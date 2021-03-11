@@ -318,7 +318,7 @@ def get_authorization_header(request):
 def get_plugin_hash():
     from octoprint.plugin import plugin_manager
 
-    plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
+    plugin_signature = lambda impl: f"{impl._identifier}:{impl._plugin_version}"
     template_plugins = list(
         map(
             plugin_signature,

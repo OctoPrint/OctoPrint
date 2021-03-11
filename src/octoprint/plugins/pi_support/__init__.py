@@ -1,7 +1,6 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import os
 
 import flask
@@ -95,7 +94,7 @@ class ThrottleState:
         self._past_throttled = False
 
         for key, value in kwargs.items():
-            local_key = "_{}".format(key)
+            local_key = f"_{key}"
             if hasattr(self, local_key) and isinstance(value, bool):
                 setattr(self, local_key, value)
 
@@ -141,7 +140,7 @@ class ThrottleState:
 
     @property
     def raw_value_hex(self):
-        return "0x{:X}".format(self._raw_value)
+        return f"0x{self._raw_value:X}"
 
     def __eq__(self, other):
         if not isinstance(other, ThrottleState):
@@ -176,7 +175,7 @@ def get_proc_dt_model():
     global _proc_dt_model
 
     if _proc_dt_model is None:
-        with io.open(_PROC_DT_MODEL_PATH, "rt", encoding="utf-8") as f:
+        with open(_PROC_DT_MODEL_PATH, encoding="utf-8") as f:
             _proc_dt_model = f.readline().strip(" \t\r\n\0")
 
     return _proc_dt_model
@@ -189,7 +188,7 @@ def get_vcgencmd_throttled_state(command):
         output = sarge.get_stdout(command, close_fds=CLOSE_FDS)
 
     if "throttled=0x" not in output:
-        raise ValueError('cannot parse "{}" output: {}'.format(command, output))
+        raise ValueError(f'cannot parse "{command}" output: {output}')
 
     value = output[len("throttled=") :].strip(" \t\r\n\0")
     value = int(value, 0)
@@ -207,7 +206,7 @@ def get_octopi_version():
     global _octopi_version
 
     if _octopi_version is None:
-        with io.open(_OCTOPI_VERSION_PATH, "rt", encoding="utf-8") as f:
+        with open(_OCTOPI_VERSION_PATH, encoding="utf-8") as f:
             _octopi_version = f.readline().strip(" \t\r\n\0")
 
     return _octopi_version
@@ -362,7 +361,7 @@ class PiSupportPlugin(
     def _check_throttled_state(self):
         command = self._settings.get(["vcgencmd_throttle_check_command"])
 
-        self._logger.debug('Retrieving throttle state via "{}"'.format(command))
+        self._logger.debug(f'Retrieving throttle state via "{command}"')
         try:
             state = get_vcgencmd_throttled_state(command)
         except ValueError:

@@ -3,7 +3,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import copy
-import io
 import logging
 import os
 import shutil
@@ -492,9 +491,7 @@ class LocalFileStorage(StorageInterface):
         self._initialize_metadata()
 
     def _initialize_metadata(self):
-        self._logger.info(
-            "Initializing the file metadata for {}...".format(self.basefolder)
-        )
+        self._logger.info(f"Initializing the file metadata for {self.basefolder}...")
 
         old_metadata_path = os.path.join(self.basefolder, "metadata.yaml")
         backup_path = os.path.join(self.basefolder, "metadata.yaml.backup")
@@ -502,7 +499,7 @@ class LocalFileStorage(StorageInterface):
         if os.path.exists(old_metadata_path):
             # load the old metadata file
             try:
-                with io.open(old_metadata_path, "rt", encoding="utf-8") as f:
+                with open(old_metadata_path, encoding="utf-8") as f:
                     import yaml
 
                     self._old_metadata = yaml.safe_load(f)
@@ -526,7 +523,7 @@ class LocalFileStorage(StorageInterface):
             self._list_folder(self.basefolder)
 
         self._logger.info(
-            "... file metadata for {} initialized successfully.".format(self.basefolder)
+            f"... file metadata for {self.basefolder} initialized successfully."
         )
 
     @property
@@ -719,7 +716,7 @@ class LocalFileStorage(StorageInterface):
 
         if not os.path.exists(source_fullpath):
             raise StorageError(
-                "{} in {} does not exist".format(source_name, source_path),
+                f"{source_name} in {source_path} does not exist",
                 code=StorageError.INVALID_SOURCE,
             )
 
@@ -735,7 +732,7 @@ class LocalFileStorage(StorageInterface):
             and source_fullpath != destination_fullpath
         ):
             raise StorageError(
-                "{} does already exist in {}".format(destination_name, destination_path),
+                f"{destination_name} does already exist in {destination_path}",
                 code=StorageError.INVALID_DESTINATION,
             )
 
@@ -1208,16 +1205,14 @@ class LocalFileStorage(StorageInterface):
             while os.path.exists(sanitized_path):
                 counter += 1
                 sanitized = self.sanitize_name(
-                    "{}_({}){}".format(sanitized_name, counter, sanitized_ext)
+                    f"{sanitized_name}_({counter}){sanitized_ext}"
                 )
                 sanitized_path = os.path.join(path, sanitized)
 
             try:
                 shutil.move(entry_path, sanitized_path)
 
-                self._logger.info(
-                    'Sanitized "{}" to "{}"'.format(entry_path, sanitized_path)
-                )
+                self._logger.info(f'Sanitized "{entry_path}" to "{sanitized_path}"')
                 return sanitized, sanitized_path
             except Exception:
                 self._logger.exception(
@@ -1664,7 +1659,7 @@ class LocalFileStorage(StorageInterface):
                     except Exception:
                         # So something went wrong somewhere while processing this file entry - log that and continue
                         self._logger.exception(
-                            "Error while processing entry {}".format(entry_path)
+                            f"Error while processing entry {entry_path}"
                         )
                         continue
 
@@ -1734,7 +1729,7 @@ class LocalFileStorage(StorageInterface):
 
         blocksize = 65536
         hash = hashlib.sha1()
-        with io.open(path, "rb") as f:
+        with open(path, "rb") as f:
             buffer = f.read(blocksize)
             while len(buffer) > 0:
                 hash.update(buffer)
@@ -1815,7 +1810,7 @@ class LocalFileStorage(StorageInterface):
         metadata = None
         with self._get_persisted_metadata_lock(path):
             if os.path.exists(metadata_path):
-                with io.open(metadata_path, "rt", encoding="utf-8") as f:
+                with open(metadata_path, encoding="utf-8") as f:
                     try:
                         metadata = json.load(f)
                     except Exception:
@@ -1922,7 +1917,7 @@ class LocalFileStorage(StorageInterface):
                     )
                 return
 
-            with io.open(metadata_path_yaml, "rt", encoding="utf-8") as f:
+            with open(metadata_path_yaml, encoding="utf-8") as f:
                 try:
                     metadata = yaml.safe_load(f)
                 except Exception:

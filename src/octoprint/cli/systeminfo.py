@@ -135,7 +135,7 @@ def systeminfo_command(ctx, path, **kwargs):
         if path:
             # create zip at path
             zipfilename = os.path.join(path, get_systeminfo_bundle_name())
-            click.echo("Writing systeminfo bundle to {}...".format(zipfilename))
+            click.echo(f"Writing systeminfo bundle to {zipfilename}...")
 
             z = get_systeminfo_bundle(systeminfo, settings.getBaseFolder("logs"))
             try:
@@ -144,9 +144,7 @@ def systeminfo_command(ctx, path, **kwargs):
                         f.write(data)
             except Exception as e:
                 click.echo(str(e), err=True)
-                click.echo(
-                    "There was an error writing to {}.".format(zipfilename), err=True
-                )
+                click.echo(f"There was an error writing to {zipfilename}.", err=True)
                 ctx.exit(-1)
 
             click.echo("Done!")

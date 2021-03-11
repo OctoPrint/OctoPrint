@@ -169,7 +169,7 @@ class EnvironmentDetector:
             environment, default_flow_style=False, indent=2, allow_unicode=True
         ).strip()
         environment_lines = "\n".join(
-            map(lambda l: "|  {}".format(l), dumped_environment.split("\n"))
+            map(lambda l: f"|  {l}", dumped_environment.split("\n"))
         )
         return "Detected environment is Python {} under {} ({}). Details:\n{}".format(
             environment["python"]["version"],

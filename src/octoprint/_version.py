@@ -10,7 +10,6 @@
 """Git implementation of _version.py."""
 
 import errno
-import io
 import logging
 import os
 import re
@@ -97,7 +96,7 @@ def run_command(commands, args, cwd=None, verbose=False, hide_stderr=False):
             return None
     else:
         if verbose:
-            print("unable to find command, tried {}".format(commands))
+            print(f"unable to find command, tried {commands}")
         return None
     stdout = p.communicate()[0].strip()
     if sys.version_info[0] >= 3:
@@ -140,7 +139,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = io.open(versionfile_abs, "rt", encoding="utf-8")
+        f = open(versionfile_abs, encoding="utf-8")
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -334,7 +333,7 @@ def git_parse_lookup_file(path):
     import re
 
     lookup = []
-    with io.open(path, "rt", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             if "#" in line:
                 line = line[: line.index("#")]

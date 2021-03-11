@@ -16,6 +16,7 @@ repos:
     rev: v2.10.0
     hooks:
       - id: pyupgrade
+        args: ["--py37-plus"]
   - repo: https://github.com/OctoPrint/codemods
     rev: 0.4.0
     hooks:

@@ -161,8 +161,7 @@ class SettingsTestCase(unittest.TestCase):
             self.assertEqual(1, len(w))
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
             self.assertTrue(
-                "{old} has been renamed to {new}".format(old=deprecated, new=current)
-                in str(w[-1].message)
+                f"{deprecated} has been renamed to {current}" in str(w[-1].message)
             )
 
     @data(
@@ -402,8 +401,7 @@ class SettingsTestCase(unittest.TestCase):
             self.assertEqual(1, len(w))
             self.assertTrue(issubclass(w[-1].category, DeprecationWarning))
             self.assertTrue(
-                "{old} has been renamed to {new}".format(old=deprecated, new=current)
-                in str(w[-1].message)
+                f"{deprecated} has been renamed to {current}" in str(w[-1].message)
             )
 
     def test_global_get_basefolder(self):
@@ -419,7 +417,7 @@ class SettingsTestCase(unittest.TestCase):
 
         self.settings.getBaseFolder.assert_called_once_with("logs")
         self.assertEqual(
-            "/some/folder/plugin_{key}.log".format(key=self.plugin_key),
+            f"/some/folder/plugin_{self.plugin_key}.log",
             path.replace(os.sep, "/"),
         )
 
@@ -432,7 +430,7 @@ class SettingsTestCase(unittest.TestCase):
 
         self.settings.getBaseFolder.assert_called_once_with("logs")
         self.assertEqual(
-            "/some/folder/plugin_{key}_mypostfix.log".format(key=self.plugin_key),
+            f"/some/folder/plugin_{self.plugin_key}_mypostfix.log",
             path.replace(os.sep, "/"),
         )
 

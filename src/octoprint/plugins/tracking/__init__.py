@@ -479,7 +479,7 @@ class TrackingPlugin(
         # Don't print the URL or UUID! That would expose the UUID in forums/tickets
         # if pasted. It's okay for the user to know their uuid, but it shouldn't be shared.
 
-        headers = {"User-Agent": "OctoPrint/{}".format(get_octoprint_version_string())}
+        headers = {"User-Agent": f"OctoPrint/{get_octoprint_version_string()}"}
         try:
             params = urlencode(kwargs, doseq=True).replace("+", "%20")
 
@@ -488,9 +488,7 @@ class TrackingPlugin(
             else:
                 requests.get(url, params=params, timeout=3.1, headers=headers)
 
-            self._logger.info(
-                "Sent tracking event {}, payload: {!r}".format(event, kwargs)
-            )
+            self._logger.info(f"Sent tracking event {event}, payload: {kwargs!r}")
         except Exception:
             if self._logger.isEnabledFor(logging.DEBUG):
                 self._logger.exception(

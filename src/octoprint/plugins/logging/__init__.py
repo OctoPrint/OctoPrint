@@ -1,7 +1,6 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import os
 from os import scandir
 
@@ -183,7 +182,7 @@ class LoggingPlugin(
         if os.path.exists(logging_file) and os.path.isfile(logging_file):
             import yaml
 
-            with io.open(logging_file, "rt", encoding="utf-8") as f:
+            with open(logging_file, encoding="utf-8") as f:
                 config_from_file = yaml.safe_load(f)
         return config_from_file
 
@@ -242,7 +241,7 @@ class LoggingPlugin(
         for logger, level in new_levels.items():
             level = logging.getLevelName(level)
 
-            self._logger.info("Setting logger {} level to {}".format(logger, level))
+            self._logger.info(f"Setting logger {logger} level to {level}")
             self._logger.manager.loggerDict[logger].setLevel(level)
 
     def _is_managed_logger(self, logger):

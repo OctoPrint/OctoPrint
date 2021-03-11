@@ -522,7 +522,7 @@ class IsHiddenPathTest(unittest.TestCase):
             "path_always_hidden",
         ):
             path = getattr(self, attr)
-            with io.open(path, "wt+", encoding="utf-8") as f:
+            with open(path, "wt+", encoding="utf-8") as f:
                 f.write(attr)
 
         if sys.platform == "win32":

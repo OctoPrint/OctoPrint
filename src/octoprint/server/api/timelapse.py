@@ -177,9 +177,9 @@ def deleteTimelapse(filename):
             os.remove(full_path)
         except Exception as ex:
             logging.getLogger(__file__).exception(
-                "Error deleting timelapse file {}".format(full_path)
+                f"Error deleting timelapse file {full_path}"
             )
-            abort(500, description="Unexpected error: {}".format(ex))
+            abort(500, description=f"Unexpected error: {ex}")
 
     return getTimelapseData()
 

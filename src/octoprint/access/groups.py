@@ -2,7 +2,6 @@ __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import logging
 import os
 from functools import partial
@@ -183,13 +182,13 @@ class GroupManager:
             return None
 
     def _notify_listeners(self, action, group, *args, **kwargs):
-        method = "on_group_{}".format(action)
+        method = f"on_group_{action}"
         for listener in self._group_change_listeners:
             try:
                 getattr(listener, method)(group, *args, **kwargs)
             except Exception:
                 self._logger.exception(
-                    "Error notifying listener {!r} via {}".format(listener, method)
+                    f"Error notifying listener {listener!r} via {method}"
                 )
 
 
@@ -227,7 +226,7 @@ class FilebasedGroupManager(GroupManager):
     def _load(self):
         if os.path.exists(self._groupfile) and os.path.isfile(self._groupfile):
             try:
-                with io.open(self._groupfile, "rt", encoding="utf-8") as f:
+                with open(self._groupfile, encoding="utf-8") as f:
                     data = yaml.safe_load(f)
 
                 if "groups" not in data:
@@ -316,7 +315,7 @@ class FilebasedGroupManager(GroupManager):
 
             except Exception:
                 self._logger.exception(
-                    "Error while loading groups from file {}".format(self._groupfile)
+                    f"Error while loading groups from file {self._groupfile}"
                 )
 
     def _save(self, force=False):

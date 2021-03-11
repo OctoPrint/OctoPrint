@@ -1,7 +1,6 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import json
 import os
 
@@ -45,11 +44,11 @@ def create_client(
     if not apikey:
         cli_key_file = os.path.join(settings.getBaseFolder("generated"), "cli.key")
         try:
-            with io.open(cli_key_file, "r", encoding="utf8") as f:
+            with open(cli_key_file, encoding="utf8") as f:
                 apikey = f.readline()
         except Exception:
             raise FatalStartupError(
-                "Can not authenticate with server at {}:{}, no key".format(host, port)
+                f"Can not authenticate with server at {host}:{port}, no key"
             )
 
     baseurl = octoprint_client.build_base_url(
@@ -115,10 +114,10 @@ def client(ctx, apikey, host, port, httpuser, httppass, https, prefix):
 
 def log_response(response, status_code=True, body=True, headers=False):
     if status_code:
-        click.echo("Status Code: {}".format(response.status_code))
+        click.echo(f"Status Code: {response.status_code}")
     if headers:
         for header, value in response.headers.items():
-            click.echo("{}: {}".format(header, value))
+            click.echo(f"{header}: {value}")
         click.echo()
     if body:
         click.echo(response.text)
@@ -169,17 +168,17 @@ def post_from_file(ctx, path, file_path, json_flag, yaml_flag, timeout):
     """POSTs JSON data to the specified server path, taking the data from the specified file."""
     if json_flag or yaml_flag:
         if json_flag:
-            with io.open(file_path, "rt") as fp:
+            with open(file_path) as fp:
                 data = json.load(fp)
         else:
             import yaml
 
-            with io.open(file_path, "rt") as fp:
+            with open(file_path) as fp:
                 data = yaml.safe_load(fp)
 
         r = ctx.obj.client.post_json(path, data, timeout=timeout)
     else:
-        with io.open(file_path, "rb") as fp:
+        with open(file_path, "rb") as fp:
             data = fp.read()
 
         r = ctx.obj.client.post(path, data, timeout=timeout)
@@ -285,7 +284,7 @@ def listen(ctx):
         click.echo("--- Connection closed!")
 
     def on_error(ws, error):
-        click.echo("!!! Error: {}".format(error))
+        click.echo(f"!!! Error: {error}")
 
     def on_sent(ws, data):
         click.echo(">>> {}".format(json.dumps(data)))

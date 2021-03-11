@@ -62,7 +62,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            click.echo("Could not get update information from server, got {}".format(e))
+            click.echo(f"Could not get update information from server, got {e}")
             sys.exit(1)
 
         data = r.json()
@@ -230,7 +230,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            click.echo("Could not get update information from server, got {}".format(e))
+            click.echo(f"Could not get update information from server, got {e}")
             sys.exit(1)
 
         data = r.json()

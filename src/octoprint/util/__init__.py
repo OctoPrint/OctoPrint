@@ -10,7 +10,6 @@ import collections
 import contextlib
 import copy
 import glob
-import io
 import logging
 import os
 import queue
@@ -334,7 +333,7 @@ def get_formatted_size(num):
 
     for x in ["B", "KB", "MB", "GB"]:
         if num < 1024:
-            return "{:3.1f}{}".format(num, x)
+            return f"{num:3.1f}{x}"
         num /= 1024
     return "{:3.1f}{}".format(num, "TB")
 
@@ -1253,7 +1252,7 @@ else:
                 os.remove(self._path)
             except Exception as exc:
                 logging.getLogger(__name__).warning(
-                    "Could not delete temporary directory {}: {}".format(self.name, exc)
+                    f"Could not delete temporary directory {self.name}: {exc}"
                 )
 
         def __enter__(self):
@@ -1279,13 +1278,13 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
         # these encodings might have a BOM, so let's see if there is one
         bom = getattr(codecs, potential_bom_attribute)
 
-        with io.open(filename, mode="rb") as f:
+        with open(filename, mode="rb") as f:
             header = f.read(4)
 
         if header.startswith(bom):
             encoding += "-sig"
 
-    return io.open(filename, encoding=encoding, mode=mode, **kwargs)
+    return open(filename, encoding=encoding, mode=mode, **kwargs)
 
 
 def is_hidden_path(path):
@@ -1764,7 +1763,7 @@ class TypedQueue(PrependableQueue):
         if item_type is not None:
             if item_type in self._lookup:
                 raise TypeAlreadyInQueue(
-                    item_type, "Type {} is already in queue".format(item_type)
+                    item_type, f"Type {item_type} is already in queue"
                 )
             else:
                 self._lookup.add(item_type)
@@ -1785,7 +1784,7 @@ class TypedQueue(PrependableQueue):
         if item_type is not None:
             if item_type in self._lookup:
                 raise TypeAlreadyInQueue(
-                    item_type, "Type {} is already in queue".format(item_type)
+                    item_type, f"Type {item_type} is already in queue"
                 )
             else:
                 self._lookup.add(item_type)
@@ -1842,7 +1841,7 @@ def fqfn(f):
             f.__self__.__class__.__module__, f.__self__.__class__.__name__, f.__name__
         )
     else:
-        return "{}.{}".format(f.__module__, f.__name__)
+        return f"{f.__module__}.{f.__name__}"
 
 
 def time_this(

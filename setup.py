@@ -134,7 +134,7 @@ def md_to_html_build_py_factory(files, baseclass):
                             source = entry
                             dest = os.path.join(target_dir, source + ".html")
 
-                        print("Rendering markdown from {} to {}".format(source, dest))
+                        print(f"Rendering markdown from {source} to {dest}")
 
                         from markdown import markdownFromFile
 

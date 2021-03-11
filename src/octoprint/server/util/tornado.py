@@ -1186,7 +1186,7 @@ class LargeResponseHandler(
             etag = str(self.get_content_version(self.absolute_path))
 
         if not etag.endswith('"'):
-            etag = '"{}"'.format(etag)
+            etag = f'"{etag}"'
         return etag
 
     # noinspection PyAttributeOutsideInit
@@ -1330,7 +1330,7 @@ class UrlProxyHandler(
         if not extension:
             return None
 
-        return "{}{}".format(self._basename, extension)
+        return f"{self._basename}{extension}"
 
 
 class StaticDataHandler(
@@ -1373,7 +1373,7 @@ class DeprecatedEndpointHandler(CorsSupportMixin, tornado.web.RequestHandler):
     def _handle_method(self, *args, **kwargs):
         to_url = self._url.format(*args)
         self._logger.info(
-            "Redirecting deprecated endpoint {} to {}".format(self.request.path, to_url)
+            f"Redirecting deprecated endpoint {self.request.path} to {to_url}"
         )
         self.redirect(to_url, permanent=True)
 
@@ -1431,7 +1431,7 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
         if self._as_attachment:
             self.set_header(
                 "Content-Disposition",
-                'attachment; filename="{}"'.format(self.get_attachment_name()),
+                f'attachment; filename="{self.get_attachment_name()}"',
             )
 
         import zipstream
@@ -1576,7 +1576,7 @@ class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
         self.set_header("Content-Type", "application/zip")
         self.set_header(
             "Content-Disposition",
-            'attachment; filename="{}"'.format(get_systeminfo_bundle_name()),
+            f'attachment; filename="{get_systeminfo_bundle_name()}"',
         )
 
         for chunk in z:

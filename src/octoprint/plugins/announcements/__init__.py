@@ -4,7 +4,6 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 
 import calendar
-import io
 import os
 import re
 import sys
@@ -434,9 +433,7 @@ class AnnouncementPlugin(
             now = time.time()
             if os.stat(channel_path).st_mtime + ttl > now:
                 d = feedparser.parse(channel_path)
-                self._logger.debug(
-                    "Loaded channel {} from cache at {}".format(key, channel_path)
-                )
+                self._logger.debug(f"Loaded channel {key} from cache at {channel_path}")
                 return d
 
         return None
@@ -464,7 +461,7 @@ class AnnouncementPlugin(
 
         response = r.text
         channel_path = self._get_channel_cache_path(key)
-        with io.open(channel_path, mode="wt", encoding="utf-8") as f:
+        with open(channel_path, mode="wt", encoding="utf-8") as f:
             f.write(response)
         return feedparser.parse(response)
 
@@ -518,7 +515,7 @@ class AnnouncementPlugin(
         """Retrieve cache path for channel key."""
 
         safe_key = sanitize(key)
-        return os.path.join(self.get_plugin_data_folder(), "{}.cache".format(safe_key))
+        return os.path.join(self.get_plugin_data_folder(), f"{safe_key}.cache")
 
 
 _image_tag_re = re.compile(r"<img.*?/?>")
@@ -577,7 +574,7 @@ def _lazy_images(text, placeholder=None):
             quote = match.group("quote")
             quoted_src = quote + src + quote
             img_tag = img_tag.replace(
-                match.group(0), 'src="{}" data-src={}'.format(placeholder, quoted_src)
+                match.group(0), f'src="{placeholder}" data-src={quoted_src}'
             )
         return img_tag
 
@@ -602,10 +599,10 @@ def _strip_tags(text):
             self._fed.append(data)
 
         def handle_entityref(self, ref):
-            self._fed.append("&{};".format(ref))
+            self._fed.append(f"&{ref};")
 
         def handle_charref(self, ref):
-            self._fed.append("&#{};".format(ref))
+            self._fed.append(f"&#{ref};")
 
         def get_data(self):
             return "".join(self._fed)

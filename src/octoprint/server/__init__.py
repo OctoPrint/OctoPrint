@@ -4,7 +4,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import atexit
 import base64
-import io
 import logging
 import logging.config
 import mimetypes
@@ -393,7 +392,7 @@ class Server:
                 analysis_queue_factories.update(**additional_factories)
             except Exception:
                 self._logger.exception(
-                    "Error while processing analysis queues from {}".format(name),
+                    f"Error while processing analysis queues from {name}",
                     extra={"plugin": name},
                 )
         analysisQueue = octoprint.filemanager.analysis.AnalysisQueue(
@@ -497,7 +496,7 @@ class Server:
                 groupManager = factory(components, self._settings)
                 if groupManager is not None:
                     self._logger.debug(
-                        "Created group manager instance from factory {}".format(name)
+                        f"Created group manager instance from factory {name}"
                     )
                     break
             except Exception:
@@ -531,7 +530,7 @@ class Server:
                 userManager = factory(components, self._settings)
                 if userManager is not None:
                     self._logger.debug(
-                        "Created user manager instance from factory {}".format(name)
+                        f"Created user manager instance from factory {name}"
                     )
                     break
             except Exception:
@@ -562,13 +561,11 @@ class Server:
             try:
                 printer = factory(components)
                 if printer is not None:
-                    self._logger.debug(
-                        "Created printer instance from factory {}".format(name)
-                    )
+                    self._logger.debug(f"Created printer instance from factory {name}")
                     break
             except Exception:
                 self._logger.exception(
-                    "Error while creating printer instance from factory {}".format(name),
+                    f"Error while creating printer instance from factory {name}",
                     extra={"plugin": name},
                 )
         else:
@@ -1095,7 +1092,7 @@ class Server:
                 connectionOptions = printer.__class__.get_connection_options()
                 if port in connectionOptions["ports"] or port == "AUTO" or port is None:
                     self._logger.info(
-                        "Trying to connect to configured serial port {}".format(port)
+                        f"Trying to connect to configured serial port {port}"
                     )
                     printer.connect(
                         port=port,
@@ -1152,9 +1149,7 @@ class Server:
             if self._host == "::":
                 if self._v6_only:
                     # only v6
-                    self._logger.info(
-                        "Listening on http://[::]:{port}".format(port=self._port)
-                    )
+                    self._logger.info(f"Listening on http://[::]:{self._port}")
                 else:
                     # all v4 and v6
                     self._logger.info(
@@ -1327,7 +1322,7 @@ class Server:
             logger.info("Server heartbeat <3")
 
         interval = settings().getFloat(["server", "heartbeat"])
-        logger.info("Starting server heartbeat, {}s interval".format(interval))
+        logger.info(f"Starting server heartbeat, {interval}s interval")
 
         timer = octoprint.util.RepeatedTimer(interval, log_heartbeat)
         timer.start()
@@ -1427,7 +1422,7 @@ class Server:
                 result.add(locale.language)
                 if locale.territory:
                     # if a territory is specified, add that too
-                    result.add("{}_{}".format(locale.language, locale.territory))
+                    result.add(f"{locale.language}_{locale.territory}")
 
             return result
 
@@ -1495,7 +1490,7 @@ class Server:
                     tag += ' target="_blank" rel="noreferrer noopener"'
 
                 content = match.group("content")
-                return "<{tag}>{content}</a>".format(tag=tag, content=content)
+                return f"<{tag}>{content}</a>"
 
             return html_link_regex.sub(repl, text)
 
@@ -1820,7 +1815,7 @@ class Server:
         if plugin.is_blueprint_protected():
             blueprint.before_request(requireLoginRequestHandler)
 
-        url_prefix = "/plugin/{name}".format(name=name)
+        url_prefix = f"/plugin/{name}"
         app.register_blueprint(blueprint, url_prefix=url_prefix)
 
         if self._logger:
@@ -1835,7 +1830,7 @@ class Server:
     def _prepare_asset_plugin(self, plugin):
         name = plugin._identifier
 
-        url_prefix = "/plugin/{name}".format(name=name)
+        url_prefix = f"/plugin/{name}"
         blueprint = Blueprint(
             "plugin." + name, name, static_folder=plugin.get_asset_folder()
         )
@@ -1895,7 +1890,7 @@ class Server:
 
         cli_key_file = os.path.join(self._settings.getBaseFolder("generated"), "cli.key")
         cli_key = generate_api_key()
-        with io.open(cli_key_file, "w", encoding="utf8") as f:
+        with open(cli_key_file, "w", encoding="utf8") as f:
             f.write(cli_key)
 
         return cli_key
@@ -2178,7 +2173,7 @@ class Server:
             js_plugins_bundle = Bundle(
                 *js_plugins.values(),
                 output="webassets/packed_plugins.js",
-                filters=",".join(js_plugin_filters)
+                filters=",".join(js_plugin_filters),
             )
 
         js_app_bundle = Bundle(
@@ -2191,7 +2186,7 @@ class Server:
         js_client_core_bundle = Bundle(
             *clientjs_core,
             output="webassets/packed_client_core.js",
-            filters=",".join(js_filters)
+            filters=",".join(js_filters),
         )
 
         if len(clientjs_plugins) == 0:
@@ -2200,7 +2195,7 @@ class Server:
             js_client_plugins_bundle = Bundle(
                 *clientjs_plugins.values(),
                 output="webassets/packed_client_plugins.js",
-                filters=",".join(js_plugin_filters)
+                filters=",".join(js_plugin_filters),
             )
 
         js_client_bundle = Bundle(
@@ -2231,7 +2226,7 @@ class Server:
             css_core_bundle = Bundle(
                 *css_core,
                 output="webassets/packed_core.css",
-                filters=",".join(css_filters)
+                filters=",".join(css_filters),
             )
 
         if len(css_plugins) == 0:
@@ -2240,7 +2235,7 @@ class Server:
             css_plugins_bundle = Bundle(
                 *css_plugins,
                 output="webassets/packed_plugins.css",
-                filters=",".join(css_filters)
+                filters=",".join(css_filters),
             )
 
         css_app_bundle = Bundle(
@@ -2265,7 +2260,7 @@ class Server:
             less_core_bundle = Bundle(
                 *less_core,
                 output="webassets/packed_core.less",
-                filters=",".join(less_filters)
+                filters=",".join(less_filters),
             )
 
         if len(less_plugins) == 0:
@@ -2274,7 +2269,7 @@ class Server:
             less_plugins_bundle = Bundle(
                 *less_plugins,
                 output="webassets/packed_plugins.less",
-                filters=",".join(less_filters)
+                filters=",".join(less_filters),
             )
 
         less_app_bundle = Bundle(
@@ -2290,13 +2285,13 @@ class Server:
         assets.register("js_client_core", js_client_core_bundle)
         for plugin, bundle in clientjs_plugins.items():
             # register our collected clientjs plugin bundles so that they are bound to the environment
-            assets.register("js_client_plugin_{}".format(plugin), bundle)
+            assets.register(f"js_client_plugin_{plugin}", bundle)
         assets.register("js_client_plugins", js_client_plugins_bundle)
         assets.register("js_client", js_client_bundle)
         assets.register("js_core", js_core_bundle)
         for plugin, bundle in js_plugins.items():
             # register our collected plugin bundles so that they are bound to the environment
-            assets.register("js_plugin_{}".format(plugin), bundle)
+            assets.register(f"js_plugin_{plugin}", bundle)
         assets.register("js_plugins", js_plugins_bundle)
         assets.register("js_app", js_app_bundle)
         assets.register("css_libs", css_libs_bundle)
@@ -2387,7 +2382,7 @@ class Server:
             if not os.path.isfile(path):
                 return ""
 
-            with io.open(path, "rb") as f:
+            with open(path, "rb") as f:
                 data = f.read()
             return data
 
@@ -2442,9 +2437,7 @@ class Server:
 
         if host == "::":
             if self._v6_only:
-                self._logger.debug(
-                    "Starting intermediary server on http://[::]:{port}".format(port=port)
-                )
+                self._logger.debug(f"Starting intermediary server on http://[::]:{port}")
             else:
                 self._logger.debug(
                     "Starting intermediary server on http://0.0.0.0:{port} and http://[::]:{port}".format(
@@ -2532,7 +2525,7 @@ class Server:
             return "{}: {}".format(plugin, definition["name"])
 
         def permission_role(plugin, role):
-            return "plugin_{}_{}".format(plugin, role)
+            return f"plugin_{plugin}_{role}"
 
         def process_regular_permission(plugin_info, definition):
             permissions = []
@@ -2562,7 +2555,7 @@ class Server:
                 plugin=plugin_info.key,
                 dangerous=dangerous,
                 default_groups=default_groups,
-                *roles_and_permissions
+                *roles_and_permissions,
             )
             setattr(
                 octoprint.access.permissions.Permissions,
@@ -2573,7 +2566,7 @@ class Server:
                     plugin=plugin_info.key,
                     dangerous=dangerous,
                     default_groups=default_groups,
-                    *roles_and_permissions
+                    *roles_and_permissions,
                 ),
             )
 
@@ -2621,7 +2614,7 @@ class Server:
                         postponed.append((plugin_info, p))
             except Exception:
                 self._logger.exception(
-                    "Error while creating permission instance/s from {}".format(name)
+                    f"Error while creating permission instance/s from {name}"
                 )
 
         # final resolution passes

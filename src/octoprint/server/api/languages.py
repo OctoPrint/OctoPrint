@@ -2,7 +2,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import logging
 import os
 import tarfile
@@ -44,7 +43,7 @@ def getInstalledLanguagePacks():
                 import yaml
 
                 try:
-                    with io.open(meta_path, "rt", encoding="utf-8") as f:
+                    with open(meta_path, encoding="utf-8") as f:
                         meta = yaml.safe_load(f)
                 except Exception:
                     logging.getLogger(__name__).exception("Could not load %s", meta_path)

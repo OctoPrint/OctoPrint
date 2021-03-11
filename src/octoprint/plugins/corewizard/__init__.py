@@ -54,9 +54,9 @@ class CoreWizardPlugin(
             config = {
                 "type": "wizard",
                 "name": name,
-                "template": "corewizard_{}_wizard.jinja2".format(key),
-                "div": "wizard_plugin_corewizard_{}".format(key),
-                "suffix": "_{}".format(key),
+                "template": f"corewizard_{key}_wizard.jinja2",
+                "div": f"wizard_plugin_corewizard_{key}",
+                "suffix": f"_{key}",
             }
             if key in additional:
                 additional_result = additional[key]()

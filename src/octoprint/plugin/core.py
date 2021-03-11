@@ -24,7 +24,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import fnmatch
 import inspect
-import io
 import logging
 import os
 from collections import OrderedDict, defaultdict, namedtuple
@@ -306,7 +305,7 @@ class PluginInfo:
 
     def __str__(self):
         if self.version:
-            return "{name} ({version})".format(name=self.name, version=self.version)
+            return f"{self.name} ({self.version})"
         else:
             return to_unicode(self.name)
 
@@ -684,14 +683,12 @@ class PluginInfo:
             # we only support parsing plain text source files
             return result
 
-        self._logger.debug(
-            "Parsing plugin metadata for {} from AST of {}".format(self.key, path)
-        )
+        self._logger.debug(f"Parsing plugin metadata for {self.key} from AST of {path}")
 
         try:
             import ast
 
-            with io.open(path, "rb") as f:
+            with open(path, "rb") as f:
                 root = ast.parse(f.read(), filename=path)
 
             assignments = list(
@@ -765,13 +762,11 @@ class PluginInfo:
                     break
 
         except SyntaxError:
-            self._logger.exception(
-                "Invalid syntax in {} for plugin {}".format(path, self.key)
-            )
+            self._logger.exception(f"Invalid syntax in {path} for plugin {self.key}")
             self.invalid_syntax = True
         except Exception:
             self._logger.exception(
-                "Error while parsing AST from {} for plugin {}".format(path, self.key)
+                f"Error while parsing AST from {path} for plugin {self.key}"
             )
 
         return result
@@ -1001,7 +996,7 @@ class PluginManager:
 
                         module_name = None
                         if package:
-                            module_name = "{}.{}".format(package, key)
+                            module_name = f"{package}.{key}"
 
                         plugin = self._import_plugin_from_module(
                             key, module_name=module_name, folder=folder, bundled=bundled
@@ -1025,7 +1020,7 @@ class PluginManager:
                             )
                         )
             except Exception:
-                self.logger.exception("Error processing folder {}".format(folder))
+                self.logger.exception(f"Error processing folder {folder}")
 
         return added, found
 
@@ -1163,7 +1158,7 @@ class PluginManager:
             else:
                 return None
         except Exception:
-            self.logger.exception("Could not locate plugin {key}".format(key=key))
+            self.logger.exception(f"Could not locate plugin {key}")
             return None
 
         # Create a simple dummy entry first ...
@@ -1181,14 +1176,14 @@ class PluginManager:
         plugin.bundled = bundled
 
         if self._is_plugin_disabled(key):
-            self.logger.info("Plugin {} is disabled.".format(plugin))
+            self.logger.info(f"Plugin {plugin} is disabled.")
             plugin.forced_disabled = True
 
         if self._is_plugin_blacklisted(key) or (
             plugin.version is not None
             and self._is_plugin_version_blacklisted(key, plugin.version)
         ):
-            self.logger.warning("Plugin {} is blacklisted.".format(plugin))
+            self.logger.warning(f"Plugin {plugin} is blacklisted.")
             plugin.blacklisted = True
 
         python_version = get_python_version_string()
@@ -1264,7 +1259,7 @@ class PluginManager:
 
             plugin.bundled = bundled
         except Exception:
-            self.logger.exception("Error loading plugin {key}".format(key=key))
+            self.logger.exception(f"Error loading plugin {key}")
             return None
 
         if plugin.check():
@@ -1386,7 +1381,7 @@ class PluginManager:
                 ):
                     if plugin.blacklisted:
                         self.logger.warning(
-                            "Plugin {} is blacklisted. Not enabling it.".format(plugin)
+                            f"Plugin {plugin} is blacklisted. Not enabling it."
                         )
                         continue
                     self.enable_plugin(
@@ -2272,11 +2267,11 @@ def is_sub_path_of(path, parent):
 
 
 def is_editable_install(install_dir, package, module, location):
-    package_link = os.path.join(install_dir, "{}.egg-link".format(package))
+    package_link = os.path.join(install_dir, f"{package}.egg-link")
     if os.path.isfile(package_link):
         expected_target = os.path.normcase(os.path.realpath(location))
         try:
-            with io.open(package_link, "rt", encoding="utf-8") as f:
+            with open(package_link, encoding="utf-8") as f:
                 contents = f.readlines()
             for line in contents:
                 target = os.path.normcase(

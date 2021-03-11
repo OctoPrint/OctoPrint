@@ -4,7 +4,6 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import base64
 import datetime
-import io
 import logging
 import os
 import re
@@ -104,7 +103,7 @@ def _preemptive_data(
                 d.update(data)
         except Exception:
             _logger.exception(
-                "Error collecting data for preemptive cache from plugin {}".format(key)
+                f"Error collecting data for preemptive cache from plugin {key}"
             )
 
     # add additional request data if we have any
@@ -129,7 +128,7 @@ def _cache_key(ui, url=None, locale=None, additional_key_data=None):
     if locale is None:
         locale = g.locale.language if g.locale else "en"
 
-    k = "ui:{}:{}:{}".format(ui, url, locale)
+    k = f"ui:{ui}:{url}:{locale}"
     if callable(additional_key_data):
         try:
             ak = additional_key_data()
@@ -160,7 +159,7 @@ def _add_additional_assets(hook):
                 result += assets
         except Exception:
             _logger.exception(
-                "Error fetching theming CSS to include from plugin {}".format(name),
+                f"Error fetching theming CSS to include from plugin {name}",
                 extra={"plugin": name},
             )
     return result
@@ -273,7 +272,7 @@ def in_cache():
                 break
         except Exception:
             _logger.exception(
-                "Error while calling plugin {}, skipping it".format(plugin._identifier),
+                f"Error while calling plugin {plugin._identifier}, skipping it",
                 extra={"plugin": plugin._identifier},
             )
     else:
@@ -297,9 +296,7 @@ def in_cache():
         )
         return response
     elif util.flask.is_in_cache(key):
-        _logger.info(
-            "Found path {} in cache (key: {}), signaling as cached".format(path, key)
-        )
+        _logger.info(f"Found path {path} in cache (key: {key}), signaling as cached")
         return response
     elif util.flask.is_cache_bypassed(key):
         _logger.info(
@@ -309,9 +306,7 @@ def in_cache():
         )
         return response
     else:
-        _logger.debug(
-            "Path {} not yet cached (key: {}), signaling as missing".format(path, key)
-        )
+        _logger.debug(f"Path {path} not yet cached (key: {key}), signaling as missing")
         return abort(404)
 
 
@@ -619,7 +614,7 @@ def index():
 
     if forced_view:
         # we have view forced by the preemptive cache
-        _logger.debug("Forcing rendering of view {}".format(forced_view))
+        _logger.debug(f"Forcing rendering of view {forced_view}")
         if forced_view != "_default":
             plugin = pluginManager.get_plugin_info(forced_view, require_enabled=True)
             if plugin is not None and isinstance(
@@ -706,7 +701,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 
     permissions = [permission.as_dict() for permission in Permissions.all()]
     filetypes = list(sorted(full_extension_tree().keys()))
-    extensions = list(map(lambda ext: ".{}".format(ext), get_all_extensions()))
+    extensions = list(map(lambda ext: f".{ext}", get_all_extensions()))
 
     # ~~ prepare full set of template vars for rendering
 
@@ -1684,7 +1679,7 @@ def _get_translations(locale, domain):
 
     def messages_from_po(path, locale, domain):
         messages = {}
-        with io.open(path, mode="rt", encoding="utf-8") as f:
+        with open(path, mode="rt", encoding="utf-8") as f:
             catalog = read_po(f, locale=locale, domain=domain)
 
             for message in catalog:

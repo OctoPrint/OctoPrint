@@ -1,4 +1,3 @@
-import io
 import os
 import threading
 import time
@@ -439,13 +438,11 @@ class AppKeysPlugin(
                 return
 
             try:
-                with io.open(
-                    self._key_path, "rt", encoding="utf-8", errors="strict"
-                ) as f:
+                with open(self._key_path, encoding="utf-8", errors="strict") as f:
                     persisted = yaml.safe_load(f)
             except Exception:
                 self._logger.exception(
-                    "Could not load application keys from {}".format(self._key_path)
+                    f"Could not load application keys from {self._key_path}"
                 )
                 return
 
@@ -470,7 +467,7 @@ class AppKeysPlugin(
                     yaml.safe_dump(to_persist, f, allow_unicode=True)
             except Exception:
                 self._logger.exception(
-                    "Could not write application keys to {}".format(self._key_path)
+                    f"Could not write application keys to {self._key_path}"
                 )
 
 

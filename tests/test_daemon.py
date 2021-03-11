@@ -403,7 +403,7 @@ class DaemonTest(unittest.TestCase):
         # test
         with mock.patch(
             _fixups.OPEN_SIGNATURE,
-            mock.mock_open(read_data="{}\n".format(pid)),
+            mock.mock_open(read_data=f"{pid}\n"),
             create=True,
         ) as m:
             result = self.daemon.get_pid()
@@ -432,7 +432,7 @@ class DaemonTest(unittest.TestCase):
         # test
         with mock.patch(
             _fixups.OPEN_SIGNATURE,
-            mock.mock_open(read_data="{}\n".format(pid)),
+            mock.mock_open(read_data=f"{pid}\n"),
             create=True,
         ) as m:
             result = self.daemon.get_pid()
@@ -452,7 +452,7 @@ class DaemonTest(unittest.TestCase):
         # assert
         m.assert_called_once_with(self.pidfile, "wt+", encoding="utf-8")
         handle = m()
-        handle.write.assert_called_once_with("{}\n".format(pid))
+        handle.write.assert_called_once_with(f"{pid}\n")
 
     def test_set_pid_int(self):
         # setup
@@ -465,7 +465,7 @@ class DaemonTest(unittest.TestCase):
         # assert
         m.assert_called_once_with(self.pidfile, "wt+", encoding="utf-8")
         handle = m()
-        handle.write.assert_called_once_with("{}\n".format(pid))
+        handle.write.assert_called_once_with(f"{pid}\n")
 
     @mock.patch("os.path.isfile")
     @mock.patch("os.remove")

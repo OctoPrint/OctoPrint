@@ -1,7 +1,6 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import logging
 import os
 import socket
@@ -57,7 +56,7 @@ def get_lan_ranges(additional_private=None):
             _, prefix = prefix.split("/")
 
         addr = strip_interface_tag(address["addr"])
-        return netaddr.IPNetwork("{}/{}".format(addr, prefix))
+        return netaddr.IPNetwork(f"{addr}/{prefix}")
 
     subnets = []
 
@@ -260,7 +259,7 @@ def download_file(url, folder, max_length=None):
         path = os.path.abspath(os.path.join(folder, filename))
         assert path.startswith(folder)
 
-        with io.open(path, "wb") as f:
+        with open(path, "wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
     return path

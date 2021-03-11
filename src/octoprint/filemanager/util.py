@@ -72,7 +72,7 @@ class DiskFileWrapper(AbstractFileWrapper):
         os.chmod(path, permissions)
 
     def stream(self):
-        return io.open(self.path, "rb")
+        return open(self.path, "rb")
 
 
 class StreamWrapper(AbstractFileWrapper):

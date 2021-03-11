@@ -445,8 +445,6 @@ class FileManager:
                     source_meta = self.get_metadata(source_location, source_path)
                     hash = source_meta.get("hash", "n/a")
 
-                    import io
-
                     links = [("model", {"name": source_path})]
                     _, stl_name = self.split_path(source_location, source_path)
                     file_obj = StreamWrapper(
@@ -954,7 +952,7 @@ class FileManager:
                 )
         except Exception:
             self._logger.exception(
-                "Could not write recovery data to file {}".format(self._recovery_file)
+                f"Could not write recovery data to file {self._recovery_file}"
             )
 
     def delete_recovery_data(self):
@@ -965,7 +963,7 @@ class FileManager:
             os.remove(self._recovery_file)
         except Exception:
             self._logger.exception(
-                "Error deleting recovery data file {}".format(self._recovery_file)
+                f"Error deleting recovery data file {self._recovery_file}"
             )
 
     def get_recovery_data(self):
@@ -975,7 +973,7 @@ class FileManager:
         import yaml
 
         try:
-            with io.open(self._recovery_file, "rt", encoding="utf-8") as f:
+            with open(self._recovery_file, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
             if not isinstance(data, dict) or not all(
                 map(lambda x: x in data, ("origin", "path", "pos", "date"))
@@ -984,7 +982,7 @@ class FileManager:
             return data
         except Exception:
             self._logger.exception(
-                "Could not read recovery data from file {}".format(self._recovery_file)
+                f"Could not read recovery data from file {self._recovery_file}"
             )
             self.delete_recovery_data()
 

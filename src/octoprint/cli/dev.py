@@ -33,9 +33,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
             return log
 
         self.command_caller = CommandlineCaller()
-        self.command_caller.on_log_call = log_util(
-            lambda x: click.echo(">> {}".format(x))
-        )
+        self.command_caller.on_log_call = log_util(lambda x: click.echo(f">> {x}"))
         self.command_caller.on_log_stdout = log_util(click.echo)
         self.command_caller.on_log_stderr = log_util(partial(click.echo, err=True))
 
@@ -53,7 +51,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
     def _get_commands(self):
         result = {}
         for group in self.groups:
-            for command in self._get_commands_from_prefix_methods("{}_".format(group)):
+            for command in self._get_commands_from_prefix_methods(f"{group}_"):
                 result[group + self.sep + command.name] = command
         return result
 

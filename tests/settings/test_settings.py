@@ -10,7 +10,6 @@ Tests for OctoPrint's Settings class
 
 import contextlib
 import hashlib
-import io
 import os
 import re
 import shutil
@@ -27,11 +26,11 @@ import octoprint.settings
 @ddt.ddt
 class TestSettings(unittest.TestCase):
     def _load_yaml(self, fname):
-        with io.open(fname, "rt", encoding="utf-8") as f:
+        with open(fname, encoding="utf-8") as f:
             return yaml.safe_load(f)
 
     def _dump_yaml(self, fname, config):
-        with io.open(fname, "wt", encoding="utf-8") as f:
+        with open(fname, "wt", encoding="utf-8") as f:
             yaml.safe_dump(config, f)
 
     def setUp(self):
@@ -182,7 +181,7 @@ class TestSettings(unittest.TestCase):
             # can switch to assertIsNone after 3.x upgrade.
             self.assertFalse(
                 match_result,
-                "string matched and it shouldn't have: {!r}".format(terminal_string),
+                f"string matched and it shouldn't have: {terminal_string!r}",
             )
 
     def test_temperature_regex_matches(self):
@@ -208,7 +207,7 @@ class TestSettings(unittest.TestCase):
             # can switch to assertIsNotNone after 3.x upgrade.
             self.assertTrue(
                 match_result,
-                "string did not match and it should have: {!r}".format(terminal_string),
+                f"string did not match and it should have: {terminal_string!r}",
             )
 
     ##~~ test getters

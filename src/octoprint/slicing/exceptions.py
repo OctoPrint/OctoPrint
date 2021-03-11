@@ -67,7 +67,7 @@ class SlicerNotConfigured(SlicerException):
 
     def __init__(self, slicer, *args, **kwargs):
         SlicerException.__init__(self, slicer, *args, **kwargs)
-        self.message = "Slicer not configured: {slicer}".format(slicer=slicer)
+        self.message = f"Slicer not configured: {slicer}"
 
 
 class UnknownSlicer(SlicerException):
@@ -77,7 +77,7 @@ class UnknownSlicer(SlicerException):
 
     def __init__(self, slicer, *args, **kwargs):
         SlicerException.__init__(self, slicer, *args, **kwargs)
-        self.message = "No such slicer: {slicer}".format(slicer=slicer)
+        self.message = f"No such slicer: {slicer}"
 
 
 class ProfileException(Exception):

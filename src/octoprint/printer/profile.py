@@ -145,7 +145,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import copy
-import io
 import logging
 import os
 from os import scandir
@@ -475,7 +474,7 @@ class PrinterProfileManager:
             try:
                 profile = self._load_from_path(path)
             except InvalidProfileError:
-                self._logger.warning("Profile {} is invalid, skipping".format(identifier))
+                self._logger.warning(f"Profile {identifier} is invalid, skipping")
                 continue
 
             if profile is None:
@@ -503,7 +502,7 @@ class PrinterProfileManager:
 
         import yaml
 
-        with io.open(path, "rt", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             profile = yaml.safe_load(f)
 
         if profile is None or not isinstance(profile, dict):

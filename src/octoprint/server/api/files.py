@@ -288,7 +288,7 @@ def _getFileList(
             )
 
         with _file_cache_mutex:
-            cache_key = "{}:{}:{}:{}".format(origin, path, recursive, filter)
+            cache_key = f"{origin}:{path}:{recursive}:{filter}"
             files, lastmodified = _file_cache.get(cache_key, ([], None))
             # recursive needs to be True for lastmodified queries so we get lastmodified of whole subtree - #3422
             if (
@@ -994,7 +994,7 @@ def gcodeFileCommand(filename, target):
         with Permissions.FILES_UPLOAD.require(403):
             # Copy and move are only possible on local storage
             if target not in [FileDestinations.LOCAL]:
-                abort(400, description="Unsupported target for {}".format(command))
+                abort(400, description=f"Unsupported target for {command}")
 
             if not _verifyFileExists(target, filename) and not _verifyFolderExists(
                 target, filename
@@ -1026,9 +1026,7 @@ def gcodeFileCommand(filename, target):
             is_folder = fileManager.folder_exists(target, filename)
 
             if not (is_file or is_folder):
-                abort(
-                    400, description="Neither file nor folder, can't {}".format(command)
-                )
+                abort(400, description=f"Neither file nor folder, can't {command}")
 
             if command == "copy":
                 # destination already there? error...

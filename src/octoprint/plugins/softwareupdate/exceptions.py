@@ -29,7 +29,7 @@ class NetworkError(Exception):
         if self.message is not None:
             return self.message
         elif self.cause is not None:
-            return "NetworkError caused by {}".format(self.cause)
+            return f"NetworkError caused by {self.cause}"
         else:
             return "NetworkError"
 

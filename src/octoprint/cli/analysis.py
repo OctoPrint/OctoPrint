@@ -113,7 +113,7 @@ def gcode_command(
     if progress:
 
         def progress_callback(percentage):
-            click.echo("PROGRESS:{}".format(percentage))
+            click.echo(f"PROGRESS:{percentage}")
 
     interpreter = gcode(progress_callback=progress_callback)
 

@@ -26,7 +26,6 @@ except ImportError:
     zlib = None
 
 
-import io
 import json
 import logging
 import os
@@ -506,7 +505,7 @@ class BackupPlugin(
             if not os.path.isdir(datafolder):
                 os.makedirs(datafolder)
 
-            click.echo("Creating backup at {}, please wait...".format(filename))
+            click.echo(f"Creating backup at {filename}, please wait...")
             self._create_backup(
                 filename,
                 exclude=exclude,
@@ -550,7 +549,7 @@ class BackupPlugin(
                 path = os.path.join(datafolder, path)
 
             if not os.path.exists(path):
-                click.echo("Backup {} does not exist".format(path), err=True)
+                click.echo(f"Backup {path} does not exist", err=True)
                 sys.exit(-1)
 
             archive = tempfile.NamedTemporaryFile(delete=False)
@@ -568,7 +567,7 @@ class BackupPlugin(
                 pip_args = settings.global_get(["plugins", "pluginmanager", "pip_args"])
 
                 def log(line):
-                    click.echo("\t{}".format(line))
+                    click.echo(f"\t{line}")
 
                 for plugin in plugins:
                     octoprint_compatible = is_octoprint_compatible(
@@ -644,9 +643,9 @@ class BackupPlugin(
                 on_log_error=on_log_error,
                 on_invalid_backup=on_log_error,
             ):
-                click.echo("Restored from {}".format(path))
+                click.echo(f"Restored from {path}")
             else:
-                click.echo("Restoring from {} failed".format(path), err=True)
+                click.echo(f"Restoring from {path} failed", err=True)
 
         return [backup_command, restore_command]
 
@@ -725,7 +724,7 @@ class BackupPlugin(
             try:
                 os.remove(full_path)
             except Exception:
-                self._logger.exception("Could not delete {}".format(filename))
+                self._logger.exception(f"Could not delete {filename}")
                 raise
 
     def _get_backups(self):
@@ -754,7 +753,7 @@ class BackupPlugin(
         data_file = os.path.join(self.get_plugin_data_folder(), UNKNOWN_PLUGINS_FILE)
         if os.path.exists(data_file):
             try:
-                with io.open(data_file, mode="rt", encoding="utf-8") as f:
+                with open(data_file, mode="rt", encoding="utf-8") as f:
                     unknown_plugins = json.load(f)
 
                 assert isinstance(unknown_plugins, list)
@@ -852,7 +851,7 @@ class BackupPlugin(
             r.raise_for_status()
         except Exception:
             logger.exception(
-                "Error while fetching the plugin repository data from {}".format(url)
+                f"Error while fetching the plugin repository data from {url}"
             )
             return {}
 
@@ -873,7 +872,7 @@ class BackupPlugin(
         # prepare pip caller
         def log(prefix, *lines):
             for line in lines:
-                on_log("{} {}".format(prefix, line.rstrip()))
+                on_log(f"{prefix} {line.rstrip()}")
 
         def log_call(*lines):
             log(">", *lines)
@@ -967,7 +966,7 @@ class BackupPlugin(
             configfile = settings._configfile
             basedir = settings._basedir
 
-            temporary_path = os.path.join(datafolder, ".{}".format(name))
+            temporary_path = os.path.join(datafolder, f".{name}")
             final_path = os.path.join(datafolder, name)
 
             own_folder = datafolder
@@ -1162,7 +1161,7 @@ class BackupPlugin(
                 temp = tempfile.mkdtemp()
                 try:
                     if callable(on_log_progress):
-                        on_log_progress("Unpacking backup to {}...".format(temp))
+                        on_log_progress(f"Unpacking backup to {temp}...")
 
                     abstemp = os.path.abspath(temp)
                     dirs = {}
@@ -1193,7 +1192,7 @@ class BackupPlugin(
 
                     import yaml
 
-                    with io.open(configfile, "rt", encoding="utf-8") as f:
+                    with open(configfile, encoding="utf-8") as f:
                         configdata = yaml.safe_load(f)
 
                     userfile = os.path.join(temp, "basedir", "users.yaml")
@@ -1211,7 +1210,7 @@ class BackupPlugin(
                     plugins = []
                     plugin_list_file = os.path.join(temp, "plugin_list.json")
                     if os.path.exists(plugin_list_file):
-                        with io.open(os.path.join(temp, "plugin_list.json"), "rb") as f:
+                        with open(os.path.join(temp, "plugin_list.json"), "rb") as f:
                             plugins = json.load(f)
 
                     known_plugins = []
@@ -1261,16 +1260,12 @@ class BackupPlugin(
                     basedir_extracted = os.path.join(temp, "basedir")
 
                     if callable(on_log_progress):
-                        on_log_progress(
-                            "Renaming {} to {}...".format(basedir, basedir_backup)
-                        )
+                        on_log_progress(f"Renaming {basedir} to {basedir_backup}...")
                     shutil.move(basedir, basedir_backup)
 
                     try:
                         if callable(on_log_progress):
-                            on_log_progress(
-                                "Moving {} to {}...".format(basedir_extracted, basedir)
-                            )
+                            on_log_progress(f"Moving {basedir_extracted} to {basedir}...")
                         shutil.move(basedir_extracted, basedir)
                     except Exception:
                         if callable(on_log_error):
@@ -1297,7 +1292,7 @@ class BackupPlugin(
                             datafolder, UNKNOWN_PLUGINS_FILE
                         )
                         try:
-                            with io.open(unknown_plugins_path, mode="wb") as f:
+                            with open(unknown_plugins_path, mode="wb") as f:
                                 f.write(to_bytes(json.dumps(unknown_plugins)))
                         except Exception:
                             if callable(on_log_error):
@@ -1351,7 +1346,7 @@ class BackupPlugin(
             except Exception:
                 if callable(on_log_error):
                     on_log_error(
-                        "Error while restarting via command {}".format(restart_command),
+                        f"Error while restarting via command {restart_command}",
                         exc_info=sys.exc_info(),
                     )
                     on_log_error("Please restart OctoPrint manually")

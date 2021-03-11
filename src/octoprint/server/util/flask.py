@@ -5,7 +5,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import functools
-import io
 import logging
 import os
 import threading
@@ -151,9 +150,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                         )
                         break
                 else:
-                    logger.debug(
-                        "No translations for locale {} in core folders".format(locale)
-                    )
+                    logger.debug(f"No translations for locale {locale} in core folders")
                 translations = translations.merge(core_translations)
 
             ctx.babel_translations = translations
@@ -215,7 +212,7 @@ def fix_webassets_cache():
 
         filename = os.path.join(self.directory, "%s" % hash)
         try:
-            f = io.open(filename, "rb")
+            f = open(filename, "rb")
         except OSError as e:
             if e.errno != errno.ENOENT:
                 error_logger.exception(
@@ -615,7 +612,7 @@ def _local_networks():
                 continue
 
             local_networks.add(network)
-            logger.debug("Added network {} to localNetworks".format(network))
+            logger.debug(f"Added network {network} to localNetworks")
 
             if network.version == 4:
                 network_v6 = network.ipv6()
@@ -664,9 +661,7 @@ def passive_login():
     def determine_user(u):
         if not u.is_anonymous and u.is_active:
             # known active user
-            logger.info(
-                "Passively logging in user {} from {}".format(u.get_id(), remote_address)
-            )
+            logger.info(f"Passively logging in user {u.get_id()} from {remote_address}")
 
         elif (
             settings().getBoolean(["accessControl", "autologinLocal"])
@@ -998,9 +993,7 @@ class PreemptiveCache:
                 entries = cleanup_function(root, entries)
                 if not entries:
                     del all_data[root]
-                    self._logger.debug(
-                        "Removed root {} from preemptive cache".format(root)
-                    )
+                    self._logger.debug(f"Removed root {root} from preemptive cache")
                 elif len(entries) < old_count:
                     all_data[root] = entries
                     self._logger.debug(
@@ -1018,7 +1011,7 @@ class PreemptiveCache:
         cache_data = None
         with self._lock:
             try:
-                with io.open(self.cachefile, "rt") as f:
+                with open(self.cachefile) as f:
                     cache_data = yaml.safe_load(f)
             except OSError as e:
                 import errno
@@ -1026,7 +1019,7 @@ class PreemptiveCache:
                 if e.errno != errno.ENOENT:
                     raise
             except Exception:
-                self._logger.exception("Error while reading {}".format(self.cachefile))
+                self._logger.exception(f"Error while reading {self.cachefile}")
 
         if cache_data is None:
             cache_data = {}
@@ -1057,7 +1050,7 @@ class PreemptiveCache:
                         allow_unicode=True,
                     )
             except Exception:
-                self._logger.exception("Error while writing {}".format(self.cachefile))
+                self._logger.exception(f"Error while writing {self.cachefile}")
 
     def set_data(self, root, data):
         with self._lock:
@@ -1106,12 +1099,12 @@ class PreemptiveCache:
                 to_persist = copy.deepcopy(data)
                 to_persist["_timestamp"] = time.time()
                 to_persist["_count"] = 1
-                self._logger.info("Adding entry for {} and {!r}".format(root, to_persist))
+                self._logger.info(f"Adding entry for {root} and {to_persist!r}")
             else:
                 to_persist["_timestamp"] = time.time()
                 to_persist["_count"] = to_persist.get("_count", 0) + 1
                 self._logger.debug(
-                    "Updating timestamp and counter for {} and {!r}".format(root, data)
+                    f"Updating timestamp and counter for {root} and {data!r}"
                 )
 
             self.set_data(root, [to_persist] + other)
@@ -1150,7 +1143,7 @@ def preemptively_cached(cache, data, unless=None):
                 cache.record(data, unless=unless)
             except Exception:
                 logging.getLogger(__name__).exception(
-                    "Error while recording preemptive cache entry: {!r}".format(data)
+                    f"Error while recording preemptive cache entry: {data!r}"
                 )
             return f(*args, **kwargs)
 
