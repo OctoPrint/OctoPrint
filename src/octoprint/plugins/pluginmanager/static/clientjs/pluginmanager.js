@@ -10,6 +10,10 @@
     };
 
     OctoPrintPluginManagerClient.prototype.get = function (refresh, opts) {
+        console.log(
+            "Deprecated endpoint OctoPrint.plugin.pluginmanager.get, " +
+                "please use OctoPrint.plugin.pluginmanager.get*"
+        );
         var refresh_repo, refresh_notices, refresh_orphans;
         if (_.isPlainObject(refresh)) {
             refresh_repo = refresh.repo || false;
@@ -34,11 +38,39 @@
     };
 
     OctoPrintPluginManagerClient.prototype.getWithRefresh = function (opts) {
+        console.log(
+            "Deprecated endpoint OctoPrint.plugin.pluginmanager.getWithRefresh, " +
+                "please use OctoPrint.plugin.pluginmanager.get*"
+        );
         return this.get(true, opts);
     };
 
     OctoPrintPluginManagerClient.prototype.getWithoutRefresh = function (opts) {
+        console.log(
+            "Deprecated endpoint OctoPrint.plugin.pluginmanager.getWithoutRefresh, " +
+                "please use OctoPrint.plugin.pluginmanager.get*"
+        );
         return this.get(false, opts);
+    };
+
+    OctoPrintPluginManagerClient.prototype.getPlugins = function (refresh, opts) {
+        var url = this.base.getBlueprintUrl("pluginmanager") + "plugins";
+        return this.base.get(url + (refresh ? "?refresh=true" : ""), opts);
+    };
+
+    OctoPrintPluginManagerClient.prototype.getPlugin = function (plugin, opts) {
+        var url = this.base.getBlueprintUrl("pluginmanager") + "plugins/" + plugin;
+        return this.base.get(url, opts);
+    };
+
+    OctoPrintPluginManagerClient.prototype.getOrphans = function (refresh, opts) {
+        var url = this.base.getBlueprintUrl("pluginmanager") + "orphans";
+        return this.base.get(url + (refresh ? "?refresh=true" : ""), opts);
+    };
+
+    OctoPrintPluginManagerClient.prototype.getRepository = function (refresh, opts) {
+        var url = this.base.getBlueprintUrl("pluginmanager") + "repository";
+        return this.base.get(url + (refresh ? "?refresh=true" : ""), opts);
     };
 
     OctoPrintPluginManagerClient.prototype.install = function (

@@ -4,9 +4,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 
-from flask import abort, jsonify, make_response, request
+from flask import abort, jsonify, request
 from flask_login import current_user
-from werkzeug.exceptions import BadRequest
 
 import octoprint.plugin
 import octoprint.util
@@ -148,7 +147,10 @@ def getSettings():
             "g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
             "autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"]),
         },
-        "gcodeAnalysis": {"runAt": s.get(["gcodeAnalysis", "runAt"])},
+        "gcodeAnalysis": {
+            "runAt": s.get(["gcodeAnalysis", "runAt"]),
+            "bedZ": s.getFloat(["gcodeAnalysis", "bedZ"]),
+        },
         "serial": {
             "port": connectionOptions["portPreference"],
             "baudrate": connectionOptions["baudratePreference"],
@@ -365,22 +367,11 @@ def _get_plugin_settings():
 @Permissions.SETTINGS.require(403)
 def setSettings():
     if "application/json" not in request.headers["Content-Type"]:
-        return make_response("Expected content-type JSON", 400)
+        abort(400, description="Expected content-type JSON")
 
-    try:
-        data = request.get_json()
-    except BadRequest:
-        return make_response("Malformed JSON body in request", 400)
-
-    if data is None:
-        return make_response("Malformed JSON body in request", 400)
-
-    if not isinstance(data, dict):
-        return make_response(
-            "Malformed request, need settings dictionary, "
-            "got a {} instead: {!r}".format(type(data).__name__, data),
-            400,
-        )
+    data = request.get_json()
+    if data is None or not isinstance(data, dict):
+        abort(400, description="Malformed JSON body in request")
 
     response = _saveSettings(data)
     if response:
@@ -460,7 +451,7 @@ def _saveSettings(data):
 
                 s.setBaseFolder(folder, future[folder])
         except Exception:
-            return make_response("At least one of the configured folders is invalid", 400)
+            abort(400, description="At least one of the configured folders is invalid")
 
     if "api" in data:
         if "allowCrossOrigin" in data["api"]:
@@ -593,6 +584,8 @@ def _saveSettings(data):
     if "gcodeAnalysis" in data:
         if "runAt" in data["gcodeAnalysis"]:
             s.set(["gcodeAnalysis", "runAt"], data["gcodeAnalysis"]["runAt"])
+        if "bedZ" in data["gcodeAnalysis"]:
+            s.setBoolean(["gcodeAnalysis", "bedZ"], data["gcodeAnalysis"]["bedZ"])
 
     if "serial" in data:
         if "autoconnect" in data["serial"]:

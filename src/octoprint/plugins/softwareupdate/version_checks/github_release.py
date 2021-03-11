@@ -355,7 +355,7 @@ def get_latest(
         "release_notes": release_notes,
     }
 
-    logger.debug("Target: %s, local: %s, remote: %s" % (target, current, remote_tag))
+    logger.debug("Target: {}, local: {}, remote: {}".format(target, current, remote_tag))
 
     return information, _is_current(
         information, compare_type, custom=custom_compare, force_base=force_base

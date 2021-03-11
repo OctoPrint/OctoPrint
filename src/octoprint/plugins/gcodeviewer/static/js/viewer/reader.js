@@ -39,7 +39,8 @@ GCODE.gCodeReader = (function () {
             centeredOrigin: undefined
         },
         ignoreOutsideBed: false,
-        g90InfluencesExtruder: false
+        g90InfluencesExtruder: false,
+        bedZ: 0
     };
 
     var percentageTree = undefined;
@@ -166,7 +167,8 @@ GCODE.gCodeReader = (function () {
                         toolOffsets: gCodeOptions["toolOffsets"],
                         bed: gCodeOptions["bed"],
                         ignoreOutsideBed: gCodeOptions["ignoreOutsideBed"],
-                        g90InfluencesExtruder: gCodeOptions["g90InfluencesExtruder"]
+                        g90InfluencesExtruder: gCodeOptions["g90InfluencesExtruder"],
+                        bedZ: gCodeOptions["bedZ"]
                     }
                 }
             });
@@ -174,11 +176,11 @@ GCODE.gCodeReader = (function () {
 
         setOption: function (options) {
             var dirty = false;
-            for (var opt in options) {
-                if (options[opt] === undefined) continue;
-                dirty = dirty || gCodeOptions[opt] != options[opt];
-                gCodeOptions[opt] = options[opt];
-            }
+            _.forOwn(options, function (value, key) {
+                if (value === undefined) return;
+                dirty = dirty || gCodeOptions[key] !== value;
+                gCodeOptions[key] = value;
+            });
             if (dirty) {
                 if (model && model.length > 0) this.passDataToRenderer();
             }

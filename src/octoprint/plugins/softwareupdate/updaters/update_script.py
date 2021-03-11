@@ -79,7 +79,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True):
 
     if pre_update_script is not None:
         logger.debug(
-            "Target: %s, running pre-update script: %s" % (target, pre_update_script)
+            "Target: {}, running pre-update script: {}".format(target, pre_update_script)
         )
         try:
             caller.checked_call(pre_update_script, cwd=folder)
@@ -100,7 +100,9 @@ def perform_update(target, check, target_version, log_cb=None, online=True):
             force="true" if force_exact_version else "false",
         )
 
-        logger.debug("Target %s, running update script: %s" % (target, update_command))
+        logger.debug(
+            "Target {}, running update script: {}".format(target, update_command)
+        )
 
         caller.checked_call(update_command, cwd=folder)
     except CommandlineError as e:
@@ -116,7 +118,9 @@ def perform_update(target, check, target_version, log_cb=None, online=True):
 
     if post_update_script is not None:
         logger.debug(
-            "Target: %s, running post-update script %s..." % (target, post_update_script)
+            "Target: {}, running post-update script {}...".format(
+                target, post_update_script
+            )
         )
         try:
             caller.checked_call(post_update_script, cwd=folder)

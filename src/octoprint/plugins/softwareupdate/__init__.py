@@ -1012,8 +1012,11 @@ class SoftwareUpdatePlugin(
                     }
                 )
             except exceptions.ConfigurationInvalid as e:
-                return flask.make_response(
-                    "Update not properly configured, can't proceed: {}".format(e), 500
+                flask.abort(
+                    500,
+                    description="Update not properly configured, can't proceed: {}".format(
+                        e
+                    ),
                 )
 
         def etag():
@@ -1078,30 +1081,31 @@ class SoftwareUpdatePlugin(
             and not self._settings.get_boolean(["ignore_throttled"])
         ):
             # currently throttled, we refuse to run
-            return flask.make_response(
-                "System is currently throttled, refusing to update "
-                "anything due to possible stability issues",
+            flask.abort(
                 409,
+                description="System is currently throttled, refusing to update "
+                "anything due to possible stability issues",
             )
 
         if self._printer.is_printing() or self._printer.is_paused():
             # do not update while a print job is running
-            return flask.make_response("Printer is currently printing or paused", 409)
+            flask.abort(409, description="Printer is currently printing or paused")
 
         if not self._environment_supported:
-            return flask.make_response(
-                "Direct updates are not supported in this Python environment", 409
+            flask.abort(
+                409,
+                description="Direct updates are not supported in this Python environment",
             )
 
         if not self._storage_sufficient:
-            return flask.make_response("Not enough free disk space for updating", 409)
+            flask.abort(409, description="Not enough free disk space for updating")
 
         if "application/json" not in flask.request.headers["Content-Type"]:
-            return flask.make_response("Expected content-type JSON", 400)
+            flask.abort(400, description="Expected content-type JSON")
 
         json_data = flask.request.get_json(silent=True)
         if json_data is None:
-            return flask.make_response("Invalid JSON", 400)
+            flask.abort(400, description="Invalid JSON")
 
         if "targets" in json_data or "checks" in json_data:
             targets = list(
@@ -1124,7 +1128,7 @@ class SoftwareUpdatePlugin(
     def configure_update(self):
         json_data = flask.request.get_json(silent=True)
         if json_data is None:
-            return flask.make_response("Invalid JSON", 400)
+            flask.abort(400)
 
         checks = self._get_configured_checks()
 
@@ -1796,7 +1800,9 @@ class SoftwareUpdatePlugin(
 
         populated_check = self._populated_check(target, check)
         try:
-            self._logger.info("Starting update of %s to %s..." % (target, target_version))
+            self._logger.info(
+                "Starting update of {} to {}...".format(target, target_version)
+            )
             self._send_client_message(
                 "updating",
                 {
@@ -1813,7 +1819,9 @@ class SoftwareUpdatePlugin(
                 target, populated_check, target_version, log_cb=self._log, online=online
             )
             target_result = ("success", update_result)
-            self._logger.info("Update of %s to %s successful!" % (target, target_version))
+            self._logger.info(
+                "Update of {} to {} successful!".format(target, target_version)
+            )
             trigger_event(True)
 
         except exceptions.UnknownUpdateType:

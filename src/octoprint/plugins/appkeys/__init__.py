@@ -155,10 +155,10 @@ class AppKeysPlugin(
     def handle_request(self):
         data = flask.request.json
         if data is None:
-            return flask.make_response("Missing key request", 400)
+            flask.abort(400, description="Missing key request")
 
         if "app" not in data:
-            return flask.make_response("No app name provided", 400)
+            flask.abort(400, description="No app name provided")
 
         app_name = data["app"]
         user_id = None
@@ -206,7 +206,7 @@ class AppKeysPlugin(
     def handle_decision(self, user_token):
         data = flask.request.json
         if "decision" not in data:
-            return flask.make_response("No decision provided", 400)
+            flask.abort(400, description="No decision provided")
         decision = data["decision"] in valid_boolean_trues
         user_id = current_user.get_name()
 

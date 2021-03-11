@@ -10,7 +10,7 @@ import zipfile
 from collections import defaultdict
 from os import scandir
 
-from flask import jsonify, make_response, request
+from flask import abort, jsonify, request
 from flask_babel import Locale
 
 from octoprint.access.permissions import Permissions
@@ -127,7 +127,7 @@ def uploadLanguagePack():
         input_name + "." + settings().get(["server", "uploads", "nameSuffix"])
     )
     if input_upload_path not in request.values or input_upload_name not in request.values:
-        return make_response("No file included", 400)
+        abort(400, description="No file included")
 
     upload_name = request.values[input_upload_name]
     upload_path = request.values[input_upload_path]
@@ -138,8 +138,9 @@ def uploadLanguagePack():
         )
     )
     if not len(exts):
-        return make_response(
-            "File doesn't have a valid extension for a language pack archive", 400
+        abort(
+            400,
+            description="File doesn't have a valid extension for a language pack archive",
         )
 
     target_path = settings().getBaseFolder("translations")
@@ -149,7 +150,7 @@ def uploadLanguagePack():
     elif zipfile.is_zipfile(upload_path):
         _unpack_uploaded_zipfile(upload_path, target_path)
     else:
-        return make_response("Neither zip file nor tarball included", 400)
+        abort(400, description="Neither zip file nor tarball included")
 
     return getInstalledLanguagePacks()
 

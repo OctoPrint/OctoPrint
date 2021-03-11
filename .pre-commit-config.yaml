@@ -12,34 +12,20 @@ repos:
       - id: check-merge-conflict
       - id: fix-encoding-pragma
         args: ["--remove"]
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.10.0
+    hooks:
+      - id: pyupgrade
   - repo: https://github.com/OctoPrint/codemods
     rev: 0.4.0
     hooks:
       - id: codemod_detect_past_builtins_imports
         args: ["--ignore", "src/octoprint/vendor"]
-      - id: codemod_dict_comprehension_to_literal
-        args: ["--ignore", "src/octoprint/vendor"]
-      - id: codemod_dict_to_literal
-        args: ["--ignore", "src/octoprint/vendor"]
       - id: codemod_not_in
-        args: ["--ignore", "src/octoprint/vendor"]
-      - id: codemod_oserror_merge
-        args: ["--ignore", "src/octoprint/vendor"]
-      - id: codemod_py3_class_inheritance
-        args: ["--ignore", "src/octoprint/vendor"]
-      - id: codemod_py3_super
-        args: ["--ignore", "src/octoprint/vendor"]
-      - id: codemod_remove_builtins_imports
         args: ["--ignore", "src/octoprint/vendor"]
       - id: codemod_remove_float_conversion
         args: ["--ignore", "src/octoprint/vendor"]
       - id: codemod_remove_future_imports
-        args: ["--ignore", "src/octoprint/vendor"]
-      - id: codemod_set_to_literal
-        args: ["--ignore", "src/octoprint/vendor"]
-      - id: codemod_string_encoding
-        args: ["--ignore", "src/octoprint/vendor"]
-      - id: codemod_yield_from_generator
         args: ["--ignore", "src/octoprint/vendor"]
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.5.4

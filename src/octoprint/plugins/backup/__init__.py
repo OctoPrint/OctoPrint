@@ -197,12 +197,13 @@ class BackupPlugin(
         if not Permissions.PLUGIN_BACKUP_ACCESS.can() and not self._settings.global_get(
             ["server", "firstRun"]
         ):
-            return flask.abort(403)
+            flask.abort(403)
 
         if not self._restore_supported(self._settings):
-            return flask.make_response(
-                "Invalid request, the restores are not supported on the underlying operating system",
+            flask.abort(
                 400,
+                description="Invalid request, the restores are not "
+                "supported on the underlying operating system",
             )
 
         input_name = "file"
@@ -230,9 +231,10 @@ class BackupPlugin(
                 return flask.abort(404)
 
         else:
-            return flask.make_response(
-                "Invalid request, neither a file nor a path of a file to restore provided",
+            flask.abort(
                 400,
+                description="Invalid request, neither a file nor a path of a file to "
+                "restore provided",
             )
 
         def on_install_plugins(plugins):

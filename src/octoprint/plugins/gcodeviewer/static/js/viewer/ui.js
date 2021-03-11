@@ -156,7 +156,8 @@ GCODE.ui = (function () {
             });
             GCODE.gCodeReader.setOption({
                 toolOffsets: options.toolOffsets,
-                bed: options.bed
+                bed: options.bed,
+                bedZ: options.bedZ
             });
             GCODE.renderer.render(0, 0);
 

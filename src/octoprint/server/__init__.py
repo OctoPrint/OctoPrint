@@ -37,6 +37,7 @@ from flask_login import (  # noqa: F401
 )
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
+from werkzeug.exceptions import HTTPException
 
 import octoprint.util
 import octoprint.util.net
@@ -60,8 +61,8 @@ except ImportError:
     fcntl = None
 
 SUCCESS = {}
-NO_CONTENT = ("", 204)
-NOT_MODIFIED = ("Not Modified", 304)
+NO_CONTENT = ("", 204, {"Content-Type": "text/plain"})
+NOT_MODIFIED = ("Not Modified", 304, {"Content-Type": "text/plain"})
 
 app = Flask("octoprint")
 
@@ -745,10 +746,13 @@ class Server:
                 lambda path: not octoprint.util.is_hidden_path(path), status_code=404
             )
         }
+
+        valid_timelapse = lambda path: not octoprint.util.is_hidden_path(
+            path
+        ) and octoprint.timelapse.valid_timelapse(path)
         timelapse_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
-                lambda path: not octoprint.util.is_hidden_path(path)
-                and octoprint.timelapse.valid_timelapse(path),
+                valid_timelapse,
                 status_code=404,
             )
         }
@@ -759,12 +763,23 @@ class Server:
                 status_code=400,
             )
         }
+
+        valid_log = (
+            lambda path: not octoprint.util.is_hidden_path(path)
+            and path.endswith(".log")
+            and os.path.realpath(os.path.abspath(path)).startswith(
+                settings().getBaseFolder("logs")
+            )
+        )
+        log_path_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                valid_log,
+                status_code=404,
+            )
+        }
         logs_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
-                lambda path: not octoprint.util.is_hidden_path(path)
-                and os.path.realpath(os.path.abspath(path)).startswith(
-                    settings().getBaseFolder("logs")
-                ),
+                valid_log,
                 status_code=400,
             )
         }
@@ -839,6 +854,7 @@ class Server:
                     },
                     download_handler_kwargs,
                     log_permission_validator,
+                    log_path_validator,
                 ),
             ),
             # zipped log file bundles
@@ -1411,7 +1427,7 @@ class Server:
                 result.add(locale.language)
                 if locale.territory:
                     # if a territory is specified, add that too
-                    result.add("%s_%s" % (locale.language, locale.territory))
+                    result.add("{}_{}".format(locale.language, locale.territory))
 
             return result
 
@@ -1714,12 +1730,19 @@ class Server:
         # do not remove or the index view won't be found
         import octoprint.server.views  # noqa: F401
         from octoprint.server.api import api
+        from octoprint.server.util.flask import make_api_error
 
         blueprints = OrderedDict()
         blueprints["/api"] = api
+        json_errors = ["/api"]
 
         # also register any blueprints defined in BlueprintPlugins
-        blueprints.update(self._prepare_blueprint_plugins())
+        (
+            blueprint_from_plugins,
+            api_prefixes_from_plugins,
+        ) = self._prepare_blueprint_plugins()
+        blueprints.update(blueprint_from_plugins)
+        json_errors += api_prefixes_from_plugins
 
         # and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
         blueprints.update(self._prepare_asset_plugins())
@@ -1731,8 +1754,16 @@ class Server:
         for url_prefix, blueprint in blueprints.items():
             app.register_blueprint(blueprint, url_prefix=url_prefix)
 
+        @app.errorhandler(HTTPException)
+        def _handle_api_error(ex):
+            if any(map(lambda x: request.path.startswith(x), json_errors)):
+                return make_api_error(ex.description, ex.code)
+            else:
+                return ex
+
     def _prepare_blueprint_plugins(self):
         blueprints = OrderedDict()
+        api_prefixes = []
 
         blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(
             octoprint.plugin.BlueprintPlugin
@@ -1740,6 +1771,9 @@ class Server:
         for plugin in blueprint_plugins:
             try:
                 blueprint, prefix = self._prepare_blueprint_plugin(plugin)
+                api_prefixes += map(
+                    lambda x: prefix + x, plugin.get_blueprint_api_prefixes()
+                )
                 blueprints[prefix] = blueprint
             except Exception:
                 self._logger.exception(
@@ -1749,7 +1783,7 @@ class Server:
                 )
                 continue
 
-        return blueprints
+        return blueprints, api_prefixes
 
     def _prepare_asset_plugins(self):
         blueprints = OrderedDict()

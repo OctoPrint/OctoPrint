@@ -410,6 +410,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
             throttle_lines = settings().getInt(["gcodeAnalysis", "throttle_lines"])
             max_extruders = settings().getInt(["gcodeAnalysis", "maxExtruders"])
             g90_extruder = settings().getBoolean(["feature", "g90InfluencesExtruder"])
+            bed_z = settings().getFloat(["gcodeAnalysis", "bedZ"])
             speedx = self._current.printer_profile["axes"]["x"]["speed"]
             speedy = self._current.printer_profile["axes"]["y"]["speed"]
             offsets = self._current.printer_profile["extruder"]["offsets"]
@@ -425,6 +426,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
                 "--max-t={}".format(max_extruders),
                 "--throttle={}".format(throttle),
                 "--throttle-lines={}".format(throttle_lines),
+                "--bed-z={}".format(bed_z),
             ]
             for offset in offsets[1:]:
                 command += ["--offset", str(offset[0]), str(offset[1])]
