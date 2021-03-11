@@ -348,9 +348,9 @@ def get_formatted_size(num):
 
     for x in ["B", "KB", "MB", "GB"]:
         if num < 1024:
-            return "%3.1f%s" % (num, x)
+            return "{:3.1f}{}".format(num, x)
         num /= 1024
-    return "%3.1f%s" % (num, "TB")
+    return "{:3.1f}{}".format(num, "TB")
 
 
 def is_allowed_file(filename, extensions):
@@ -1079,7 +1079,7 @@ def dict_filter(dictionary, filter_function):
     """
     assert isinstance(dictionary, dict)
     assert callable(filter_function)
-    return dict((k, v) for k, v in dictionary.items() if filter_function(k, v))
+    return {k: v for k, v in dictionary.items() if filter_function(k, v)}
 
 
 # Source: http://stackoverflow.com/a/6190500/562769
@@ -1123,7 +1123,7 @@ class DefaultOrderedDict(collections.OrderedDict):
 
     # noinspection PyMethodOverriding
     def __repr__(self):
-        return "OrderedDefaultDict(%s, %s)" % (
+        return "OrderedDefaultDict({}, {})".format(
             self.default_factory,
             collections.OrderedDict.__repr__(self),
         )

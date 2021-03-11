@@ -101,7 +101,7 @@ def get_latest(target, check, online=True, *args, **kwargs):
         "octoprint.plugins.softwareupdate.version_checks.git_commit"
     )
     logger.debug(
-        "Target: %s, local: %s, remote: %s" % (target, local_commit, remote_commit)
+        "Target: {}, local: {}, remote: {}".format(target, local_commit, remote_commit)
     )
 
     return information, is_current

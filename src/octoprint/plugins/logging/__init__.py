@@ -199,11 +199,11 @@ class LoggingPlugin(
         if config is None or not isinstance(config, dict):
             return {}
 
-        return dict(
-            (key, value.get("level"))
+        return {
+            key: value.get("level")
             for key, value in config.get("loggers", {}).items()
             if isinstance(value, dict) and "level" in value
-        )
+        }
 
     def _set_logging_levels(self, new_levels):
         import logging

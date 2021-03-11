@@ -325,7 +325,7 @@ class DebugEventListener(GenericEventListener):
 
     def eventCallback(self, event, payload):
         GenericEventListener.eventCallback(self, event, payload)
-        self._logger.debug("Received event: %s (Payload: %r)" % (event, payload))
+        self._logger.debug("Received event: {} (Payload: {!r})".format(event, payload))
 
 
 class CommandTrigger(GenericEventListener):

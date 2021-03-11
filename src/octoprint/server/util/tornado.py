@@ -235,9 +235,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         self._file_suffix = file_suffix
         self._path = path
 
-        self._suffixes = dict(
-            (key, key) for key in ("name", "path", "content_type", "size")
-        )
+        self._suffixes = {key: key for key in ("name", "path", "content_type", "size")}
         for suffix_type, suffix in suffixes.items():
             if suffix_type in self._suffixes and suffix is not None:
                 self._suffixes[suffix_type] = suffix
@@ -538,9 +536,9 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
                 if "content_type" in part:
                     parameters["content_type"] = part["content_type"]
 
-                fields = dict(
-                    (self._suffixes[key], value) for (key, value) in parameters.items()
-                )
+                fields = {
+                    self._suffixes[key]: value for (key, value) in parameters.items()
+                }
                 for n, p in fields.items():
                     if n is None or p is None:
                         continue
@@ -1349,7 +1347,7 @@ class UrlProxyHandler(
         if not extension:
             return None
 
-        return "%s%s" % (self._basename, extension)
+        return "{}{}".format(self._basename, extension)
 
 
 class StaticDataHandler(

@@ -1634,9 +1634,9 @@ class Settings(object):
     def _validate_config(self):
         # validate uniqueness of folder paths
         folder_keys = self.get(["folder"], merged=True).keys()
-        folders = dict(
-            (folder_key, self.getBaseFolder(folder_key)) for folder_key in folder_keys
-        )
+        folders = {
+            folder_key: self.getBaseFolder(folder_key) for folder_key in folder_keys
+        }
         if len(folders.values()) != len(set(folders.values())):
             raise DuplicateFolderPaths(folders)
 

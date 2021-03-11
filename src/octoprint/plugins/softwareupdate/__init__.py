@@ -1642,11 +1642,11 @@ class SoftwareUpdatePlugin(
         updater_thread.daemon = False
         updater_thread.start()
 
-        check_data = dict(
-            (key, check["displayName"] if "displayName" in check else key)
+        check_data = {
+            key: check["displayName"] if "displayName" in check else key
             for key, check in populated_checks.items()
             if key in to_be_updated
-        )
+        }
         return to_be_updated, check_data
 
     def _update_worker(self, checks, check_targets, force):
@@ -1805,7 +1805,9 @@ class SoftwareUpdatePlugin(
 
         populated_check = self._populated_check(target, check)
         try:
-            self._logger.info("Starting update of %s to %s..." % (target, target_version))
+            self._logger.info(
+                "Starting update of {} to {}...".format(target, target_version)
+            )
             self._send_client_message(
                 "updating",
                 {
@@ -1822,7 +1824,9 @@ class SoftwareUpdatePlugin(
                 target, populated_check, target_version, log_cb=self._log, online=online
             )
             target_result = ("success", update_result)
-            self._logger.info("Update of %s to %s successful!" % (target, target_version))
+            self._logger.info(
+                "Update of {} to {} successful!".format(target, target_version)
+            )
             trigger_event(True)
 
         except exceptions.UnknownUpdateType:

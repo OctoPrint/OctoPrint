@@ -337,7 +337,7 @@ class PositionRecord(object):
 
     def as_dict(self):
         attrs = self._standard_attrs | {key for key in dir(self) if self.valid_e(key)}
-        return dict((attr, getattr(self, attr)) for attr in attrs)
+        return {attr: getattr(self, attr) for attr in attrs}
 
 
 class TemperatureRecord(object):

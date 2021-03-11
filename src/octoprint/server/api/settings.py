@@ -446,10 +446,10 @@ def _saveSettings(data):
 
     if "folder" in data:
         try:
-            folders = dict(
-                (FOLDER_MAPPING.get(folder, folder), path)
+            folders = {
+                FOLDER_MAPPING.get(folder, folder): path
                 for folder, path in data["folder"].items()
-            )
+            }
             future = {}
             for folder in FOLDER_TYPES:
                 future[folder] = s.getBaseFolder(folder)
