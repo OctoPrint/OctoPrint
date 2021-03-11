@@ -26,6 +26,13 @@ import warnings
 from functools import wraps
 from typing import Union
 
+try:
+    # Python 3.4+
+    from collections.abc import Iterable, MutableMapping, Set
+except ImportError:
+    # Python 2.7
+    from collections import Iterable, MutableMapping, Set
+
 import frozendict
 import past.builtins
 
@@ -978,7 +985,7 @@ def dict_flatten(dictionary, prefix="", separator="."):
     result = {}
     for k, v in dictionary.items():
         key = prefix + separator + k if prefix else k
-        if isinstance(v, collections.MutableMapping):
+        if isinstance(v, MutableMapping):
             result.update(dict_flatten(v, prefix=key, separator=separator))
         else:
             result[key] = v
@@ -1722,11 +1729,6 @@ class CountedEvent(object):
 
 class InvariantContainer(object):
     def __init__(self, initial_data=None, guarantee_invariant=None):
-        try:
-            from collections.abc import Iterable
-        except ImportError:
-            # Python < 3.8
-            from collections import Iterable
         from threading import RLock
 
         if guarantee_invariant is None:
@@ -1847,7 +1849,7 @@ class TypeAlreadyInQueue(Exception):
         self.type = t
 
 
-class CaseInsensitiveSet(collections.Set):
+class CaseInsensitiveSet(Set):
     """
     Basic case insensitive set
 
