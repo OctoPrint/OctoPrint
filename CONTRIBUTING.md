@@ -51,7 +51,7 @@ into one ticket: One ticket per bug, request, brainstorming thread please.
 ## How to file a bug report
 
 If you encounter an issue with OctoPrint, you are welcome to
-[submit a bug report](https://github.com/foosel/OctoPrint/issues/new).
+[submit a bug report](https://github.com/OctoPrint/OctoPrint/issues/new?template=bug_report.yml).
 
 Before you do that for the first time though please take a moment to read the
 following section *completely* and also follow the instructions in the
@@ -287,6 +287,7 @@ See [the corresponding chapter in the documentation](https://docs.octoprint.org/
   * 2020-09-23: Move branch & versioning into development docs
   * 2020-10-07: Introduce `pre-commit`
   * 2021-02-04: Issue forms! \o/
+  * 2020-03-04: Correct issue forms link
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add
