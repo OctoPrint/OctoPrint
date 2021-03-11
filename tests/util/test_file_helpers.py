@@ -1,7 +1,6 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import os
 import sys
 import unittest
@@ -77,7 +76,7 @@ class BomAwareOpenTest(unittest.TestCase):
     def test_bom_aware_open_parameters_text_mode(self):
         """Tests that the parameters are propagated properly in text mode."""
 
-        with mock.patch("io.open", wraps=io.open) as mock_open:
+        with mock.patch("builtins.open", wraps=open) as mock_open:
             with octoprint.util.bom_aware_open(
                 self.filename_utf8_without_bom,
                 mode="rt",
