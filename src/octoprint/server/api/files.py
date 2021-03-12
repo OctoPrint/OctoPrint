@@ -218,7 +218,7 @@ def readGcodeFile(target, filename):
     if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
         abort(404)
 
-    if filename != fileManager.sanitize(target, filename):
+    if not _validate(target, filename):
         abort(404)
 
     recursive = False
@@ -735,7 +735,7 @@ def gcodeFileCommand(filename, target):
     if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
         abort(404)
 
-    if filename != fileManager.sanitize(target, filename):
+    if not _validate(target, filename):
         abort(404)
 
     # valid file commands, dict mapping command name to mandatory parameters
@@ -1101,7 +1101,7 @@ def gcodeFileCommand(filename, target):
 @no_firstrun_access
 @Permissions.FILES_DELETE.require(403)
 def deleteGcodeFile(filename, target):
-    if filename != fileManager.sanitize(target, filename):
+    if not _validate(target, filename):
         abort(404)
 
     if not _verifyFileExists(target, filename) and not _verifyFolderExists(
@@ -1164,6 +1164,12 @@ def _getCurrentFile():
         return currentJob["file"]["origin"], currentJob["file"]["path"]
     else:
         return None, None
+
+
+def _validate(target, filename):
+    return filename == "/".join(
+        map(lambda x: fileManager.sanitize_name(target, x), filename.split("/"))
+    )
 
 
 class WerkzeugFileWrapper(octoprint.filemanager.util.AbstractFileWrapper):
