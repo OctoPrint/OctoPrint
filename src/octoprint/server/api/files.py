@@ -247,6 +247,8 @@ def _getFileDetails(origin, path, recursive=True):
     logtarget=__name__ + ".timings",
     message="{func}({func_args},{func_kwargs}) took {timing:.2f}ms",
     incl_func_args=True,
+    log_enter=True,
+    message_enter="Entering {func}({func_args},{func_kwargs})...",
 )
 def _getFileList(
     origin, path=None, filter=None, recursive=False, level=0, allow_from_cache=True

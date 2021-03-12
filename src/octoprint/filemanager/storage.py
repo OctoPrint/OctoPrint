@@ -1508,6 +1508,7 @@ class LocalFileStorage(StorageInterface):
         logtarget=__name__ + ".timings",
         message="{func}({func_args},{func_kwargs}) took {timing:.2f}ms",
         incl_func_args=True,
+        log_enter=True,
     )
     def _list_folder(self, path, base="", force_refresh=False, **kwargs):
         def get_size(nodes):

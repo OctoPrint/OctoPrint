@@ -1900,33 +1900,38 @@ def time_this(
     expand_logtarget=False,
     message="{func} took {timing:.2f}ms",
     incl_func_args=False,
+    log_enter=False,
+    message_enter="Entering {func}...",
 ):
     def decorator(f):
+        func = fqfn(f)
+
+        lt = logtarget
+        if expand_logtarget:
+            lt += "." + func
+
+        logger = logging.getLogger(lt)
+
         @wraps(f)
         def wrapper(*args, **kwargs):
+            data = {"func": func}
+            if incl_func_args and logger.isEnabledFor(logging.DEBUG):
+                data.update(
+                    func_args=",".join(map(repr, args)),
+                    func_kwargs=",".join(
+                        map(lambda x: "{}={!r}".format(x[0], x[1]), kwargs.items())
+                    ),
+                )
+            if log_enter:
+                logger.debug(message_enter.format(**data), extra=data)
+
             start = time.time()
             try:
                 return f(*args, **kwargs)
             finally:
                 timing = (time.time() - start) * 1000
-                func = fqfn(f)
-
-                lt = logtarget
-                if expand_logtarget:
-                    lt += "." + func
-
-                logger = logging.getLogger(lt)
                 if logger.isEnabledFor(logging.DEBUG):
-                    data = {"func": func, "timing": timing}
-                    if incl_func_args:
-                        data.update(
-                            func_args=",".join(map(repr, args)),
-                            func_kwargs=",".join(
-                                map(
-                                    lambda x: "{}={!r}".format(x[0], x[1]), kwargs.items()
-                                )
-                            ),
-                        )
+                    data.update(timing=timing)
                     logger.debug(message.format(**data), extra=data)
 
         return wrapper
