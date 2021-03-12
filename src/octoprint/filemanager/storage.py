@@ -1536,11 +1536,8 @@ class LocalFileStorage(StorageInterface):
         try:
             with self._filelist_cache_mutex:
                 cache = self._filelist_cache.get(path)
-                if (
-                    not force_refresh
-                    and cache
-                    and cache[0] >= self.last_modified(path, recursive=True)
-                ):
+                lm = self.last_modified(path, recursive=True)
+                if not force_refresh and cache and cache[0] >= lm:
                     return enrich_folders(cache[1])
 
                 metadata = self._get_metadata(path)
@@ -1681,7 +1678,7 @@ class LocalFileStorage(StorageInterface):
                         continue
 
                 self._filelist_cache[path] = (
-                    self.last_modified(path, recursive=True),
+                    lm,
                     result,
                 )
                 return enrich_folders(result)
