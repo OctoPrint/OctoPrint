@@ -1086,10 +1086,14 @@ class SoftwareUpdatePlugin(
             and not self._settings.get_boolean(["ignore_throttled"])
         ):
             # currently throttled, we refuse to run
+            message = (
+                "System is currently throttled, refusing to update "
+                "anything due to possible stability issues"
+            )
+            self._logger.error(message)
             flask.abort(
                 409,
-                description="System is currently throttled, refusing to update "
-                "anything due to possible stability issues",
+                description=message,
             )
 
         if self._printer.is_printing() or self._printer.is_paused():
