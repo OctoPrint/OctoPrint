@@ -423,7 +423,7 @@ default_settings = {
     "terminalFilters": [
         {
             "name": "Suppress temperature messages",
-            "regex": r"(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+((P|B|N)\d+\s+)*)?(B|T\d*):\d+)",
+            "regex": r"(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+([PBN]\d+\s+)*)?([BCLPR]|T\d*):-?\d+)",
         },
         {
             "name": "Suppress SD status messages",
