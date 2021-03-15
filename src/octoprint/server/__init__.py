@@ -766,13 +766,9 @@ class Server(object):
             )
         }
 
-        valid_log = (
-            lambda path: not octoprint.util.is_hidden_path(path)
-            and path.endswith(".log")
-            and os.path.realpath(os.path.abspath(path)).startswith(
-                settings().getBaseFolder("logs")
-            )
-        )
+        valid_log = lambda path: not octoprint.util.is_hidden_path(
+            path
+        ) and path.endswith(".log")
         log_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
                 valid_log,
