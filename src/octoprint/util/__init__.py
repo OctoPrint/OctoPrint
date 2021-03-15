@@ -21,15 +21,9 @@ import threading
 import time
 import traceback
 import warnings
+from collections.abc import Iterable, MutableMapping, Set
 from functools import wraps
 from typing import Union
-
-try:
-    # Python 3.4+
-    from collections.abc import Iterable, MutableMapping, Set
-except ImportError:
-    # Python 2.7
-    from collections import Iterable, MutableMapping, Set
 
 import frozendict
 
