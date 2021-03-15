@@ -1914,7 +1914,7 @@ def time_this(
 
         @wraps(f)
         def wrapper(*args, **kwargs):
-            data = {"func": func}
+            data = {"func": func, "func_args": "?", "func_kwargs": "?"}
             if incl_func_args and logger.isEnabledFor(logging.DEBUG):
                 data.update(
                     func_args=",".join(map(repr, args)),
