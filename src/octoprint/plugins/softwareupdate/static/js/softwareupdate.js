@@ -680,13 +680,20 @@ $(function () {
                         gettext("Updating, please wait.")
                     );
                 })
-                .fail(function () {
+                .fail(function (response) {
                     self.updateInProgress = false;
+                    var message =
+                        "<p>" +
+                        gettext(
+                            "The update could not be started. Is it already active? Please consult octoprint.log for details."
+                        ) +
+                        "</p><pre>" +
+                        _.escape(response.responseJSON.error) +
+                        "</pre>";
+
                     self._showPopup({
                         title: gettext("Update not started!"),
-                        text: gettext(
-                            "The update could not be started. Is it already active? Please consult octoprint.log for details."
-                        ),
+                        text: message,
                         type: "error",
                         hide: false,
                         buttons: {
