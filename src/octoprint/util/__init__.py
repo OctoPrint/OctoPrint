@@ -1337,11 +1337,6 @@ def thaw_immutabledict(obj):
     return letitgo
 
 
-thaw_frozendict = deprecated(
-    "thaw_frozendict has been renamed to thaw_immutabledict", since="1.6.0"
-)(thaw_immutabledict)
-
-
 def utmify(link, source=None, medium=None, name=None, term=None, content=None):
     if source is None:
         return link
