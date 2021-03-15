@@ -24,6 +24,13 @@ import warnings
 from functools import wraps
 from typing import Union
 
+try:
+    # Python 3.4+
+    from collections.abc import Iterable, MutableMapping, Set
+except ImportError:
+    # Python 2.7
+    from collections import Iterable, MutableMapping, Set
+
 import frozendict
 
 from octoprint import UMASK
@@ -970,7 +977,7 @@ def dict_flatten(dictionary, prefix="", separator="."):
     result = {}
     for k, v in dictionary.items():
         key = prefix + separator + k if prefix else k
-        if isinstance(v, collections.MutableMapping):
+        if isinstance(v, MutableMapping):
             result.update(dict_flatten(v, prefix=key, separator=separator))
         else:
             result[key] = v
@@ -1677,7 +1684,6 @@ class CountedEvent:
 
 class InvariantContainer:
     def __init__(self, initial_data=None, guarantee_invariant=None):
-        from collections.abc import Iterable
         from threading import RLock
 
         if guarantee_invariant is None:
@@ -1798,7 +1804,7 @@ class TypeAlreadyInQueue(Exception):
         self.type = t
 
 
-class CaseInsensitiveSet(collections.Set):
+class CaseInsensitiveSet(Set):
     """
     Basic case insensitive set
 
@@ -1849,33 +1855,38 @@ def time_this(
     expand_logtarget=False,
     message="{func} took {timing:.2f}ms",
     incl_func_args=False,
+    log_enter=False,
+    message_enter="Entering {func}...",
 ):
     def decorator(f):
+        func = fqfn(f)
+
+        lt = logtarget
+        if expand_logtarget:
+            lt += "." + func
+
+        logger = logging.getLogger(lt)
+
         @wraps(f)
         def wrapper(*args, **kwargs):
+            data = {"func": func, "func_args": "?", "func_kwargs": "?"}
+            if incl_func_args and logger.isEnabledFor(logging.DEBUG):
+                data.update(
+                    func_args=",".join(map(repr, args)),
+                    func_kwargs=",".join(
+                        map(lambda x: "{}={!r}".format(x[0], x[1]), kwargs.items())
+                    ),
+                )
+            if log_enter:
+                logger.debug(message_enter.format(**data), extra=data)
+
             start = time.time()
             try:
                 return f(*args, **kwargs)
             finally:
                 timing = (time.time() - start) * 1000
-                func = fqfn(f)
-
-                lt = logtarget
-                if expand_logtarget:
-                    lt += "." + func
-
-                logger = logging.getLogger(lt)
                 if logger.isEnabledFor(logging.DEBUG):
-                    data = {"func": func, "timing": timing}
-                    if incl_func_args:
-                        data.update(
-                            func_args=",".join(map(repr, args)),
-                            func_kwargs=",".join(
-                                map(
-                                    lambda x: "{}={!r}".format(x[0], x[1]), kwargs.items()
-                                )
-                            ),
-                        )
+                    data.update(timing=timing)
                     logger.debug(message.format(**data), extra=data)
 
         return wrapper
