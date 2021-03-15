@@ -760,8 +760,10 @@ class Server(object):
         }
         timelapses_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
-                lambda path: not octoprint.util.is_hidden_path(path)
-                and octoprint.timelapse.valid_timelapse(path),
+                lambda path: valid_timelapse(path)
+                and os.path.realpath(os.path.abspath(path)).startswith(
+                    settings().getBaseFolder("timelapse")
+                ),
                 status_code=400,
             )
         }
@@ -777,7 +779,10 @@ class Server(object):
         }
         logs_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
-                valid_log,
+                lambda path: valid_log(path)
+                and os.path.realpath(os.path.abspath(path)).startswith(
+                    settings().getBaseFolder("logs")
+                ),
                 status_code=400,
             )
         }
