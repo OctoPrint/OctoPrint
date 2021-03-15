@@ -15,7 +15,12 @@ import os
 import threading
 import time
 
-from frozendict import frozendict
+try:
+    from immutabledict import immutabledict
+except ImportError:
+    # Python 2
+    from frozendict import frozendict as immutabledict
+
 from past.builtins import basestring, long
 
 import octoprint.util.json
@@ -51,7 +56,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._logger_job = logging.getLogger("{}.job".format(__name__))
 
         self._dict = (
-            frozendict
+            immutabledict
             if settings().getBoolean(["devel", "useFrozenDictForPrinterState"])
             else dict
         )
@@ -194,7 +199,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
     @property
     def firmware_info(self):
-        return frozendict(self._firmware_info) if self._firmware_info else None
+        return immutabledict(self._firmware_info) if self._firmware_info else None
 
     # ~~ handling of PrinterCallbacks
 
@@ -820,11 +825,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             return self._comm.getErrorString()
 
     def get_current_data(self, *args, **kwargs):
-        return util.thaw_frozendict(self._stateMonitor.get_current_data())
+        return util.thaw_immutabledict(self._stateMonitor.get_current_data())
 
     def get_current_job(self, *args, **kwargs):
         currentData = self._stateMonitor.get_current_data()
-        return util.thaw_frozendict(currentData["job"])
+        return util.thaw_immutabledict(currentData["job"])
 
     def get_current_temperatures(self, *args, **kwargs):
         if self._comm is not None:

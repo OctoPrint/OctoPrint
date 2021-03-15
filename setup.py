@@ -58,7 +58,6 @@ INSTALL_REQUIRES = [
     "websocket-client>=0.57,<1",
     "wrapt>=1.12.1,<2",
     "emoji>=0.5.4,<1",
-    "frozendict>=1.2,<2",
     "sentry-sdk>=0.15.1,<1",
     "filetype>=1.0.7,<2",
     "zipstream-new>=1.1.8,<1.2",
@@ -76,10 +75,15 @@ INSTALL_REQUIRES_PYTHON2 = [
     "chainmap>=1.0.3,<2",
     "typing>=3.7.4.1,<4",
     "enum34>=1.1.10,<1.2",
+    "frozendict>=1.2,<2",
 ]
 
 # Python 3 specific requirements
-INSTALL_REQUIRES_PYTHON3 = ["feedparser>=6.0.2,<7", "zeroconf>=0.24,<0.25"]
+INSTALL_REQUIRES_PYTHON3 = [
+    "feedparser>=6.0.2,<7",
+    "zeroconf>=0.24,<0.25",
+    "immutabledict>=1.2.0,<2",
+]
 
 # OSX specific requirements
 INSTALL_REQUIRES_OSX = [
