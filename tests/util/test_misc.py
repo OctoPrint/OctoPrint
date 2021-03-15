@@ -8,7 +8,12 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 import unittest
 
 import ddt
-from frozendict import frozendict
+
+try:
+    from immutabledict import immutabledict
+except ImportError:
+    # Python 2
+    from frozendict import frozendict as immutabledict
 
 import octoprint.util
 
@@ -66,31 +71,35 @@ class MiscTestCase(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     @ddt.data(
-        (frozendict(a=1, b=2, c=3), {"a": 1, "b": 2, "c": 3}),
+        (immutabledict(a=1, b=2, c=3), {"a": 1, "b": 2, "c": 3}),
         (
-            frozendict(a=1, b=2, c=frozendict(c1=1, c2=2)),
+            immutabledict(a=1, b=2, c=immutabledict(c1=1, c2=2)),
             {"a": 1, "b": 2, "c": {"c1": 1, "c2": 2}},
         ),
         ({"a": 1, "b": 2, "c": 3}, {"a": 1, "b": 2, "c": 3}),
         (
-            {"a": 1, "b": 2, "c": frozendict(c1=1, c2=2)},
+            {"a": 1, "b": 2, "c": immutabledict(c1=1, c2=2)},
             {"a": 1, "b": 2, "c": {"c1": 1, "c2": 2}},
         ),
         (
-            {"a": 1, "b": 2, "c": {"c1": 1, "c2": 2, "c3": frozendict(c11=11, c12=12)}},
+            {
+                "a": 1,
+                "b": 2,
+                "c": {"c1": 1, "c2": 2, "c3": immutabledict(c11=11, c12=12)},
+            },
             {"a": 1, "b": 2, "c": {"c1": 1, "c2": 2, "c3": {"c11": 11, "c12": 12}}},
         ),
     )
     @ddt.unpack
-    def test_unfreeze_frozendict(self, input, expected):
-        result = octoprint.util.thaw_frozendict(input)
+    def test_unfreeze_immutabledict(self, input, expected):
+        result = octoprint.util.thaw_immutabledict(input)
         self.assertIsInstance(result, dict)
         self.assertDictEqual(result, expected)
 
     @ddt.data(None, "invalid", 3, [1, 2], (3, 4))
-    def test_unfreeze_frozendict_invalid(self, input):
+    def test_unfreeze_immutabledict_invalid(self, input):
         try:
-            octoprint.util.thaw_frozendict(input)
+            octoprint.util.thaw_immutabledict(input)
             self.fail("expected ValueError")
         except ValueError:
             # expected
