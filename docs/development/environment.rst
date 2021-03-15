@@ -74,7 +74,7 @@ If you also want to be able to build the documentation that resides in the ``doc
 the *Python 3* environment and install the docs dependencies as well:
 
   * ``source venv3/bin/activate`` (Linux, macOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
-  * ``pip install -e .[develop,plugins,docs]``
+  * ``pip install -e '.[develop,plugins,docs]'``
 
 Go to the directory `docs` and you can then build the documentation:
 
@@ -116,10 +116,10 @@ Then:
    virtualenv --python=python3 venv3
    source ./venv2/bin/activate
    pip install --upgrade pip
-   pip install -e .[develop,plugins]
+   pip install -e '.[develop,plugins]'
    source ./venv3/bin/activate
    pip install --upgrade pip
-   pip install -e .[develop,plugins,docs]
+   pip install -e '.[develop,plugins,docs]'
    pre-commit install
    git config blame.ignoreRevsFile .git-blame-ignore-revs
 
@@ -162,10 +162,10 @@ Open the Git Bash you just installed and in that:
    virtualenv --python=C:\Python38\python.exe venv3
    source ./venv2/Scripts/activate
    python -m pip install --upgrade pip
-   pip install -e .[develop,plugins]
+   pip install -e '.[develop,plugins]'
    source ./venv3/Scripts/activate
    pip install --upgrade pip
-   python -m pip install -e .[develop,plugins,docs]
+   python -m pip install -e '.[develop,plugins,docs]'
    pre-commit install
    git config blame.ignoreRevsFile .git-blame-ignore-revs
 
@@ -241,7 +241,7 @@ You'll need a user account with administrator privileges.
        virtualenv venv
        source venv/bin/activate
        pip install --upgrade pip
-       pip install -e .[develop,plugins]
+       pip install -e '.[develop,plugins]'
        pre-commit install
        git config blame.ignoreRevsFile .git-blame-ignore-revs
 
@@ -291,7 +291,7 @@ PyCharm
 
       * Name: Update OctoPrint dependencies
       * Program: ``$ModuleSdkPath$``
-      * Parameters: ``-m pip install -e .[develop,plugins]``
+      * Parameters: ``-m pip install -e '.[develop,plugins]'``
       * Working directory: ``$ProjectFileDir$``
 
       Note that sadly that seems to cause some hiccups on current PyCharm versions due to ``$PyInterpreterDirectory$``
@@ -320,7 +320,7 @@ PyCharm
       the documentation, see above on how to set this up.
 
     Note that this requires you to also have installed the additional ``docs`` dependencies into the Python 3 venv as
-    described above via ``pip install -e .[develop,plugins,docs]``.
+    described above via ``pip install -e '.[develop,plugins,docs]'``.
 
   - Settings > Tools > File Watchers (you might have to enable this, it's a bundled plugin), add new:
 

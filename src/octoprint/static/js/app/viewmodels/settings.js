@@ -406,7 +406,8 @@ $(function () {
         self.addTerminalFilter = function () {
             self.terminalFilters.push({
                 name: "New",
-                regex: "(Send:\\s+(N\\d+\\s+)?M105)|(Recv:\\s+(ok\\s+)?.*(B|T\\d*):\\d+)"
+                regex:
+                    "(Send:\\s+(N\\d+\\s+)?M105)|(Recv:\\s+(ok\\s+([PBN]\\d+\\s+)*)?.*([BCLPR]|T\\d*):-?\\d+)"
             });
         };
 
