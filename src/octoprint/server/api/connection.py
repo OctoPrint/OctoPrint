@@ -2,7 +2,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import jsonify, make_response, request
+from flask import abort, jsonify, request
 
 from octoprint.access.permissions import Permissions
 from octoprint.comm.protocol import all_protocols
@@ -74,7 +74,7 @@ def connectionCommand():
         if "printerProfile" in data:
             printerProfile = data["printerProfile"]
             if not printerProfileManager.exists(printerProfile):
-                return make_response("Invalid printer profile: %s" % printerProfile, 400)
+                abort(400, description="printerProfile is invalid")
             kwargs["profile"] = printerProfile
 
         if "save" in data and data["save"]:  # TODO

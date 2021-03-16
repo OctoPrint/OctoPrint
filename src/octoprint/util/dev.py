@@ -67,7 +67,7 @@ def log_duration(log=None, with_args=False):
                 arguments = "".join([args_str, sep, kwargs_str])
             else:
                 arguments = "..."
-            context = "{name}({arguments})".format(name=f.__name__, arguments=arguments)
+            context = f"{f.__name__}({arguments})"
             with duration_log(context=context, log=log):
                 return f(*args, **kwargs)
 

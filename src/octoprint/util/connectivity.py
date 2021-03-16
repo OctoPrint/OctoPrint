@@ -168,7 +168,7 @@ class ConnectivityChecker:
             "online": self.online,
             "enabled": self.enabled,
             "connection_ok": self._connection_working,
-            "connection_check": "{}:{}".format(self._host, self._port),
+            "connection_check": f"{self._host}:{self._port}",
         }
         if self._name:
             result.update(
@@ -208,9 +208,7 @@ class ConnectivityChecker:
 
                 if self._name:
                     if connection_working:
-                        self._logger.debug(
-                            "Checking if we can resolve {}...".format(self._name)
-                        )
+                        self._logger.debug(f"Checking if we can resolve {self._name}...")
                         resolution_working = len(resolve_host(self._name)) > 0
                     else:
                         resolution_working = False

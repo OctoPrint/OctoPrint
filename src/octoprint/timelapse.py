@@ -5,7 +5,6 @@ import collections
 import datetime
 import fnmatch
 import glob
-import io
 import logging
 import os
 import queue
@@ -201,7 +200,7 @@ def delete_unrendered_timelapse(name):
             except Exception:
                 if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
                     logging.getLogger(__name__).exception(
-                        "Error while processing file {} during cleanup".format(entry.name)
+                        f"Error while processing file {entry.name} during cleanup"
                     )
 
 
@@ -259,14 +258,12 @@ def delete_old_unrendered_timelapses():
             except Exception:
                 if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
                     logging.getLogger(__name__).exception(
-                        "Error while processing file {} during cleanup".format(entry.name)
+                        f"Error while processing file {entry.name} during cleanup"
                     )
 
         for prefix in prefixes_to_clean:
             delete_unrendered_timelapse(prefix)
-            logging.getLogger(__name__).info(
-                "Deleted old unrendered timelapse {}".format(prefix)
-            )
+            logging.getLogger(__name__).info(f"Deleted old unrendered timelapse {prefix}")
 
 
 def _create_render_start_handler(name, gcode=None):
@@ -682,7 +679,7 @@ class Timelapse:
             )
             self._image_number += 1
 
-        self._logger.debug("Capturing image to {}".format(filename))
+        self._logger.debug(f"Capturing image to {filename}")
         entry = {
             "type": self.__class__.QUEUE_ENTRY_TYPE_CAPTURE,
             "filename": filename,
@@ -728,9 +725,7 @@ class Timelapse:
 
         eventManager().fire(Events.CAPTURE_START, {"file": filename})
         try:
-            self._logger.debug(
-                "Going to capture {} from {}".format(filename, self._snapshot_url)
-            )
+            self._logger.debug(f"Going to capture {filename} from {self._snapshot_url}")
             r = requests.get(
                 self._snapshot_url,
                 stream=True,
@@ -739,18 +734,16 @@ class Timelapse:
             )
             r.raise_for_status()
 
-            with io.open(filename, "wb") as f:
+            with open(filename, "wb") as f:
                 for chunk in r.iter_content(chunk_size=1024):
                     if chunk:
                         f.write(chunk)
                         f.flush()
 
-            self._logger.debug(
-                "Image {} captured from {}".format(filename, self._snapshot_url)
-            )
+            self._logger.debug(f"Image {filename} captured from {self._snapshot_url}")
         except Exception as e:
             self._logger.exception(
-                "Could not capture image {} from {}".format(filename, self._snapshot_url)
+                f"Could not capture image {filename} from {self._snapshot_url}"
             )
             self._capture_errors += 1
             err = e
@@ -993,7 +986,7 @@ class TimelapseRenderJob:
             postfix=self._postfix if self._postfix is not None else "",
             extension=extension,
         )
-        temporary = os.path.join(self._output_dir, ".{}".format(output_name))
+        temporary = os.path.join(self._output_dir, f".{output_name}")
         output = os.path.join(self._output_dir, output_name)
 
         for i in range(4):
@@ -1034,7 +1027,7 @@ class TimelapseRenderJob:
             rotate=rotate,
             watermark=watermark,
         )
-        self._logger.debug("Executing command: {}".format(command_str))
+        self._logger.debug(f"Executing command: {command_str}")
 
         with self.render_job_lock:
             try:
@@ -1075,7 +1068,7 @@ class TimelapseRenderJob:
                         os.remove(temporary)
                 except Exception:
                     self._logger.warning(
-                        "Could not delete temporary timelapse {}".format(temporary)
+                        f"Could not delete temporary timelapse {temporary}"
                     )
                 self._notify_callback("always", output)
 
@@ -1155,7 +1148,7 @@ class TimelapseRenderJob:
             "-framerate",
             str(fps),
             "-i",
-            '"{}"'.format(input),
+            f'"{input}"',
             "-vcodec",
             videocodec,
             "-threads",
@@ -1174,12 +1167,12 @@ class TimelapseRenderJob:
         )
 
         if filter_string is not None:
-            logger.debug("Applying videofilter chain: {}".format(filter_string))
+            logger.debug(f"Applying videofilter chain: {filter_string}")
             command.extend(["-vf", sarge.shell_quote(filter_string)])
 
         # finalize command with output file
-        logger.debug("Rendering movie to {}".format(output))
-        command.append('"{}"'.format(output))
+        logger.debug(f"Rendering movie to {output}")
+        command.append(f'"{output}"')
 
         return " ".join(command)
 
@@ -1204,7 +1197,7 @@ class TimelapseRenderJob:
         ### See unit tests in test/timelapse/test_timelapse_renderjob.py
 
         # apply pixel format
-        filters = ["format={}".format(pixfmt)]
+        filters = [f"format={pixfmt}"]
 
         # flip video if configured
         if hflip:
@@ -1236,7 +1229,7 @@ class TimelapseRenderJob:
 
     def _notify_callback(self, callback, *args, **kwargs):
         """Notifies registered callbacks of type `callback`."""
-        name = "_on_{}".format(callback)
+        name = f"_on_{callback}"
         method = getattr(self, name, None)
         if method is not None and callable(method):
             method(*args, **kwargs)

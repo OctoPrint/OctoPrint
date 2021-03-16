@@ -2,7 +2,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import hashlib
-import io
 import logging
 import os
 import time
@@ -83,11 +82,11 @@ class UserManager(GroupChangeListener):
                 listener.on_user_logged_in(user)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_logged_in on {!r}".format(listener),
+                    f"Error in on_user_logged_in on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
-        self._logger.info("Logged in user: {}".format(user.get_id()))
+        self._logger.info(f"Logged in user: {user.get_id()}")
 
         return user
 
@@ -121,11 +120,11 @@ class UserManager(GroupChangeListener):
                 listener.on_user_logged_out(user, stale=stale)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_logged_out on {!r}".format(listener),
+                    f"Error in on_user_logged_out on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
-        self._logger.info("Logged out user: {}".format(user.get_id()))
+        self._logger.info(f"Logged out user: {user.get_id()}")
 
     def _cleanup_sessions(self):
         for session, user in list(self._session_users_by_session.items()):
@@ -269,9 +268,7 @@ class UserManager(GroupChangeListener):
         return False
 
     def on_group_removed(self, group):
-        self._logger.debug(
-            "Group {} got removed, removing from all users".format(group.key)
-        )
+        self._logger.debug(f"Group {group.key} got removed, removing from all users")
         self.remove_groups_from_users([group])
 
     def on_group_permissions_changed(self, group, added=None, removed=None):
@@ -282,7 +279,7 @@ class UserManager(GroupChangeListener):
                     listener.on_user_modified(user)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_modified on {!r}".format(listener),
+                    f"Error in on_user_modified on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
@@ -295,7 +292,7 @@ class UserManager(GroupChangeListener):
                     listener.on_user_modified(user)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_modified on {!r}".format(listener),
+                    f"Error in on_user_modified on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
@@ -327,7 +324,7 @@ class UserManager(GroupChangeListener):
                     listener.on_user_modified(user)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_modified on {!r}".format(listener),
+                    f"Error in on_user_modified on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
@@ -337,7 +334,7 @@ class UserManager(GroupChangeListener):
                 listener.on_user_removed(username)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_removed on {!r}".format(listener),
+                    f"Error in on_user_removed on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
@@ -516,7 +513,7 @@ class FilebasedUserManager(UserManager):
     def _load(self):
         if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
             # noinspection PyBroadException
-            with io.open(self._userfile, "rt", encoding="utf-8") as f:
+            with open(self._userfile, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
 
                 if not data or not isinstance(data, dict):

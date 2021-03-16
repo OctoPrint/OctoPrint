@@ -21,7 +21,7 @@ from . import (  # noqa: F401
 class GithubRateLimitCheckError(RateLimitCheckError):
     def __init__(self, remaining, ratelimit, reset):
         if reset:
-            message = "Github rate limit exceeded, reset at {}".format(reset)
+            message = f"Github rate limit exceeded, reset at {reset}"
         else:
             message = "Github rate limit exceeded"
         super().__init__(message, remaining=remaining, limit=ratelimit, reset=reset)

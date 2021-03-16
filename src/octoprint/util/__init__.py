@@ -10,7 +10,6 @@ import collections
 import contextlib
 import copy
 import glob
-import io
 import logging
 import os
 import queue
@@ -22,10 +21,11 @@ import threading
 import time
 import traceback
 import warnings
+from collections.abc import Iterable, MutableMapping, Set
 from functools import wraps
 from typing import Union
 
-import frozendict
+from immutabledict import immutabledict
 
 from octoprint import UMASK
 from octoprint.util.connectivity import ConnectivityChecker  # noqa: F401
@@ -338,9 +338,9 @@ def get_formatted_size(num):
 
     for x in ["B", "KB", "MB", "GB"]:
         if num < 1024:
-            return "%3.1f%s" % (num, x)
+            return f"{num:3.1f}{x}"
         num /= 1024
-    return "%3.1f%s" % (num, "TB")
+    return "{:3.1f}{}".format(num, "TB")
 
 
 def is_allowed_file(filename, extensions):
@@ -975,7 +975,7 @@ def dict_flatten(dictionary, prefix="", separator="."):
     result = {}
     for k, v in dictionary.items():
         key = prefix + separator + k if prefix else k
-        if isinstance(v, collections.MutableMapping):
+        if isinstance(v, MutableMapping):
             result.update(dict_flatten(v, prefix=key, separator=separator))
         else:
             result[key] = v
@@ -1119,7 +1119,7 @@ class DefaultOrderedDict(collections.OrderedDict):
 
     # noinspection PyMethodOverriding
     def __repr__(self):
-        return "OrderedDefaultDict(%s, %s)" % (
+        return "OrderedDefaultDict({}, {})".format(
             self.default_factory,
             collections.OrderedDict.__repr__(self),
         )
@@ -1257,7 +1257,7 @@ else:
                 os.remove(self._path)
             except Exception as exc:
                 logging.getLogger(__name__).warning(
-                    "Could not delete temporary directory {}: {}".format(self.name, exc)
+                    f"Could not delete temporary directory {self.name}: {exc}"
                 )
 
         def __enter__(self):
@@ -1283,13 +1283,13 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
         # these encodings might have a BOM, so let's see if there is one
         bom = getattr(codecs, potential_bom_attribute)
 
-        with io.open(filename, mode="rb") as f:
+        with open(filename, mode="rb") as f:
             header = f.read(4)
 
         if header.startswith(bom):
             encoding += "-sig"
 
-    return io.open(filename, encoding=encoding, mode=mode, **kwargs)
+    return open(filename, encoding=encoding, mode=mode, **kwargs)
 
 
 def is_hidden_path(path):
@@ -1327,15 +1327,15 @@ glob_escape = deprecated(
 )(glob.escape)
 
 
-def thaw_frozendict(obj):
-    if not isinstance(obj, (dict, frozendict.frozendict)):
-        raise ValueError("obj must be a dict or frozendict instance")
+def thaw_immutabledict(obj):
+    if not isinstance(obj, (dict, immutabledict)):
+        raise ValueError("obj must be a dict or immutabledict instance")
 
     # only true love can thaw a frozen dict
     letitgo = {}
     for key, value in obj.items():
-        if isinstance(value, (dict, frozendict.frozendict)):
-            letitgo[key] = thaw_frozendict(value)
+        if isinstance(value, (dict, immutabledict)):
+            letitgo[key] = thaw_immutabledict(value)
         else:
             letitgo[key] = copy.deepcopy(value)
     return letitgo
@@ -1683,7 +1683,6 @@ class CountedEvent:
 
 class InvariantContainer:
     def __init__(self, initial_data=None, guarantee_invariant=None):
-        from collections.abc import Iterable
         from threading import RLock
 
         if guarantee_invariant is None:
@@ -1778,7 +1777,7 @@ class TypedQueue(PrependableQueue):
         if item_type is not None:
             if item_type in self._lookup:
                 raise TypeAlreadyInQueue(
-                    item_type, "Type {} is already in queue".format(item_type)
+                    item_type, f"Type {item_type} is already in queue"
                 )
             else:
                 self._lookup.add(item_type)
@@ -1799,7 +1798,7 @@ class TypedQueue(PrependableQueue):
         if item_type is not None:
             if item_type in self._lookup:
                 raise TypeAlreadyInQueue(
-                    item_type, "Type {} is already in queue".format(item_type)
+                    item_type, f"Type {item_type} is already in queue"
                 )
             else:
                 self._lookup.add(item_type)
@@ -1897,12 +1896,12 @@ class protectedkeydict(collections.MutableMapping):
 
     def __setitem__(self, key, value):
         if key in self.protected_keys:
-            raise KeyError("Cannot set protected key {!r}".format(key))
+            raise KeyError(f"Cannot set protected key {key!r}")
         self.data[key] = value
 
     def __delitem__(self, key):
         if key in self.protected_keys:
-            raise KeyError("Cannot delete protected key {!r}".format(key))
+            raise KeyError(f"Cannot delete protected key {key!r}")
 
     def _get_item(self, key):
         if key not in self.protected_keys:
@@ -1920,7 +1919,7 @@ class protectedkeydict(collections.MutableMapping):
             return value
 
 
-class CaseInsensitiveSet(collections.Set):
+class CaseInsensitiveSet(Set):
     """
     Basic case insensitive set
 
@@ -1963,7 +1962,7 @@ def fqfn(f):
             f.__self__.__class__.__module__, f.__self__.__class__.__name__, f.__name__
         )
     else:
-        return "{}.{}".format(f.__module__, f.__name__)
+        return f"{f.__module__}.{f.__name__}"
 
 
 def time_this(
@@ -1971,33 +1970,38 @@ def time_this(
     expand_logtarget=False,
     message="{func} took {timing:.2f}ms",
     incl_func_args=False,
+    log_enter=False,
+    message_enter="Entering {func}...",
 ):
     def decorator(f):
+        func = fqfn(f)
+
+        lt = logtarget
+        if expand_logtarget:
+            lt += "." + func
+
+        logger = logging.getLogger(lt)
+
         @wraps(f)
         def wrapper(*args, **kwargs):
+            data = {"func": func, "func_args": "?", "func_kwargs": "?"}
+            if incl_func_args and logger.isEnabledFor(logging.DEBUG):
+                data.update(
+                    func_args=",".join(map(repr, args)),
+                    func_kwargs=",".join(
+                        map(lambda x: "{}={!r}".format(x[0], x[1]), kwargs.items())
+                    ),
+                )
+            if log_enter:
+                logger.debug(message_enter.format(**data), extra=data)
+
             start = time.time()
             try:
                 return f(*args, **kwargs)
             finally:
                 timing = (time.time() - start) * 1000
-                func = fqfn(f)
-
-                lt = logtarget
-                if expand_logtarget:
-                    lt += "." + func
-
-                logger = logging.getLogger(lt)
                 if logger.isEnabledFor(logging.DEBUG):
-                    data = {"func": func, "timing": timing}
-                    if incl_func_args:
-                        data.update(
-                            func_args=",".join(map(repr, args)),
-                            func_kwargs=",".join(
-                                map(
-                                    lambda x: "{}={!r}".format(x[0], x[1]), kwargs.items()
-                                )
-                            ),
-                        )
+                    data.update(timing=timing)
                     logger.debug(message.format(**data), extra=data)
 
         return wrapper

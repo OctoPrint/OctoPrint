@@ -162,7 +162,7 @@ class CommandlineCaller:
             joined_command = " ".join(command)
         else:
             joined_command = command
-        self._logger.debug("Calling: {}".format(joined_command))
+        self._logger.debug(f"Calling: {joined_command}")
         self.on_log_call(joined_command)
 
         delimiter = kwargs.get("delimiter", b"\n")
@@ -200,9 +200,7 @@ class CommandlineCaller:
 
         if not p.commands[0].process:
             # the process might have been set to None in case of any exception
-            self._logger.error(
-                "Error while trying to run command {}".format(joined_command)
-            )
+            self._logger.error(f"Error while trying to run command {joined_command}")
             return None, [], []
 
         all_stdout = []

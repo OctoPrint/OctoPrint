@@ -131,7 +131,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
                     result[name + self.sep + command.name] = command
             except Exception:
                 self._logger.exception(
-                    "Error while retrieving cli commands for plugin {}".format(name),
+                    f"Error while retrieving cli commands for plugin {name}",
                     extra={"plugin": name},
                 )
 

@@ -57,7 +57,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
                 if not self._valid_path(path):
                     continue
 
-                self._logger.info("Found {}, trying to add it".format(path))
+                self._logger.info(f"Found {path}, trying to add it")
                 self._upload(path)
             self._logger.info("... initial scan done.")
 
@@ -147,7 +147,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
                 # file is still there - that should only happen if something went wrong, so mark it as failed
                 # noinspection PyBroadException
                 try:
-                    shutil.move(path, "{}.failed".format(path))
+                    shutil.move(path, f"{path}.failed")
                 except Exception:
                     # something went really wrong here.... but we can't do anything about it, so just log it
                     self._logger.exception(
@@ -190,7 +190,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
             last_size = new_size
             time.sleep(interval)
 
-        self._logger.debug("File at {} is stable, moving it".format(path))
+        self._logger.debug(f"File at {path} is stable, moving it")
         self._upload(path)
 
     def _valid_path(self, path):

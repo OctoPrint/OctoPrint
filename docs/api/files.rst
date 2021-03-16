@@ -14,7 +14,8 @@ Retrieve all files
 .. http:get:: /api/files
 
    Retrieve information regarding all files currently available and regarding the disk space still available
-   locally in the system.
+   locally in the system. The results are cached for performance reasons. If you
+   want to override the cache, supply the query parameter ``force`` and set it to ``true``.
 
    By default only returns the files and folders in the root directory. If the query parameter ``recursive``
    is provided and set to ``true``, returns all files and folders.
@@ -234,6 +235,7 @@ Retrieve all files
         "free": "3.2GB"
       }
 
+   :param force: If set to ``true``, forces a refresh, overriding the cache.
    :param recursive: If set to ``true``, return all files and folders recursively. Otherwise only return items on same level.
    :statuscode 200: No error
 
@@ -245,7 +247,8 @@ Retrieve files from specific location
 .. http:get:: /api/files/(string:location)
 
    Retrieve information regarding the files currently available on the selected `location` and -- if targeting
-   the ``local`` location -- regarding the disk space still available locally in the system.
+   the ``local`` location -- regarding the disk space still available locally in the system. The results are cached for performance reasons. If you
+   want to override the cache, supply the query parameter ``force`` and set it to ``true``.
 
    By default only returns the files and folders in the root directory. If the query parameter ``recursive``
    is provided and set to ``true``, returns all files and folders.
@@ -305,6 +308,7 @@ Retrieve files from specific location
    :param location: The origin location from which to retrieve the files. Currently only ``local`` and ``sdcard`` are
                     supported, with ``local`` referring to files stored in OctoPrint's ``uploads`` folder and ``sdcard``
                     referring to files stored on the printer's SD card (if available).
+   :param force: If set to ``true``, forces a refresh, overriding the cache.
    :param recursive: If set to ``true``, return all files and folders recursively. Otherwise only return items on same level.
    :statuscode 200: No error
    :statuscode 404: If `location` is neither ``local`` nor ``sdcard``

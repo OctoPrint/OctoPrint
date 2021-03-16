@@ -22,7 +22,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import copy
 import fnmatch
-import io
 import logging
 import os
 import re
@@ -257,6 +256,7 @@ default_settings = {
         "throttle_highprio": 0.0,
         "throttle_lines": 100,
         "runAt": "idle",  # 'never', 'idle', 'always'
+        "bedZ": 0.0,
     },
     "feature": {
         "temperatureGraph": True,
@@ -410,7 +410,7 @@ default_settings = {
     "terminalFilters": [
         {
             "name": "Suppress temperature messages",
-            "regex": r"(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+((P|B|N)\d+\s+)*)?(B|T\d*):\d+)",
+            "regex": r"(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+([PBN]\d+\s+)*)?([BCLPR]|T\d*):-?\d+)",
         },
         {
             "name": "Suppress SD status messages",
@@ -988,7 +988,7 @@ class Settings:
 
     def load(self, migrate=False):
         if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
-            with io.open(self._configfile, "rt", encoding="utf-8", errors="replace") as f:
+            with open(self._configfile, encoding="utf-8", errors="replace") as f:
                 try:
                     self._config = yaml.safe_load(f)
                     self._mtime = self.last_modified
@@ -1029,11 +1029,9 @@ class Settings:
                 try:
                     overlay_config = self.load_overlay(path, migrate=migrate)
                     self.add_overlay(overlay_config)
-                    self._logger.info("Added config overlay from {}".format(path))
+                    self._logger.info(f"Added config overlay from {path}")
                 except Exception:
-                    self._logger.exception(
-                        "Could not add config overlay from {}".format(path)
-                    )
+                    self._logger.exception(f"Could not add config overlay from {path}")
 
             if os.path.isfile(overlay):
                 process(overlay)
@@ -1060,7 +1058,7 @@ class Settings:
 
         if isinstance(overlay, str):
             if os.path.exists(overlay) and os.path.isfile(overlay):
-                with io.open(overlay, "rt", encoding="utf-8", errors="replace") as f:
+                with open(overlay, encoding="utf-8", errors="replace") as f:
                     config = yaml.safe_load(f)
         elif isinstance(overlay, dict):
             config = overlay
@@ -1071,7 +1069,7 @@ class Settings:
 
         if not isinstance(config, dict):
             raise ValueError(
-                "Configuration data must be a dict but is a {}".format(config.__class__)
+                f"Configuration data must be a dict but is a {config.__class__}"
             )
 
         if migrate:
@@ -2393,7 +2391,7 @@ class Settings:
         preprocessors=None,
         error_on_path=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         if not path:
             if error_on_path:
@@ -2665,7 +2663,7 @@ class SubSettings:
             if item in self.deprecated_access_methods:
                 new = self.deprecated_access_methods[item]
                 decorator = deprecated(
-                    "{old} has been renamed to {new}".format(old=item, new=new),
+                    f"{item} has been renamed to {new}",
                     stacklevel=2,
                 )
                 item = new
@@ -2725,7 +2723,7 @@ def _validate_folder(
     if not os.path.exists(folder):
         if os.path.islink(folder):
             # broken symlink, see #2644
-            raise OSError("Folder at {} appears to be a broken symlink".format(folder))
+            raise OSError(f"Folder at {folder} appears to be a broken symlink")
 
         elif create:
             # non existing, but we are allowed to create it
@@ -2733,7 +2731,7 @@ def _validate_folder(
                 os.makedirs(folder)
             except Exception:
                 if log_error:
-                    logger.exception("Could not create {}".format(folder))
+                    logger.exception(f"Could not create {folder}")
                 raise OSError(
                     "Folder for type {} at {} does not exist and creation failed".format(
                         type, folder
@@ -2742,11 +2740,11 @@ def _validate_folder(
 
         else:
             # not extisting, not allowed to create it
-            raise OSError("No such folder: {}".format(folder))
+            raise OSError(f"No such folder: {folder}")
 
     elif os.path.isfile(folder):
         # hardening against misconfiguration, see #1953
-        raise OSError("Expected a folder at {} but found a file instead".format(folder))
+        raise OSError(f"Expected a folder at {folder} but found a file instead")
 
     elif check_writable:
         # make sure we can also write into the folder
@@ -2761,10 +2759,10 @@ def _validate_folder(
             # to determine whether things are *actually* writable
             testfile = os.path.join(folder, ".testballoon.txt")
             try:
-                with io.open(testfile, "wt", encoding="utf-8") as f:
+                with open(testfile, "wt", encoding="utf-8") as f:
                     f.write("test")
                 os.remove(testfile)
             except Exception:
                 if log_error:
-                    logger.exception("Could not write test file to {}".format(folder))
+                    logger.exception(f"Could not write test file to {folder}")
                 raise OSError(error)

@@ -14,7 +14,7 @@ import threading
 import time
 from collections import namedtuple
 
-from frozendict import frozendict
+from immutabledict import immutabledict
 
 import octoprint.util.json
 from octoprint import util as util
@@ -73,7 +73,7 @@ def _serial_factory(port=None, baudrate=None):
             )
         except Exception:
             logging.getLogger(__name__).exception(
-                "Error while creating serial via factory {}".format(name)
+                f"Error while creating serial via factory {name}"
             )
             return None
 
@@ -101,10 +101,10 @@ class Printer(
         from collections import deque
 
         self._logger = logging.getLogger(__name__)
-        self._logger_job = logging.getLogger("{}.job".format(__name__))
+        self._logger_job = logging.getLogger(f"{__name__}.job")
 
         self._dict = (
-            frozendict
+            immutabledict
             if settings().getBoolean(["devel", "useFrozenDictForPrinterState"])
             else dict
         )
@@ -157,13 +157,11 @@ class Printer(
             try:
                 estimator = hook()
                 if estimator is not None:
-                    self._logger.info(
-                        "Using print time estimator provided by {}".format(name)
-                    )
+                    self._logger.info(f"Using print time estimator provided by {name}")
                     self._estimator_factory = estimator
             except Exception:
                 self._logger.exception(
-                    "Error while processing analysis queues from {}".format(name),
+                    f"Error while processing analysis queues from {name}",
                     extra={"plugin": name},
                 )
 
@@ -245,7 +243,7 @@ class Printer(
 
     @property
     def firmware_info(self):
-        return frozendict(self._firmware_info) if self._firmware_info else None
+        return immutabledict(self._firmware_info) if self._firmware_info else None
 
     # ~~ handling of PrinterCallbacks
 
@@ -332,7 +330,7 @@ class Printer(
                     plugin_data[name] = additional
             except ValueError:
                 self._logger.exception(
-                    "Invalid additional data from plugin {}".format(name),
+                    f"Invalid additional data from plugin {name}",
                     extra={"plugin": name},
                 )
             except Exception:
@@ -404,8 +402,8 @@ class Printer(
 
         from octoprint.logging.handlers import CommunicationLogHandler
 
-        CommunicationLogHandler.arm_rollover(u"CONNECTION")
-        CommunicationLogHandler.arm_rollover(u"COMMDEBUG")
+        CommunicationLogHandler.arm_rollover("CONNECTION")
+        CommunicationLogHandler.arm_rollover("COMMDEBUG")
 
         if not logging.getLogger("CONNECTION").isEnabledFor(logging.DEBUG):
             # is protocol.log is not enabled, log a line to explain to reduce "connection.log is empty" in tickets...
@@ -525,7 +523,7 @@ class Printer(
 
         transport_class = lookup_transport(selected_transport)
         if not transport_class:
-            raise ValueError("Invalid transport: {}".format(selected_transport))
+            raise ValueError(f"Invalid transport: {selected_transport}")
 
         transport = transport_class(**transport_kwargs)
         self._transport = transport
@@ -536,7 +534,7 @@ class Printer(
 
         protocol_class = lookup_protocol(selected_protocol)
         if not protocol_class:
-            raise ValueError("Invalid protocol: {}".format(selected_protocol))
+            raise ValueError(f"Invalid protocol: {selected_protocol}")
 
         protocol = protocol_class(**protocol_kwargs)
         self._protocol = protocol
@@ -623,7 +621,7 @@ class Printer(
         # this code preserves existing CamelCase
         event_name = name[0].upper() + name[1:]
 
-        event_start = "GcodeScript{}Running".format(event_name)
+        event_start = f"GcodeScript{event_name}Running"
         payload = context.get("event", None) if isinstance(context, dict) else None
 
         eventManager().fire(event_start, payload)
@@ -642,7 +640,7 @@ class Printer(
             if must_be_set:
                 raise
 
-        event_end = "GcodeScript{}Finished".format(event_name)
+        event_end = f"GcodeScript{event_name}Finished"
         eventManager().fire(event_end, payload)
 
     def jog(self, axes, relative=True, speed=None, *args, **kwargs):
@@ -654,9 +652,7 @@ class Printer(
                 raise ValueError("amount not set")
             amount = args[0]
             if not isinstance(amount, (int, float)):
-                raise ValueError(
-                    "amount must be a valid number: {amount}".format(amount=amount)
-                )
+                raise ValueError(f"amount must be a valid number: {amount}")
 
             axes = {}
             axes[axis] = amount
@@ -689,9 +685,7 @@ class Printer(
             if isinstance(axes, str):
                 axes = [axes]
             else:
-                raise ValueError(
-                    "axes is neither a list nor a string: {axes}".format(axes=axes)
-                )
+                raise ValueError(f"axes is neither a list nor a string: {axes}")
 
         validated_axes = list(
             filter(
@@ -699,16 +693,14 @@ class Printer(
             )
         )
         if len(axes) != len(validated_axes):
-            raise ValueError("axes contains invalid axes: {axes}".format(axes=axes))
+            raise ValueError(f"axes contains invalid axes: {axes}")
 
         kwargs = {axes: True for axes in validated_axes}
         self._protocol.home(**kwargs)
 
     def extrude(self, amount, speed=None, *args, **kwargs):
         if not isinstance(amount, (int, float)):
-            raise ValueError(
-                "amount must be a valid number: {amount}".format(amount=amount)
-            )
+            raise ValueError(f"amount must be a valid number: {amount}")
 
         printer_profile = self._printer_profile_manager.get_current_or_default()
 
@@ -731,7 +723,7 @@ class Printer(
 
     def change_tool(self, tool, *args, **kwargs):
         if not PrinterInterface.valid_tool_regex.match(tool):
-            raise ValueError('tool must match "tool[0-9]+": {tool}'.format(tool=tool))
+            raise ValueError(f'tool must match "tool[0-9]+": {tool}')
 
         tool_num = int(tool[len("tool") :])
         self._protocol.change_tool(
@@ -748,9 +740,7 @@ class Printer(
             )
 
         if not isinstance(value, (int, float)) or value < 0:
-            raise ValueError(
-                "value must be a valid number >= 0: {value}".format(value=value)
-            )
+            raise ValueError(f"value must be a valid number >= 0: {value}")
 
         tags = kwargs.get("tags", set()) | {"trigger:printer.set_temperature"}
         self._protocol.set_temperature(heater, value, wait=False, tags=tags)
@@ -770,13 +760,9 @@ class Printer(
         )
 
         if len(validated_keys) != len(offsets):
-            raise ValueError(
-                "offsets contains invalid keys: {offsets}".format(offsets=offsets)
-            )
+            raise ValueError(f"offsets contains invalid keys: {offsets}")
         if len(validated_values) != len(offsets):
-            raise ValueError(
-                "offsets contains invalid values: {offsets}".format(offsets=offsets)
-            )
+            raise ValueError(f"offsets contains invalid values: {offsets}")
 
         if self._protocol is None:
             return
@@ -793,9 +779,9 @@ class Printer(
             factor = int(factor * 100)
 
         if min_val and factor < min_val:
-            raise ValueError("factor must be a value >={}".format(min_val))
+            raise ValueError(f"factor must be a value >={min_val}")
         elif max_val and factor > max_val:
-            raise ValueError("factor must be a value <={}".format(max_val))
+            raise ValueError(f"factor must be a value <={max_val}")
 
         return factor
 
@@ -963,9 +949,9 @@ class Printer(
             elif state == ProtocolState.PAUSED:
                 return "Paused"
             elif state == ProtocolState.DISCONNECTED_WITH_ERROR:
-                return "Error: {}".format(self._protocol.error)
+                return f"Error: {self._protocol.error}"
 
-        return "Unknown state ({})".format(self._protocol.state)
+        return f"Unknown state ({self._protocol.state})"
 
     def get_state_id(self, state=None, *args, **kwargs):
         if state is None:
@@ -999,11 +985,11 @@ class Printer(
             return self._protocol.error
 
     def get_current_data(self, *args, **kwargs):
-        return util.thaw_frozendict(self._state_monitor.get_current_data())
+        return util.thaw_immutabledict(self._state_monitor.get_current_data())
 
     def get_current_job(self):
         data = self._state_monitor.get_current_data()
-        return util.thaw_frozendict(data["job"])
+        return util.thaw_immutabledict(data["job"])
 
     def get_current_temperatures(self, *args, **kwargs):
         if self._protocol is not None:
@@ -1194,7 +1180,7 @@ class Printer(
                     sd_upload_succeeded,
                     sd_upload_failed,
                     *args,
-                    **kwargs
+                    **kwargs,
                 )
                 if result is not None:
                     return result
@@ -1577,7 +1563,7 @@ class Printer(
             callback.on_printer_send_initial_data(data)
         except Exception:
             self._logger.exception(
-                u"Error while pushing initial state update to callback {}".format(
+                "Error while pushing initial state update to callback {}".format(
                     callback
                 ),
                 extra={"callback": fqcn(callback)},
@@ -1636,9 +1622,7 @@ class Printer(
         if protocol != self._protocol:
             return
 
-        self._logger.info(
-            "Protocol state changed from {} to {}".format(old_state, new_state)
-        )
+        self._logger.info(f"Protocol state changed from {old_state} to {new_state}")
 
         # forward relevant state changes to file manager
         if old_state == ProtocolState.PROCESSING:

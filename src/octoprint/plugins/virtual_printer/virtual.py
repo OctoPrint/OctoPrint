@@ -3,7 +3,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 
 import collections
-import io
 import json
 import math
 import os
@@ -303,7 +302,7 @@ class VirtualPrinter:
 
     @timeout.setter
     def timeout(self, value):
-        self._logger.debug("Setting read timeout to {}s".format(value))
+        self._logger.debug(f"Setting read timeout to {value}s")
         self._read_timeout = value
 
     @property
@@ -312,7 +311,7 @@ class VirtualPrinter:
 
     @write_timeout.setter
     def write_timeout(self, value):
-        self._logger.debug("Setting write timeout to {}s".format(value))
+        self._logger.debug(f"Setting write timeout to {value}s")
         self._write_timeout = value
 
     @property
@@ -496,7 +495,7 @@ class VirtualPrinter:
 
                 try:
                     # if we have a method _gcode_G, _gcode_M or _gcode_T, execute that first
-                    letter_handler = "_gcode_{}".format(letter)
+                    letter_handler = f"_gcode_{letter}"
                     if hasattr(self, letter_handler):
                         code = command_match.group(2)
                         handled = getattr(self, letter_handler)(code, data)
@@ -504,7 +503,7 @@ class VirtualPrinter:
                             continue
 
                     # then look for a method _gcode_<command> and execute that if it exists
-                    command_handler = "_gcode_{}".format(command)
+                    command_handler = f"_gcode_{command}"
                     if hasattr(self, command_handler):
                         handled = getattr(self, command_handler)(data)
                         if handled:
@@ -544,7 +543,7 @@ class VirtualPrinter:
             self.currentExtruder = t
             self._send("Active Extruder: %d" % self.currentExtruder)
         else:
-            self._send("echo:T{} Invalid extruder ".format(t))
+            self._send(f"echo:T{t} Invalid extruder ")
 
     # noinspection PyUnusedLocal
     def _gcode_F(self, code, data):
@@ -691,7 +690,7 @@ class VirtualPrinter:
         if not self._okBeforeCommandOutput:
             ok = self._ok()
             if ok:
-                output = "{} {}".format(self._ok(), output)
+                output = f"{self._ok()} {output}"
         self._send(output)
         return True
 
@@ -707,7 +706,10 @@ class VirtualPrinter:
     def _gcode_M117(self, data: str) -> None:
         # we'll just use this to echo a message, to allow playing around with pause triggers
         if self._echoOnM117:
-            self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
+            try:
+                self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
+            except AttributeError:
+                self._send("echo:")
 
     def _gcode_M155(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
@@ -1236,7 +1238,7 @@ class VirtualPrinter:
             | Unsets the busy loop.
             """
             for line in usage.split("\n"):
-                self._send("echo: {}".format(line.strip()))
+                self._send(f"echo: {line.strip()}")
         elif data == "action_pause":
             self._send("// action:pause")
         elif data == "action_resume":
@@ -1306,9 +1308,7 @@ class VirtualPrinter:
 
                 if sleep_match is not None:
                     interval = int(sleep_match.group(1))
-                    self._send(
-                        "// sleeping for {interval} seconds".format(interval=interval)
-                    )
+                    self._send(f"// sleeping for {interval} seconds")
                     self._debug_sleep = interval
                 elif sleep_after_match is not None:
                     command = sleep_after_match.group(1)
@@ -1463,7 +1463,7 @@ class VirtualPrinter:
                     ["smoothieTemperatureReporting"]
                 ):
                     continue
-                temps["T{}".format(i)] = (self.temp[i], self.targetTemp[i])
+                temps[f"T{i}"] = (self.temp[i], self.targetTemp[i])
 
             if self._settings.get_boolean(["hasBed"]):
                 temps["B"] = (self.bedTemp, self.bedTargetTemp)
@@ -1500,7 +1500,7 @@ class VirtualPrinter:
         if includeOk:
             ok = self._ok()
             if ok:
-                output = "{} {}".format(ok, output)
+                output = f"{ok} {output}"
         self._send(output)
 
     def _parseHotendCommand(
@@ -1742,7 +1742,7 @@ class VirtualPrinter:
 
         handle = None
         try:
-            handle = io.open(file, "wt", encoding="utf-8")
+            handle = open(file, "wt", encoding="utf-8")
         except Exception:
             self._send("error writing to file")
             if handle is not None:
@@ -1769,7 +1769,7 @@ class VirtualPrinter:
     def _sdPrintingWorker(self):
         self._selectedSdFilePos = 0
         try:
-            with io.open(self._selectedSdFile, "rt", encoding="utf-8") as f:
+            with open(self._selectedSdFile, encoding="utf-8") as f:
                 for line in iter(f.readline, ""):
                     if self._killed or not self._sdPrinting:
                         break
@@ -1930,7 +1930,7 @@ class VirtualPrinter:
 
         def loop():
             while self._busy:
-                self._send("echo:busy {}".format(self._busy))
+                self._send(f"echo:busy {self._busy}")
                 time.sleep(self._busyInterval)
             self._sendOk()
 
@@ -1944,9 +1944,9 @@ class VirtualPrinter:
 
     def _showPrompt(self, text, choices):
         self._hidePrompt()
-        self._send("//action:prompt_begin {}".format(text))
+        self._send(f"//action:prompt_begin {text}")
         for choice in choices:
-            self._send("//action:prompt_button {}".format(choice))
+            self._send(f"//action:prompt_button {choice}")
         self._send("//action:prompt_show")
 
     def _hidePrompt(self):
@@ -1970,7 +1970,7 @@ class VirtualPrinter:
                 return 0
 
             if b"M112" in data and self._supportM112:
-                self._seriallog.info("<<< {}".format(u_data))
+                self._seriallog.info(f"<<< {u_data}")
                 self._kill()
                 return len(data)
 
@@ -1978,7 +1978,7 @@ class VirtualPrinter:
                 written = self.incoming.put(
                     data, timeout=self._write_timeout, partial=True
                 )
-                self._seriallog.info("<<< {}".format(u_data))
+                self._seriallog.info(f"<<< {u_data}")
                 return written
             except queue.Full:
                 self._logger.info(
@@ -2113,13 +2113,13 @@ class VirtualEEPROM:
     def _initialise_eeprom(self):
         if os.path.exists(self._eeprom_file_path):
             # file exists, read it
-            with io.open(self._eeprom_file_path, "rt", encoding="utf-8") as eeprom_file:
+            with open(self._eeprom_file_path, encoding="utf-8") as eeprom_file:
                 data = json.load(eeprom_file)
             return data
         else:
             # no eeprom file, make new one with defaults
             data = self.get_default_settings()
-            with io.open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+            with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
                 eeprom_file.write(to_unicode(json.dumps(data)))
             return data
 
@@ -2230,7 +2230,7 @@ class VirtualEEPROM:
 
     def save_settings(self):
         # M500 behind-the-scenes
-        with io.open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+        with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
             eeprom_file.write(to_unicode(json.dumps(self._eeprom)))
 
     def read_settings(self):
@@ -2238,7 +2238,7 @@ class VirtualEEPROM:
         if not os.path.exists(self._eeprom_file_path):
             self.load_defaults()
             self.save_settings()
-        with io.open(self._eeprom_file_path, "rt") as eeprom_file:
+        with open(self._eeprom_file_path) as eeprom_file:
             self._eeprom = json.load(eeprom_file)
 
     def load_defaults(self):

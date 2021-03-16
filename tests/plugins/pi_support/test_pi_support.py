@@ -1,7 +1,6 @@
 import unittest
 import unittest.mock as mock
 
-import _fixups
 import ddt
 
 from octoprint.util.platform import CLOSE_FDS
@@ -19,23 +18,21 @@ class PiSupportTestCase(unittest.TestCase):
 
         # import _fixups
 
-        with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
+        with mock.patch("builtins.open", mock.mock_open(), create=True) as m:
             m.return_value.readline.return_value = OCTOPI_VERSION
             version = get_octopi_version()
 
-        m.assert_called_once_with("/etc/octopi_version", "rt", encoding="utf-8")
+        m.assert_called_once_with("/etc/octopi_version", encoding="utf-8")
         self.assertEqual(version, OCTOPI_VERSION)
 
     def test_get_proc_dt_model(self):
         from octoprint.plugins.pi_support import get_proc_dt_model
 
-        # import _fixups
-
-        with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
+        with mock.patch("builtins.open", mock.mock_open(), create=True) as m:
             m.return_value.readline.return_value = DT_MODEL
             model = get_proc_dt_model()
 
-        m.assert_called_once_with("/proc/device-tree/model", "rt", encoding="utf-8")
+        m.assert_called_once_with("/proc/device-tree/model", encoding="utf-8")
         self.assertEqual(model, DT_MODEL)
 
     def test_get_vcgencmd_throttle_state(self):

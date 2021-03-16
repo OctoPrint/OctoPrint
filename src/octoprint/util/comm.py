@@ -158,9 +158,7 @@ Groups will be as follows:
   * ``es``: multiple E coordinates if present, to be parsed further with regex_e_positions
 """
 
-regex_e_positions = re.compile(
-    r"E(?P<id>\d+):\s*(?P<value>{float})".format(float=regex_float_pattern)
-)
+regex_e_positions = re.compile(fr"E(?P<id>\d+):\s*(?P<value>{regex_float_pattern})")
 """Regex for matching multiple E coordinates in a position report.
 
 Groups will be as follows:
@@ -248,7 +246,7 @@ def baudrateList(candidates=None):
             candidates.insert(0, int(additional))
         except Exception:
             _logger.warning(
-                "{} is not a valid additional baudrate, ignoring it".format(additional)
+                f"{additional} is not a valid additional baudrate, ignoring it"
             )
 
     # blacklisted baudrates
@@ -354,7 +352,7 @@ class TemperatureRecord:
 
     def set_custom(self, identifier, actual=None, target=None):
         if self.RESERVED_IDENTIFIER_REGEX.match(identifier):
-            raise ValueError("{} is a reserved identifier".format(identifier))
+            raise ValueError(f"{identifier} is a reserved identifier")
         current = self._custom.get(identifier, (None, None))
         self._custom[identifier] = self._to_new_tuple(current, actual, target)
 
@@ -869,7 +867,7 @@ class MachineCom:
 
     def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
         log = "Last lines in terminal:\n" + "\n".join(
-            map(lambda x: "| {}".format(x), list(self._terminal_log))
+            map(lambda x: f"| {x}", list(self._terminal_log))
         )
         if message is not None:
             log = message + "\n| " + log
@@ -942,7 +940,7 @@ class MachineCom:
             return "Offline after error"
         elif state == self.STATE_TRANSFERING_FILE:
             return "Transferring file to SD"
-        return "Unknown State ({})".format(self._state)
+        return f"Unknown State ({self._state})"
 
     def getErrorString(self):
         return self._errorValue
@@ -1305,7 +1303,7 @@ class MachineCom:
                     else:
                         return None
 
-                additional_tags = {"plugin:{}".format(name)}
+                additional_tags = {f"plugin:{name}"}
                 if len(retval) == 4:
                     additional_tags |= set(retval[3])
 
@@ -1356,7 +1354,7 @@ class MachineCom:
         tags_to_use = tags | {
             "trigger:comm.send_gcode_script",
             "source:script",
-            "script:{}".format(scriptName),
+            f"script:{scriptName}",
         }
         for line in scriptLines:
             if (
@@ -1401,7 +1399,7 @@ class MachineCom:
                         "Starting job on behalf of plugin {}".format(tag[7:])
                     )
         elif "source:api" in tags:
-            self._logger.info("Starting job on behalf of user {}".format(user))
+            self._logger.info(f"Starting job on behalf of user {user}")
 
         try:
             with self._jobLock:
@@ -1435,7 +1433,7 @@ class MachineCom:
                         if pos is not None and isinstance(pos, int) and pos > 0:
                             self._currentFile.pos = pos
                             self.sendCommand(
-                                "M26 S{}".format(pos),
+                                f"M26 S{pos}",
                                 part_of_job=True,
                                 tags=tags
                                 | {
@@ -1650,7 +1648,7 @@ class MachineCom:
                         "Cancelling job on behalf of plugin {}".format(tag[7:])
                     )
         elif "source:api" in tags:
-            self._logger.info("Cancelling job on behalf of user {}".format(user))
+            self._logger.info(f"Cancelling job on behalf of user {user}")
 
         if self.isStreaming():
             # we are streaming, we handle cancelling that differently...
@@ -1787,7 +1785,7 @@ class MachineCom:
                         "Pausing/resuming job on behalf of plugin {}".format(tag[7:])
                     )
         elif user:
-            self._logger.info("Pausing/resuming job on behalf of user {}".format(user))
+            self._logger.info(f"Pausing/resuming job on behalf of user {user}")
 
         valid_paused_states = (self.STATE_PAUSED, self.STATE_PAUSING)
         valid_running_states = (
@@ -2005,7 +2003,7 @@ class MachineCom:
             tags = set()
 
         self.sendCommand(
-            "M110 N{}".format(number),
+            f"M110 N{number}",
             part_of_job=part_of_job,
             tags=tags
             | {
@@ -2052,7 +2050,7 @@ class MachineCom:
                     return
             except Exception:
                 self._logger.exception(
-                    "Error while processing temperatures in {}, skipping".format(name),
+                    f"Error while processing temperatures in {name}, skipping",
                     extra={"plugin": name},
                 )
 
@@ -2272,6 +2270,19 @@ class MachineCom:
                         elif action_name == "disconnect":
                             self._log("Disconnecting on request of the printer...")
                             self._callback.on_comm_force_disconnect()
+                        elif self._sdEnabled and action_name == "sd_inserted":
+                            self._log("Printer reported SD card as inserted")
+                            self._sdAvailable = True
+                            self.refreshSdFiles()
+                            self._callback.on_comm_sd_state_change(self._sdAvailable)
+                        elif self._sdEnabled and action_name == "sd_ejected":
+                            self._log("Printer reported SD card as ejected")
+                            self._sdAvailable = False
+                            self._sdFiles = []
+                            self._callback.on_comm_sd_state_change(self._sdAvailable)
+                        elif self._sdEnabled and action_name == "sd_updated":
+                            self._log("Printer reported a change on the SD card")
+                            self.refreshSdFiles()
                         else:
                             for name, hook in self._printer_action_hooks.items():
                                 try:
@@ -2310,7 +2321,7 @@ class MachineCom:
 
                 ##~~ SD file list
                 # if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
-                if self._sdFileList and "End file list" not in line:
+                if self._sdEnabled and self._sdFileList and "End file list" not in line:
                     preprocessed_line = line
                     fileinfo = preprocessed_line.split(None, 2)
                     if len(fileinfo) == 3:
@@ -2462,7 +2473,7 @@ class MachineCom:
                         else:
                             # multiple extruder coordinates provided, find current one
                             self.last_position.e = (
-                                parsed.get("e{}".format(self._currentTool))
+                                parsed.get(f"e{self._currentTool}")
                                 if not self.isSdFileSelected()
                                 else None
                             )
@@ -2590,7 +2601,7 @@ class MachineCom:
                     if not self._firmware_info_received and firmware_name:
                         firmware_name = firmware_name.strip()
                         self._logger.info(
-                            'Printer reports firmware name "{}"'.format(firmware_name)
+                            f'Printer reports firmware name "{firmware_name}"'
                         )
 
                         if self._firmware_detection:
@@ -2755,7 +2766,7 @@ class MachineCom:
                             # we actually do send a T command here instead of just settings self._currentTool just in case
                             # we had any scripts or plugins modify stuff due to the prior tool change
                             self.sendCommand(
-                                "T{}".format(fallback_tool),
+                                f"T{fallback_tool}",
                                 tags={
                                     "trigger:revert_invalid_tool",
                                 },
@@ -2770,140 +2781,145 @@ class MachineCom:
                             )
 
                 ##~~ SD Card handling
-                elif (
-                    "SD init fail" in line
-                    or "volume.init failed" in line
-                    or "openRoot failed" in line
-                ):
-                    self._sdAvailable = False
-                    self._sdFiles = []
-                    self._callback.on_comm_sd_state_change(self._sdAvailable)
-                elif "SD card ok" in line and not self._sdAvailable:
-                    self._sdAvailable = True
-                    self.refreshSdFiles()
-                    self._callback.on_comm_sd_state_change(self._sdAvailable)
-                elif "Begin file list" in line:
-                    self._sdFiles = []
-                    self._sdFileList = True
-                elif "End file list" in line:
-                    self._sdFileList = False
-                    self._callback.on_comm_sd_files(self.getSdFiles())
-                elif "SD printing byte" in line:
-                    # answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
-                    match = regex_sdPrintingByte.search(line)
-                    if match:
-                        try:
-                            current = int(match.group("current"))
-                            total = int(match.group("total"))
-                        except Exception:
-                            self._logger.exception("Error while parsing SD status report")
-                        else:
-                            if (
-                                current == total == 0
-                                and self.isSdPrinting()
-                                and not self.isStarting()
-                                and not self.isStarting()
-                                and not self.isFinishing()
-                            ):
-                                # apparently not SD printing - some Marlin versions report it like that for some reason
-                                self._consecutive_not_sd_printing += 1
-                                if (
-                                    self._consecutive_not_sd_printing
-                                    > self._consecutive_not_sd_printing_maximum
-                                ):
-                                    self.cancelPrint(external_sd=True)
-
-                            else:
-                                self._consecutive_not_sd_printing = 0
-                                if self.isSdFileSelected():
-
-                                    # If we are not yet sd printing, the current does not equal the total, is larger
-                                    # than zero and has increased since the last time we saw a position report, then
-                                    # yes, this looks like we just started printing due to an external trigger.
-                                    if (
-                                        not self.isSdPrinting()
-                                        and current != total
-                                        and current > 0
-                                        and self._currentFile
-                                        and current > self._currentFile.pos
-                                    ):
-                                        self.startPrint(external_sd=True)
-
-                                    self._currentFile.pos = current
-                                    if self._currentFile.size == 0:
-                                        self._currentFile.size = total
-
-                                    if not self._currentFile.done:
-                                        self._callback.on_comm_progress()
-                elif (
-                    "Not SD printing" in line
-                    and self.isSdPrinting()
-                    and not self.isStarting()
-                    and not self.isFinishing()
-                ):
-                    self._consecutive_not_sd_printing += 1
+                elif self._sdEnabled:
                     if (
-                        self._consecutive_not_sd_printing
-                        > self._consecutive_not_sd_printing_maximum
+                        "SD init fail" in line
+                        or "volume.init failed" in line
+                        or "openRoot failed" in line
                     ):
-                        # something went wrong, printer is reporting that we actually are not printing right now...
-                        self.cancelPrint(external_sd=True)
-                elif "File opened" in line and not self._ignore_select:
-                    # answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
-                    match = regex_sdFileOpened.search(line)
-                    if match:
-                        name = match.group("name")
-                        size = int(match.group("size"))
-                    else:
-                        name = "Unknown"
-                        size = 0
-                    user = None
+                        self._sdAvailable = False
+                        self._sdFiles = []
+                        self._callback.on_comm_sd_state_change(self._sdAvailable)
+                    elif "SD card ok" in line and not self._sdAvailable:
+                        self._sdAvailable = True
+                        self.refreshSdFiles()
+                        self._callback.on_comm_sd_state_change(self._sdAvailable)
+                    elif "Begin file list" in line:
+                        self._sdFiles = []
+                        self._sdFileList = True
+                    elif "End file list" in line:
+                        self._sdFileList = False
+                        self._callback.on_comm_sd_files(self.getSdFiles())
+                    elif "SD printing byte" in line:
+                        # answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
+                        match = regex_sdPrintingByte.search(line)
+                        if match:
+                            try:
+                                current = int(match.group("current"))
+                                total = int(match.group("total"))
+                            except Exception:
+                                self._logger.exception(
+                                    "Error while parsing SD status report"
+                                )
+                            else:
+                                if (
+                                    current == total == 0
+                                    and self.isSdPrinting()
+                                    and not self.isStarting()
+                                    and not self.isStarting()
+                                    and not self.isFinishing()
+                                ):
+                                    # apparently not SD printing - some Marlin versions report it like that for some reason
+                                    self._consecutive_not_sd_printing += 1
+                                    if (
+                                        self._consecutive_not_sd_printing
+                                        > self._consecutive_not_sd_printing_maximum
+                                    ):
+                                        self.cancelPrint(external_sd=True)
 
-                    if self._sdFileToSelect:
-                        name = self._sdFileToSelect
-                        user = self._sdFileToSelectUser
+                                else:
+                                    self._consecutive_not_sd_printing = 0
+                                    if self.isSdFileSelected():
 
-                    self._sdFileToSelect = None
-                    self._sdFileToSelectUser = None
+                                        # If we are not yet sd printing, the current does not equal the total, is larger
+                                        # than zero and has increased since the last time we saw a position report, then
+                                        # yes, this looks like we just started printing due to an external trigger.
+                                        if (
+                                            not self.isSdPrinting()
+                                            and current != total
+                                            and current > 0
+                                            and self._currentFile
+                                            and current > self._currentFile.pos
+                                        ):
+                                            self.startPrint(external_sd=True)
 
-                    self._currentFile = PrintingSdFileInformation(name, size, user=user)
-                elif "File selected" in line:
-                    if self._ignore_select:
-                        self._ignore_select = False
-                    elif self._currentFile is not None and self.isSdFileSelected():
-                        # final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
-                        self._callback.on_comm_file_selected(
-                            self._currentFile.getFilename(),
-                            self._currentFile.getFilesize(),
-                            True,
-                            user=self._currentFile.getUser(),
+                                        self._currentFile.pos = current
+                                        if self._currentFile.size == 0:
+                                            self._currentFile.size = total
+
+                                        if not self._currentFile.done:
+                                            self._callback.on_comm_progress()
+                    elif (
+                        "Not SD printing" in line
+                        and self.isSdPrinting()
+                        and not self.isStarting()
+                        and not self.isFinishing()
+                    ):
+                        self._consecutive_not_sd_printing += 1
+                        if (
+                            self._consecutive_not_sd_printing
+                            > self._consecutive_not_sd_printing_maximum
+                        ):
+                            # something went wrong, printer is reporting that we actually are not printing right now...
+                            self.cancelPrint(external_sd=True)
+                    elif "File opened" in line and not self._ignore_select:
+                        # answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
+                        match = regex_sdFileOpened.search(line)
+                        if match:
+                            name = match.group("name")
+                            size = int(match.group("size"))
+                        else:
+                            name = "Unknown"
+                            size = 0
+                        user = None
+
+                        if self._sdFileToSelect:
+                            name = self._sdFileToSelect
+                            user = self._sdFileToSelectUser
+
+                        self._sdFileToSelect = None
+                        self._sdFileToSelectUser = None
+
+                        self._currentFile = PrintingSdFileInformation(
+                            name, size, user=user
                         )
-                elif "Writing to file" in line and self.isStreaming():
-                    self._changeState(self.STATE_PRINTING)
-                elif "Done printing file" in line and self.isSdPrinting():
-                    # printer is reporting file finished printing
-                    self._changeState(self.STATE_FINISHING)
+                    elif "File selected" in line:
+                        if self._ignore_select:
+                            self._ignore_select = False
+                        elif self._currentFile is not None and self.isSdFileSelected():
+                            # final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
+                            self._callback.on_comm_file_selected(
+                                self._currentFile.getFilename(),
+                                self._currentFile.getFilesize(),
+                                True,
+                                user=self._currentFile.getUser(),
+                            )
+                    elif "Writing to file" in line and self.isStreaming():
+                        self._changeState(self.STATE_PRINTING)
+                    elif "Done printing file" in line and self.isSdPrinting():
+                        # printer is reporting file finished printing
+                        self._changeState(self.STATE_FINISHING)
 
-                    self._currentFile.done = True
-                    self._currentFile.pos = 0
+                        self._currentFile.done = True
+                        self._currentFile.pos = 0
 
-                    self.sendCommand("M400", part_of_job=True)
-                    self._callback.on_comm_print_job_done()
+                        self.sendCommand("M400", part_of_job=True)
+                        self._callback.on_comm_print_job_done()
 
-                    def finalize():
-                        self._changeState(self.STATE_OPERATIONAL)
+                        def finalize():
+                            self._changeState(self.STATE_OPERATIONAL)
 
-                    self.sendCommand(SendQueueMarker(finalize), part_of_job=True)
-                    self._continue_sending()
-                elif "Done saving file" in line:
-                    if self._trigger_ok_for_m29:
-                        # workaround for most versions of Marlin out in the wild
-                        # not sending an ok after saving a file
+                        self.sendCommand(SendQueueMarker(finalize), part_of_job=True)
+                        self._continue_sending()
+                    elif "Done saving file" in line:
+                        if self._trigger_ok_for_m29:
+                            # workaround for most versions of Marlin out in the wild
+                            # not sending an ok after saving a file
+                            self._handle_ok()
+                    elif "File deleted" in line and line.strip().endswith("ok"):
+                        # buggy Marlin version that doesn't send a proper line break after the "File deleted" statement, fixed in
+                        # current versions
                         self._handle_ok()
-                elif "File deleted" in line and line.strip().endswith("ok"):
-                    # buggy Marlin version that doesn't send a proper line break after the "File deleted" statement, fixed in
-                    # current versions
-                    self._handle_ok()
 
                 ##~~ Message handling
                 self._callback.on_comm_message(line)
@@ -3074,9 +3090,7 @@ class MachineCom:
 
         # now increment the timeout counter
         self._consecutive_timeouts += 1
-        self._logger.debug(
-            "Now at {} consecutive timeouts".format(self._consecutive_timeouts)
-        )
+        self._logger.debug(f"Now at {self._consecutive_timeouts} consecutive timeouts")
 
         if 0 < consecutive_max < self._consecutive_timeouts:
             # too many consecutive timeouts, we give up
@@ -3133,7 +3147,7 @@ class MachineCom:
     def _perform_detection_step(self, init=False):
         def log(message):
             self._log(message)
-            self._logger.info("Serial detection: {}".format(message))
+            self._logger.info(f"Serial detection: {message}")
 
         if init:
             port = self._port
@@ -3191,7 +3205,7 @@ class MachineCom:
                     )
                 )
                 self._logger.exception(
-                    "Unexpected error while setting timeout {}".format(timeout)
+                    f"Unexpected error while setting timeout {timeout}"
                 )
             else:
                 self._do_send_without_checksum(b"", log=False)  # new line to reset things
@@ -3220,7 +3234,7 @@ class MachineCom:
                 (p, b) = self._detection_candidates.pop(0)
 
                 try:
-                    log("Trying port {}, baudrate {}".format(p, b))
+                    log(f"Trying port {p}, baudrate {b}")
                     if self._serial is None or self._serial.port != p:
                         if not self._open_serial(p, b, trigger_errors=False):
                             log(
@@ -3243,9 +3257,7 @@ class MachineCom:
                             b, get_exception_string()
                         )
                     )
-                    self._logger.exception(
-                        "Unexpected error while setting baudrate {}".format(b)
-                    )
+                    self._logger.exception(f"Unexpected error while setting baudrate {b}")
 
         error_text = "No more candidates to test, and no working port/baudrate combination detected."
         self._trigger_error(error_text, "autodetect")
@@ -3405,7 +3417,7 @@ class MachineCom:
             except Exception:
                 interval = 2
         self.sendCommand(
-            "M155 S{}".format(interval),
+            f"M155 S{interval}",
             tags={"trigger:comm.set_autoreport_temperature_interval"},
         )
 
@@ -3416,7 +3428,7 @@ class MachineCom:
             except Exception:
                 interval = 1
         self.sendCommand(
-            "M27 S{}".format(interval),
+            f"M27 S{interval}",
             tags={"trigger:comm.set_autoreport_sdstatus_interval"},
         )
 
@@ -3429,7 +3441,7 @@ class MachineCom:
             except Exception:
                 interval = 2
         self.sendCommand(
-            "M113 S{}".format(interval),
+            f"M113 S{interval}",
             tags={"trigger:comm.set_busy_protocol_interval"},
             on_sent=callback,
         )
@@ -3601,7 +3613,7 @@ class MachineCom:
         def default(_, p, b, timeout):
             # connect to regular serial port
             self._dual_log(
-                "Connecting to port {}, baudrate {}".format(port, baudrate),
+                f"Connecting to port {port}, baudrate {baudrate}",
                 level=logging.INFO,
             )
 
@@ -3841,8 +3853,8 @@ class MachineCom:
             try:
                 self._log("Recv: {}".format(sanitize_ascii(ret)))
             except ValueError as e:
-                self._log("WARN: While reading last line: {}".format(e))
-                self._log("Recv: {!r}".format(ret))
+                self._log(f"WARN: While reading last line: {e}")
+                self._log(f"Recv: {ret!r}")
 
             if null_pos >= 0:
                 self._logger.warning("Received line:")
@@ -3925,8 +3937,8 @@ class MachineCom:
                     line,
                     tags={
                         "source:file",
-                        "filepos:{}".format(pos),
-                        "fileline:{}".format(lineno),
+                        f"filepos:{pos}",
+                        f"fileline:{lineno}",
                     },
                 )
                 self._callback.on_comm_progress()
@@ -4419,7 +4431,7 @@ class MachineCom:
     def _log_command_phase(self, phase, command, *args, **kwargs):
         if self._phaseLogger.isEnabledFor(logging.DEBUG):
             output_parts = [
-                "phase: {}".format(phase),
+                f"phase: {phase}",
                 "command: {}".format(to_unicode(command, errors="replace")),
             ]
 
@@ -4494,8 +4506,8 @@ class MachineCom:
                         hook_results,
                         tags_to_add={
                             "source:rewrite",
-                            "phase:{}".format(phase),
-                            "plugin:{}".format(name),
+                            f"phase:{phase}",
+                            f"plugin:{name}",
                         },
                     )
 
@@ -4598,7 +4610,7 @@ class MachineCom:
                 )
 
         # trigger built-in handler if available
-        handler = getattr(self, "_atcommand_{}_{}".format(atcommand, phase), None)
+        handler = getattr(self, f"_atcommand_{atcommand}_{phase}", None)
         if callable(handler):
             try:
                 handler(atcommand, parameters, tags=tags)
@@ -4931,7 +4943,7 @@ class MachineCom:
         wait=False,
         support_r=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         toolNum = self._currentTool
         toolMatch = regexes_parameters["intT"].search(cmd)
@@ -4969,7 +4981,7 @@ class MachineCom:
         wait=False,
         support_r=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         match = regexes_parameters["floatS"].search(cmd)
         if not match and support_r:
@@ -4997,7 +5009,7 @@ class MachineCom:
         wait=False,
         support_r=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         match = regexes_parameters["floatS"].search(cmd)
         if not match and support_r:
@@ -5087,7 +5099,7 @@ class MachineCom:
 
         with self._line_mutex:
             self._logger.info(
-                "M110 detected, setting current line number to {}".format(newLineNumber)
+                f"M110 detected, setting current line number to {newLineNumber}"
             )
 
             # send M110 command with new line number
@@ -5115,9 +5127,7 @@ class MachineCom:
         for tool in range(
             self._printerProfileManager.get_current_or_default()["extruder"]["count"]
         ):
-            self._do_increment_and_send_with_checksum(
-                "M104 T{tool} S0".format(tool=tool).encode("ascii")
-            )
+            self._do_increment_and_send_with_checksum(f"M104 T{tool} S0".encode("ascii"))
         if self._printerProfileManager.get_current_or_default()["heatedBed"]:
             self._do_increment_and_send_with_checksum(b"M140 S0")
 
@@ -5222,10 +5232,10 @@ class MachineCom:
             if gcode in self._emergency_commands and gcode != "M112":
                 return self._emergency_force_send(
                     cmd,
-                    "Force-sending {} to the printer".format(gcode),
+                    f"Force-sending {gcode} to the printer",
                     gcode=gcode,
                     *args,
-                    **kwargs
+                    **kwargs,
                 )
 
             if (
@@ -5234,7 +5244,7 @@ class MachineCom:
                 and "trigger:cancel" not in tags
                 and "trigger:pause" not in tags
             ):
-                self._logger.info("Pausing print job due to command {}".format(gcode))
+                self._logger.info(f"Pausing print job due to command {gcode}")
                 self.setPause(True)
 
             if gcode in self._blocked_commands:
@@ -5515,9 +5525,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
         """
         with self._handle_mutex:
             if self._handle is None:
-                self._logger.warning(
-                    "File {} is not open for reading".format(self._filename)
-                )
+                self._logger.warning(f"File {self._filename} is not open for reading")
                 return None, None, None
 
             try:
@@ -5563,7 +5571,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
     def _report_stats(self):
         duration = time.monotonic() - self._start_time
-        self._logger.info("Finished in {:.3f} s.".format(duration))
+        self._logger.info(f"Finished in {duration:.3f} s.")
         pass
 
 
@@ -5731,7 +5739,7 @@ class SendQueue(PrependableQueue):
         if item_type is not None:
             if item_type in self._lookup:
                 raise TypeAlreadyInQueue(
-                    item_type, "Type {} is already in queue".format(item_type)
+                    item_type, f"Type {item_type} is already in queue"
                 )
             else:
                 self._lookup.add(item_type)
@@ -5748,7 +5756,7 @@ class SendQueue(PrependableQueue):
         if item_type is not None:
             if item_type in self._lookup:
                 raise TypeAlreadyInQueue(
-                    item_type, "Type {} is already in queue".format(item_type)
+                    item_type, f"Type {item_type} is already in queue"
                 )
             else:
                 self._lookup.add(item_type)
@@ -5879,11 +5887,7 @@ def convert_pause_triggers(configured_triggers):
     for t in triggers.keys():
         if len(triggers[t]) > 0:
             result[t] = re.compile(
-                "|".join(
-                    map(
-                        lambda pattern: "({pattern})".format(pattern=pattern), triggers[t]
-                    )
-                )
+                "|".join(map(lambda pattern: f"({pattern})", triggers[t]))
             )
     return result
 
@@ -6500,14 +6504,12 @@ def upload_cli():
 
         def on_comm_file_transfer_started(self, filename, filesize, user=None):
             # transfer started, report
-            _logger.info(
-                "Started file transfer of {}, size {}B".format(filename, filesize)
-            )
+            _logger.info(f"Started file transfer of {filename}, size {filesize}B")
             self.started = True
 
         def on_comm_file_transfer_done(self, filename):
             # transfer done, report, print stats and finish
-            _logger.info("Finished file transfer of {}".format(filename))
+            _logger.info(f"Finished file transfer of {filename}")
             self.finished.set()
 
         def on_comm_state_change(self, state):

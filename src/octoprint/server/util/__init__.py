@@ -44,7 +44,7 @@ def loginFromApiKeyRequestHandler():
         if loginUserFromApiKey():
             _flask.g.login_via_apikey = True
     except InvalidApiKeyException:
-        return _flask.make_response("Invalid API key", 403)
+        _flask.abort(403)
 
 
 def loginFromAuthorizationHeaderRequestHandler():
@@ -55,7 +55,7 @@ def loginFromAuthorizationHeaderRequestHandler():
         if loginUserFromAuthorizationHeader():
             _flask.g.login_via_header = True
     except InvalidApiKeyException:
-        return _flask.make_response("Invalid API key", 403)
+        _flask.abort(403)
 
 
 class InvalidApiKeyException(Exception):
@@ -117,7 +117,7 @@ def requireLoginRequestHandler():
 
     user = flask_login.current_user
     if user is None or user.is_anonymous or not user.is_active:
-        return flask.make_response("Forbidden", 403)
+        _flask.abort(403)
 
 
 def corsRequestHandler():
@@ -318,7 +318,7 @@ def get_authorization_header(request):
 def get_plugin_hash():
     from octoprint.plugin import plugin_manager
 
-    plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
+    plugin_signature = lambda impl: f"{impl._identifier}:{impl._plugin_version}"
     template_plugins = list(
         map(
             plugin_signature,

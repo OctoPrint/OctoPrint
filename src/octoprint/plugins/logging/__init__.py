@@ -1,12 +1,11 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import os
 from os import scandir
 
 import yaml
-from flask import jsonify, make_response, request, url_for
+from flask import abort, jsonify, request, url_for
 from flask_babel import gettext
 from werkzeug.exceptions import BadRequest
 from werkzeug.utils import secure_filename
@@ -17,6 +16,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access, redirect_to_tornado
 from octoprint.settings import settings
+from octoprint.util import is_hidden_path
 
 
 class LoggingPlugin(
@@ -81,8 +81,12 @@ class LoggingPlugin(
     @Permissions.PLUGIN_LOGGING_MANAGE.require(403)
     def delete_log(self, filename):
         secure = os.path.join(settings().getBaseFolder("logs"), secure_filename(filename))
-        if not os.path.exists(secure):
-            return make_response("File not found: %s" % filename, 404)
+        if (
+            not os.path.exists(secure)
+            or is_hidden_path(secure)
+            or not filename.endswith(".log")
+        ):
+            abort(404)
 
         os.remove(secure)
 
@@ -107,15 +111,15 @@ class LoggingPlugin(
     @Permissions.PLUGIN_LOGGING_MANAGE.require(403)
     def set_logging_levels_api(self):
         if "application/json" not in request.headers["Content-Type"]:
-            return make_response("Expected content-type JSON", 400)
+            abort(400, description="Expected content-type JSON")
 
         try:
             json_data = request.json
         except BadRequest:
-            return make_response("Malformed JSON body in request", 400)
+            abort(400, description="Malformed JSON body in request")
 
         if not isinstance(json_data, dict):
-            return make_response("Invalid log level configuration", 400)
+            abort(400, description="Invalid log level configuration")
 
         # TODO validate further
 
@@ -135,6 +139,12 @@ class LoggingPlugin(
         files = []
         basedir = settings().getBaseFolder("logs", check_writable=False)
         for entry in scandir(basedir):
+            if is_hidden_path(entry.path) or not entry.name.endswith(".log"):
+                continue
+
+            if not entry.is_file():
+                continue
+
             files.append(
                 {
                     "name": entry.name,
@@ -172,7 +182,7 @@ class LoggingPlugin(
         if os.path.exists(logging_file) and os.path.isfile(logging_file):
             import yaml
 
-            with io.open(logging_file, "rt", encoding="utf-8") as f:
+            with open(logging_file, encoding="utf-8") as f:
                 config_from_file = yaml.safe_load(f)
         return config_from_file
 
@@ -231,7 +241,7 @@ class LoggingPlugin(
         for logger, level in new_levels.items():
             level = logging.getLevelName(level)
 
-            self._logger.info("Setting logger {} level to {}".format(logger, level))
+            self._logger.info(f"Setting logger {logger} level to {level}")
             self._logger.manager.loggerDict[logger].setLevel(level)
 
     def _is_managed_logger(self, logger):

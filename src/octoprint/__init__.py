@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import io
 import logging as log
 import os
 import sys
@@ -373,7 +372,7 @@ def init_logging(
         if os.path.exists(logging_file) and os.path.isfile(logging_file):
             import yaml
 
-            with io.open(logging_file, "rt", encoding="utf-8") as f:
+            with open(logging_file, encoding="utf-8") as f:
                 config_from_file = yaml.safe_load(f)
 
         # we merge that with the default config
@@ -403,7 +402,7 @@ def octoprint_plugin_inject_factory(settings, components):
                 def wrapper(*args, **kwargs):
                     tags = kwargs.get("tags", set()) | {
                         "source:plugin",
-                        "plugin:{}".format(name),
+                        f"plugin:{name}",
                     }
                     kwargs["tags"] = tags
                     return f(*args, **kwargs)
@@ -528,7 +527,7 @@ def init_custom_events(plugin_manager):
             if isinstance(result, (list, tuple)):
                 for event in result:
                     constant, value = octoprint.events.Events.register_event(
-                        event, prefix="plugin_{}_".format(name)
+                        event, prefix=f"plugin_{name}_"
                     )
                     logger.debug(
                         'Registered event {} of plugin {} as Events.{} = "{}"'.format(
@@ -537,7 +536,7 @@ def init_custom_events(plugin_manager):
                     )
         except Exception:
             logger.exception(
-                "Error while retrieving custom event list from plugin {}".format(name),
+                f"Error while retrieving custom event list from plugin {name}",
                 extra={"plugin": name},
             )
 
@@ -664,7 +663,7 @@ def init_pluginsystem(
                 disabled_from_overlays[name] = (disabled_plugins, order)
 
             settings_overlays[name] = overlay
-            logger.debug("Found settings overlay on plugin {}".format(name))
+            logger.debug(f"Found settings overlay on plugin {name}")
 
     def handle_plugins_loaded(
         startup=False, initialize_implementations=True, force_reload=None
@@ -706,7 +705,7 @@ def init_pluginsystem(
     def handle_plugin_enabled(name, plugin):
         if name in settings_overlays:
             settings.add_overlay(settings_overlays[name])
-            logger.info("Added settings overlay from plugin {}".format(name))
+            logger.info(f"Added settings overlay from plugin {name}")
 
     pm.on_plugin_loaded = handle_plugin_loaded
     pm.on_plugins_loaded = handle_plugins_loaded
@@ -735,7 +734,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
         format_entry = (
             lambda x: "{} ({})".format(x[0], x[1])
             if isinstance(x, (list, tuple)) and len(x) == 2
-            else "{} (any)".format(x)
+            else f"{x} (any)"
         )
         return ", ".join(map(format_entry, entries))
 

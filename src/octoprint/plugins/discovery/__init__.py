@@ -228,15 +228,15 @@ class DiscoveryPlugin(
                 name,
                 addresses=addresses,
                 port=port,
-                server="{}.local.".format(socket.gethostname()),
+                server=f"{socket.gethostname()}.local.",
                 properties=txt_record,
             )
             self._zeroconf.register_service(info, allow_name_change=True)
             self._zeroconf_registrations[key].append(info)
-            self._logger.info("Registered '{}' for {}".format(name, reg_type))
+            self._logger.info(f"Registered '{name}' for {reg_type}")
         except Exception:
             self._logger.exception(
-                "Could not register {} for {} on port {}".format(name, reg_type, port)
+                f"Could not register {name} for {reg_type} on port {port}"
             )
 
     def zeroconf_unregister(self, reg_type, port=None):
@@ -260,10 +260,10 @@ class DiscoveryPlugin(
         try:
             for info in infos:
                 self._zeroconf.unregister_service(info)
-            self._logger.debug("Unregistered {} on port {}".format(reg_type, port))
+            self._logger.debug(f"Unregistered {reg_type} on port {port}")
         except Exception:
             self._logger.exception(
-                "Could not (fully) unregister {} on port {}".format(reg_type, port)
+                f"Could not (fully) unregister {reg_type} on port {port}"
             )
 
     def zeroconf_browse(
@@ -349,9 +349,7 @@ class DiscoveryPlugin(
                     for address in map(lambda x: socket.inet_ntoa(x), info.addresses):
                         result.append(to_result(info, address))
 
-        self._logger.debug(
-            "Browsing Zeroconf for {service_type}".format(service_type=service_type)
-        )
+        self._logger.debug(f"Browsing Zeroconf for {service_type}")
 
         def browse():
             listener = ZeroconfListener(self._logger)
@@ -706,7 +704,7 @@ class DiscoveryPlugin(
             + socket.inet_aton("0.0.0.0"),
         )
 
-        self._logger.info("Registered {} for SSDP".format(self.get_instance_name()))
+        self._logger.info(f"Registered {self.get_instance_name()} for SSDP")
 
         self._ssdp_notify(alive=True)
 
@@ -728,7 +726,7 @@ class DiscoveryPlugin(
                         interface_address = octoprint.util.address_for_client(
                             *address,
                             addresses=self._settings.get(["addresses"]),
-                            interfaces=self._settings.get(["interfaces"])
+                            interfaces=self._settings.get(["interfaces"]),
                         )
                         if not interface_address:
                             continue
@@ -772,9 +770,9 @@ class DiscoveryPlugin(
     def get_instance_name(self):
         name = self._settings.global_get(["appearance", "name"])
         if name:
-            return 'OctoPrint instance "{}"'.format(name)
+            return f'OctoPrint instance "{name}"'
         else:
-            return "OctoPrint instance on {}".format(socket.gethostname())
+            return f"OctoPrint instance on {socket.gethostname()}"
 
     def get_interface_addresses(self):
         addresses = self._settings.get(["addresses"])

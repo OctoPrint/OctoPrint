@@ -354,7 +354,7 @@ class SettingsTestCase(unittest.TestCase):
 
         self.settings.getBaseFolder.assert_called_once_with("logs")
         self.assertEqual(
-            "/some/folder/plugin_{key}.log".format(key=self.plugin_key),
+            f"/some/folder/plugin_{self.plugin_key}.log",
             path.replace(os.sep, "/"),
         )
 
@@ -367,7 +367,7 @@ class SettingsTestCase(unittest.TestCase):
 
         self.settings.getBaseFolder.assert_called_once_with("logs")
         self.assertEqual(
-            "/some/folder/plugin_{key}_mypostfix.log".format(key=self.plugin_key),
+            f"/some/folder/plugin_{self.plugin_key}_mypostfix.log",
             path.replace(os.sep, "/"),
         )
 

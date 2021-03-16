@@ -26,7 +26,7 @@ def get_latest(target, check, online=True, *args, **kwargs):
     method = check.get("header_method", "head")
     prefix = check.get("header_prefix", header)
     if prefix:
-        prefix = "{} ".format(prefix)
+        prefix = f"{prefix} "
 
     try:
         with requests.request(method, url) as r:

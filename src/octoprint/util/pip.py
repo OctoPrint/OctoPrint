@@ -72,9 +72,7 @@ class PipCaller(CommandlineCaller):
 
         # add --no-use-wheel for versions that otherwise break
         if pip_version in cls.no_use_wheel and "--no-use-wheel" not in args:
-            logger.debug(
-                "Version {} needs --no-use-wheel to properly work.".format(pip_version)
-            )
+            logger.debug(f"Version {pip_version} needs --no-use-wheel to properly work.")
             args.append("--no-use-wheel")
 
         # remove --user if it's present and a virtual env is detected
@@ -333,7 +331,7 @@ class PipCaller(CommandlineCaller):
         with _cache_mutex:
             if not self.ignore_cache and pip_command_str in _cache["version"]:
                 self._logger.debug(
-                    "Using cached pip version information for {}".format(pip_command_str)
+                    f"Using cached pip version information for {pip_command_str}"
                 )
                 return _cache["version"][pip_command_str]
 
@@ -347,7 +345,7 @@ class PipCaller(CommandlineCaller):
 
             if p.returncode != 0:
                 self._logger.warning(
-                    "Error while trying to run pip --version: {}".format(p.stderr.text)
+                    f"Error while trying to run pip --version: {p.stderr.text}"
                 )
                 return None, None
 
@@ -383,7 +381,7 @@ class PipCaller(CommandlineCaller):
                 )
                 return None, None
 
-            self._logger.info("Version of pip is {}".format(version_segment))
+            self._logger.info(f"Version of pip is {version_segment}")
 
             result = pip_version, version_segment
             _cache["version"][pip_command_str] = result
@@ -397,7 +395,7 @@ class PipCaller(CommandlineCaller):
         with _cache_mutex:
             if not self.ignore_cache and pip_command_str in _cache["setup"]:
                 self._logger.debug(
-                    "Using cached pip setup information for {}".format(pip_command_str)
+                    f"Using cached pip setup information for {pip_command_str}"
                 )
                 return _cache["setup"][pip_command_str]
 

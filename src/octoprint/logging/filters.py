@@ -20,7 +20,7 @@ class TornadoAccessFilter(logging.Filter):
                     record.levelname = logging.getLevelName(record.levelno)
         except Exception:
             logging.getLogger(__name__).exception(
-                "Error while filtering log record {!r}".format(record)
+                f"Error while filtering log record {record!r}"
             )
 
         return logging.Filter.filter(self, record)

@@ -39,7 +39,7 @@ class QueueEntry(
     """
 
     def __str__(self):
-        return "{location}:{path}".format(location=self.location, path=self.path)
+        return f"{self.location}:{self.path}"
 
 
 class AnalysisAborted(Exception):
@@ -114,7 +114,7 @@ class AnalysisQueue:
                 callback(entry, result)
             except Exception:
                 self._logger.exception(
-                    "Error while pushing analysis data to callback {}".format(callback),
+                    f"Error while pushing analysis data to callback {callback}",
                     extra={"callback": fqcn(callback)},
                 )
         eventManager().fire(
@@ -185,9 +185,7 @@ class AbstractAnalysisQueue:
         """
 
         if settings().get(["gcodeAnalysis", "runAt"]) == "never":
-            self._logger.debug(
-                "Ignoring entry {entry} for analysis queue".format(entry=entry)
-            )
+            self._logger.debug(f"Ignoring entry {entry} for analysis queue")
             return
         elif high_priority:
             self._logger.debug(
@@ -254,7 +252,7 @@ class AbstractAnalysisQueue:
         while True:
             (priority, entry, high_priority) = self._queue.get()
             self._logger.debug(
-                "Processing entry {} from queue (priority {})".format(entry, priority)
+                f"Processing entry {entry} from queue (priority {priority})"
             )
             self._active.wait()
 
@@ -273,7 +271,7 @@ class AbstractAnalysisQueue:
                             high_priority,
                         )
                     )
-                self._logger.debug("Running analysis of entry {} aborted".format(entry))
+                self._logger.debug(f"Running analysis of entry {entry} aborted")
                 self._queue.task_done()
                 self._done.set()
             else:
@@ -290,7 +288,7 @@ class AbstractAnalysisQueue:
 
         try:
             start_time = time.monotonic()
-            self._logger.info("Starting analysis of {}".format(entry))
+            self._logger.info(f"Starting analysis of {entry}")
             eventManager().fire(
                 Events.METADATA_ANALYSIS_STARTED,
                 {
@@ -311,9 +309,7 @@ class AbstractAnalysisQueue:
             )
             self._finished_callback(self._current, result)
         except RuntimeError as exc:
-            self._logger.error(
-                "Analysis for {} ran into error: {}".format(self._current, exc)
-            )
+            self._logger.error(f"Analysis for {self._current} ran into error: {exc}")
         finally:
             self._current = None
             self._current_progress = None
@@ -410,6 +406,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
             throttle_lines = settings().getInt(["gcodeAnalysis", "throttle_lines"])
             max_extruders = settings().getInt(["gcodeAnalysis", "maxExtruders"])
             g90_extruder = settings().getBoolean(["feature", "g90InfluencesExtruder"])
+            bed_z = settings().getFloat(["gcodeAnalysis", "bedZ"])
             speedx = self._current.printer_profile["axes"]["x"]["speed"]
             speedy = self._current.printer_profile["axes"]["y"]["speed"]
             offsets = self._current.printer_profile["extruder"]["offsets"]
@@ -420,11 +417,12 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
                 "octoprint",
                 "analysis",
                 "gcode",
-                "--speed-x={}".format(speedx),
-                "--speed-y={}".format(speedy),
-                "--max-t={}".format(max_extruders),
-                "--throttle={}".format(throttle),
-                "--throttle-lines={}".format(throttle_lines),
+                f"--speed-x={speedx}",
+                f"--speed-y={speedy}",
+                f"--max-t={max_extruders}",
+                f"--throttle={throttle}",
+                f"--throttle-lines={throttle_lines}",
+                f"--bed-z={bed_z}",
             ]
             for offset in offsets[1:]:
                 command += ["--offset", str(offset[0]), str(offset[1])]
@@ -470,7 +468,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
                 p.close()
 
             output = p.stdout.text
-            self._logger.debug("Got output: {!r}".format(output))
+            self._logger.debug(f"Got output: {output!r}")
 
             if "ERROR:" in output:
                 _, error = output.split("ERROR:")

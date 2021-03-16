@@ -365,7 +365,8 @@ $(function () {
                     onLayerSelected: self._onLayerSelected,
                     bed: self._retrieveBedDimensions(),
                     toolOffsets: self._retrieveToolOffsets(),
-                    invertAxes: self._retrieveAxesConfiguration()
+                    invertAxes: self._retrieveAxesConfiguration(),
+                    bedZ: self.settings.settings.gcodeAnalysis.bedZ()
                 });
 
                 if (!initResult) {

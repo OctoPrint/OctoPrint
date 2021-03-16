@@ -5,7 +5,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import functools
-import io
 import logging
 import os
 import threading
@@ -151,9 +150,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                         )
                         break
                 else:
-                    logger.debug(
-                        "No translations for locale {} in core folders".format(locale)
-                    )
+                    logger.debug(f"No translations for locale {locale} in core folders")
                 translations = translations.merge(core_translations)
 
             ctx.babel_translations = translations
@@ -215,7 +212,7 @@ def fix_webassets_cache():
 
         filename = os.path.join(self.directory, "%s" % hash)
         try:
-            f = io.open(filename, "rb")
+            f = open(filename, "rb")
         except OSError as e:
             if e.errno != errno.ENOENT:
                 error_logger.exception(
@@ -615,7 +612,7 @@ def _local_networks():
                 continue
 
             local_networks.add(network)
-            logger.debug("Added network {} to localNetworks".format(network))
+            logger.debug(f"Added network {network} to localNetworks")
 
             if network.version == 4:
                 network_v6 = network.ipv6()
@@ -664,9 +661,7 @@ def passive_login():
     def determine_user(u):
         if not u.is_anonymous and u.is_active:
             # known active user
-            logger.info(
-                "Passively logging in user {} from {}".format(u.get_id(), remote_address)
-            )
+            logger.info(f"Passively logging in user {u.get_id()} from {remote_address}")
 
         elif (
             settings().getBoolean(["accessControl", "autologinLocal"])
@@ -998,9 +993,7 @@ class PreemptiveCache:
                 entries = cleanup_function(root, entries)
                 if not entries:
                     del all_data[root]
-                    self._logger.debug(
-                        "Removed root {} from preemptive cache".format(root)
-                    )
+                    self._logger.debug(f"Removed root {root} from preemptive cache")
                 elif len(entries) < old_count:
                     all_data[root] = entries
                     self._logger.debug(
@@ -1018,7 +1011,7 @@ class PreemptiveCache:
         cache_data = None
         with self._lock:
             try:
-                with io.open(self.cachefile, "rt") as f:
+                with open(self.cachefile) as f:
                     cache_data = yaml.safe_load(f)
             except OSError as e:
                 import errno
@@ -1026,7 +1019,7 @@ class PreemptiveCache:
                 if e.errno != errno.ENOENT:
                     raise
             except Exception:
-                self._logger.exception("Error while reading {}".format(self.cachefile))
+                self._logger.exception(f"Error while reading {self.cachefile}")
 
         if cache_data is None:
             cache_data = {}
@@ -1057,7 +1050,7 @@ class PreemptiveCache:
                         allow_unicode=True,
                     )
             except Exception:
-                self._logger.exception("Error while writing {}".format(self.cachefile))
+                self._logger.exception(f"Error while writing {self.cachefile}")
 
     def set_data(self, root, data):
         with self._lock:
@@ -1106,12 +1099,12 @@ class PreemptiveCache:
                 to_persist = copy.deepcopy(data)
                 to_persist["_timestamp"] = time.time()
                 to_persist["_count"] = 1
-                self._logger.info("Adding entry for {} and {!r}".format(root, to_persist))
+                self._logger.info(f"Adding entry for {root} and {to_persist!r}")
             else:
                 to_persist["_timestamp"] = time.time()
                 to_persist["_count"] = to_persist.get("_count", 0) + 1
                 self._logger.debug(
-                    "Updating timestamp and counter for {} and {!r}".format(root, data)
+                    f"Updating timestamp and counter for {root} and {data!r}"
                 )
 
             self.set_data(root, [to_persist] + other)
@@ -1150,7 +1143,7 @@ def preemptively_cached(cache, data, unless=None):
                 cache.record(data, unless=unless)
             except Exception:
                 logging.getLogger(__name__).exception(
-                    "Error while recording preemptive cache entry: {!r}".format(data)
+                    f"Error while recording preemptive cache entry: {data!r}"
                 )
             return f(*args, **kwargs)
 
@@ -1297,11 +1290,13 @@ def with_revalidation_checking(
     def decorator(f):
         @functools.wraps(f)
         def decorated_function(*args, **kwargs):
+            from octoprint.server import NOT_MODIFIED
+
             lm = lastmodified_factory()
             etag = etag_factory(lm)
 
             if condition(lm, etag) and not unless():
-                return make_response("Not Modified", 304)
+                return NOT_MODIFIED
 
             # generate response
             response = f(*args, **kwargs)
@@ -1539,7 +1534,7 @@ def no_firstrun_access(func):
             octoprint.server.userManager is None
             or not octoprint.server.userManager.has_been_customized()
         ):
-            return flask.make_response("OctoPrint isn't setup yet", 403)
+            flask.abort(403)
         return func(*args, **kwargs)
 
     return decorated_view
@@ -1561,9 +1556,7 @@ def firstrun_only_access(func):
         ):
             return func(*args, **kwargs)
         else:
-            return flask.make_response(
-                "OctoPrint is already setup, this resource is not longer available.", 403
-            )
+            flask.abort(403)
 
     return decorated_view
 
@@ -1578,32 +1571,54 @@ def get_remote_address(request):
 def get_json_command_from_request(request, valid_commands):
     content_type = request.headers.get("Content-Type", None)
     if content_type is None or "application/json" not in content_type:
-        return None, None, make_response("Expected content-type JSON", 400)
+        flask.abort(400, description="Expected content-type JSON")
 
     data = request.get_json()
     if data is None:
-        return (
-            None,
-            None,
-            make_response("Malformed JSON body or wrong content-type in request", 400),
+        flask.abort(
+            400, description="Malformed JSON body or wrong content-type in request"
         )
     if "command" not in data or data["command"] not in valid_commands:
-        return None, None, make_response("Expected valid command", 400)
+        flask.abort(400, description="command is invalid")
 
     command = data["command"]
-    for parameter in valid_commands[command]:
-        if parameter not in data:
-            return (
-                None,
-                None,
-                make_response(
-                    "Mandatory parameter %s missing for command %s"
-                    % (parameter, command),
-                    400,
-                ),
-            )
+    if any(map(lambda x: x not in data, valid_commands[command])):
+        flask.abort(400, description="Mandatory parameters missing")
 
     return command, data, None
+
+
+def make_text_response(message, status):
+    """
+    Helper to generate basic text responses.
+
+    Response will have the provided message as body, the provided status code, and
+    a content type of "text/plain".
+
+    Args:
+        message: The message in the response body
+        status: The HTTP status code
+
+    Returns:
+
+    """
+    return make_response(message, status, {"Content-Type": "text/plain"})
+
+
+def make_api_error(message, status):
+    """
+    Helper to generate API error responses in JSON format.
+
+    Turns something like ``make_api_error("Not Found", 404)`` into a JSON response
+    with body ``{"error": "Not Found"}``.
+
+    Args:
+        message: The error message to put into the response
+        status: The HTTP status code
+
+    Returns: a flask response to return to the client
+    """
+    return make_response(flask.jsonify(error=message), status)
 
 
 ##~~ Flask-Assets resolver with plugin asset support

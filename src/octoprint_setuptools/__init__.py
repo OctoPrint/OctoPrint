@@ -485,9 +485,9 @@ class PackTranslation(Command):
                     print("Adding {entry_path} as {new_prefix}".format(**locals()))
                     zip.write(entry_path, new_prefix)
 
-        meta_str = "last_update: {date}\n".format(date=now.isoformat())
+        meta_str = f"last_update: {now.isoformat()}\n"
         if self.author:
-            meta_str += "author: {author}\n".format(author=self.author)
+            meta_str += f"author: {self.author}\n"
 
         zip_locale_root = self.__class__.pack_path_prefix + locale
 
@@ -636,7 +636,7 @@ def create_plugin_setup_parameters(
         [package]
         + list(
             filter(
-                lambda x: x.startswith("{package}.".format(package=package)),
+                lambda x: x.startswith(f"{package}."),
                 find_packages(where=source_folder, exclude=ignored_packages),
             )
         )

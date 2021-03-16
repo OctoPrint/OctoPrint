@@ -153,7 +153,7 @@
     </div>
     <div class="tab-pane" id="settings_plugin_pluginmanager_cleanup">
         <div class="pull-right">
-            <button class="btn btn-small" data-bind="click: function() { $root.requestData({refresh_orphans: true}) }" title="{{ _('Refresh')|edq }}"><i class="fas fa-sync"></i></button>
+            <button class="btn btn-small" data-bind="click: function() { $root.requestOrphanData({refresh: true}) }" title="{{ _('Refresh')|edq }}"><i class="fas fa-sync"></i></button>
         </div>
 
         <h3>{{ _('Cleanup') }}</h3>
