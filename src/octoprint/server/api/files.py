@@ -154,7 +154,7 @@ def readGcodeFiles():
         recursive=recursive,
         allow_from_cache=not force,
     )
-    files.extend(_getFileList(FileDestinations.SDCARD))
+    files.extend(_getFileList(FileDestinations.SDCARD, allow_from_cache=not force))
 
     usage = psutil.disk_usage(settings().getBaseFolder("uploads", check_writable=False))
     return jsonify(files=files, free=usage.free, total=usage.total)
@@ -251,7 +251,7 @@ def _getFileList(
     origin, path=None, filter=None, recursive=False, level=0, allow_from_cache=True
 ):
     if origin == FileDestinations.SDCARD:
-        sdFileList = printer.get_sd_files()
+        sdFileList = printer.get_sd_files(refresh=not allow_from_cache)
 
         files = []
         if sdFileList is not None:

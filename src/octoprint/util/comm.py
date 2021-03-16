@@ -2270,6 +2270,19 @@ class MachineCom:
                         elif action_name == "disconnect":
                             self._log("Disconnecting on request of the printer...")
                             self._callback.on_comm_force_disconnect()
+                        elif self._sdEnabled and action_name == "sd_inserted":
+                            self._log("Printer reported SD card as inserted")
+                            self._sdAvailable = True
+                            self.refreshSdFiles()
+                            self._callback.on_comm_sd_state_change(self._sdAvailable)
+                        elif self._sdEnabled and action_name == "sd_ejected":
+                            self._log("Printer reported SD card as ejected")
+                            self._sdAvailable = False
+                            self._sdFiles = []
+                            self._callback.on_comm_sd_state_change(self._sdAvailable)
+                        elif self._sdEnabled and action_name == "sd_updated":
+                            self._log("Printer reported a change on the SD card")
+                            self.refreshSdFiles()
                         else:
                             for name, hook in self._printer_action_hooks.items():
                                 try:
@@ -2308,7 +2321,7 @@ class MachineCom:
 
                 ##~~ SD file list
                 # if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
-                if self._sdFileList and "End file list" not in line:
+                if self._sdEnabled and self._sdFileList and "End file list" not in line:
                     preprocessed_line = line
                     fileinfo = preprocessed_line.split(None, 2)
                     if len(fileinfo) == 3:
@@ -2768,140 +2781,145 @@ class MachineCom:
                             )
 
                 ##~~ SD Card handling
-                elif (
-                    "SD init fail" in line
-                    or "volume.init failed" in line
-                    or "openRoot failed" in line
-                ):
-                    self._sdAvailable = False
-                    self._sdFiles = []
-                    self._callback.on_comm_sd_state_change(self._sdAvailable)
-                elif "SD card ok" in line and not self._sdAvailable:
-                    self._sdAvailable = True
-                    self.refreshSdFiles()
-                    self._callback.on_comm_sd_state_change(self._sdAvailable)
-                elif "Begin file list" in line:
-                    self._sdFiles = []
-                    self._sdFileList = True
-                elif "End file list" in line:
-                    self._sdFileList = False
-                    self._callback.on_comm_sd_files(self.getSdFiles())
-                elif "SD printing byte" in line:
-                    # answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
-                    match = regex_sdPrintingByte.search(line)
-                    if match:
-                        try:
-                            current = int(match.group("current"))
-                            total = int(match.group("total"))
-                        except Exception:
-                            self._logger.exception("Error while parsing SD status report")
-                        else:
-                            if (
-                                current == total == 0
-                                and self.isSdPrinting()
-                                and not self.isStarting()
-                                and not self.isStarting()
-                                and not self.isFinishing()
-                            ):
-                                # apparently not SD printing - some Marlin versions report it like that for some reason
-                                self._consecutive_not_sd_printing += 1
-                                if (
-                                    self._consecutive_not_sd_printing
-                                    > self._consecutive_not_sd_printing_maximum
-                                ):
-                                    self.cancelPrint(external_sd=True)
-
-                            else:
-                                self._consecutive_not_sd_printing = 0
-                                if self.isSdFileSelected():
-
-                                    # If we are not yet sd printing, the current does not equal the total, is larger
-                                    # than zero and has increased since the last time we saw a position report, then
-                                    # yes, this looks like we just started printing due to an external trigger.
-                                    if (
-                                        not self.isSdPrinting()
-                                        and current != total
-                                        and current > 0
-                                        and self._currentFile
-                                        and current > self._currentFile.pos
-                                    ):
-                                        self.startPrint(external_sd=True)
-
-                                    self._currentFile.pos = current
-                                    if self._currentFile.size == 0:
-                                        self._currentFile.size = total
-
-                                    if not self._currentFile.done:
-                                        self._callback.on_comm_progress()
-                elif (
-                    "Not SD printing" in line
-                    and self.isSdPrinting()
-                    and not self.isStarting()
-                    and not self.isFinishing()
-                ):
-                    self._consecutive_not_sd_printing += 1
+                elif self._sdEnabled:
                     if (
-                        self._consecutive_not_sd_printing
-                        > self._consecutive_not_sd_printing_maximum
+                        "SD init fail" in line
+                        or "volume.init failed" in line
+                        or "openRoot failed" in line
                     ):
-                        # something went wrong, printer is reporting that we actually are not printing right now...
-                        self.cancelPrint(external_sd=True)
-                elif "File opened" in line and not self._ignore_select:
-                    # answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
-                    match = regex_sdFileOpened.search(line)
-                    if match:
-                        name = match.group("name")
-                        size = int(match.group("size"))
-                    else:
-                        name = "Unknown"
-                        size = 0
-                    user = None
+                        self._sdAvailable = False
+                        self._sdFiles = []
+                        self._callback.on_comm_sd_state_change(self._sdAvailable)
+                    elif "SD card ok" in line and not self._sdAvailable:
+                        self._sdAvailable = True
+                        self.refreshSdFiles()
+                        self._callback.on_comm_sd_state_change(self._sdAvailable)
+                    elif "Begin file list" in line:
+                        self._sdFiles = []
+                        self._sdFileList = True
+                    elif "End file list" in line:
+                        self._sdFileList = False
+                        self._callback.on_comm_sd_files(self.getSdFiles())
+                    elif "SD printing byte" in line:
+                        # answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
+                        match = regex_sdPrintingByte.search(line)
+                        if match:
+                            try:
+                                current = int(match.group("current"))
+                                total = int(match.group("total"))
+                            except Exception:
+                                self._logger.exception(
+                                    "Error while parsing SD status report"
+                                )
+                            else:
+                                if (
+                                    current == total == 0
+                                    and self.isSdPrinting()
+                                    and not self.isStarting()
+                                    and not self.isStarting()
+                                    and not self.isFinishing()
+                                ):
+                                    # apparently not SD printing - some Marlin versions report it like that for some reason
+                                    self._consecutive_not_sd_printing += 1
+                                    if (
+                                        self._consecutive_not_sd_printing
+                                        > self._consecutive_not_sd_printing_maximum
+                                    ):
+                                        self.cancelPrint(external_sd=True)
 
-                    if self._sdFileToSelect:
-                        name = self._sdFileToSelect
-                        user = self._sdFileToSelectUser
+                                else:
+                                    self._consecutive_not_sd_printing = 0
+                                    if self.isSdFileSelected():
 
-                    self._sdFileToSelect = None
-                    self._sdFileToSelectUser = None
+                                        # If we are not yet sd printing, the current does not equal the total, is larger
+                                        # than zero and has increased since the last time we saw a position report, then
+                                        # yes, this looks like we just started printing due to an external trigger.
+                                        if (
+                                            not self.isSdPrinting()
+                                            and current != total
+                                            and current > 0
+                                            and self._currentFile
+                                            and current > self._currentFile.pos
+                                        ):
+                                            self.startPrint(external_sd=True)
 
-                    self._currentFile = PrintingSdFileInformation(name, size, user=user)
-                elif "File selected" in line:
-                    if self._ignore_select:
-                        self._ignore_select = False
-                    elif self._currentFile is not None and self.isSdFileSelected():
-                        # final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
-                        self._callback.on_comm_file_selected(
-                            self._currentFile.getFilename(),
-                            self._currentFile.getFilesize(),
-                            True,
-                            user=self._currentFile.getUser(),
+                                        self._currentFile.pos = current
+                                        if self._currentFile.size == 0:
+                                            self._currentFile.size = total
+
+                                        if not self._currentFile.done:
+                                            self._callback.on_comm_progress()
+                    elif (
+                        "Not SD printing" in line
+                        and self.isSdPrinting()
+                        and not self.isStarting()
+                        and not self.isFinishing()
+                    ):
+                        self._consecutive_not_sd_printing += 1
+                        if (
+                            self._consecutive_not_sd_printing
+                            > self._consecutive_not_sd_printing_maximum
+                        ):
+                            # something went wrong, printer is reporting that we actually are not printing right now...
+                            self.cancelPrint(external_sd=True)
+                    elif "File opened" in line and not self._ignore_select:
+                        # answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
+                        match = regex_sdFileOpened.search(line)
+                        if match:
+                            name = match.group("name")
+                            size = int(match.group("size"))
+                        else:
+                            name = "Unknown"
+                            size = 0
+                        user = None
+
+                        if self._sdFileToSelect:
+                            name = self._sdFileToSelect
+                            user = self._sdFileToSelectUser
+
+                        self._sdFileToSelect = None
+                        self._sdFileToSelectUser = None
+
+                        self._currentFile = PrintingSdFileInformation(
+                            name, size, user=user
                         )
-                elif "Writing to file" in line and self.isStreaming():
-                    self._changeState(self.STATE_PRINTING)
-                elif "Done printing file" in line and self.isSdPrinting():
-                    # printer is reporting file finished printing
-                    self._changeState(self.STATE_FINISHING)
+                    elif "File selected" in line:
+                        if self._ignore_select:
+                            self._ignore_select = False
+                        elif self._currentFile is not None and self.isSdFileSelected():
+                            # final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
+                            self._callback.on_comm_file_selected(
+                                self._currentFile.getFilename(),
+                                self._currentFile.getFilesize(),
+                                True,
+                                user=self._currentFile.getUser(),
+                            )
+                    elif "Writing to file" in line and self.isStreaming():
+                        self._changeState(self.STATE_PRINTING)
+                    elif "Done printing file" in line and self.isSdPrinting():
+                        # printer is reporting file finished printing
+                        self._changeState(self.STATE_FINISHING)
 
-                    self._currentFile.done = True
-                    self._currentFile.pos = 0
+                        self._currentFile.done = True
+                        self._currentFile.pos = 0
 
-                    self.sendCommand("M400", part_of_job=True)
-                    self._callback.on_comm_print_job_done()
+                        self.sendCommand("M400", part_of_job=True)
+                        self._callback.on_comm_print_job_done()
 
-                    def finalize():
-                        self._changeState(self.STATE_OPERATIONAL)
+                        def finalize():
+                            self._changeState(self.STATE_OPERATIONAL)
 
-                    self.sendCommand(SendQueueMarker(finalize), part_of_job=True)
-                    self._continue_sending()
-                elif "Done saving file" in line:
-                    if self._trigger_ok_for_m29:
-                        # workaround for most versions of Marlin out in the wild
-                        # not sending an ok after saving a file
+                        self.sendCommand(SendQueueMarker(finalize), part_of_job=True)
+                        self._continue_sending()
+                    elif "Done saving file" in line:
+                        if self._trigger_ok_for_m29:
+                            # workaround for most versions of Marlin out in the wild
+                            # not sending an ok after saving a file
+                            self._handle_ok()
+                    elif "File deleted" in line and line.strip().endswith("ok"):
+                        # buggy Marlin version that doesn't send a proper line break after the "File deleted" statement, fixed in
+                        # current versions
                         self._handle_ok()
-                elif "File deleted" in line and line.strip().endswith("ok"):
-                    # buggy Marlin version that doesn't send a proper line break after the "File deleted" statement, fixed in
-                    # current versions
-                    self._handle_ok()
 
                 ##~~ Message handling
                 self._callback.on_comm_message(line)
