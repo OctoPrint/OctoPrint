@@ -2288,6 +2288,19 @@ class MachineCom(object):
                         elif action_name == "disconnect":
                             self._log("Disconnecting on request of the printer...")
                             self._callback.on_comm_force_disconnect()
+                        elif self._sdEnabled and action_name == "sd_inserted":
+                            self._log("Printer reported SD card as inserted")
+                            self._sdAvailable = True
+                            self.refreshSdFiles()
+                            self._callback.on_comm_sd_state_change(self._sdAvailable)
+                        elif self._sdEnabled and action_name == "sd_ejected":
+                            self._log("Printer reported SD card as ejected")
+                            self._sdAvailable = False
+                            self._sdFiles = []
+                            self._callback.on_comm_sd_state_change(self._sdAvailable)
+                        elif self._sdEnabled and action_name == "sd_updated":
+                            self._log("Printer reported a change on the SD card")
+                            self.refreshSdFiles()
                         else:
                             for name, hook in self._printer_action_hooks.items():
                                 try:
