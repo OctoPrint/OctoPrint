@@ -920,16 +920,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
     # ~~ sd file handling
 
     def get_sd_files(self, *args, **kwargs):
-        if self._comm is None or not self._comm.isSdReady():
-            result = []
-        else:
-            result = list(
-                map(
-                    lambda x: {"name": x[0][1:], "size": x[1], "display": x[2]},
-                    self._comm.getSdFiles(),
-                )
+        if not self.is_sd_ready():
+            return []
+
+        if kwargs.get("refresh"):
+            self.refresh_sd_files(blocking=True)
+
+        return list(
+            map(
+                lambda x: {"name": x[0][1:], "size": x[1], "display": x[2]},
+                self._comm.getSdFiles(),
             )
-        return result
+        )
 
     def add_sd_file(
         self, filename, path, on_success=None, on_failure=None, *args, **kwargs
