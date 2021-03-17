@@ -69,7 +69,7 @@ class TestTransport(Transport):
             expected = expected()
 
         if expected != actual:
-            raise AssertionError("Expected {!r}, got {!r}".format(expected, actual))
+            raise AssertionError(f"Expected {expected!r}, got {actual!r}")
 
         return actual
 

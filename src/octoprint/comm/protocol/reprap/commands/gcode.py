@@ -130,7 +130,7 @@ class GcodeCommand(Command):
     def __getattr__(self, item):
         if len(item) == 1:
             return self.args.get(item, None)
-        raise AttributeError("'GcodeCommand' object has no attribute '{}'".format(item))
+        raise AttributeError(f"'GcodeCommand' object has no attribute '{item}'")
 
     def __repr__(self):
         return self._repr
@@ -143,7 +143,7 @@ class GcodeCommand(Command):
                 if value is True:
                     attr.append(key.upper())
                 else:
-                    attr.append("{}{!r}".format(key.upper(), value))
+                    attr.append(f"{key.upper()}{value!r}")
         attribute_str = " ".join(attr)
         return "{}{}{}".format(
             self.code.upper(),

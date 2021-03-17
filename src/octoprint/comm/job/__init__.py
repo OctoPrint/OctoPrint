@@ -168,7 +168,7 @@ class Printjob(ProtocolListener, ListenerAware, metaclass=ABCMeta):
     def report_stats(self):
         elapsed = self.elapsed
         if elapsed:
-            self._logger.info("Job processed in {}s".format(elapsed))
+            self._logger.info(f"Job processed in {elapsed}s")
 
     def reset_job(self, success=True):
         self._last_result.progress = 1.0 if success else self.progress
@@ -351,9 +351,7 @@ class LocalFilePrintjob(StoragePrintjob):
         lines = self._read_lines
 
         if elapsed and lines:
-            self._logger.info(
-                "Job processed in {:.3f}s ({} lines)".format(elapsed, lines)
-            )
+            self._logger.info(f"Job processed in {elapsed:.3f}s ({lines} lines)")
 
 
 class CopyJobMixin:

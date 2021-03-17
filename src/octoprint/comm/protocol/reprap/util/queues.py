@@ -124,7 +124,7 @@ class SendQueue(PrependableQueue):
         if item_type is not None:
             if item_type in self._lookup:
                 raise TypeAlreadyInQueue(
-                    item_type, "Type {} is already in queue".format(item_type)
+                    item_type, f"Type {item_type} is already in queue"
                 )
             else:
                 self._lookup.add(item_type)
@@ -139,7 +139,7 @@ class SendQueue(PrependableQueue):
         if item_type is not None:
             if item_type in self._lookup:
                 raise TypeAlreadyInQueue(
-                    item_type, "Type {} is already in queue".format(item_type)
+                    item_type, f"Type {item_type} is already in queue"
                 )
             else:
                 self._lookup.add(item_type)

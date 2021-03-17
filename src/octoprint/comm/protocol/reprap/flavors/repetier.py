@@ -60,7 +60,7 @@ class RepetierFlavor(StandardFlavor):
             if match is not None:
                 tool_num = int(match.group("toolnum"))
                 target = float(match.group("target"))
-                tool = "T{}".format(tool_num)
+                tool = f"T{tool_num}"
                 temperatures = {}
                 temperatures[tool] = (None, target)
                 return {

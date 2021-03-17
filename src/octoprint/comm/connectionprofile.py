@@ -2,7 +2,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-import io
 import logging
 import os
 from os import scandir
@@ -21,7 +20,7 @@ class ConnectionProfile:
         protocol_parameters=None,
         transport=None,
         transport_parameters=None,
-        **kwargs
+        **kwargs,
     ):
         self.id = id
         self.name = name if name is not None else id
@@ -61,7 +60,7 @@ class ConnectionProfileManager:
     def select(self, identifier):
         self._current = self.get(identifier)
         if self._current is None:
-            self._logger.error("Profile {} is invalid, cannot select".format(identifier))
+            self._logger.error(f"Profile {identifier} is invalid, cannot select")
             return False
         return True
 
@@ -118,7 +117,7 @@ class ConnectionProfileManager:
             if profile is not None:
                 return profile
             else:
-                self._logger.warning("Default profile {} is invalid".format(default))
+                self._logger.warning(f"Default profile {default} is invalid")
 
         return None
 
@@ -153,7 +152,7 @@ class ConnectionProfileManager:
             try:
                 profile = self._load_from_path(path)
             except InvalidProfileError:
-                self._logger.warning("Profile {} is invalid, skipping".format(identifier))
+                self._logger.warning(f"Profile {identifier} is invalid, skipping")
                 continue
 
             if profile is None:
@@ -181,7 +180,7 @@ class ConnectionProfileManager:
 
         import yaml
 
-        with io.open(path, "rt", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
         if data is None or not isinstance(data, dict):
@@ -224,7 +223,7 @@ class ConnectionProfileManager:
             return False
 
     def _get_profile_path(self, identifier):
-        return os.path.join(self._folder, "{}.profile".format(identifier))
+        return os.path.join(self._folder, f"{identifier}.profile")
 
 
 class InvalidProfileError(Exception):

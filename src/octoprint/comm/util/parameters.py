@@ -84,10 +84,10 @@ class ParamType:
 
     def __repr__(self):
         return (
-            "{}(".format(self.__class__.__name__)
+            f"{self.__class__.__name__}("
             + ", ".join(
                 [
-                    "{}={!r}".format(key, value)
+                    f"{key}={value!r}"
                     for key, value in self.__dict__.items()
                     if not key.startswith("_")
                 ]
@@ -127,15 +127,13 @@ class IntegerType(ParamType):
         try:
             value = int(value)
         except ValueError:
-            raise ValueError("value {!r} is not a valid integer".format(value))
+            raise ValueError(f"value {value!r} is not a valid integer")
 
         if self.min is not None and value < self.min:
-            raise ValueError(
-                "value {} is less than minimum valid value {}".format(value, self.min)
-            )
+            raise ValueError(f"value {value} is less than minimum valid value {self.min}")
         if self.max is not None and value > self.max:
             raise ValueError(
-                "value {} is greater than maximum valid value {}".format(value, self.max)
+                f"value {value} is greater than maximum valid value {self.max}"
             )
 
         return value
@@ -159,15 +157,13 @@ class FloatType(ParamType):
         try:
             value = float(value)
         except ValueError:
-            raise ValueError("value {!r} is not a valid float".format(value))
+            raise ValueError(f"value {value!r} is not a valid float")
 
         if self.min is not None and value < self.min:
-            raise ValueError(
-                "value {} is less than minimum valid value {}".format(value, self.min)
-            )
+            raise ValueError(f"value {value} is less than minimum valid value {self.min}")
         if self.max is not None and value > self.max:
             raise ValueError(
-                "value {} is greater than maximum valid value {}".format(value, self.max)
+                f"value {value} is greater than maximum valid value {self.max}"
             )
 
         return value
@@ -180,7 +176,7 @@ class BooleanType(ParamType):
         try:
             value = bool(value)
         except ValueError:
-            raise ValueError("value {!r} is not a valid boolean".format(value))
+            raise ValueError(f"value {value!r} is not a valid boolean")
 
         return value
 
@@ -283,7 +279,7 @@ class ParamGroup(ParamType):
 
     def convert(self, value):
         if not isinstance(value, dict):
-            raise ValueError("value {!r} must be a dict".format(value))
+            raise ValueError(f"value {value!r} must be a dict")
         return {k: v.convert() for k, v in value.items()}
 
 

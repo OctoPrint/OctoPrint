@@ -54,7 +54,7 @@ def connectionProfilesList():
 def connectionProfilesGet(identifier):
     profile = connectionProfileManager.get(identifier)
     if profile is None:
-        return make_response("Unknown profile: {}".format(identifier), 404)
+        return make_response(f"Unknown profile: {identifier}", 404)
     else:
         return jsonify({"profile": _convert_profile(profile)})
 
@@ -96,10 +96,10 @@ def connectionProfileSet(identifier):
     except InvalidProfileError:
         return make_response("Profile is invalid", 400)
     except SaveError:
-        return make_response("Profile {} could not be saved".format(profile.id), 400)
+        return make_response(f"Profile {profile.id} could not be saved", 400)
     except Exception as e:
         return make_response(
-            "Could not save profile due to an unexpected error: {}".format(e), 500
+            f"Could not save profile due to an unexpected error: {e}", 500
         )
     else:
         return jsonify({"profile": _convert_profile(profile)})
@@ -112,12 +112,12 @@ def connectionProfilesDelete(identifier):
     current_profile = connectionProfileManager.get_current()
     if current_profile and current_profile.id == identifier:
         return make_response(
-            "Cannot delete currently selected profile: {}".format(identifier), 409
+            f"Cannot delete currently selected profile: {identifier}", 409
         )
 
     default_profile = connectionProfileManager.get_default()
     if default_profile and default_profile.id == identifier:
-        return make_response("Cannot delete default profile: {}".format(identifier), 409)
+        return make_response(f"Cannot delete default profile: {identifier}", 409)
 
     connectionProfileManager.remove(identifier)
     return NO_CONTENT
@@ -159,10 +159,10 @@ def connectionProfilesUpdate(identifier):
     except InvalidProfileError:
         return make_response("Profile is invalid", 400)
     except SaveError:
-        return make_response("Profile {} could not be saved".format(profile.id), 400)
+        return make_response(f"Profile {profile.id} could not be saved", 400)
     except Exception as e:
         return make_response(
-            "Could not save profile due to an unexpected error: {}".format(e), 500
+            f"Could not save profile due to an unexpected error: {e}", 500
         )
     else:
         return jsonify({"profile": _convert_profile(saved_profile)})

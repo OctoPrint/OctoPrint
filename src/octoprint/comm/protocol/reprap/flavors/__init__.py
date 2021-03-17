@@ -118,9 +118,7 @@ class StandardFlavor(metaclass=FlavorMeta):
       * ``target``: target temperature, if provided (float)
     """
 
-    regex_position = re.compile(
-        r"(?P<axis>[XYZE]):(?P<pos>{float})\s*".format(float=regex_float_pattern)
-    )
+    regex_position = re.compile(fr"(?P<axis>[XYZE]):(?P<pos>{regex_float_pattern})\s*")
     """Regex for matching position entries in line.
 
     Groups will be as follows:
@@ -713,7 +711,7 @@ class StandardFlavor(metaclass=FlavorMeta):
             tool_num = self._protocol.internal_state.current_tool
 
         return self._apply_temperature_offset(
-            "tool{}".format(tool_num), command, support_r=support_r
+            f"tool{tool_num}", command, support_r=support_r
         )
 
     def handle_gcode_M104_sent(self, command, wait=False, support_r=False):

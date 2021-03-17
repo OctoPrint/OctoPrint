@@ -16,7 +16,7 @@ class VirtualSerialTransport(SerialTransport):
     @classmethod
     def with_settings_and_data(cls, settings, datafolder):
         return type(
-            "{}WithSettingsAndData".format(cls.__name__),
+            f"{cls.__name__}WithSettingsAndData",
             (cls,),
             {"settings": settings, "datafolder": datafolder},
         )

@@ -53,7 +53,7 @@ def register_transport(transport_class, settings, path):
     logger = logging.getLogger(__name__)
 
     if not hasattr(transport_class, "key"):
-        raise ValueError("Transport class {} is missing key".format(transport_class))
+        raise ValueError(f"Transport class {transport_class} is missing key")
 
     # register settings overlay
     overlay = register_transport_overlay(transport_class, settings, path)
@@ -74,9 +74,9 @@ def register_transport(transport_class, settings, path):
 
 def register_transport_overlay(transport_class, settings, path):
     if not hasattr(transport_class, "key"):
-        raise ValueError("Transport class {} is missing key".format(transport_class))
+        raise ValueError(f"Transport class {transport_class} is missing key")
     if not hasattr(transport_class, "settings"):
-        raise ValueError("Transport class {} is missing settings".format(transport_class))
+        raise ValueError(f"Transport class {transport_class} is missing settings")
 
     params = transport_class.settings
     return register_settings_overlay(settings, path + [transport_class.key], params)
@@ -161,7 +161,7 @@ class Transport(ListenerAware):
         self.notify_listeners(
             "on_transport_log_message",
             self,
-            "Transport state changed from '{}' to '{}'".format(old_state, value),
+            f"Transport state changed from '{old_state}' to '{value}'",
         )
 
     def connect(self, **params):
@@ -343,7 +343,7 @@ class LineAwareTransportWrapper(SeparatorAwareTransportWrapper):
         SeparatorAwareTransportWrapper.__init__(self, transport, b"\n")
 
     def __str__(self):
-        return "LineAwareTransportWrapper({})".format(self.transport)
+        return f"LineAwareTransportWrapper({self.transport})"
 
 
 class PushingTransportWrapper(TransportWrapper):
@@ -392,7 +392,7 @@ class PushingTransportWrapper(TransportWrapper):
                     raise
 
     def __str__(self):
-        return "PushingTransportWrapper({})".format(self.transport)
+        return f"PushingTransportWrapper({self.transport})"
 
 
 class TransportListener:

@@ -50,9 +50,9 @@ def register_protocol(protocol_class, settings, path):
     logger = logging.getLogger(__name__)
 
     if not hasattr(protocol_class, "key"):
-        raise ValueError("Protocol class {} is missing key".format(protocol_class))
+        raise ValueError(f"Protocol class {protocol_class} is missing key")
     if not hasattr(protocol_class, "settings"):
-        raise ValueError("Protocol class {} is missing settings".format(protocol_class))
+        raise ValueError(f"Protocol class {protocol_class} is missing settings")
 
     # register settings overlay
     overlay = register_settings_overlay(settings, path, protocol_class.settings)
@@ -309,17 +309,17 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
 
         self._state = new_state
 
-        name = "_on_switching_state_{}".format(new_state)
+        name = f"_on_switching_state_{new_state}"
         method = getattr(self, name, None)
         if method is not None:
             method(old_state)
 
         self.process_protocol_log(
-            "--- Protocol state changed from '{}' to '{}'".format(old_state, new_state)
+            f"--- Protocol state changed from '{old_state}' to '{new_state}'"
         )
         self.notify_listeners("on_protocol_state", self, old_state, new_state)
 
-        name = "_on_switched_state_{}".format(new_state)
+        name = f"_on_switched_state_{new_state}"
         method = getattr(self, name, None)
         if method is not None:
             method(old_state)
@@ -352,7 +352,7 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
             raise ProtocolAlreadyConnectedError("Already connected, disconnect first")
 
         self.process_protocol_log(
-            "--- Protocol {} connecting via transport {}...".format(self, transport)
+            f"--- Protocol {self} connecting via transport {transport}..."
         )
 
         if transport_args is None:
@@ -396,7 +396,7 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
                 self._transport.disconnect(wait=wait)
             except Exception:
                 self._logger.exception(
-                    "Error while disconnecting from transport {}".format(self._transport)
+                    f"Error while disconnecting from transport {self._transport}"
                 )
                 error = True
 
@@ -407,9 +407,7 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
 
     def process(self, job, position=0, user=None, tags=None, **kwargs):
         if not job.can_process(self):
-            raise ValueError(
-                "Job {} cannot be processed with protocol {}".format(job, self)
-            )
+            raise ValueError(f"Job {job} cannot be processed with protocol {self}")
 
         self._job = job
         self._job.register_listener(self)
@@ -452,7 +450,7 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
                 self._job,
                 user=user,
                 tags=tags,
-                **kwargs
+                **kwargs,
             )
             self._job.cancel(error=error, user=user, tags=tags, **kwargs)
 
@@ -515,21 +513,21 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
         message = to_unicode(data, errors="replace").strip()
         self.notify_listeners("on_protocol_log_received", self, message)
 
-        message = "<<< {}".format(message)
+        message = f"<<< {message}"
         self.process_protocol_log(message)
 
     def on_transport_log_sent_data(self, transport, data):
         message = to_unicode(data, errors="replace").strip()
         self.notify_listeners("on_protocol_log_sent", self, message)
 
-        message = ">>> {}".format(message)
+        message = f">>> {message}"
         self.process_protocol_log(message)
 
     def on_transport_log_message(self, transport, data):
         message = to_unicode(data, errors="replace").strip()
         self.notify_listeners("on_protocol_log_message", self, message)
 
-        message = "--- {}".format(message)
+        message = f"--- {message}"
         self.process_protocol_log(message)
 
     def process_protocol_log(self, message):
@@ -622,7 +620,7 @@ class Fdm3dPrinterProtocolMixin(
         feedrate=None,
         relative=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         pass
 

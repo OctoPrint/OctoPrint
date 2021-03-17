@@ -7,9 +7,9 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 
 
 import unittest
+from unittest import mock
 
 import ddt
-import mock
 
 import octoprint.comm.protocol.reprap
 from octoprint.util import to_bytes
@@ -83,7 +83,7 @@ class RepRapProtocolTest(unittest.TestCase):
         if capabilities is None:
             capabilities = {}
 
-        firmware_info = "FIRMWARE_NAME:{}\n".format(firmware_name)
+        firmware_info = f"FIRMWARE_NAME:{firmware_name}\n"
         for cap, enabled in capabilities.items():
             firmware_info += "Cap:{}:{}\n".format(cap.upper(), "1" if enabled else "0")
         firmware_info += "ok\n"

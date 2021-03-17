@@ -1163,7 +1163,7 @@ class ReprapGcodeProtocol(
         feedrate=None,
         relative=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         tags = kwargs.pop("tags", set()) | {"trigger:protocol.move"}
 
@@ -1206,7 +1206,7 @@ class ReprapGcodeProtocol(
                 tool = int(heater[len("tool") :])
             except ValueError:
                 self._logger.error(
-                    "Got invalid tool heater, expected tool<n>, got: {}".format(heater)
+                    f"Got invalid tool heater, expected tool<n>, got: {heater}"
                 )
                 return
             command = self.flavor.command_set_extruder_temp(
@@ -1218,7 +1218,7 @@ class ReprapGcodeProtocol(
             command = self.flavor.command_set_chamber_temp(temperature, wait=wait)
         else:
             self._logger.warning(
-                "Got unknown heater identifier to set temperature on: {}".format(heater)
+                f"Got unknown heater identifier to set temperature on: {heater}"
             )
             return
 
@@ -1260,7 +1260,7 @@ class ReprapGcodeProtocol(
             self.flavor.command_sd_set_pos(position),
             self.flavor.command_sd_start(),
             tags=tags,
-            **kwargs
+            **kwargs,
         )
 
     def pause_file_print(self, *args, **kwargs):
@@ -1328,7 +1328,7 @@ class ReprapGcodeProtocol(
     def reset_linenumber(self, linenumber=0):
         with self._line_mutex:
             self._logger.info(
-                "M110 detected, setting current line number to {}".format(linenumber)
+                f"M110 detected, setting current line number to {linenumber}"
             )
 
             # send M110 command with new line number
@@ -1469,7 +1469,7 @@ class ReprapGcodeProtocol(
                 )  # prefix, postfix [ , variables [ , additional tags ] ]
             except Exception:
                 self._logger.exception(
-                    "Error while processing hook {}.".format(name),
+                    f"Error while processing hook {name}.",
                     extra={"plugin": name},
                 )
             else:
@@ -1493,7 +1493,7 @@ class ReprapGcodeProtocol(
                     variables = retval[2]
                     context.update({"plugins": {name: variables}})
 
-                additional_tags = {"plugin:{}".format(name)}
+                additional_tags = {f"plugin:{name}"}
                 if len(retval) == 4:
                     # additional tags are defined
                     additional_tags |= set(retval[3])
@@ -1518,10 +1518,10 @@ class ReprapGcodeProtocol(
             tags={
                 "trigger:protocol.send_script",
                 "source:script",
-                "script:{}".format(script.name),
+                f"script:{script.name}",
             },
             part_of_job=part_of_job,
-            *lines
+            *lines,
         )
 
     def repair(self, *args, **kwargs):
@@ -1779,7 +1779,7 @@ class ReprapGcodeProtocol(
         self._on_comm_any(line, lower_line)
 
         for message in self._current_registered_messages:
-            handler_method = getattr(self, "_on_{}".format(message), None)
+            handler_method = getattr(self, f"_on_{message}", None)
             if not handler_method:
                 # no handler, nothing to do
                 continue
@@ -1794,7 +1794,7 @@ class ReprapGcodeProtocol(
             if matches:
                 message_args = {}
 
-                parse_method = getattr(self.flavor, "parse_{}".format(message), None)
+                parse_method = getattr(self.flavor, f"parse_{message}", None)
                 if parse_method:
                     # flavor specific parser? run it
                     parse_result = parse_method(line, lower_line)
@@ -1808,7 +1808,7 @@ class ReprapGcodeProtocol(
                     message_args.update(parse_result)
 
                 # before handler: flavor.before_comm_* or flavor.before_message_*
-                before_handler = getattr(self.flavor, "before_{}".format(message), None)
+                before_handler = getattr(self.flavor, f"before_{message}", None)
                 if before_handler:
                     before_handler(**message_args)
 
@@ -1816,7 +1816,7 @@ class ReprapGcodeProtocol(
                 result = handler_method(**message_args)
 
                 # after handler: flavor.after_comm_* or flavor.after_message_*
-                after_handler = getattr(self.flavor, "after_{}".format(message), None)
+                after_handler = getattr(self.flavor, f"after_{message}", None)
                 if after_handler:
                     after_handler(result, **message_args)
 
@@ -2026,7 +2026,7 @@ class ReprapGcodeProtocol(
     def _on_comm_ignore_ok(self):
         self.internal_state.ignore_ok += 1
         self._logger.info(
-            "Ignoring next ok, counter is now at {}".format(self.internal_state.ignore_ok)
+            f"Ignoring next ok, counter is now at {self.internal_state.ignore_ok}"
         )
 
     def _on_comm_wait(self):
@@ -2175,14 +2175,14 @@ class ReprapGcodeProtocol(
 
     def _on_comm_error(self, line, lower_line, error):
         for message in self._error_messages:
-            handler_method = getattr(self, "_on_{}".format(message), None)
+            handler_method = getattr(self, f"_on_{message}", None)
             if not handler_method:
                 continue
 
             if getattr(self.flavor, message)(line, lower_line, error):
                 message_args = {}
 
-                parse_method = getattr(self.flavor, "parse_{}".format(message), None)
+                parse_method = getattr(self.flavor, f"parse_{message}", None)
                 if parse_method:
                     parse_result = parse_method(line, lower_line, error)
                     if parse_result is None:
@@ -2305,7 +2305,7 @@ class ReprapGcodeProtocol(
             self.internal_state.heatup_start = time.monotonic()
 
         shared_nozzle = self._printer_profile["extruder"]["sharedNozzle"]
-        current_tool_key = "T{}".format(self.internal_state.current_tool)
+        current_tool_key = f"T{self.internal_state.current_tool}"
 
         for name, hook in self._temperature_hooks.items():
             try:
@@ -2314,13 +2314,13 @@ class ReprapGcodeProtocol(
                     return
             except Exception:
                 self._logger.exception(
-                    "Error while processing temperatures in {}, skipping".format(name),
+                    f"Error while processing temperatures in {name}, skipping",
                     extra={"plugin": name},
                 )
 
         if current_tool_key in temperatures:
             for x in range(max_tool_num + 1):
-                tool = "T{}".format(x)
+                tool = f"T{x}"
                 if tool not in temperatures:
                     if shared_nozzle:
                         # replicate the current temperature across all tools (see #2077)
@@ -2361,7 +2361,7 @@ class ReprapGcodeProtocol(
         else:
             # multiple extruder coordinates provided, find current one
             self.last_position.e = (
-                position.get("e{}".format(self.internal_state.current_tool))
+                position.get(f"e{self.internal_state.current_tool}")
                 if t_and_f_trustworthy
                 else None
             )
@@ -2402,7 +2402,7 @@ class ReprapGcodeProtocol(
         )
 
         if not self.internal_state.firmware_identified and firmware_name:
-            self._logger.info('Printer reports firmware name "{}"'.format(firmware_name))
+            self._logger.info(f'Printer reports firmware name "{firmware_name}"')
 
             for flavor_class in all_flavors():
                 if (
@@ -2427,7 +2427,7 @@ class ReprapGcodeProtocol(
                     hook(self, firmware_name, copy.copy(data))
                 except Exception:
                     self._logger.exception(
-                        "Error processing firmware info hook {}:".format(name),
+                        f"Error processing firmware info hook {name}:",
                         extra={"plugin": name},
                     )
 
@@ -2461,7 +2461,7 @@ class ReprapGcodeProtocol(
                 )
             except Exception:
                 self._logger.exception(
-                    "Error processing firmware capability hook {}:".format(name),
+                    f"Error processing firmware capability hook {name}:",
                     extra={"plugin": name},
                 )
 
@@ -2696,9 +2696,9 @@ class ReprapGcodeProtocol(
                     line,
                     tags={
                         "source:file",
-                        "filepos:{}".format(pos),
-                        "fileline:{}".format(read_lines),
-                        "fileactualline:{}".format(actual_lines),
+                        f"filepos:{pos}",
+                        f"fileline:{read_lines}",
+                        f"fileactualline:{actual_lines}",
                     },
                 )
                 if self._send_command(command):
@@ -2868,7 +2868,7 @@ class ReprapGcodeProtocol(
             )
             return True
         except TypeAlreadyInQueue as e:
-            self._logger.debug("Type already in queue: {}".format(e.type))
+            self._logger.debug(f"Type already in queue: {e.type}")
             return False
 
     def _send_loop(self):
@@ -3012,7 +3012,7 @@ class ReprapGcodeProtocol(
 
     def _log_command_phase(self, phase, command):
         if self._phase_logger.isEnabledFor(logging.DEBUG):
-            self._phase_logger.debug("phase: {}, command: {!r}".format(phase, command))
+            self._phase_logger.debug(f"phase: {phase}, command: {command!r}")
 
     def _process_command_phase(self, phase, command, **kwargs):
         command = to_command(command, **kwargs)
@@ -3056,8 +3056,8 @@ class ReprapGcodeProtocol(
                         hook_results,
                         tags_to_add={
                             "source:rewrite",
-                            "phase:{}".format(phase),
-                            "plugin:{}".format(name),
+                            f"phase:{phase}",
+                            f"plugin:{name}",
                         },
                     )
 
@@ -3131,7 +3131,7 @@ class ReprapGcodeProtocol(
                 )
 
         # trigger built-in handler if available
-        atcommand_handler = "_atcommand_{}_{}".format(command.atcommand, phase)
+        atcommand_handler = f"_atcommand_{command.atcommand}_{phase}"
         if atcommand_handler in self._atcommand_handlers:
             try:
                 getattr(self, atcommand_handler)(command)
@@ -3276,7 +3276,7 @@ class ReprapGcodeProtocol(
                     self._trigger_emergency_stop()
                     return (None,)
                 else:
-                    message = "Force-sending {} to the printer".format(command)
+                    message = f"Force-sending {command} to the printer"
                     self._logger.info(message)
                     return self._emergency_force_send(command, message)
 
@@ -3284,7 +3284,7 @@ class ReprapGcodeProtocol(
                 self.state in ProtocolState.PROCESSING_STATES
                 and command.code in self.flavor.pausing_commands
             ):
-                self._logger.info("Pausing print job due to command {}".format(command))
+                self._logger.info(f"Pausing print job due to command {command}")
                 self.pause_processing(tags=command.tags)
 
             if command.code in self.flavor.blocked_commands:
@@ -3358,7 +3358,7 @@ class ReprapGcodeProtocol(
 
     def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
         log = "Last lines in terminal:\n" + "\n".join(
-            map(lambda x: "| {}".format(x), list(self._terminal_log))
+            map(lambda x: f"| {x}", list(self._terminal_log))
         )
         if message is not None:
             log = message + "\n| " + log
@@ -3400,9 +3400,7 @@ class ReprapGcodeProtocol(
 
     def _trigger_emergency_stop(self, close=True):
         emergency_command = self.flavor.command_emergency_stop()
-        self._logger.info(
-            "Force-sending {} to the printer".format(emergency_command.code)
-        )
+        self._logger.info(f"Force-sending {emergency_command.code} to the printer")
 
         # emergency stop, jump the queue with the M112, regardless of whether the EMERGENCY_PARSER capability is
         # available or not
