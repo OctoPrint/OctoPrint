@@ -20,9 +20,12 @@ def get_param_defaults(options):
     for option in options:
         if option.type == "group":
             result[option.name] = get_param_defaults(option.params)
-        elif option.type == "groupchoice":
+        elif option.type == "presetchoice":
             result[option.name] = option.default
             result[option.group.name] = option.defaults
+        elif option.type == "conditionalgroup":
+            result[option.name] = option.default
+            result.update(get_param_defaults(option.groups.get(option.default, [])))
         else:
             result[option.name] = option.default
     return result
@@ -198,8 +201,8 @@ class SmallChoiceType(ChoiceType):
     type = "smallchoice"
 
 
-class GroupChoiceType(ChoiceType):
-    type = "groupchoice"
+class PresetChoiceType(ChoiceType):
+    type = "presetchoice"
 
     def __init__(self, name, title, choices, group, defaults=None, **kwargs):
         if defaults is None:
@@ -214,6 +217,22 @@ class GroupChoiceType(ChoiceType):
         result = ChoiceType.as_dict(self)
         result["group"] = self.group.as_dict()
         result["defaults"] = self.defaults
+        return result
+
+
+class ConditionalGroup(ChoiceType):
+    type = "conditionalgroup"
+
+    def __init__(self, name, title, choices, groups, **kwargs):
+        ChoiceType.__init__(self, name, title, choices, **kwargs)
+        self.groups = groups
+
+    def as_dict(self):
+        result = ChoiceType.as_dict(self)
+        result["groups"] = {
+            key: list(map(lambda x: x.as_dict(), value))
+            for key, value in self.groups.items()
+        }
         return result
 
 

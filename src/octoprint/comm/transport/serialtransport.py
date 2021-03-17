@@ -10,6 +10,7 @@ from octoprint.comm.transport import Transport
 from octoprint.comm.util.parameters import (
     BooleanType,
     ChoiceType,
+    ConditionalGroup,
     IntegerType,
     ListType,
     SmallChoiceType,
@@ -54,18 +55,56 @@ class SerialTransport(Transport):
     @classmethod
     def get_connection_options(cls):
         return [
-            SuggestionType(
-                "port",
-                gettext("Port"),
-                cls.get_available_serial_ports(),
-                lambda value: Value(value),
-            ),
-            SuggestionType(
-                "baudrate",
-                gettext("Baudrate"),
-                cls.get_available_baudrates(),
-                lambda value: Value(value),
-                default=0,
+            ConditionalGroup(
+                "connect_via",
+                gettext("Connect via"),
+                [
+                    Value("port", title=gettext("Port & baudrate")),
+                    Value("usbid", title=gettext("USB ID & baudrate")),
+                    Value("url", title=gettext("URL")),
+                ],
+                {
+                    "port": [
+                        SuggestionType(
+                            "port",
+                            gettext("Port"),
+                            cls.get_available_serial_ports("port"),
+                            lambda value: Value(value),
+                        ),
+                        SuggestionType(
+                            "baudrate",
+                            gettext("Baudrate"),
+                            cls.get_available_baudrates(),
+                            lambda value: Value(value),
+                            default=0,
+                        ),
+                    ],
+                    "usbid": [
+                        SuggestionType(
+                            "usbid",
+                            gettext("USB ID"),
+                            cls.get_available_serial_ports("usbid"),
+                            lambda value: Value(value),
+                        ),
+                        SuggestionType(
+                            "baudrate",
+                            gettext("Baudrate"),
+                            cls.get_available_baudrates(),
+                            lambda value: Value(value),
+                            default=0,
+                        ),
+                    ],
+                    "url": [
+                        UrlType(
+                            "url",
+                            "URL",
+                            help=gettext(
+                                "See [here](https://pythonhosted.org/pyserial/url_handlers.html#urls) for supported URL schemes"
+                            ),
+                        )
+                    ],
+                },
+                default="port",
             ),
         ] + cls._get_common_options()
 
@@ -128,23 +167,25 @@ class SerialTransport(Transport):
         ]
 
     @classmethod
-    def get_available_serial_ports(cls):
+    def get_available_serial_ports(cls, focus):
         from serial.tools.list_ports import comports
 
-        def port_title(port):
-            if port.vid and port.pid:
-                # usb
-                return "{desc} [{vid:04x}:{pid:04x}]".format(
-                    desc=port.description, vid=port.vid, pid=port.pid
-                )
+        matcher = lambda x: True
+        if focus == "usbid":
+            matcher = lambda x: x.vid and x.pid
+
+        def port_value(port):
+            if focus == "usbid":
+                vidpid = f"{port.vid:04x}:{port.pid:04x}"
+                return Value(vidpid, title=f"{port.description} [{vidpid}]")
             else:
-                return port.description
+                return Value(port.device, title=f"{port.description} [{port.device}]")
 
         port_values = [Value(None, title="Auto detect")] + sorted(
             [
-                Value(port.device, title=port_title(port))
+                port_value(port)
                 for port in comports()
-                if port.device not in cls.ignored_ports
+                if port.device not in cls.ignored_ports and matcher(port)
             ],
             key=lambda x: x.title,
         )
@@ -279,13 +320,41 @@ class SerialTransport(Transport):
 
     @classmethod
     def _create_serial(cls, **kwargs):
+        focus = kwargs["connect_via"]
+
+        if focus == "port":
+            return cls._create_serial_for_port_and_baudrate(
+                kwargs.get("port"), kwargs.get("baudrate")
+            )
+
+        elif focus == "usbid":
+            from serial.tools.list_ports import comports
+
+            usbid = kwargs.get("usbid")
+            vid, pid = usbid.split(":")
+            for port in comports():
+                if f"{port.vid:04x}" == vid and f"{port.pid:04x}" == pid:
+                    return cls._create_serial_for_port_and_baudrate(
+                        port.device, kwargs.get("baudrate")
+                    )
+            else:
+                raise ValueError(f"Can't find USB ID to connect to: {usbid}")
+
+        elif focus == "url":
+            serial_obj = serial.serial_for_url(kwargs.get("url"), do_not_open=True)
+            return serial_obj
+        else:
+            raise ValueError(f"Invalid connect_via: {focus}")
+
+    @classmethod
+    def _create_serial_for_port_and_baudrate(cls, port, baudrate, **kwargs):
         serial_obj = serial.Serial(
-            baudrate=kwargs.get("baudrate"),
+            baudrate=baudrate,
             exclusive=kwargs.get("exclusive"),
             parity=kwargs.get("parity"),
             write_timeout=kwargs.get("write_timeout", 10) * 1000,
         )
-        serial_obj.port = kwargs.get("port")  # set port only now to prevent auto open
+        serial_obj.port = port  # set port only now to prevent auto open
         return serial_obj
 
     @classmethod
@@ -319,29 +388,6 @@ class SerialTransport(Transport):
 
     def __str__(self):
         return "SerialTransport"
-
-
-class SerialUrlTransport(SerialTransport):
-    name = "Serial URL Connection"
-    key = "serialurl"
-    message_integrity = False
-
-    @classmethod
-    def get_connection_options(cls):
-        return [
-            UrlType(
-                "url",
-                "URL",
-                help=gettext(
-                    "See [here](https://pythonhosted.org/pyserial/url_handlers.html#urls) for supported URL schemes"
-                ),
-            )
-        ] + cls._get_common_options()
-
-    @classmethod
-    def _create_serial(cls, **kwargs):
-        serial_obj = serial.serial_for_url(kwargs.get("url"), do_not_open=True)
-        return serial_obj
 
 
 if __name__ == "__main__":

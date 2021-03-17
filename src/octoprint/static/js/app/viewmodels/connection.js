@@ -12,7 +12,7 @@ $(function () {
             return _.any(params, function (p) {
                 if (p.type === "group") {
                     return check(p) || checkRecursively(p.params, check);
-                } else if (p.type === "groupchoice" && p.group) {
+                } else if (p.type === "presetchoice" && p.group) {
                     return (
                         check(p) ||
                         check(p.group) ||
@@ -60,7 +60,7 @@ $(function () {
                         return p.expert;
                     });
             } else {
-                if (option.type === "groupchoice") {
+                if (option.type === "presetchoice") {
                     value = convertValue(value, option);
                     _.each(option.group.params, function (p) {
                         extendOption(
@@ -87,7 +87,7 @@ $(function () {
                         return option.value() != option.defaultValue();
                     });
 
-                    if (option.type === "groupchoice" && option.defaults) {
+                    if (option.type === "presetchoice" && option.defaults) {
                         option.group.advancedParameters =
                             option.group.advanced ||
                             _.any(option.group.params, function (p) {
@@ -456,7 +456,7 @@ $(function () {
                     _.each(parameters, function (parameter) {
                         if (parameter.type === "group") {
                             result[parameter.name] = toOptions(parameter.params);
-                        } else if (parameter.type === "groupchoice") {
+                        } else if (parameter.type === "presetchoice") {
                             result[parameter.name] = parameter.value();
                             result[parameter.group.name] = toOptions(
                                 parameter.group.params

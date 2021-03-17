@@ -56,9 +56,9 @@ from octoprint.comm.transport import (
 from octoprint.comm.util.parameters import (
     BooleanType,
     FloatType,
-    GroupChoiceType,
     IntegerType,
     ParamGroup,
+    PresetChoiceType,
     SmallChoiceType,
     SmallListType,
     Value,
@@ -192,7 +192,7 @@ class ReprapGcodeProtocol(
     @classmethod
     def get_connection_options(cls):
         return [
-            GroupChoiceType(
+            PresetChoiceType(
                 "flavor",
                 "Firmware Flavor",
                 sorted(

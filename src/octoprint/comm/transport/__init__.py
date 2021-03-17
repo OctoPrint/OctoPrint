@@ -17,13 +17,12 @@ _registry = {}
 
 
 def register_transports(settings):
-    from .serialtransport import SerialTransport, SerialUrlTransport
+    from .serialtransport import SerialTransport
     from .sockettransport import SerialOverTcpTransport, TcpTransport
 
     # stock transports
     for transport in (
         SerialTransport,
-        SerialUrlTransport,
         TcpTransport,
         SerialOverTcpTransport,
     ):

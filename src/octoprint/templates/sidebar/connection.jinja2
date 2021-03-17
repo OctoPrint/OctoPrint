@@ -112,7 +112,7 @@
     <!-- ko template: { name: 'connection_template_' + $data.type, data: $data } --><!-- /ko -->
     <!-- /ko -->
 </script>
-<script type="text/html" id="connection_template_groupchoice">
+<script type="text/html" id="connection_template_presetchoice">
     <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
     <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
     <!-- ko if: !$data.group.advanced -->
@@ -121,6 +121,15 @@
     <!-- ko if: !advanced -->
     <!-- ko template: { name: 'connection_template_' + $data.type, data: $data } --><!-- /ko -->
     <!-- /ko -->
+    <!-- /ko -->
+    <!-- /ko -->
+</script>
+<script type="text/html" id="connection_template_conditionalgroup">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+    <!-- ko foreach: $data.groups[$data.value] -->
+    <!-- ko if: !advanced -->
+    <!-- ko template: { name: 'connection_template_' + $data.type, data: $data } --><!-- /ko -->
     <!-- /ko -->
     <!-- /ko -->
 </script>
