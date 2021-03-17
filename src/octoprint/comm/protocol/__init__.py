@@ -14,14 +14,17 @@ from octoprint.settings import SubSettings
 from octoprint.util import CountedEvent, to_unicode
 from octoprint.util.listener import ListenerAware
 
+SETTINGS_PATH = ["connection", "protocols"]
+
+
 _registry = {}
 
 
-def register_protocols(settings, path):
+def register_protocols(settings):
     from .reprap import ReprapGcodeProtocol
 
     # stock protocols
-    register_protocol(ReprapGcodeProtocol, settings, path)
+    register_protocol(ReprapGcodeProtocol, settings, SETTINGS_PATH)
 
     # more protocols provided by plugins
     logger = logging.getLogger(__name__)
@@ -31,7 +34,7 @@ def register_protocols(settings, path):
             protocols = hook()
             for protocol in protocols:
                 try:
-                    register_protocol(protocol, settings, path)
+                    register_protocol(protocol, settings, SETTINGS_PATH)
                 except Exception:
                     logger.exception(
                         "Error while registering protocol class {} for plugin {}".format(
@@ -566,8 +569,10 @@ class ProtocolSettings(SubSettings):
         SubSettings.__init__(
             self,
             settings,
-            ["comm", "protocol", protocol.key],
-            defaults=protocol.get_settings_defaults(),
+            SETTINGS_PATH
+            + [
+                protocol.key,
+            ],
         )
 
 

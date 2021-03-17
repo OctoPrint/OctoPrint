@@ -10,10 +10,13 @@ from octoprint.plugin import plugin_manager
 from octoprint.settings import SubSettings
 from octoprint.util.listener import ListenerAware
 
+SETTINGS_PATH = ["connection", "transports"]
+
+
 _registry = {}
 
 
-def register_transports(settings, path):
+def register_transports(settings):
     from .serialtransport import SerialTransport, SerialUrlTransport
     from .sockettransport import SerialOverTcpTransport, TcpTransport
 
@@ -24,7 +27,7 @@ def register_transports(settings, path):
         TcpTransport,
         SerialOverTcpTransport,
     ):
-        register_transport(transport, settings, path)
+        register_transport(transport, settings, SETTINGS_PATH)
 
     # more transports provided by plugins
     logger = logging.getLogger(__name__)
@@ -34,7 +37,7 @@ def register_transports(settings, path):
             transports = hook()
             for transport in transports:
                 try:
-                    register_transport(transport, settings, path)
+                    register_transport(transport, settings, SETTINGS_PATH)
                 except Exception:
                     logger.exception(
                         "Error while registering transport class {} for plugin {}".format(
@@ -229,12 +232,7 @@ class TransportState:
 class TransportSettings(SubSettings):
     def __init__(self, settings, transport):
         self.transport = transport.key
-        SubSettings.__init__(
-            self,
-            settings,
-            ["comm", "transport", transport.key],
-            defaults=transport.get_settings_defaults(),
-        )
+        SubSettings.__init__(self, settings, SETTINGS_PATH + [transport.key])
 
 
 class TransportNotConnectedError(Exception):

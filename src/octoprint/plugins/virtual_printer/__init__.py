@@ -10,7 +10,9 @@ class VirtualSerialTransport(SerialTransport):
     name = "Virtual Connection"
     key = "virtual"
 
-    settings = {}
+    settings = []
+
+    pluginSettings = None
     datafolder = None
 
     @classmethod
@@ -18,7 +20,7 @@ class VirtualSerialTransport(SerialTransport):
         return type(
             f"{cls.__name__}WithSettingsAndData",
             (cls,),
-            {"settings": settings, "datafolder": datafolder},
+            {"pluginSettings": settings, "datafolder": datafolder},
         )
 
     @classmethod
@@ -28,7 +30,7 @@ class VirtualSerialTransport(SerialTransport):
     def create_connection(self, *args, **kwargs):
         from . import virtual
 
-        self._serial = virtual.VirtualPrinter(self.settings, self.datafolder)
+        self._serial = virtual.VirtualPrinter(self.pluginSettings, self.datafolder)
 
 
 class VirtualPrinterPlugin(
