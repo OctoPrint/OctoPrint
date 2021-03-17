@@ -863,11 +863,11 @@ class ReprapGcodeProtocol(
         )
 
         self._firmware_info_hooks = self._plugin_manager.get_hooks(
-            "octoprint.comm.firmware.info"
+            "octoprint.comm.protocol.firmware.info"
         )
 
         self._firmware_cap_hooks = self._plugin_manager.get_hooks(
-            "octoprint.comm.firmware.capabilities"
+            "octoprint.comm.protocol.firmware.capabilities"
         )
 
         # polling

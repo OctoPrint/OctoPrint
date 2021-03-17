@@ -1,6 +1,5 @@
 # General TODOs
 
-  * firmware info propagation & FirmwareCheck
   * auto connect on start
     * any chance to match by vid/pid (#4023)
   * save and connect
