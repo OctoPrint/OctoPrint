@@ -321,7 +321,7 @@ def in_cache():
 
 @app.route("/")
 def index():
-    from octoprint.server import printer
+    from octoprint.server import connectivityChecker, printer
 
     global _templates, _plugin_names, _plugin_vars
 
@@ -375,6 +375,7 @@ def index():
         enable_webcam,
         enable_temperature_graph,
         sockjs_connect_timeout,
+        connectivityChecker.online,
         wizard_active(_templates.get(locale)),
     ] + sorted(
         [
@@ -597,6 +598,7 @@ def index():
                 "enableSdSupport": enable_sd_support,
                 "sockJsConnectTimeout": sockjs_connect_timeout * 1000,
                 "wizard": wizard,
+                "online": connectivityChecker.online,
                 "now": now,
             }
         )
@@ -868,6 +870,11 @@ def fetch_template_data(refresh=False):
     # navbar
 
     templates["navbar"]["entries"] = {
+        "offlineindicator": {
+            "template": "navbar/offlineindicator.jinja2",
+            "_div": "navbar_offlineindicator",
+            "custom_bindings": False,
+        },
         "settings": {
             "template": "navbar/settings.jinja2",
             "_div": "navbar_settings",

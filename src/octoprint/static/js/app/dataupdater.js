@@ -173,6 +173,9 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
         BRANCH = data["branch"];
         $("span.version").text(DISPLAY_VERSION);
 
+        // update connectivity state
+        ONLINE = data["online"];
+
         // update plugin hash
         var oldPluginHash = self._pluginHash;
         self._pluginHash = data["plugin_hash"];
@@ -413,6 +416,8 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                     type: severity,
                     hide: false
                 });
+            } else if (type === "ConnectivityChanged") {
+                ONLINE = payload.new;
             }
 
             var legacyEventHandlers = {
