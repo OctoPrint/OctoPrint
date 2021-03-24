@@ -548,6 +548,13 @@ def _saveSettings(data):
             s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
         if "ffmpegCommandline" in data["webcam"]:
             commandline = data["webcam"]["ffmpegCommandline"]
+            if not all(
+                map(lambda x: "{" + x + "}" in commandline, ("ffmpeg", "input", "output"))
+            ):
+                abort(
+                    400,
+                    description="Invalid webcam.ffmpegCommandline setting, lacks mandatory {ffmpeg}, {input} or {output}",
+                )
             try:
                 commandline.format(
                     ffmpeg="ffmpeg",
@@ -558,6 +565,7 @@ def _saveSettings(data):
                     output="output",
                     videocodec="videocodec",
                     containerformat="containerformat",
+                    filters="filters",
                 )
             except Exception:
                 # some invalid data we'll refuse to set

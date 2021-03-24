@@ -16,7 +16,7 @@ class TimelapseRenderJobTest(unittest.TestCase):
     @data(
         (
             (
-                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y',
+                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y {filters} "{output}"',
                 "/path/to/ffmpeg",
                 25,
                 "10000k",
@@ -30,7 +30,7 @@ class TimelapseRenderJobTest(unittest.TestCase):
         ),
         (
             (
-                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y -g 5',
+                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y -g 5 {filters} "{output}"',
                 "/path/to/ffmpeg",
                 25,
                 "10000k",
@@ -44,7 +44,7 @@ class TimelapseRenderJobTest(unittest.TestCase):
         ),
         (
             (
-                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y',
+                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y {filters} "{output}"',
                 "/path/to/ffmpeg",
                 25,
                 "10000k",
@@ -58,7 +58,7 @@ class TimelapseRenderJobTest(unittest.TestCase):
         ),
         (
             (
-                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y',
+                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y {filters} "{output}"',
                 "/path/to/ffmpeg",
                 25,
                 "10000k",
@@ -72,7 +72,7 @@ class TimelapseRenderJobTest(unittest.TestCase):
         ),
         (
             (
-                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y',
+                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y {filters} "{output}"',
                 "/path/to/ffmpeg",
                 25,
                 "20000k",

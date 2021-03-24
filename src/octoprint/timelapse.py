@@ -1166,30 +1166,23 @@ class TimelapseRenderJob(object):
         else:
             containerformat = "mp4"
 
+        filter_string = cls._create_filter_string(
+            hflip=hflip, vflip=vflip, rotate=rotate, watermark=watermark
+        )
         placeholders = {
             "ffmpeg": ffmpeg,
             "fps": str(fps),
             "input": input,
+            "output": output,
             "videocodec": videocodec,
             "threads": str(threads),
             "bitrate": str(bitrate),
             "containerformat": containerformat,
+            "filters": "-vf " + sarge.shell_quote(filter_string) if filter_string else "",
         }
 
-        command = commandline.format(**placeholders)
-
-        filter_string = cls._create_filter_string(
-            hflip=hflip, vflip=vflip, rotate=rotate, watermark=watermark
-        )
-        if filter_string is not None:
-            logger.debug("Applying videofilter chain: {}".format(filter_string))
-            command += " -vf " + sarge.shell_quote(filter_string)
-
-        # finalize command with output file
         logger.debug("Rendering movie to {}".format(output))
-        command += ' "{}"'.format(output)
-
-        return command
+        return commandline.format(**placeholders)
 
     @classmethod
     def _create_filter_string(
