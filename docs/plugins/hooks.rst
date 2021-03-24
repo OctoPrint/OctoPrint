@@ -1253,6 +1253,26 @@ octoprint.printer.factory
    :return: The ``printer`` instance to use globally.
    :rtype: PrinterInterface subclass or None
 
+.. _sec-plugins-hook-printer-handle_connect:
+
+octoprint.printer.handle_connect
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: handle_connect(*args, **kwargs):
+
+   .. versionadded:: 1.6.0
+
+   Allows plugins to perform actions upon connecting to a printer. By returning ``True``,
+   plugins may also prevent further processing of the connect command. This hook is of
+   special interest if your plugin needs a connect from going through under certain
+   circumstances or if you need to do something before a connection to the printer is
+   established (e.g. switching on power to the printer).
+
+   :param kwargs: All connection parameters supplied to the ``connect`` call. Currently
+                  this also includes ``port``, ``baudrate`` and ``profile``.
+   :return: ``True`` if OctoPrint should not proceed with the connect
+   :rtype: boolean or None
+
 .. _sec-plugins-hook-printer-estimation-factory:
 
 octoprint.printer.estimation.factory
