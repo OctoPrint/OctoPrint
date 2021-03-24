@@ -131,6 +131,7 @@ def getSettings():
             "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
             "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
             "ffmpegPath": s.get(["webcam", "ffmpeg"]),
+            "ffmpegCommandline": s.get(["webcam", "ffmpegCommandline"]),
             "bitrate": s.get(["webcam", "bitrate"]),
             "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
             "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
@@ -545,6 +546,25 @@ def _saveSettings(data):
             )
         if "ffmpegPath" in data["webcam"]:
             s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
+        if "ffmpegCommandline" in data["webcam"]:
+            commandline = data["webcam"]["ffmpegCommandline"]
+            try:
+                commandline.format(
+                    ffmpeg="ffmpeg",
+                    fps="fps",
+                    bitrate="bitrate",
+                    threads="threads",
+                    input="input",
+                    output="output",
+                    videocodec="videocodec",
+                    containerformat="containerformat",
+                )
+            except Exception:
+                # some invalid data we'll refuse to set
+                logger.exception("Invalid webcam.ffmpegCommandline setting")
+                abort(400, description="Invalid webcam.ffmpegCommandline setting")
+            else:
+                s.set(["webcam", "ffmpegCommandline"], commandline)
         if "bitrate" in data["webcam"]:
             s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
         if "ffmpegThreads" in data["webcam"]:
