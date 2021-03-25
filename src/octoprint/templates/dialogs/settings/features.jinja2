@@ -31,6 +31,13 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
+                <input type="checkbox" data-bind="checked: feature_uploadOverwriteConfirmation" id="settings-uploadOverwriteConfirmation"> {{ _('Confirm before overwriting a file by upload') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_sdSupport" id="settings-featureSdSupport"> {{ _('Enable SD support') }}
             </label>
         </div>

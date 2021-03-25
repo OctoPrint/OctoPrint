@@ -281,6 +281,7 @@ default_settings = {
         "modelSizeDetection": True,
         "printStartConfirmation": False,
         "printCancelConfirmation": True,
+        "uploadOverwriteConfirmation": True,
         "autoUppercaseBlacklist": ["M117", "M118"],
         "g90InfluencesExtruder": False,
     },

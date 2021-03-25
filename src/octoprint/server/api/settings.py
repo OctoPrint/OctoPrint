@@ -150,6 +150,9 @@ def getSettings():
             "printCancelConfirmation": s.getBoolean(
                 ["feature", "printCancelConfirmation"]
             ),
+            "uploadOverwriteConfirmation": s.getBoolean(
+                ["feature", "uploadOverwriteConfirmation"]
+            ),
             "g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
             "autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"]),
         },
@@ -616,6 +619,11 @@ def _saveSettings(data):
             s.setBoolean(
                 ["feature", "printCancelConfirmation"],
                 data["feature"]["printCancelConfirmation"],
+            )
+        if "uploadOverwriteConfirmation" in data["feature"]:
+            s.setBoolean(
+                ["feature", "uploadOverwriteConfirmation"],
+                data["feature"]["uploadOverwriteConfirmation"],
             )
         if "g90InfluencesExtruder" in data["feature"]:
             s.setBoolean(

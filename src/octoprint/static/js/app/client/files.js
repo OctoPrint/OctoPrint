@@ -7,6 +7,7 @@
 })(this, function (OctoPrintClient, $, _) {
     var url = "api/files";
     var downloadUrl = "downloads/files";
+    var testUrl = url + "/test";
 
     var OctoPrintFilesClient = function (base) {
         this.base = base;
@@ -198,20 +199,22 @@
         return recursiveSearch(path.split("/"), root);
     };
 
-    OctoPrintFilesClient.prototype.pathForElement = function (element) {
-        // TODO Remove in 1.4.x
-        log.warn(
-            "pathForElement has been renamed to pathForEntry, please use that instead"
+    OctoPrintFilesClient.prototype.sanitize = function (location, path, filename, opts) {
+        return this.base.issueCommand(
+            testUrl,
+            "sanitize",
+            {storage: location, path: path, filename: filename},
+            opts
         );
-        return this.pathForEntry(element);
     };
 
-    OctoPrintFilesClient.prototype.elementByPath = function (location, startElement) {
-        // TODO Remove in 1.4.x
-        log.warn(
-            "elementByPath has been renamed to entryForPath, please use that instead"
+    OctoPrintFilesClient.prototype.exists = function (location, path, filename, opts) {
+        return this.base.issueCommand(
+            testUrl,
+            "exists",
+            {storage: location, path: path, filename: filename},
+            opts
         );
-        return this.entryForPath(location, startElement);
     };
 
     OctoPrintClient.registerComponent("files", OctoPrintFilesClient);
