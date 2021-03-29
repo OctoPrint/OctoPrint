@@ -1042,6 +1042,8 @@ class FileManager(object):
     def _add_analysis_result(self, destination, path, result):
         if destination not in self._storage_managers:
             return
+        if not result:
+            return
 
         storage_manager = self._storage_managers[destination]
         storage_manager.set_additional_metadata(path, "analysis", result, overwrite=True)

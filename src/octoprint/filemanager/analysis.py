@@ -483,27 +483,29 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
             output = p.stdout.text
             self._logger.debug("Got output: {!r}".format(output))
 
+            result = {}
             if "ERROR:" in output:
                 _, error = output.split("ERROR:")
                 raise RuntimeError(error.strip())
+            elif "EMPTY:" in output:
+                self._logger.info("Result is empty, no extrusions found")
             elif "RESULTS:" not in output:
                 raise RuntimeError("No analysis result found")
+            else:
+                _, output = output.split("RESULTS:")
+                analysis = yaml.safe_load(output)
 
-            _, output = output.split("RESULTS:")
-            analysis = yaml.safe_load(output)
-
-            result = {}
-            result["printingArea"] = analysis["printing_area"]
-            result["dimensions"] = analysis["dimensions"]
-            if analysis["total_time"]:
-                result["estimatedPrintTime"] = analysis["total_time"] * 60
-            if analysis["extrusion_length"]:
-                result["filament"] = {}
-                for i in range(len(analysis["extrusion_length"])):
-                    result["filament"]["tool%d" % i] = {
-                        "length": analysis["extrusion_length"][i],
-                        "volume": analysis["extrusion_volume"][i],
-                    }
+                result["printingArea"] = analysis["printing_area"]
+                result["dimensions"] = analysis["dimensions"]
+                if analysis["total_time"]:
+                    result["estimatedPrintTime"] = analysis["total_time"] * 60
+                if analysis["extrusion_length"]:
+                    result["filament"] = {}
+                    for i in range(len(analysis["extrusion_length"])):
+                        result["filament"]["tool%d" % i] = {
+                            "length": analysis["extrusion_length"][i],
+                            "volume": analysis["extrusion_volume"][i],
+                        }
 
             if self._current.analysis and isinstance(self._current.analysis, dict):
                 return dict_merge(result, self._current.analysis)
