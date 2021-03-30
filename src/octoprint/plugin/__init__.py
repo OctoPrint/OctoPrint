@@ -107,7 +107,7 @@ def plugin_manager(
                 plugin_obsolete_hooks = ["octoprint.comm.protocol.gcode"]
 
             if plugin_considered_bundled is None:
-                plugin_considered_bundled = ["firmware_check", "file_check"]
+                plugin_considered_bundled = ["firmware_check", "file_check", "pi_support"]
 
             if plugin_validators is None:
                 plugin_validators = [_validate_plugin]

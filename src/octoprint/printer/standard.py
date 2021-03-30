@@ -173,6 +173,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             Events.METADATA_STATISTICS_UPDATED, self._on_event_MetadataStatisticsUpdated
         )
 
+        self._handle_connect_hooks = plugin_manager().get_hooks(
+            "octoprint.printer.handle_connect"
+        )
+
     def _create_estimator(self, job_type=None):
         if job_type is None:
             with self._selectedFileMutex:
@@ -350,6 +354,19 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         """
         if self._comm is not None:
             return
+
+        for name, hook in self._handle_connect_hooks.items():
+            try:
+                if hook(
+                    self, port=port, baudrate=baudrate, profile=profile, *args, **kwargs
+                ):
+                    self._logger.info(f"Connect signalled as handled by plugin {name}")
+                    return
+            except Exception:
+                self._logger.exception(
+                    f"Exception while handling connect in plugin {name}",
+                    extra={"plugin": name},
+                )
 
         eventManager().fire(Events.CONNECTING)
         self._printerProfileManager.select(profile)

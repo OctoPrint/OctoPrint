@@ -10,10 +10,16 @@ click.disable_unicode_literals_warning = True
 # ~~ "octoprint util" commands
 
 
-def validate_result(result):
-    dimensions = ("depth", "height", "width")
-    printing_area = ("maxX", "maxY", "maxZ", "minX", "minY", "minZ")
+dimensions = ("depth", "height", "width")
+printing_area = ("maxX", "maxY", "maxZ", "minX", "minY", "minZ")
 
+
+def empty_result(result):
+    dims = result.get("dimensions", {})
+    return all(map(lambda x: dims.get(x) == 0.0, dimensions))
+
+
+def validate_result(result):
     def validate_list(data):
         return not any(map(invalid_float, data))
 
@@ -131,6 +137,10 @@ def gcode_command(
     click.echo("DONE:{}s".format(time.monotonic() - start_time))
 
     result = interpreter.get_result()
+    if empty_result(result):
+        click.echo("EMPTY:There are no extrusions in the file, nothing to analyse")
+        sys.exit(0)
+
     if not validate_result(result):
         click.echo(
             "ERROR:Invalid analysis result, please create a bug report in OctoPrint's "

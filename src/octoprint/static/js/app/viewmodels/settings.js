@@ -157,6 +157,7 @@ $(function () {
         self.webcam_snapshotTimeout = ko.observable(undefined);
         self.webcam_snapshotSslValidation = ko.observable(undefined);
         self.webcam_ffmpegPath = ko.observable(undefined);
+        self.webcam_ffmpegCommandline = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
         self.webcam_ffmpegThreads = ko.observable(undefined);
         self.webcam_ffmpegVideoCodec = ko.observable(undefined);
@@ -172,6 +173,7 @@ $(function () {
         self.feature_modelSizeDetection = ko.observable(undefined);
         self.feature_printStartConfirmation = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
+        self.feature_uploadOverwriteConfirmation = ko.observable(undefined);
         self.feature_g90InfluencesExtruder = ko.observable(undefined);
         self.feature_autoUppercaseBlacklist = ko.observable(undefined);
 
