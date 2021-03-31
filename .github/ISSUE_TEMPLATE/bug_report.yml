@@ -1,5 +1,5 @@
 name: 🐛 Report a bug
-about: Create a bug report to help improve OctoPrint
+description: Create a bug report to help improve OctoPrint
 title: ""
 issue_body: true
 body:
