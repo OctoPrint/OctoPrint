@@ -1,5 +1,5 @@
 name: ✨ Request a feature
-about: Request a new feature to implement in OctoPrint
+description: Request a new feature to implement in OctoPrint
 title: "[Request]"
 issue_body: true
 body:
