@@ -75,9 +75,6 @@ def jobState():
     response = {
         "job": currentData["job"],
         "progress": currentData["progress"],
-        "state": currentData["state"]["text"],
+        "state": currentData["state"],
     }
-    if currentData["state"]["error"]:
-        response["error"] = currentData["state"]["error"]
-
     return jsonify(**response)
