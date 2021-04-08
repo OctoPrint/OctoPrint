@@ -163,18 +163,22 @@ $(function () {
             listHelperExclusiveFilters.push(SUPPORTED_FILETYPES);
         }
 
+        var sortByName = function (a, b) {
+            // sorts ascending
+            if (a["display"].toLowerCase() < b["display"].toLowerCase()) return -1;
+            if (a["display"].toLowerCase() > b["display"].toLowerCase()) return 1;
+            return 0;
+        };
+
         self.listHelper = new ItemListHelper(
             "gcodeFiles",
             {
-                name: function (a, b) {
-                    // sorts ascending
-                    if (a["display"].toLowerCase() < b["display"].toLowerCase())
-                        return -1;
-                    if (a["display"].toLowerCase() > b["display"].toLowerCase()) return 1;
-                    return 0;
-                },
+                name: sortByName,
                 upload: function (a, b) {
                     // sorts descending
+                    if (a["date"] === undefined && b["date"] === undefined) {
+                        return sortByName(a, b);
+                    }
                     if (b["date"] === undefined || a["date"] > b["date"]) return -1;
                     if (a["date"] === undefined || a["date"] < b["date"]) return 1;
                     return 0;
