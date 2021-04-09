@@ -514,7 +514,7 @@ $(function () {
             }
 
             // IF disabled then we dont need to do anything
-            if(self.settings.webcam_webcamEnabled() == false){
+            if (self.settings.webcam_webcamEnabled() == false) {
                 return;
             }
 
