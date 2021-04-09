@@ -713,7 +713,11 @@ $(function () {
             var video = document.getElementById("webcam_hls");
 
             // Check for native playback options: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canPlayType
-            if (video != null && typeof video.canPlayType != undefined && video.canPlayType("application/vnd.apple.mpegurl") == "probably") {
+            if (
+                video != null &&
+                typeof video.canPlayType != undefined &&
+                video.canPlayType("application/vnd.apple.mpegurl") == "probably"
+            ) {
                 video.src = self.settings.webcam_streamUrl();
             } else if (Hls.isSupported()) {
                 var hls = new Hls();
