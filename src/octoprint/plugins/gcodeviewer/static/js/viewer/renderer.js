@@ -50,6 +50,7 @@ GCODE.renderer = (function () {
         showCurrentLayer: false,
         showPreviousLayer: false,
         showBoundingBox: false,
+        showLayerBoundingBox: false,
         showFullSize: false,
         showHead: false,
 
@@ -113,7 +114,7 @@ GCODE.renderer = (function () {
         ctx.clearRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
 
         drawGrid();
-        drawBoundingBox();
+        drawBoundingBox(layerNumStore);
         if (model && model.length) {
             if (layerNumStore < model.length) {
                 if (renderOptions["showNextLayer"] && layerNumStore < model.length - 1) {
@@ -546,24 +547,27 @@ GCODE.renderer = (function () {
         ctx.stroke();
     };
 
-    var drawBoundingBox = function () {
+    var drawBoundingBox = function (layerNum) {
         if (!modelInfo) return;
 
         var minX, minY, width, height;
+
+        var draw = function (x, y, w, h, c) {
+            ctx.beginPath();
+            ctx.strokeStyle = c;
+            ctx.setLineDash([2, 5]);
+
+            ctx.rect(x, y, w, h);
+
+            ctx.stroke();
+        };
 
         if (renderOptions["showFullSize"]) {
             minX = modelInfo.min.x;
             minY = modelInfo.min.y;
             width = modelInfo.modelSize.x;
             height = modelInfo.modelSize.y;
-
-            ctx.beginPath();
-            ctx.strokeStyle = "#0000ff";
-            ctx.setLineDash([2, 5]);
-
-            ctx.rect(minX, minY, width, height);
-
-            ctx.stroke();
+            draw(minX, minY, width, height, "#0000ff");
         }
 
         if (renderOptions["showBoundingBox"]) {
@@ -571,14 +575,18 @@ GCODE.renderer = (function () {
             minY = modelInfo.boundingBox.minY;
             width = modelInfo.boundingBox.maxX - minX;
             height = modelInfo.boundingBox.maxY - minY;
+            draw(minX, minY, width, height, "#ff0000");
+        }
 
-            ctx.beginPath();
-            ctx.strokeStyle = "#ff0000";
-            ctx.setLineDash([2, 5]);
-
-            ctx.rect(minX, minY, width, height);
-
-            ctx.stroke();
+        if (renderOptions["showLayerBoundingBox"]) {
+            var layerBounds = getLayerBounds(layerNum);
+            if (layerBounds) {
+                minX = layerBounds.minX;
+                minY = layerBounds.minY;
+                width = layerBounds.maxX - minX;
+                height = layerBounds.maxY - minY;
+                draw(minX, minY, width, height, "#00ff00");
+            }
         }
 
         ctx.setLineDash([1, 0]);
@@ -884,6 +892,7 @@ GCODE.renderer = (function () {
 
     var applyOffsets = function (layerNum) {
         var canvasCenter;
+        var layerBounds;
 
         // determine bed and model offsets
         if (ctx) ctx.translate(-offsetModelX, -offsetModelY);
