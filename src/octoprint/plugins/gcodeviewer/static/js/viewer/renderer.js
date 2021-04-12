@@ -151,42 +151,40 @@ GCODE.renderer = (function () {
         if (!model || !model[layer]) return;
 
         var cmds = model[layer];
-        var i = 0;
+        var firstExtrusion;
+        var i;
 
         // find bounds based on x/y moves with extrusion only
         // if you want to change that criterion, this is the place to do it
+        var factorIn = function (cmd) {
+            return cmd && cmd.extrude && (cmd.x !== undefined || cmd.y !== undefined);
+        };
 
-        while (i < cmds.length) {
-            if (cmds[i].extrude && (cmds[i].x !== undefined || cmds[i].y !== undefined))
-                break;
-            i++;
+        for (i = 0; i < cmds.length; i++) {
+            if (factorIn(cmds[i])) break;
         }
 
-        if (i == cmds.length) return;
+        if (i === cmds.length) return;
+        firstExtrusion = i;
 
         // initialize with guaranteed defined values and cut out a bunch of
         // testing for undefined cases
-        var minX = cmds[i].prevX,
-            maxX = cmds[i].prevX,
-            minY = cmds[i].prevY,
-            maxY = cmds[i].prevY;
+        var minX = cmds[firstExtrusion].prevX,
+            maxX = cmds[firstExtrusion].prevX,
+            minY = cmds[firstExtrusion].prevY,
+            maxY = cmds[firstExtrusion].prevY;
 
-        while (i < cmds.length) {
-            if (cmds[i].extrude && (cmds[i].x !== undefined || cmds[i].y !== undefined)) {
-                minX = Math.min(minX, cmds[i].prevX);
-                maxX = Math.max(maxX, cmds[i].prevX);
+        for (i = firstExtrusion; i < cmds.length; i++) {
+            if (factorIn(cmds[i])) {
                 if (cmds[i].x !== undefined) {
                     minX = Math.min(minX, cmds[i].x);
                     maxX = Math.max(maxX, cmds[i].x);
                 }
-                minY = Math.min(minY, cmds[i].prevY);
-                maxY = Math.max(maxY, cmds[i].prevY);
                 if (cmds[i].y !== undefined) {
                     minY = Math.min(minY, cmds[i].y);
                     maxY = Math.max(maxY, cmds[i].y);
                 }
             }
-            i++;
         }
 
         return {minX: minX, maxX: maxX, minY: minY, maxY: maxY};
