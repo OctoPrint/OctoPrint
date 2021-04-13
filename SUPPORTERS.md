@@ -8,9 +8,9 @@ thanks to everyone who contributed!
 
   * 3D-TECH
   * 3DPrinterOS
-  * Andrew Moorby
   * Arnljot Arntsen
   * Ash King
+  * Ashley Merrick
   * BigTreeTech
   * Boris Hussein
   * Brad Jackson
@@ -21,8 +21,10 @@ thanks to everyone who contributed!
   * Christoph Sigrist
   * Creality3D
   * D Brian Kimmel
+  * Dana Voigt
   * DeltaMaker 3D Printers
   * Dennis Breining
+  * Dennis Christilaw
   * Diana C Rodriguez
   * Douglas Floyd
   * Eric Betts
@@ -33,7 +35,6 @@ thanks to everyone who contributed!
   * Hog Duske
   * Hopewell Medical Acupuncture Center
   * Jeremy Cole
-  * Joe Pasqua
   * Joshua Wills
   * Julian Melo
   * Justin Kaufman
@@ -49,7 +50,6 @@ thanks to everyone who contributed!
   * Makespace Madrid
   * Mark Walker
   * Michael Aumock
-  * Michael Begala
   * Miles Flavel
   * Mosaic Manufacturing
   * Nat Friedman
@@ -75,6 +75,7 @@ thanks to everyone who contributed!
   * Sven Mueller
   * TH3D
   * The Spaghetti Detective
+  * Ulderico Cirello
   * Ulrich Kempken
 
-and 2296 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2309 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!

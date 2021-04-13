@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.6.0.dev405+g72dfa803c\n"
+"Project-Id-Version: OctoPrint 1.6.0rc2.dev12+ga1e5b4de6\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2021-03-30 10:55+0200\n"
+"POT-Creation-Date: 2021-04-14 14:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1331,48 +1331,48 @@ msgstr ""
 msgid "Analyzed"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:641
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:649
 #: src/octoprint/static/js/app/viewmodels/files.js:929
 msgid "Model size"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:651
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:659
 msgid "Estimated layer height"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:654
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:662
 #: src/octoprint/templates/tabs/timelapse.jinja2:69
 msgid "mm"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:657
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:665
 msgid "Estimated total print time"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:662
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:670
 msgid "Layers with extrusion"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:695
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:703
 msgid "Layer number"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:696
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:704
 msgid "Layer height"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:697
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:705
 msgid "GCODE commands"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:701
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:710
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:709
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:718
 #: src/octoprint/static/js/app/viewmodels/files.js:944
 #: src/octoprint/static/js/app/viewmodels/files.js:960
 msgid "Filament"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:712
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:720
 #: src/octoprint/static/js/app/viewmodels/control.js:85
 #: src/octoprint/static/js/app/viewmodels/files.js:962
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:355
@@ -1382,7 +1382,7 @@ msgstr ""
 msgid "Tool"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:724
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:732
 #: src/octoprint/static/js/app/viewmodels/files.js:972
 msgid "Estimated print time"
 msgstr ""
@@ -1495,24 +1495,32 @@ msgstr ""
 msgid "Show printed bounding box"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:92
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:90
+msgid "Show layer bounding box"
+msgstr ""
+
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:93
+msgid "Show segment starts"
+msgstr ""
+
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:98
 msgid "Hide empty layers"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:92
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:95
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:98
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:101
 msgid "Causes reload"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:95
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:101
 msgid "Sort layers"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:99
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:105
 msgid "Reset options"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:107
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:113
 msgid ""
 "\n"
 "            Note that the time and usage values in this tab are "
@@ -1527,7 +1535,7 @@ msgid ""
 "        "
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:117
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:123
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:73
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:94
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:459
@@ -1539,7 +1547,7 @@ msgstr ""
 msgid "Warning"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:118
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:124
 msgid ""
 "<p>\n"
 "        You've selected <strong data-bind=\"text: "
@@ -1556,7 +1564,7 @@ msgid ""
 "    </p>"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:129
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:135
 #, python-format
 msgid "Yes, please visualize %(name)s regardless of its size"
 msgstr ""
