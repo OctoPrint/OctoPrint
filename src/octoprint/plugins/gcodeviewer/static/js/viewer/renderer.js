@@ -177,10 +177,14 @@ GCODE.renderer = (function () {
 
         for (i = firstExtrusion; i < cmds.length; i++) {
             if (factorIn(cmds[i])) {
+                minX = Math.min(minX, cmds[i].prevX);
+                maxX = Math.max(maxX, cmds[i].prevX);
                 if (cmds[i].x !== undefined) {
                     minX = Math.min(minX, cmds[i].x);
                     maxX = Math.max(maxX, cmds[i].x);
                 }
+                minY = Math.min(minY, cmds[i].prevY);
+                maxY = Math.max(maxY, cmds[i].prevY);
                 if (cmds[i].y !== undefined) {
                     minY = Math.min(minY, cmds[i].y);
                     maxY = Math.max(maxY, cmds[i].y);
