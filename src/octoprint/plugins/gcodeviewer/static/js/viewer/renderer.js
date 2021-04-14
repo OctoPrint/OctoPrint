@@ -217,41 +217,29 @@ GCODE.renderer = (function () {
                     if (endAngle < 0) endAngle += deg360;
 
                     // from now on we only think in clockwise direction
+                    var intersectsAngle = function (sA, eA, angle) {
+                        return (
+                            (sA >= angle && (eA <= angle || eA > sA)) ||
+                            (sA <= angle && eA <= angle && eA > sA)
+                        );
+                    };
 
-                    if (endAngle > startAngle) {
+                    if (intersectsAngle(startAngle, endAngle, deg0)) {
                         // arc crosses positive x
                         maxX = Math.max(maxX, arc.x + arc.r);
                     }
 
-                    if (
-                        (startAngle >= deg180 &&
-                            (endAngle <= deg180 || endAngle > startAngle)) ||
-                        (startAngle <= deg180 &&
-                            endAngle <= deg180 &&
-                            endAngle > startAngle)
-                    ) {
-                        // arc crosses negative x
-                        minX = Math.min(minX, arc.x - arc.r);
-                    }
-
-                    if (
-                        (startAngle >= deg90 &&
-                            (endAngle <= deg90 || endAngle > startAngle)) ||
-                        (startAngle <= deg90 &&
-                            endAngle <= deg90 &&
-                            endAngle > startAngle)
-                    ) {
+                    if (intersectsAngle(startAngle, endAngle, deg90)) {
                         // arc crosses positive y
                         maxY = Math.max(maxY, arc.y + arc.r);
                     }
 
-                    if (
-                        (startAngle >= deg270 &&
-                            (endAngle <= deg270 || endAngle > startAngle)) ||
-                        (startAngle <= deg270 &&
-                            endAngle <= deg270 &&
-                            endAngle > startAngle)
-                    ) {
+                    if (intersectsAngle(startAngle, endAngle, deg180)) {
+                        // arc crosses negative x
+                        minX = Math.min(minX, arc.x - arc.r);
+                    }
+
+                    if (intersectsAngle(startAngle, endAngle, deg270)) {
                         // arc crosses negative y
                         minY = Math.min(minY, arc.y - arc.r);
                     }
