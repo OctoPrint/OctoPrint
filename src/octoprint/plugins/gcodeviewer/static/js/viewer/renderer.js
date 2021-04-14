@@ -85,6 +85,12 @@ GCODE.renderer = (function () {
     var currentInvertX = false,
         currentInvertY = false;
 
+    var deg0 = 0.0;
+    var deg90 = Math.PI / 2.0;
+    var deg180 = Math.PI;
+    var deg270 = Math.PI * 1.5;
+    var deg360 = Math.PI * 2.0;
+
     function notifyIfViewportChanged() {
         if (viewportChanged) {
             if (renderOptions["onViewportChange"]) {
@@ -192,10 +198,87 @@ GCODE.renderer = (function () {
                     minY = Math.min(minY, cmds[i].y);
                     maxY = Math.max(maxY, cmds[i].y);
                 }
+                if (!!cmds[i].direction) {
+                    var dir = cmds[i].direction;
+                    var arc = getArcParams(cmds[i]);
+
+                    var startAngle, endAngle;
+                    if (dir < 0) {
+                        // cw: start = start and end = end
+                        startAngle = arc.startAngle;
+                        endAngle = arc.endAngle;
+                    } else {
+                        // ccw: start = end and end = start for clockwise
+                        startAngle = arc.endAngle;
+                        endAngle = arc.startAngle;
+                    }
+
+                    if (startAngle < 0) startAngle += deg360;
+                    if (endAngle < 0) endAngle += deg360;
+
+                    // from now on we only think in clockwise direction
+
+                    if (endAngle > startAngle) {
+                        // arc crosses positive x
+                        maxX = Math.max(maxX, arc.x + arc.r);
+                    }
+
+                    if (
+                        (startAngle >= deg180 &&
+                            (endAngle <= deg180 || endAngle > startAngle)) ||
+                        (startAngle <= deg180 &&
+                            endAngle <= deg180 &&
+                            endAngle > startAngle)
+                    ) {
+                        // arc crosses negative x
+                        minX = Math.min(minX, arc.x - arc.r);
+                    }
+
+                    if (
+                        (startAngle >= deg90 &&
+                            (endAngle <= deg90 || endAngle > startAngle)) ||
+                        (startAngle <= deg90 &&
+                            endAngle <= deg90 &&
+                            endAngle > startAngle)
+                    ) {
+                        // arc crosses positive y
+                        maxY = Math.max(maxY, arc.y + arc.r);
+                    }
+
+                    if (
+                        (startAngle >= deg270 &&
+                            (endAngle <= deg270 || endAngle > startAngle)) ||
+                        (startAngle <= deg270 &&
+                            endAngle <= deg270 &&
+                            endAngle > startAngle)
+                    ) {
+                        // arc crosses negative y
+                        minY = Math.min(minY, arc.y - arc.r);
+                    }
+                }
             }
         }
 
         return {minX: minX, maxX: maxX, minY: minY, maxY: maxY};
+    }
+
+    function getArcParams(cmd) {
+        var x = cmd.x !== undefined ? cmd.x : cmd.prevX;
+        var y = cmd.y !== undefined ? cmd.y : cmd.prevY;
+
+        var centerX = cmd.prevX + cmd.i;
+        var centerY = cmd.prevY + cmd.j;
+        return {
+            x: centerX,
+            y: centerY,
+            r: Math.sqrt(cmd.i * cmd.i + cmd.j * cmd.j),
+            startAngle: Math.atan2(cmd.prevY - centerY, cmd.prevX - centerX),
+            endAngle: Math.atan2(y - centerY, x - centerX),
+            startX: cmd.prevX,
+            startY: cmd.prevY,
+            endX: x,
+            endY: y
+        };
     }
 
     function trackTransforms(ctx) {
@@ -875,20 +958,14 @@ GCODE.renderer = (function () {
                     // no retraction => real extrusion move, use tool color to draw line
                     strokePathIfNeeded("extrude", getColorLineForTool(tool));
                     ctx.lineWidth = renderOptions["extrusionWidth"] * lineWidthFactor;
-                    if (cmd.direction !== undefined && cmd.direction != 0) {
-                        var di = cmd.i;
-                        var dj = cmd.j;
-                        var centerX = prevX + di;
-                        var centerY = prevY + dj;
-                        var startAngle = Math.atan2(prevY - centerY, prevX - centerX);
-                        var endAngle = Math.atan2(y - centerY, x - centerX);
-                        var radius = Math.sqrt(di * di + dj * dj);
+                    if (cmd.direction !== undefined && cmd.direction !== 0) {
+                        var arc = getArcParams(cmd);
                         ctx.arc(
-                            centerX,
-                            centerY,
-                            radius,
-                            startAngle,
-                            endAngle,
+                            arc.x,
+                            arc.y,
+                            arc.r,
+                            arc.startAngle,
+                            arc.endAngle,
                             cmd.direction < 0
                         ); // Y-axis is inverted so direction is also inverted
                     } else {
