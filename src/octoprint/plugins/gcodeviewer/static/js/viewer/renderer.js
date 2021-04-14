@@ -37,6 +37,7 @@ GCODE.renderer = (function () {
         colorRetract: "#ff0000",
         colorRestart: "#0000ff",
         colorHead: "#00ff00",
+        colorSegmentStart: "#666666",
 
         showMoves: true,
         showRetracts: true,
@@ -50,8 +51,11 @@ GCODE.renderer = (function () {
         showCurrentLayer: false,
         showPreviousLayer: false,
         showBoundingBox: false,
+        showLayerBoundingBox: false,
         showFullSize: false,
         showHead: false,
+        showSegmentStarts: false,
+        sizeSegmentStart: 2 * pixelRatio,
 
         moveModel: true,
         zoomInOnModel: false,
@@ -113,7 +117,7 @@ GCODE.renderer = (function () {
         ctx.clearRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
 
         drawGrid();
-        drawBoundingBox();
+        drawBoundingBox(layerNumStore);
         if (model && model.length) {
             if (layerNumStore < model.length) {
                 if (renderOptions["showNextLayer"] && layerNumStore < model.length - 1) {
@@ -151,28 +155,31 @@ GCODE.renderer = (function () {
         if (!model || !model[layer]) return;
 
         var cmds = model[layer];
-        var i = 0;
+        var firstExtrusion;
+        var i;
 
         // find bounds based on x/y moves with extrusion only
         // if you want to change that criterion, this is the place to do it
+        var factorIn = function (cmd) {
+            return cmd && cmd.extrude && (cmd.x !== undefined || cmd.y !== undefined);
+        };
 
-        while (i < cmds.length) {
-            if (cmds[i].extrude && (cmds[i].x !== undefined || cmds[i].y !== undefined))
-                break;
-            i++;
+        for (i = 0; i < cmds.length; i++) {
+            if (factorIn(cmds[i])) break;
         }
 
-        if (i == cmds.length) return;
+        if (i === cmds.length) return;
+        firstExtrusion = i;
 
         // initialize with guaranteed defined values and cut out a bunch of
         // testing for undefined cases
-        var minX = cmds[i].prevX,
-            maxX = cmds[i].prevX,
-            minY = cmds[i].prevY,
-            maxY = cmds[i].prevY;
+        var minX = cmds[firstExtrusion].prevX,
+            maxX = cmds[firstExtrusion].prevX,
+            minY = cmds[firstExtrusion].prevY,
+            maxY = cmds[firstExtrusion].prevY;
 
-        while (i < cmds.length) {
-            if (cmds[i].extrude && (cmds[i].x !== undefined || cmds[i].y !== undefined)) {
+        for (i = firstExtrusion; i < cmds.length; i++) {
+            if (factorIn(cmds[i])) {
                 minX = Math.min(minX, cmds[i].prevX);
                 maxX = Math.max(maxX, cmds[i].prevX);
                 if (cmds[i].x !== undefined) {
@@ -186,7 +193,6 @@ GCODE.renderer = (function () {
                     maxY = Math.max(maxY, cmds[i].y);
                 }
             }
-            i++;
         }
 
         return {minX: minX, maxX: maxX, minY: minY, maxY: maxY};
@@ -548,24 +554,27 @@ GCODE.renderer = (function () {
         ctx.stroke();
     };
 
-    var drawBoundingBox = function () {
+    var drawBoundingBox = function (layerNum) {
         if (!modelInfo) return;
 
         var minX, minY, width, height;
+
+        var draw = function (x, y, w, h, c) {
+            ctx.beginPath();
+            ctx.strokeStyle = c;
+            ctx.setLineDash([2, 5]);
+
+            ctx.rect(x, y, w, h);
+
+            ctx.stroke();
+        };
 
         if (renderOptions["showFullSize"]) {
             minX = modelInfo.min.x;
             minY = modelInfo.min.y;
             width = modelInfo.modelSize.x;
             height = modelInfo.modelSize.y;
-
-            ctx.beginPath();
-            ctx.strokeStyle = "#0000ff";
-            ctx.setLineDash([2, 5]);
-
-            ctx.rect(minX, minY, width, height);
-
-            ctx.stroke();
+            draw(minX, minY, width, height, "#0000ff");
         }
 
         if (renderOptions["showBoundingBox"]) {
@@ -573,14 +582,18 @@ GCODE.renderer = (function () {
             minY = modelInfo.boundingBox.minY;
             width = modelInfo.boundingBox.maxX - minX;
             height = modelInfo.boundingBox.maxY - minY;
+            draw(minX, minY, width, height, "#ff0000");
+        }
 
-            ctx.beginPath();
-            ctx.strokeStyle = "#ff0000";
-            ctx.setLineDash([2, 5]);
-
-            ctx.rect(minX, minY, width, height);
-
-            ctx.stroke();
+        if (renderOptions["showLayerBoundingBox"]) {
+            var layerBounds = getLayerBounds(layerNum);
+            if (layerBounds) {
+                minX = layerBounds.minX;
+                minY = layerBounds.minY;
+                width = layerBounds.maxX - minX;
+                height = layerBounds.maxY - minY;
+                draw(minX, minY, width, height, "#00ff00");
+            }
         }
 
         ctx.setLineDash([1, 0]);
@@ -631,6 +644,23 @@ GCODE.renderer = (function () {
         ctx.fill();
 
         ctx.lineJoin = origLineJoin;
+    };
+
+    var drawCross = function (centerX, centerY, size) {
+        var x1, y1, x2, y2;
+
+        var half = size / 2;
+        x1 = centerX - half;
+        x2 = centerX + half;
+        y1 = centerY - half;
+        y2 = centerY + half;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.moveTo(x1, y2);
+        ctx.lineTo(x2, y1);
+        ctx.stroke();
     };
 
     var drawLayer = function (layerNum, fromProgress, toProgress, isNotCurrentLayer) {
@@ -692,6 +722,7 @@ GCODE.renderer = (function () {
         //~~ render this layer's commands
 
         var sizeRetractSpot = renderOptions["sizeRetractSpot"] * lineWidthFactor * 2;
+        var sizeSegmentStart = renderOptions["sizeSegmentStart"] * lineWidthFactor * 2;
 
         // alpha value (100% if current layer is being rendered, 30% otherwise)
         // Note - If showing currently layer as preview - also render it at 30% and draw the progress over the top at 100%
@@ -707,6 +738,7 @@ GCODE.renderer = (function () {
         var colorMove = {};
         var colorRetract = {};
         var colorRestart = {};
+        var colorSegmentStart = {};
 
         function getColorLineForTool(tool) {
             var rv = colorLine[tool];
@@ -755,6 +787,19 @@ GCODE.renderer = (function () {
                 var shade = tool * 0.15;
                 rv = colorRestart[tool] = pusher
                     .color(renderOptions["colorRestart"])
+                    .shade(shade)
+                    .alpha(alpha)
+                    .html();
+            }
+            return rv;
+        }
+
+        function getColorSegmentStartForTool(tool) {
+            var rv = colorSegmentStart[tool];
+            if (rv === undefined) {
+                var shade = tool * 0.15;
+                rv = colorSegmentStart[tool] = pusher
+                    .color(renderOptions["colorSegmentStart"])
                     .shade(shade)
                     .alpha(alpha)
                     .html();
@@ -858,6 +903,12 @@ GCODE.renderer = (function () {
                         drawTriangle(prevX, prevY, sizeRetractSpot, false);
                     }
                 }
+
+                if (renderOptions["showSegmentStarts"] && !isNotCurrentLayer) {
+                    strokePathIfNeeded("fill");
+                    ctx.strokeStyle = getColorSegmentStartForTool(tool);
+                    drawCross(x, y, sizeSegmentStart);
+                }
             }
 
             // set new (prevX, prevY)
@@ -886,6 +937,7 @@ GCODE.renderer = (function () {
 
     var applyOffsets = function (layerNum) {
         var canvasCenter;
+        var layerBounds;
 
         // determine bed and model offsets
         if (ctx) ctx.translate(-offsetModelX, -offsetModelY);
