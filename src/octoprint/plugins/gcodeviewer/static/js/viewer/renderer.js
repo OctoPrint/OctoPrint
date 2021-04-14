@@ -37,6 +37,7 @@ GCODE.renderer = (function () {
         colorRetract: "#ff0000",
         colorRestart: "#0000ff",
         colorHead: "#00ff00",
+        colorSegmentStart: "#666666",
 
         showMoves: true,
         showRetracts: true,
@@ -53,6 +54,8 @@ GCODE.renderer = (function () {
         showLayerBoundingBox: false,
         showFullSize: false,
         showHead: false,
+        showSegmentStarts: false,
+        sizeSegmentStart: 2 * pixelRatio,
 
         moveModel: true,
         zoomInOnModel: false,
@@ -643,6 +646,23 @@ GCODE.renderer = (function () {
         ctx.lineJoin = origLineJoin;
     };
 
+    var drawCross = function (centerX, centerY, size) {
+        var x1, y1, x2, y2;
+
+        var half = size / 2;
+        x1 = centerX - half;
+        x2 = centerX + half;
+        y1 = centerY - half;
+        y2 = centerY + half;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.moveTo(x1, y2);
+        ctx.lineTo(x2, y1);
+        ctx.stroke();
+    };
+
     var drawLayer = function (layerNum, fromProgress, toProgress, isNotCurrentLayer) {
         log.trace(
             "Drawing layer " +
@@ -702,6 +722,7 @@ GCODE.renderer = (function () {
         //~~ render this layer's commands
 
         var sizeRetractSpot = renderOptions["sizeRetractSpot"] * lineWidthFactor * 2;
+        var sizeSegmentStart = renderOptions["sizeSegmentStart"] * lineWidthFactor * 2;
 
         // alpha value (100% if current layer is being rendered, 30% otherwise)
         // Note - If showing currently layer as preview - also render it at 30% and draw the progress over the top at 100%
@@ -717,6 +738,7 @@ GCODE.renderer = (function () {
         var colorMove = {};
         var colorRetract = {};
         var colorRestart = {};
+        var colorSegmentStart = {};
 
         function getColorLineForTool(tool) {
             var rv = colorLine[tool];
@@ -765,6 +787,19 @@ GCODE.renderer = (function () {
                 var shade = tool * 0.15;
                 rv = colorRestart[tool] = pusher
                     .color(renderOptions["colorRestart"])
+                    .shade(shade)
+                    .alpha(alpha)
+                    .html();
+            }
+            return rv;
+        }
+
+        function getColorSegmentStartForTool(tool) {
+            var rv = colorSegmentStart[tool];
+            if (rv === undefined) {
+                var shade = tool * 0.15;
+                rv = colorSegmentStart[tool] = pusher
+                    .color(renderOptions["colorSegmentStart"])
                     .shade(shade)
                     .alpha(alpha)
                     .html();
@@ -867,6 +902,12 @@ GCODE.renderer = (function () {
                         ctx.strokeStyle = ctx.fillStyle;
                         drawTriangle(prevX, prevY, sizeRetractSpot, false);
                     }
+                }
+
+                if (renderOptions["showSegmentStarts"] && !isNotCurrentLayer) {
+                    strokePathIfNeeded("fill");
+                    ctx.strokeStyle = getColorSegmentStartForTool(tool);
+                    drawCross(x, y, sizeSegmentStart);
                 }
             }
 
