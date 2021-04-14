@@ -1215,9 +1215,13 @@ def _getCurrentFile():
 
 
 def _validate(target, filename):
-    return filename == "/".join(
-        map(lambda x: fileManager.sanitize_name(target, x), filename.split("/"))
-    )
+    if target == FileDestinations.SDCARD:
+        # we make no assumptions about the shape of valid SDCard file names
+        return True
+    else:
+        return filename == "/".join(
+            map(lambda x: fileManager.sanitize_name(target, x), filename.split("/"))
+        )
 
 
 class WerkzeugFileWrapper(octoprint.filemanager.util.AbstractFileWrapper):

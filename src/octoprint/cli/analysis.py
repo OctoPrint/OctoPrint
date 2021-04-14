@@ -74,6 +74,7 @@ def util():
 @click.option("--g90-extruder", "g90_extruder", is_flag=True)
 @click.option("--bed-z", "bedz", type=float, default=0)
 @click.option("--progress", "progress", is_flag=True)
+@click.option("--layers", "layers", is_flag=True)
 @click.argument("path", type=click.Path())
 def gcode_command(
     path,
@@ -87,6 +88,7 @@ def gcode_command(
     g90_extruder,
     bedz,
     progress,
+    layers,
 ):
     """Runs a GCODE file analysis."""
 
@@ -121,7 +123,7 @@ def gcode_command(
         def progress_callback(percentage):
             click.echo(f"PROGRESS:{percentage}")
 
-    interpreter = gcode(progress_callback=progress_callback)
+    interpreter = gcode(progress_callback=progress_callback, incl_layers=layers)
 
     interpreter.load(
         path,

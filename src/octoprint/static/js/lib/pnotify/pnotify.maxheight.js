@@ -44,7 +44,8 @@
             return;
         }
         notice.text_container.css("max-height", height);
-        notice.text_container.css("overflow", "auto");
+        notice.text_container.css("overflow-x", "hidden");
+        notice.text_container.css("overflow-y", "auto");
     };
 
     PNotify.prototype.modules.maxheight = {

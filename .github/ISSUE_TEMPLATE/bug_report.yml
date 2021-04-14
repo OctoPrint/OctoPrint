@@ -1,7 +1,6 @@
 name: 🐛 Report a bug
-about: Create a bug report to help improve OctoPrint
+description: Create a bug report to help improve OctoPrint
 title: ""
-issue_body: true
 body:
   - type: markdown
     attributes:
@@ -130,7 +129,6 @@ body:
         - label: Contents of the JavaScript browser console (always include in cases of issues with the user interface)
         - label: Screenshots and/or videos showing the problem (always include in case of issues with the user interface)
         - label: GCODE file with which to reproduce (always include in case of issues with GCODE analysis or printing behaviour)
-  - type: markdown
+  - type: textarea
     attributes:
-      value: |
-        ## Additional information & file uploads
+      label: Additional information & file uploads
