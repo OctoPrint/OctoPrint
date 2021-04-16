@@ -516,7 +516,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     )
                 )
 
-        command = "G1 {}".format(
+        command = "G0 {}".format(
             " ".join(["{}{}".format(axis.upper(), amt) for axis, amt in axes.items()])
         )
 
