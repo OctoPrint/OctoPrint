@@ -1284,7 +1284,7 @@ class Server:
             self._logger.exception("Stacktrace follows:")
 
     def _create_socket_connection(self, session):
-        global printer, fileManager, analysisQueue, userManager, eventManager
+        global printer, fileManager, analysisQueue, userManager, eventManager, connectivityChecker
         return util.sockjs.PrinterStateConnection(
             printer,
             fileManager,
@@ -1293,6 +1293,7 @@ class Server:
             groupManager,
             eventManager,
             pluginManager,
+            connectivityChecker,
             session,
         )
 

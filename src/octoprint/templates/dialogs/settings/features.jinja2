@@ -1,3 +1,4 @@
+<h3>{{ _("Features") }}</h3>
 <form class="form-horizontal" onsubmit="return false;">
     <div class="control-group">
         <div class="controls">
@@ -24,6 +25,13 @@
         <div class="controls">
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_printCancelConfirmation" id="settings-printCancelConfirmation"> {{ _('Confirm before cancelling a print') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: feature_uploadOverwriteConfirmation" id="settings-uploadOverwriteConfirmation"> {{ _('Confirm before overwriting a file by upload') }}
             </label>
         </div>
     </div>

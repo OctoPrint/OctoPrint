@@ -120,6 +120,7 @@ def getSettings():
             "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
             "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
             "ffmpegPath": s.get(["webcam", "ffmpeg"]),
+            "ffmpegCommandline": s.get(["webcam", "ffmpegCommandline"]),
             "bitrate": s.get(["webcam", "bitrate"]),
             "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
             "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
@@ -137,6 +138,9 @@ def getSettings():
             "printStartConfirmation": s.getBoolean(["feature", "printStartConfirmation"]),
             "printCancelConfirmation": s.getBoolean(
                 ["feature", "printCancelConfirmation"]
+            ),
+            "uploadOverwriteConfirmation": s.getBoolean(
+                ["feature", "uploadOverwriteConfirmation"]
             ),
             "g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
             "autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"]),
@@ -520,6 +524,33 @@ def _saveSettings(data):
             )
         if "ffmpegPath" in data["webcam"]:
             s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
+        if "ffmpegCommandline" in data["webcam"]:
+            commandline = data["webcam"]["ffmpegCommandline"]
+            if not all(
+                map(lambda x: "{" + x + "}" in commandline, ("ffmpeg", "input", "output"))
+            ):
+                abort(
+                    400,
+                    description="Invalid webcam.ffmpegCommandline setting, lacks mandatory {ffmpeg}, {input} or {output}",
+                )
+            try:
+                commandline.format(
+                    ffmpeg="ffmpeg",
+                    fps="fps",
+                    bitrate="bitrate",
+                    threads="threads",
+                    input="input",
+                    output="output",
+                    videocodec="videocodec",
+                    containerformat="containerformat",
+                    filters="filters",
+                )
+            except Exception:
+                # some invalid data we'll refuse to set
+                logger.exception("Invalid webcam.ffmpegCommandline setting")
+                abort(400, description="Invalid webcam.ffmpegCommandline setting")
+            else:
+                s.set(["webcam", "ffmpegCommandline"], commandline)
         if "bitrate" in data["webcam"]:
             s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
         if "ffmpegThreads" in data["webcam"]:
@@ -563,6 +594,11 @@ def _saveSettings(data):
             s.setBoolean(
                 ["feature", "printCancelConfirmation"],
                 data["feature"]["printCancelConfirmation"],
+            )
+        if "uploadOverwriteConfirmation" in data["feature"]:
+            s.setBoolean(
+                ["feature", "uploadOverwriteConfirmation"],
+                data["feature"]["uploadOverwriteConfirmation"],
             )
         if "g90InfluencesExtruder" in data["feature"]:
             s.setBoolean(

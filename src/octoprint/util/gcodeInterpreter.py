@@ -208,9 +208,8 @@ regex_command = re.compile(
 
 
 class gcode:
-    def __init__(self, progress_callback=None):
+    def __init__(self, incl_layers=False, progress_callback=None):
         self._logger = logging.getLogger(__name__)
-        self.layerList = None
         self.extrusionAmount = [0]
         self.extrusionVolume = [0]
         self.totalMoveTimeMinute = 0
@@ -220,6 +219,25 @@ class gcode:
         self._filamentDiameter = 0
         self._minMax = MinMax3D()
         self._progress_callback = progress_callback
+
+        self._incl_layers = incl_layers
+        self._layers = []
+        self._current_layer = None
+
+    def _track_layer(self, pos):
+        if not self._incl_layers:
+            return
+
+        if self._current_layer is None or self._current_layer["z"] != pos.z:
+            self._current_layer = {"z": pos.z, "minmax": MinMax3D(), "commands": 1}
+            self._layers.append(self._current_layer)
+
+        elif self._current_layer:
+            self._current_layer["minmax"].record(pos)
+
+    def _track_command(self):
+        if self._current_layer:
+            self._current_layer["commands"] += 1
 
     @property
     def dimensions(self):
@@ -236,6 +254,23 @@ class gcode:
             "maxY": None if math.isinf(self._minMax.max.y) else self._minMax.max.y,
             "maxZ": None if math.isinf(self._minMax.max.z) else self._minMax.max.z,
         }
+
+    @property
+    def layers(self):
+        return [
+            {
+                "num": num + 1,
+                "z": layer["z"],
+                "commands": layer["commands"],
+                "bounds": {
+                    "minX": layer["minmax"].min.x,
+                    "maxX": layer["minmax"].max.x,
+                    "minY": layer["minmax"].min.y,
+                    "maxY": layer["minmax"].max.y,
+                },
+            }
+            for num, layer in enumerate(self._layers)
+        ]
 
     def load(
         self,
@@ -450,6 +485,10 @@ class gcode:
                 # time to add is maximum of both
                 totalMoveTimeMinute += max(moveTimeXYZ, extrudeTime)
 
+                # process layers if there's extrusion
+                if e:
+                    self._track_layer(pos)
+
             elif gcode == "G4":  # Delay
                 S = getCodeFloat(line, "S")
                 if S is not None:
@@ -510,7 +549,6 @@ class gcode:
                         pos.y = y
                     if z is not None:
                         pos.z = z
-
             # M codes
             elif gcode == "M82":  # Absolute E
                 relativeE = False
@@ -578,6 +616,9 @@ class gcode:
                         for _ in range(len(totalExtrusion), currentExtruder + 1):
                             totalExtrusion.append(0.0)
 
+            if gcode or tool:
+                self._track_command()
+
             if throttle is not None:
                 throttle(lineNo, readBytes)
         if self._progress_callback is not None:
@@ -602,13 +643,17 @@ class gcode:
         }
 
     def get_result(self):
-        return {
+        result = {
             "total_time": self.totalMoveTimeMinute,
             "extrusion_length": self.extrusionAmount,
             "extrusion_volume": self.extrusionVolume,
             "dimensions": self.dimensions,
             "printing_area": self.printing_area,
         }
+        if self._incl_layers:
+            result["layers"] = self.layers
+
+        return result
 
 
 def getCodeInt(line, code):

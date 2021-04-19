@@ -64,7 +64,8 @@ def plugin_manager(
             this defaults to the entry point ``octoprint.plugin``.
         plugin_disabled_list (list): A list of plugin identifiers that are currently disabled. If not provided this
             defaults to all plugins for which ``enabled`` is set to ``False`` in the settings.
-        plugin_blacklist (list): A list of plugin identifiers/identifier-version tuples that are currently blacklisted.
+        plugin_blacklist (list): A list of plugin identifiers/identifier-requirement tuples
+            that are currently blacklisted.
         plugin_restart_needing_hooks (list): A list of hook namespaces which cause a plugin to need a restart in order
             be enabled/disabled. Does not have to contain full hook identifiers, will be matched with startswith similar
             to logging handlers
@@ -107,7 +108,7 @@ def plugin_manager(
                 plugin_obsolete_hooks = ["octoprint.comm.protocol.gcode"]
 
             if plugin_considered_bundled is None:
-                plugin_considered_bundled = ["firmware_check", "file_check"]
+                plugin_considered_bundled = ["firmware_check", "file_check", "pi_support"]
 
             if plugin_validators is None:
                 plugin_validators = [_validate_plugin]

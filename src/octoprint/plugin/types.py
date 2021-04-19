@@ -670,7 +670,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
                 object.
 
         Returns:
-            bool: ``True`` if the the implementation will serve the request,
+            bool: ``True`` if the implementation will serve the request,
                 ``False`` otherwise.
         """
         return False

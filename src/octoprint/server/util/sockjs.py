@@ -116,6 +116,7 @@ class PrinterStateConnection(
         groupManager,
         eventManager,
         pluginManager,
+        connectivityChecker,
         session,
     ):
         if isinstance(session, octoprint.vendor.sockjs.tornado.session.Session):
@@ -142,6 +143,7 @@ class PrinterStateConnection(
         self._groupManager = groupManager
         self._eventManager = eventManager
         self._pluginManager = pluginManager
+        self._connectivityChecker = connectivityChecker
 
         self._remoteAddress = None
         self._user = self._userManager.anonymous_user_factory()
@@ -220,6 +222,7 @@ class PrinterStateConnection(
                 "config_hash": config_hash,
                 "debug": octoprint.server.debug,
                 "safe_mode": octoprint.server.safe_mode,
+                "online": self._connectivityChecker.online,
                 "permissions": [permission.as_dict() for permission in Permissions.all()],
             },
         )

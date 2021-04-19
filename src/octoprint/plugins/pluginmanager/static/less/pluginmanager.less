@@ -1,21 +1,20 @@
 #settings_plugin_pluginmanager {
 }
 
-#settings_plugin_pluginmanager_navbar {
-  position: -webkit-sticky; /* Safari, according to the internet */
-  position: sticky;
-  top: 0;
-  padding-bottom: 1px;
-  border-bottom: 1px solid #ddd;
-  background: white;
-}
-
 #settings_plugin_pluginmanager_pluginlist {
+  height: calc(100vh - 450px);
   display: block;
   width: auto;
   overflow-x: hidden;
   padding-right: 2px;
   margin-bottom: 1em;
+  position: relative;
+  border-top: 1px solid #eee;
+  padding-top: 6px;
+
+  > table {
+    margin-top: 0px;
+  }
 
   table {
     th,

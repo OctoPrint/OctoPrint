@@ -228,6 +228,10 @@ class Printer(
             Events.METADATA_STATISTICS_UPDATED, self._on_event_MetadataStatisticsUpdated
         )
 
+        self._handle_connect_hooks = plugin_manager().get_hooks(
+            "octoprint.printer.handle_connect"
+        )
+
     def _create_estimator(self, job_type=None):
         if job_type is None:
             with self._selectedFileMutex:
@@ -390,6 +394,17 @@ class Printer(
 
         if self._protocol is not None or self._transport is not None:
             return
+
+        for name, hook in self._handle_connect_hooks.items():
+            try:
+                if hook(self, **kwargs):
+                    self._logger.info(f"Connect signalled as handled by plugin {name}")
+                    return
+            except Exception:
+                self._logger.exception(
+                    f"Exception while handling connect in plugin {name}",
+                    extra={"plugin": name},
+                )
 
         ## prepare feedback controls
         self._feedback_controls, self._feedback_matcher = convert_feedback_controls(
@@ -1468,16 +1483,16 @@ class Printer(
             except Exception:
                 pass
             else:
-                if "display" in file_data:
+                if file_data.get("display"):
                     display_name = file_data["display"]
 
-                if "analysis" in file_data:
+                if isinstance(file_data.get("analysis"), dict):
                     if "estimatedPrintTime" in file_data["analysis"]:
                         analysis_total = file_data["analysis"]["estimatedPrintTime"]
-                    if "filament" in file_data["analysis"].keys():
+                    if file_data["analysis"].get("filament"):
                         filament = file_data["analysis"]["filament"]
 
-                if "statistics" in file_data:
+                if isinstance(file_data.get("statistics"), dict):
                     printer_profile = (
                         self._printer_profile_manager.get_current_or_default()["id"]
                     )

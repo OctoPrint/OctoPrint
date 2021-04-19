@@ -35,6 +35,7 @@
     var SUPPORTED_EXTENSIONS = {{ supportedExtensions|tojson }};
 
     var PERMISSIONS = {{ permissions|tojson }};
+    var ONLINE = {% if online -%}true{% else %}false{%- endif %};
 
     var OCTOPRINT_VIEWMODELS = [];
     var ADDITIONAL_VIEWMODELS = [];

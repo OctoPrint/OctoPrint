@@ -162,6 +162,54 @@ def readGcodeFiles():
     return jsonify(files=files, free=usage.free, total=usage.total)
 
 
+@api.route("/files/test", methods=["POST"])
+@Permissions.FILES_LIST.require(403)
+def runFilesTest():
+    valid_commands = {
+        "sanitize": ["storage", "path", "filename"],
+        "exists": ["storage", "path", "filename"],
+    }
+
+    command, data, response = get_json_command_from_request(request, valid_commands)
+    if response is not None:
+        return response
+
+    def sanitize(storage, path, filename):
+        sanitized_path = fileManager.sanitize_path(storage, path)
+        sanitized_name = fileManager.sanitize_name(storage, filename)
+        joined = fileManager.join_path(storage, sanitized_path, sanitized_name)
+        return sanitized_path, sanitized_name, joined
+
+    if command == "sanitize":
+        _, _, sanitized = sanitize(data["storage"], data["path"], data["filename"])
+        return jsonify(sanitized=sanitized)
+    elif command == "exists":
+        storage = data["storage"]
+        path = data["path"]
+        filename = data["filename"]
+
+        sanitized_path, _, sanitized = sanitize(storage, path, filename)
+
+        exists = fileManager.file_exists(storage, sanitized)
+        if exists:
+            suggestion = filename
+            name, ext = os.path.splitext(filename)
+            counter = 0
+            while fileManager.file_exists(
+                storage,
+                fileManager.join_path(
+                    storage,
+                    sanitized_path,
+                    fileManager.sanitize_name(storage, suggestion),
+                ),
+            ):
+                counter += 1
+                suggestion = name + f"_{counter}" + ext
+            return jsonify(exists=True, suggestion=suggestion)
+        else:
+            return jsonify(exists=False)
+
+
 @api.route("/files/<string:origin>", methods=["GET"])
 @Permissions.FILES_LIST.require(403)
 @with_revalidation_checking(
@@ -506,6 +554,11 @@ def uploadGcodeFile(target):
             canonPath, canonFilename = fileManager.canonicalize(
                 FileDestinations.LOCAL, upload.filename
             )
+            if request.values.get("path"):
+                canonPath = request.values.get("path")
+            if request.values.get("filename"):
+                canonFilename = request.values.get("filename")
+
             futurePath = fileManager.sanitize_path(FileDestinations.LOCAL, canonPath)
             futureFilename = fileManager.sanitize_name(
                 FileDestinations.LOCAL, canonFilename
@@ -517,12 +570,6 @@ def uploadGcodeFile(target):
 
         if futureFilename is None:
             abort(415, description="Can not upload file, wrong format?")
-
-        if "path" in request.values and request.values["path"]:
-            # we currently only support uploads to sdcard via local, so first target is local instead of "target"
-            futurePath = fileManager.sanitize_path(
-                FileDestinations.LOCAL, request.values["path"]
-            )
 
         # prohibit overwriting currently selected file while it's being printed
         futureFullPath = fileManager.join_path(
@@ -537,6 +584,12 @@ def uploadGcodeFile(target):
                 409,
                 description="Trying to overwrite file that is currently being printed",
             )
+
+        if (
+            fileManager.file_exists(FileDestinations.LOCAL, futureFullPathInStorage)
+            and request.values.get("noOverwrite") in valid_boolean_trues
+        ):
+            abort(409, description="File already exists and noOverwrite was set")
 
         reselect = printer.is_current_file(futureFullPathInStorage, sd)
 
@@ -1160,9 +1213,13 @@ def _getCurrentFile():
 
 
 def _validate(target, filename):
-    return filename == "/".join(
-        map(lambda x: fileManager.sanitize_name(target, x), filename.split("/"))
-    )
+    if target == FileDestinations.SDCARD:
+        # we make no assumptions about the shape of valid SDCard file names
+        return True
+    else:
+        return filename == "/".join(
+            map(lambda x: fileManager.sanitize_name(target, x), filename.split("/"))
+        )
 
 
 class WerkzeugFileWrapper(octoprint.filemanager.util.AbstractFileWrapper):

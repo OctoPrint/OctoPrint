@@ -59,7 +59,9 @@ $(function () {
         self.renderer_showMoves = ko.observable(true);
         self.renderer_showRetracts = ko.observable(true);
         self.renderer_showPrinthead = ko.observable(true);
+        self.renderer_showSegmentStarts = ko.observable(false);
         self.renderer_showBoundingBox = ko.observable(false);
+        self.renderer_showLayerBoundingBox = ko.observable(false);
         self.renderer_showFullSize = ko.observable(false);
         self.renderer_extrusionWidthEnabled = ko.observable(false);
         self.renderer_extrusionWidth = ko.observable(2);
@@ -94,7 +96,9 @@ $(function () {
                 showMoves: self.renderer_showMoves(),
                 showRetracts: self.renderer_showRetracts(),
                 showHead: self.renderer_showPrinthead(),
+                showSegmentStarts: self.renderer_showSegmentStarts(),
                 showBoundingBox: self.renderer_showBoundingBox(),
+                showLayerBoundingBox: self.renderer_showLayerBoundingBox(),
                 showFullSize: self.renderer_showFullSize(),
                 extrusionWidth: self.renderer_extrusionWidthEnabled()
                     ? self.renderer_extrusionWidth()
@@ -141,7 +145,9 @@ $(function () {
         self.renderer_showMoves.subscribe(self.rendererOptionUpdated);
         self.renderer_showRetracts.subscribe(self.rendererOptionUpdated);
         self.renderer_showPrinthead.subscribe(self.rendererOptionUpdated);
+        self.renderer_showSegmentStarts.subscribe(self.rendererOptionUpdated);
         self.renderer_showBoundingBox.subscribe(self.rendererOptionUpdated);
+        self.renderer_showLayerBoundingBox.subscribe(self.rendererOptionUpdated);
         self.renderer_showFullSize.subscribe(self.rendererOptionUpdated);
         self.renderer_extrusionWidthEnabled.subscribe(self.rendererOptionUpdated);
         self.renderer_extrusionWidth.subscribe(self.rendererOptionUpdated);
@@ -394,7 +400,9 @@ $(function () {
             self.renderer_showMoves(true);
             self.renderer_showRetracts(true);
             self.renderer_showPrinthead(true);
+            self.renderer_showSegmentStarts(false);
             self.renderer_showBoundingBox(false);
+            self.renderer_showLayerBoundingBox(false);
             self.renderer_showFullSize(false);
             self.renderer_extrusionWidthEnabled(false);
             self.renderer_extrusionWidth(2);
@@ -881,11 +889,13 @@ $(function () {
                 showMoves: self.renderer_showMoves(),
                 showRetracts: self.renderer_showRetracts(),
                 showPrinthead: self.renderer_showPrinthead(),
+                showSegmentStarts: self.renderer_showSegmentStarts(),
                 showPrevious: self.renderer_showPrevious(),
                 showCurrent: self.renderer_showCurrent(),
                 showNext: self.renderer_showNext(),
                 showFullsize: self.renderer_showFullSize(),
                 showBoundingBox: self.renderer_showBoundingBox(),
+                showLayerBoundingBox: self.renderer_showLayerBoundingBox(),
                 hideEmptyLayers: self.reader_hideEmptyLayers(),
                 sortLayers: self.reader_sortLayers()
             });
@@ -904,6 +914,8 @@ $(function () {
                 self.renderer_showRetracts(current["showRetracts"]);
             if (current["showPrinthead"] !== undefined)
                 self.renderer_showPrinthead(current["showPrinthead"]);
+            if (current["showSegmentStarts"] !== undefined)
+                self.renderer_showSegmentStarts(current["showSegmentStarts"]);
             if (current["showPrevious"] !== undefined)
                 self.renderer_showPrevious(current["showPrevious"]);
             if (current["showCurrent"] !== undefined)
@@ -914,6 +926,8 @@ $(function () {
                 self.renderer_showFullSize(current["showFullsize"]);
             if (current["showBoundingBox"] !== undefined)
                 self.renderer_showBoundingBox(current["showBoundingBox"]);
+            if (current["showLayerBoundingBox"] !== undefined)
+                self.renderer_showLayerBoundingBox(current["showLayerBoundingBox"]);
             if (current["hideEmptyLayers"] !== undefined)
                 self.reader_hideEmptyLayers(current["hideEmptyLayers"]);
             if (current["sortLayers"] !== undefined)
