@@ -816,11 +816,27 @@ class PluginManager:
         if plugin_considered_bundled is None:
             plugin_considered_bundled = []
 
+        processed_blacklist = []
+        for entry in plugin_blacklist:
+            if isinstance(entry, tuple):
+                key, version = entry
+                try:
+                    processed_blacklist.append(
+                        (key, pkg_resources.Requirement.parse(version))
+                    )
+                except Exception:
+                    self.logger.warning(
+                        "Invalid version requirement {} for blacklist "
+                        "entry {}, ignoring".format(version, key)
+                    )
+            else:
+                processed_blacklist.append(entry)
+
         self.plugin_folders = plugin_folders
         self.plugin_bases = plugin_bases
         self.plugin_entry_points = plugin_entry_points
         self.plugin_disabled_list = plugin_disabled_list
-        self.plugin_blacklist = plugin_blacklist
+        self.plugin_blacklist = processed_blacklist
         self.plugin_restart_needing_hooks = plugin_restart_needing_hooks
         self.plugin_obsolete_hooks = plugin_obsolete_hooks
         self.plugin_validators = plugin_validators
@@ -1289,7 +1305,7 @@ class PluginManager:
         def matches_plugin(entry):
             if isinstance(entry, (tuple, list)) and len(entry) == 2:
                 entry_key, entry_version = entry
-                return entry_key == key and entry_version == version
+                return entry_key == key and version in entry_version
             return False
 
         return any(map(lambda entry: matches_plugin(entry), self.plugin_blacklist))
