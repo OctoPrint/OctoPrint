@@ -756,7 +756,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
                     )
                 )
                 for version in entry["versions"]:
-                    result.append((entry["plugin"], "=={}".format(version)))
+                    result.append((entry["plugin"], f"=={version}"))
             else:
                 logger.debug("Blacklisted plugin: {}".format(entry["plugin"]))
                 result.append(entry["plugin"])
