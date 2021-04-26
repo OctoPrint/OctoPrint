@@ -123,12 +123,18 @@
         );
     };
 
-    OctoPrintFilesClient.prototype.move = function (location, path, destination, opts) {
+    OctoPrintFilesClient.prototype.move = function (
+        location,
+        path,
+        destination,
+        filename,
+        opts
+    ) {
         return this.issueEntryCommand(
             location,
             path,
             "move",
-            {destination: destination},
+            {destination: destination, filename: filename},
             opts
         );
     };

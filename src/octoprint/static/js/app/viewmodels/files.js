@@ -83,8 +83,9 @@ $(function () {
         self.moveEntry = ko.observable({name: "", display: "", path: ""}); // is there a better way to do this?
         self.moveSource = ko.observable(undefined);
         self.moveDestination = ko.observable(undefined);
+        self.moveSourceFilename = ko.observable(undefined);
+        self.moveDestinationFilename = ko.observable(undefined);
         self.moveError = ko.observable("");
-
         self.folderList = ko.observableArray(["/"]);
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
@@ -679,6 +680,8 @@ $(function () {
             self.moveError("");
             self.moveSource(current);
             self.moveDestination(current);
+            self.moveSourceFilename(entry.name);
+            self.moveDestinationFilename(entry.name);
             self.moveDialog.modal("show");
         };
 
@@ -724,10 +727,10 @@ $(function () {
             OctoPrint.printer.refreshSd();
         };
 
-        self.moveFileOrFolder = function (source, destination) {
+        self.moveFileOrFolder = function (source, destination, filename) {
             self.movingFileOrFolder(true);
             return OctoPrint.files
-                .move("local", source, destination)
+                .move("local", source, destination, filename)
                 .done(function () {
                     self.requestData()
                         .done(function () {
@@ -739,13 +742,15 @@ $(function () {
                 })
                 .fail(function () {
                     self.moveError(
-                        gettext("Unable to move file or folder") +
+                        gettext("Unable to move/rename file or folder") +
                             " " +
                             self.moveEntry().display +
                             " " +
                             gettext("to") +
                             " " +
-                            self.moveDestination()
+                            self.moveDestination() +
+                            "/" +
+                            self.moveDestinationFilename()
                     );
                     self.movingFileOrFolder(false);
                 });

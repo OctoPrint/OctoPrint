@@ -1062,6 +1062,13 @@ def gcodeFileCommand(filename, target):
             path, name = fileManager.split_path(target, filename)
 
             destination = data["destination"]
+
+            # if newFilename not passed, then use existing name
+            if "filename" in data:
+                newFilename = data["filename"]
+            else:
+                newFilename = name
+
             dst_path, dst_name = fileManager.split_path(target, destination)
             sanitized_destination = fileManager.join_path(
                 target, dst_path, fileManager.sanitize_name(target, dst_name)
@@ -1073,7 +1080,7 @@ def gcodeFileCommand(filename, target):
             ):
                 # destination is an existing folder and not ourselves (= display rename), we'll assume we are supposed
                 # to move filename to this folder under the same name
-                destination = fileManager.join_path(target, destination, name)
+                destination = fileManager.join_path(target, destination, newFilename)
 
             if _verifyFileExists(target, destination) or _verifyFolderExists(
                 target, destination
@@ -1087,6 +1094,10 @@ def gcodeFileCommand(filename, target):
                 abort(
                     400, description="Neither file nor folder, can't {}".format(command)
                 )
+
+            # check new filename is valid, if the filename isn't a folder...
+            if not (is_folder or octoprint.filemanager.valid_file_type(newFilename)):
+                abort(400, description="File type invalid: {}".format(newFilename))
 
             if command == "copy":
                 # destination already there? error...
