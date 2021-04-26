@@ -548,6 +548,7 @@ class MachineCom:
         )
         self._sdAlwaysAvailable = settings().getBoolean(["serial", "sdAlwaysAvailable"])
         self._sdRelativePath = settings().getBoolean(["serial", "sdRelativePath"])
+        self._sdLowerCase = settings().getBoolean(["serial", "sdLowerCase"])
         self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
         self._send_m112_on_error = settings().getBoolean(["serial", "sendM112OnError"])
         self._disable_sd_printing_detection = settings().getBoolean(
@@ -2364,6 +2365,8 @@ class MachineCom:
                             if not filename.startswith("/"):
                                 # file from the root of the sd -- we'll prepend a /
                                 filename = "/" + filename
+                            if self._sdLowerCase:
+                                filename = filename.lower()
                             self._sdFiles.append((filename, size))
                             if longname is not None:
                                 self._sdFilesMap[filename] = longname
@@ -2662,6 +2665,13 @@ class MachineCom:
                                 )
 
                                 self._disable_sd_printing_detection = True
+
+                            elif "prusa-firmware" in firmware_name.lower():
+                                self._logger.info(
+                                    "Detected Prusa firmware, enabling relevant features for issue free communication"
+                                )
+
+                                self._sdLowerCase = True
 
                         self._firmware_info_received = True
                         self._firmware_info = data

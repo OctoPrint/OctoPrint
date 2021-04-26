@@ -213,6 +213,7 @@ $(function () {
         self.serial_waitForStart = ko.observable(undefined);
         self.serial_sendChecksum = ko.observable("print");
         self.serial_sdRelativePath = ko.observable(undefined);
+        self.serial_sdLowerCase = ko.observable(undefined);
         self.serial_sdAlwaysAvailable = ko.observable(undefined);
         self.serial_swallowOkAfterResend = ko.observable(undefined);
         self.serial_repetierTargetTemp = ko.observable(undefined);

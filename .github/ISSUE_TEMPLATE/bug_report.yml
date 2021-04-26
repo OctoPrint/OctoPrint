@@ -1,6 +1,5 @@
 name: 🐛 Report a bug
 description: Create a bug report to help improve OctoPrint
-title: ""
 body:
   - type: markdown
     attributes:

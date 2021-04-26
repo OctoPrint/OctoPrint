@@ -129,6 +129,7 @@ default_settings = {
         "unknownCommandsNeedAck": False,
         "sdRelativePath": False,
         "sdAlwaysAvailable": False,
+        "sdLowerCase": False,
         "maxNotSdPrinting": 2,
         "swallowOkAfterResend": True,
         "repetierTargetTemp": False,
