@@ -218,6 +218,7 @@ def getSettings():
             "neverSendChecksum": s.getBoolean(["serial", "neverSendChecksum"]),
             "sdRelativePath": s.getBoolean(["serial", "sdRelativePath"]),
             "sdAlwaysAvailable": s.getBoolean(["serial", "sdAlwaysAvailable"]),
+            "sdLowerCase": s.getBoolean(["serial", "sdLowerCase"]),
             "swallowOkAfterResend": s.getBoolean(["serial", "swallowOkAfterResend"]),
             "repetierTargetTemp": s.getBoolean(["serial", "repetierTargetTemp"]),
             "externalHeatupDetection": s.getBoolean(
@@ -805,6 +806,8 @@ def _saveSettings(data):
             s.setBoolean(
                 ["serial", "sdAlwaysAvailable"], data["serial"]["sdAlwaysAvailable"]
             )
+        if "sdLowerCase" in data["serial"]:
+            s.setBoolean(["serial", "sdLowerCase"], data["serial"]["sdLowerCase"])
         if "swallowOkAfterResend" in data["serial"]:
             s.setBoolean(
                 ["serial", "swallowOkAfterResend"], data["serial"]["swallowOkAfterResend"]
