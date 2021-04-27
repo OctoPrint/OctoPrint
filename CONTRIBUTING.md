@@ -109,7 +109,7 @@ following section *completely* and also follow the instructions in the
    it is the same as your's, it actually behaves the same as your's. E.g. if someone gives steps
    to reproduce his bug that looks like your's, reproduce the bug like that if possible,
    and only add a "me too" if you actually can reproduce the same
-   issue. Also **provide all information like logs, versions, different reproduction steps**
+   issue. Also **provide all information like Systeminfo Bundle, additional logs & versions, different reproduction steps**
    and whatever was additionally requested over the course of the ticket
    even if you "only" add to an existing ticket. The more information available regarding a bug, the higher
    the chances of reproducing and solving it. But "me too" on an actually unrelated ticket
@@ -131,6 +131,10 @@ information as possible.
 
 Provide the same kind and amount of information also when you are just adding on to an
 existing ticket!
+
+### Where can I find the System Info Bundle?
+
+Please refer to [this FAQ entry](https://community.octoprint.org/t/what-is-a-systeminfo-bundle-and-how-can-i-obtain-one/29887).
 
 ### Where can I find which version and branch I'm on?
 
@@ -287,7 +291,8 @@ See [the corresponding chapter in the documentation](https://docs.octoprint.org/
   * 2020-09-23: Move branch & versioning into development docs
   * 2020-10-07: Introduce `pre-commit`
   * 2021-02-04: Issue forms! \o/
-  * 2020-03-04: Correct issue forms link
+  * 2021-03-04: Correct issue forms link
+  * 2021-04-27: Systeminfo Bundles! \o/
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

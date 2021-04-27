@@ -76,14 +76,6 @@ If you can't test this in safe mode, state why.
 Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.
 -->
 
-#### Operating System running OctoPrint
-
-<!--
-OctoPi, Linux, Windows, MacOS, something else? With version please.
-OctoPi's version can be found in /etc/octopi_version or in the lower left
-corner of the web interface.
--->
-
 #### Printer model & used firmware incl. version
 
 <!--
@@ -96,26 +88,12 @@ If applicable, always include if unsure.
 If applicable, always include if unsure.
 -->
 
-#### Link to octoprint.log
+#### System Info Bundle
 
 <!--
-Directly uploaded here or on gist.github.com or pastebin.com.
-ALWAYS INCLUDE and never truncate.
+Directly uploaded here. ALWAYS INCLUDE.
 
 The Contribution Guidelines tell you where to find that.
--->
-
-#### Link to contents of terminal tab or serial.log
-
-<!--
-Directly uploaded here or on gist.github.com or pastebin.com.
-If applicable, always include if unsure or reporting communication issues.
-Never truncate.
-
-serial.log is usually not written due to performance reasons and must be
-enabled explicitly. Provide at the very least the FULL contents of your
-terminal tab at the time of the bug occurrence, even if you do not have
-a serial.log (which the Contribution Guidelines tell you where to find).
 -->
 
 #### Link to contents of Javascript console in the browser
