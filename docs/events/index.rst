@@ -539,6 +539,34 @@ PrintResumed
 
    .. versionchanged:: 1.4.0
 
+GcodeScript${ScriptName}Running
+   A custom :ref:`GCODE script <sec-features-gcode_scripts>` has started running.
+
+   Payload:
+
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``size``: the file's size in bytes (if available)
+     * ``owner``: the user who started the print job (if available)
+     * ``time``: the time needed for the print, in seconds (float)
+
+   .. versionadded:: 1.6.0
+
+GcodeScript${ScriptName}Finished
+   A custom :ref:`GCODE script <sec-features-gcode_scripts>` has finished running.
+
+   Payload:
+
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``size``: the file's size in bytes (if available)
+     * ``owner``: the user who started the print job (if available)
+     * ``time``: the time needed for the print, in seconds (float)
+
+   .. versionadded:: 1.6.0
+
 .. _sec-events-available_events-gcode_processing:
 
 GCODE processing

@@ -9,7 +9,6 @@ import copy
 import io
 import logging
 import os
-import re
 import shutil
 
 import pylru
@@ -21,12 +20,11 @@ except ImportError:
 
 from contextlib import contextmanager
 
-from emoji import demojize
 from past.builtins import basestring
 
 import octoprint.filemanager
 from octoprint.util import atomic_write, is_hidden_path, time_this, to_bytes, to_unicode
-from octoprint.vendor.awesome_slugify import Slugify
+from octoprint.util.text import sanitize
 
 
 class StorageInterface(object):
@@ -34,6 +32,7 @@ class StorageInterface(object):
     Interface of storage adapters for OctoPrint.
     """
 
+    # noinspection PyUnreachableCode
     @property
     def analysis_backlog(self):
         """
@@ -48,6 +47,7 @@ class StorageInterface(object):
         return
         yield
 
+    # noinspection PyUnreachableCode
     def analysis_backlog_for_path(self, path=None):
         # empty generator pattern, yield is intentionally unreachable
         return
@@ -467,22 +467,6 @@ class LocalFileStorage(StorageInterface):
 
     This storage type implements :func:`path_on_disk`.
     """
-
-    _UNICODE_VARIATIONS = re.compile("[\uFE00-\uFE0F]", re.U)
-
-    @classmethod
-    def _no_unicode_variations(cls, text):
-        return cls._UNICODE_VARIATIONS.sub("", text)
-
-    _SLUGIFY = Slugify()
-    _SLUGIFY.safe_chars = "-_.()[] "
-
-    @classmethod
-    def _slugify(cls, text):
-        text = to_unicode(text)
-        text = cls._no_unicode_variations(text)
-        text = demojize(text, delimiters=("", ""))
-        return cls._SLUGIFY(text)
 
     def __init__(self, basefolder, create=False):
         """
@@ -1192,7 +1176,7 @@ class LocalFileStorage(StorageInterface):
         if "/" in name or "\\" in name:
             raise ValueError("name must not contain / or \\")
 
-        result = self._slugify(name).replace(" ", "_")
+        result = sanitize(name, safe_chars="-_.()[] ").replace(" ", "_")
         if result and result != "." and result != ".." and result[0] == ".":
             # hidden files under *nix
             result = result[1:]
@@ -1376,7 +1360,7 @@ class LocalFileStorage(StorageInterface):
                 continue
             statistics["averagePrintTime"][printer_profile] = sum(
                 former_print_times[printer_profile]
-            ) / float(len(former_print_times[printer_profile]))
+            ) / len(former_print_times[printer_profile])
 
         for printer_profile in last_print:
             if not last_print[printer_profile]:
@@ -1524,6 +1508,7 @@ class LocalFileStorage(StorageInterface):
         logtarget=__name__ + ".timings",
         message="{func}({func_args},{func_kwargs}) took {timing:.2f}ms",
         incl_func_args=True,
+        log_enter=True,
     )
     def _list_folder(self, path, base="", force_refresh=False, **kwargs):
         def get_size(nodes):
@@ -1551,11 +1536,8 @@ class LocalFileStorage(StorageInterface):
         try:
             with self._filelist_cache_mutex:
                 cache = self._filelist_cache.get(path)
-                if (
-                    not force_refresh
-                    and cache
-                    and cache[0] >= self.last_modified(path, recursive=True)
-                ):
+                lm = self.last_modified(path, recursive=True)
+                if not force_refresh and cache and cache[0] >= lm:
                     return enrich_folders(cache[1])
 
                 metadata = self._get_metadata(path)
@@ -1696,7 +1678,7 @@ class LocalFileStorage(StorageInterface):
                         continue
 
                 self._filelist_cache[path] = (
-                    self.last_modified(path, recursive=True),
+                    lm,
                     result,
                 )
                 return enrich_folders(result)
@@ -1891,7 +1873,7 @@ class LocalFileStorage(StorageInterface):
             try:
                 with atomic_write(metadata_path, mode="wb") as f:
                     f.write(
-                        to_bytes(json.dumps(metadata, indent=4, separators=(",", ": ")))
+                        to_bytes(json.dumps(metadata, indent=2, separators=(",", ": ")))
                     )
             except Exception:
                 self._logger.exception(
@@ -1965,7 +1947,7 @@ class LocalFileStorage(StorageInterface):
                 return
 
             with atomic_write(metadata_path_json, mode="wb") as f:
-                f.write(to_bytes(json.dumps(metadata, indent=4, separators=(",", ": "))))
+                f.write(to_bytes(json.dumps(metadata, indent=2, separators=(",", ": "))))
 
             try:
                 os.remove(metadata_path_yaml)

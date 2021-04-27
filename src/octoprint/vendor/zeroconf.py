@@ -453,7 +453,7 @@ class DNSRecord(DNSEntry):
 
     def get_remaining_ttl(self, now):
         """Returns the remaining TTL in seconds."""
-        return max(0, (self._expiration_time - now) / 1000.0)
+        return max(0, (self._expiration_time - now) / 1000)
 
     def is_expired(self, now):
         """Returns true if this record has expired."""
@@ -1820,7 +1820,7 @@ class Zeroconf(QuietLogger):
         """Calling thread waits for a given number of milliseconds or
         until notified."""
         with self.condition:
-            self.condition.wait(timeout / 1000.0)
+            self.condition.wait(timeout / 1000)
 
     def notify_all(self):
         """Notifies all waiting threads"""

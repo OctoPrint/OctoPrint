@@ -8,7 +8,6 @@ import octoprint.plugin
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
-from octoprint.plugin.core import FolderOrigin
 from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import default_settings
@@ -50,17 +49,16 @@ import requests
 import sarge
 from flask_babel import gettext
 
+from octoprint.plugins.pluginmanager import DEFAULT_PLUGIN_REPOSITORY
 from octoprint.settings import valid_boolean_trues
+from octoprint.util import get_formatted_size
+from octoprint.util.text import sanitize
 
 UNKNOWN_PLUGINS_FILE = "unknown_plugins_from_restore.json"
 
-BACKUP_FILE_PREFIX = "octoprint-backup"
-
 BACKUP_DATE_TIME_FMT = "%Y%m%d-%H%M%S"
 
-
-def build_backup_filename():
-    return "{}-{}.zip".format(BACKUP_FILE_PREFIX, time.strftime(BACKUP_DATE_TIME_FMT))
+MAX_UPLOAD_SIZE = 1024 * 1024 * 1024  # 1GB
 
 
 class BackupPlugin(
@@ -129,6 +127,12 @@ class BackupPlugin(
             {"type": "wizard", "name": gettext("Restore Backup?")},
         ]
 
+    def get_template_vars(self):
+        return {
+            "max_upload_size": MAX_UPLOAD_SIZE,
+            "max_upload_size_str": get_formatted_size(MAX_UPLOAD_SIZE),
+        }
+
     ##~~ BlueprintPlugin
 
     @octoprint.plugin.BlueprintPlugin.route("/", methods=["GET"])
@@ -142,6 +146,7 @@ class BackupPlugin(
             backup_in_progress=len(self._in_progress) > 0,
             unknown_plugins=unknown_plugins,
             restore_supported=self._restore_supported(self._settings),
+            max_upload_size=MAX_UPLOAD_SIZE,
         )
 
     @octoprint.plugin.BlueprintPlugin.route("/unknown_plugins", methods=["GET"])
@@ -174,65 +179,14 @@ class BackupPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
     def create_backup(self):
-        backup_file = build_backup_filename()
 
         data = flask.request.json
         exclude = data.get("exclude", [])
+        filename = self._build_backup_filename(settings=self._settings)
 
-        def on_backup_start(name, temporary_path, exclude):
-            self._logger.info(
-                "Creating backup zip at {} (excluded: {})...".format(
-                    temporary_path, ",".join(exclude) if len(exclude) else "-"
-                )
-            )
+        self._start_backup(exclude, filename)
 
-            with self._in_progress_lock:
-                self._in_progress.append(name)
-                self._send_client_message("backup_started", payload={"name": name})
-
-        def on_backup_done(name, final_path, exclude):
-            with self._in_progress_lock:
-                self._in_progress.remove(name)
-                self._send_client_message("backup_done", payload={"name": name})
-
-            self._logger.info("... done creating backup zip.")
-
-            self._event_bus.fire(
-                Events.PLUGIN_BACKUP_BACKUP_CREATED,
-                {"name": name, "path": final_path, "excludes": exclude},
-            )
-
-        def on_backup_error(name, exc_info):
-            with self._in_progress_lock:
-                try:
-                    self._in_progress.remove(name)
-                except ValueError:
-                    # we'll ignore that
-                    pass
-
-            self._send_client_message(
-                "backup_error", payload={"name": name, "error": "{}".format(exc_info[1])}
-            )
-            self._logger.error("Error while creating backup zip", exc_info=exc_info)
-
-        thread = threading.Thread(
-            target=self._create_backup,
-            args=(backup_file,),
-            kwargs={
-                "exclude": exclude,
-                "settings": self._settings,
-                "plugin_manager": self._plugin_manager,
-                "logger": self._logger,
-                "datafolder": self.get_plugin_data_folder(),
-                "on_backup_start": on_backup_start,
-                "on_backup_done": on_backup_done,
-                "on_backup_error": on_backup_error,
-            },
-        )
-        thread.daemon = True
-        thread.start()
-
-        response = flask.jsonify(started=True, name=backup_file)
+        response = flask.jsonify(started=True, name=filename)
         response.status_code = 201
         return response
 
@@ -240,18 +194,8 @@ class BackupPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
     def delete_backup(self, filename):
-        backup_folder = self.get_plugin_data_folder()
-        full_path = os.path.realpath(os.path.join(backup_folder, filename))
-        if (
-            full_path.startswith(backup_folder)
-            and os.path.exists(full_path)
-            and not is_hidden_path(full_path)
-        ):
-            try:
-                os.remove(full_path)
-            except Exception:
-                self._logger.exception("Could not delete {}".format(filename))
-                raise
+        self._delete_backup(filename)
+
         return NO_CONTENT
 
     @octoprint.plugin.BlueprintPlugin.route("/restore", methods=["POST"])
@@ -259,12 +203,13 @@ class BackupPlugin(
         if not Permissions.PLUGIN_BACKUP_ACCESS.can() and not self._settings.global_get(
             ["server", "firstRun"]
         ):
-            return flask.abort(403)
+            flask.abort(403)
 
         if not self._restore_supported(self._settings):
-            return flask.make_response(
-                "Invalid request, the restores are not supported on the underlying operating system",
+            flask.abort(
                 400,
+                description="Invalid request, the restores are not "
+                "supported on the underlying operating system",
             )
 
         input_name = "file"
@@ -292,9 +237,10 @@ class BackupPlugin(
                 return flask.abort(404)
 
         else:
-            return flask.make_response(
-                "Invalid request, neither a file nor a path of a file to restore provided",
+            flask.abort(
                 400,
+                description="Invalid request, neither a file nor a path of a file to "
+                "restore provided",
             )
 
         def on_install_plugins(plugins):
@@ -457,8 +403,78 @@ class BackupPlugin(
         ]
 
     def bodysize_hook(self, current_max_body_sizes, *args, **kwargs):
-        # max upload size of 1GB for the restore endpoint
-        return [("POST", r"/restore", 1024 * 1024 * 1024)]
+        # max upload size for the restore endpoint
+        return [("POST", r"/restore", MAX_UPLOAD_SIZE)]
+
+    # Exported plugin helpers
+    def create_backup_helper(self, exclude=None, filename=None):
+        """
+        .. versionadded:: 1.6.0
+
+        Create a backup from a plugin or other internal call
+
+        This helper is exported as ``create_backup`` and can be used from the plugin
+        manager's ``get_helpers`` method.
+
+        **Example**
+
+        The following code snippet can be used from within a plugin, and will create a backup
+        excluding two folders (``timelapse`` and ``uploads``)
+
+        .. code-block:: python
+
+            helpers = self._plugin_manager.get_helpers("backup", "create_backup")
+
+            if helpers and "create_backup" in helpers:
+                helpers["create_backup"](exclude=["timelapse", "uploads"])
+
+        By using the ``if helpers [...]`` clause, plugins can fall back to other methods
+        when they are running under versions where these helpers did not exist.
+
+
+        :param list exclude: Names of data folders to exclude, defaults to None
+        :param str filename: Name of backup to be created, if None (default) the backup
+            name will be auto-generated. This should use a ``.zip`` extension.
+        """
+        if exclude is None:
+            exclude = []
+        if not isinstance(exclude, list):
+            exclude = list(exclude)
+
+        self._start_backup(exclude, filename=filename)
+
+    def delete_backup_helper(self, filename):
+        """
+        .. versionadded:: 1.6.0
+
+        Delete the specified backup from a plugin or other internal call
+
+        This helper is exported as ``delete_backup`` and can be used through the plugin
+        manager's ``get_helpers`` method.
+
+        **Example**
+        The following code snippet can be used from within a plugin, and will attempt to
+        delete the backup named ``ExampleBackup.zip``.
+
+        .. code-block:: python
+
+            helpers = self._plugin_manager.get_helpers("backup", "delete_backup")
+
+            if helpers and "delete_backup" in helpers:
+                helpers["delete_backup"]("ExampleBackup.zip")
+
+        By using the ``if helpers [...]`` clause, plugins can fall back to other methods
+        when they are running under versions where these helpers did not exist.
+
+        .. warning::
+
+            This method will fail silently if the backup does not exist, and so
+            it is recommended that you make sure the name comes from a verified source,
+            for example the name from the events or other helpers.
+
+        :param str filename: The name of the backup to delete
+        """
+        self._delete_backup(filename)
 
     ##~~ CLI hook
 
@@ -488,26 +504,24 @@ class BackupPlugin(
             )
 
             if path is not None:
-                datafolder, backup_file = os.path.split(os.path.abspath(path))
+                datafolder, filename = os.path.split(os.path.abspath(path))
             else:
-                backup_file = build_backup_filename()
+                filename = self._build_backup_filename(settings=settings)
                 datafolder = os.path.join(settings.getBaseFolder("data"), "backup")
 
             if not os.path.isdir(datafolder):
                 os.makedirs(datafolder)
 
-            click.echo("Creating backup at {}, please wait...".format(backup_file))
+            click.echo("Creating backup at {}, please wait...".format(filename))
             self._create_backup(
-                backup_file,
+                filename,
                 exclude=exclude,
                 settings=settings,
                 plugin_manager=cli_group.plugin_manager,
                 datafolder=datafolder,
             )
             click.echo("Done.")
-            click.echo(
-                "Backup located at {}".format(os.path.join(datafolder, backup_file))
-            )
+            click.echo("Backup located at {}".format(os.path.join(datafolder, filename)))
 
         @click.command("restore")
         @click.argument("path")
@@ -644,6 +658,82 @@ class BackupPlugin(
 
     ##~~ helpers
 
+    def _start_backup(self, exclude, filename=None):
+        if filename is None:
+            filename = self._build_backup_filename(settings=self._settings)
+
+        def on_backup_start(name, temporary_path, exclude):
+            self._logger.info(
+                "Creating backup zip at {} (excluded: {})...".format(
+                    temporary_path, ",".join(exclude) if len(exclude) else "-"
+                )
+            )
+
+            with self._in_progress_lock:
+                self._in_progress.append(name)
+                self._send_client_message("backup_started", payload={"name": name})
+
+        def on_backup_done(name, final_path, exclude):
+            with self._in_progress_lock:
+                self._in_progress.remove(name)
+                self._send_client_message("backup_done", payload={"name": name})
+
+            self._logger.info("... done creating backup zip.")
+
+            self._event_bus.fire(
+                Events.PLUGIN_BACKUP_BACKUP_CREATED,
+                {"name": name, "path": final_path, "excludes": exclude},
+            )
+
+        def on_backup_error(name, exc_info):
+            with self._in_progress_lock:
+                try:
+                    self._in_progress.remove(name)
+                except ValueError:
+                    # we'll ignore that
+                    pass
+
+            self._send_client_message(
+                "backup_error", payload={"name": name, "error": "{}".format(exc_info[1])}
+            )
+            self._logger.error("Error while creating backup zip", exc_info=exc_info)
+
+        thread = threading.Thread(
+            target=self._create_backup,
+            args=(filename,),
+            kwargs={
+                "exclude": exclude,
+                "settings": self._settings,
+                "plugin_manager": self._plugin_manager,
+                "logger": self._logger,
+                "datafolder": self.get_plugin_data_folder(),
+                "on_backup_start": on_backup_start,
+                "on_backup_done": on_backup_done,
+                "on_backup_error": on_backup_error,
+            },
+        )
+        thread.daemon = True
+        thread.start()
+
+    def _delete_backup(self, filename):
+        """
+        Delete the backup specified
+        Args:
+            filename (str): Name of backup to delete
+        """
+        backup_folder = self.get_plugin_data_folder()
+        full_path = os.path.realpath(os.path.join(backup_folder, filename))
+        if (
+            full_path.startswith(backup_folder)
+            and os.path.exists(full_path)
+            and not is_hidden_path(full_path)
+        ):
+            try:
+                os.remove(full_path)
+            except Exception:
+                self._logger.exception("Could not delete {}".format(filename))
+                raise
+
     def _get_backups(self):
         backups = []
         for entry in scandir(self.get_plugin_data_folder()):
@@ -774,9 +864,7 @@ class BackupPlugin(
 
         from octoprint.plugins.pluginmanager import map_repository_entry
 
-        return dict(
-            (plugin["id"], plugin) for plugin in map(map_repository_entry, r.json())
-        )
+        return {plugin["id"]: plugin for plugin in map(map_repository_entry, r.json())}
 
     @classmethod
     def _install_plugin(
@@ -985,22 +1073,16 @@ class BackupPlugin(
                 )
 
                 # add list of installed plugins
-                plugins = []
-                plugin_folder = settings.global_get_basefolder("plugins")
-                for plugin in plugin_manager.plugins.values():
-                    if plugin.bundled or (
-                        isinstance(plugin.origin, FolderOrigin)
-                        and plugin.origin.folder == plugin_folder
-                    ):
-                        # ignore anything bundled or from the plugins folder we already include in the backup
-                        continue
-
-                    plugins.append(
-                        {"key": plugin.key, "name": plugin.name, "url": plugin.url}
+                helpers = plugin_manager.get_helpers(
+                    "pluginmanager", "generate_plugins_json"
+                )
+                if helpers and "generate_plugins_json" in helpers:
+                    plugins = helpers["generate_plugins_json"](
+                        settings=settings, plugin_manager=plugin_manager
                     )
 
-                if len(plugins):
-                    zip.writestr("plugin_list.json", json.dumps(plugins))
+                    if len(plugins):
+                        zip.writestr("plugin_list.json", json.dumps(plugins))
 
             shutil.move(temporary_path, final_path)
 
@@ -1047,10 +1129,11 @@ class BackupPlugin(
         basedir = settings._basedir
         cls._clean_dir_backup(basedir, on_log_progress=on_log_progress)
 
-        plugin_repo = {}
         repo_url = settings.global_get(["plugins", "pluginmanager", "repository"])
-        if repo_url:
-            plugin_repo = cls._get_plugin_repository_data(repo_url)
+        if not repo_url:
+            repo_url = DEFAULT_PLUGIN_REPOSITORY
+
+        plugin_repo = cls._get_plugin_repository_data(repo_url)
 
         if callable(on_restore_start):
             on_restore_start(path)
@@ -1071,8 +1154,8 @@ class BackupPlugin(
                 metadata_bytes = zip.read(metadata_zipinfo)
                 metadata = json.loads(metadata_bytes)
 
-                backup_version = get_comparable_version(metadata["version"], base=True)
-                if backup_version > get_octoprint_version(base=True):
+                backup_version = get_comparable_version(metadata["version"], cut=1)
+                if backup_version > get_octoprint_version(cut=1):
                     if callable(on_invalid_backup):
                         on_invalid_backup(
                             "Backup is from a newer version of OctoPrint and cannot be applied"
@@ -1291,6 +1374,17 @@ class BackupPlugin(
         return True
 
     @classmethod
+    def _build_backup_filename(cls, settings):
+        if settings.global_get(["appearance", "name"]) == "":
+            backup_prefix = "octoprint"
+        else:
+            backup_prefix = settings.global_get(["appearance", "name"])
+        backup_prefix = sanitize(backup_prefix)
+        return "{}-backup-{}.zip".format(
+            backup_prefix, time.strftime(BACKUP_DATE_TIME_FMT)
+        )
+
+    @classmethod
     def _restore_supported(cls, settings):
         return (
             is_os_compatible(["!windows"])
@@ -1331,4 +1425,8 @@ __plugin_hooks__ = {
     "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
     "octoprint.events.register_custom_events": _register_custom_events,
     "octoprint.server.sockjs.emit": __plugin_implementation__.socket_emit_hook,
+}
+__plugin_helpers__ = {
+    "create_backup": __plugin_implementation__.create_backup_helper,
+    "delete_backup": __plugin_implementation__.delete_backup_helper,
 }

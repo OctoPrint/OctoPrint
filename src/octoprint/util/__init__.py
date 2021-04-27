@@ -26,7 +26,18 @@ import warnings
 from functools import wraps
 from typing import Union
 
-import frozendict
+try:
+    from collections.abc import Iterable, MutableMapping, Set
+except ImportError:
+    # Python 2.7
+    from collections import Iterable, MutableMapping, Set
+
+try:
+    from immutabledict import immutabledict
+except ImportError:
+    # Python 2
+    from frozendict import frozendict as immutabledict
+
 import past.builtins
 
 try:
@@ -347,10 +358,10 @@ def get_formatted_size(num):
     """
 
     for x in ["B", "KB", "MB", "GB"]:
-        if num < 1024.0:
-            return "%3.1f%s" % (num, x)
-        num /= 1024.0
-    return "%3.1f%s" % (num, "TB")
+        if num < 1024:
+            return "{:3.1f}{}".format(num, x)
+        num /= 1024
+    return "{:3.1f}{}".format(num, "TB")
 
 
 def is_allowed_file(filename, extensions):
@@ -449,7 +460,7 @@ def get_fully_qualified_classname(o):
     return module + "." + o.__class__.__name__
 
 
-def get_exception_string():
+def get_exception_string(fmt="{type}: '{message}' @ {file}:{function}:{line}"):
     """
     Retrieves the exception info of the last raised exception and returns it as a string formatted as
     ``<exception type>: <exception message> @ <source file>:<function name>:<line number>``.
@@ -458,14 +469,15 @@ def get_exception_string():
         string: The formatted exception information.
     """
 
-    locationInfo = traceback.extract_tb(sys.exc_info()[2])[0]
-    return "%s: '%s' @ %s:%s:%d" % (
-        str(sys.exc_info()[0].__name__),
-        str(sys.exc_info()[1]),
-        os.path.basename(locationInfo[0]),
-        locationInfo[2],
-        locationInfo[1],
-    )
+    location_info = traceback.extract_tb(sys.exc_info()[2])[0]
+    exception = {
+        "type": str(sys.exc_info()[0].__name__),
+        "message": str(sys.exc_info()[1]),
+        "file": os.path.basename(location_info[0]),
+        "function": location_info[2],
+        "line": location_info[1],
+    }
+    return fmt.format(**exception)
 
 
 @deprecated(
@@ -977,7 +989,7 @@ def dict_flatten(dictionary, prefix="", separator="."):
     result = {}
     for k, v in dictionary.items():
         key = prefix + separator + k if prefix else k
-        if isinstance(v, collections.MutableMapping):
+        if isinstance(v, MutableMapping):
             result.update(dict_flatten(v, prefix=key, separator=separator))
         else:
             result[key] = v
@@ -1078,7 +1090,7 @@ def dict_filter(dictionary, filter_function):
     """
     assert isinstance(dictionary, dict)
     assert callable(filter_function)
-    return dict((k, v) for k, v in dictionary.items() if filter_function(k, v))
+    return {k: v for k, v in dictionary.items() if filter_function(k, v)}
 
 
 # Source: http://stackoverflow.com/a/6190500/562769
@@ -1122,7 +1134,7 @@ class DefaultOrderedDict(collections.OrderedDict):
 
     # noinspection PyMethodOverriding
     def __repr__(self):
-        return "OrderedDefaultDict(%s, %s)" % (
+        return "OrderedDefaultDict({}, {})".format(
             self.default_factory,
             collections.OrderedDict.__repr__(self),
         )
@@ -1359,18 +1371,23 @@ except ImportError:
         monotonic_time = time.time
 
 
-def thaw_frozendict(obj):
-    if not isinstance(obj, (dict, frozendict.frozendict)):
-        raise ValueError("obj must be a dict or frozendict instance")
+def thaw_immutabledict(obj):
+    if not isinstance(obj, (dict, immutabledict)):
+        raise ValueError("obj must be a dict or immutabledict instance")
 
     # only true love can thaw a frozen dict
     letitgo = {}
     for key, value in obj.items():
-        if isinstance(value, (dict, frozendict.frozendict)):
-            letitgo[key] = thaw_frozendict(value)
+        if isinstance(value, (dict, immutabledict)):
+            letitgo[key] = thaw_immutabledict(value)
         else:
             letitgo[key] = copy.deepcopy(value)
     return letitgo
+
+
+thaw_frozendict = deprecated(
+    "thaw_frozendict has been renamed to thaw_immutabledict", since="1.6.0"
+)(thaw_immutabledict)
 
 
 def utmify(link, source=None, medium=None, name=None, term=None, content=None):
@@ -1655,6 +1672,24 @@ class CountedEvent(object):
         self._internal_set(value)
 
     @property
+    def min(self):
+        return self._min
+
+    @min.setter
+    def min(self, val):
+        with self._mutex:
+            self._min = val
+
+    @property
+    def max(self):
+        return self._max
+
+    @max.setter
+    def max(self, val):
+        with self._mutex:
+            self._max = val
+
+    @property
     def is_set(self):
         return self._event.is_set
 
@@ -1703,11 +1738,6 @@ class CountedEvent(object):
 
 class InvariantContainer(object):
     def __init__(self, initial_data=None, guarantee_invariant=None):
-        try:
-            from collections.abc import Iterable
-        except ImportError:
-            # Python < 3.8
-            from collections import Iterable
         from threading import RLock
 
         if guarantee_invariant is None:
@@ -1760,7 +1790,7 @@ class PrependableQueue(queue.Queue):
                     endtime = _time() + timeout
                     while self._qsize() == self.maxsize:
                         remaining = endtime - _time()
-                        if remaining <= 0.0:
+                        if remaining <= 0:
                             raise queue.Full
                         self.not_full.wait(remaining)
             self._prepend(item)
@@ -1828,7 +1858,7 @@ class TypeAlreadyInQueue(Exception):
         self.type = t
 
 
-class CaseInsensitiveSet(collections.Set):
+class CaseInsensitiveSet(Set):
     """
     Basic case insensitive set
 
@@ -1881,33 +1911,38 @@ def time_this(
     expand_logtarget=False,
     message="{func} took {timing:.2f}ms",
     incl_func_args=False,
+    log_enter=False,
+    message_enter="Entering {func}...",
 ):
     def decorator(f):
+        func = fqfn(f)
+
+        lt = logtarget
+        if expand_logtarget:
+            lt += "." + func
+
+        logger = logging.getLogger(lt)
+
         @wraps(f)
         def wrapper(*args, **kwargs):
+            data = {"func": func, "func_args": "?", "func_kwargs": "?"}
+            if incl_func_args and logger.isEnabledFor(logging.DEBUG):
+                data.update(
+                    func_args=",".join(map(repr, args)),
+                    func_kwargs=",".join(
+                        map(lambda x: "{}={!r}".format(x[0], x[1]), kwargs.items())
+                    ),
+                )
+            if log_enter:
+                logger.debug(message_enter.format(**data), extra=data)
+
             start = time.time()
             try:
                 return f(*args, **kwargs)
             finally:
-                timing = (time.time() - start) * 1000.0
-                func = fqfn(f)
-
-                lt = logtarget
-                if expand_logtarget:
-                    lt += "." + func
-
-                logger = logging.getLogger(lt)
+                timing = (time.time() - start) * 1000
                 if logger.isEnabledFor(logging.DEBUG):
-                    data = {"func": func, "timing": timing}
-                    if incl_func_args:
-                        data.update(
-                            func_args=",".join(map(repr, args)),
-                            func_kwargs=",".join(
-                                map(
-                                    lambda x: "{}={!r}".format(x[0], x[1]), kwargs.items()
-                                )
-                            ),
-                        )
+                    data.update(timing=timing)
                     logger.debug(message.format(**data), extra=data)
 
         return wrapper

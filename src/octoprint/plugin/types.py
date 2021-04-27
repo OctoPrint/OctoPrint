@@ -792,7 +792,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             list: A list of paths to additional files whose modification to track for (in)validating
                 the cache. Ignored if ``None`` is returned.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -807,7 +807,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             list: A list of paths representing the only files whose modification to track for (in)validating
                 the cache. Ignored if ``None`` is returned.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -820,7 +820,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         Returns:
             str: An alternatively calculated ETag value. Ignored if ``None`` is returned (default).
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -838,7 +838,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         Returns:
             (list): A list of additional fields for the ETag generation, or None
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return default_additional
 
@@ -851,7 +851,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         Returns:
             int: An alternatively calculated LastModified value. Ignored if ``None`` is returned (default).
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -877,7 +877,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         Returns:
             dict: Additional data to persist in the preemptive cache configuration.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -895,7 +895,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             dict: Additional request data to persist in the preemptive cache configuration and to
                 use for request environment construction.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return None
 
@@ -911,7 +911,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         Returns:
             bool: Whether to suppress a record (True) or not (False, default)
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return False
 
@@ -933,7 +933,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             and returning ``True`` to keep it and ``False`` to filter it out. If ``None`` is returned, no
             filtering will take place.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         return default_template_filter
 
@@ -953,7 +953,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             (list) A list of permissions which to check the current user session against.
             May be empty to indicate that no permission checks should be made by OctoPrint.
 
-        ..versionadded: 1.5.0
+        .. versionadded: 1.5.0
         """
         from octoprint.access.permissions import Permissions
 
@@ -1279,7 +1279,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
 
         If your plugin returns nothing here, OctoPrint will return an empty response with return code ``204 No content``
         for you. You may also return regular responses as you would return from any Flask view here though, e.g.
-        ``return flask.jsonify(result="some json result")`` or ``return flask.make_response("Not found", 404)``.
+        ``return flask.jsonify(result="some json result")`` or ``flask.abort(404)``.
 
         :param string command: the command with which the resource was called
         :param dict data:      the full request body of the POST request parsed from JSON into a Python dictionary
@@ -1297,7 +1297,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
 
         If your plugin returns nothing here, OctoPrint will return an empty response with return code ``204 No content``
         for you. You may also return regular responses as you would return from any Flask view here though, e.g.
-        ``return flask.jsonify(result="some json result")`` or ``return flask.make_response("Not found", 404)``.
+        ``return flask.jsonify(result="some json result")`` or ``flask.abort(404)``.
 
         :param request: the Flask request object
         :return: ``None`` in which case OctoPrint will generate a ``204 No content`` response with empty body, or optionally
@@ -1327,7 +1327,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
            @octoprint.plugin.BlueprintPlugin.route("/echo", methods=["GET"])
            def myEcho(self):
                if not "text" in flask.request.values:
-                   return flask.make_response("Expected a text to echo back.", 400)
+                   abort(400, description="Expected a text to echo back.")
                return flask.request.values["text"]
 
        __plugin_implementation__ = MyBlueprintPlugin()
@@ -1381,7 +1381,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         and `the documentation for flask.Flask.errorhandler <http://flask.pocoo.org/docs/0.10/api/#flask.Flask.errorhandler>`_ for more
         information.
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         from collections import defaultdict
 
@@ -1477,8 +1477,21 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         If you want your blueprint's endpoints to have specific permissions, return ``False`` for this and do your
         permissions checks explicitly.
         """
-
         return True
+
+    # noinspection PyMethodMayBeStatic
+    def get_blueprint_api_prefixes(self):
+        """
+        Return all prefixes of your endpoint that are an API that should be containing JSON only.
+
+        Anything that matches this will generate JSON error messages in case of flask.abort
+        calls, instead of the default HTML ones.
+
+        Defaults to all endpoints under the blueprint. Limit this further as needed. E.g.,
+        if you only want your endpoints /foo, /foo/1 and /bar to be declared as API,
+        return ``["/foo", "/bar"]``. A match will be determined via startswith.
+        """
+        return [""]
 
 
 class SettingsPlugin(OctoPrintPlugin):
@@ -1580,7 +1593,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
         from flask_login import current_user
 
-        from octoprint.access.permissions import Permissions
+        from octoprint.access.permissions import OctoPrintPermission, Permissions
 
         data = copy.deepcopy(self._settings.get_all_data(merged=True))
         if self.config_version_key in data:
@@ -1632,9 +1645,15 @@ class SettingsPlugin(OctoPrintPlugin):
             "never": lambda: False,
         }
 
-        for level, condition in conditions.items():
-            paths_for_level = restricted_paths.get(level, [])
-            for path in paths_for_level:
+        for level, paths in restricted_paths.items():
+            if isinstance(level, OctoPrintPermission):
+                condition = lambda: (
+                    current_user is not None and current_user.has_permission(level)
+                )
+            else:
+                condition = conditions.get(level, lambda: False)
+
+            for path in paths:
                 restrict_path_unless(data, path, condition)
 
         return data
@@ -1708,12 +1727,15 @@ class SettingsPlugin(OctoPrintPlugin):
         Retrieves the list of paths in the plugin's settings which be restricted on the REST API.
 
         Override this in your plugin's implementation to restrict whether a path should only be returned to users with
-        the SETTINGS permission, any logged in users, or never on the REST API.
+        certain permissions, or never on the REST API.
 
-        Return a ``dict`` with the keys ``admin``, ``user``, ``never`` mapping to a list of paths (as tuples or lists of
-        the path elements) for which to restrict access via the REST API accordingly. Paths returned for the ``admin``
-        key will only be available on the REST API when access with admin rights, ``user`` will only be available when accessed
-        as a logged in user. ``never`` will never be returned on the API.
+        Return a ``dict`` with one of the following keys, mapping to a list of paths (as tuples or lists of
+        the path elements) for which to restrict access via the REST API accordingly.
+
+           * An :py:class:`~octoprint.access.permissions.OctoPrintPermission` instance: Paths will only be available on the REST API for users with the permission
+           * ``admin``: Paths will only be available on the REST API for users with admin rights (any user with the SETTINGS permission)
+           * ``user``: Paths will only be available on the REST API when accessed as a logged in user
+           * ``never``: Paths will never be returned on the API
 
         Example:
 
@@ -1724,12 +1746,15 @@ class SettingsPlugin(OctoPrintPlugin):
                                      user_only=dict(path="path", bar="bar")),
                            another=dict(admin_only=dict(path="path"),
                                         field="field"),
-                           path=dict(to=dict(never=dict(return="return"))))
+                           path=dict(to=dict(never=dict(return="return"))),
+                           the=dict(webcam=dict(data="webcam")))
 
            def get_settings_restricted_paths(self):
-               return dict(admin=[["some", "admin_only", "path"], ["another", "admin_only", "path"],],
-                           user=[["some", "user_only", "path"],],
-                           never=[["path", "to", "never", "return"],])
+               from octoprint.access.permissions import Permissions
+               return {'admin':[["some", "admin_only", "path"], ["another", "admin_only", "path"],],
+                       'user':[["some", "user_only", "path"],],
+                       'never':[["path", "to", "never", "return"],],
+                       Permissions.WEBCAM:[["the", "webcam", "data"],]}
 
            # this will make the plugin return settings on the REST API like this for an anonymous user
            #
@@ -1737,15 +1762,26 @@ class SettingsPlugin(OctoPrintPlugin):
            #                    user_only=dict(path=None, bar="bar")),
            #          another=dict(admin_only=dict(path=None),
            #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))))
+           #          path=dict(to=dict(never=dict(return=None))),
+           #          the=dict(webcam=dict(data=None)))
            #
-           # like this for a logged in user
+           # like this for a logged in user without the webcam permission
            #
            #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
            #                    user_only=dict(path="path", bar="bar")),
            #          another=dict(admin_only=dict(path=None),
            #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))))
+           #          path=dict(to=dict(never=dict(return=None))),
+           #          the=dict(webcam=dict(data=None)))
+           #
+           # like this for a logged in user with the webcam permission
+           #
+           #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
+           #                    user_only=dict(path="path", bar="bar")),
+           #          another=dict(admin_only=dict(path=None),
+           #                       field="field"),
+           #          path=dict(to=dict(never=dict(return=None))),
+           #          the=dict(webcam=dict(data="webcam")))
            #
            # and like this for an admin user
            #
@@ -1753,9 +1789,10 @@ class SettingsPlugin(OctoPrintPlugin):
            #                    user_only=dict(path="path", bar="bar")),
            #          another=dict(admin_only=dict(path="path"),
            #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))))
+           #          path=dict(to=dict(never=dict(return=None))),
+           #          the=dict(webcam=dict(data="webcam")))
 
-        ..versionadded:: 1.2.17
+        .. versionadded:: 1.2.17
         """
         return {}
 
@@ -1793,7 +1830,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
         Returns:
             (dict, dict): A tuple consisting of two dictionaries, the first being the plugin's preprocessors for
-                getters, the second the preprocessors for setters
+            getters, the second the preprocessors for setters
         """
         return {}, {}
 
@@ -1807,8 +1844,8 @@ class SettingsPlugin(OctoPrintPlugin):
 
         Returns:
             int or None: an int signifying the current settings format, should be incremented by plugins whenever there
-                         are backwards incompatible changes. Returning None here disables the version tracking for the
-                         plugin's configuration.
+            are backwards incompatible changes. Returning None here disables the version tracking for the
+            plugin's configuration.
         """
         return None
 
@@ -1844,7 +1881,7 @@ class SettingsPlugin(OctoPrintPlugin):
         the differences to the defaults (in case the current data was persisted with an older
         version of OctoPrint that still duplicated default data).
 
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         import octoprint.util
         from octoprint.settings import NoSuchSettingsPath
@@ -1987,7 +2024,7 @@ class SlicerPlugin(OctoPrintPlugin):
 
         Returns: (dict) a dictionary containing a valid extension subtree.
 
-        ..versionadded:: 1.3.11
+        .. versionadded:: 1.3.11
         """
         from octoprint.filemanager import ContentTypeMapping
 
@@ -2004,7 +2041,7 @@ class SlicerPlugin(OctoPrintPlugin):
         Arguments:
             profile_path (str): The base folder where OctoPrint stores this slicer plugin's profiles
 
-        ..versionadded:: 1.3.7
+        .. versionadded:: 1.3.7
         """
 
         try:
@@ -2029,7 +2066,7 @@ class SlicerPlugin(OctoPrintPlugin):
     # noinspection PyMethodMayBeStatic
     def get_slicer_profiles_lastmodified(self, profile_path):
         """
-        ..versionadded:: 1.3.0
+        .. versionadded:: 1.3.0
         """
         import os
 

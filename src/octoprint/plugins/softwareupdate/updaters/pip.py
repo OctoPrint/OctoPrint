@@ -101,7 +101,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
         target_version=target_version, target=target_version
     )
 
-    logger.debug("Target: %s, executing pip install %s" % (target, install_arg))
+    logger.debug("Target: {}, executing pip install {}".format(target, install_arg))
     pip_args = ["--disable-pip-version-check", "install", install_arg, "--no-cache-dir"]
     pip_kwargs = {
         "env": {"PYTHONWARNINGS": b"ignore:DEPRECATION::pip._internal.cli.base_command"}

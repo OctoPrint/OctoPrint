@@ -12,7 +12,7 @@ on:
 jobs:
   dispatch_releases:
     runs-on: ubuntu-latest
-    if: github.event_name != 'push'
+    if: github.repository == 'OctoPrint/OctoPrint' && github.event_name != 'push'
     steps:
       - name: 🚀 Repository Dispatch
         uses: peter-evans/repository-dispatch@v1
@@ -24,7 +24,7 @@ jobs:
 
   dispatch_canary:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/maintenance'
+    if: github.repository == 'OctoPrint/OctoPrint' && github.event_name == 'push' && github.ref == 'refs/heads/maintenance'
     steps:
       - name: 🚀 Repository Dispatch
         uses: peter-evans/repository-dispatch@v1
@@ -36,7 +36,7 @@ jobs:
 
   dispatch_bleeding:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/devel'
+    if: github.repository == 'OctoPrint/OctoPrint' && github.event_name == 'push' && github.ref == 'refs/heads/devel'
     steps:
       - name: 🚀 Repository Dispatch
         uses: peter-evans/repository-dispatch@v1

@@ -556,7 +556,7 @@ class PrinterProfileManager(object):
             self._logger.exception(
                 "Error while trying to save profile %s" % profile["id"]
             )
-            raise SaveError("Cannot save profile %s: %s" % (profile["id"], str(e)))
+            raise SaveError("Cannot save profile {}: {}".format(profile["id"], str(e)))
 
     def _remove_from_path(self, path):
         try:
@@ -796,8 +796,8 @@ class PrinterProfileManager(object):
     @staticmethod
     def _default_box_for_volume(volume):
         if volume["origin"] == BedOrigin.CENTER:
-            half_width = volume["width"] / 2.0
-            half_depth = volume["depth"] / 2.0
+            half_width = volume["width"] / 2
+            half_depth = volume["depth"] / 2
             return {
                 "x_min": -half_width,
                 "x_max": half_width,

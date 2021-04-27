@@ -24,6 +24,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import copy
+import fnmatch
 import io
 import logging
 import os
@@ -47,6 +48,11 @@ try:
 except ImportError:
     from collections import KeysView
 
+try:
+    from os import scandir
+except ImportError:
+    from scandir import scandir
+
 from octoprint.util import (
     CaseInsensitiveSet,
     atomic_write,
@@ -60,7 +66,7 @@ _APPNAME = "OctoPrint"
 _instance = None
 
 
-def settings(init=False, basedir=None, configfile=None):
+def settings(init=False, basedir=None, configfile=None, overlays=None):
     """
     Factory method for initially constructing and consecutively retrieving the :class:`~octoprint.settings.Settings`
     singleton.
@@ -75,6 +81,7 @@ def settings(init=False, basedir=None, configfile=None):
             ``~/Library/Application Support/OctoPrint`` on MacOS.
         configfile (str): Path of the configuration file (``config.yaml``) to work on. If not set the default will
             be used: ``<basedir>/config.yaml`` for ``basedir`` as defined above.
+        overlays (list): List of paths to config overlays to put between default settings and config.yaml
 
     Returns:
         Settings: The fully initialized :class:`Settings` instance.
@@ -89,7 +96,9 @@ def settings(init=False, basedir=None, configfile=None):
 
     else:
         if init:
-            _instance = Settings(configfile=configfile, basedir=basedir)
+            _instance = Settings(
+                configfile=configfile, basedir=basedir, overlays=overlays
+            )
         else:
             raise ValueError("Settings not initialized yet")
 
@@ -133,6 +142,7 @@ default_settings = {
         "disconnectOnErrors": True,
         "ignoreErrorsFromFirmware": False,
         "terminalLogSize": 20,
+        "lastLineBufferSize": 50,
         "logResends": True,
         "supportResendsWithoutOk": "detect",
         "logPositionOnPause": True,
@@ -145,6 +155,7 @@ default_settings = {
         "unknownCommandsNeedAck": False,
         "sdRelativePath": False,
         "sdAlwaysAvailable": False,
+        "sdLowerCase": False,
         "maxNotSdPrinting": 2,
         "swallowOkAfterResend": True,
         "repetierTargetTemp": False,
@@ -211,7 +222,7 @@ default_settings = {
         "onlineCheck": {
             "enabled": None,
             "interval": 15 * 60,  # 15 min
-            "host": "8.8.8.8",
+            "host": "1.1.1.1",
             "port": 53,
             "name": "octoprint.org",
         },
@@ -246,6 +257,7 @@ default_settings = {
         "flipH": False,
         "flipV": False,
         "rotate90": False,
+        "ffmpegCommandline": '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y {filters} "{output}"',
         "timelapse": {
             "type": "off",
             "options": {},
@@ -260,6 +272,7 @@ default_settings = {
         "throttle_highprio": 0.0,
         "throttle_lines": 100,
         "runAt": "idle",  # 'never', 'idle', 'always'
+        "bedZ": 0.0,
     },
     "feature": {
         "temperatureGraph": True,
@@ -269,6 +282,7 @@ default_settings = {
         "modelSizeDetection": True,
         "printStartConfirmation": False,
         "printCancelConfirmation": True,
+        "uploadOverwriteConfirmation": True,
         "autoUppercaseBlacklist": ["M117", "M118"],
         "g90InfluencesExtruder": False,
     },
@@ -319,7 +333,13 @@ default_settings = {
                     "plugin_pi_support",
                     "login",
                 ],
-                "sidebar": ["plugin_firmware_check", "connection", "state", "files"],
+                "sidebar": [
+                    "plugin_firmware_check_warning",
+                    "plugin_firmware_check_info",
+                    "connection",
+                    "state",
+                    "files",
+                ],
                 "tab": [
                     "temperature",
                     "control",
@@ -355,7 +375,11 @@ default_settings = {
                     "plugin_pi_support",
                 ],
                 "usersettings": ["access", "interface"],
-                "wizard": ["plugin_backup", "plugin_corewizard_acl"],
+                "wizard": [
+                    "plugin_backup",
+                    "plugin_corewizard_acl",
+                    "plugin_corewizard_onlinecheck",
+                ],
                 "about": [
                     "about",
                     "plugin_pi_support",
@@ -402,7 +426,7 @@ default_settings = {
     "terminalFilters": [
         {
             "name": "Suppress temperature messages",
-            "regex": r"(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+((P|B|N)\d+\s+)*)?(B|T\d*):\d+)",
+            "regex": r"(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+([PBN]\d+\s+)*)?([BCLPR]|T\d*):-?\d+)",
         },
         {
             "name": "Suppress SD status messages",
@@ -658,14 +682,18 @@ class Settings(object):
 
     OVERLAY_KEY = "__overlay__"
 
-    def __init__(self, configfile=None, basedir=None):
+    def __init__(self, configfile=None, basedir=None, overlays=None):
         self._logger = logging.getLogger(__name__)
 
         self._basedir = None
 
+        if overlays is None:
+            overlays = []
+
         assert isinstance(default_settings, dict)
 
         self._map = HierarchicalChainMap({}, default_settings)
+        self.load_overlays(overlays)
 
         self._config = None
         self._dirty = False
@@ -1011,6 +1039,34 @@ class Settings(object):
         self._validate_config()
 
         self._forget_hashes()
+
+    def load_overlays(self, overlays, migrate=True):
+        for overlay in overlays:
+            if not os.path.exists(overlay):
+                continue
+
+            def process(path):
+                try:
+                    overlay_config = self.load_overlay(path, migrate=migrate)
+                    self.add_overlay(overlay_config)
+                    self._logger.info("Added config overlay from {}".format(path))
+                except Exception:
+                    self._logger.exception(
+                        "Could not add config overlay from {}".format(path)
+                    )
+
+            if os.path.isfile(overlay):
+                process(overlay)
+
+            elif os.path.isdir(overlay):
+                for entry in scandir(overlay):
+                    name = entry.name
+                    path = entry.path
+
+                    if is_hidden_path(path) or not fnmatch.fnmatch(name, "*.yaml"):
+                        continue
+
+                    process(path)
 
     def load_overlay(self, overlay, migrate=True):
         config = None
@@ -1581,9 +1637,9 @@ class Settings(object):
     def _validate_config(self):
         # validate uniqueness of folder paths
         folder_keys = self.get(["folder"], merged=True).keys()
-        folders = dict(
-            (folder_key, self.getBaseFolder(folder_key)) for folder_key in folder_keys
-        )
+        folders = {
+            folder_key: self.getBaseFolder(folder_key) for folder_key in folder_keys
+        }
         if len(folders.values()) != len(set(folders.values())):
             raise DuplicateFolderPaths(folders)
 
@@ -1628,7 +1684,7 @@ class Settings(object):
                     self._config,
                     configFile,
                     default_flow_style=False,
-                    indent=4,
+                    indent=2,
                     allow_unicode=True,
                 )
                 self._dirty = False

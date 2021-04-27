@@ -157,6 +157,7 @@ $(function () {
         self.webcam_snapshotTimeout = ko.observable(undefined);
         self.webcam_snapshotSslValidation = ko.observable(undefined);
         self.webcam_ffmpegPath = ko.observable(undefined);
+        self.webcam_ffmpegCommandline = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
         self.webcam_ffmpegThreads = ko.observable(undefined);
         self.webcam_ffmpegVideoCodec = ko.observable(undefined);
@@ -172,6 +173,7 @@ $(function () {
         self.feature_modelSizeDetection = ko.observable(undefined);
         self.feature_printStartConfirmation = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
+        self.feature_uploadOverwriteConfirmation = ko.observable(undefined);
         self.feature_g90InfluencesExtruder = ko.observable(undefined);
         self.feature_autoUppercaseBlacklist = ko.observable(undefined);
 
@@ -211,6 +213,7 @@ $(function () {
         self.serial_waitForStart = ko.observable(undefined);
         self.serial_sendChecksum = ko.observable("print");
         self.serial_sdRelativePath = ko.observable(undefined);
+        self.serial_sdLowerCase = ko.observable(undefined);
         self.serial_sdAlwaysAvailable = ko.observable(undefined);
         self.serial_swallowOkAfterResend = ko.observable(undefined);
         self.serial_repetierTargetTemp = ko.observable(undefined);
@@ -406,7 +409,8 @@ $(function () {
         self.addTerminalFilter = function () {
             self.terminalFilters.push({
                 name: "New",
-                regex: "(Send: (Nd+s+)?M105)|(Recv:s+(oks+)?.*(B|Td*):d+)"
+                regex:
+                    "(Send:\\s+(N\\d+\\s+)?M105)|(Recv:\\s+(ok\\s+([PBN]\\d+\\s+)*)?.*([BCLPR]|T\\d*):-?\\d+)"
             });
         };
 
@@ -770,7 +774,7 @@ $(function () {
             $(".reload_nonconflicts", self.settingsUpdatedDialog).click(function (e) {
                 e.preventDefault();
                 self.settingsUpdatedDialog.modal("hide");
-                self.requestData(undefined, true);
+                self.requestData(true);
                 return false;
             });
 
@@ -839,14 +843,14 @@ $(function () {
         self.requestData = function (local) {
             // handle old parameter format
             var callback = undefined;
-            if (arguments.length == 2 || _.isFunction(local)) {
+            if (arguments.length === 2 || _.isFunction(local)) {
                 var exc = new Error();
                 log.warn(
                     "The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead. Stacktrace:",
                     exc.stack || exc.stacktrace || "<n/a>"
                 );
 
-                if (arguments.length == 2) {
+                if (arguments.length === 2) {
                     callback = arguments[0];
                     local = arguments[1];
                 } else {

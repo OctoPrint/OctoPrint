@@ -33,11 +33,11 @@ class CoreWizardPlugin(
         firstrun = self._settings.global_get(["server", "firstRun"])
 
         if not firstrun:
-            required = dict(
-                (key, value)
+            required = {
+                key: value
                 for key, value in required.items()
                 if not firstrunonly.get(key, lambda: False)()
-            )
+            }
 
         result = list()
         for key, method in required.items():
@@ -85,11 +85,11 @@ class CoreWizardPlugin(
         firstrun = self._settings.global_get(["server", "firstRun"])
 
         if not firstrun:
-            required = dict(
-                (key, value)
+            required = {
+                key: value
                 for key, value in required.items()
                 if not firstrunonly.get(key, lambda: False)()
-            )
+            }
         any_required = any(map(lambda m: m(), required.values()))
 
         return any_required

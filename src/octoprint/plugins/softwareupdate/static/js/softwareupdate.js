@@ -81,6 +81,12 @@ $(function () {
             );
         });
 
+        self.enableUpdateAll = ko.pureComputed(function () {
+            return (
+                self.enableUpdate() && self.availableAndPossibleAndEnabled().length > 0
+            );
+        });
+
         self.enable_configSave = ko.pureComputed(function () {
             return (
                 self.config_checkType() === "github_release" ||
@@ -386,7 +392,11 @@ $(function () {
 
                 text += "<ul class='fa-ul'>";
                 _.each(self.versions.items(), function (update_info) {
-                    if (update_info.updateAvailable && !update_info.disabled) {
+                    if (
+                        update_info.updateAvailable &&
+                        !update_info.disabled &&
+                        update_info.compatible
+                    ) {
                         text +=
                             "<li>" +
                             "<i class='fa fa-li " +
@@ -676,13 +686,20 @@ $(function () {
                         gettext("Updating, please wait.")
                     );
                 })
-                .fail(function () {
+                .fail(function (response) {
                     self.updateInProgress = false;
+                    var message =
+                        "<p>" +
+                        gettext(
+                            "The update could not be started. Is it already active? Please consult octoprint.log for details."
+                        ) +
+                        "</p><pre>" +
+                        _.escape(response.responseJSON.error) +
+                        "</pre>";
+
                     self._showPopup({
                         title: gettext("Update not started!"),
-                        text: gettext(
-                            "The update could not be started. Is it already active? Please consult octoprint.log for details."
-                        ),
+                        text: message,
                         type: "error",
                         hide: false,
                         buttons: {

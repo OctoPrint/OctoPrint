@@ -612,7 +612,16 @@ def _local_networks():
         logger = logging.getLogger(__name__)
         local_networks = netaddr.IPSet([])
         for entry in settings().get(["accessControl", "localNetworks"]):
-            network = netaddr.IPNetwork(entry)
+            try:
+                network = netaddr.IPNetwork(entry)
+            except Exception:
+                logger.warning(
+                    "Invalid network definition configured in localNetworks: {}".format(
+                        entry
+                    )
+                )
+                continue
+
             local_networks.add(network)
             logger.debug("Added network {} to localNetworks".format(network))
 
@@ -1052,7 +1061,7 @@ class PreemptiveCache(object):
                         data,
                         handle,
                         default_flow_style=False,
-                        indent=4,
+                        indent=2,
                         allow_unicode=True,
                     )
             except Exception:
@@ -1296,11 +1305,13 @@ def with_revalidation_checking(
     def decorator(f):
         @functools.wraps(f)
         def decorated_function(*args, **kwargs):
+            from octoprint.server import NOT_MODIFIED
+
             lm = lastmodified_factory()
             etag = etag_factory(lm)
 
             if condition(lm, etag) and not unless():
-                return make_response("Not Modified", 304)
+                return NOT_MODIFIED
 
             # generate response
             response = f(*args, **kwargs)
@@ -1535,7 +1546,7 @@ def no_firstrun_access(func):
             octoprint.server.userManager is None
             or not octoprint.server.userManager.has_been_customized()
         ):
-            return flask.make_response("OctoPrint isn't setup yet", 403)
+            flask.abort(403)
         return func(*args, **kwargs)
 
     return decorated_view
@@ -1557,9 +1568,7 @@ def firstrun_only_access(func):
         ):
             return func(*args, **kwargs)
         else:
-            return flask.make_response(
-                "OctoPrint is already setup, this resource is not longer available.", 403
-            )
+            flask.abort(403)
 
     return decorated_view
 
@@ -1574,32 +1583,54 @@ def get_remote_address(request):
 def get_json_command_from_request(request, valid_commands):
     content_type = request.headers.get("Content-Type", None)
     if content_type is None or "application/json" not in content_type:
-        return None, None, make_response("Expected content-type JSON", 400)
+        flask.abort(400, description="Expected content-type JSON")
 
     data = request.get_json()
     if data is None:
-        return (
-            None,
-            None,
-            make_response("Malformed JSON body or wrong content-type in request", 400),
+        flask.abort(
+            400, description="Malformed JSON body or wrong content-type in request"
         )
     if "command" not in data or data["command"] not in valid_commands:
-        return None, None, make_response("Expected valid command", 400)
+        flask.abort(400, description="command is invalid")
 
     command = data["command"]
-    for parameter in valid_commands[command]:
-        if parameter not in data:
-            return (
-                None,
-                None,
-                make_response(
-                    "Mandatory parameter %s missing for command %s"
-                    % (parameter, command),
-                    400,
-                ),
-            )
+    if any(map(lambda x: x not in data, valid_commands[command])):
+        flask.abort(400, description="Mandatory parameters missing")
 
     return command, data, None
+
+
+def make_text_response(message, status):
+    """
+    Helper to generate basic text responses.
+
+    Response will have the provided message as body, the provided status code, and
+    a content type of "text/plain".
+
+    Args:
+        message: The message in the response body
+        status: The HTTP status code
+
+    Returns:
+
+    """
+    return make_response(message, status, {"Content-Type": "text/plain"})
+
+
+def make_api_error(message, status):
+    """
+    Helper to generate API error responses in JSON format.
+
+    Turns something like ``make_api_error("Not Found", 404)`` into a JSON response
+    with body ``{"error": "Not Found"}``.
+
+    Args:
+        message: The error message to put into the response
+        status: The HTTP status code
+
+    Returns: a flask response to return to the client
+    """
+    return make_response(flask.jsonify(error=message), status)
 
 
 ##~~ Flask-Assets resolver with plugin asset support

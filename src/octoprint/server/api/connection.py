@@ -5,7 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import jsonify, make_response, request
+from flask import abort, jsonify, request
 
 from octoprint.access.permissions import Permissions
 from octoprint.server import NO_CONTENT, printer, printerProfileManager
@@ -49,15 +49,15 @@ def connectionCommand():
         if "port" in data:
             port = data["port"]
             if port not in connection_options["ports"] and port != "AUTO":
-                return make_response("Invalid port: %s" % port, 400)
+                abort(400, description="port is invalid")
         if "baudrate" in data:
             baudrate = data["baudrate"]
             if baudrate not in connection_options["baudrates"] and baudrate != 0:
-                return make_response("Invalid baudrate: %d" % baudrate, 400)
+                abort(400, description="baudrate is invalid")
         if "printerProfile" in data:
             printerProfile = data["printerProfile"]
             if not printerProfileManager.exists(printerProfile):
-                return make_response("Invalid printer profile: %s" % printerProfile, 400)
+                abort(400, description="printerProfile is invalid")
         if "save" in data and data["save"]:
             settings().set(["serial", "port"], port)
             settings().setInt(["serial", "baudrate"], baudrate)

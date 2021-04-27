@@ -131,6 +131,16 @@ date of first contribution):
   * [Manuel McLure](https://github.com/ManuelMcLure)
   * ["j7126"](https://github.com/j7126)
   * ["coliss86"](https://github.com/coliss86)
+  * ["MichaIng"](https://github.com/MichaIng)
+  * ["jasonbcox"](https://github.com/jasonbcox)
+  * ["shadycuz"](https://github.com/shadycuz)
+  * [David Rifkind](https://github.com/drifkind)
+  * [Nils Hofmann](https://github.com/Master92)
+  * [Miroslav Šedivý](https://github.com/eumiro)
+  * [Costas Basdekis](https://github.com/costas-basdekis)
+  * [Joe Martella](https://github.com/martellaj)
+  * [Scott Lahteine](https://github.com/thinkyhead)
+  * [Karthikeyan Singaravelan](https://github.com/tirkarthi)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

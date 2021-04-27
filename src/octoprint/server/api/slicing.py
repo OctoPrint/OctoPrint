@@ -5,8 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import jsonify, make_response, request, url_for
-from werkzeug.exceptions import BadRequest
+from flask import abort, jsonify, make_response, request, url_for
 
 from octoprint.access.permissions import Permissions
 from octoprint.server import slicingManager
@@ -141,7 +140,7 @@ def slicingListSlicerProfiles(slicer):
     try:
         return jsonify(_getSlicingProfilesData(slicer, require_configured=configured))
     except (UnknownSlicer, SlicerNotConfigured):
-        return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+        abort(404)
 
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["GET"])
@@ -151,9 +150,9 @@ def slicingGetSlicerProfile(slicer, name):
     try:
         profile = slicingManager.load_profile(slicer, name, require_configured=False)
     except UnknownSlicer:
-        return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+        abort(404)
     except UnknownProfile:
-        return make_response("Profile not found", 404)
+        abort(404)
 
     result = _getSlicingProfileData(slicer, name, profile)
     result["data"] = profile.data
@@ -165,15 +164,11 @@ def slicingGetSlicerProfile(slicer, name):
 @Permissions.SETTINGS.require(403)
 def slicingAddSlicerProfile(slicer, name):
     if "application/json" not in request.headers["Content-Type"]:
-        return make_response("Expected content-type JSON", 400)
+        abort(400, description="Expected content-type JSON")
 
-    try:
-        json_data = request.get_json()
-    except BadRequest:
-        return make_response("Malformed JSON body in request", 400)
-
+    json_data = request.get_json()
     if json_data is None:
-        return make_response("Malformed JSON body in request", 400)
+        abort(400, description="Malformed JSON body in request")
 
     data = {}
     display_name = None
@@ -195,7 +190,7 @@ def slicingAddSlicerProfile(slicer, name):
             description=description,
         )
     except UnknownSlicer:
-        return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+        abort(404, description="Unknown slicer")
 
     result = _getSlicingProfileData(slicer, name, profile)
     r = make_response(jsonify(result), 201)
@@ -208,24 +203,18 @@ def slicingAddSlicerProfile(slicer, name):
 @Permissions.SETTINGS.require(403)
 def slicingPatchSlicerProfile(slicer, name):
     if "application/json" not in request.headers["Content-Type"]:
-        return make_response("Expected content-type JSON", 400)
+        abort(400, description="Expected content-type JSON")
 
     try:
         profile = slicingManager.load_profile(slicer, name, require_configured=False)
     except UnknownSlicer:
-        return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+        return abort(404)
     except UnknownProfile:
-        return make_response(
-            "Profile {name} for slicer {slicer} not found".format(**locals()), 404
-        )
+        return abort(404)
 
-    try:
-        json_data = request.get_json()
-    except BadRequest:
-        return make_response("Malformed JSON body in request", 400)
-
+    json_data = request.get_json()
     if json_data is None:
-        return make_response("Malformed JSON body in request", 400)
+        abort(400, description="Malformed JSON body in request")
 
     data = {}
     display_name = None
@@ -262,13 +251,13 @@ def slicingDelSlicerProfile(slicer, name):
     try:
         slicingManager.delete_profile(slicer, name)
     except UnknownSlicer:
-        return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+        abort(404)
     except CouldNotDeleteProfile as e:
-        return make_response(
-            "Could not delete profile {profile} for slicer {slicer}: {cause}".format(
-                profile=name, slicer=slicer, cause=str(e.cause)
-            ),
+        abort(
             500,
+            description="Could not delete profile for slicer: {cause}".format(
+                cause=str(e.cause)
+            ),
         )
 
     return NO_CONTENT

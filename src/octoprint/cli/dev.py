@@ -196,9 +196,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
                         "plugin_source": source,
                         "plugin_installurl": installurl,
                     }
-                    options = dict(
-                        (k, v) for k, v in raw_options.items() if v is not None
-                    )
+                    options = {k: v for k, v in raw_options.items() if v is not None}
 
                     with custom_cookiecutter_prompt(options):
                         cookiecutter.main.cookiecutter(

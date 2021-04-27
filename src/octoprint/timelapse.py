@@ -980,6 +980,7 @@ class TimelapseRenderJob(object):
         """Rendering runnable."""
 
         ffmpeg = settings().get(["webcam", "ffmpeg"])
+        commandline = settings().get(["webcam", "ffmpegCommandline"])
         bitrate = settings().get(["webcam", "bitrate"])
         if ffmpeg is None or bitrate is None:
             self._logger.warning(
@@ -1034,6 +1035,7 @@ class TimelapseRenderJob(object):
 
         # prepare ffmpeg command
         command_str = self._create_ffmpeg_command_string(
+            commandline,
             ffmpeg,
             self._fps,
             bitrate,
@@ -1097,7 +1099,7 @@ class TimelapseRenderJob(object):
             current_time = _ffmpeg_current_regex.search(line)
             if current_time is not None and self._parsed_duration != 0:
                 current_s = self._convert_time(*current_time.groups())
-                progress = current_s / float(self._parsed_duration) * 100
+                progress = current_s / self._parsed_duration * 100
 
                 # Update progress bar
                 for callback in _update_callbacks:
@@ -1118,6 +1120,7 @@ class TimelapseRenderJob(object):
     @classmethod
     def _create_ffmpeg_command_string(
         cls,
+        commandline,
         ffmpeg,
         fps,
         bitrate,
@@ -1135,6 +1138,7 @@ class TimelapseRenderJob(object):
         Create ffmpeg command string based on input parameters.
 
         Arguments:
+            commandline (str): Command line template to use
             ffmpeg (str): Path to ffmpeg
             fps (int): Frames per second for output
             bitrate (str): Bitrate of output
@@ -1162,38 +1166,23 @@ class TimelapseRenderJob(object):
         else:
             containerformat = "mp4"
 
-        command = [
-            ffmpeg,
-            "-framerate",
-            str(fps),
-            "-i",
-            '"{}"'.format(input),
-            "-vcodec",
-            videocodec,
-            "-threads",
-            str(threads),
-            "-r",
-            "25",
-            "-y",
-            "-b",
-            str(bitrate),
-            "-f",
-            containerformat,
-        ]
-
         filter_string = cls._create_filter_string(
             hflip=hflip, vflip=vflip, rotate=rotate, watermark=watermark
         )
+        placeholders = {
+            "ffmpeg": ffmpeg,
+            "fps": str(fps),
+            "input": input,
+            "output": output,
+            "videocodec": videocodec,
+            "threads": str(threads),
+            "bitrate": str(bitrate),
+            "containerformat": containerformat,
+            "filters": "-vf " + sarge.shell_quote(filter_string) if filter_string else "",
+        }
 
-        if filter_string is not None:
-            logger.debug("Applying videofilter chain: {}".format(filter_string))
-            command.extend(["-vf", sarge.shell_quote(filter_string)])
-
-        # finalize command with output file
         logger.debug("Rendering movie to {}".format(output))
-        command.append('"{}"'.format(output))
-
-        return " ".join(command)
+        return commandline.format(**placeholders)
 
     @classmethod
     def _create_filter_string(

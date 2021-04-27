@@ -53,6 +53,10 @@ $(function () {
         self.restoreSupported = ko.observable(false);
         self.backups = ko.observableArray([]);
         self.excludeFromBackup = ko.observableArray([]);
+        self.backupMaxUploadSize = ko.observable();
+        self.backupIsAboveUploadSize = function (data) {
+            return data.size > self.backupMaxUploadSize();
+        };
 
         // working dialog
         self.workDialog = $("#workdialog");
@@ -96,6 +100,7 @@ $(function () {
                 OctoPrint.plugins.backup.get().done(function (resp) {
                     self.backupSupported(true);
                     self.restoreSupported(resp.restore_supported);
+                    self.backupMaxUploadSize(resp.max_upload_size);
 
                     var backups = resp.backups;
                     backups.sort(function (a, b) {

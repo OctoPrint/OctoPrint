@@ -715,6 +715,7 @@ var parseGCode = function (message) {
     bed = message.options.bed;
     ignoreOutsideBed = message.options.ignoreOutsideBed;
     g90InfluencesExtruder = message.options.g90InfluencesExtruder;
+    boundingBox.minZ = min.z = message.options.bedZ;
 
     doParse();
     gcode = [];

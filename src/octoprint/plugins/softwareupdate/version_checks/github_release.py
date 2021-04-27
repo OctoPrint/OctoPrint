@@ -323,10 +323,10 @@ def get_latest(
         prerelease_branches = check.get("prerelease_branches", None)
         if prerelease_branches:
             # fetch valid commitish list from configured prerelease_branches for selected channel
-            commitishes = dict(
-                (x["branch"], x.get("commitish", [x["branch"]]))
+            commitishes = {
+                x["branch"]: x.get("commitish", [x["branch"]])
                 for x in prerelease_branches
-            )
+            }
             commitish = commitishes.get(prerelease_channel, [prerelease_channel])
 
     force_base = check.get("force_base", False)
@@ -360,7 +360,7 @@ def get_latest(
         "release_notes": release_notes,
     }
 
-    logger.debug("Target: %s, local: %s, remote: %s" % (target, current, remote_tag))
+    logger.debug("Target: {}, local: {}, remote: {}".format(target, current, remote_tag))
 
     return information, _is_current(
         information, compare_type, custom=custom_compare, force_base=force_base

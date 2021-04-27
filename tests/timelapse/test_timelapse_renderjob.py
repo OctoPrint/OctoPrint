@@ -16,6 +16,7 @@ class TimelapseRenderJobTest(unittest.TestCase):
     @data(
         (
             (
+                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y {filters} "{output}"',
                 "/path/to/ffmpeg",
                 25,
                 "10000k",
@@ -25,10 +26,25 @@ class TimelapseRenderJobTest(unittest.TestCase):
                 "mpeg2video",
             ),
             {},
-            '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 1 -r 25 -y -b 10000k -f vob -vf \'[in] format=yuv420p [out]\' "/path/to/output.mpg"',
+            '/path/to/ffmpeg -r 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 1 -b 10000k -f vob -y -vf \'[in] format=yuv420p [out]\' "/path/to/output.mpg"',
         ),
         (
             (
+                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y -g 5 {filters} "{output}"',
+                "/path/to/ffmpeg",
+                25,
+                "10000k",
+                1,
+                "/path/to/input/files_%d.jpg",
+                "/path/to/output.mpg",
+                "mpeg2video",
+            ),
+            {},
+            '/path/to/ffmpeg -r 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 1 -b 10000k -f vob -y -g 5 -vf \'[in] format=yuv420p [out]\' "/path/to/output.mpg"',
+        ),
+        (
+            (
+                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y {filters} "{output}"',
                 "/path/to/ffmpeg",
                 25,
                 "10000k",
@@ -38,10 +54,11 @@ class TimelapseRenderJobTest(unittest.TestCase):
                 "libx264",
             ),
             {},
-            '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec libx264 -threads 1 -r 25 -y -b 10000k -f mp4 -vf \'[in] format=yuv420p [out]\' "/path/to/output.mp4"',
+            '/path/to/ffmpeg -r 25 -i "/path/to/input/files_%d.jpg" -vcodec libx264 -threads 1 -b 10000k -f mp4 -y -vf \'[in] format=yuv420p [out]\' "/path/to/output.mp4"',
         ),
         (
             (
+                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y {filters} "{output}"',
                 "/path/to/ffmpeg",
                 25,
                 "10000k",
@@ -51,10 +68,11 @@ class TimelapseRenderJobTest(unittest.TestCase):
                 "mpeg2video",
             ),
             {"hflip": True},
-            '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 1 -r 25 -y -b 10000k -f vob -vf \'[in] format=yuv420p,hflip [out]\' "/path/to/output.mpg"',
+            '/path/to/ffmpeg -r 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 1 -b 10000k -f vob -y -vf \'[in] format=yuv420p,hflip [out]\' "/path/to/output.mpg"',
         ),
         (
             (
+                '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y {filters} "{output}"',
                 "/path/to/ffmpeg",
                 25,
                 "20000k",
@@ -64,13 +82,13 @@ class TimelapseRenderJobTest(unittest.TestCase):
                 "mpeg2video",
             ),
             {"rotate": True, "watermark": "/path/to/watermark.png"},
-            '/path/to/ffmpeg -framerate 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 4 -r 25 -y -b 20000k -f vob -vf \'[in] format=yuv420p,transpose=2 [postprocessed]; movie=/path/to/watermark.png [wm]; [postprocessed][wm] overlay=10:main_h-overlay_h-10 [out]\' "/path/to/output.mpg"',
+            '/path/to/ffmpeg -r 25 -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 4 -b 20000k -f vob -y -vf \'[in] format=yuv420p,transpose=2 [postprocessed]; movie=/path/to/watermark.png [wm]; [postprocessed][wm] overlay=10:main_h-overlay_h-10 [out]\' "/path/to/output.mpg"',
         ),
     )
     @unpack
     def test_create_ffmpeg_command_string(self, args, kwargs, expected):
         actual = TimelapseRenderJob._create_ffmpeg_command_string(*args, **kwargs)
-        self.assertEqual(actual, expected)
+        self.assertEqual(expected, actual)
 
     @data(
         ({}, "[in] format=yuv420p [out]"),

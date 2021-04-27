@@ -22,7 +22,7 @@ import tornado.iostream
 import tornado.tcpserver
 import tornado.util
 import tornado.web
-from past.builtins import unicode
+from past.builtins import basestring, unicode
 
 import octoprint.util
 
@@ -235,9 +235,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         self._file_suffix = file_suffix
         self._path = path
 
-        self._suffixes = dict(
-            (key, key) for key in ("name", "path", "content_type", "size")
-        )
+        self._suffixes = {key: key for key in ("name", "path", "content_type", "size")}
         for suffix_type, suffix in suffixes.items():
             if suffix_type in self._suffixes and suffix is not None:
                 self._suffixes[suffix_type] = suffix
@@ -538,9 +536,9 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
                 if "content_type" in part:
                     parameters["content_type"] = part["content_type"]
 
-                fields = dict(
-                    (self._suffixes[key], value) for (key, value) in parameters.items()
-                )
+                fields = {
+                    self._suffixes[key]: value for (key, value) in parameters.items()
+                }
                 for n, p in fields.items():
                     if n is None or p is None:
                         continue
@@ -814,7 +812,7 @@ class WsgiInputContainer(object):
             log_method = access_log.warning
         else:
             log_method = access_log.error
-        request_time = 1000.0 * request.request_time()
+        request_time = 1000 * request.request_time()
         summary = request.method + " " + request.uri + " (" + request.remote_ip + ")"
         log_method("%d %s %.2fms", status_code, summary, request_time)
 
@@ -1200,9 +1198,13 @@ class LargeResponseHandler(
 
     def compute_etag(self):
         if self._etag_generator is not None:
-            return self._etag_generator(self)
+            etag = self._etag_generator(self)
         else:
-            return self.get_content_version(self.absolute_path)
+            etag = str(self.get_content_version(self.absolute_path))
+
+        if not etag.endswith('"'):
+            etag = '"{}"'.format(etag)
+        return etag
 
     # noinspection PyAttributeOutsideInit
     def get_content_type(self):
@@ -1345,7 +1347,7 @@ class UrlProxyHandler(
         if not extension:
             return None
 
-        return "%s%s" % (self._basename, extension)
+        return "{}{}".format(self._basename, extension)
 
 
 class StaticDataHandler(
@@ -1400,6 +1402,211 @@ class DeprecatedEndpointHandler(CorsSupportMixin, tornado.web.RequestHandler):
     delete = _handle_method
     head = _handle_method
     options = _handle_method
+
+
+class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
+    def initialize(
+        self,
+        files=None,
+        as_attachment=True,
+        attachment_name=None,
+        access_validation=None,
+        compress=False,
+    ):
+        if files is None:
+            files = []
+        if as_attachment and not attachment_name:
+            raise ValueError("attachment name must be set if as_attachment is True")
+
+        self._files = files
+        self._as_attachment = as_attachment
+        self._attachment_name = attachment_name
+        self._access_validator = access_validation
+        self._compress = compress
+
+    def get(self, *args, **kwargs):
+        if self._access_validator is not None:
+            self._access_validator(self.request)
+        return self.stream_zip(self._files)
+
+    def get_attachment_name(self):
+        return self._attachment_name
+
+    # noinspection PyCompatibility
+    def normalize_files(self, files):
+        result = []
+        for f in files:
+            if isinstance(f, basestring):
+                result.append({"path": f})
+            elif isinstance(f, dict) and ("path" in f or "iter" in f or "content" in f):
+                result.append(f)
+        return result
+
+    @tornado.gen.coroutine
+    def stream_zip(self, files):
+        self.set_header("Content-Type", "application/zip")
+        if self._as_attachment:
+            self.set_header(
+                "Content-Disposition",
+                'attachment; filename="{}"'.format(self.get_attachment_name()),
+            )
+
+        import zipstream
+
+        compress_type = zipstream.ZIP_STORED
+        if self._compress:
+            try:
+                import zlib  # noqa: F401
+
+                compress_type = zipstream.ZIP_DEFLATED
+            except ImportError:
+                # no zlib, no compression
+                pass
+
+        z = zipstream.ZipFile()
+        for f in self.normalize_files(files):
+            # noinspection PyCompatibility
+            name = f.get("name")
+            path = f.get("path")
+            iter = f.get("iter")
+            content = f.get("content")
+
+            if path:
+                z.write(path, arcname=name, compress_type=compress_type)
+            elif iter and name:
+                z.write_iter(name, iter, compress_type=compress_type)
+            elif content and name:
+                z.writestr(name, content, compress_type=compress_type)
+
+        for chunk in z:
+            try:
+                self.write(chunk)
+                yield self.flush()
+            except tornado.iostream.StreamClosedError:
+                return
+
+
+class DynamicZipBundleHandler(StaticZipBundleHandler):
+    # noinspection PyMethodOverriding
+    def initialize(
+        self,
+        path_validation=None,
+        path_processor=None,
+        as_attachment=True,
+        attachment_name=None,
+        access_validation=None,
+        compress=False,
+    ):
+        if as_attachment and not attachment_name:
+            raise ValueError("attachment name must be set if as_attachment is True")
+
+        self._path_validator = path_validation
+        self._path_processor = path_processor
+        self._as_attachment = as_attachment
+        self._attachment_name = attachment_name
+        self._access_validator = access_validation
+        self._compress = compress
+
+    def get(self, *args, **kwargs):
+        if self._access_validator is not None:
+            self._access_validator(self.request)
+
+        files = list(
+            map(octoprint.util.to_unicode, self.request.query_arguments.get("files", []))
+        )
+        return self._get_files_zip(files)
+
+    def post(self, *args, **kwargs):
+        if self._access_validator is not None:
+            self._access_validator(self.request)
+
+        import json
+
+        content_type = self.request.headers.get("Content-Type", "")
+        try:
+            if "application/json" in content_type:
+                data = json.loads(self.request.body)
+            else:
+                data = self.request.body_arguments
+        except Exception:
+            raise tornado.web.HTTPError(400)
+
+        return self._get_files_zip(
+            list(map(octoprint.util.to_unicode, data.get("files", [])))
+        )
+
+    def _get_files_zip(self, files):
+        files = self.normalize_files(files)
+        if not files:
+            raise tornado.web.HTTPError(400)
+
+        for f in files:
+            if "path" in f:
+                if callable(self._path_processor):
+                    path = self._path_processor(f["path"])
+                    if isinstance(path, tuple):
+                        f["name"], f["path"] = path
+                    else:
+                        f["path"] = path
+                self._path_validator(f["path"])
+
+        return self.stream_zip(files)
+
+
+class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
+    # noinspection PyMethodOverriding
+    def initialize(self, access_validation=None):
+        self._access_validator = access_validation
+
+    @tornado.gen.coroutine
+    def get(self, *args, **kwargs):
+        if self._access_validator is not None:
+            self._access_validator(self.request)
+
+        from octoprint.cli.systeminfo import (
+            get_systeminfo,
+            get_systeminfo_bundle,
+            get_systeminfo_bundle_name,
+        )
+        from octoprint.server import (
+            connectivityChecker,
+            environmentDetector,
+            printer,
+            safe_mode,
+        )
+        from octoprint.settings import settings
+
+        systeminfo = get_systeminfo(
+            environmentDetector,
+            connectivityChecker,
+            {
+                "browser.user_agent": self.request.headers.get("User-Agent"),
+                "octoprint.safe_mode": safe_mode is not None,
+                "systeminfo.generator": "zipapi",
+            },
+        )
+
+        z = get_systeminfo_bundle(
+            systeminfo, settings().getBaseFolder("logs"), printer=printer
+        )
+
+        self.set_header("Content-Type", "application/zip")
+        self.set_header(
+            "Content-Disposition",
+            'attachment; filename="{}"'.format(get_systeminfo_bundle_name()),
+        )
+
+        for chunk in z:
+            try:
+                self.write(chunk)
+                yield self.flush()
+            except tornado.iostream.StreamClosedError:
+                return
+
+    def get_attachment_name(self):
+        import time
+
+        return "octoprint-systeminfo-{}.zip".format(time.strftime("%Y%m%d%H%M%S"))
 
 
 class GlobalHeaderTransform(tornado.web.OutputTransform):

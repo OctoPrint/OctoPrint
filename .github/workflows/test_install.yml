@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
-        python: ["2.7", "3.7", "3.8"]
+        python: ["2.7", "3.7", "3.8", "3.9"]
         branch: ["master"]
     runs-on: ${{ matrix.os }}
     steps:
@@ -49,7 +49,7 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-latest"]
-        python: ["2.7", "3.7", "3.8"]
+        python: ["2.7", "3.7", "3.8", "3.9"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: 👀 Determine latest release

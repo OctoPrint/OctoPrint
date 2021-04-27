@@ -169,7 +169,7 @@ class EnvironmentDetector(object):
             environment = copy.deepcopy(self._cache)
 
         dumped_environment = yaml.safe_dump(
-            environment, default_flow_style=False, indent=4, allow_unicode=True
+            environment, default_flow_style=False, indent=2, allow_unicode=True
         ).strip()
         environment_lines = "\n".join(
             map(lambda l: "|  {}".format(l), dumped_environment.split("\n"))

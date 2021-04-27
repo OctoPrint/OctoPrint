@@ -10,6 +10,7 @@ import logging
 
 from flask import (
     Blueprint,
+    Response,
     abort,
     current_app,
     g,
@@ -80,24 +81,40 @@ def pluginData(name):
         lambda p: p._identifier == name, octoprint.plugin.SimpleApiPlugin
     )
     if not api_plugins:
-        return make_response("Not found", 404)
+        abort(404)
 
     if len(api_plugins) > 1:
-        return make_response(
-            "More than one api provider registered for {name}, can't proceed".format(
-                name=name
-            ),
-            500,
-        )
+        abort(500, description="More than one api provider registered, can't proceed")
 
     try:
         api_plugin = api_plugins[0]
         if api_plugin.is_api_adminonly() and not current_user.is_admin:
-            return make_response("Forbidden", 403)
+            abort(403)
 
         response = api_plugin.on_api_get(request)
 
         if response is not None:
+            message = (
+                "Rewriting response from {} to use abort(msg, code) - please "
+                "consider upgrading the implementation accordingly".format(name)
+            )
+            if (
+                isinstance(response, Response)
+                and response.mimetype == "text/html"
+                and response.status_code >= 300
+            ):
+                # this actually looks like an error response
+                logging.getLogger(__name__).info(message)
+                abort(response.status_code, description=response.data)
+            elif (
+                isinstance(response, tuple)
+                and len(response) == 2
+                and isinstance(response[0], (str, bytes))
+                and response[1] >= 300
+            ):
+                # this actually looks like an error response
+                logging.getLogger(__name__).info(message)
+                abort(response[1], response[0])
             return response
         return NO_CONTENT
     except HTTPException:
@@ -120,24 +137,19 @@ def pluginCommand(name):
     )
 
     if not api_plugins:
-        return make_response("Not found", 404)
+        abort(400)
 
     if len(api_plugins) > 1:
-        return make_response(
-            "More than one api provider registered for {name}, can't proceed".format(
-                name=name
-            ),
-            500,
-        )
+        abort(500, description="More than one api provider registered, can't proceed")
 
     api_plugin = api_plugins[0]
     try:
         valid_commands = api_plugin.get_api_commands()
         if valid_commands is None:
-            return make_response("Method not allowed", 405)
+            abort(405)
 
         if api_plugin.is_api_adminonly() and not Permissions.ADMIN.can():
-            return make_response("Forbidden", 403)
+            abort(403)
 
         command, data, response = get_json_command_from_request(request, valid_commands)
         if response is not None:
@@ -253,14 +265,6 @@ def wizardFinish():
 # ~~ system state
 
 
-@api.route("/state", methods=["GET"])
-@no_firstrun_access
-def apiPrinterState():
-    return make_response(
-        ("/api/state has been deprecated, use /api/printer instead", 405, [])
-    )
-
-
 @api.route("/version", methods=["GET"])
 @Permissions.STATUS.require(403)
 def apiVersion():
@@ -302,7 +306,7 @@ def login():
         if user is not None:
             if octoprint.server.userManager.check_password(username, password):
                 if not user.is_active:
-                    return make_response(("Your account is deactivated", 403, []))
+                    abort(403)
 
                 user = octoprint.server.userManager.login_user(user)
                 session["usersession.id"] = user.session
@@ -339,12 +343,12 @@ def login():
 
                 return r
 
-        return make_response(("User unknown or password incorrect", 403, []))
+        abort(403)
 
     elif "passive" in data:
         return passive_login()
 
-    return make_response("Neither user and pass attributes nor passive flag present", 400)
+    abort(400, description="Neither user and pass attributes nor passive flag present")
 
 
 @api.route("/logout", methods=["POST"])
@@ -588,12 +592,7 @@ def _test_url(data):
         try:
             timeout = float(data["timeout"])
         except Exception:
-            return make_response(
-                "{!r} is not a valid value for timeout (must be int or float)".format(
-                    data["timeout"]
-                ),
-                400,
-            )
+            abort(400, description="timeout is invalid")
 
     if "validSsl" in data:
         valid_ssl = data["validSsl"] in valid_boolean_trues
@@ -617,13 +616,13 @@ def _test_url(data):
 
     if "content_type_whitelist" in data:
         if not isinstance(data["content_type_whitelist"], (list, tuple)):
-            return make_response("content_type_whitelist must be a list of mime types")
+            abort(400, description="content_type_whitelist must be a list of mime types")
         content_type_whitelist = list(
             map(util.parse_mime_type, data["content_type_whitelist"])
         )
     if "content_type_blacklist" in data:
         if not isinstance(data["content_type_whitelist"], (list, tuple)):
-            return make_response("content_type_blacklist must be a list of mime types")
+            abort(400, description="content_type_blacklist must be a list of mime types")
         content_type_blacklist = list(
             map(util.parse_mime_type, data["content_type_blacklist"])
         )
@@ -704,28 +703,18 @@ def _test_server(data):
     try:
         port = int(data["port"])
     except Exception:
-        return make_response(
-            "{!r} is not a valid value for port (must be int)".format(data["port"]), 400
-        )
+        abort(400, description="Invalid value for port")
 
     timeout = 3.05
     if "timeout" in data:
         try:
             timeout = float(data["timeout"])
         except Exception:
-            return make_response(
-                "{!r} is not a valid value for timeout (must be int or float)".format(
-                    data["timeout"]
-                ),
-                400,
-            )
+            abort(400, description="Invalid value for timeout")
 
     protocol = data.get("protocol", "tcp")
     if protocol not in ("tcp", "udp"):
-        return make_response(
-            "{!r} is not a valid value for protocol, must be tcp or udp".format(protocol),
-            400,
-        )
+        abort(400, description="Invalid value for protocol")
 
     from octoprint.util import server_reachable
 

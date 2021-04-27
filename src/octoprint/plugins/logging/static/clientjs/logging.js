@@ -13,6 +13,8 @@
         this.setupUrl = this.baseUrl + "setup";
     };
 
+    var bulkDownloadUrl = "downloads/logs";
+
     OctoPrintLoggingClient.prototype.get = function (opts) {
         return this.base.get(this.baseUrl, opts);
     };
@@ -29,6 +31,10 @@
     OctoPrintLoggingClient.prototype.downloadLog = function (file, opts) {
         var fileUrl = this.logsUrl + "/" + file;
         return this.base.download(fileUrl, opts);
+    };
+
+    OctoPrintLoggingClient.prototype.bulkDownloadUrl = function (filenames) {
+        return this.base.bulkDownloadUrl(bulkDownloadUrl, filenames);
     };
 
     OctoPrintLoggingClient.prototype.updateLevels = function (config, opts) {

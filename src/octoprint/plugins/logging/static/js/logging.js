@@ -21,13 +21,6 @@ $(function () {
             return _.sortBy(self.availableLoggers());
         });
 
-        self.configuredLoggersSorted = ko.computed(function () {
-            return _.sortBy(self.configuredLoggers(), function (o) {
-                o.level();
-                return o.component;
-            });
-        });
-
         // initialize list helper
         self.listHelper = new ItemListHelper(
             "logFiles",
@@ -104,11 +97,15 @@ $(function () {
                 levels.push(item);
                 configuredLoggers.push(logger);
             });
-            self.configuredLoggers(levels);
+            var sortedLevels = _.sortBy(levels, function (o) {
+                return o.component;
+            });
+            self.configuredLoggers(sortedLevels);
 
             // loggers
-            var availableLoggers = _.without(response.loggers, configuredLoggers);
+            var availableLoggers = _.difference(response.loggers, configuredLoggers);
             self.availableLoggers(availableLoggers);
+            self.configuredLoggersChanged = false;
         };
 
         self.fromSerialLogResponse = function (response) {
@@ -180,6 +177,9 @@ $(function () {
             }
 
             var component = self.availableLoggersName();
+            if (!component) {
+                return;
+            }
             var level = self.availableLoggersLevel();
 
             self.configuredLoggers.push({
@@ -273,7 +273,28 @@ $(function () {
             );
         };
 
-        self.onServerReconnect = self.onUserLoggedIn = self.onEventSettingsUpdated = function () {
+        self.enableBulkDownload = ko.pureComputed(function () {
+            return self.markedForDeletion().length && !self.bulkDownloadUrlTooLong();
+        });
+
+        self.bulkDownloadUrlTooLong = ko.pureComputed(function () {
+            return BASEURL.length + self.bulkDownloadUrl().length >= 2000;
+        });
+
+        self.bulkDownloadButtonUrl = ko.pureComputed(function () {
+            var files = self.markedForDeletion();
+            if (!files.length || self.bulkDownloadUrlTooLong()) {
+                return "javascript:void(0)";
+            }
+            return self.bulkDownloadUrl();
+        });
+
+        self.bulkDownloadUrl = function () {
+            var files = self.markedForDeletion();
+            return OctoPrint.plugins.logging.bulkDownloadUrl(files);
+        };
+
+        self.onServerReconnect = self.onUserLoggedIn = self.onEventSettingsUpdated = self.onSettingsShown = function () {
             if (
                 !self.loginState.hasPermission(
                     self.access.permissions.PLUGIN_LOGGING_MANAGE

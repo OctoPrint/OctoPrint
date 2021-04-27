@@ -6,10 +6,11 @@ thanks to everyone who contributed!
 
 ## Patrons & Sponsors
 
+  * 3D-TECH
   * 3DPrinterOS
-  * Andrew Moorby
   * Arnljot Arntsen
   * Ash King
+  * Ashley Merrick
   * BigTreeTech
   * Boris Hussein
   * Brad Jackson
@@ -17,11 +18,15 @@ thanks to everyone who contributed!
   * BuildBee
   * Christian Petropolis
   * Christian Wolf
+  * Christoph Sigrist
   * Creality3D
   * D Brian Kimmel
+  * Dana Voigt
   * DeltaMaker 3D Printers
   * Dennis Breining
+  * Dennis Christilaw
   * Diana C Rodriguez
+  * Douglas Floyd
   * Eric Betts
   * Ernesto Martinez
   * Franziska Kunsmann
@@ -29,11 +34,9 @@ thanks to everyone who contributed!
   * Greg Holloway
   * Hog Duske
   * Hopewell Medical Acupuncture Center
-  * jean-claude migneault
-  * Jefferson Hunt
   * Jeremy Cole
-  * Joe Pasqua
   * Joshua Wills
+  * Julian Melo
   * Justin Kaufman
   * Kaile Riser
   * Kale Stedman
@@ -44,14 +47,15 @@ thanks to everyone who contributed!
   * Kyle Menigoz
   * LA 3D Printer Repair
   * Lee Dohm
-  * Loyal Moses
   * Makespace Madrid
   * Mark Walker
   * Michael Aumock
-  * Michael Begala
   * Miles Flavel
   * Mosaic Manufacturing
+  * Nat Friedman
   * Neil R. Goldberg
+  * Norman Jaffe
+  * Ory Weaver
   * Patrick Glyré
   * Pete Barnwell
   * Prof Yuh Wen Chen
@@ -69,6 +73,9 @@ thanks to everyone who contributed!
   * Stefan Krister
   * Steve Thompson
   * Sven Mueller
+  * TH3D
+  * The Spaghetti Detective
+  * Ulderico Cirello
   * Ulrich Kempken
 
-and 2225 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [Github Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2341 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!

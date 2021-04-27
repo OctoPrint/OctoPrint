@@ -54,6 +54,27 @@ resumed
 disconnect
     When this command is received from the printer, OctoPrint will immediately disconnect from it.
 
+sd_inserted
+    When this command is received from the printer, OctoPrint will assume an SD card is present in the printer,
+    set the corresponding internal state flags and send a file list request. This command is only recognized
+    if SD support is enabled in OctoPrint.
+
+    .. versionadded:: 1.6.0
+
+sd_ejected
+    When this command is received from the printer, OctoPrint will assume the SD card has been removed from
+    the printer and clear the corresponding internal state flags. This command is only recognized
+    if SD support is enabled in OctoPrint.
+
+    .. versionadded:: 1.6.0
+
+sd_updated
+    When this command is received from the printer, OctoPrint will assume something on the SD card in the
+    printer has changed and trigger a file list request. This command is only recognized
+    if SD support is enabled in OctoPrint.
+
+    .. versionadded:: 1.6.0
+
 If the bundled :ref:`Action Command Prompt Support Plugin <sec-bundledplugins-action_command_prompt>` is enabled (which
 should be the case by default), OctoPrint will also interactive dialog creation through its :ref:`supported commands <sec-bundledplugins-action_command_prompt-action_commands>`.
 

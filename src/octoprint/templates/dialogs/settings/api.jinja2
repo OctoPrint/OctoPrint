@@ -1,6 +1,6 @@
 <form class="form-horizontal" onsubmit="return false;">
     <fieldset>
-        <legend>{{ _('CORS') }}</legend>
+        <h3>{{ _('CORS') }}</h3>
         <div class="control-group">
             <div class="controls">
                 <label class="checkbox">
@@ -10,11 +10,12 @@
         </div>
     </fieldset>
     <fieldset>
-        <legend>{{ _('Global API Key') }}</legend>
+        <h3>{{ _('Global API Key') }}</h3>
         <div class="alert">
             <p>{% trans %}
-                The global API key should best not be used anymore. It's one single key that gives full admin access to
-                your whole OctoPrint instance. Instead of using it you should create individual Application Keys for
+                It is recommended to no longer use the global API key as it's one single key that gives full admin access
+                to your whole OctoPrint instance. <strong>It will be removed in OctoPrint 2.0</strong>.
+                Instead of using the global key you should create individual Application Keys for
                 your third party clients. That way they get permissions matching the user account used for key
                 creation and you can also revoke access to one app without having to change the keys for all other apps.
                 It's also recommended to create a user account without admin access and use that for third

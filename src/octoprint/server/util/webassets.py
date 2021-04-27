@@ -19,6 +19,7 @@ import webassets.filter.cssrewrite.urlpath as urlpath
 from webassets.bundle import Bundle
 from webassets.filter import Filter
 from webassets.filter.cssrewrite.base import PatternRewriter
+from webassets.filter.rjsmin import rjsmin
 from webassets.merge import BaseHunk, MemoryHunk
 
 
@@ -103,6 +104,22 @@ class JsDelimiterBundler(Filter):
         out.write("// source: " + source + "\n")
         out.write(_in.read())
         out.write("\n;\n")
+
+
+class RJSMinExtended(Filter):
+    name = "rjsmin_extended"
+    options = {
+        "keep_bang_comments": "RJSMIN_KEEP_BANG_COMMENTS",
+    }
+
+    def input(self, _in, out, **kw):
+        source = kw["source"]
+        if source.endswith(".min.js"):
+            # out.write("// source is already minified, not minifying again\n")
+            out.write(_in.read())
+        else:
+            keep = self.keep_bang_comments or False
+            out.write(rjsmin.jsmin(_in.read(), keep_bang_comments=keep))
 
 
 class GzipFile(Filter):

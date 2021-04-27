@@ -97,6 +97,9 @@ $(function () {
             );
         });
 
+        self.uploadExistsDialog = undefined;
+        self.uploadFilename = ko.observable(undefined);
+
         self.allItems = ko.observable(undefined);
         self.currentPath = ko.observable("");
         self.uploadProgressText = ko.observable();
@@ -1130,7 +1133,10 @@ $(function () {
                         return false;
                     }
 
-                    var success = entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+                    var success =
+                        (entry["display"] &&
+                            entry["display"].toLocaleLowerCase().indexOf(query) > -1) ||
+                        entry["name"].toLocaleLowerCase().indexOf(query) > -1;
                     if (!success && entry["type"] === "folder" && entry["children"]) {
                         return _.any(entry["children"], recursiveSearch);
                     }
@@ -1217,6 +1223,8 @@ $(function () {
                     self.addFolder();
                 }
             });
+
+            self.uploadExistsDialog = $("#upload_exists_dialog");
 
             //~~ Gcode upload
 
@@ -1416,22 +1424,18 @@ $(function () {
 
             if (button === undefined) return;
 
-            button
-                .fileupload({
-                    url: url,
-                    dataType: "json",
-                    dropZone: enable ? drop : null,
-                    drop: function (e, data) {},
-                    submit: self._handleUploadStart,
-                    done: self._handleUploadDone,
-                    fail: self._handleUploadFail,
-                    always: self._handleUploadAlways,
-                    progressall: self._handleUploadProgress
-                })
-                .bind("fileuploadsubmit", function (e, data) {
-                    if (self.currentPath() !== "")
-                        data.formData = {path: self.currentPath()};
-                });
+            button.fileupload({
+                url: url,
+                dataType: "json",
+                dropZone: enable ? drop : null,
+                drop: function (e, data) {},
+                add: self._handleUploadAdd,
+                submit: self._handleUploadStart,
+                done: self._handleUploadDone,
+                fail: self._handleUploadFail,
+                always: self._handleUploadAlways,
+                progressall: self._handleUploadProgress
+            });
         };
 
         self._enableDragNDrop = function (enable) {
@@ -1454,6 +1458,89 @@ $(function () {
                 self.uploadProgress.addClass("progress-striped active");
             } else {
                 self.uploadProgress.removeClass("progress-striped active");
+            }
+        };
+
+        self._handleUploadAdd = function (e, data) {
+            var file = data.files[0];
+            var path = self.currentPath();
+
+            var formData = {};
+            if (path !== "") {
+                formData.path = path;
+            }
+
+            if (self.settingsViewModel.feature_uploadOverwriteConfirmation()) {
+                OctoPrint.files
+                    .exists("local", path, file.name)
+                    .done(function (response) {
+                        if (response.exists) {
+                            $("h3", self.uploadExistsDialog).text(
+                                _.sprintf(gettext("File already exists: %(name)s"), {
+                                    name: file.name
+                                })
+                            );
+                            $("input", self.uploadExistsDialog)
+                                .val("")
+                                .prop("placeholder", response.suggestion);
+                            $("a.upload-rename", self.uploadExistsDialog)
+                                .prop("disabled", false)
+                                .off("click")
+                                .on("click", function () {
+                                    var newName = $(
+                                        "input",
+                                        self.uploadExistsDialog
+                                    ).val();
+                                    if (newName === "") newName = response.suggestion;
+
+                                    OctoPrint.files
+                                        .exists("local", path, newName)
+                                        .done(function (r) {
+                                            if (r.exists) {
+                                                $(
+                                                    ".control-group",
+                                                    self.uploadExistsDialog
+                                                ).addClass("error");
+                                                $(
+                                                    ".help-block",
+                                                    self.uploadExistsDialog
+                                                ).show();
+                                            } else {
+                                                $(
+                                                    ".control-group",
+                                                    self.uploadExistsDialog
+                                                ).removeClass("error");
+                                                $(
+                                                    ".help-block",
+                                                    self.uploadExistsDialog
+                                                ).hide();
+
+                                                self.uploadExistsDialog.modal("hide");
+
+                                                formData.filename = newName;
+                                                formData.noOverwrite = true;
+                                                data.formData = formData;
+
+                                                data.submit();
+                                            }
+                                        });
+                                });
+                            $("a.upload-overwrite", self.uploadExistsDialog)
+                                .off("click")
+                                .on("click", function () {
+                                    self.uploadExistsDialog.modal("hide");
+                                    data.formData = formData;
+                                    data.submit();
+                                });
+                            self.uploadExistsDialog.modal("show");
+                        } else {
+                            data.formData = formData;
+                            data.submit();
+                        }
+                    });
+            } else {
+                data.formData = formData;
+                data.submit();
             }
         };
 
@@ -1604,6 +1691,11 @@ $(function () {
             "printerProfilesViewModel",
             "accessViewModel"
         ],
-        elements: ["#files_wrapper", "#add_folder_dialog", "#move_file_or_folder_dialog"]
+        elements: [
+            "#files_wrapper",
+            "#add_folder_dialog",
+            "#move_file_or_folder_dialog",
+            "#upload_exists_dialog"
+        ]
     });
 });

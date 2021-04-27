@@ -7,9 +7,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 
-from flask import abort, jsonify, make_response, request
+from flask import abort, jsonify, request
 from flask_login import current_user
-from werkzeug.exceptions import BadRequest
+from past.builtins import basestring
 
 import octoprint.plugin
 import octoprint.util
@@ -131,6 +131,7 @@ def getSettings():
             "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
             "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
             "ffmpegPath": s.get(["webcam", "ffmpeg"]),
+            "ffmpegCommandline": s.get(["webcam", "ffmpegCommandline"]),
             "bitrate": s.get(["webcam", "bitrate"]),
             "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
             "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
@@ -149,10 +150,16 @@ def getSettings():
             "printCancelConfirmation": s.getBoolean(
                 ["feature", "printCancelConfirmation"]
             ),
+            "uploadOverwriteConfirmation": s.getBoolean(
+                ["feature", "uploadOverwriteConfirmation"]
+            ),
             "g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
             "autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"]),
         },
-        "gcodeAnalysis": {"runAt": s.get(["gcodeAnalysis", "runAt"])},
+        "gcodeAnalysis": {
+            "runAt": s.get(["gcodeAnalysis", "runAt"]),
+            "bedZ": s.getFloat(["gcodeAnalysis", "bedZ"]),
+        },
         "serial": {
             "port": connectionOptions["portPreference"],
             "baudrate": connectionOptions["baudratePreference"],
@@ -211,6 +218,7 @@ def getSettings():
             "neverSendChecksum": s.getBoolean(["serial", "neverSendChecksum"]),
             "sdRelativePath": s.getBoolean(["serial", "sdRelativePath"]),
             "sdAlwaysAvailable": s.getBoolean(["serial", "sdAlwaysAvailable"]),
+            "sdLowerCase": s.getBoolean(["serial", "sdLowerCase"]),
             "swallowOkAfterResend": s.getBoolean(["serial", "swallowOkAfterResend"]),
             "repetierTargetTemp": s.getBoolean(["serial", "repetierTargetTemp"]),
             "externalHeatupDetection": s.getBoolean(
@@ -310,6 +318,7 @@ def getSettings():
             "allowFraming": s.getBoolean(["server", "allowFraming"]),
         },
         "devel": {"pluginTimings": s.getBoolean(["devel", "pluginTimings"])},
+        "slicing": {"defaultSlicer": s.get(["slicing", "defaultSlicer"])},
     }
 
     gcode_scripts = s.listScripts("gcode")
@@ -368,22 +377,11 @@ def _get_plugin_settings():
 @Permissions.SETTINGS.require(403)
 def setSettings():
     if "application/json" not in request.headers["Content-Type"]:
-        return make_response("Expected content-type JSON", 400)
+        abort(400, description="Expected content-type JSON")
 
-    try:
-        data = request.get_json()
-    except BadRequest:
-        return make_response("Malformed JSON body in request", 400)
-
-    if data is None:
-        return make_response("Malformed JSON body in request", 400)
-
-    if not isinstance(data, dict):
-        return make_response(
-            "Malformed request, need settings dictionary, "
-            "got a {} instead: {!r}".format(type(data).__name__, data),
-            400,
-        )
+    data = request.get_json()
+    if data is None or not isinstance(data, dict):
+        abort(400, description="Malformed JSON body in request")
 
     response = _saveSettings(data)
     if response:
@@ -453,10 +451,10 @@ def _saveSettings(data):
 
     if "folder" in data:
         try:
-            folders = dict(
-                (FOLDER_MAPPING.get(folder, folder), path)
+            folders = {
+                FOLDER_MAPPING.get(folder, folder): path
                 for folder, path in data["folder"].items()
-            )
+            }
             future = {}
             for folder in FOLDER_TYPES:
                 future[folder] = s.getBaseFolder(folder)
@@ -479,7 +477,7 @@ def _saveSettings(data):
 
                 s.setBaseFolder(folder, future[folder])
         except Exception:
-            return make_response("At least one of the configured folders is invalid", 400)
+            abort(400, description="At least one of the configured folders is invalid")
 
     if "api" in data:
         if "allowCrossOrigin" in data["api"]:
@@ -552,6 +550,33 @@ def _saveSettings(data):
             )
         if "ffmpegPath" in data["webcam"]:
             s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
+        if "ffmpegCommandline" in data["webcam"]:
+            commandline = data["webcam"]["ffmpegCommandline"]
+            if not all(
+                map(lambda x: "{" + x + "}" in commandline, ("ffmpeg", "input", "output"))
+            ):
+                abort(
+                    400,
+                    description="Invalid webcam.ffmpegCommandline setting, lacks mandatory {ffmpeg}, {input} or {output}",
+                )
+            try:
+                commandline.format(
+                    ffmpeg="ffmpeg",
+                    fps="fps",
+                    bitrate="bitrate",
+                    threads="threads",
+                    input="input",
+                    output="output",
+                    videocodec="videocodec",
+                    containerformat="containerformat",
+                    filters="filters",
+                )
+            except Exception:
+                # some invalid data we'll refuse to set
+                logger.exception("Invalid webcam.ffmpegCommandline setting")
+                abort(400, description="Invalid webcam.ffmpegCommandline setting")
+            else:
+                s.set(["webcam", "ffmpegCommandline"], commandline)
         if "bitrate" in data["webcam"]:
             s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
         if "ffmpegThreads" in data["webcam"]:
@@ -596,6 +621,11 @@ def _saveSettings(data):
                 ["feature", "printCancelConfirmation"],
                 data["feature"]["printCancelConfirmation"],
             )
+        if "uploadOverwriteConfirmation" in data["feature"]:
+            s.setBoolean(
+                ["feature", "uploadOverwriteConfirmation"],
+                data["feature"]["uploadOverwriteConfirmation"],
+            )
         if "g90InfluencesExtruder" in data["feature"]:
             s.setBoolean(
                 ["feature", "g90InfluencesExtruder"],
@@ -612,6 +642,8 @@ def _saveSettings(data):
     if "gcodeAnalysis" in data:
         if "runAt" in data["gcodeAnalysis"]:
             s.set(["gcodeAnalysis", "runAt"], data["gcodeAnalysis"]["runAt"])
+        if "bedZ" in data["gcodeAnalysis"]:
+            s.setBoolean(["gcodeAnalysis", "bedZ"], data["gcodeAnalysis"]["bedZ"])
 
     if "serial" in data:
         if "autoconnect" in data["serial"]:
@@ -774,6 +806,8 @@ def _saveSettings(data):
             s.setBoolean(
                 ["serial", "sdAlwaysAvailable"], data["serial"]["sdAlwaysAvailable"]
             )
+        if "sdLowerCase" in data["serial"]:
+            s.setBoolean(["serial", "sdLowerCase"], data["serial"]["sdLowerCase"])
         if "swallowOkAfterResend" in data["serial"]:
             s.setBoolean(
                 ["serial", "swallowOkAfterResend"], data["serial"]["swallowOkAfterResend"]
@@ -932,6 +966,8 @@ def _saveSettings(data):
             for name, script in data["scripts"]["gcode"].items():
                 if name == "snippets":
                     continue
+                if not isinstance(script, basestring):
+                    continue
                 s.saveScript(
                     "gcode", name, script.replace("\r\n", "\n").replace("\r", "\n")
                 )
@@ -1023,6 +1059,10 @@ def _saveSettings(data):
             # enable plugin timing logging to plugintimings.log
             logging.getLogger("PLUGIN_TIMINGS").setLevel(logging.DEBUG)
             logging.getLogger("PLUGIN_TIMINGS").debug("Enabling plugin timings logging")
+
+    if "slicing" in data:
+        if "defaultSlicer" in data["slicing"]:
+            s.set(["slicing", "defaultSlicer"], data["slicing"]["defaultSlicer"])
 
     if "plugins" in data:
         for plugin in octoprint.plugin.plugin_manager().get_implementations(
