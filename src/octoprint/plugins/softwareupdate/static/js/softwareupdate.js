@@ -81,6 +81,12 @@ $(function () {
             );
         });
 
+        self.enableUpdateAll = ko.pureComputed(function () {
+            return (
+                self.enableUpdate() && self.availableAndPossibleAndEnabled().length > 0
+            );
+        });
+
         self.enable_configSave = ko.pureComputed(function () {
             return (
                 self.config_checkType() === "github_release" ||
