@@ -279,9 +279,9 @@ def params():
 
     project_urls = {
         "Community Forum": "https://community.octoprint.org",
-        "Bug Reports": "https://github.com/foosel/OctoPrint/issues",
-        "Source": "https://github.com/foosel/OctoPrint",
-        "Funding": "https://donate.octoprint.org",
+        "Bug Reports": "https://github.com/OctoPrint/OctoPrint/issues",
+        "Source": "https://github.com/OctoPrint/OctoPrint",
+        "Funding": "https://support.octoprint.org",
     }
 
     packages = setuptools.find_packages(where="src")
