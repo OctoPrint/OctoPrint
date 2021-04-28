@@ -104,10 +104,8 @@
 <h1 data-bind="visible: renderProgressBarString">{{ _('Timelapse Render Progress') }}</h1>
 
 <div id="render_progress" class="progress progress-text-centered" data-bind="visible: renderProgressBarString, css: { 'progress-striped' : renderAnimation, active : renderAnimation }">
-    <span class="progress-text-back" data-bind="text: renderProgressBarString"></span>
-    <div class="bar" data-bind="style: {width: renderProgressString() + '%'}">
-        <span class="progress-text-front" data-bind="copyWidth: ':parent :parent', text: renderProgressBarString"></span>
-    </div>
+    <div class="bar" data-bind="style: {width: renderProgressString() + '%'}"></div>
+    <span class="progress-text-back" data-bind="css: { 'progress-text-front': (renderProgressString() >= 50), 'progress-text-back': (renderProgressString() < 50) }, text: renderProgressBarString()"></span>
 </div>
 
 <h1>{{ _('Finished Timelapses') }}</h1>

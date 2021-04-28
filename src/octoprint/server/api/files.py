@@ -794,6 +794,7 @@ def gcodeFileCommand(filename, target):
     # valid file commands, dict mapping command name to mandatory parameters
     valid_commands = {
         "select": [],
+        "unselect": [],
         "slice": [],
         "analyse": [],
         "copy": ["destination"],
@@ -841,6 +842,26 @@ def gcodeFileCommand(filename, target):
             else:
                 filenameToSelect = fileManager.path_on_disk(target, filename)
             printer.select_file(filenameToSelect, sd, printAfterLoading, user)
+
+    elif command == "unselect":
+        with Permissions.FILES_SELECT.require(403):
+            if not printer.is_ready():
+                return make_response(
+                    "Printer is already printing, cannot unselect current file", 409
+                )
+
+            _, currentFilename = _getCurrentFile()
+            if currentFilename is None:
+                return make_response(
+                    "Cannot unselect current file when there is no file selected", 409
+                )
+
+            if filename != currentFilename and filename != "current":
+                return make_response(
+                    "Only the currently selected file can be unselected", 400
+                )
+
+            printer.unselect_file()
 
     elif command == "slice":
         with Permissions.SLICE.require(403):
@@ -1067,18 +1088,25 @@ def gcodeFileCommand(filename, target):
                 target, dst_path, fileManager.sanitize_name(target, dst_name)
             )
 
-            if (
-                _verifyFolderExists(target, destination)
-                and sanitized_destination != filename
-            ):
-                # destination is an existing folder and not ourselves (= display rename), we'll assume we are supposed
-                # to move filename to this folder under the same name
-                destination = fileManager.join_path(target, destination, name)
+            # Check for exception thrown by _verifyFolderExists, if outside the root directory
+            try:
+                if (
+                    _verifyFolderExists(target, destination)
+                    and sanitized_destination != filename
+                ):
+                    # destination is an existing folder and not ourselves (= display rename), we'll assume we are supposed
+                    # to move filename to this folder under the same name
+                    destination = fileManager.join_path(target, destination, name)
 
-            if _verifyFileExists(target, destination) or _verifyFolderExists(
-                target, destination
-            ):
-                abort(409, description="File or folder does already exist")
+                if _verifyFileExists(target, destination) or _verifyFolderExists(
+                    target, destination
+                ):
+                    abort(409, description="File or folder does already exist")
+
+            except Exception:
+                abort(
+                    409, description="Exception thrown by storage, bad folder/file name?"
+                )
 
             is_file = fileManager.file_exists(target, filename)
             is_folder = fileManager.folder_exists(target, filename)

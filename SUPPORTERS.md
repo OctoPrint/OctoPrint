@@ -78,4 +78,4 @@ thanks to everyone who contributed!
   * Ulderico Cirello
   * Ulrich Kempken
 
-and 2309 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2341 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!

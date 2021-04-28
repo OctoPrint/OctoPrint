@@ -259,6 +259,13 @@
                     <div class="control-group">
                         <div class="controls">
                             <label class="checkbox">
+                                <input type="checkbox" data-bind="checked: serial_sdLowerCase" id="settings-serialSdLowerCase"> {{ _('Select SD files by lower case path') }} <span class="label">{{ _('Prusa Firmware') }}</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <div class="controls">
+                            <label class="checkbox">
                                 <input type="checkbox" data-bind="checked: serial_sdRelativePath" id="settings-serialSdRelativePath"> {{ _('Select SD files by relative path') }} <span class="label">{{ _('RepRap Firmware') }}</span>
                             </label>
                         </div>
