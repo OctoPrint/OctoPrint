@@ -83,6 +83,20 @@ $(function () {
         self.moveEntry = ko.observable({name: "", display: "", path: ""}); // is there a better way to do this?
         self.moveSource = ko.observable(undefined);
         self.moveDestination = ko.observable(undefined);
+        self.moveSourceFilename = ko.observable(undefined);
+        self.moveDestinationFilename = ko.observable(undefined);
+        self.moveDestinationFullpath = ko.pureComputed(function () {
+            // Join the paths for renaming
+            if (self.moveSourceFilename() != self.moveDestinationFilename()) {
+                if (self.moveDestination() === "/") {
+                    return self.moveDestination() + self.moveDestinationFilename();
+                } else {
+                    return self.moveDestination() + "/" + self.moveDestinationFilename();
+                }
+            } else {
+                return self.moveDestination();
+            }
+        });
         self.moveError = ko.observable("");
 
         self.folderList = ko.observableArray(["/"]);
@@ -680,6 +694,8 @@ $(function () {
             self.moveError("");
             self.moveSource(current);
             self.moveDestination(current);
+            self.moveSourceFilename(entry.name);
+            self.moveDestinationFilename(entry.name);
             self.moveDialog.modal("show");
         };
 

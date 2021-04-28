@@ -1088,18 +1088,25 @@ def gcodeFileCommand(filename, target):
                 target, dst_path, fileManager.sanitize_name(target, dst_name)
             )
 
-            if (
-                _verifyFolderExists(target, destination)
-                and sanitized_destination != filename
-            ):
-                # destination is an existing folder and not ourselves (= display rename), we'll assume we are supposed
-                # to move filename to this folder under the same name
-                destination = fileManager.join_path(target, destination, name)
+            # Check for exception thrown by _verifyFolderExists, if outside the root directory
+            try:
+                if (
+                    _verifyFolderExists(target, destination)
+                    and sanitized_destination != filename
+                ):
+                    # destination is an existing folder and not ourselves (= display rename), we'll assume we are supposed
+                    # to move filename to this folder under the same name
+                    destination = fileManager.join_path(target, destination, name)
 
-            if _verifyFileExists(target, destination) or _verifyFolderExists(
-                target, destination
-            ):
-                abort(409, description="File or folder does already exist")
+                if _verifyFileExists(target, destination) or _verifyFolderExists(
+                    target, destination
+                ):
+                    abort(409, description="File or folder does already exist")
+
+            except Exception:
+                abort(
+                    409, description="Exception thrown by storage, bad folder/file name?"
+                )
 
             is_file = fileManager.file_exists(target, filename)
             is_folder = fileManager.folder_exists(target, filename)
