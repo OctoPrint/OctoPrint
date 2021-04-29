@@ -105,10 +105,8 @@ body:
       value: >-
         Please also be sure to upload the following files below:
 
-          * `octoprint.log`: See [here](https://community.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299) if you don't know where to find that. Just attach down below as-is.
-          * `serial.log` or the contents of your terminal tab, if applicable. Always
-            include if unsure. **Please note that you need to enable `serial.log` first**,
-            see [here](https://community.octoprint.org/t/where-can-i-find-octoprints-and-octopis-log-files/299) if you don't know how to do or where to find it. Just attach down below as-is.
+          * Systeminfo Bundle: See [here](https://community.octoprint.org/t/what-is-a-systeminfo-bundle-and-how-can-i-obtain-one/29887) if you don't know where to find that. Just attach down below as-is. Note that you'll need at least OctoPrint 1.6.0 for this to be available - we no longer accept bug reports created for older versions than this.
+            * If you are reporting an issue that involves communicating with you printer, **be sure to enable `serial.log` before reproducing and creating the Systeminfo Bundle**!
           * Your browser's JavaScript console, if you are reporting a problem with the
             user interface. See [here](https://webmasters.stackexchange.com/questions/8525/how-to-open-the-javascript-console-in-different-browsers) on where to find that.
           * If possible, screenshots or videos showing the problem, especially if you
@@ -116,15 +114,14 @@ body:
           * GCODE files with which to reproduce, if you are reporting an issue with
             GCODE file analysis or printing behaviour.
 
-        Please be aware that unless at least `octoprint.log` is included, your bug report
-        will not be processed.
+        Please be aware that unless at least Systeminfo Bundle is included, your bug report
+        will not be processed and closed after a while.
   - type: checkboxes
     attributes:
       label: Checklist of files to include below
       options:
-        - label: octoprint.log
+        - label: Systeminfo Bundle (always include!)
           required: true
-        - label: serial.log or contents of your terminal tab (always include in cases of issues with printer communication)
         - label: Contents of the JavaScript browser console (always include in cases of issues with the user interface)
         - label: Screenshots and/or videos showing the problem (always include in case of issues with the user interface)
         - label: GCODE file with which to reproduce (always include in case of issues with GCODE analysis or printing behaviour)
