@@ -74,12 +74,18 @@ GCODE.renderer = (function () {
         onDragStop: undefined
     };
 
+    // offset due to dragging
     var offsetModelX = 0,
         offsetModelY = 0;
+
+    // TODO: remove in 1.7.0
     var offsetBedX = 0,
         offsetBedY = 0;
+
+    // scale due to zooming
     var scaleX = 1,
         scaleY = 1;
+
     var speeds = [];
     var speedsByLayer = {};
     var currentInvertX = false,
@@ -357,8 +363,6 @@ GCODE.renderer = (function () {
         ctx.lineCap = "round";
         trackTransforms(ctx);
 
-        ctx.scale(1, -1); // Invert y-axis
-
         // dragging => translating
         canvas.addEventListener(
             "mousedown",
@@ -395,6 +399,9 @@ GCODE.renderer = (function () {
                     if (renderOptions["onDrag"] && renderOptions["onDrag"](pt) === false)
                         return;
 
+                    ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
+                    reRender();
+
                     renderOptions["centerViewport"] = false;
                     renderOptions["zoomInOnModel"] = false;
                     renderOptions["zoomInOnBed"] = false;
@@ -404,9 +411,6 @@ GCODE.renderer = (function () {
                     offsetBedY = 0;
                     scaleX = 1;
                     scaleY = 1;
-
-                    ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
-                    reRender();
 
                     if (renderOptions["onInternalOptionChange"] !== undefined) {
                         renderOptions["onInternalOptionChange"]({
@@ -451,6 +455,9 @@ GCODE.renderer = (function () {
             // return to old position
             ctx.translate(-pt.x, -pt.y);
 
+            // render
+            reRender();
+
             // disable conflicting options
             renderOptions["zoomInOnModel"] = false;
             renderOptions["zoomInOnBed"] = false;
@@ -460,9 +467,6 @@ GCODE.renderer = (function () {
             offsetBedY = 0;
             scaleX = 1;
             scaleY = 1;
-
-            // render
-            reRender();
 
             if (renderOptions["onInternalOptionChange"] !== undefined) {
                 renderOptions["onInternalOptionChange"]({
@@ -1036,15 +1040,6 @@ GCODE.renderer = (function () {
                     (renderOptions["bed"]["y"] / 2 -
                         (layerBounds.minY + layerBounds.maxY) / 2);
             }
-        } else if (
-            renderOptions["bed"]["circular"] ||
-            renderOptions["bed"]["centeredOrigin"]
-        ) {
-            canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
-            offsetModelX = canvasCenter.x;
-            offsetModelY = canvasCenter.y;
-            offsetBedX = 0;
-            offsetBedY = 0;
         } else {
             offsetModelX = 0;
             offsetModelY = 0;
@@ -1127,48 +1122,56 @@ GCODE.renderer = (function () {
         currentInvertY = invertY;
     };
 
+    var resetViewport = function () {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(1, -1); // invert y axis
+
+        var bedWidth = renderOptions["bed"]["x"];
+        var bedHeight = renderOptions["bed"]["y"];
+        if (renderOptions["bed"]["circular"]) {
+            bedWidth = bedHeight = renderOptions["bed"]["r"] * 2;
+        }
+
+        // Ratio of bed to canvas viewport
+        var viewportRatio = Math.min(
+            (canvas.width - 10) / bedWidth,
+            (canvas.height - 10) / bedHeight
+        );
+
+        // Apply initial translation to center the bed in the viewport
+        var translationX, translationY;
+        if (renderOptions["bed"]["circular"] || renderOptions["bed"]["centeredOrigin"]) {
+            translationX = canvas.width / 2;
+            translationY = canvas.height / 2;
+        } else {
+            translationX = (canvas.width - bedWidth * viewportRatio) / 2;
+            translationY =
+                bedHeight * viewportRatio +
+                (canvas.height - bedHeight * viewportRatio) / 2;
+        }
+
+        ctx.translate(translationX, -translationY);
+        ctx.scale(viewportRatio, viewportRatio);
+
+        // Scaling to apply to move lines and extrusion/retraction markers
+        lineWidthFactor = 1 / viewportRatio;
+
+        offsetModelX = 0;
+        offsetModelY = 0;
+        offsetBedX = 0;
+        offsetBedY = 0;
+    };
+
     // ***** PUBLIC *******
     return {
         init: function () {
             startCanvas();
+            resetViewport();
             initialized = true;
-            var bedWidth = renderOptions["bed"]["x"];
-            var bedHeight = renderOptions["bed"]["y"];
-            if (renderOptions["bed"]["circular"]) {
-                bedWidth = bedHeight = renderOptions["bed"]["r"] * 2;
-            }
-
-            // Ratio of bed to canvas viewport
-            var viewportRatio = Math.min(
-                (canvas.width - 10) / bedWidth,
-                (canvas.height - 10) / bedHeight
-            );
-
-            // Apply initial translation to center the bed in the viewport
-            var translationX, translationY;
-            if (renderOptions["bed"]["circular"]) {
-                translationX = canvas.width / 2;
-                translationY = canvas.height / 2;
-            } else {
-                translationX = (canvas.width - bedWidth * viewportRatio) / 2;
-                translationY =
-                    bedHeight * viewportRatio +
-                    (canvas.height - bedHeight * viewportRatio) / 2;
-            }
-            ctx.translate(translationX, -translationY);
-
-            ctx.scale(viewportRatio, viewportRatio);
-
-            offsetModelX = 0;
-            offsetModelY = 0;
-            offsetBedX = 0;
-            offsetBedY = 0;
-
-            // Scaling to apply to move lines and extrusion/retraction markers
-            lineWidthFactor = 1 / viewportRatio;
         },
         setOption: function (options) {
             var mustRefresh = false;
+            var mustReset = false;
             var dirty = false;
             for (var opt in options) {
                 if (!renderOptions.hasOwnProperty(opt) || !options.hasOwnProperty(opt))
@@ -1190,10 +1193,17 @@ GCODE.renderer = (function () {
                 ) {
                     mustRefresh = true;
                 }
+
+                if ($.inArray(opt, ["bed", "onViewportChange"]) > -1) {
+                    mustReset = true;
+                }
             }
 
             if (!dirty) return;
             if (initialized) {
+                if (mustReset) {
+                    resetViewport();
+                }
                 if (mustRefresh) {
                     this.refresh();
                 } else {
@@ -1266,6 +1276,10 @@ GCODE.renderer = (function () {
         refresh: function (layerNum) {
             if (layerNum === undefined) layerNum = layerNumStore;
             this.doRender(model, layerNum);
+        },
+        resetViewport: function () {
+            resetViewport();
+            reRender();
         },
         getZ: function (layerNum) {
             if (!model || !model[layerNum]) {
