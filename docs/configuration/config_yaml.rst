@@ -1132,9 +1132,9 @@ Use `Javascript regular expressions <https://developer.mozilla.org/en/docs/Web/J
    # A list of filters to display in the terminal tab. Defaults to the filters shown below
    terminalFilters:
    - name: Suppress temperature messages
-     regex: '(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?.*(B|T\d*):\d+)'
+     regex: '(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+([PBN]\d+\s+)*)?([BCLPR]|T\d*):-?\d+)'
    - name: Suppress SD status messages
-     regex: '(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)'
+     regex: '(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)'
    - name: Suppress wait responses
      regex: 'Recv: wait'
    - name: Suppress processing responses

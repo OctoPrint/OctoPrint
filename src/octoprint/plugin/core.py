@@ -207,34 +207,11 @@ class PluginInfo(object):
     attr_implementation = "__plugin_implementation__"
     """ Module attribute from which to retrieve the plugin's provided mixin implementation. """
 
-    attr_implementations = "__plugin_implementations__"
-    """
-    Module attribute from which to retrieve the plugin's provided implementations.
-
-    This deprecated attribute will only be used if a plugin does not yet offer :attr:`attr_implementation`. Only the
-    first entry will be evaluated.
-
-    .. deprecated:: 1.2.0-dev-694
-
-       Use :attr:`attr_implementation` instead.
-    """
-
     attr_helpers = "__plugin_helpers__"
     """ Module attribute from which to retrieve the plugin's provided helpers. """
 
     attr_check = "__plugin_check__"
     """ Module attribute which to call to determine if the plugin can be loaded. """
-
-    attr_init = "__plugin_init__"
-    """
-    Module attribute which to call when loading the plugin.
-
-    This deprecated attribute will only be used if a plugin does not yet offer :attr:`attr_load`.
-
-    .. deprecated:: 1.2.0-dev-720
-
-       Use :attr:`attr_load` instead.
-    """
 
     attr_load = "__plugin_load__"
     """ Module attribute which to call when loading the plugin. """
@@ -323,7 +300,8 @@ class PluginInfo(object):
 
         if phase == "before_import":
             result = (
-                not self.forced_disabled
+                self.looks_like_plugin
+                and not self.forced_disabled
                 and not self.blacklisted
                 and not self.incompatible
                 and not self.invalid_syntax
@@ -331,54 +309,10 @@ class PluginInfo(object):
             )
 
         elif phase == "before_load":
-            # if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
-            if hasattr(self.instance, self.__class__.attr_init):
-                if not hasattr(self.instance, self.__class__.attr_load):
-                    # deprecation warning
-                    import warnings
-
-                    warnings.warn(
-                        "{name} uses deprecated control property __plugin_init__, use __plugin_load__ instead".format(
-                            name=self.key
-                        ),
-                        DeprecationWarning,
-                    )
-
-                    # move it
-                    init = getattr(self.instance, self.__class__.attr_init)
-                    setattr(self.instance, self.__class__.attr_load, init)
-
-                # delete __plugin_init__
-                delattr(self.instance, self.__class__.attr_init)
+            pass
 
         elif phase == "after_load":
-            # if the plugin still uses __plugin_implementations__, log a deprecation warning and put the first
-            # item into __plugin_implementation__
-            if hasattr(self.instance, self.__class__.attr_implementations):
-                if not hasattr(self.instance, self.__class__.attr_implementation):
-                    # deprecation warning
-                    import warnings
-
-                    warnings.warn(
-                        "{name} uses deprecated control property __plugin_implementations__, use __plugin_implementation__ instead - only the first implementation of {name} will be recognized".format(
-                            name=self.key
-                        ),
-                        DeprecationWarning,
-                    )
-
-                    # put first item into __plugin_implementation__
-                    implementations = getattr(
-                        self.instance, self.__class__.attr_implementations
-                    )
-                    if len(implementations) > 0:
-                        setattr(
-                            self.instance,
-                            self.__class__.attr_implementation,
-                            implementations[0],
-                        )
-
-                # delete __plugin_implementations__
-                delattr(self.instance, self.__class__.attr_implementations)
+            pass
 
         if additional_validators is not None:
             for validator in additional_validators:
@@ -731,8 +665,23 @@ class PluginInfo(object):
 
     @property
     def parsed_metadata(self):
-        """The plugin metadata parsed from the plugin ``__init__.py``'s AST."""
+        """The plugin metadata parsed from the plugin's AST."""
         return self._cached_parsed_metadata
+
+    @property
+    def control_properties(self):
+        return [
+            getattr(self.__class__, key)
+            for key in dir(self.__class__)
+            if key.startswith("attr_")
+        ]
+
+    @property
+    def looks_like_plugin(self):
+        """
+        Returns whether the plugin actually looks like a plugin (has control properties) or not.
+        """
+        return self.parsed_metadata.get("has_control_properties", False)
 
     def _parse_metadata(self):
         result = {}
@@ -764,6 +713,10 @@ class PluginInfo(object):
             assignments = list(
                 filter(lambda x: isinstance(x, ast.Assign) and x.targets, root.body)
             )
+            function_defs = list(
+                filter(lambda x: isinstance(x, ast.FunctionDef) and x.name, root.body)
+            )
+            all_relevant = assignments + function_defs
 
             def extract_target_ids(node):
                 return list(
@@ -772,6 +725,16 @@ class PluginInfo(object):
                         filter(lambda x: isinstance(x, ast.Name), node.targets),
                     )
                 )
+
+            def extract_names(node):
+                if isinstance(node, ast.Assign):
+                    return extract_target_ids(node)
+                elif isinstance(node, ast.FunctionDef):
+                    return [
+                        node.name,
+                    ]
+                else:
+                    return []
 
             for key in (
                 self.__class__.attr_name,
@@ -810,6 +773,12 @@ class PluginInfo(object):
                             result[key] = bool(a.value.id)
 
                         break
+
+            for a in reversed(all_relevant):
+                targets = extract_names(a)
+                if any(map(lambda x: x in targets, self.control_properties)):
+                    result["has_control_properties"] = True
+                    break
 
         except SyntaxError:
             self._logger.exception(
@@ -1015,11 +984,8 @@ class PluginManager(object):
                     try:
                         if entry.is_dir():
                             init_py = os.path.join(entry.path, "__init__.py")
-                            init_pyc = os.path.join(entry.path, "__init__.pyc")
 
-                            if not os.path.isfile(init_py) and not os.path.isfile(
-                                init_pyc
-                            ):
+                            if not os.path.isfile(init_py):
                                 # neither does exist, we ignore this
                                 continue
 
@@ -1027,8 +993,8 @@ class PluginManager(object):
 
                         elif entry.is_file():
                             key, ext = os.path.splitext(entry.name)
-                            if ext not in (".py", ".pyc") or key.startswith("__"):
-                                # neither py nor pyc, or starts with __ (like __init__), we ignore this
+                            if ext not in (".py",) or key.startswith("__"):
+                                # not py, or starts with __ (like __init__), we ignore this
                                 continue
 
                         else:
@@ -1375,9 +1341,7 @@ class PluginManager(object):
             force_reload = []
 
         added, found = self.find_plugins(
-            existing=dict(
-                (k, v) for k, v in self.plugins.items() if k not in force_reload
-            ),
+            existing={k: v for k, v in self.plugins.items() if k not in force_reload},
             incl_all_found=True,
         )
 
@@ -1405,7 +1369,8 @@ class PluginManager(object):
         for name, plugin in added.items():
             try:
                 if (
-                    not plugin.blacklisted
+                    plugin.looks_like_plugin
+                    and not plugin.blacklisted
                     and not plugin.forced_disabled
                     and not plugin.incompatible
                 ):
@@ -1431,6 +1396,7 @@ class PluginManager(object):
             try:
                 if (
                     plugin.loaded
+                    and plugin.looks_like_plugin
                     and not plugin.forced_disabled
                     and not plugin.incompatible
                 ):
@@ -2226,7 +2192,7 @@ class PluginManager(object):
 
         all_helpers = plugin.helpers
         if len(helpers):
-            return dict((k, v) for (k, v) in all_helpers.items() if k in helpers)
+            return {k: v for (k, v) in all_helpers.items() if k in helpers}
         else:
             return all_helpers
 

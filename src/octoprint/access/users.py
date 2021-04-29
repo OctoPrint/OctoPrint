@@ -609,7 +609,7 @@ class FilebasedUserManager(UserManager):
             self._userfile, mode="wt", permissions=0o600, max_permissions=0o666
         ) as f:
             yaml.safe_dump(
-                data, f, default_flow_style=False, indent=4, allow_unicode=True
+                data, f, default_flow_style=False, indent=2, allow_unicode=True
             )
             self._dirty = False
         self._load()

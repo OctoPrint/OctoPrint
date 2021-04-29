@@ -42,6 +42,7 @@ from flask_login import (  # noqa: F401
 from past.builtins import basestring, unicode
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
+from werkzeug.exceptions import HTTPException
 
 import octoprint.util
 import octoprint.util.net
@@ -65,8 +66,8 @@ except ImportError:
     fcntl = None
 
 SUCCESS = {}
-NO_CONTENT = ("", 204)
-NOT_MODIFIED = ("Not Modified", 304)
+NO_CONTENT = ("", 204, {"Content-Type": "text/plain"})
+NOT_MODIFIED = ("Not Modified", 304, {"Content-Type": "text/plain"})
 
 app = Flask("octoprint")
 
@@ -720,6 +721,11 @@ class Server(object):
                 app, util.flask.permission_validator, permissions.Permissions.WEBCAM
             ),
         ] + access_validators_from_plugins
+        systeminfo_validators = [
+            util.tornado.access_validation_factory(
+                app, util.flask.permission_validator, permissions.Permissions.SYSTEM
+            )
+        ] + access_validators_from_plugins
 
         timelapse_permission_validator = {
             "access_validation": util.tornado.validation_chain(*timelapse_validators)
@@ -733,17 +739,51 @@ class Server(object):
         camera_permission_validator = {
             "access_validation": util.tornado.validation_chain(*camera_validators)
         }
+        systeminfo_permission_validator = {
+            "access_validation": util.tornado.validation_chain(*systeminfo_validators)
+        }
 
         no_hidden_files_validator = {
             "path_validation": util.tornado.path_validation_factory(
                 lambda path: not octoprint.util.is_hidden_path(path), status_code=404
             )
         }
+
+        valid_timelapse = lambda path: not octoprint.util.is_hidden_path(
+            path
+        ) and octoprint.timelapse.valid_timelapse(path)
         timelapse_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
-                lambda path: not octoprint.util.is_hidden_path(path)
-                and octoprint.timelapse.valid_timelapse(path),
+                valid_timelapse,
                 status_code=404,
+            )
+        }
+        timelapses_path_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                lambda path: valid_timelapse(path)
+                and os.path.realpath(os.path.abspath(path)).startswith(
+                    settings().getBaseFolder("timelapse")
+                ),
+                status_code=400,
+            )
+        }
+
+        valid_log = lambda path: not octoprint.util.is_hidden_path(
+            path
+        ) and path.endswith(".log")
+        log_path_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                valid_log,
+                status_code=404,
+            )
+        }
+        logs_path_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                lambda path: valid_log(path)
+                and os.path.realpath(os.path.abspath(path)).startswith(
+                    settings().getBaseFolder("logs")
+                ),
+                status_code=400,
             )
         }
 
@@ -772,6 +812,24 @@ class Server(object):
                     timelapse_path_validator,
                 ),
             ),
+            # zipped timelapse bundles
+            (
+                r"/downloads/timelapses",
+                util.tornado.DynamicZipBundleHandler,
+                joined_dict(
+                    {
+                        "as_attachment": True,
+                        "attachment_name": "octoprint-timelapses.zip",
+                        "path_processor": lambda x: (
+                            x,
+                            os.path.join(self._settings.getBaseFolder("timelapse"), x),
+                        ),
+                    },
+                    timelapse_permission_validator,
+                    timelapses_path_validator,
+                ),
+            ),
+            # uploaded printables
             (
                 r"/downloads/files/local/(.*)",
                 util.tornado.LargeResponseHandler,
@@ -787,6 +845,7 @@ class Server(object):
                     additional_mime_types,
                 ),
             ),
+            # log files
             (
                 r"/downloads/logs/([^/]*)",
                 util.tornado.LargeResponseHandler,
@@ -798,7 +857,31 @@ class Server(object):
                     },
                     download_handler_kwargs,
                     log_permission_validator,
+                    log_path_validator,
                 ),
+            ),
+            # zipped log file bundles
+            (
+                r"/downloads/logs",
+                util.tornado.DynamicZipBundleHandler,
+                joined_dict(
+                    {
+                        "as_attachment": True,
+                        "attachment_name": "octoprint-logs.zip",
+                        "path_processor": lambda x: (
+                            x,
+                            os.path.join(self._settings.getBaseFolder("logs"), x),
+                        ),
+                    },
+                    log_permission_validator,
+                    logs_path_validator,
+                ),
+            ),
+            # system info bundle
+            (
+                r"/downloads/systeminfo.zip",
+                util.tornado.SystemInfoBundleHandler,
+                systeminfo_permission_validator,
             ),
             # camera snapshot
             (
@@ -1194,7 +1277,7 @@ class Server(object):
             self._logger.exception("Stacktrace follows:")
 
     def _create_socket_connection(self, session):
-        global printer, fileManager, analysisQueue, userManager, eventManager
+        global printer, fileManager, analysisQueue, userManager, eventManager, connectivityChecker
         return util.sockjs.PrinterStateConnection(
             printer,
             fileManager,
@@ -1203,6 +1286,7 @@ class Server(object):
             groupManager,
             eventManager,
             pluginManager,
+            connectivityChecker,
             session,
         )
 
@@ -1347,7 +1431,7 @@ class Server(object):
                 result.add(locale.language)
                 if locale.territory:
                     # if a territory is specified, add that too
-                    result.add("%s_%s" % (locale.language, locale.territory))
+                    result.add("{}_{}".format(locale.language, locale.territory))
 
             return result
 
@@ -1573,11 +1657,11 @@ class Server(object):
                             continue
 
                     additional_request_data = kwargs.get("_additional_request_data", {})
-                    kwargs = dict(
-                        (k, v)
+                    kwargs = {
+                        k: v
                         for k, v in kwargs.items()
                         if not k.startswith("_") and not k == "plugin"
-                    )
+                    }
                     kwargs.update(additional_request_data)
 
                     try:
@@ -1652,12 +1736,19 @@ class Server(object):
         # do not remove or the index view won't be found
         import octoprint.server.views  # noqa: F401
         from octoprint.server.api import api
+        from octoprint.server.util.flask import make_api_error
 
         blueprints = OrderedDict()
         blueprints["/api"] = api
+        json_errors = ["/api"]
 
         # also register any blueprints defined in BlueprintPlugins
-        blueprints.update(self._prepare_blueprint_plugins())
+        (
+            blueprint_from_plugins,
+            api_prefixes_from_plugins,
+        ) = self._prepare_blueprint_plugins()
+        blueprints.update(blueprint_from_plugins)
+        json_errors += api_prefixes_from_plugins
 
         # and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
         blueprints.update(self._prepare_asset_plugins())
@@ -1669,8 +1760,16 @@ class Server(object):
         for url_prefix, blueprint in blueprints.items():
             app.register_blueprint(blueprint, url_prefix=url_prefix)
 
+        @app.errorhandler(HTTPException)
+        def _handle_api_error(ex):
+            if any(map(lambda x: request.path.startswith(x), json_errors)):
+                return make_api_error(ex.description, ex.code)
+            else:
+                return ex
+
     def _prepare_blueprint_plugins(self):
         blueprints = OrderedDict()
+        api_prefixes = []
 
         blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(
             octoprint.plugin.BlueprintPlugin
@@ -1678,6 +1777,9 @@ class Server(object):
         for plugin in blueprint_plugins:
             try:
                 blueprint, prefix = self._prepare_blueprint_plugin(plugin)
+                api_prefixes += map(
+                    lambda x: prefix + x, plugin.get_blueprint_api_prefixes()
+                )
                 blueprints[prefix] = blueprint
             except Exception:
                 self._logger.exception(
@@ -1687,7 +1789,7 @@ class Server(object):
                 )
                 continue
 
-        return blueprints
+        return blueprints, api_prefixes
 
     def _prepare_asset_plugins(self):
         blueprints = OrderedDict()
@@ -1913,6 +2015,7 @@ class Server(object):
         )
 
         js_libs = [
+            "js/lib/babel-polyfill.min.js",
             "js/lib/jquery/jquery.min.js",
             "js/lib/modernizr.custom.js",
             "js/lib/lodash.min.js",
@@ -1955,8 +2058,8 @@ class Server(object):
             "js/lib/loglevel.min.js",
             "js/lib/sockjs.min.js",
             "js/lib/ResizeSensor.js",
-            "js/lib/less.min.js",
             "js/lib/hls.js",
+            "js/lib/less.js",
         ]
         js_client = [
             "js/app/client/base.js",
@@ -2001,6 +2104,7 @@ class Server(object):
             JsDelimiterBundler,
             JsPluginBundle,
             LessImportRewrite,
+            RJSMinExtended,
             SourceMapRemove,
             SourceMapRewrite,
         )
@@ -2010,6 +2114,7 @@ class Server(object):
         register_filter(SourceMapRemove)
         register_filter(JsDelimiterBundler)
         register_filter(GzipFile)
+        register_filter(RJSMinExtended)
 
         def all_assets_for_plugins(collection):
             """Gets all plugin assets for a dict of plugin->assets"""
@@ -2020,16 +2125,16 @@ class Server(object):
 
         # -- JS --------------------------------------------------------------------------------------------------------
 
-        filters = ["sourcemap_remove", "js_delimiter_bundler"]
+        filters = ["sourcemap_remove"]
         if self._settings.getBoolean(["devel", "webassets", "minify"]):
-            filters.append("rjsmin")
-        filters.append("gzip")
+            filters += ["rjsmin_extended"]
+        filters += ["js_delimiter_bundler", "gzip"]
 
         js_filters = filters
         if self._settings.getBoolean(["devel", "webassets", "minify_plugins"]):
             js_plugin_filters = js_filters
         else:
-            js_plugin_filters = [x for x in js_filters if x not in ("rjsmin",)]
+            js_plugin_filters = [x for x in js_filters if x not in ("rjsmin_extended",)]
 
         def js_bundles_for_plugins(collection, filters=None):
             """Produces JsPluginBundle instances that output IIFE wrapped assets"""
@@ -2254,7 +2359,7 @@ class Server(object):
                         break
                 else:
                     self.send_response(404)
-                    self.wfile.write("Not found".encode("utf-8"))
+                    self.wfile.write(b"Not found")
 
         base_path = os.path.realpath(
             os.path.join(os.path.dirname(__file__), "..", "static")
@@ -2375,9 +2480,25 @@ class Server(object):
         try:
             self._intermediary_server.server_bind()
             self._intermediary_server.server_activate()
-        except Exception:
+        except Exception as exc:
             self._intermediary_server.server_close()
-            raise
+
+            if isinstance(exc, UnicodeDecodeError) and sys.platform == "win32":
+                # we end up here if the hostname contains non-ASCII characters due to
+                # https://bugs.python.org/issue26227 - tell the user they need
+                # to either change their hostname or read up other options in
+                # https://github.com/OctoPrint/OctoPrint/issues/3963
+                raise CannotStartServerException(
+                    "OctoPrint cannot start due to a Python bug "
+                    "(https://bugs.python.org/issue26227). Your "
+                    "computer's host name contains non-ASCII characters. "
+                    "Please either change your computer's host name to "
+                    "contain only ASCII characters, or take a look at "
+                    "https://github.com/OctoPrint/OctoPrint/issues/3963 for "
+                    "other options."
+                )
+            else:
+                raise
 
         def serve():
             try:
@@ -2590,3 +2711,7 @@ class LifecycleManager(object):
             for event in events:
                 if callback in self._plugin_lifecycle_callbacks[event]:
                     self._plugin_lifecycle_callbacks[event].remove(callback)
+
+
+class CannotStartServerException(Exception):
+    pass

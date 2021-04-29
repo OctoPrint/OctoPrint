@@ -18,9 +18,9 @@ def get_octoprint_version_string():
     return __version__
 
 
-def get_octoprint_version(base=False):
-    octoprint_version_string = get_octoprint_version_string()
-    return get_comparable_version(octoprint_version_string, base=base)
+def get_octoprint_version(cut=None, **kwargs):
+    octoprint_version_string = normalize_version(get_octoprint_version_string())
+    return get_comparable_version(octoprint_version_string, cut=cut, **kwargs)
 
 
 def is_released_octoprint_version(version=None):
@@ -129,11 +129,7 @@ def is_octoprint_compatible(*compatibility_entries, **kwargs):
 def get_python_version_string():
     from platform import python_version
 
-    version_string = python_version()
-
-    # Debian has the python version set to 2.7.15+ which is not PEP440 compliant (bug 914072)
-    if version_string.endswith("+"):
-        version_string = version_string[:-1]
+    version_string = normalize_version(python_version())
 
     return version_string
 
@@ -154,21 +150,27 @@ def is_python_compatible(compat, **kwargs):
     return python_version in s
 
 
-def get_comparable_version(version_string, base=False):
-    if "-" in version_string:
-        version_string = version_string[: version_string.find("-")]
+def get_comparable_version(version_string, cut=None, **kwargs):
+    """
+    Args:
+        version_string: The version string for which to create a comparable version instance
+        cut: optional, how many version digits to remove (e.g., cut=1 will turn 1.2.3 into 1.2).
+             Defaults to ``None``, meaning no further action. Settings this to 0 will remove
+             anything up to the last digit, e.g. dev or rc information.
 
-    # Debian has the python version set to 2.7.15+ which is not PEP440 compliant (bug 914072)
-    if version_string.endswith("+"):
-        version_string = version_string[:-1]
+    Returns:
+        A comparable version
+    """
 
+    if "base" in kwargs and kwargs.get("base", False) and cut is None:
+        cut = 0
+    if cut is not None and (cut < 0 or not isinstance(cut, int)):
+        raise ValueError("level must be a positive integer")
+
+    version_string = normalize_version(version_string)
     version = pkg_resources.parse_version(version_string)
 
-    # A leading v is common in github release tags and old setuptools doesn't remove it.
-    if version and isinstance(version, tuple) and version[0].lower() == "*v":
-        version = version[1:]
-
-    if base:
+    if cut is not None:
         if isinstance(version, tuple):
             # old setuptools
             base_version = []
@@ -176,11 +178,21 @@ def get_comparable_version(version_string, base=False):
                 if part.startswith("*"):
                     break
                 base_version.append(part)
+            if 0 < cut < len(base_version):
+                base_version = base_version[:-cut]
             base_version.append("*final")
             version = tuple(base_version)
         else:
             # new setuptools
             version = pkg_resources.parse_version(version.base_version)
+            if cut is not None:
+                parts = version.base_version.split(".")
+                if 0 < cut < len(parts):
+                    reduced = parts[:-cut]
+                    version = pkg_resources.parse_version(
+                        ".".join(str(x) for x in reduced)
+                    )
+
     return version
 
 
@@ -193,3 +205,17 @@ def is_prerelease(version_string):
     else:
         # new setuptools
         return version.is_prerelease
+
+
+def normalize_version(version):
+    if "-" in version:
+        version = version[: version.find("-")]
+
+    # Debian has the python version set to 2.7.15+ which is not PEP440 compliant (bug 914072)
+    if version.endswith("+"):
+        version = version[:-1]
+
+    if version[0].lower() == "v":
+        version = version[1:]
+
+    return version.strip()

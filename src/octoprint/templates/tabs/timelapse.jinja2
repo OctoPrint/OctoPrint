@@ -133,6 +133,7 @@
         </ul>
     </div>
     <button class="btn btn-small" data-bind="click: removeMarkedFiles, enable: markedForFileDeletion().length > 0">{{ _('Delete selected') }}</button>
+    <a class="btn btn-small" data-bind="css: { disabled: !enableBulkDownload() }, attr: { href: bulkDownloadButtonUrl }">{{_('Download selected')}}</a>
 </div>
 <table class="table table-striped table-hover table-condensed table-hover" id="timelapse_files">
     <thead>
@@ -163,6 +164,7 @@
         <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}"><a href="javascript:void(0)" data-bind="click: listHelper.nextPage">»</a></li>
     </ul>
 </div>
+<small data-bind="visible: bulkDownloadUrlTooLong"><i class="fa fa-warning"></i> {{ _('Too many files selected to download at once. Reduce number of files to enable download button.') }}</small>
 
 
 <div data-bind="visible: unrenderedListHelper.allSize">

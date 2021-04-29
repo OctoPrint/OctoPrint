@@ -202,7 +202,7 @@ class VirtualPrinter(object):
 
         self._received_lines = 0
         self._resend_every_n = 0
-        self._calculate_resend_every_n(self._settings.get(["resend_ratio"]))
+        self._calculate_resend_every_n(self._settings.get_int(["resend_ratio"]))
 
         self._dont_answer = False
 
@@ -705,7 +705,7 @@ class VirtualPrinter(object):
     def _gcode_M114(self, data):
         # type: (str) -> bool
         m114FormatString = self._settings.get(["m114FormatString"])
-        e = dict((index, value) for index, value in enumerate(self._lastE))
+        e = {index: value for index, value in enumerate(self._lastE)}
         e["current"] = self._lastE[self.currentExtruder]
         e["all"] = " ".join(
             [
@@ -745,7 +745,10 @@ class VirtualPrinter(object):
         # type: (str) -> None
         # we'll just use this to echo a message, to allow playing around with pause triggers
         if self._echoOnM117:
-            self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
+            try:
+                self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
+            except AttributeError:
+                self._send("echo:")
 
     def _gcode_M155(self, data):
         # type: (str) -> None
@@ -809,7 +812,7 @@ class VirtualPrinter(object):
     # noinspection PyUnusedLocal
     def _gcode_G20(self, data):
         # type: (str) -> None
-        self._unitModifier = 1.0 / 2.54
+        self._unitModifier = 1 / 2.54
         if self._lastX is not None:
             self._lastX *= 2.54
         if self._lastY is not None:
@@ -866,7 +869,7 @@ class VirtualPrinter(object):
 
         _timeout = 0
         if matchP:
-            _timeout = float(matchP.group(1)) / 1000.0
+            _timeout = float(matchP.group(1)) / 1000
         elif matchS:
             _timeout = float(matchS.group(1))
 
@@ -1091,7 +1094,7 @@ class VirtualPrinter(object):
                 if key == "S":
                     pass
                 else:
-                    self._virtual_eeprom.eeprom["advanced"]["params"][material_no][
+                    self._virtual_eeprom.eeprom["material"]["params"][material_no][
                         key
                     ] = float(value)
 
@@ -1137,7 +1140,7 @@ class VirtualPrinter(object):
         config = self._virtual_eeprom.eeprom["material"]
         lines = []
         for material in ["0", "1"]:
-            line = "echo: " + config["command"] + "S" + material
+            line = "echo: " + config["command"] + " S" + material
             for param, saved_value in config["params"][material].items():
                 line = line + " " + param + str(saved_value)
             lines.append(line)
@@ -1639,8 +1642,8 @@ class VirtualPrinter(object):
             except ValueError:
                 pass
 
-        speedXYZ = self._lastF * (self._feedrate_multiplier / 100.0)
-        speedE = self._lastF * (self._flowrate_multiplier / 100.0)
+        speedXYZ = self._lastF * (self._feedrate_multiplier / 100)
+        speedE = self._lastF * (self._flowrate_multiplier / 100)
         if speedXYZ == 0:
             speedXYZ = 999999999999
         if speedE == 0:
@@ -1653,10 +1656,10 @@ class VirtualPrinter(object):
                 pass
             else:
                 if self._relative or self._lastX is None:
-                    duration = max(duration, x * self._unitModifier / speedXYZ * 60.0)
+                    duration = max(duration, x * self._unitModifier / speedXYZ * 60)
                 else:
                     duration = max(
-                        duration, (x - self._lastX) * self._unitModifier / speedXYZ * 60.0
+                        duration, (x - self._lastX) * self._unitModifier / speedXYZ * 60
                     )
 
                 if self._relative and self._lastX is not None:
@@ -1670,10 +1673,10 @@ class VirtualPrinter(object):
                 pass
             else:
                 if self._relative or self._lastY is None:
-                    duration = max(duration, y * self._unitModifier / speedXYZ * 60.0)
+                    duration = max(duration, y * self._unitModifier / speedXYZ * 60)
                 else:
                     duration = max(
-                        duration, (y - self._lastY) * self._unitModifier / speedXYZ * 60.0
+                        duration, (y - self._lastY) * self._unitModifier / speedXYZ * 60
                     )
 
                 if self._relative and self._lastY is not None:
@@ -1687,10 +1690,10 @@ class VirtualPrinter(object):
                 pass
             else:
                 if self._relative or self._lastZ is None:
-                    duration = max(duration, z * self._unitModifier / speedXYZ * 60.0)
+                    duration = max(duration, z * self._unitModifier / speedXYZ * 60)
                 else:
                     duration = max(
-                        duration, (z - self._lastZ) * self._unitModifier / speedXYZ * 60.0
+                        duration, (z - self._lastZ) * self._unitModifier / speedXYZ * 60
                     )
 
                 if self._relative and self._lastZ is not None:
@@ -1705,10 +1708,10 @@ class VirtualPrinter(object):
             else:
                 lastE = self._lastE[self.currentExtruder]
                 if self._relative or lastE is None:
-                    duration = max(duration, e * self._unitModifier / speedE * 60.0)
+                    duration = max(duration, e * self._unitModifier / speedE * 60)
                 else:
                     duration = max(
-                        duration, (e - lastE) * self._unitModifier / speedE * 60.0
+                        duration, (e - lastE) * self._unitModifier / speedE * 60
                     )
 
                 if self._relative and lastE is not None:
@@ -2295,7 +2298,7 @@ class CharCountingQueue(queue.Queue):
                 endtime = monotonic_time() + timeout
                 while not self._will_it_fit(item):
                     remaining = endtime - monotonic_time()
-                    if remaining <= 0.0:
+                    if remaining <= 0:
                         raise queue.Full
                     self.not_full.wait(remaining)
 

@@ -377,6 +377,31 @@ $(function () {
             );
         };
 
+        self.enableBulkDownload = ko.pureComputed(function () {
+            return (
+                self.markedForFileDeletion().length &&
+                !self.isBusy() &&
+                !self.bulkDownloadUrlTooLong()
+            );
+        });
+
+        self.bulkDownloadUrlTooLong = ko.pureComputed(function () {
+            return BASEURL.length + self.bulkDownloadUrl().length >= 2000;
+        });
+
+        self.bulkDownloadButtonUrl = ko.pureComputed(function () {
+            var files = self.markedForFileDeletion();
+            if (!files.length || self.bulkDownloadUrlTooLong()) {
+                return "javascript:void(0)";
+            }
+            return self.bulkDownloadUrl();
+        });
+
+        self.bulkDownloadUrl = function () {
+            var files = self.markedForFileDeletion();
+            return OctoPrint.timelapse.bulkDownloadUrl(files);
+        };
+
         self.markUnrenderedOnPage = function () {
             self.markedForUnrenderedDeletion(
                 _.uniq(

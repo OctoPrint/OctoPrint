@@ -253,7 +253,7 @@ body {
     .accordion-heading-button {
       float: right;
 
-      a {
+      > a {
         display: inline-block;
         padding: 8px 15px;
         font-size: 14px;
@@ -1010,7 +1010,7 @@ ul.dropdown-menu li a {
   }
 
   #footer_version,
-  #footer_link {
+  #footer_links {
     max-width: 50%;
   }
 }
@@ -1338,6 +1338,25 @@ _::-webkit-full-page-media,
 _:future,
 :root .full-sized-box {
   position: static;
+}
+
+// Speaking of Safari... it also wants to be special and doesn't consider scrollbars
+// being visible that important and I'm frankly at a loss of words about that
+
+.safari {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    background: rgba(100, 100, 100, 0.8);
+  }
 }
 
 .scrollable {

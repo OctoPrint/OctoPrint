@@ -259,6 +259,10 @@ onUserSettingsShown()
 onUserSettingsHidden()
    Called when the user settings dialog is hidden.
 
+onUserSettingsBeforeSave()
+   Called just before the user settings view model is sent to the server. This is useful, for example, if your plugin
+   needs to compute persisted settings from a custom view model.
+
 onWizardDetails(response)
    Called with the response from the wizard detail API call initiated before opening the wizard dialog. Will contain
    the data from all :class:`~octoprint.plugin.WizardPlugin` implementations returned by their :meth:`~octoprint.plugin.WizardPlugin.get_wizard_details`

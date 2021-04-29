@@ -69,7 +69,7 @@ class ActionCommandNotificationPlugin(
 
     def on_api_get(self, request):
         if not Permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_SHOW.can():
-            return flask.abort(403, "Insufficient permissions")
+            return flask.abort(403)
         return flask.jsonify(
             notifications=[
                 {"timestamp": notification[0], "message": notification[1]}

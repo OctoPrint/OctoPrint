@@ -177,6 +177,7 @@ further down there's also a dedicated list of steps for OctoPi specifically.
    salt line):
 
    .. code-block:: yaml
+
       accessControl:
           salt: aabbccddee1234523452345
           autologinLocal: true

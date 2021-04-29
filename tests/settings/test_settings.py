@@ -311,7 +311,7 @@ class TestSettings(unittest.TestCase):
 
             self.assertGreater(len(data), 1)
             test_dict = {"enabled": True, "sendWait": True, "waitInterval": 1.0}
-            test_data = dict((k, v) for k, v in data.items() if k in test_dict)
+            test_data = {k: v for k, v in data.items() if k in test_dict}
             self.assertEqual(test_dict, test_data)
 
     def test_get_multiple(self):
@@ -605,6 +605,9 @@ class TestSettings(unittest.TestCase):
         with self.mocked_config() as paths:
             basedir, configfile = paths
             settings = octoprint.settings.Settings()
+
+            # Make sure the config files last modified time changes
+            time.sleep(1.0)
 
             self.assertEqual("0.0.0.0", settings.get(["server", "host"]))
 

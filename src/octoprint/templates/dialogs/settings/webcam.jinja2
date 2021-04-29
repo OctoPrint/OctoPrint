@@ -1,3 +1,7 @@
+<div class="alert alert-block">
+    <strong>{{ _('Note: ') }}</strong>{{ _('Please note that OctoPrint merely embeds a webcam stream & access a snapshot URL. It does not actually run its own webcam server or interact directly with your camera. It thus can\'t impose access restrictions on it or enable/disable the stream for you. Please see <a href="%(url)s" target="_blank">this FAQ entry</a> for more explanation.', url="http://faq.octoprint.org/external-webcam-server") }}
+</div>
+
 <h3>{{ _('Webcam') }}</h3>
 
 <form class="form-horizontal" onsubmit="return false;">
@@ -25,6 +29,7 @@
         <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="fas
          fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
+            {% include "snippets/settings/webcam/ffmpegCommandline.jinja2" %}
             {% include "snippets/settings/webcam/ffmpegBitrate.jinja2" %}
             {% include "snippets/settings/webcam/ffmpegThreads.jinja2" %}
             {% include "snippets/settings/webcam/webcamSnapshotTimeout.jinja2" %}

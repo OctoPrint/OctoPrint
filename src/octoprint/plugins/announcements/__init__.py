@@ -29,6 +29,7 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.util import count, monotonic_time, utmify
+from octoprint.util.text import sanitize
 
 PY2 = sys.version_info[0] < 3
 
@@ -46,11 +47,6 @@ class AnnouncementPlugin(
     def __init__(self):
         self._cached_channel_configs = None
         self._cached_channel_configs_mutex = threading.RLock()
-
-        from octoprint.vendor.awesome_slugify import Slugify
-
-        self._slugify = Slugify()
-        self._slugify.safe_chars = "-_."
 
     # Additional permissions hook
 
@@ -293,7 +289,7 @@ class AnnouncementPlugin(
 
         elif command == "toggle":
             if not Permissions.PLUGIN_ANNOUNCEMENTS_MANAGE.can():
-                return flask.make_response("Insufficient rights", 403)
+                flask.abort(403)
             self._toggle(channel)
 
         return NO_CONTENT
@@ -366,14 +362,14 @@ class AnnouncementPlugin(
                     if config is None or "url" not in config or "name" not in config:
                         # strip invalid entries
                         continue
-                    result[self._slugify(key)] = config
+                    result[sanitize(key)] = config
                 self._cached_channel_configs = result
         return self._cached_channel_configs
 
     def _get_channel_config(self, key, force=False):
         """Retrieve specific channel config for channel."""
 
-        safe_key = self._slugify(key)
+        safe_key = sanitize(key)
         return self._get_channel_configs(force=force).get(safe_key)
 
     def _fetch_all_channels_async(self, force=False):
@@ -524,7 +520,7 @@ class AnnouncementPlugin(
     def _get_channel_cache_path(self, key):
         """Retrieve cache path for channel key."""
 
-        safe_key = self._slugify(key)
+        safe_key = sanitize(key)
         return os.path.join(self.get_plugin_data_folder(), "{}.cache".format(safe_key))
 
 

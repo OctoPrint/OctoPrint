@@ -176,9 +176,9 @@ class CommandlineCaller(object):
 
         # if we are running under windows, make sure there are no unicode strings in the env
         if get_os() == "windows" and "env" in kwargs:
-            kwargs["env"] = dict(
-                (to_native_str(k), to_native_str(v)) for k, v in kwargs["env"].items()
-            )
+            kwargs["env"] = {
+                to_native_str(k): to_native_str(v) for k, v in kwargs["env"].items()
+            }
 
         delimiter = kwargs.get("delimiter", b"\n")
         try:

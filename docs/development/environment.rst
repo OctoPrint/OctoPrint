@@ -1,14 +1,15 @@
 .. _sec-development-environment:
 
+************************************
 Setting up a Development environment
-====================================
+************************************
 
 .. _sec-development-environment-source:
 
 Obtaining, building and running the source
-------------------------------------------
+==========================================
 
-This describes the general steps in obtaining, building and running. OS specific instructions can be found
+This describes the **general, platform agnostic** steps in obtaining, building and running. OS specific instructions can be found
 below.
 
   * Prerequisites:
@@ -73,16 +74,18 @@ If you also want to be able to build the documentation that resides in the ``doc
 the *Python 3* environment and install the docs dependencies as well:
 
   * ``source venv3/bin/activate`` (Linux, macOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
-  * ``pip install -e .[develop,plugins,docs]``
+  * ``pip install -e '.[develop,plugins,docs]'``
 
-You can then build the documentation:
+Go to the directory `docs` and you can then build the documentation:
 
   * ``sphinx-build -b html . _build``
+
+The documentation will be available in the newly created ``_build`` directory. You can simply browse it locally by opening ``index.html``
 
 .. _sec-development-environment-source-linux:
 
 Linux
-.....
+-----
 
 This assumes you'll host your OctoPrint development checkout at ``~/devel/OctoPrint``. If you want to use a different
 location, please substitute accordingly.
@@ -113,10 +116,10 @@ Then:
    virtualenv --python=python3 venv3
    source ./venv2/bin/activate
    pip install --upgrade pip
-   pip install -e .[develop,plugins]
+   pip install -e '.[develop,plugins]'
    source ./venv3/bin/activate
    pip install --upgrade pip
-   pip install -e .[develop,plugins,docs]
+   pip install -e '.[develop,plugins,docs]'
    pre-commit install
    git config blame.ignoreRevsFile .git-blame-ignore-revs
 
@@ -125,7 +128,7 @@ You can then start OctoPrint via ``octoprint`` after activating one of the two v
 .. _sec-development-environment-windows:
 
 Windows
-.......
+-------
 
 This assumes you'll host your OctoPrint development checkout at ``C:\Devel\OctoPrint``. If you want to use a different
 location, please substitute accordingly.
@@ -134,17 +137,18 @@ First download & install:
 
   * `Git for Windows <https://git-for-windows.github.io/>`_
   * `Latest *stable* Python 2.7 and Python 3.8 releases from python.org <https://www.python.org/downloads/windows/>`_
-    (at the time of writing those are ``2.7.18`` and ``3.8.4``)
+    (at the time of writing those are ``2.7.18`` and ``3.8.7``)
 
     * make sure to have the installer add Python to the ``PATH`` and have it install ``pip`` too
     * it's recommended to install Python 2.7 into ``C:\Python27`` and Python 3 into ``C:\Python38`` - if you select
       different install locations please substitute accordingly
+    * it's also recommended to have both versions get installed for all users
 
   * `Microsoft Visual C++ Compiler for Python 2.7 <http://www.microsoft.com/en-us/download/details.aspx?id=44266>`_
   * `Build Tools For Visual Studio 2019 <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019>`_
 
     * install "C++ build tools" and ensure the latest versions of "MSVCv142 - VS 2019 C++ x64/x86 build tools" and
-      "Windows 10 SDK" are checked.
+      "Windows 10 SDK" are checked under individual components.
 
 Open the Git Bash you just installed and in that:
 
@@ -157,18 +161,43 @@ Open the Git Bash you just installed and in that:
    virtualenv --python=C:\Python27\python.exe venv2
    virtualenv --python=C:\Python38\python.exe venv3
    source ./venv2/Scripts/activate
-   pip install --upgrade pip
-   pip install -e .[develop,plugins]
+   python -m pip install --upgrade pip
+   pip install -e '.[develop,plugins]'
    source ./venv3/Scripts/activate
    pip install --upgrade pip
-   pip install -e .[develop,plugins,docs]
+   python -m pip install -e '.[develop,plugins,docs]'
    pre-commit install
    git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+.. _sec-development-environment-windows-optional:
+
+Optional but recommended tools
+..............................
+
+These are some tools that are recommended but not required to have on hand:
+
+  * `Visual Studio Code <https://code.visualstudio.com/download>`_
+  * `Windows Terminal <https://github.com/microsoft/terminal>`_
+
+    Add the following profile to ``profiles.list`` in the settings, that will allow you to
+    easily start Git Bash from the terminal:
+
+    .. code-block:: js
+
+       {
+           "guid": "{3df4550c-eebd-496c-a189-e55f2f8b01ce}",
+           "hidden": false,
+           "name": "Git Bash",
+           "commandline": "C:\\Program Files\\Git\\bin\\bash.exe --login -i",
+           "startingDirectory": "C:\\Devel",
+           "tabTitle": "Git Bash",
+           "suppressApplicationTitle": true
+       },
 
 .. _sec-development-environment-mac:
 
 Mac OS X
-........
+--------
 
 .. note::
 
@@ -212,14 +241,14 @@ You'll need a user account with administrator privileges.
        virtualenv venv
        source venv/bin/activate
        pip install --upgrade pip
-       pip install -e .[develop,plugins]
+       pip install -e '.[develop,plugins]'
        pre-commit install
        git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 .. _sec-development-environment-ides:
 
 IDE Setup
----------
+=========
 
 .. todo::
 
@@ -230,7 +259,7 @@ IDE Setup
 .. _sec-development-environment-ides-pycharm:
 
 PyCharm
-.......
+-------
 
   - "File" > "Open ...", select OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
   - Register virtual environments:
@@ -262,7 +291,7 @@ PyCharm
 
       * Name: Update OctoPrint dependencies
       * Program: ``$ModuleSdkPath$``
-      * Parameters: ``-m pip install -e .[develop,plugins]``
+      * Parameters: ``-m pip install -e '.[develop,plugins]'``
       * Working directory: ``$ProjectFileDir$``
 
       Note that sadly that seems to cause some hiccups on current PyCharm versions due to ``$PyInterpreterDirectory$``
@@ -291,7 +320,7 @@ PyCharm
       the documentation, see above on how to set this up.
 
     Note that this requires you to also have installed the additional ``docs`` dependencies into the Python 3 venv as
-    described above via ``pip install -e .[develop,plugins,docs]``.
+    described above via ``pip install -e '.[develop,plugins,docs]'``.
 
   - Settings > Tools > File Watchers (you might have to enable this, it's a bundled plugin), add new:
 

@@ -113,14 +113,14 @@ class TestCommHelpers(unittest.TestCase):
             return m.hexdigest()
 
         # rb'' doesn't exist in Python2
-        temp_regex = r"T:((\d*\.)\d+)".encode("utf-8")
+        temp_regex = br"T:((\d*\.)\d+)"
         temp_template = b"Temp: {}"
         temp2_template = b"Temperature: {}"
         temp_key = md5sum(temp_regex)
         temp_template_key = md5sum(temp_template)
         temp2_template_key = md5sum(temp2_template)
 
-        x_regex = r"X:(?P<x>\d+)".encode("utf-8")
+        x_regex = br"X:(?P<x>\d+)"
         x_template = b"X: {x}"
         x_key = md5sum(x_regex)
         x_template_key = md5sum(x_template)
@@ -375,6 +375,23 @@ class TestCommHelpers(unittest.TestCase):
                 "EXTRUDER_COUNT": "1",
                 "UUID": "00000000-0000-0000-0000-000000000000",
             },
+        ),
+        # Test firmware name with time created
+        (
+            "FIRMWARE_NAME:Marlin 2.0.7.2 (Nov 27 2020 14:30:11) SOURCE_CODE_URL:https://github.com/MarlinFirmware/Marlin PROTOCOL_VERSION:1.0 MACHINE_TYPE:Ender 5 Pro EXTRUDER_COUNT:1 UUID:cede2a2f-41a2-4748-9b12-c55c62f367ff",
+            {
+                "FIRMWARE_NAME": "Marlin 2.0.7.2 (Nov 27 2020 14:30:11)",
+                "SOURCE_CODE_URL": "https://github.com/MarlinFirmware/Marlin",
+                "PROTOCOL_VERSION": "1.0",
+                "MACHINE_TYPE": "Ender 5 Pro",
+                "EXTRUDER_COUNT": "1",
+                "UUID": "cede2a2f-41a2-4748-9b12-c55c62f367ff",
+            },
+        ),
+        # Test that keys beginning with _ or number are ignored
+        (
+            "KEY1:VALUE1 _KEY2:INVALID 123:INVALID 1KEY:INVALID KEY2:VALUE2",
+            {"KEY1": "VALUE1 _KEY2:INVALID 123:INVALID 1KEY:INVALID", "KEY2": "VALUE2"},
         ),
     )
     @unpack

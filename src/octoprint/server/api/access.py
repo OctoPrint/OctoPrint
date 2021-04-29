@@ -5,9 +5,8 @@ __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import abort, jsonify, make_response, request
+from flask import abort, jsonify, request
 from flask_login import current_user
-from werkzeug.exceptions import BadRequest
 
 import octoprint.access.groups as groups
 import octoprint.access.users as users
@@ -39,19 +38,16 @@ def get_groups():
 @Permissions.SETTINGS.require(403)
 def add_group():
     if "application/json" not in request.headers["Content-Type"]:
-        return make_response("Expected content-type JSON", 400)
+        abort(400, description="Expected content-type JSON")
 
-    try:
-        data = request.get_json()
-    except BadRequest:
-        return make_response("Malformed JSON body in request", 400)
+    data = request.get_json()
 
     if "key" not in data:
-        return make_response("Missing mandatory key field", 400)
+        abort(400, description="key is missing")
     if "name" not in data:
-        return make_response("Missing mandatory name field", 400)
+        abort(400, description="name is missing")
     if "permissions" not in data:
-        return make_response("Missing mandatory permissions field", 400)
+        abort(400, description="permissions are missing")
 
     key = data["key"]
     name = data["name"]
@@ -90,12 +86,9 @@ def get_group(key):
 @Permissions.SETTINGS.require(403)
 def update_group(key):
     if "application/json" not in request.headers["Content-Type"]:
-        return make_response("Expected content-type JSON", 400)
+        abort(400, description="Expected content-type JSON")
 
-    try:
-        data = request.get_json()
-    except BadRequest:
-        return make_response("Malformed JSON body in request", 400)
+    data = request.get_json()
 
     try:
         kwargs = {}
@@ -149,22 +142,18 @@ def get_users():
 @Permissions.SETTINGS.require(403)
 def add_user():
     if "application/json" not in request.headers["Content-Type"]:
-        return make_response("Expected content-type JSON", 400)
+        abort(400, description="Expected content-type JSON")
 
-    try:
-        data = request.get_json()
-    except BadRequest:
-        return make_response("Malformed JSON body in request", 400)
-
+    data = request.get_json()
     if data is None:
-        return make_response("Malformed JSON body in request", 400)
+        abort(400, description="Malformed JSON body in request")
 
     if "name" not in data:
-        return make_response("Missing mandatory name field", 400)
+        abort(400, description="name is missing")
     if "password" not in data:
-        return make_response("Missing mandatory password field", 400)
+        abort(400, description="password is missing")
     if "active" not in data:
-        return make_response("Missing mandatory active field", 400)
+        abort(400, description="active is missing")
 
     name = data["name"]
     password = data["password"]
@@ -207,12 +196,12 @@ def update_user(username):
     user = userManager.find_user(username)
     if user is not None:
         if "application/json" not in request.headers["Content-Type"]:
-            return make_response("Expected content-type JSON", 400)
+            abort(400, description="Expected content-type JSON")
 
-        try:
-            data = request.get_json()
-        except BadRequest:
-            return make_response("Malformed JSON body in request", 400)
+        data = request.get_json()
+
+        if data is None:
+            abort(400, description="Malformed JSON body in request")
 
         # change groups
         if "groups" in data:
@@ -223,9 +212,6 @@ def update_user(username):
         if "permissions" in data:
             permissions = data["permissions"]
             userManager.change_user_permissions(username, permissions)
-
-        if data is None:
-            return make_response("Malformed JSON body in request", 400)
 
         # change activation
         if "active" in data:
@@ -261,27 +247,24 @@ def change_password_for_user(username):
         and (current_user.get_name() == username or current_user.is_admin)
     ):
         if "application/json" not in request.headers["Content-Type"]:
-            return make_response("Expected content-type JSON", 400)
+            abort(400, description="Expected content-type JSON")
 
-        try:
-            data = request.get_json()
-        except BadRequest:
-            return make_response("Malformed JSON body in request", 400)
+        data = request.get_json()
 
         if data is None:
-            return make_response("Malformed JSON body in request", 400)
+            abort(400, description="Malformed JSON body in request")
 
         if "password" not in data or not data["password"]:
-            return make_response("password is missing from request", 400)
+            abort(400, description="password is missing")
 
         try:
             userManager.change_user_password(username, data["password"])
         except users.UnknownUser:
-            return make_response(("Unknown user: %s" % username, 404, []))
+            abort(404)
 
         return jsonify(SUCCESS)
     else:
-        return make_response(("Forbidden", 403, []))
+        abort(403)
 
 
 @api.route("/access/users/<username>/settings", methods=["GET"])
@@ -295,12 +278,12 @@ def get_settings_for_user(username):
             and not current_user.has_permission(Permissions.ADMIN)
         )
     ):
-        return make_response("Forbidden", 403)
+        abort(403)
 
     try:
         return jsonify(userManager.get_all_user_settings(username))
     except users.UnknownUser:
-        return make_response("Unknown user: %s" % username, 404)
+        abort(404)
 
 
 @api.route("/access/users/<username>/settings", methods=["PATCH"])
@@ -314,21 +297,18 @@ def change_settings_for_user(username):
             and not current_user.has_permission(Permissions.ADMIN)
         )
     ):
-        return make_response("Forbidden", 403)
+        abort(403)
 
-    try:
-        data = request.get_json()
-    except BadRequest:
-        return make_response("Malformed JSON body in request", 400)
+    data = request.get_json()
 
     if data is None:
-        return make_response("Malformed JSON body in request", 400)
+        abort(400, description="Malformed JSON body in request")
 
     try:
         userManager.change_user_settings(username, data)
         return jsonify(SUCCESS)
     except users.UnknownUser:
-        return make_response("Unknown user: %s" % username, 404)
+        abort(404)
 
 
 @api.route("/access/users/<username>/apikey", methods=["DELETE"])
@@ -345,10 +325,10 @@ def delete_apikey_for_user(username):
         try:
             userManager.delete_api_key(username)
         except users.UnknownUser:
-            return make_response(("Unknown user: %s" % username, 404, []))
+            abort(404)
         return jsonify(SUCCESS)
     else:
-        return make_response(("Forbidden", 403, []))
+        abort(403)
 
 
 @api.route("/access/users/<username>/apikey", methods=["POST"])
@@ -368,10 +348,10 @@ def generate_apikey_for_user(username):
         try:
             apikey = userManager.generate_api_key(username)
         except users.UnknownUser:
-            return make_response(("Unknown user: %s" % username, 404, []))
+            abort(404)
         return jsonify({"apikey": apikey})
     else:
-        return make_response(("Forbidden", 403, []))
+        abort(403)
 
 
 def _to_external_permissions(*permissions):

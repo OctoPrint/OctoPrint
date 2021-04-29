@@ -21,7 +21,7 @@ import filetype
 import pkg_resources
 import requests
 import sarge
-from flask import jsonify, make_response
+from flask import Response, abort, jsonify, request
 from flask_babel import gettext
 from past.builtins import basestring
 
@@ -30,13 +30,14 @@ import octoprint.plugin.core
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
+from octoprint.server import safe_mode
 from octoprint.server.util.flask import (
     check_etag,
     no_firstrun_access,
     with_revalidation_checking,
 )
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import TemporaryDirectory, to_bytes, to_native_str
+from octoprint.util import TemporaryDirectory, deprecated, to_bytes, to_native_str
 from octoprint.util.net import download_file
 from octoprint.util.pip import create_pip_caller
 from octoprint.util.platform import get_os, is_os_compatible
@@ -55,6 +56,9 @@ except ImportError:
     from scandir import scandir
 
 _DATA_FORMAT_VERSION = "v3"
+
+DEFAULT_PLUGIN_REPOSITORY = "https://plugins.octoprint.org/plugins.json"
+DEFAULT_PLUGIN_NOTICES = "https://plugins.octoprint.org/notices.json"
 
 
 def map_repository_entry(entry):
@@ -275,9 +279,9 @@ class PluginManagerPlugin(
 
     def get_settings_defaults(self):
         return {
-            "repository": "https://plugins.octoprint.org/plugins.json",
+            "repository": DEFAULT_PLUGIN_REPOSITORY,
             "repository_ttl": 24 * 60,
-            "notices": "https://plugins.octoprint.org/notices.json",
+            "notices": DEFAULT_PLUGIN_NOTICES,
             "notices_ttl": 6 * 60,
             "pip_args": None,
             "pip_force_user": False,
@@ -363,7 +367,7 @@ class PluginManagerPlugin(
             input_upload_path not in flask.request.values
             or input_upload_name not in flask.request.values
         ):
-            return flask.make_response("No file included", 400)
+            abort(400, description="No file included")
         upload_path = flask.request.values[input_upload_path]
         upload_name = flask.request.values[input_upload_name]
 
@@ -374,34 +378,208 @@ class PluginManagerPlugin(
             )
         )
         if not len(exts):
-            return flask.make_response(
-                "File doesn't have a valid extension for a plugin archive or a single file plugin",
+            abort(
                 400,
+                description="File doesn't have a valid extension for a plugin archive or a single file plugin",
             )
 
         ext = exts[0]
+        archive = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+        archive.close()
+        shutil.copy(upload_path, archive.name)
 
-        archive = tempfile.NamedTemporaryFile(
-            delete=False, suffix="{ext}".format(**locals())
-        )
-        try:
-            archive.close()
-            shutil.copy(upload_path, archive.name)
-            return self.command_install(
-                path=archive.name,
-                name=upload_name,
-                force="force" in flask.request.values
-                and flask.request.values["force"] in valid_boolean_trues,
-            )
-        finally:
+        def perform_install(source, name, force=False):
             try:
-                os.remove(archive.name)
-            except Exception as e:
-                self._logger.warning(
-                    "Could not remove temporary file {path} again: {message}".format(
-                        path=archive.name, message=str(e)
-                    )
+                self.command_install(
+                    path=source,
+                    name=name,
+                    force=force,
                 )
+            finally:
+                try:
+                    os.remove(archive.name)
+                except Exception as e:
+                    self._logger.warning(
+                        "Could not remove temporary file {path} again: {message}".format(
+                            path=archive.name, message=str(e)
+                        )
+                    )
+
+        with self._install_lock:
+            if self._install_task is not None:
+                abort(409, description="There's already a plugin being installed")
+
+            self._install_task = threading.Thread(
+                target=perform_install,
+                args=(archive.name, upload_name),
+                kwargs={
+                    "force": "force" in flask.request.values
+                    and flask.request.values["force"] in valid_boolean_trues
+                },
+            )
+            self._install_task.daemon = True
+            self._install_task.start()
+
+            return jsonify(in_progress=True)
+
+    @octoprint.plugin.BlueprintPlugin.route("/export", methods=["GET"])
+    @no_firstrun_access
+    @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
+    def export_plugin_list(self):
+        import json
+
+        plugins = self.generate_plugins_json(self._settings, self._plugin_manager)
+
+        return Response(
+            json.dumps(plugins),
+            mimetype="text/plain",
+            headers={"Content-Disposition": 'attachment; filename="plugin_list.json"'},
+        )
+
+    def _plugin_response(self):
+        return {
+            "plugins": self._get_plugins(),
+            "os": get_os(),
+            "octoprint": get_octoprint_version_string(),
+            "pip": {
+                "available": self._pip_caller.available,
+                "version": self._pip_caller.version_string,
+                "install_dir": self._pip_caller.install_dir,
+                "use_user": self._pip_caller.use_user,
+                "virtual_env": self._pip_caller.virtual_env,
+                "additional_args": self._settings.get(["pip_args"]),
+                "python": sys.executable,
+            },
+            "safe_mode": safe_mode,
+            "online": self._connectivity_checker.online,
+        }
+
+    @octoprint.plugin.BlueprintPlugin.route("/plugins")
+    @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
+    def retrieve_plugins(self):
+        refresh = request.values.get("refresh", "false") in valid_boolean_trues
+        if refresh or not self._is_notices_cache_valid():
+            self._notices_available = self._refresh_notices()
+
+        def view():
+            return jsonify(**self._plugin_response())
+
+        def etag():
+            import hashlib
+
+            hash = hashlib.sha1()
+
+            def hash_update(value):
+                value = value.encode("utf-8")
+                hash.update(value)
+
+            hash_update(repr(self._get_plugins()))
+            hash_update(str(self._notices_available))
+            hash_update(repr(self._notices))
+            hash_update(repr(safe_mode))
+            hash_update(repr(self._connectivity_checker.online))
+            hash_update(repr(_DATA_FORMAT_VERSION))
+            return hash.hexdigest()
+
+        def condition():
+            return check_etag(etag())
+
+        return with_revalidation_checking(
+            etag_factory=lambda *args, **kwargs: etag(),
+            condition=lambda *args, **kwargs: condition(),
+            unless=lambda: refresh,
+        )(view)()
+
+    @octoprint.plugin.BlueprintPlugin.route("/plugins/<string:key>")
+    @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
+    def retrieve_specific_plugin(self, key):
+        plugin = self._plugin_manager.get_plugin_info(key, require_enabled=False)
+        if plugin is None:
+            return abort(404)
+
+        return jsonify(plugin=self._to_external_plugin(plugin))
+
+    def _orphan_response(self):
+        return {"orphan_data": self._get_orphans()}
+
+    @octoprint.plugin.BlueprintPlugin.route("/orphans")
+    @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
+    def retrieve_plugin_orphans(self):
+        if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
+            abort(403)
+
+        refresh = request.values.get("refresh", "false") in valid_boolean_trues
+        if refresh:
+            self._get_orphans(refresh=True)
+
+        def view():
+            return jsonify(**self._orphan_response())
+
+        def etag():
+            import hashlib
+
+            hash = hashlib.sha1()
+
+            def hash_update(value):
+                value = value.encode("utf-8")
+                hash.update(value)
+
+            hash_update(repr(self._get_orphans()))
+            hash_update(repr(_DATA_FORMAT_VERSION))
+            return hash.hexdigest()
+
+        def condition():
+            return check_etag(etag())
+
+        return with_revalidation_checking(
+            etag_factory=lambda *args, **kwargs: etag(),
+            condition=lambda *args, **kwargs: condition(),
+            unless=lambda: refresh,
+        )(view)()
+
+    def _repository_response(self):
+        return {
+            "repository": {
+                "available": self._repository_available,
+                "plugins": self._repository_plugins,
+            }
+        }
+
+    @octoprint.plugin.BlueprintPlugin.route("/repository")
+    @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
+    def retrieve_plugin_repository(self):
+        if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
+            abort(403)
+
+        refresh = request.values.get("refresh", "false") in valid_boolean_trues
+        if refresh or not self._is_repository_cache_valid():
+            self._repository_available = self._refresh_repository()
+
+        def view():
+            return jsonify(**self._repository_response())
+
+        def etag():
+            import hashlib
+
+            hash = hashlib.sha1()
+
+            def hash_update(value):
+                value = value.encode("utf-8")
+                hash.update(value)
+
+            hash_update(str(self._repository_available))
+            hash_update(repr(self._repository_plugins))
+            hash_update(repr(_DATA_FORMAT_VERSION))
+            return hash.hexdigest()
+
+        def condition():
+            return check_etag(etag())
+
+        return with_revalidation_checking(
+            etag_factory=lambda *args, **kwargs: etag(),
+            condition=lambda *args, **kwargs: condition(),
+            unless=lambda: refresh,
+        )(view)()
 
     def is_blueprint_protected(self):
         return False
@@ -432,97 +610,23 @@ class PluginManagerPlugin(
             "refresh_repository": [],
         }
 
-    def on_api_get(self, request):
-        if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
-            return make_response("Insufficient rights", 403)
-
-        from octoprint.server import safe_mode
-
-        refresh_repository = (
-            request.values.get("refresh_repository", "false") in valid_boolean_trues
-        )
-        if refresh_repository or not self._is_repository_cache_valid():
-            self._repository_available = self._refresh_repository()
-
-        refresh_notices = (
-            request.values.get("refresh_notices", "false") in valid_boolean_trues
-        )
-        if refresh_notices or not self._is_notices_cache_valid():
-            self._notices_available = self._refresh_notices()
-
-        refresh_orphan = (
-            request.values.get("refresh_orphans", "false") in valid_boolean_trues
-        )
-
-        def view():
-            return jsonify(
-                plugins=self._get_plugins(),
-                repository={
-                    "available": self._repository_available,
-                    "plugins": self._repository_plugins,
-                },
-                orphan_data=self._get_orphans(refresh=refresh_orphan),
-                os=get_os(),
-                octoprint=get_octoprint_version_string(),
-                pip={
-                    "available": self._pip_caller.available,
-                    "version": self._pip_caller.version_string,
-                    "install_dir": self._pip_caller.install_dir,
-                    "use_user": self._pip_caller.use_user,
-                    "virtual_env": self._pip_caller.virtual_env,
-                    "additional_args": self._settings.get(["pip_args"]),
-                    "python": sys.executable,
-                },
-                safe_mode=safe_mode,
-                online=self._connectivity_checker.online,
-            )
-
-        def etag():
-            import hashlib
-
-            hash = hashlib.sha1()
-
-            def hash_update(value):
-                value = value.encode("utf-8")
-                hash.update(value)
-
-            hash_update(repr(self._get_plugins()))
-            hash_update(str(self._repository_available))
-            hash_update(repr(self._repository_plugins))
-            hash_update(str(self._notices_available))
-            hash_update(repr(self._notices))
-            hash_update(repr(self._get_orphans()))
-            hash_update(repr(safe_mode))
-            hash_update(repr(self._connectivity_checker.online))
-            hash_update(repr(_DATA_FORMAT_VERSION))
-            return hash.hexdigest()
-
-        def condition():
-            return check_etag(etag())
-
-        return with_revalidation_checking(
-            etag_factory=lambda *args, **kwargs: etag(),
-            condition=lambda *args, **kwargs: condition(),
-            unless=lambda: refresh_repository or refresh_notices or refresh_orphan,
-        )(view)()
-
     def on_api_command(self, command, data):
         if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
-            return make_response("Insufficient rights", 403)
+            abort(403)
 
         if self._printer.is_printing() or self._printer.is_paused():
             # do not update while a print job is running
-            return make_response("Printer is currently printing or paused", 409)
+            abort(409, description="Printer is currently printing or paused")
 
         if command == "install":
             if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
-                return make_response("Insufficient rights", 403)
+                abort(403)
             url = data["url"]
             plugin_name = data["plugin"] if "plugin" in data else None
 
             with self._install_lock:
                 if self._install_task is not None:
-                    return make_response("There's always a plugin being installed", 409)
+                    abort(409, description="There's already a plugin being installed")
 
                 self._install_task = threading.Thread(
                     target=self.command_install,
@@ -542,7 +646,7 @@ class PluginManagerPlugin(
         elif command == "uninstall":
             plugin_name = data["plugin"]
             if plugin_name not in self._plugin_manager.plugins:
-                return make_response("Unknown plugin: %s" % plugin_name, 404)
+                abort(404, description="Unknown plugin")
 
             plugin = self._plugin_manager.plugins[plugin_name]
             return self.command_uninstall(plugin, cleanup=data.get("cleanup", False))
@@ -563,10 +667,43 @@ class PluginManagerPlugin(
         elif command == "enable" or command == "disable":
             plugin_name = data["plugin"]
             if plugin_name not in self._plugin_manager.plugins:
-                return make_response("Unknown plugin: %s" % plugin_name, 404)
+                abort(404, description="Unknown plugin")
 
             plugin = self._plugin_manager.plugins[plugin_name]
             return self.command_toggle(plugin, command)
+
+    @deprecated(
+        "Deprecated API endpoint api/plugin/pluginmanager used. "
+        "Please switch clients to plugin/pluginmanager/*",
+        since="1.6.0",
+    )
+    def on_api_get(self, r):
+        if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
+            abort(403)
+
+        refresh_repository = (
+            request.values.get("refresh_repository", "false") in valid_boolean_trues
+        )
+        if refresh_repository or not self._is_repository_cache_valid():
+            self._repository_available = self._refresh_repository()
+
+        refresh_notices = (
+            request.values.get("refresh_notices", "false") in valid_boolean_trues
+        )
+        if refresh_notices or not self._is_notices_cache_valid():
+            self._notices_available = self._refresh_notices()
+
+        refresh_orphan = (
+            request.values.get("refresh_orphans", "false") in valid_boolean_trues
+        )
+        if refresh_orphan:
+            self._get_orphans(refresh=True)
+
+        result = {}
+        result.update(**self._plugin_response())
+        result.update(**self._orphan_response())
+        result.update(**self._repository_response())
+        return jsonify(**result)
 
     # noinspection PyMethodMayBeStatic
     def _is_archive(self, path):
@@ -620,7 +757,7 @@ class PluginManagerPlugin(
 
                 # determine type of path
                 if self._is_archive(path):
-                    return self._command_install_archive(
+                    result = self._command_install_archive(
                         path,
                         source=source,
                         source_type=source_type,
@@ -630,12 +767,13 @@ class PluginManagerPlugin(
                     )
 
                 elif self._is_pythonfile(path):
-                    return self._command_install_pythonfile(
+                    result = self._command_install_pythonfile(
                         path, source=source, source_type=source_type, name=name
                     )
 
                 else:
                     raise exceptions.InvalidPackageFormat()
+
             except requests.exceptions.HTTPError as e:
                 self._logger.error("Could not fetch plugin from server, got {}".format(e))
                 result = {
@@ -645,7 +783,7 @@ class PluginManagerPlugin(
                     "reason": "Could not fetch plugin from server, got {}".format(e),
                 }
                 self._send_result_notification("install", result)
-                return result
+
             except exceptions.InvalidPackageFormat:
                 self._logger.error(
                     "{} is neither an archive nor a python file, can't install that.".format(
@@ -660,11 +798,28 @@ class PluginManagerPlugin(
                     "a plugin archive nor a single file plugin".format(source),
                 }
                 self._send_result_notification("install", result)
-                return result
+
+            except Exception:
+                error_msg = (
+                    "Unexpected error while trying to install plugin from {}".format(
+                        source
+                    )
+                )
+                self._logger.exception(error_msg)
+                result = {
+                    "result": False,
+                    "source": source,
+                    "source_type": source_type,
+                    "reason": error_msg,
+                }
+                self._send_result_notification("install", result)
+
             finally:
                 if folder is not None:
                     folder.cleanup()
                 self._install_task = None
+
+        return result
 
     # noinspection DuplicatedCode
     def _command_install_archive(
@@ -686,7 +841,7 @@ class PluginManagerPlugin(
             # currently throttled, we refuse to run
             error_msg = (
                 "System is currently throttled, refusing to install anything"
-                " due to possible stability isssues"
+                " due to possible stability issues"
             )
             self._logger.error(error_msg)
             result = {
@@ -1037,15 +1192,15 @@ class PluginManagerPlugin(
 
     def command_uninstall(self, plugin, cleanup=False):
         if plugin.key == "pluginmanager":
-            return make_response("Can't uninstall Plugin Manager", 403)
+            abort(403, description="Can't uninstall Plugin Manager")
 
         if not plugin.managable:
-            return make_response(
-                "Plugin is not managable and hence cannot be uninstalled", 403
+            abort(
+                403, description="Plugin is not managable and hence cannot be uninstalled"
             )
 
         if plugin.bundled:
-            return make_response("Bundled plugins cannot be uninstalled", 403)
+            abort(403, description="Bundled plugins cannot be uninstalled")
 
         if plugin.origin is None:
             self._logger.warning(
@@ -1053,7 +1208,7 @@ class PluginManagerPlugin(
                     **locals()
                 )
             )
-            return make_response("Could not uninstall plugin, its origin is unknown")
+            abort(500, description="Could not uninstall plugin, its origin is unknown")
 
         if plugin.origin.type == "entry_point":
             # plugin is installed through entry point, need to use pip to uninstall it
@@ -1066,9 +1221,9 @@ class PluginManagerPlugin(
                 self._call_pip(pip_args)
             except Exception:
                 self._logger.exception("Could not uninstall plugin via pip")
-                return make_response(
-                    "Could not uninstall plugin via pip, see the log for more details",
+                abort(
                     500,
+                    description="Could not uninstall plugin via pip, see the log for more details",
                 )
 
         elif plugin.origin.type == "folder":
@@ -1092,6 +1247,9 @@ class PluginManagerPlugin(
                 if full_path.endswith(".py"):
                     pyc_file = "{full_path}c".format(**locals())
                     if os.path.isfile(pyc_file):
+                        self._log_stdout(
+                            "Deleting plugin from {file}".format(file=pyc_file)
+                        )
                         os.remove(pyc_file)
 
         else:
@@ -1100,7 +1258,7 @@ class PluginManagerPlugin(
                     **locals()
                 )
             )
-            return make_response("Could not uninstall plugin, its origin is unknown")
+            abort(500, description="Could not uninstall plugin, its origin is unknown")
 
         needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin) or cleanup
         needs_refresh = plugin.implementation and isinstance(
@@ -1288,7 +1446,7 @@ class PluginManagerPlugin(
 
     def command_toggle(self, plugin, command):
         if plugin.key == "pluginmanager" or (plugin.hidden and plugin.bundled):
-            return make_response("Can't enable/disable Plugin Manager", 400)
+            abort(400, description="Can't enable/disable Plugin Manager")
 
         pending = (command == "disable" and plugin.key in self._pending_enable) or (
             command == "enable" and plugin.key in self._pending_disable
@@ -1787,6 +1945,24 @@ class PluginManagerPlugin(
 
         return result
 
+    @staticmethod
+    def generate_plugins_json(
+        settings, plugin_manager, ignore_bundled=True, ignore_plugins_folder=True
+    ):
+        plugins = []
+        plugin_folder = settings.getBaseFolder("plugins")
+        for plugin in plugin_manager.plugins.values():
+            if (ignore_bundled and plugin.bundled) or (
+                ignore_plugins_folder
+                and isinstance(plugin.origin, octoprint.plugin.core.FolderOrigin)
+                and plugin.origin.folder == plugin_folder
+            ):
+                # ignore bundled or from the plugins folder already included in the backup
+                continue
+
+            plugins.append({"key": plugin.key, "name": plugin.name, "url": plugin.url})
+        return plugins
+
     def _to_external_plugin(self, plugin):
         return {
             "key": plugin.key,
@@ -1929,4 +2105,9 @@ def __plugin_load__():
         "octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types,
         "octoprint.events.register_custom_events": _register_custom_events,
         "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+    }
+
+    global __plugin_helpers__
+    __plugin_helpers__ = {
+        "generate_plugins_json": __plugin_implementation__.generate_plugins_json,
     }

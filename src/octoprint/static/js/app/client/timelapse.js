@@ -8,6 +8,7 @@
     var url = "api/timelapse";
 
     var downloadUrl = "downloads/timelapse";
+    var bulkDownloadUrl = "downloads/timelapses";
 
     var timelapseUrl = function (filename) {
         return url + "/" + filename;
@@ -84,6 +85,10 @@
 
     OctoPrintTimelapseClient.prototype.download = function (filename, opts) {
         return this.base.download(timelapseDownloadUrl(filename), opts);
+    };
+
+    OctoPrintTimelapseClient.prototype.bulkDownloadUrl = function (filenames) {
+        return this.base.bulkDownloadUrl(bulkDownloadUrl, filenames);
     };
 
     OctoPrintTimelapseClient.prototype.delete = function (filename, opts) {

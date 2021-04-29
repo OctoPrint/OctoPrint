@@ -7,9 +7,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import re
 
-from flask import Response, jsonify, make_response, request
+from flask import Response, abort, jsonify, request
 from past.builtins import basestring, long, unicode
-from werkzeug.exceptions import BadRequest
 
 from octoprint.access.permissions import Permissions
 from octoprint.printer import UnknownScript
@@ -25,7 +24,7 @@ from octoprint.settings import settings, valid_boolean_trues
 @Permissions.STATUS.require(403)
 def printerState():
     if not printer.is_operational():
-        return make_response("Printer is not operational", 409)
+        abort(409, description="Printer is not operational")
 
     # process excludes
     excludes = []
@@ -75,7 +74,7 @@ def printerState():
 @Permissions.CONTROL.require(403)
 def printerToolCommand():
     if not printer.is_operational():
-        return make_response("Printer is not operational", 409)
+        abort(409, description="Printer is not operational")
 
     valid_commands = {
         "select": ["tool"],
@@ -96,9 +95,7 @@ def printerToolCommand():
     if command == "select":
         tool = data["tool"]
         if not isinstance(tool, basestring) or re.match(validation_regex, tool) is None:
-            return make_response("Invalid tool: %s" % tool, 400)
-        if not tool.startswith("tool"):
-            return make_response("Invalid tool for selection: %s" % tool, 400)
+            abort(400, description="tool is invalid")
 
         printer.change_tool(tool, tags=tags)
 
@@ -110,11 +107,9 @@ def printerToolCommand():
         validated_values = {}
         for tool, value in targets.items():
             if re.match(validation_regex, tool) is None:
-                return make_response(
-                    "Invalid target for setting temperature: %s" % tool, 400
-                )
+                abort(400, description="targets contains invalid tool")
             if not isinstance(value, (int, long, float)):
-                return make_response("Not a number for %s: %r" % (tool, value), 400)
+                abort(400, description="targets contains invalid value")
             validated_values[tool] = value
 
         # perform the actual temperature commands
@@ -129,15 +124,9 @@ def printerToolCommand():
         validated_values = {}
         for tool, value in offsets.items():
             if re.match(validation_regex, tool) is None:
-                return make_response(
-                    "Invalid target for setting temperature: %s" % tool, 400
-                )
-            if not isinstance(value, (int, long, float)):
-                return make_response("Not a number for %s: %r" % (tool, value), 400)
-            if not -50 <= value <= 50:
-                return make_response(
-                    "Offset %s not in range [-50, 50]: %f" % (tool, value), 400
-                )
+                abort(400, description="offsets contains invalid tool")
+            if not isinstance(value, (int, long, float)) or not -50 <= value <= 50:
+                abort(400, description="offsets contains invalid value")
             validated_values[tool] = value
 
         # set the offsets
@@ -147,22 +136,22 @@ def printerToolCommand():
     elif command == "extrude":
         if printer.is_printing():
             # do not extrude when a print job is running
-            return make_response("Printer is currently printing", 409)
+            abort(409, description="Printer is currently printing")
 
         amount = data["amount"]
         speed = data.get("speed", None)
         if not isinstance(amount, (int, long, float)):
-            return make_response("Not a number for extrusion amount: %r" % amount, 400)
+            abort(400, description="amount is invalid")
         printer.extrude(amount, speed=speed, tags=tags)
 
     elif command == "flowrate":
         factor = data["factor"]
         if not isinstance(factor, (int, long, float)):
-            return make_response("Not a number for flow rate: %r" % factor, 400)
+            abort(400, description="factor is invalid")
         try:
             printer.flow_rate(factor, tags=tags)
-        except ValueError as e:
-            return make_response("Invalid value for flow rate: %s" % str(e), 400)
+        except ValueError:
+            abort(400, description="factor is invalid")
 
     return NO_CONTENT
 
@@ -172,7 +161,7 @@ def printerToolCommand():
 @Permissions.STATUS.require(403)
 def printerToolState():
     if not printer.is_operational():
-        return make_response("Printer is not operational", 409)
+        abort(409, description="Printer is not operational")
 
     return jsonify(_get_temperature_data(_keep_tools))
 
@@ -185,10 +174,10 @@ def printerToolState():
 @Permissions.CONTROL.require(403)
 def printerBedCommand():
     if not printer.is_operational():
-        return make_response("Printer is not operational", 409)
+        abort(409, description="Printer is not operational")
 
     if not printerProfileManager.get_current_or_default()["heatedBed"]:
-        return make_response("Printer does not have a heated bed", 409)
+        abort(409, description="Printer does not have a heated bed")
 
     valid_commands = {"target": ["target"], "offset": ["offset"]}
     command, data, response = get_json_command_from_request(request, valid_commands)
@@ -203,7 +192,7 @@ def printerBedCommand():
 
         # make sure the target is a number
         if not isinstance(target, (int, long, float)):
-            return make_response("Not a number: %r" % target, 400)
+            abort(400, description="target is invalid")
 
         # perform the actual temperature command
         printer.set_temperature("bed", target, tags=tags)
@@ -213,10 +202,8 @@ def printerBedCommand():
         offset = data["offset"]
 
         # make sure the offset is valid
-        if not isinstance(offset, (int, long, float)):
-            return make_response("Not a number: %r" % offset, 400)
-        if not -50 <= offset <= 50:
-            return make_response("Offset not in range [-50, 50]: %f" % offset, 400)
+        if not isinstance(offset, (int, long, float)) or not -50 <= offset <= 50:
+            abort(400, description="offset is invalid")
 
         # set the offsets
         printer.set_temperature_offset({"bed": offset})
@@ -229,10 +216,10 @@ def printerBedCommand():
 @Permissions.STATUS.require(403)
 def printerBedState():
     if not printer.is_operational():
-        return make_response("Printer is not operational", 409)
+        abort(409, description="Printer is not operational")
 
     if not printerProfileManager.get_current_or_default()["heatedBed"]:
-        return make_response("Printer does not have a heated bed", 409)
+        abort(409, description="Printer does not have a heated bed")
 
     data = _get_temperature_data(_keep_bed)
     if isinstance(data, Response):
@@ -249,10 +236,10 @@ def printerBedState():
 @Permissions.CONTROL.require(403)
 def printerChamberCommand():
     if not printer.is_operational():
-        return make_response("Printer is not operational", 409)
+        abort(409, description="Printer is not operational")
 
     if not printerProfileManager.get_current_or_default()["heatedChamber"]:
-        return make_response("Printer does not have a heated chamber", 409)
+        abort(409, description="Printer does not have a heated chamber")
 
     valid_commands = {"target": ["target"], "offset": ["offset"]}
     command, data, response = get_json_command_from_request(request, valid_commands)
@@ -267,7 +254,7 @@ def printerChamberCommand():
 
         # make sure the target is a number
         if not isinstance(target, (int, long, float)):
-            return make_response("Not a number: %r" % target, 400)
+            abort(400, description="target is invalid")
 
         # perform the actual temperature command
         printer.set_temperature("chamber", target, tags=tags)
@@ -277,10 +264,8 @@ def printerChamberCommand():
         offset = data["offset"]
 
         # make sure the offset is valid
-        if not isinstance(offset, (int, long, float)):
-            return make_response("Not a number: %r" % offset, 400)
-        if not -50 <= offset <= 50:
-            return make_response("Offset not in range [-50, 50]: %f" % offset, 400)
+        if not isinstance(offset, (int, long, float)) or not -50 <= offset <= 50:
+            abort(400, description="offset is invalid")
 
         # set the offsets
         printer.set_temperature_offset({"chamber": offset})
@@ -293,10 +278,10 @@ def printerChamberCommand():
 @Permissions.STATUS.require(403)
 def printerChamberState():
     if not printer.is_operational():
-        return make_response("Printer is not operational", 409)
+        abort(409, description="Printer is not operational")
 
     if not printerProfileManager.get_current_or_default()["heatedChamber"]:
-        return make_response("Printer does not have a heated chamber", 409)
+        abort(409, description="Printer does not have a heated chamber")
 
     data = _get_temperature_data(_keep_chamber)
     if isinstance(data, Response):
@@ -319,7 +304,7 @@ def printerPrintheadCommand():
 
     if not printer.is_operational() or (printer.is_printing() and command != "feedrate"):
         # do not jog when a print job is running or we don't have a connection
-        return make_response("Printer is not operational or currently printing", 409)
+        abort(409, description="Printer is not operational or currently printing")
 
     tags = {"source:api", "api:printer.printhead"}
 
@@ -332,9 +317,7 @@ def printerPrintheadCommand():
             if axis in data:
                 value = data[axis]
                 if not isinstance(value, (int, long, float)):
-                    return make_response(
-                        "Not a number for axis %s: %r" % (axis, value), 400
-                    )
+                    abort(400, description="axis value is invalid")
                 validated_values[axis] = value
 
         absolute = "absolute" in data and data["absolute"] in valid_boolean_trues
@@ -349,7 +332,7 @@ def printerPrintheadCommand():
         axes = data["axes"]
         for axis in axes:
             if axis not in valid_axes:
-                return make_response("Invalid axis: %s" % axis, 400)
+                abort(400, description="axis is invalid")
             validated_values.append(axis)
 
         # execute the home command
@@ -358,11 +341,11 @@ def printerPrintheadCommand():
     elif command == "feedrate":
         factor = data["factor"]
         if not isinstance(factor, (int, long, float)):
-            return make_response("Not a number for feed rate: %r" % factor, 400)
+            abort(400, description="factor is invalid")
         try:
             printer.feed_rate(factor, tags=tags)
-        except ValueError as e:
-            return make_response("Invalid value for feed rate: %s" % str(e), 400)
+        except ValueError:
+            abort(400, description="factor is invalid")
 
     return NO_CONTENT
 
@@ -375,10 +358,10 @@ def printerPrintheadCommand():
 @Permissions.CONTROL.require(403)
 def printerSdCommand():
     if not settings().getBoolean(["feature", "sdSupport"]):
-        return make_response("SD support is disabled", 404)
+        abort(404, description="SD support is disabled")
 
     if not printer.is_operational() or printer.is_printing() or printer.is_paused():
-        return make_response("Printer is not operational or currently busy", 409)
+        abort(409, description="Printer is not operational or currently busy")
 
     valid_commands = {"init": [], "refresh": [], "release": []}
     command, data, response = get_json_command_from_request(request, valid_commands)
@@ -402,7 +385,7 @@ def printerSdCommand():
 @Permissions.STATUS.require(403)
 def printerSdState():
     if not settings().getBoolean(["feature", "sdSupport"]):
-        return make_response("SD support is disabled", 404)
+        abort(404, description="SD support is disabled")
 
     return jsonify(ready=printer.is_sd_ready())
 
@@ -415,27 +398,22 @@ def printerSdState():
 @Permissions.CONTROL.require(403)
 def printerCommand():
     if not printer.is_operational():
-        return make_response("Printer is not operational", 409)
+        abort(409, description="Printer is not operational")
 
     if "application/json" not in request.headers["Content-Type"]:
-        return make_response("Expected content type JSON", 400)
+        abort(400, description="Expected content type JSON")
 
-    try:
-        data = request.get_json()
-    except BadRequest:
-        return make_response("Malformed JSON body in request", 400)
+    data = request.get_json()
 
     if data is None:
-        return make_response("Malformed JSON body in request", 400)
+        abort(400, description="Malformed JSON body in request")
 
     if "command" in data and "commands" in data:
-        return make_response("'command' and 'commands' are mutually exclusive", 400)
+        abort(400, description="'command' and 'commands' are mutually exclusive")
     elif ("command" in data or "commands" in data) and "script" in data:
-        return make_response(
-            "'command'/'commands' and 'script' are mutually exclusive", 400
-        )
+        abort(400, description="'command'/'commands' and 'script' are mutually exclusive")
     elif not ("command" in data or "commands" in data or "script" in data):
-        return make_response("Need one of 'command', 'commands' or 'script'", 400)
+        abort(400, description="Need one of 'command', 'commands' or 'script'")
 
     parameters = {}
     if "parameters" in data:
@@ -448,7 +426,7 @@ def printerCommand():
             commands = [data["command"]]
         else:
             if not isinstance(data["commands"], (list, tuple)):
-                return make_response("'commands' needs to be a list", 400)
+                abort(400, description="commands is invalid")
             commands = data["commands"]
 
         commandsToSend = []
@@ -469,7 +447,7 @@ def printerCommand():
         try:
             printer.script(script_name, context=context, tags=tags)
         except UnknownScript:
-            return make_response("Unknown script: {script_name}".format(**locals()), 404)
+            abort(404, description="Unknown script")
 
     return NO_CONTENT
 
@@ -484,7 +462,7 @@ def getCustomControls():
 
 def _get_temperature_data(preprocessor):
     if not printer.is_operational():
-        return make_response("Printer is not operational", 409)
+        abort(409, description="Printer is not operational")
 
     tempData = printer.get_current_temperatures()
 

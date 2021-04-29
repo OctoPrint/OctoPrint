@@ -199,7 +199,7 @@ types are currently recognized:
     * ``prerelease_branches``: Prerelease channel definitions, optional. List of:
       * ``branch``: Branch associated with the channel, acts as ID
       * ``name``: Human readable name of the release channel
-      * ``committish``: List of values to check against ``target_comittish``
+      * ``commitish``: List of values to check against ``target_commitish``
         field in Github release data - release will only be included if the
         values match. Defaults to being unset, in which case the ``branch``
         will be matched.
@@ -207,13 +207,13 @@ types are currently recognized:
     * ``stable_branch``: Stable channel definition, optional. Structure:
       * ``branch``: Branch associated with the channel, acts as ID
       * ``name``: Human readable name of the release channel
-      * ``commitish``: List of values to check against ``target_comittish``
+      * ``commitish``: List of values to check against ``target_commitish``
         field in Github release data - release will only be included if the
         values match. Defaults to being unset, in which case the ``branch``
         will be matched.
       .. versionadded:: 1.2.16
     * ``prerelease_channel``: Release channel to limit updates to. If set only
-      those releases will be included if their ``target_comittish`` matches
+      those releases will be included if their ``target_commitish`` matches
       the ones associated with the release channel identified by this, either
       included in ``prerelease_channels`` or the ``stable_channel``. Only
       taken into account if ``prerelease`` is ``true``.
@@ -445,23 +445,25 @@ but with "Stable" active:
            stable_branch:
              name: Stable
              branch: master
-             comittish:
+             commitish:
              - master
            prerelease_branches:
            - name: Maintenance RCs
              branch: rc/maintenance
-             comittish:
+             commitish:
              - rc/maintenance
              - master
            - name: Devel RCs
              branch: rc/devel
-             comittish:
+             commitish:
              - rc/devel
              - rc/maintenance
              - master
            pip: 'https://github.com/someUser/OctoPrint-SomePlugin/archive/{target}.zip'
 
 And now with "Maintenance RCs" active (note the ``prerelease`` and ``prerelease_channel`` settings):
+
+.. code-block:: yaml
 
    plugins:
      softwareupdate:
@@ -473,17 +475,17 @@ And now with "Maintenance RCs" active (note the ``prerelease`` and ``prerelease_
            stable_branch:
              name: Stable
              branch: master
-             comittish:
+             commitish:
              - master
            prerelease_branches:
            - name: Maintenance RCs
              branch: rc/maintenance
-             comittish:
+             commitish:
              - rc/maintenance
              - master
            - name: Devel RCs
              branch: rc/devel
-             comittish:
+             commitish:
              - rc/devel
              - rc/maintenance
              - master

@@ -34,7 +34,11 @@ from octoprint.server.util.flask import (
 )
 from octoprint.util import dict_merge, get_formatted_size, to_unicode
 from octoprint.util.pip import create_pip_caller
-from octoprint.util.version import get_comparable_version, get_python_version_string
+from octoprint.util.version import (
+    get_comparable_version,
+    get_python_version_string,
+    is_python_compatible,
+)
 
 from . import cli, exceptions, updaters, util, version_checks
 
@@ -92,7 +96,7 @@ class SoftwareUpdatePlugin(
         self._environment_ready = threading.Event()
 
         self._storage_sufficient = True
-        self.storage_info = {}
+        self._storage_info = {}
 
         self._console_logger = None
 
@@ -372,23 +376,33 @@ class SoftwareUpdatePlugin(
             or self._overlay_cache_timestamp + self._overlay_cache_ttl < time.time()
         )
 
+    def _get_check_overlay(self, url):
+        self._logger.info("Fetching check overlays from {}".format(url))
+        try:
+            r = requests.get(url, timeout=3.1)
+            r.raise_for_status()
+            data = r.json()
+        except Exception as exc:
+            self._logger.error(
+                "Could not fetch check overlay from {}: {}".format(url, exc)
+            )
+            return {}
+        else:
+            return data
+
     def _get_check_overlays(self, force=False):
         if self._check_overlays_stale or force:
             if self._connectivity_checker.online:
-                # reload from URL
-                url = self._settings.get(["check_overlay_url"])
-                self._logger.info("Fetching check overlays from {}".format(url))
-                try:
-                    r = requests.get(url, timeout=3.1)
-                    r.raise_for_status()
-                    data = r.json()
-                except Exception as exc:
-                    self._logger.error(
-                        "Could not fetch check overlay from {}: {}".format(url, exc)
+                self._overlay_cache = self._get_check_overlay(
+                    self._settings.get(["check_overlay_url"])
+                )
+                if is_python_compatible("<3"):
+                    data = self._get_check_overlay(
+                        self._settings.get(["check_overlay_py2_url"])
                     )
-                    self._overlay_cache = {}
-                else:
-                    self._overlay_cache = data
+                    self._overlay_cache = octoprint.util.dict_merge(
+                        self._overlay_cache, data
+                    )
 
             else:
                 self._logger.info("Not fetching check overlays, we are offline")
@@ -535,6 +549,7 @@ class SoftwareUpdatePlugin(
             "ignore_throttled": False,
             "minimum_free_storage": 150,
             "check_overlay_url": "https://plugins.octoprint.org/update_check_overlay.json",
+            "check_overlay_py2_url": "https://plugins.octoprint.org/update_check_overlay_py2.json",
             "check_overlay_ttl": 6 * 60,
             "credentials": {
                 "github": None,
@@ -1002,8 +1017,11 @@ class SoftwareUpdatePlugin(
                     }
                 )
             except exceptions.ConfigurationInvalid as e:
-                return flask.make_response(
-                    "Update not properly configured, can't proceed: {}".format(e), 500
+                flask.abort(
+                    500,
+                    description="Update not properly configured, can't proceed: {}".format(
+                        e
+                    ),
                 )
 
         def etag():
@@ -1068,30 +1086,35 @@ class SoftwareUpdatePlugin(
             and not self._settings.get_boolean(["ignore_throttled"])
         ):
             # currently throttled, we refuse to run
-            return flask.make_response(
+            message = (
                 "System is currently throttled, refusing to update "
-                "anything due to possible stability issues",
+                "anything due to possible stability issues"
+            )
+            self._logger.error(message)
+            flask.abort(
                 409,
+                description=message,
             )
 
         if self._printer.is_printing() or self._printer.is_paused():
             # do not update while a print job is running
-            return flask.make_response("Printer is currently printing or paused", 409)
+            flask.abort(409, description="Printer is currently printing or paused")
 
         if not self._environment_supported:
-            return flask.make_response(
-                "Direct updates are not supported in this Python environment", 409
+            flask.abort(
+                409,
+                description="Direct updates are not supported in this Python environment",
             )
 
         if not self._storage_sufficient:
-            return flask.make_response("Not enough free disk space for updating", 409)
+            flask.abort(409, description="Not enough free disk space for updating")
 
         if "application/json" not in flask.request.headers["Content-Type"]:
-            return flask.make_response("Expected content-type JSON", 400)
+            flask.abort(400, description="Expected content-type JSON")
 
         json_data = flask.request.get_json(silent=True)
         if json_data is None:
-            return flask.make_response("Invalid JSON", 400)
+            flask.abort(400, description="Invalid JSON")
 
         if "targets" in json_data or "checks" in json_data:
             targets = list(
@@ -1114,7 +1137,7 @@ class SoftwareUpdatePlugin(
     def configure_update(self):
         json_data = flask.request.get_json(silent=True)
         if json_data is None:
-            return flask.make_response("Invalid JSON", 400)
+            flask.abort(400)
 
         checks = self._get_configured_checks()
 
@@ -1336,6 +1359,7 @@ class SoftwareUpdatePlugin(
                         )
 
                         target_disabled = populated_check.get("disabled", False)
+                        target_compatible = populated_check.get("compatible", True)
                         update_available = update_available or (
                             target_update_available and not target_disabled
                         )
@@ -1385,6 +1409,7 @@ class SoftwareUpdatePlugin(
                             "online": target_online,
                             "error": target_error,
                             "disabled": target_disabled,
+                            "compatible": target_compatible,
                             "releaseChannels": {},
                         }
 
@@ -1490,6 +1515,9 @@ class SoftwareUpdatePlugin(
         update_available = False
         error = None
 
+        disabled = check.get("disabled", False)
+        compatible = check.get("compatible", True)
+
         try:
             version_checker = self._get_version_checker(target, check)
             information, is_current = version_checker.get_latest(
@@ -1506,7 +1534,7 @@ class SoftwareUpdatePlugin(
                     )
                     del self._version_cache[target]
                     self._version_cache_dirty = True
-                elif not is_current:
+                elif not is_current and compatible:
                     update_available = True
         except exceptions.CannotCheckOffline:
             update_possible = False
@@ -1544,14 +1572,14 @@ class SoftwareUpdatePlugin(
         else:
             try:
                 updater = self._get_updater(target, check)
-                update_possible = updater.can_perform_update(target, check, online=online)
+                update_possible = compatible and updater.can_perform_update(
+                    target, check, online=online
+                )
             except Exception:
                 self._logger.exception(
                     "Error while checking if {} can be updated".format(target)
                 )
                 update_possible = False
-
-        disabled = check.get("disabled", False)
 
         self._version_cache[target] = {
             "timestamp": time.time(),
@@ -1562,6 +1590,7 @@ class SoftwareUpdatePlugin(
             "online": online,
             "error": error,
             "disabled": disabled,
+            "compatible": compatible,
         }
         self._version_cache_dirty = True
         return information, update_available, update_possible, online, error
@@ -1617,11 +1646,11 @@ class SoftwareUpdatePlugin(
         updater_thread.daemon = False
         updater_thread.start()
 
-        check_data = dict(
-            (key, check["displayName"] if "displayName" in check else key)
+        check_data = {
+            key: check["displayName"] if "displayName" in check else key
             for key, check in populated_checks.items()
             if key in to_be_updated
-        )
+        }
         return to_be_updated, check_data
 
     def _update_worker(self, checks, check_targets, force):
@@ -1643,7 +1672,7 @@ class SoftwareUpdatePlugin(
                     continue
                 check = checks[target]
 
-                if "enabled" in check and not check["enabled"]:
+                if not check.get("enabled", True) or not check.get("compatible", True):
                     continue
 
                 if target not in check_targets:
@@ -1736,8 +1765,17 @@ class SoftwareUpdatePlugin(
 
         if not update_possible:
             self._logger.warning(
-                "Cannot perform update for %s, update type is not fully configured"
-                % target
+                "Cannot perform update for {}, update type is not fully configured".format(
+                    target
+                )
+            )
+            return False, None
+
+        if not information.get("compatible", True):
+            self._logger.warning(
+                "Cannot perform update for {}, update is reported as incompatible".format(
+                    target
+                )
             )
             return False, None
 
@@ -1771,7 +1809,9 @@ class SoftwareUpdatePlugin(
 
         populated_check = self._populated_check(target, check)
         try:
-            self._logger.info("Starting update of %s to %s..." % (target, target_version))
+            self._logger.info(
+                "Starting update of {} to {}...".format(target, target_version)
+            )
             self._send_client_message(
                 "updating",
                 {
@@ -1788,7 +1828,9 @@ class SoftwareUpdatePlugin(
                 target, populated_check, target_version, log_cb=self._log, online=online
             )
             target_result = ("success", update_result)
-            self._logger.info("Update of %s to %s successful!" % (target, target_version))
+            self._logger.info(
+                "Update of {} to {} successful!".format(target, target_version)
+            )
             trigger_event(True)
 
         except exceptions.UnknownUpdateType:
@@ -1972,12 +2014,6 @@ class SoftwareUpdatePlugin(
                     elif check.get("pip", None):
                         # we force python unequality check for pip installs, to be able to downgrade
                         result["release_compare"] = "python_unequal"
-                        result["pip_command"] = check.get(
-                            "pip_command",
-                            self._settings.global_get(
-                                ["server", "commands", "localPipCommand"]
-                            ),
-                        )
 
         elif target == "pip":
             import pkg_resources
@@ -2021,12 +2057,13 @@ class SoftwareUpdatePlugin(
                     "current", check.get("displayVersion", None)
                 )
 
-        if "pip" in result:
-            if (
-                "pip_command" not in check
-                and self._settings.get(["pip_command"]) is not None
-            ):
-                result["pip_command"] = self._settings.get(["pip_command"])
+        if result.get("pip", None):
+            if "pip_command" not in result:
+                local_pip_command = self._settings.global_get(
+                    ["server", "commands", "localPipCommand"]
+                )
+                if local_pip_command:
+                    result["pip_command"] = local_pip_command
 
         return result
 

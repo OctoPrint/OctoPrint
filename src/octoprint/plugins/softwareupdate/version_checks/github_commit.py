@@ -97,6 +97,8 @@ def get_latest(target, check, online=True, credentials=None, *args, **kwargs):
         current is not None and current == remote_commit
     ) or remote_commit is None
 
-    logger.debug("Target: %s, local: %s, remote: %s" % (target, current, remote_commit))
+    logger.debug(
+        "Target: {}, local: {}, remote: {}".format(target, current, remote_commit)
+    )
 
     return information, is_current

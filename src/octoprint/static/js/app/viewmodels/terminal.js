@@ -152,19 +152,22 @@ $(function () {
         self._reenableFancyTimer = undefined;
         self._reenableUnfancyTimer = undefined;
         self._disableFancy = function (difference) {
-            log.warn(
-                "Terminal: Detected slow client (needed " +
-                    difference +
-                    "ms for processing new log data), disabling fancy terminal functionality"
-            );
+            if (self.enableFancyFunctionality()) {
+                log.warn(
+                    "Terminal: Detected slow client (needed " +
+                        difference +
+                        "ms for processing new log data), disabling fancy terminal functionality"
+                );
+                self.enableFancyFunctionality(false);
+            }
             if (self._reenableFancyTimer) {
                 window.clearTimeout(self._reenableFancyTimer);
                 self._reenableFancyTimer = undefined;
             }
-            self.enableFancyFunctionality(false);
         };
         self._reenableFancy = function (difference) {
             if (self._reenableFancyTimer) return;
+            if (self.enableFancyFunctionality()) return;
             self._reenableFancyTimer = window.setTimeout(function () {
                 log.info(
                     "Terminal: Client speed recovered, enabling fancy terminal functionality"
@@ -173,19 +176,22 @@ $(function () {
             }, self.reenableTimeout);
         };
         self._disableUnfancy = function (difference) {
-            log.warn(
-                "Terminal: Detected very slow client (needed " +
-                    difference +
-                    "ms for processing new log data), completely disabling terminal output during printing"
-            );
+            if (!self.disableTerminalLogDuringPrinting()) {
+                log.warn(
+                    "Terminal: Detected very slow client (needed " +
+                        difference +
+                        "ms for processing new log data), completely disabling terminal output during printing"
+                );
+                self.disableTerminalLogDuringPrinting(true);
+            }
             if (self._reenableUnfancyTimer) {
                 window.clearTimeout(self._reenableUnfancyTimer);
                 self._reenableUnfancyTimer = undefined;
             }
-            self.disableTerminalLogDuringPrinting(true);
         };
         self._reenableUnfancy = function () {
             if (self._reenableUnfancyTimer) return;
+            if (!self.disableTerminalLogDuringPrinting()) return;
             self._reenableUnfancyTimer = window.setTimeout(function () {
                 log.info(
                     "Terminal: Client speed recovered, enabling terminal output during printing"
@@ -202,23 +208,14 @@ $(function () {
             var end = new Date().getTime();
             var difference = end - start;
 
-            if (self.enableFancyFunctionality()) {
-                // fancy enabled -> check if we need to disable fancy
-                if (difference >= self.acceptableFancyTime) {
-                    self._disableFancy(difference);
-                }
-            } else if (!self.disableTerminalLogDuringPrinting()) {
-                // fancy disabled, unfancy not -> check if we need to disable unfancy or re-enable fancy
-                if (difference >= self.acceptableUnfancyTime) {
-                    self._disableUnfancy(difference);
-                } else if (difference < self.acceptableFancyTime / 2.0) {
-                    self._reenableFancy(difference);
-                }
-            } else {
-                // fancy & unfancy disabled -> check if we need to re-enable unfancy
-                if (difference < self.acceptableUnfancyTime / 2.0) {
-                    self._reenableUnfancy(difference);
-                }
+            if (difference >= self.acceptableFancyTime) {
+                self._disableFancy(difference);
+            } else if (difference >= self.acceptableUnfancyTime) {
+                self._disableUnfancy(difference);
+            } else if (difference < self.acceptableFancyTime / 2.0) {
+                self._reenableFancy(difference);
+            } else if (difference < self.acceptableUnfancyTime / 2.0) {
+                self._reenableUnfancy(difference);
             }
         };
 

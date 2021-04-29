@@ -119,6 +119,8 @@ pygments_style = "sphinx"
 
 numfig = True
 
+mermaid_version = ""
+
 # -- Options for HTML output ---------------------------------------------------
 
 import sphinx_rtd_theme
@@ -162,6 +164,7 @@ html_static_path = ["_static"]
 
 def setup(app):
     app.add_css_file("theme_overrides.css")
+    app.add_js_file("mermaid.min.js")
 
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,

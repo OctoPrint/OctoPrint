@@ -2,13 +2,19 @@
 }
 
 #settings_plugin_pluginmanager_pluginlist {
+  height: calc(100vh - 450px);
   display: block;
   width: auto;
-  max-height: 400px;
   overflow-x: hidden;
-  overflow-y: scroll;
   padding-right: 2px;
   margin-bottom: 1em;
+  position: relative;
+  border-top: 1px solid #eee;
+  padding-top: 6px;
+
+  > table {
+    margin-top: 0px;
+  }
 
   table {
     th,

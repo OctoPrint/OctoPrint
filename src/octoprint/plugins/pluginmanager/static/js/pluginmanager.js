@@ -50,7 +50,7 @@ $(function () {
                     return !item.enabled;
                 }
             },
-            "name",
+            "popularity",
             [],
             [
                 ["bundled", "3rdparty"],
@@ -174,7 +174,7 @@ $(function () {
             "#settings_plugin_pluginmanager_repositorydialog_upload_start"
         );
 
-        self.repositoryAvailable = ko.observable(false);
+        self.repositoryAvailable = ko.observable(undefined);
 
         self.repositorySearchQuery = ko.observable();
         self.repositorySearchQuery.subscribe(function () {
@@ -435,23 +435,30 @@ $(function () {
             },
             done: function (e, data) {
                 var response = data.result;
-                if (response.result) {
-                    self._markDone();
-                } else {
-                    self._markDone(response.reason);
+                if (!response.in_progress) {
+                    if (response.result) {
+                        self._markDone();
+                    } else {
+                        self._markDone(response.reason);
+                    }
                 }
 
                 self.uploadButton.unbind("click");
                 self.uploadFilename(undefined);
             },
             fail: function (e, data) {
-                new PNotify({
-                    title: gettext("Something went wrong"),
-                    text: gettext("Please consult octoprint.log for details"),
-                    type: "error",
-                    hide: false
-                });
-                self._markDone("Could not install plugin, unknown error.");
+                if (data && data.errorThrown === "CONFLICT") {
+                    // there's already a plugin being installed
+                    self._markDone("There's already another plugin install in progress.");
+                } else {
+                    new PNotify({
+                        title: gettext("Something went wrong"),
+                        text: gettext("Please consult octoprint.log for details"),
+                        type: "error",
+                        hide: false
+                    });
+                    self._markDone("Could not install plugin, unknown error.");
+                }
                 self.uploadButton.unbind("click");
                 self.uploadFilename(undefined);
             }
@@ -492,17 +499,7 @@ $(function () {
             return false;
         };
 
-        self.fromResponse = function (data, options) {
-            self._fromPluginsResponse(data.plugins, options);
-            self._fromOrphanResponse(data.orphan_data, options);
-            self._fromRepositoryResponse(data.repository, options);
-            self._fromPipResponse(data.pip, options);
-
-            self.safeMode(data.safe_mode || false);
-            self.online(data.online !== undefined ? data.online : true);
-        };
-
-        self._fromPluginsResponse = function (data, options) {
+        self.fromPluginsResponse = function (data, options) {
             var evalNotices = options.eval_notices || false;
             var ignoreNoticeHidden = options.ignore_notice_hidden || false;
             var ignoreNoticeIgnored = options.ignore_notice_ignored || false;
@@ -542,7 +539,7 @@ $(function () {
             self.plugins.updateItems(data);
         };
 
-        self._fromOrphanResponse = function (data) {
+        self.fromOrphanResponse = function (data) {
             var orphans = [];
             _.each(data, function (value, key) {
                 orphans.push({
@@ -554,7 +551,7 @@ $(function () {
             self.orphans.updateItems(orphans);
         };
 
-        self._fromRepositoryResponse = function (data) {
+        self.fromRepositoryResponse = function (data) {
             self.repositoryAvailable(data.available);
             if (data.available) {
                 self.repositoryplugins.updateItems(data.plugins);
@@ -563,7 +560,7 @@ $(function () {
             }
         };
 
-        self._fromPipResponse = function (data) {
+        self.fromPipResponse = function (data) {
             self.pipAvailable(data.available);
             if (data.available) {
                 self.pipVersion(data.version);
@@ -581,41 +578,23 @@ $(function () {
             }
         };
 
-        self.dataDeferred = undefined;
-        self.requestData = function (options) {
+        self.dataPluginsDeferred = undefined;
+        self.requestPluginData = function (options) {
             if (!_.isPlainObject(options)) {
-                options = {
-                    refresh_repo: options,
-                    refresh_orphans: false,
-                    refresh_notices: false,
-                    eval_notices: false
-                };
+                options = {};
             }
 
-            options.refresh_repo = options.refresh_repo || false;
-            options.refresh_orphans = options.refresh_orphans || false;
-            options.refresh_notices = options.refresh_notices || false;
-            options.eval_notices = options.eval_notices || false;
-
             if (
-                self.dataDeferred &&
-                self.dataDeferred.state() === "pending" &&
-                !options.refresh_repo &&
-                !options.refresh_orphans &&
-                !options.refresh_notices &&
-                !options.eval_notices
+                self.dataPluginsDeferred &&
+                self.dataPluginsDeferred.state() === "pending" &&
+                !!!options.refresh
             ) {
-                return self.dataDeferred.promise();
+                return self.dataPluginsDeferred.promise();
             }
 
             var deferred = new $.Deferred();
-            if (
-                !options.refresh_repo &&
-                !options.refresh_orphans &&
-                !options.refresh_notices &&
-                !options.eval_notices
-            ) {
-                self.dataDeferred = deferred;
+            if (!!!options.refresh) {
+                self.dataPluginsDeferred = deferred;
             }
 
             if (
@@ -628,18 +607,99 @@ $(function () {
             }
 
             OctoPrint.plugins.pluginmanager
-                .get({
-                    repo: options.refresh_repo,
-                    notices: options.refresh_notices,
-                    orphans: options.refresh_orphans
-                })
+                .getPlugins(!!options.refresh)
                 .fail(function () {
                     self.requestError(true);
                     deferred.reject();
                 })
                 .done(function (data) {
                     self.requestError(false);
-                    self.fromResponse(data, options);
+                    self.fromPluginsResponse(data.plugins, options);
+                    self.fromPipResponse(data.pip);
+                    self.safeMode(data.safe_mode || false);
+                    deferred.resolveWith(data);
+                });
+
+            return deferred.promise();
+        };
+
+        self.dataOrphansDeferred = undefined;
+        self.requestOrphanData = function (options) {
+            if (!_.isPlainObject(options)) {
+                options = {};
+            }
+
+            if (
+                self.dataOrphansDeferred &&
+                self.dataOrphansDeferred.state() === "pending" &&
+                !!!options.refresh
+            ) {
+                return self.dataOrphansDeferred.promise();
+            }
+
+            var deferred = new $.Deferred();
+            if (!!!options.refresh) {
+                self.dataOrphansDeferred = deferred;
+            }
+
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE
+                )
+            ) {
+                deferred.fail();
+                return deferred.promise();
+            }
+
+            OctoPrint.plugins.pluginmanager
+                .getOrphans(!!options.refresh)
+                .fail(function () {
+                    deferred.reject();
+                })
+                .done(function (data) {
+                    self.fromOrphanResponse(data.orphans);
+                    deferred.resolveWith(data);
+                });
+
+            return deferred.promise();
+        };
+
+        self.dataRepositoryDeferred = undefined;
+        self.requestRepositoryData = function (options) {
+            if (!_.isPlainObject(options)) {
+                options = {};
+            }
+
+            if (
+                self.dataRepositoryDeferred &&
+                self.dataRepositoryDeferred.state() === "pending" &&
+                !!!options.refresh
+            ) {
+                return self.dataRepositoryDeferred.promise();
+            }
+
+            var deferred = new $.Deferred();
+            if (!!!options.refresh) {
+                self.dataRepositoryDeferred = deferred;
+            }
+
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE
+                )
+            ) {
+                deferred.fail();
+                return deferred.promise();
+            }
+
+            OctoPrint.plugins.pluginmanager
+                .getRepository(!!options.refresh)
+                .fail(function () {
+                    deferred.reject();
+                })
+                .done(function (data) {
+                    self.fromRepositoryResponse(data.repository);
+                    self.online(data.online !== undefined ? data.online : true);
                     deferred.resolveWith(data);
                 });
 
@@ -662,7 +722,7 @@ $(function () {
             if (data.key === "pluginmanager") return;
 
             var onSuccess = function () {
-                    self.requestData().always(function () {
+                    self.requestPluginData().always(function () {
                         self.toggling(false);
                     });
                 },
@@ -823,16 +883,23 @@ $(function () {
             var onSuccess = function (response) {
                     self.installUrl("");
                 },
-                onError = function () {
-                    self._markDone(
-                        "Could not install plugin, unknown error, please consult octoprint.log for details"
-                    );
-                    new PNotify({
-                        title: gettext("Something went wrong"),
-                        text: gettext("Please consult octoprint.log for details"),
-                        type: "error",
-                        hide: false
-                    });
+                onError = function (jqXHR) {
+                    if (jqXHR.status === 409) {
+                        // there's already a plugin being installed
+                        self._markDone(
+                            "There's already another plugin install in progress."
+                        );
+                    } else {
+                        self._markDone(
+                            "Could not install plugin, unknown error, please consult octoprint.log for details"
+                        );
+                        new PNotify({
+                            title: gettext("Something went wrong"),
+                            text: gettext("Please consult octoprint.log for details"),
+                            type: "error",
+                            hide: false
+                        });
+                    }
                 };
 
             if (reinstall) {
@@ -877,7 +944,7 @@ $(function () {
                 OctoPrint.plugins.pluginmanager
                     .uninstall(data.key, cleanup)
                     .done(function () {
-                        self.requestData();
+                        self.requestPluginData();
                     })
                     .fail(function () {
                         new PNotify({
@@ -933,7 +1000,7 @@ $(function () {
                 OctoPrint.plugins.pluginmanager
                     .cleanup(key)
                     .done(function () {
-                        self.requestData();
+                        self.requestOrphanData();
                     })
                     .fail(function () {
                         new PNotify({
@@ -1005,7 +1072,7 @@ $(function () {
             ) {
                 return;
             }
-            self.requestData({refresh_repo: true});
+            self.requestRepositoryData({refresh: true});
         };
 
         self.refreshNotices = function () {
@@ -1013,8 +1080,8 @@ $(function () {
                 return;
             }
 
-            self.requestData({
-                refresh_notices: true,
+            self.requestPluginData({
+                refresh: true,
                 eval_notices: true,
                 ignore_notice_hidden: true,
                 ignore_notice_ignored: true
@@ -1026,7 +1093,7 @@ $(function () {
                 return;
             }
 
-            self.requestData({
+            self.requestPluginData({
                 eval_notices: true,
                 ignore_notice_hidden: true,
                 ignore_notice_ignored: true
@@ -1084,11 +1151,15 @@ $(function () {
             self.settingsViewModel.saveData(data, function () {
                 self.configurationDialog.modal("hide");
                 self._copyConfig();
-                self.requestData({
-                    refresh_repo: true,
-                    refresh_notices: true,
+                self.requestPluginData({
+                    refresh: true,
                     eval_notices: true
                 });
+                if (self.repositoryAvailable() !== undefined) {
+                    self.requestRepositoryData({
+                        refresh: true
+                    });
+                }
             });
         };
 
@@ -1587,7 +1658,7 @@ $(function () {
             if (!self.hiddenNoticeNotifications[key]) return false;
             return _.any(
                 _.map(self.hiddenNoticeNotifications[key], function (d) {
-                    return date == d;
+                    return date === d;
                 })
             );
         };
@@ -1642,14 +1713,25 @@ $(function () {
                     self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE
                 )
             ) {
-                self.requestData({eval_notices: true});
+                self.requestPluginData({eval_notices: true});
             } else {
                 self._resetNotifications();
             }
         };
 
+        self.onSettingsShown = function () {
+            if (
+                self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE
+                )
+            ) {
+                self.requestRepositoryData();
+                self.requestOrphanData();
+            }
+        };
+
         self.onEventConnectivityChanged = function (payload) {
-            self.requestData({eval_notices: true});
+            self.requestPluginData({eval_notices: true});
         };
 
         self._resetNotifications = function () {
@@ -1713,7 +1795,7 @@ $(function () {
                 }
 
                 self._processPluginManagementResult(data, action, name);
-                self.requestData();
+                self.requestPluginData();
             }
         };
 

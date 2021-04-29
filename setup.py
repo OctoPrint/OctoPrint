@@ -24,15 +24,15 @@ SETUP_REQUIRES = ["markdown>=3.1,<3.2"]  # newer versions require Python 3
 # Requirements for our application
 INSTALL_REQUIRES = [
     # additional OctoPrint plugins that are maintained on a different release cycle
-    "OctoPrint-FirmwareCheck>=2020.09.23",
-    "OctoPrint-FileCheck>=2020.08.07",
+    "OctoPrint-FileCheck>=2021.2.23",
+    "OctoPrint-FirmwareCheck>=2021.2.4",
+    "OctoPrint-PiSupport>=2021.3.26",
     # the following dependencies are non trivial to update since later versions
     # introduce backwards incompatible changes that might affect plugins, or due to
     # other observed problems
     "markupsafe>=1.1,<2.0",  # Jinja dependency, newer versions require Python 3
     "tornado==5.1.1",  # newer versions require Python 3
     "markdown>=3.1,<3.2",  # newer versions require Python 3
-    "rsa==4.0",  # newer versions require Python 3
     "regex!=2018.11.6",  # avoid broken 2018.11.6. See #2874
     # anything below this should be checked on releases for new versions
     "flask>=1.1.2,<2",
@@ -59,9 +59,9 @@ INSTALL_REQUIRES = [
     "websocket-client>=0.57,<1",
     "wrapt>=1.12.1,<2",
     "emoji>=0.5.4,<1",
-    "frozendict>=1.2,<2",
     "sentry-sdk>=0.15.1,<1",
     "filetype>=1.0.7,<2",
+    "zipstream-new>=1.1.8,<1.2",
     # vendor bundled dependencies
     "unidecode>=0.04.14,<0.05",  # dependency of awesome-slugify
     "blinker>=1.4,<2",  # dependency of flask_principal
@@ -76,10 +76,15 @@ INSTALL_REQUIRES_PYTHON2 = [
     "chainmap>=1.0.3,<2",
     "typing>=3.7.4.1,<4",
     "enum34>=1.1.10,<1.2",
+    "frozendict>=1.2,<2",
 ]
 
 # Python 3 specific requirements
-INSTALL_REQUIRES_PYTHON3 = ["feedparser>=6.0.2,<7", "zeroconf>=0.24,<0.25"]
+INSTALL_REQUIRES_PYTHON3 = [
+    "feedparser>=6.0.2,<7",
+    "zeroconf>=0.24,<0.25",
+    "immutabledict>=1.2.0,<2",
+]
 
 # OSX specific requirements
 INSTALL_REQUIRES_OSX = [
@@ -274,9 +279,9 @@ def params():
 
     project_urls = {
         "Community Forum": "https://community.octoprint.org",
-        "Bug Reports": "https://github.com/foosel/OctoPrint/issues",
-        "Source": "https://github.com/foosel/OctoPrint",
-        "Funding": "https://donate.octoprint.org",
+        "Bug Reports": "https://github.com/OctoPrint/OctoPrint/issues",
+        "Source": "https://github.com/OctoPrint/OctoPrint",
+        "Funding": "https://support.octoprint.org",
     }
 
     packages = setuptools.find_packages(where="src")

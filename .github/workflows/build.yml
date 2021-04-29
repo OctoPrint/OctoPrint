@@ -2,9 +2,8 @@ name: Build
 on:
   push:
   pull_request:
-    types: [opened, sychronize, reopened]
   release:
-    types: [published, prereleased]
+    types: [published]
   workflow_dispatch:
 
 jobs:
@@ -31,8 +30,8 @@ jobs:
           name: dist
           path: dist
 
-  lint-black:
-    name: 🧹 black
+  pre-commit:
+    name: 🧹 Pre-commit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -43,63 +42,15 @@ jobs:
       - name: 🏗 Set up dev dependencies
         run: |
           pip install -e .[develop]
-      - name: 🚀 Run black
+      - name: 🚀 Run pre-commit
         run: |
-          pre-commit run --hook-stage manual black --all-files --show-diff-on-failure
-
-  lint-prettier:
-    name: 🧹 prettier
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: 🏗 Set up Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.7
-      - name: 🏗 Set up dev dependencies
-        run: |
-          pip install -e .[develop]
-      - name: 🚀 Run prettier
-        run: |
-          pre-commit run --hook-stage manual prettier --all-files --show-diff-on-failure
-
-  lint-isort:
-    name: 🧹 isort
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: 🏗 Set up Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.7
-      - name: 🏗 Set up dev dependencies
-        run: |
-          pip install -e .[develop]
-      - name: 🚀 Run isort
-        run: |
-          pre-commit run --hook-stage manual isort --all-files --show-diff-on-failure
-
-  lint-flake8:
-    name: 🧹 Flake8
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: 🏗 Set up Python 3.7
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.7
-      - name: 🏗 Set up dev dependencies
-        run: |
-          pip install -e .[develop]
-      - name: 🚀 Run flake8
-        run: |
-          pre-commit run --hook-stage manual flake8 --all-files
+          pre-commit run --all-files --show-diff-on-failure
 
   test-unit:
     name: 🧪 Unit tests
     strategy:
       matrix:
-        python: ["2.7", "3.7", "3.8"]
+        python: ["2.7", "3.7", "3.8", "3.9"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -119,7 +70,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        python: ["2.7", "3.7", "3.8"]
+        python: ["2.7", "3.7", "3.8", "3.9"]
         installable: ["wheel", "sdist"]
     runs-on: ubuntu-latest
     steps:
@@ -192,10 +143,7 @@ jobs:
     name: 📦 Publish on TestPyPI
     if: github.event_name == 'release'
     needs:
-      - lint-black
-      - lint-prettier
-      - lint-isort
-      - lint-flake8
+      - pre-commit
       - test-unit
       - test-install
       - test-e2e

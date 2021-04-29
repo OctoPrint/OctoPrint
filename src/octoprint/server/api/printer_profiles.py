@@ -8,9 +8,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import copy
 
-from flask import jsonify, make_response, request, url_for
+from flask import abort, jsonify, request, url_for
 from past.builtins import basestring
-from werkzeug.exceptions import BadRequest
 
 from octoprint.access.permissions import Permissions
 from octoprint.printer.profile import CouldNotOverwriteError, InvalidProfileError
@@ -60,18 +59,15 @@ def printerProfilesList():
 @Permissions.SETTINGS.require(403)
 def printerProfilesAdd():
     if "application/json" not in request.headers["Content-Type"]:
-        return make_response("Expected content-type JSON", 400)
+        abort(400, description="Expected content-type JSON")
 
-    try:
-        json_data = request.get_json()
-    except BadRequest:
-        return make_response("Malformed JSON body in request", 400)
+    json_data = request.get_json()
 
     if json_data is None:
-        return make_response("Malformed JSON body in request", 400)
+        abort(400, description="Malformed JSON body in request")
 
     if "profile" not in json_data:
-        return make_response("No profile included in request", 400)
+        abort(400, description="profile is missing")
 
     base_profile = printerProfileManager.get_default()
     if "basedOn" in json_data and isinstance(json_data["basedOn"], basestring):
@@ -95,25 +91,20 @@ def printerProfilesAdd():
     profile = dict_merge(base_profile, new_profile)
 
     if "id" not in profile:
-        return make_response("Profile does not contain mandatory 'id' field", 400)
+        abort(400, description="profile.id is missing")
     if "name" not in profile:
-        return make_response("Profile does not contain mandatory 'name' field", 400)
+        abort(400, description="profile.name is missing")
 
     try:
         saved_profile = printerProfileManager.save(
             profile, allow_overwrite=False, make_default=make_default, trigger_event=True
         )
     except InvalidProfileError:
-        return make_response("Profile is invalid", 400)
+        abort(400, description="profile is invalid")
     except CouldNotOverwriteError:
-        return make_response(
-            "Profile {} already exists and overwriting was not allowed".format(
-                profile["id"]
-            ),
-            400,
-        )
+        abort(400, description="Profile already exists and overwriting was not allowed")
     except Exception as e:
-        return make_response("Could not save profile: %s" % str(e), 500)
+        abort(500, description="Could not save profile: %s" % str(e))
     else:
         return jsonify({"profile": _convert_profile(saved_profile)})
 
@@ -124,7 +115,7 @@ def printerProfilesAdd():
 def printerProfilesGet(identifier):
     profile = printerProfileManager.get(identifier)
     if profile is None:
-        return make_response("Unknown profile: %s" % identifier, 404)
+        abort(404)
     else:
         return jsonify(_convert_profile(profile))
 
@@ -135,13 +126,11 @@ def printerProfilesGet(identifier):
 def printerProfilesDelete(identifier):
     current_profile = printerProfileManager.get_current()
     if current_profile and current_profile["id"] == identifier:
-        return make_response(
-            "Cannot delete currently selected profile: {}".format(identifier), 409
-        )
+        abort(409, description="Cannot delete currently selected profile")
 
     default_profile = printerProfileManager.get_default()
     if default_profile and default_profile["id"] == identifier:
-        return make_response("Cannot delete default profile: {}".format(identifier), 409)
+        abort(409, description="Cannot delete default profile")
 
     printerProfileManager.remove(identifier, trigger_event=True)
     return NO_CONTENT
@@ -152,18 +141,14 @@ def printerProfilesDelete(identifier):
 @Permissions.SETTINGS.require(403)
 def printerProfilesUpdate(identifier):
     if "application/json" not in request.headers["Content-Type"]:
-        return make_response("Expected content-type JSON", 400)
+        abort(400, description="Expected content-type JSON")
 
-    try:
-        json_data = request.get_json()
-    except BadRequest:
-        return make_response("Malformed JSON body in request", 400)
-
+    json_data = request.get_json()
     if json_data is None:
-        return make_response("Malformed JSON body in request", 400)
+        abort(400, description="Malformed JSON body in request")
 
     if "profile" not in json_data:
-        return make_response("No profile included in request", 400)
+        abort(400, description="profile missing")
 
     profile = printerProfileManager.get(identifier)
     if profile is None:
@@ -187,13 +172,11 @@ def printerProfilesUpdate(identifier):
             trigger_event=True,
         )
     except InvalidProfileError:
-        return make_response("Profile is invalid", 400)
+        abort(400, description="profile is invalid")
     except CouldNotOverwriteError:
-        return make_response(
-            "Profile already exists and overwriting was not allowed", 400
-        )
+        abort(400, description="Profile already exists and overwriting was not allowed")
     except Exception as e:
-        return make_response("Could not save profile: %s" % str(e), 500)
+        abort(500, description="Could not save profile: %s" % str(e))
     else:
         return jsonify({"profile": _convert_profile(saved_profile)})
 

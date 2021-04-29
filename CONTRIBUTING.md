@@ -60,7 +60,7 @@ into one ticket: One ticket per bug, request, brainstorming thread please.
 ## How to file a bug report
 
 If you encounter an issue with OctoPrint, you are welcome to
-[submit a bug report](https://github.com/foosel/OctoPrint/issues/new).
+[submit a bug report](https://github.com/OctoPrint/OctoPrint/issues/new?template=bug_report.yml).
 
 Before you do that for the first time though please take a moment to read the
 following section *completely* and also follow the instructions in the
@@ -118,7 +118,7 @@ following section *completely* and also follow the instructions in the
    it is the same as your's, it actually behaves the same as your's. E.g. if someone gives steps
    to reproduce his bug that looks like your's, reproduce the bug like that if possible,
    and only add a "me too" if you actually can reproduce the same
-   issue. Also **provide all information** as [described below](#what-should-i-include-in-a-bug-report)
+   issue. Also **provide all information like Systeminfo Bundle, additional logs & versions, different reproduction steps**
    and whatever was additionally requested over the course of the ticket
    even if you "only" add to an existing ticket. The more information available regarding a bug, the higher
    the chances of reproducing and solving it. But "me too" on an actually unrelated ticket
@@ -126,7 +126,7 @@ following section *completely* and also follow the instructions in the
    there's now also a [red herring](https://en.wikipedia.org/wiki/Red_herring) interfering - so please be
    very diligent here!
 
-If in doubt about any of the above - get in touch on the [community forum](https://community.octoprint.org)
+If in doubt about any of the above - get in touch on the [community forums](https://community.octoprint.org)
 instead of opening a ticket here. If you are actually running into a bug, we'll figure it out together
 there.
 
@@ -180,9 +180,10 @@ don't know what you did to get it to happen in the first place.
 Ideally provide exact steps to follow in order to reproduce your problem:
 -->
 
-1. ...
-2. ...
-3. ...
+1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
+4. See error
 
 <!--
 If you encountered a problem with specific files of any sorts, make sure
@@ -211,14 +212,6 @@ If you can't test this in safe mode, state why.
 Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.
 -->
 
-#### Operating System running OctoPrint
-
-<!--
-OctoPi, Linux, Windows, MacOS, something else? With version please.
-OctoPi's version can be found in /etc/octopi_version or in the lower left
-corner of the web interface.
--->
-
 #### Printer model & used firmware incl. version
 
 <!--
@@ -231,31 +224,19 @@ If applicable, always include if unsure.
 If applicable, always include if unsure.
 -->
 
-#### Link to octoprint.log
+#### System Info Bundle
 
 <!--
-On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.
+Directly uploaded here. ALWAYS INCLUDE.
 
 The Contribution Guidelines tell you where to find that.
--->
-
-#### Link to contents of terminal tab or serial.log
-
-<!--
-On gist.github.com or pastebin.com. If applicable, always include if unsure or
-reporting communication issues. Never truncate.
-
-serial.log is usually not written due to performance reasons and must be
-enabled explicitly. Provide at the very least the FULL contents of your
-terminal tab at the time of the bug occurrence, even if you do not have
-a serial.log (which the Contribution Guidelines tell you where to find).
 -->
 
 #### Link to contents of Javascript console in the browser
 
 <!--
-On gist.github.com or pastebin.com or alternatively a screenshot. If applicable -
-always include if unsure or reporting UI issues.
+Directly uploaded here or on gist.github.com or pastebin.com.
+If applicable - always include if unsure or reporting UI issues.
 
 The Contribution Guidelines tell you where to find that.
 -->
@@ -269,9 +250,12 @@ If applicable. Always include if unsure or reporting UI issues.
 I have read the FAQ.
 ```
 
-Copy-paste this template **completely** (or use the version that gets pre-filled
-into the "new issue" form). Do not skip any lines or the bot *will* complain! Provide
-all requested information or your ticket will be closed.
+Provide the same kind and amount of information also when you are just adding on to an
+existing ticket!
+
+### Where can I find the System Info Bundle?
+
+Please refer to [this FAQ entry](https://community.octoprint.org/t/what-is-a-systeminfo-bundle-and-how-can-i-obtain-one/29887).
 
 ### Where can I find which version and branch I'm on?
 
@@ -427,6 +411,9 @@ See [the corresponding chapter in the documentation](https://docs.octoprint.org/
   * 2020-08-10: Update versioning scheme and PR instructions
   * 2020-09-23: Move branch & versioning into development docs
   * 2020-10-07: Introduce `pre-commit`
+  * 2021-02-04: Issue forms! \o/
+  * 2021-03-04: Correct issue forms link
+  * 2021-04-27: Systeminfo Bundles! \o/
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

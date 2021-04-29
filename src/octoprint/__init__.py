@@ -86,6 +86,7 @@ class FatalStartupError(Exception):
 def init_platform(
     basedir,
     configfile,
+    overlays=None,
     use_logging_file=True,
     logging_file=None,
     logging_config=None,
@@ -117,7 +118,7 @@ def init_platform(
         after_preinit_logging(**kwargs)
 
     try:
-        settings = init_settings(basedir, configfile)
+        settings = init_settings(basedir, configfile, overlays=overlays)
     except Exception as ex:
         raise FatalStartupError("Could not initialize settings manager", cause=ex)
     kwargs["settings"] = settings
@@ -220,13 +221,15 @@ def init_platform(
     )
 
 
-def init_settings(basedir, configfile):
+def init_settings(basedir, configfile, overlays=None):
     """Inits the settings instance based on basedir and configfile to use."""
 
     from octoprint.settings import InvalidSettings, settings
 
     try:
-        return settings(init=True, basedir=basedir, configfile=configfile)
+        return settings(
+            init=True, basedir=basedir, configfile=configfile, overlays=overlays
+        )
     except InvalidSettings as e:
         raise FatalStartupError(str(e))
 
@@ -554,6 +557,8 @@ def set_logging_config(config, debug, verbosity, uncaught_logger, uncaught_handl
     # configure logging globally
     import logging.config as logconfig
 
+    from octoprint.logging.filters import TornadoAccessFilter
+
     logconfig.dictConfig(config)
 
     # make sure we log any warnings
@@ -581,6 +586,9 @@ def set_logging_config(config, debug, verbosity, uncaught_logger, uncaught_handl
 
         uncaught_handler = exception_logger
     sys.excepthook = uncaught_handler
+
+    tornado_logger = log.getLogger("tornado.access")
+    tornado_logger.addFilter(TornadoAccessFilter())
 
     return logger
 
@@ -619,16 +627,17 @@ def init_pluginsystem(
         )
 
     plugin_validators = []
+
     if safe_mode:
 
-        def validator(phase, plugin_info):
+        def safe_mode_validator(phase, plugin_info):
             if phase in ("before_import", "before_load", "before_enable"):
                 plugin_info.safe_mode_victim = not plugin_info.bundled
                 if not plugin_info.bundled:
                     return False
             return True
 
-        plugin_validators.append(validator)
+        plugin_validators.append(safe_mode_validator)
 
     compatibility_ignored_list = settings.get(["plugins", "_forcedCompatible"])
 

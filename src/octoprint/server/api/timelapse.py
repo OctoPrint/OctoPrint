@@ -9,7 +9,7 @@ import logging
 import os
 import threading
 
-from flask import jsonify, make_response, request, url_for
+from flask import abort, jsonify, request, url_for
 
 import octoprint.timelapse
 import octoprint.util as util
@@ -182,7 +182,7 @@ def deleteTimelapse(filename):
             logging.getLogger(__file__).exception(
                 "Error deleting timelapse file {}".format(full_path)
             )
-            return make_response("Unexpected error: {}".format(ex), 500)
+            abort(500, description="Unexpected error: {}".format(ex))
 
     return getTimelapseData()
 
@@ -208,8 +208,8 @@ def processUnrenderedTimelapseCommand(name):
 
     if command == "render":
         if printer.is_printing() or printer.is_paused():
-            return make_response(
-                "Printer is currently printing, cannot render timelapse", 409
+            abort(
+                409, description="Printer is currently printing, cannot render timelapse"
             )
         octoprint.timelapse.render_unrendered_timelapse(name)
 
@@ -231,68 +231,56 @@ def setTimelapseConfig():
             try:
                 postRoll = int(data["postRoll"])
             except ValueError:
-                return make_response(
-                    "Invalid value for postRoll: %r" % data["postRoll"], 400
-                )
+                abort(400, description="postRoll is invalid")
             else:
                 if postRoll >= 0:
                     config["postRoll"] = postRoll
                 else:
-                    return make_response("Invalid value for postRoll: %d" % postRoll, 400)
+                    abort(400, description="postRoll is invalid")
 
         if "fps" in data:
             try:
                 fps = int(data["fps"])
             except ValueError:
-                return make_response("Invalid value for fps: %r" % data["fps"], 400)
+                abort(400, description="fps is invalid")
             else:
                 if fps > 0:
                     config["fps"] = fps
                 else:
-                    return make_response("Invalid value for fps: %d" % fps, 400)
+                    abort(400, description="fps is invalid")
 
         if "interval" in data:
             try:
                 interval = int(data["interval"])
             except ValueError:
-                return make_response(
-                    "Invalid value for interval: %r" % data["interval"], 400
-                )
+                abort(400, description="interval is invalid")
             else:
                 if interval > 0:
                     config["options"]["interval"] = interval
                 else:
-                    return make_response("Invalid value for interval: %d" % interval, 400)
+                    abort(400, description="interval is invalid")
 
         if "retractionZHop" in data:
             try:
                 retractionZHop = float(data["retractionZHop"])
             except ValueError:
-                return make_response(
-                    "Invalid value for retraction Z-Hop: %r" % data["retractionZHop"], 400
-                )
+                abort(400, description="retractionZHop is invalid")
             else:
                 if retractionZHop >= 0:
                     config["options"]["retractionZHop"] = retractionZHop
                 else:
-                    return make_response(
-                        "Invalid value for retraction Z-Hop: %f" % retractionZHop, 400
-                    )
+                    abort(400, description="retractionZHop is invalid")
 
         if "minDelay" in data:
             try:
                 minDelay = float(data["minDelay"])
             except ValueError:
-                return make_response(
-                    "Invalid value for minimum delay: %r" % data["minDelay"], 400
-                )
+                abort(400, description="minDelay is invalid")
             else:
                 if minDelay > 0:
                     config["options"]["minDelay"] = minDelay
                 else:
-                    return make_response(
-                        "Invalid value for minimum delay: %f" % minDelay, 400
-                    )
+                    abort(400, description="minDelay is invalid")
 
         if (
             admin_permission.can()
