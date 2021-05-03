@@ -1086,7 +1086,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._comm.refreshSdFiles(
             tags=kwargs.get("tags", set()) | {"trigger:printer.refresh_sd_files"}
         )
-        if blocking:
+        if blocking and not self.is_printing():
             self._sdFilelistAvailable.wait(kwargs.get("timeout", 10))
 
     # ~~ state monitoring
