@@ -452,7 +452,10 @@ $(function () {
                 throw "Unknown stream type " + streamType;
             }
 
-            var message = $("<p></p>").append(text).append(webcam_element);
+            var message = $("<div id='webcamTestContainer'></div>")
+                .append($("<p></p>"))
+                .append(text)
+                .append(webcam_element);
 
             self.testWebcamStreamUrlBusy(true);
             showMessageDialog({
@@ -803,7 +806,6 @@ $(function () {
                     }
                 })
                 .css({
-                    "width": "auto",
                     "margin-left": function () {
                         return -($(this).width() / 2);
                     }
