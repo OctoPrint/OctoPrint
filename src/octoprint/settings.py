@@ -265,6 +265,7 @@ default_settings = {
             "fps": 25,
         },
         "cleanTmpAfterDays": 7,
+        "cacheBuster": False,
     },
     "gcodeAnalysis": {
         "maxExtruders": 10,

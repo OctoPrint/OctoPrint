@@ -14,6 +14,7 @@
         <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
             {% include "snippets/settings/webcam/webcamStreamTimeout.jinja2" %}
+            {% include "snippets/settings/webcam/webcamCacheBuster.jinja2" %}
         </div>
     </div>
 </form>

@@ -139,6 +139,7 @@ def getSettings():
             "flipH": s.getBoolean(["webcam", "flipH"]),
             "flipV": s.getBoolean(["webcam", "flipV"]),
             "rotate90": s.getBoolean(["webcam", "rotate90"]),
+            "cacheBuster": s.getBoolean(["webcam", "cacheBuster"]),
         },
         "feature": {
             "temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
@@ -593,6 +594,8 @@ def _saveSettings(data):
             s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
         if "rotate90" in data["webcam"]:
             s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
+        if "cacheBuster" in data["webcam"]:
+            s.setBoolean(["webcam", "cacheBuster"], data["webcam"]["cacheBuster"])
 
     if "feature" in data:
         if "temperatureGraph" in data["feature"]:
