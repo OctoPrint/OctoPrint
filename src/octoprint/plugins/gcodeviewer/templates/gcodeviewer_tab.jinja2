@@ -90,6 +90,13 @@
                         <label class="checkbox">
                             <input type="checkbox" data-bind="checked: renderer_showSegmentStarts">{{ _('Show segment starts') }}
                         </label>
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: renderer_showDebugArcs">{{ _('Show debug arcs') }}
+                        </label>
+                        <label class="checkbox" data-bind="visible: OctoPrint.coreui.browser.chrome">
+                            <input type="checkbox" data-bind="checked: renderer_chromeArcFix">{{ _('Apply arc fix') }} <span class="label">{{ _('Chrome') }}</span>
+                            <span class="help-block">{{ _("See <a href='%(url)s' target='_blank'>issue #4117</a>.", url="https://github.com/OctoPrint/OctoPrint/issues/4117") }}</span>
+                        </label>
                     </p>
                     <p>
                         <label class="checkbox">
