@@ -177,6 +177,10 @@ GCODE.ui = (function () {
             }
         },
 
+        resetViewport: function () {
+            GCODE.renderer.resetViewport();
+        },
+
         updateLayerInfo: function (layerNum) {
             switchLayer(layerNum, true);
         },

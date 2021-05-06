@@ -220,6 +220,9 @@ $(function () {
                     self.settings.printerProfiles
                         .currentProfileData()
                         .volume.formFactor.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles
+                        .currentProfileData()
+                        .volume.origin.subscribe(self._printerProfileUpdated);
                 }
                 if (self.settings.printerProfiles.currentProfileData().axes) {
                     self.settings.printerProfiles
@@ -397,6 +400,10 @@ $(function () {
             self.loadedFilepath = undefined;
             self.loadedFileDate = undefined;
             self.clear();
+        };
+
+        self.resetViewport = function () {
+            GCODE.ui.resetViewport();
         };
 
         self.resetOptions = function () {
