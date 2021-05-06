@@ -708,6 +708,11 @@ Use the following settings to configure the serial connection to the printer:
      - M0
      - M1
 
+     # Commands which should not be sent to the printer and just silently ignored.
+     # An example of when you may wish to use this could be useful if you wish to manually change a filament on M600, 
+     # by using that as a Pausing command (below)
+     ignoredCommands:
+
      # Commands which should cause OctoPrint to pause any ongoing prints.
      pausingCommands:
      - M0
