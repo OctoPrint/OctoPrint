@@ -73,7 +73,7 @@
 <div class="pull-right">
     <button class="btn btn-primary" data-bind="click: function() { $root.updateAll(); }, enable: enableUpdateAll, css: {disabled: !enableUpdateAll}"><i class="fas fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
     <button class="btn" data-bind="click: function() { $root.performCheck(true, false, true); }, enable: !checking(), css: {disabled: checking()}"><i class="fas fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Check for updates') }}</button>
-    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
+    <button class="btn" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
 </div>
 
 <h3>{{ _('Current versions') }}</h3>
