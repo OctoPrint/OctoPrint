@@ -183,6 +183,7 @@ $(function () {
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
         self.serial_exclusive = ko.observable();
+        self.serial_lowLatency = ko.observable();
         self.serial_portOptions = ko.observableArray([]);
         self.serial_baudrateOptions = ko.observableArray([]);
         self.serial_autoconnect = ko.observable(undefined);
