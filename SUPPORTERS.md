@@ -10,12 +10,12 @@ thanks to everyone who contributed!
   * 3DPrinterOS
   * Arnljot Arntsen
   * Ash King
-  * Ashley Merrick
   * BigTreeTech
   * Boris Hussein
   * Brad Jackson
   * BRANDON ROBERTSON
   * BuildBee
+  * Chris Lynch
   * Christian Petropolis
   * Christian Wolf
   * Christoph Sigrist
@@ -25,7 +25,6 @@ thanks to everyone who contributed!
   * DeltaMaker 3D Printers
   * Dennis Breining
   * Dennis Christilaw
-  * Diana C Rodriguez
   * Douglas Floyd
   * Eric Betts
   * Ernesto Martinez
@@ -78,4 +77,4 @@ thanks to everyone who contributed!
   * Ulderico Cirello
   * Ulrich Kempken
 
-and 2341 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2350 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
