@@ -1,0 +1,130 @@
+name: 🐛 Report a bug
+description: Create a bug report to help improve OctoPrint
+body:
+  - type: markdown
+    attributes:
+      value: >
+        **Thank you for wanting to report a bug in OctoPrint!**
+
+
+        If this is the first time you are doing this, please take a few moments to read
+        through the [Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md).
+        Also check out [the FAQ](https://faq.octoprint.org) if your
+        problem is maybe already covered there.
+
+
+        You are about to report a bug in **OctoPrint**. Do not proceed if your issues
+        occurs with OctoPi, any third party OctoPrint plugins, unofficial or outdated
+        OctoPrint versions. If you are unsure of the difference between OctoPrint and
+        OctoPi, [read this FAQ entry](https://faq.octoprint.org/octoprint-vs-octopi).
+
+
+        Do also not seek support here ("I need help with ...", "I have a
+        question ...", "Can someone walk me through ..."), that belongs into the
+        [community forum at community.octoprint.org](https://community.octoprint.org) or on the [Discord server](https://discord.octoprint.org).
+
+
+        And finally, make sure any bug you want to report is still present with the **current**
+        OctoPrint version and that it does not vanish when you start OctoPrint
+        in [safe mode](https://docs.octoprint.org/en/master/features/safemode.html) either.
+
+
+        Thank you for your collaboration!
+  - type: textarea
+    attributes:
+      label: The problem
+      description: >-
+        Describe the issue you are experiencing here. Tell us what you were trying to do
+        step by step, and what happened that you did not expect.
+
+        Provide a clear and concise description of what the problem is and include as many
+        details as possible.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Did the issue persist even in safe mode?
+      description: >-
+        Testing in safe mode is required to make sure the issue you are reporting is not
+        caused by a third party plugin. Please see [here](https://docs.octoprint.org/en/master/features/safemode.html)
+        on how to run OctoPrint in safe mode.
+      options:
+        - Yes, it did persist
+        - No, it did not persist (it's an issue with one of your installed plugins, don't report here)
+        - I cannot test this issue in safe mode (state why below)
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: If you could not test in safe mode, please state why
+      description: >-
+        Issues caused by a third party plugin are a major cause of bugs reported here, so we really need to
+        rule out that a plugin is at fault here. [Safe mode](https://docs.octoprint.org/en/master/features/safemode.html) is an easy way to do that. Only skip safe mode
+        if your particular problem *absolutely requires* third party plugins to be enabled. "It would take
+        too long" is **not** a reason to skip testing in safe mode, neither is "I do not know how to
+        enable it" as you can find info on that [here](https://docs.octoprint.org/en/master/features/safemode.html).
+
+        If you really *cannot* test in safe mode, leave a short explanation as to why.
+  - type: markdown
+    attributes:
+      value: |
+        ## Environment
+  - type: input
+    attributes:
+      label: Version of OctoPrint
+      description: Can be found in the lower left corner of the web interface.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Operating system running OctoPrint
+      description: >-
+        OctoPi, Linux, Windows, MacOS, something else? With version please? OctoPi's
+        version can be found in `/etc/octopi_version` or in the lower left corner of the
+        web interface.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Printer model & used firmware incl. version
+      description: If applicable, always include if unsure
+  - type: input
+    attributes:
+      label: Browser and version of browser, operating system running browser
+      description: If applicable, always include if unsure
+  - type: markdown
+    attributes:
+      value: |
+        ## Logs and other files needed for analysis
+  - type: markdown
+    attributes:
+      value: >-
+        Please also be sure to upload the following files below:
+
+          * Systeminfo Bundle: See [here](https://community.octoprint.org/t/what-is-a-systeminfo-bundle-and-how-can-i-obtain-one/29887) if you don't know where to find that. Just attach down below as-is. Note that you'll need at least OctoPrint 1.6.0 for this to be available - we no longer accept bug reports created for older versions than this.
+            * If you are reporting an issue that involves communicating with you printer, **be sure to enable `serial.log` before reproducing and creating the Systeminfo Bundle**!
+          * Your browser's JavaScript console, if you are reporting a problem with the
+            user interface. See [here](https://webmasters.stackexchange.com/questions/8525/how-to-open-the-javascript-console-in-different-browsers) on where to find that.
+          * If possible, screenshots or videos showing the problem, especially if you
+            are reporting a problem with the user interface!
+          * GCODE files with which to reproduce, if you are reporting an issue with
+            GCODE file analysis or printing behaviour.
+
+        Please be aware that unless at least Systeminfo Bundle is included, your bug report
+        will not be processed and closed after a while.
+  - type: checkboxes
+    attributes:
+      label: Checklist of files to include below
+      options:
+        - label: Systeminfo Bundle (always include!)
+          required: true
+        - label: Contents of the JavaScript browser console (always include in cases of issues with the user interface)
+        - label: Screenshots and/or videos showing the problem (always include in case of issues with the user interface)
+        - label: GCODE file with which to reproduce (always include in case of issues with GCODE analysis or printing behaviour)
+  - type: textarea
+    attributes:
+      label: Additional information & file uploads

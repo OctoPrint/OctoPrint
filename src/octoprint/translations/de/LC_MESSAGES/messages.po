@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2021-04-21 14:16+0200\n"
-"PO-Revision-Date: 2021-04-21 14:18+0200\n"
+"POT-Creation-Date: 2021-05-10 11:13+0200\n"
+"PO-Revision-Date: 2021-05-10 11:14+0200\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -199,7 +199,7 @@ msgid "Never"
 msgstr "Nie"
 
 #: src/octoprint/plugins/action_command_prompt/templates/action_command_prompt_settings.jinja2:19
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:80
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:81
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:329
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:82
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:207
@@ -1133,8 +1133,8 @@ msgid "<p>It looks like you are tracking an OctoPrint RC release channel. It wou
 msgstr "<p>Es sieht so also, als hättest du einen OctoPrint RC Release Channel abonniert. Es wäre klasse, wenn du Fehlertracking einschalten würdest, so dass jedwede Art von Fehler, die mit diesem RC auftritt, einfacher untersucht werden kann. Danke!</p><p><small>Du kannst mehr zum Fehlertracking erfahren unter Einstellungen > Fehlertracking</p>"
 
 #: src/octoprint/plugins/errortracking/static/js/errortracking.js:52
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:477
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:508
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:483
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:514
 #: src/octoprint/static/js/app/viewmodels/loginstate.js:147
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:466
 msgid "Ignore"
@@ -1227,48 +1227,48 @@ msgstr "Analysiere..."
 msgid "Analyzed"
 msgstr "Analysiert"
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:649
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:656
 #: src/octoprint/static/js/app/viewmodels/files.js:929
 msgid "Model size"
 msgstr "Modelgröße"
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:659
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:666
 msgid "Estimated layer height"
 msgstr "Geschätzte Schichthöhe"
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:662
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:669
 #: src/octoprint/templates/tabs/timelapse.jinja2:69
 msgid "mm"
 msgstr "mm"
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:665
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:672
 msgid "Estimated total print time"
 msgstr "Geschätzte Gesamtdauer"
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:670
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:677
 msgid "Layers with extrusion"
 msgstr "Layer mit Extrusion"
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:703
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:710
 msgid "Layer number"
 msgstr "Schichtnummer"
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:704
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:711
 msgid "Layer height"
 msgstr "Schichthöhe"
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:705
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:712
 msgid "GCODE commands"
 msgstr "GCODE Befehle"
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:709
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:718
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:716
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:725
 #: src/octoprint/static/js/app/viewmodels/files.js:944
 #: src/octoprint/static/js/app/viewmodels/files.js:960
 msgid "Filament"
 msgstr "Filament"
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:720
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:727
 #: src/octoprint/static/js/app/viewmodels/control.js:85
 #: src/octoprint/static/js/app/viewmodels/files.js:962
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:355
@@ -1278,7 +1278,7 @@ msgstr "Filament"
 msgid "Tool"
 msgstr "Tool"
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:732
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:739
 #: src/octoprint/static/js/app/viewmodels/files.js:972
 msgid "Estimated print time"
 msgstr "Geschätzte Dauer"
@@ -1376,40 +1376,44 @@ msgstr "Auch nächste Schicht anzeigen"
 msgid "Reload"
 msgstr "Neu laden"
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:84
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:77
+msgid "Reset viewport"
+msgstr "Viewport zurücksetzen"
+
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:85
 msgid "Show visited bounding box"
 msgstr "Boundingbox für besuchte Koordinaten anzeigen"
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:87
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:88
 msgid "Show printed bounding box"
 msgstr "Boundingbox für bedruckte Koordinaten anzeigen"
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:90
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:91
 msgid "Show layer bounding box"
 msgstr "Boundingbox für bedruckte Koordinaten der Schicht anzeigen"
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:93
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:94
 msgid "Show segment starts"
 msgstr "Liniensegmentstarts anzeigen"
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:98
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:99
 msgid "Hide empty layers"
 msgstr "Leere Schichten  verstecken"
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:98
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:101
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:99
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:102
 msgid "Causes reload"
 msgstr "Verursacht einen Reload"
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:101
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:102
 msgid "Sort layers"
 msgstr "Schichten sortieren"
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:105
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:106
 msgid "Reset options"
 msgstr "Optionen zurücksetzen"
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:113
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:114
 msgid "\n"
 "            Note that the time and usage values in this tab are <strong>estimated</strong> by the GCODE viewer in your\n"
 "            browser and might differ from the values <strong>estimated</strong> by the server that are displayed in the\n"
@@ -1425,7 +1429,7 @@ msgstr "\n"
 "            ungenau sein können, da sie nur auf Informationen aus den GCODE Dateien basieren.\n"
 "        "
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:123
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:124
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:73
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:94
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:466
@@ -1437,7 +1441,7 @@ msgstr "\n"
 msgid "Warning"
 msgstr "Warnung"
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:124
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:125
 msgid "<p>\n"
 "        You've selected <strong data-bind=\"text: selectedFile.name\"></strong> for printing which has a size of\n"
 "        <strong data-bind=\"text: formatSize(selectedFile.size())\"></strong>. Depending on your machine this\n"
@@ -1457,7 +1461,7 @@ msgstr "<p>\n"
 "        Bist Du sicher, dass du die Datei trotzdem visualisieren willst?\n"
 "    </p>"
 
-#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:135
+#: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:136
 #, python-format
 msgid "Yes, please visualize %(name)s regardless of its size"
 msgstr "Ja, bitte visualisiere %(name)s unabhängig seiner Größe"
@@ -2380,227 +2384,227 @@ msgstr "OctoPrint"
 msgid "Without this plugin OctoPrint will no longer be able to update itself or any of your installed plugins which might put your system at risk."
 msgstr "Ohne dieses Plugin wird OctoPrint nicht länger in der Lage sein, sich selbst oder deine installierten Plugins zu aktualisierten. Das könnte dein System gefährden."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:232
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:238
 msgid "Release"
 msgstr "Release"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:233
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:239
 msgid "Github Commit"
 msgstr "Githubcommit"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:234
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:240
 msgid "Local checkout"
 msgstr "Lokaler Checkout"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:311
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:317
 #, python-format
 msgid "%(name)s: %(version)s"
 msgstr "%(name)s: %(version)s"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:319
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:325
 msgid "unknown"
 msgstr "unbekannt"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:368
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:663
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:679
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:929
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:374
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:669
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:685
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:935
 msgid "Updating..."
 msgstr "Aktualisiere..."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:369
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:680
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:930
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:375
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:686
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:936
 msgid "Updating, please wait."
 msgstr "Aktualisiere gerade, bitte warten."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:385
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:391
 msgid "There are updates available for the following components:"
 msgstr "Es gibt Aktualisierungen für die folgenden Komponenten:"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:412
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:773
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:418
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:779
 msgid "Release Notes"
 msgstr "Release Notes"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:423
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:429
 msgid "This version of the Python environment is not supported for direct updates."
 msgstr "Diese Version der Pythonumgebung unterstützt keine direkten Aktualisierungen."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:430
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:436
 msgid "There's currently not enough free disk space available for a direct update."
 msgstr "Der Plattenplatz reicht aktuell nicht für ein Softwareupdate."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:437
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:443
 msgid "Those components marked with <i class=\"fa fa-check\"></i> can be updated directly."
 msgstr "Die mit <i class=\"fa fa-check\"></i> markierten Komponenten können direkt aktualisiert werden."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:450
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:456
 msgid "To have updates applied, get in touch with an administrator of this OctoPrint instance."
 msgstr "Um Updates durchzuführen wende dich bitte an einen Administrator dieser OctoPrint Instanz."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:459
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:465
 msgid "Update Available"
 msgstr "Aktualisierung verfügbar"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:481
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:487
 msgid "You can make this message display again via \"Settings\" > \"Software Update\" > \"Check for update now\""
 msgstr "Du kannst diese Nachricht erneut anzeigen lassen mittels \"Einstellungen\" > \"Software Update\" > \"Jetzt nach Aktualisierungen suchen\""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:488
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:494
 msgid "Update now"
 msgstr "Jetzt aktualisieren"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:532
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:538
 msgid "Everything is up-to-date"
 msgstr "Alles ist auf dem neusten Stand"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:561
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:567
 msgid "No internet connection"
 msgstr "Keine Onlineverbindung"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:565
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:571
 msgid "Update not possible"
 msgstr "Update nicht möglich"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:576
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:582
 msgid "Unknown update check, configuration ok?"
 msgstr "Unbekannter Updatechecktyp, Konfiguration in Ordnung?"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:579
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:585
 msgid "Cannot check for update, need online connection"
 msgstr "Updatecheck ist nicht möglich, benötige Onlineverbindung"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:582
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:588
 msgid "Network error while checking for update"
 msgstr "Netzwerkfehler bei Updatecheck"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:585
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:591
 msgid "Rate limit exceeded while checking for update, please try again later"
 msgstr "Ratelimit überschritten beim Updatecheck, bitte prüfe die Logs"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:590
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:596
 msgid "Check internal error while checking for update"
 msgstr "Interner Checkfehler bei Updatecheck"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:593
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:599
 msgid "Unknown error while checking for update, please check the logs"
 msgstr "Unbekannter Fehler beim Updatecheck, bitte prüfe die Logs"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:664
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:670
 msgid "Now updating, please wait."
 msgstr "Aktualisiere gerade, bitte warten."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:687
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:693
 msgid "The update could not be started. Is it already active? Please consult octoprint.log for details."
 msgstr "Die Aktualisierung konnte nicht gestartet werden. Läuft bereits eine? Bitte konsultiere octoprint.log für Details."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:695
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:701
 msgid "Update not started!"
 msgstr "Aktualisierung nicht gestartet!"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:731
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:737
 msgid "Can't update while printing"
 msgstr "Aktualisierung nicht möglich während gedruckt wird"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:732
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:738
 msgid "A print job is currently in progress. Updating will be prevented until it is done."
 msgstr "Ein Druckjob ist zur Zeit aktiv. Aktualisierungen werden unterbunden bis er fertig ist."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:743
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:749
 msgid "Can't update while throttled"
 msgstr "Aktualisierung nicht möglich bei reduzierter Systemleistung"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:744
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:750
 msgid "Your system is currently throttled. OctoPrint refuses to run updates while in this state due to possible stability issues."
 msgstr "Das System, auf dem OctoPrint läuft, ist aktuell leistungsbegrenzt. Um mögliche Probleme in Folge von dadurch\n"
 "verursachter Systeminstabilität zu verhindern, ist es daher aktuell nicht möglich, Aktualisierungen durchzuführen."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:755
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:761
 msgid "This will update the following components and restart the server:"
 msgstr "Das wird die folgenden Komponenten aktualisieren und den Server neu starten:"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:781
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:787
 msgid "Be sure to read through any linked release notes, especially those for OctoPrint since they might contain important information you need to know <strong>before</strong> upgrading."
 msgstr "Bitte lies alle verlinkten Release Notes, insbesondere die von OctoPrint, da diese wichtige Informationen behinhalten könnten, die Du <strong>vor</strong> dem Softwareupdate wissen solltest."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:786
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:792
 msgid "This action may disrupt any ongoing print jobs."
 msgstr "Das könnte laufende Druckaufträge unterbrechen."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:789
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:795
 msgid "Depending on your printer's controller and general setup, restarting OctoPrint may cause your printer to be reset."
 msgstr "Abhängig von deinem Druckerkontroller und generellem Setup könnte ein Neustart von OctoPrint auch zum Neustart deines Druckers führen."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:794
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:800
 #: src/octoprint/static/js/app/helpers.js:795
 msgid "Are you sure you want to proceed?"
 msgstr "Bist Du sicher, dass du fortfahren willst?"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:797
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:803
 msgid "Are you sure you want to update now?"
 msgstr "Bist Du sicher, dass du jetzt aktualisieren willst?"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:799
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:805
 #: src/octoprint/static/js/app/helpers.js:802
 msgid "Proceed"
 msgstr "Fortfahren"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:946
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:952
 #, python-format
 msgid "Now updating %(name)s to %(version)s"
 msgstr "Aktualisiere %(name)s auf %(version)s"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:972
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:978
 msgid "Update successful, restarting!"
 msgstr "Aktualisierung erfolgreich, starte neu!"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:973
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:979
 msgid "The update finished successfully and the server will now be restarted."
 msgstr "Die Aktualisierung wurde erfolgreich durchgeführt und der Server wird jetzt neu gestartet."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:992
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1049
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:998
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1055
 msgid "Restart failed"
 msgstr "Neustart fehlgeschlagen"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:993
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:999
 msgid "The server apparently did not restart by itself, you'll have to do it manually. Please consult octoprint.log on what went wrong."
 msgstr "Der Server hat anscheinend nicht von selbst neu gestartet, Du wirst das manuell tun müssen. Bitte konsultiere octoprint.log."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1015
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1021
 msgid "The update finished successfully, please restart OctoPrint now."
 msgstr "Die Aktualisierung wurde erfolgreich abgeschlossen, bitte starte OctoPrint jetzt neu."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1019
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1025
 msgid "The update finished successfully, please reboot the server now."
 msgstr "Die Aktualisierung wurde erfolgreich abgeschlossen, bitte reboote den Server jetzt."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1024
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1030
 msgid "Update successful, restart required!"
 msgstr "Aktualisierung erfolgreich, Neustart notwendig!"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1040
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1046
 msgid "Restarting OctoPrint failed, please restart it manually. You might also want to consult octoprint.log on what went wrong here."
 msgstr "Der Neustart von OctoPrint ist fehlgeschlagen, bitte starte es manuell neu. Du solltest auch octoprint.log konsultieren, um herauszufinden, was hier schief gelaufen ist."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1044
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1050
 msgid "Rebooting the server failed, please reboot it manually. You might also want to consult octoprint.log on what went wrong here."
 msgstr "Reboot des Servers fehlgeschlagen, bitte reboote ihn manuell. Du solltest auch octoprint.log konsultieren, um herauszufinden, was hier gerade schief gelaufen ist."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1065
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1071
 msgid "Update successful!"
 msgstr "Aktualisierung erfolgreich!"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1066
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1072
 msgid "The update finished successfully."
 msgstr "Die Aktualisierung wurde erfolgreich abgeschlossen."
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1081
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1087
 msgid "Update failed!"
 msgstr "Aktualisierung fehlgeschlagen!"
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1082
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:1088
 msgid "The update did not finish successfully. Please consult <code>octoprint.log</code> and <code>plugin_softwareupdate_console.log</code> for details."
 msgstr "Die Aktualisierung wurde nicht erfolgreich abgeschlossen. Bitte konsultiere <code>octoprint.log</code> und <code>plugin_softwareupdate_console.log</code> für Details."
 

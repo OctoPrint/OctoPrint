@@ -134,6 +134,7 @@ def getSettings():
             "flipH": s.getBoolean(["webcam", "flipH"]),
             "flipV": s.getBoolean(["webcam", "flipV"]),
             "rotate90": s.getBoolean(["webcam", "rotate90"]),
+            "cacheBuster": s.getBoolean(["webcam", "cacheBuster"]),
         },
         "feature": {
             "temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
@@ -159,6 +160,7 @@ def getSettings():
             "port": connectionOptions["portPreference"],
             "baudrate": connectionOptions["baudratePreference"],
             "exclusive": s.getBoolean(["serial", "exclusive"]),
+            "lowLatency": s.getBoolean(["serial", "lowLatency"]),
             "portOptions": connectionOptions["ports"],
             "baudrateOptions": connectionOptions["baudrates"],
             "autoconnect": s.getBoolean(["serial", "autoconnect"]),
@@ -572,6 +574,8 @@ def _saveSettings(data):
             s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
         if "rotate90" in data["webcam"]:
             s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
+        if "cacheBuster" in data["webcam"]:
+            s.setBoolean(["webcam", "cacheBuster"], data["webcam"]["cacheBuster"])
 
     if "feature" in data:
         if "temperatureGraph" in data["feature"]:
@@ -633,6 +637,8 @@ def _saveSettings(data):
             s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
         if "exclusive" in data["serial"]:
             s.setBoolean(["serial", "exclusive"], data["serial"]["exclusive"])
+        if "lowLatency" in data["serial"]:
+            s.setBoolean(["serial", "lowLatency"], data["serial"]["lowLatency"])
         if "timeoutConnection" in data["serial"]:
             s.setFloat(
                 ["serial", "timeout", "connection"],

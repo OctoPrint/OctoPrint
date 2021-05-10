@@ -755,7 +755,7 @@ function showMessageDialog(msg, options) {
 
     var modal = $("<div></div>").addClass("modal hide");
     if (!nofade) {
-        modal.addClass("fade");
+        modal.addClass("fade-in");
     }
     modal
         .append($("<div></div>").addClass("modal-header").append(modalHeader))
@@ -845,7 +845,7 @@ function showConfirmationDialog(msg, onacknowledge, options) {
 
     var modal = $("<div></div>").addClass("modal hide");
     if (!nofade) {
-        modal.addClass("fade");
+        modal.addClass("fade-in");
     }
 
     var buttons = $("<div></div>").addClass("modal-footer").append(cancelButton);
@@ -963,7 +963,7 @@ function showSelectionDialog(options) {
     // create modal and do final wiring up
     var modal = $("<div></div>").addClass("modal hide");
     if (!nofade) {
-        modal.addClass("fade");
+        modal.addClass("fade-in");
     }
     if (!cancel) {
         modal.data("backdrop", "static").data("keyboard", "false");
@@ -1092,7 +1092,7 @@ function showProgressModal(options, promise) {
     }
 
     var modal = $("<div></div>")
-        .addClass("modal hide fade")
+        .addClass("modal hide fade-in")
         .addClass(dialogClass)
         .append($("<div></div>").addClass("modal-header").append(modalHeader))
         .append(modalBody)

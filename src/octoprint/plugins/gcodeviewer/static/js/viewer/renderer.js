@@ -56,6 +56,8 @@ GCODE.renderer = (function () {
         showHead: false,
         showSegmentStarts: false,
         sizeSegmentStart: 2 * pixelRatio,
+        showDebugArcs: false,
+        chromeArcFix: false,
 
         moveModel: true,
         zoomInOnModel: false,
@@ -74,12 +76,18 @@ GCODE.renderer = (function () {
         onDragStop: undefined
     };
 
+    // offset due to dragging
     var offsetModelX = 0,
         offsetModelY = 0;
+
+    // TODO: remove in 1.7.0
     var offsetBedX = 0,
         offsetBedY = 0;
+
+    // scale due to zooming
     var scaleX = 1,
         scaleY = 1;
+
     var speeds = [];
     var speedsByLayer = {};
     var currentInvertX = false,
@@ -339,12 +347,80 @@ GCODE.renderer = (function () {
         };
     }
 
+    // replace arc for chrome, code from https://stackoverflow.com/a/11689752
+    var bezierArc = function (x, y, radius, startAngle, endAngle, anticlockwise) {
+        // Signed length of curve
+        var signedLength;
+        var tau = 2 * Math.PI;
+
+        if (!anticlockwise && endAngle - startAngle >= tau) {
+            signedLength = tau;
+        } else if (anticlockwise && startAngle - endAngle >= tau) {
+            signedLength = -tau;
+        } else {
+            var delta = endAngle - startAngle;
+            signedLength = delta - tau * Math.floor(delta / tau);
+
+            // If very close to a full number of revolutions, make it full
+            if (Math.abs(delta) > 1e-12 && signedLength < 1e-12) signedLength = tau;
+
+            // Adjust if anti-clockwise
+            if (anticlockwise && signedLength > 0) signedLength = signedLength - tau;
+        }
+
+        // Minimum number of curves; 1 per quadrant.
+        var minCurves = Math.ceil(Math.abs(signedLength) / (Math.PI / 2));
+
+        // Number of curves; square-root of radius (or minimum)
+        var numCurves = Math.ceil(Math.max(minCurves, Math.sqrt(radius)));
+
+        // "Radius" of control points to ensure that the middle point
+        // of the curve is exactly on the circle radius.
+        var cpRadius = radius * (2 - Math.cos(signedLength / (numCurves * 2)));
+
+        // Angle step per curve
+        var step = signedLength / numCurves;
+
+        // Draw the circle
+        this.lineTo(x + radius * Math.cos(startAngle), y + radius * Math.sin(startAngle));
+        for (
+            var i = 0, a = startAngle + step, a2 = startAngle + step / 2;
+            i < numCurves;
+            ++i, a += step, a2 += step
+        )
+            this.quadraticCurveTo(
+                x + cpRadius * Math.cos(a2),
+                y + cpRadius * Math.sin(a2),
+                x + radius * Math.cos(a),
+                y + radius * Math.sin(a)
+            );
+    };
+
+    var applyContextPatches = function () {
+        if (!ctx.origArc) ctx.origArc = ctx.arc;
+        ctx.circle = function (x, y, r) {
+            ctx.origArc(x, y, r, 0, 2 * Math.PI, true);
+        };
+
+        if (navigator.userAgent.toLowerCase().indexOf("chrome") > -1) {
+            if (renderOptions["chromeArcFix"]) {
+                ctx.arc = bezierArc;
+                log.info("Chrome Arc Fix enabled");
+            } else {
+                ctx.arc = ctx.origArc;
+                log.info("Chrome Arc Fix disabled");
+            }
+        }
+    };
+
     var startCanvas = function () {
         var jqueryCanvas = $(renderOptions["container"]);
         //jqueryCanvas.css("background-color", renderOptions["bgColorOffGrid"]);
         canvas = jqueryCanvas[0];
 
         ctx = canvas.getContext("2d");
+        applyContextPatches();
+
         canvas.style.height = canvas.height + "px";
         canvas.style.width = canvas.width + "px";
         canvas.height = canvas.height * pixelRatio;
@@ -356,8 +432,6 @@ GCODE.renderer = (function () {
         ctx.lineWidth = 2 * lineWidthFactor;
         ctx.lineCap = "round";
         trackTransforms(ctx);
-
-        ctx.scale(1, -1); // Invert y-axis
 
         // dragging => translating
         canvas.addEventListener(
@@ -395,6 +469,9 @@ GCODE.renderer = (function () {
                     if (renderOptions["onDrag"] && renderOptions["onDrag"](pt) === false)
                         return;
 
+                    ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
+                    reRender();
+
                     renderOptions["centerViewport"] = false;
                     renderOptions["zoomInOnModel"] = false;
                     renderOptions["zoomInOnBed"] = false;
@@ -404,9 +481,6 @@ GCODE.renderer = (function () {
                     offsetBedY = 0;
                     scaleX = 1;
                     scaleY = 1;
-
-                    ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
-                    reRender();
 
                     if (renderOptions["onInternalOptionChange"] !== undefined) {
                         renderOptions["onInternalOptionChange"]({
@@ -451,6 +525,9 @@ GCODE.renderer = (function () {
             // return to old position
             ctx.translate(-pt.x, -pt.y);
 
+            // render
+            reRender();
+
             // disable conflicting options
             renderOptions["zoomInOnModel"] = false;
             renderOptions["zoomInOnBed"] = false;
@@ -460,9 +537,6 @@ GCODE.renderer = (function () {
             offsetBedY = 0;
             scaleX = 1;
             scaleY = 1;
-
-            // render
-            reRender();
 
             if (renderOptions["onInternalOptionChange"] !== undefined) {
                 renderOptions["onInternalOptionChange"]({
@@ -540,7 +614,7 @@ GCODE.renderer = (function () {
 
         // draw origin
         ctx.beginPath();
-        ctx.arc(0, 0, 2, 0, Math.PI * 2, true);
+        ctx.circle(0, 0, 2);
         ctx.stroke();
 
         ctx.strokeStyle = renderOptions["colorGrid"];
@@ -584,7 +658,7 @@ GCODE.renderer = (function () {
 
         // outline
         var r = renderOptions["bed"]["r"];
-        ctx.arc(0, 0, r, 0, Math.PI * 2, true);
+        ctx.circle(0, 0, r);
 
         // origin
         ctx.moveTo(-1 * r, 0);
@@ -598,7 +672,7 @@ GCODE.renderer = (function () {
 
         // draw origin
         ctx.beginPath();
-        ctx.arc(0, 0, 2, 0, Math.PI * 2, true);
+        ctx.circle(0, 0, 2);
         ctx.stroke();
 
         ctx.strokeStyle = renderOptions["colorGrid"];
@@ -732,6 +806,17 @@ GCODE.renderer = (function () {
         ctx.moveTo(x1, y2);
         ctx.lineTo(x2, y1);
         ctx.stroke();
+    };
+
+    var drawDebugArc = function (arc, ccw) {
+        ctx.moveTo(arc.x, arc.y);
+        ctx.lineTo(arc.startX, arc.startY);
+        ctx.moveTo(arc.x, arc.y);
+        ctx.lineTo(arc.endX, arc.endY);
+        ctx.moveTo(arc.startX, arc.startY);
+        ctx.lineTo(arc.endX, arc.endY);
+        ctx.moveTo(arc.startX, arc.startY);
+        ctx.arc(arc.x, arc.y, arc.r, arc.startAngle, arc.endAngle, ccw);
     };
 
     var drawLayer = function (layerNum, fromProgress, toProgress, isNotCurrentLayer) {
@@ -880,14 +965,14 @@ GCODE.renderer = (function () {
 
         var prevPathType = "fill";
         function strokePathIfNeeded(newPathType, strokeStyle) {
-            if (newPathType != prevPathType || newPathType == "fill") {
-                if (prevPathType != "fill") {
+            if (newPathType !== prevPathType || newPathType === "fill") {
+                if (prevPathType !== "fill") {
                     ctx.stroke();
                 }
                 prevPathType = newPathType;
 
                 ctx.beginPath();
-                if (newPathType != "fill") {
+                if (newPathType !== "fill") {
                     ctx.strokeStyle = strokeStyle;
                     ctx.moveTo(prevX, prevY);
                 }
@@ -948,14 +1033,15 @@ GCODE.renderer = (function () {
                     ctx.lineWidth = renderOptions["extrusionWidth"] * lineWidthFactor;
                     if (cmd.direction !== undefined && cmd.direction !== 0) {
                         var arc = getArcParams(cmd);
-                        ctx.arc(
-                            arc.x,
-                            arc.y,
-                            arc.r,
-                            arc.startAngle,
-                            arc.endAngle,
-                            cmd.direction < 0
-                        ); // Y-axis is inverted so direction is also inverted
+                        var ccw = cmd.direction < 0; // Y-axis is inverted so direction is also inverted
+
+                        if (renderOptions["showDebugArcs"] && !isNotCurrentLayer) {
+                            strokePathIfNeeded("debugarc", "#ff0000");
+                            drawDebugArc(arc, ccw);
+                            strokePathIfNeeded("extrude", getColorLineForTool(tool));
+                        }
+
+                        ctx.arc(arc.x, arc.y, arc.r, arc.startAngle, arc.endAngle, ccw);
                     } else {
                         ctx.lineTo(x, y);
                     }
@@ -995,7 +1081,7 @@ GCODE.renderer = (function () {
                 .alpha(alpha)
                 .html();
             ctx.beginPath();
-            ctx.arc(prevX, prevY, sizeHeadSpot, 0, Math.PI * 2, true);
+            ctx.circle(prevX, prevY, sizeHeadSpot);
             ctx.fill();
         }
     };
@@ -1036,15 +1122,6 @@ GCODE.renderer = (function () {
                     (renderOptions["bed"]["y"] / 2 -
                         (layerBounds.minY + layerBounds.maxY) / 2);
             }
-        } else if (
-            renderOptions["bed"]["circular"] ||
-            renderOptions["bed"]["centeredOrigin"]
-        ) {
-            canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
-            offsetModelX = canvasCenter.x;
-            offsetModelY = canvasCenter.y;
-            offsetBedX = 0;
-            offsetBedY = 0;
         } else {
             offsetModelX = 0;
             offsetModelY = 0;
@@ -1127,48 +1204,57 @@ GCODE.renderer = (function () {
         currentInvertY = invertY;
     };
 
+    var resetViewport = function () {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(1, -1); // invert y axis
+
+        var bedWidth = renderOptions["bed"]["x"];
+        var bedHeight = renderOptions["bed"]["y"];
+        if (renderOptions["bed"]["circular"]) {
+            bedWidth = bedHeight = renderOptions["bed"]["r"] * 2;
+        }
+
+        // Ratio of bed to canvas viewport
+        var viewportRatio = Math.min(
+            (canvas.width - 10) / bedWidth,
+            (canvas.height - 10) / bedHeight
+        );
+
+        // Apply initial translation to center the bed in the viewport
+        var translationX, translationY;
+        if (renderOptions["bed"]["circular"] || renderOptions["bed"]["centeredOrigin"]) {
+            translationX = canvas.width / 2;
+            translationY = canvas.height / 2;
+        } else {
+            translationX = (canvas.width - bedWidth * viewportRatio) / 2;
+            translationY =
+                bedHeight * viewportRatio +
+                (canvas.height - bedHeight * viewportRatio) / 2;
+        }
+
+        ctx.translate(translationX, -translationY);
+        ctx.scale(viewportRatio, viewportRatio);
+
+        // Scaling to apply to move lines and extrusion/retraction markers
+        lineWidthFactor = 1 / viewportRatio;
+
+        offsetModelX = 0;
+        offsetModelY = 0;
+        offsetBedX = 0;
+        offsetBedY = 0;
+    };
+
     // ***** PUBLIC *******
     return {
         init: function () {
             startCanvas();
+            resetViewport();
             initialized = true;
-            var bedWidth = renderOptions["bed"]["x"];
-            var bedHeight = renderOptions["bed"]["y"];
-            if (renderOptions["bed"]["circular"]) {
-                bedWidth = bedHeight = renderOptions["bed"]["r"] * 2;
-            }
-
-            // Ratio of bed to canvas viewport
-            var viewportRatio = Math.min(
-                (canvas.width - 10) / bedWidth,
-                (canvas.height - 10) / bedHeight
-            );
-
-            // Apply initial translation to center the bed in the viewport
-            var translationX, translationY;
-            if (renderOptions["bed"]["circular"]) {
-                translationX = canvas.width / 2;
-                translationY = canvas.height / 2;
-            } else {
-                translationX = (canvas.width - bedWidth * viewportRatio) / 2;
-                translationY =
-                    bedHeight * viewportRatio +
-                    (canvas.height - bedHeight * viewportRatio) / 2;
-            }
-            ctx.translate(translationX, -translationY);
-
-            ctx.scale(viewportRatio, viewportRatio);
-
-            offsetModelX = 0;
-            offsetModelY = 0;
-            offsetBedX = 0;
-            offsetBedY = 0;
-
-            // Scaling to apply to move lines and extrusion/retraction markers
-            lineWidthFactor = 1 / viewportRatio;
         },
         setOption: function (options) {
             var mustRefresh = false;
+            var mustReset = false;
+            var mustReapplyPatches = false;
             var dirty = false;
             for (var opt in options) {
                 if (!renderOptions.hasOwnProperty(opt) || !options.hasOwnProperty(opt))
@@ -1185,15 +1271,30 @@ GCODE.renderer = (function () {
                         "zoomInOnModel",
                         "bed",
                         "invertAxes",
-                        "onViewportChange"
+                        "onViewportChange",
+                        "chromeArcFix"
                     ]) > -1
                 ) {
                     mustRefresh = true;
+                }
+
+                if ($.inArray(opt, ["bed", "onViewportChange"]) > -1) {
+                    mustReset = true;
+                }
+
+                if ($.inArray(opt, ["chromeArcFix"]) > -1) {
+                    mustReapplyPatches = true;
                 }
             }
 
             if (!dirty) return;
             if (initialized) {
+                if (mustReset) {
+                    resetViewport();
+                }
+                if (mustReapplyPatches) {
+                    applyContextPatches();
+                }
                 if (mustRefresh) {
                     this.refresh();
                 } else {
@@ -1266,6 +1367,10 @@ GCODE.renderer = (function () {
         refresh: function (layerNum) {
             if (layerNum === undefined) layerNum = layerNumStore;
             this.doRender(model, layerNum);
+        },
+        resetViewport: function () {
+            resetViewport();
+            reRender();
         },
         getZ: function (layerNum) {
             if (!model || !model[layerNum]) {

@@ -165,6 +165,7 @@ $(function () {
         self.webcam_flipH = ko.observable(undefined);
         self.webcam_flipV = ko.observable(undefined);
         self.webcam_rotate90 = ko.observable(undefined);
+        self.webcam_cacheBuster = ko.observable(undefined);
 
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_sdSupport = ko.observable(undefined);
@@ -182,6 +183,7 @@ $(function () {
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
         self.serial_exclusive = ko.observable();
+        self.serial_lowLatency = ko.observable();
         self.serial_portOptions = ko.observableArray([]);
         self.serial_baudrateOptions = ko.observableArray([]);
         self.serial_autoconnect = ko.observable(undefined);
@@ -451,7 +453,10 @@ $(function () {
                 throw "Unknown stream type " + streamType;
             }
 
-            var message = $("<p></p>").append(text).append(webcam_element);
+            var message = $("<div id='webcamTestContainer'></div>")
+                .append($("<p></p>"))
+                .append(text)
+                .append(webcam_element);
 
             self.testWebcamStreamUrlBusy(true);
             showMessageDialog({
@@ -802,7 +807,6 @@ $(function () {
                     }
                 })
                 .css({
-                    "width": "auto",
                     "margin-left": function () {
                         return -($(this).width() / 2);
                     }

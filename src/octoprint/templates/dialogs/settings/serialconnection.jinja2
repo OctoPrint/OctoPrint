@@ -70,6 +70,13 @@
                     </div>
                 </div>
                 <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: serial_lowLatency" id="settings-serialLowLatency"> {{ _('Request low latency mode on the serial port') }}
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
                     <label class="control-label">{{ _('Apply parity double open workaround')}}</label>
                     <div class="controls">
                         <label class="radio">

@@ -15,7 +15,9 @@ Retrieve all files
 
    Retrieve information regarding all files currently available and regarding the disk space still available
    locally in the system. The results are cached for performance reasons. If you
-   want to override the cache, supply the query parameter ``force`` and set it to ``true``.
+   want to override the cache, supply the query parameter ``force`` and set it to ``true``. Note that
+   while printing a refresh/override of the cache for files stored on the printer's SD card
+   is disabled due to bandwidth restrictions on the serial interface.
 
    By default only returns the files and folders in the root directory. If the query parameter ``recursive``
    is provided and set to ``true``, returns all files and folders.
@@ -249,6 +251,8 @@ Retrieve files from specific location
    Retrieve information regarding the files currently available on the selected `location` and -- if targeting
    the ``local`` location -- regarding the disk space still available locally in the system. The results are cached for performance reasons. If you
    want to override the cache, supply the query parameter ``force`` and set it to ``true``.
+   Note that while printing a refresh/override of the cache for files stored on the printer's SD card
+   is disabled due to bandwidth restrictions on the serial interface.
 
    By default only returns the files and folders in the root directory. If the query parameter ``recursive``
    is provided and set to ``true``, returns all files and folders.
@@ -582,6 +586,15 @@ Issue a file command
 
      Upon success, a status code of :http:statuscode:`204` and an empty body is returned. If there already is an
      active print job, a :http:statuscode:`409` is returned.
+
+     Requires the ``FILES_SELECT`` permission.
+
+   unselect
+     Unselects the currently selected file for printing.
+
+     Upon success, a status code of :http:statuscode:`204` and an empty body is returned. If no file is selected
+     or there already is an active print job, a :http:statuscode:`409` is returned. If path isn't ``current```
+     or the filename of the current selection, a :http:statuscode:`400` is returned
 
      Requires the ``FILES_SELECT`` permission.
 
