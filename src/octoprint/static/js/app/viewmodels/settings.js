@@ -207,6 +207,7 @@ $(function () {
         self.serial_longRunningCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_blockedCommands = ko.observable(undefined);
+        self.serial_ignoredCommands = ko.observable(undefined);
         self.serial_pausingCommands = ko.observable(undefined);
         self.serial_emergencyCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
@@ -1058,6 +1059,9 @@ $(function () {
                     blockedCommands: function () {
                         return splitTextToArray(self.serial_blockedCommands(), ",", true);
                     },
+                    ignoredCommands: function () {
+                        return splitTextToArray(self.serial_ignoredCommands(), ",", true);
+                    },
                     pausingCommands: function () {
                         return splitTextToArray(self.serial_pausingCommands(), ",", true);
                     },
@@ -1259,6 +1263,9 @@ $(function () {
                     },
                     blockedCommands: function (value) {
                         self.serial_blockedCommands(value.join(", "));
+                    },
+                    ignoredCommands: function (value) {
+                        self.serial_ignoredCommands(value.join(", "));
                     },
                     pausingCommands: function (value) {
                         self.serial_pausingCommands(value.join(", "));
