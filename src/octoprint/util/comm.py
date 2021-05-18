@@ -645,6 +645,7 @@ class MachineCom(object):
             ["serial", "checksumRequiringCommands"]
         )
         self._blocked_commands = settings().get(["serial", "blockedCommands"])
+        self._ignored_commands = settings().get(["serial", "ignoredCommands"])
         self._pausing_commands = settings().get(["serial", "pausingCommands"])
         self._emergency_commands = settings().get(["serial", "emergencyCommands"])
         self._sanity_check_tools = settings().getBoolean(["serial", "sanityCheckTools"])
@@ -5308,6 +5309,21 @@ class MachineCom(object):
                         "command": cmd,
                         "message": message,
                         "severity": "warn",
+                    },
+                )
+                return (None,)
+            if gcode in self._ignored_commands:
+                message = "Not sending {} to printer, it's configured as an ignored command".format(
+                    gcode
+                )
+                self._log("Info: " + message)
+                self._logger.info(message)
+                eventManager().fire(
+                    Events.COMMAND_SUPPRESSED,
+                    {
+                        "command": cmd,
+                        "message": message,
+                        "severity": "info",
                     },
                 )
                 return (None,)

@@ -203,6 +203,7 @@ def getSettings():
             "longRunningCommands": s.get(["serial", "longRunningCommands"]),
             "checksumRequiringCommands": s.get(["serial", "checksumRequiringCommands"]),
             "blockedCommands": s.get(["serial", "blockedCommands"]),
+            "ignoredCommands": s.get(["serial", "ignoredCommands"]),
             "pausingCommands": s.get(["serial", "pausingCommands"]),
             "emergencyCommands": s.get(["serial", "emergencyCommands"]),
             "helloCommand": s.get(["serial", "helloCommand"]),
@@ -769,6 +770,10 @@ def _saveSettings(data):
             data["serial"]["blockedCommands"], (list, tuple)
         ):
             s.set(["serial", "blockedCommands"], data["serial"]["blockedCommands"])
+        if "ignoredCommands" in data["serial"] and isinstance(
+            data["serial"]["ignoredCommands"], (list, tuple)
+        ):
+            s.set(["serial", "ignoredCommands"], data["serial"]["ignoredCommands"])
         if "pausingCommands" in data["serial"] and isinstance(
             data["serial"]["pausingCommands"], (list, tuple)
         ):

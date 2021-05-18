@@ -409,6 +409,13 @@
                     </div>
                 </div>
                 <div class="control-group">
+                    <label class="control-label" for="settings-serialIgnoredCommands">{{ _('Ignored commands') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" id="settings-serialIgnoredCommands" data-bind="value: serial_ignoredCommands">
+                        <span class="help-inline">{{ _('Use this to specify commands that should be silently ignored and never be sent to the printer. Just the G or M code, comma separated. Unlike blocked commands above, there will be no warning popup when these commands are encountered.') }}</span>
+                    </div>
+                </div>
+                <div class="control-group">
                     <label class="control-label" for="settings-serialPausingCommands">{{ _('Pausing commands') }}</label>
                     <div class="controls">
                         <input type="text" class="input-block-level" id="settings-serialPausingCommands" data-bind="value: serial_pausingCommands">
