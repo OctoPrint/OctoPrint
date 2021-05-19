@@ -480,17 +480,6 @@ def get_exception_string(fmt="{type}: '{message}' @ {file}:{function}:{line}"):
     return fmt.format(**exception)
 
 
-@deprecated(
-    "get_free_bytes has been deprecated and will be removed in the future",
-    includedoc="Replaced by `psutil.disk_usage <http://pythonhosted.org/psutil/#psutil.disk_usage>`_.",
-    since="1.2.5",
-)
-def get_free_bytes(path):
-    import psutil
-
-    return psutil.disk_usage(path).free
-
-
 def get_dos_filename(
     input, existing_filenames=None, extension=None, whitelisted_extensions=None, **kwargs
 ):
