@@ -24,15 +24,15 @@ maintenance 1.7.0 07c4630d126617c2ae98a9c23ad49facf7bf0bbd pep440-dev
 fix/.* 1.7.0 07c4630d126617c2ae98a9c23ad49facf7bf0bbd pep440-dev
 improve/.* 1.7.0 07c4630d126617c2ae98a9c23ad49facf7bf0bbd pep440-dev
 
-# staging/bugfix is the branch for preparation of the 1.5.3 hotfix release
+# staging/bugfix is the branch for preparation of the 1.6.1 bugfix release
 # so are any bug/... branches
-staging/bugfix 1.5.3 e46e8fa17a1553cd0c228a4fa4cfd93e2a9bce7b pep440-dev
-bug/.* 1.5.3 e46e8fa17a1553cd0c228a4fa4cfd93e2a9bce7b pep440-dev
+staging/bugfix 1.6.1 29484fb2926960279e62881d6ee073c374a2a5fe pep440-dev
+bug/.* 1.6.1 29484fb2926960279e62881d6ee073c374a2a5fe pep440-dev
 
-# staging/maintenance is currently the branch for preparation of 1.6.0rc3
+# staging/maintenance is currently the branch for preparation of 1.6.0rc4
 # so is regressionfix/...
-staging/maintenance 1.6.0rc3 c2844c8132871f40f8dec3a0cdff8e7cfd25bab9 pep440-dev
-regressionfix/.* 1.6.0rc3 c2844c8132871f40f8dec3a0cdff8e7cfd25bab9 pep440-dev
+staging/maintenance 1.6.0rc4 7054a726bb3dc363a98ec6944b24e07879bb389b pep440-dev
+regressionfix/.* 1.6.0rc4 7054a726bb3dc363a98ec6944b24e07879bb389b pep440-dev
 
 # staging/devel is currently inactive (but has the 1.4.1rc4 namespace)
 staging/devel 1.4.1rc4 650d54d1885409fa1d411eb54b9e8c7ff428910f pep440-dev

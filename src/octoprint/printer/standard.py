@@ -1278,8 +1278,8 @@ class Printer(
         self._protocol.list_files(
             tags=kwargs.get("tags", set()) | {"trigger:printer.refresh_sd_files"}
         )
-        if blocking:
-            self._sd_filelist_available.wait(kwargs.get("timeout", 10000))
+        if blocking and not self.is_printing():
+            self._sd_filelist_available.wait(kwargs.get("timeout", 10))
             return self._sd_files
 
     # ~~ state monitoring
@@ -1396,16 +1396,14 @@ class Printer(
                 original_estimate_type = None
 
                 try:
-                    (
-                        print_time_left,
-                        print_time_left_origin,
-                    ) = self._job.estimator.estimate(
+                    (ptl, print_time_left_origin,) = self._job.estimator.estimate(
                         progress,
                         print_time,
                         cleaned_print_time,
                         original_estimate,
                         original_estimate_type,
                     )
+                    print_time_left = int(ptl)
                 except Exception:
                     self._logger.exception(
                         "Error while estimating print time via {}".format(

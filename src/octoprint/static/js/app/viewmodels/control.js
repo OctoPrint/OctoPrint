@@ -693,12 +693,14 @@ $(function () {
 
             var newSrc = self.settings.webcam_streamUrl();
             if (currentSrc != newSrc) {
-                if (newSrc.lastIndexOf("?") > -1) {
-                    newSrc += "&";
-                } else {
-                    newSrc += "?";
+                if (self.settings.webcam_cacheBuster()) {
+                    if (newSrc.lastIndexOf("?") > -1) {
+                        newSrc += "&";
+                    } else {
+                        newSrc += "?";
+                    }
+                    newSrc += new Date().getTime();
                 }
-                newSrc += new Date().getTime();
 
                 self.webcamLoaded(false);
                 self.webcamError(false);

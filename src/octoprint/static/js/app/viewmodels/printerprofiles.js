@@ -676,7 +676,6 @@ $(function () {
                     }
                 })
                 .css({
-                    "width": "auto",
                     "margin-left": function () {
                         return -($(this).width() / 2);
                     }

@@ -166,6 +166,7 @@ $(function () {
         self.webcam_flipH = ko.observable(undefined);
         self.webcam_flipV = ko.observable(undefined);
         self.webcam_rotate90 = ko.observable(undefined);
+        self.webcam_cacheBuster = ko.observable(undefined);
 
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_sdSupport = ko.observable(undefined);
@@ -183,6 +184,7 @@ $(function () {
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
         self.serial_exclusive = ko.observable();
+        self.serial_lowLatency = ko.observable();
         self.serial_portOptions = ko.observableArray([]);
         self.serial_baudrateOptions = ko.observableArray([]);
         self.serial_autoconnect = ko.observable(undefined);
@@ -206,6 +208,7 @@ $(function () {
         self.serial_longRunningCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_blockedCommands = ko.observable(undefined);
+        self.serial_ignoredCommands = ko.observable(undefined);
         self.serial_pausingCommands = ko.observable(undefined);
         self.serial_emergencyCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
@@ -214,6 +217,7 @@ $(function () {
         self.serial_waitForStart = ko.observable(undefined);
         self.serial_sendChecksum = ko.observable("print");
         self.serial_sdRelativePath = ko.observable(undefined);
+        self.serial_sdLowerCase = ko.observable(undefined);
         self.serial_sdAlwaysAvailable = ko.observable(undefined);
         self.serial_swallowOkAfterResend = ko.observable(undefined);
         self.serial_repetierTargetTemp = ko.observable(undefined);
@@ -454,7 +458,10 @@ $(function () {
                 throw "Unknown stream type " + streamType;
             }
 
-            var message = $("<p></p>").append(text).append(webcam_element);
+            var message = $("<div id='webcamTestContainer'></div>")
+                .append($("<p></p>"))
+                .append(text)
+                .append(webcam_element);
 
             self.testWebcamStreamUrlBusy(true);
             showMessageDialog({
@@ -805,7 +812,6 @@ $(function () {
                     }
                 })
                 .css({
-                    "width": "auto",
                     "margin-left": function () {
                         return -($(this).width() / 2);
                     }
@@ -1057,6 +1063,9 @@ $(function () {
                     blockedCommands: function () {
                         return splitTextToArray(self.serial_blockedCommands(), ",", true);
                     },
+                    ignoredCommands: function () {
+                        return splitTextToArray(self.serial_ignoredCommands(), ",", true);
+                    },
                     pausingCommands: function () {
                         return splitTextToArray(self.serial_pausingCommands(), ",", true);
                     },
@@ -1258,6 +1267,9 @@ $(function () {
                     },
                     blockedCommands: function (value) {
                         self.serial_blockedCommands(value.join(", "));
+                    },
+                    ignoredCommands: function (value) {
+                        self.serial_ignoredCommands(value.join(", "));
                     },
                     pausingCommands: function (value) {
                         self.serial_pausingCommands(value.join(", "));

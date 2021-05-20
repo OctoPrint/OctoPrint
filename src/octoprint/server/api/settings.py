@@ -128,6 +128,7 @@ def getSettings():
             "flipH": s.getBoolean(["webcam", "flipH"]),
             "flipV": s.getBoolean(["webcam", "flipV"]),
             "rotate90": s.getBoolean(["webcam", "rotate90"]),
+            "cacheBuster": s.getBoolean(["webcam", "cacheBuster"]),
         },
         "feature": {
             "temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
@@ -186,6 +187,7 @@ def getSettings():
             "longRunningCommands": s.get(["serial", "longRunningCommands"]),
             "checksumRequiringCommands": s.get(["serial", "checksumRequiringCommands"]),
             "blockedCommands": s.get(["serial", "blockedCommands"]),
+            "ignoredCommands": s.get(["serial", "ignoredCommands"]),
             "pausingCommands": s.get(["serial", "pausingCommands"]),
             "emergencyCommands": s.get(["serial", "emergencyCommands"]),
             "helloCommand": s.get(["serial", "helloCommand"]),
@@ -203,6 +205,7 @@ def getSettings():
             "neverSendChecksum": s.getBoolean(["serial", "neverSendChecksum"]),
             "sdRelativePath": s.getBoolean(["serial", "sdRelativePath"]),
             "sdAlwaysAvailable": s.getBoolean(["serial", "sdAlwaysAvailable"]),
+            "sdLowerCase": s.getBoolean(["serial", "sdLowerCase"]),
             "swallowOkAfterResend": s.getBoolean(["serial", "swallowOkAfterResend"]),
             "repetierTargetTemp": s.getBoolean(["serial", "repetierTargetTemp"]),
             "externalHeatupDetection": s.getBoolean(
@@ -567,6 +570,8 @@ def _saveSettings(data):
             s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
         if "rotate90" in data["webcam"]:
             s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
+        if "cacheBuster" in data["webcam"]:
+            s.setBoolean(["webcam", "cacheBuster"], data["webcam"]["cacheBuster"])
 
     if "feature" in data:
         if "temperatureGraph" in data["feature"]:
@@ -617,7 +622,7 @@ def _saveSettings(data):
         if "runAt" in data["gcodeAnalysis"]:
             s.set(["gcodeAnalysis", "runAt"], data["gcodeAnalysis"]["runAt"])
         if "bedZ" in data["gcodeAnalysis"]:
-            s.setBoolean(["gcodeAnalysis", "bedZ"], data["gcodeAnalysis"]["bedZ"])
+            s.setFloat(["gcodeAnalysis", "bedZ"], data["gcodeAnalysis"]["bedZ"])
 
     if "serial" in data:
         if "autoconnect" in data["serial"]:
@@ -628,6 +633,8 @@ def _saveSettings(data):
             s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
         if "exclusive" in data["serial"]:
             s.setBoolean(["serial", "exclusive"], data["serial"]["exclusive"])
+        if "lowLatency" in data["serial"]:
+            s.setBoolean(["serial", "lowLatency"], data["serial"]["lowLatency"])
         if "timeoutConnection" in data["serial"]:
             s.setFloat(
                 ["serial", "timeout", "connection"],
@@ -737,6 +744,10 @@ def _saveSettings(data):
             data["serial"]["blockedCommands"], (list, tuple)
         ):
             s.set(["serial", "blockedCommands"], data["serial"]["blockedCommands"])
+        if "ignoredCommands" in data["serial"] and isinstance(
+            data["serial"]["ignoredCommands"], (list, tuple)
+        ):
+            s.set(["serial", "ignoredCommands"], data["serial"]["ignoredCommands"])
         if "pausingCommands" in data["serial"] and isinstance(
             data["serial"]["pausingCommands"], (list, tuple)
         ):
@@ -780,6 +791,8 @@ def _saveSettings(data):
             s.setBoolean(
                 ["serial", "sdAlwaysAvailable"], data["serial"]["sdAlwaysAvailable"]
             )
+        if "sdLowerCase" in data["serial"]:
+            s.setBoolean(["serial", "sdLowerCase"], data["serial"]["sdLowerCase"])
         if "swallowOkAfterResend" in data["serial"]:
             s.setBoolean(
                 ["serial", "swallowOkAfterResend"], data["serial"]["swallowOkAfterResend"]

@@ -33,7 +33,6 @@
   * [Moment.js](http://momentjs.com/): MIT
   * [PNotify](http://sciactive.com/pnotify/): GPL, LGPL, MPL (triple licensed)
   * [pusher.color.js](http://cache.preserve.io/5g18q0pw/index.html) (original link dead): MIT
-  * [ResizeSensor.js](https://github.com/procurios/ResizeSensor): MIT
   * [SockJS](https://github.com/sockjs/sockjs-client): MIT
   * [sprintf-js](http://alexei.ro/): BSD
 
@@ -58,6 +57,7 @@
   * [monotonic](https://github.com/atdt/monotonic): Apache License 2.0
   * [netaddr](https://github.com/drkjam/netaddr/): BSD
   * [netifaces](https://bitbucket.org/al45tair/netifaces): MIT
+  * [pathvalidate](https://pathvalidate.readthedocs.io/en/latest/index.html): MIT
   * [pkginfo](http://pypi.python.org/pypi/pkginfo/): Python
   * [psutil](https://github.com/giampaolo/psutil): BSD
   * [pylru](https://github.com/jlhutch/pylru): GPLv2

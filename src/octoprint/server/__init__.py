@@ -2086,7 +2086,6 @@ class Server:
             "js/lib/bootstrap-slider-knockout-binding.js",
             "js/lib/loglevel.min.js",
             "js/lib/sockjs.min.js",
-            "js/lib/ResizeSensor.js",
             "js/lib/hls.js",
             "js/lib/less.js",
         ]

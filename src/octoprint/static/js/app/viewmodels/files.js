@@ -83,6 +83,20 @@ $(function () {
         self.moveEntry = ko.observable({name: "", display: "", path: ""}); // is there a better way to do this?
         self.moveSource = ko.observable(undefined);
         self.moveDestination = ko.observable(undefined);
+        self.moveSourceFilename = ko.observable(undefined);
+        self.moveDestinationFilename = ko.observable(undefined);
+        self.moveDestinationFullpath = ko.pureComputed(function () {
+            // Join the paths for renaming
+            if (self.moveSourceFilename() != self.moveDestinationFilename()) {
+                if (self.moveDestination() === "/") {
+                    return self.moveDestination() + self.moveDestinationFilename();
+                } else {
+                    return self.moveDestination() + "/" + self.moveDestinationFilename();
+                }
+            } else {
+                return self.moveDestination();
+            }
+        });
         self.moveError = ko.observable("");
 
         self.folderList = ko.observableArray(["/"]);
@@ -103,6 +117,7 @@ $(function () {
         self.allItems = ko.observable(undefined);
         self.currentPath = ko.observable("");
         self.uploadProgressText = ko.observable();
+        self.uploadProgressPercentage = ko.observable();
 
         // list style incl. persistence
         var listStyleStorageKey = "gcodeFiles.currentListStyle";
@@ -679,6 +694,8 @@ $(function () {
             self.moveError("");
             self.moveSource(current);
             self.moveDestination(current);
+            self.moveSourceFilename(entry.name);
+            self.moveDestinationFilename(entry.name);
             self.moveDialog.modal("show");
         };
 
@@ -1294,6 +1311,7 @@ $(function () {
             self.uploadProgress.addClass("progress-striped").addClass("active");
             self.uploadProgressBar.css("width", "100%");
             if (payload.progressAvailable) {
+                self.uploadProgressPercentage(percentage);
                 self.uploadProgressText(
                     _.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0})
                 );
@@ -1308,18 +1326,21 @@ $(function () {
                     percentage: Math.round(progress)
                 })
             );
+            self.uploadProgressPercentage(Math.round(progress));
         };
 
         self.onEventSlicingCancelled = function (payload) {
             self.uploadProgress.removeClass("progress-striped").removeClass("active");
             self.uploadProgressBar.css("width", "0%");
             self.uploadProgressText("");
+            self.uploadProgressPercentage(0);
         };
 
         self.onEventSlicingDone = function (payload) {
             self.uploadProgress.removeClass("progress-striped").removeClass("active");
             self.uploadProgressBar.css("width", "0%");
             self.uploadProgressText("");
+            self.uploadProgressPercentage(0);
 
             new PNotify({
                 title: gettext("Slicing done"),
@@ -1341,6 +1362,7 @@ $(function () {
             self.uploadProgress.removeClass("progress-striped").removeClass("active");
             self.uploadProgressBar.css("width", "0%");
             self.uploadProgressText("");
+            self.uploadProgressPercentage(0);
 
             var html = _.sprintf(
                 gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"),
@@ -1369,6 +1391,7 @@ $(function () {
         self.onEventTransferStarted = function (payload) {
             self.uploadProgress.addClass("progress-striped").addClass("active");
             self.uploadProgressBar.css("width", "100%");
+            self.uploadProgressPercentage(100);
             self.uploadProgressText(gettext("Streaming ..."));
         };
 
@@ -1376,6 +1399,7 @@ $(function () {
             self.uploadProgress.removeClass("progress-striped").removeClass("active");
             self.uploadProgressBar.css("width", "0");
             self.uploadProgressText("");
+            self.uploadProgressPercentage(0);
 
             new PNotify({
                 title: gettext("Streaming done"),
@@ -1399,6 +1423,7 @@ $(function () {
             self.uploadProgress.removeClass("progress-striped").removeClass("active");
             self.uploadProgressBar.css("width", "0");
             self.uploadProgressText("");
+            self.uploadProgressPercentage(0);
 
             new PNotify({
                 title: gettext("Streaming failed"),
@@ -1457,6 +1482,7 @@ $(function () {
         self._setProgressBar = function (percentage, text, active) {
             self.uploadProgressBar.css("width", percentage + "%");
             self.uploadProgressText(text);
+            self.uploadProgressPercentage(percentage);
 
             if (active) {
                 self.uploadProgress.addClass("progress-striped active");

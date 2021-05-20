@@ -90,6 +90,7 @@ default_settings = {
         "port": None,
         "baudrate": None,
         "exclusive": True,
+        "lowLatency": True,
         "autoconnect": False,
         "log": False,
         "timeout": {
@@ -115,6 +116,7 @@ default_settings = {
         "blacklistedBaudrates": [],
         "longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226", "M600"],
         "blockedCommands": ["M0", "M1"],
+        "ignoredCommands": [],
         "pausingCommands": ["M0", "M1", "M25"],
         "emergencyCommands": ["M112", "M108", "M410"],
         "checksumRequiringCommands": ["M110"],
@@ -135,6 +137,7 @@ default_settings = {
         "unknownCommandsNeedAck": False,
         "sdRelativePath": False,
         "sdAlwaysAvailable": False,
+        "sdLowerCase": False,
         "maxNotSdPrinting": 2,
         "swallowOkAfterResend": True,
         "repetierTargetTemp": False,
@@ -250,6 +253,7 @@ default_settings = {
             "fps": 25,
         },
         "cleanTmpAfterDays": 7,
+        "cacheBuster": False,
     },
     "gcodeAnalysis": {
         "maxExtruders": 10,
@@ -270,6 +274,7 @@ default_settings = {
         "uploadOverwriteConfirmation": True,
         "autoUppercaseBlacklist": ["M117", "M118"],
         "g90InfluencesExtruder": False,
+        "enforceReallyUniversalFilenames": False,
     },
     "folder": {
         "uploads": None,

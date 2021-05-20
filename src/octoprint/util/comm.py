@@ -548,6 +548,7 @@ class MachineCom:
         )
         self._sdAlwaysAvailable = settings().getBoolean(["serial", "sdAlwaysAvailable"])
         self._sdRelativePath = settings().getBoolean(["serial", "sdRelativePath"])
+        self._sdLowerCase = settings().getBoolean(["serial", "sdLowerCase"])
         self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
         self._send_m112_on_error = settings().getBoolean(["serial", "sendM112OnError"])
         self._disable_sd_printing_detection = settings().getBoolean(
@@ -629,6 +630,7 @@ class MachineCom:
             ["serial", "checksumRequiringCommands"]
         )
         self._blocked_commands = settings().get(["serial", "blockedCommands"])
+        self._ignored_commands = settings().get(["serial", "ignoredCommands"])
         self._pausing_commands = settings().get(["serial", "pausingCommands"])
         self._emergency_commands = settings().get(["serial", "emergencyCommands"])
         self._sanity_check_tools = settings().getBoolean(["serial", "sanityCheckTools"])
@@ -2364,6 +2366,8 @@ class MachineCom:
                             if not filename.startswith("/"):
                                 # file from the root of the sd -- we'll prepend a /
                                 filename = "/" + filename
+                            if self._sdLowerCase:
+                                filename = filename.lower()
                             self._sdFiles.append((filename, size))
                             if longname is not None:
                                 self._sdFilesMap[filename] = longname
@@ -2662,6 +2666,13 @@ class MachineCom:
                                 )
 
                                 self._disable_sd_printing_detection = True
+
+                            elif "prusa-firmware" in firmware_name.lower():
+                                self._logger.info(
+                                    "Detected Prusa firmware, enabling relevant features for issue free communication"
+                                )
+
+                                self._sdLowerCase = True
 
                         self._firmware_info_received = True
                         self._firmware_info = data
@@ -3652,6 +3663,20 @@ class MachineCom:
                 # win32
                 # noinspection PyProtectedMember
                 set_close_exec(serial_obj._port_handle)
+
+            if hasattr(serial_obj, "set_low_latency_mode"):
+                try:
+                    serial_obj.set_low_latency_mode(
+                        settings().getBoolean(["serial", "lowLatency"])
+                    )
+                except Exception:
+                    self._logger.exception(
+                        "Could not set low latency mode on serial port, continuing without"
+                    )
+            else:
+                self._logger.info(
+                    "Platform doesn't support low latency mode on serial port"
+                )
 
             return BufferedReadlineWrapper(serial_obj)
 
@@ -5259,6 +5284,21 @@ class MachineCom:
                         "command": cmd,
                         "message": message,
                         "severity": "warn",
+                    },
+                )
+                return (None,)
+            if gcode in self._ignored_commands:
+                message = "Not sending {} to printer, it's configured as an ignored command".format(
+                    gcode
+                )
+                self._log("Info: " + message)
+                self._logger.info(message)
+                eventManager().fire(
+                    Events.COMMAND_SUPPRESSED,
+                    {
+                        "command": cmd,
+                        "message": message,
+                        "severity": "info",
                     },
                 )
                 return (None,)

@@ -1430,7 +1430,7 @@ octoprint.server.api.after_request
 octoprint.server.api.before_request
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: after_request_handlers_hook(*args, **kwargs)
+.. py:function:: before_request_handlers_hook(*args, **kwargs)
 
    .. versionadded:: 1.3.10
 

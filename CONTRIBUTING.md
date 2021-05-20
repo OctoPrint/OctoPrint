@@ -31,7 +31,7 @@ nothing but ticket management.
 
 - **[Read the FAQ](https://faq.octoprint.org)**
 - If you want to report a **bug**, [read "How to file a bug report" below](#how-to-file-a-bug-report)
-  and *[use the provided form](https://github.com/OctoPrint/OctoPrint/issues/new?template=bug_report.yml)*.
+  and *[use the provided template](#what-should-i-include-in-a-ticket)*.
   You do not need to do anything else with your ticket.
 - If you want to post a **feature request** or a **documentation request**, add `[Request]`
   to your issue's title (e.g. `[Request] Awesome new feature`). A question on how to run/change/setup
@@ -47,6 +47,15 @@ nothing but ticket management.
 
 No matter what kind of ticket you create, never mix two or more "ticket reasons"
 into one ticket: One ticket per bug, request, brainstorming thread please.
+
+> 👉 **Note**
+>
+> A bot is in place that monitors new tickets, automatically
+> categorizes them and checks new bug reports for usage of the provided template.
+> That bot will only bother you if you open a ticket that appears to be a bug (no
+> `[Request]` in the title) without the complete template, and it
+> will do that only to ensure that all information needed to solve the issue is
+> available for the maintainers to directly start tackling that problem.
 
 ## How to file a bug report
 
@@ -109,7 +118,7 @@ following section *completely* and also follow the instructions in the
    it is the same as your's, it actually behaves the same as your's. E.g. if someone gives steps
    to reproduce his bug that looks like your's, reproduce the bug like that if possible,
    and only add a "me too" if you actually can reproduce the same
-   issue. Also **provide all information like logs, versions, different reproduction steps**
+   issue. Also **provide all information like Systeminfo Bundle, additional logs & versions, different reproduction steps**
    and whatever was additionally requested over the course of the ticket
    even if you "only" add to an existing ticket. The more information available regarding a bug, the higher
    the chances of reproducing and solving it. But "me too" on an actually unrelated ticket
@@ -126,11 +135,127 @@ there.
 First of all make sure your use **a descriptive title**. "It doesn't work"
 and similar unspecific complaints are NOT descriptive titles.
 
-Always fill out the [reporting form](https://github.com/OctoPrint/OctoPrint/issues/new?template=bug_report.yml) **completely** and include as much
-information as possible.
+**Always use the following template, even if only adding a "me too" to an
+existing ticket**:
+
+```
+<!--
+READ THE FOLLOWING FIRST:
+
+If not already done, please read the the Contribution Guidelines that
+are linked to the right under "Helpful resources" > "Contributing".
+
+Also read the FAQ: https://faq.octoprint.org
+
+This is a bug and feature tracker, please only use it to report bugs
+or request features within OctoPrint (not OctoPi, not any OctoPrint
+plugins and not unofficial OctoPrint versions).
+
+Do not seek support here ("I need help with ...", "I have a
+question ..."), that belongs on the community forum at
+community.octoprint.org, NOT here.
+
+Mark requests with a "[Request]" prefix in the title please. For bug
+reports fully fill out the bug reporting template (if you don't know
+where to find some information - it's all described in the Contribution
+Guidelines linked up there in the big yellow box).
+
+When reporting a bug do NOT delete ANY lines from the template.
+
+Make sure any bug you want to report is still present with the CURRENT
+OctoPrint version and that it does not vanish when you start OctoPrint
+in safe mode - how to do that is also explained in the Contribution
+Guidelines linked up there in the big yellow box.
+
+Thank you!
+-->
+
+#### What were you doing?
+
+<!--
+Please be as specific as possible here. The maintainers will need to
+reproduce your issue in order to fix it and that is not possible if they
+don't know what you did to get it to happen in the first place.
+
+Ideally provide exact steps to follow in order to reproduce your problem:
+-->
+
+1. Go to '...'
+2. Click on '....'
+3. Scroll down to '....'
+4. See error
+
+<!--
+If you encountered a problem with specific files of any sorts, make sure
+to also include a link to a file with which to reproduce the problem.
+-->
+
+#### What did you expect to happen?
+
+#### What happened instead?
+
+#### Did the same happen when running OctoPrint in safe mode?
+
+<!--
+Test if you can reproduce your problem in safe mode. You can find information
+on how to enable safe mode in the Contribution Guidelines.
+
+If you can't reproduce in safe mode, this is a bug with one of your
+installed third party plugins. Don't open a ticket here!
+
+If you can't test this in safe mode, state why.
+-->
+
+#### Version of OctoPrint
+
+<!--
+Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.
+-->
+
+#### Printer model & used firmware incl. version
+
+<!--
+If applicable, always include if unsure.
+-->
+
+#### Browser and version of browser, operating system running browser
+
+<!--
+If applicable, always include if unsure.
+-->
+
+#### System Info Bundle
+
+<!--
+Directly uploaded here. ALWAYS INCLUDE.
+
+The Contribution Guidelines tell you where to find that.
+-->
+
+#### Link to contents of Javascript console in the browser
+
+<!--
+Directly uploaded here or on gist.github.com or pastebin.com.
+If applicable - always include if unsure or reporting UI issues.
+
+The Contribution Guidelines tell you where to find that.
+-->
+
+#### Screenshot(s)/video(s) showing the problem:
+
+<!--
+If applicable. Always include if unsure or reporting UI issues.
+-->
+
+I have read the FAQ.
+```
 
 Provide the same kind and amount of information also when you are just adding on to an
 existing ticket!
+
+### Where can I find the System Info Bundle?
+
+Please refer to [this FAQ entry](https://community.octoprint.org/t/what-is-a-systeminfo-bundle-and-how-can-i-obtain-one/29887).
 
 ### Where can I find which version and branch I'm on?
 
@@ -287,7 +412,8 @@ See [the corresponding chapter in the documentation](https://docs.octoprint.org/
   * 2020-09-23: Move branch & versioning into development docs
   * 2020-10-07: Introduce `pre-commit`
   * 2021-02-04: Issue forms! \o/
-  * 2020-03-04: Correct issue forms link
+  * 2021-03-04: Correct issue forms link
+  * 2021-04-27: Systeminfo Bundles! \o/
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

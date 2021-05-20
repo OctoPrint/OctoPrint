@@ -235,27 +235,13 @@ class LocalStorageTest(unittest.TestCase):
         self.assertIsNotNone(copied_metadata)
         self.assertDictEqual(before_stl_metadata, copied_metadata)
 
-    def test_copy_file_new_display(self):
+    def test_copy_file_same_name(self):
         self._add_file("bp_case.stl", FILE_BP_CASE_STL)
         try:
-            self.storage.copy_file("bp_case.stl", "bp_cäse.stl")
+            self.storage.copy_file("bp_case.stl", "bp_case.stl")
             self.fail("Expected an exception")
         except StorageError as e:
             self.assertEqual(e.code, StorageError.SOURCE_EQUALS_DESTINATION)
-
-    def test_move_file_new_display(self):
-        self._add_file("bp_case.stl", FILE_BP_CASE_STL)
-
-        before_metadata = self.storage.get_metadata("bp_case.stl")
-        self.storage.move_file("bp_case.stl", "bp_cäse.stl")
-        after_metadata = self.storage.get_metadata("bp_case.stl")
-
-        self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "bp_case.stl")))
-
-        self.assertIsNotNone(before_metadata)
-        self.assertIsNotNone(after_metadata)
-        self.assertIn("display", after_metadata)
-        self.assertEqual("bp_cäse.stl", after_metadata["display"])
 
     @data("copy_file", "move_file")
     def test_copy_move_file_different_display(self, operation):
@@ -319,9 +305,7 @@ class LocalStorageTest(unittest.TestCase):
         self.assertEqual("täst", metadata["display"])
 
     def test_add_subfolder(self):
-        folder_name = self._add_and_verify_folder(
-            "folder with some spaces", "folder_with_some_spaces"
-        )
+        folder_name = self._add_and_verify_folder("folder", "folder")
         subfolder_name = self._add_and_verify_folder(
             (folder_name, "subfolder"), folder_name + "/subfolder"
         )
@@ -438,24 +422,13 @@ class LocalStorageTest(unittest.TestCase):
         self.assertIsNotNone(copied_metadata)
         self.assertDictEqual(before_source_metadata, copied_metadata)
 
-    def test_copy_folder_new_display(self):
+    def test_copy_folder_same_name(self):
         self._add_folder("folder")
         try:
-            self.storage.copy_folder("folder", "földer")
+            self.storage.copy_folder("folder", "folder")
             self.fail("Expected an exception")
         except StorageError as e:
             self.assertEqual(e.code, StorageError.SOURCE_EQUALS_DESTINATION)
-
-    def test_move_folder_new_display(self):
-        self._add_folder("folder")
-
-        before_metadata = self.storage.get_metadata("folder")
-        self.storage.move_folder("folder", "földer")
-        after_metadata = self.storage.get_metadata("folder")
-
-        self.assertIsNone(before_metadata)
-        self.assertIsNotNone(after_metadata)
-        self.assertDictEqual(after_metadata, {"display": "földer"})
 
     @data("copy_folder", "move_folder")
     def test_copy_move_folder_different_display(self, operation):
@@ -745,9 +718,9 @@ class LocalStorageTest(unittest.TestCase):
         ("some_file.gco", "some_file.gco"),
         (
             "some_file with (parentheses) and ümläuts and digits 123.gco",
-            "some_file_with_(parentheses)_and_umlauts_and_digits_123.gco",
+            "some_file with (parentheses) and ümläuts and digits 123.gco",
         ),
-        ("pengüino pequeño.stl", "penguino_pequeno.stl"),
+        ("pengüino pequeño.stl", "pengüino pequeño.stl"),
     )
     @unpack
     def test_sanitize_name(self, input, expected):
@@ -785,10 +758,10 @@ class LocalStorageTest(unittest.TestCase):
             self.assertTrue(e.args[0].startswith("path not contained in base folder: "))
 
     @data(
-        ("some/folder/and/some file.gco", "/some/folder/and", "some_file.gco"),
-        (("some", "folder", "and", "some file.gco"), "/some/folder/and", "some_file.gco"),
-        ("some file.gco", "/", "some_file.gco"),
-        (("some file.gco",), "/", "some_file.gco"),
+        ("some/folder/and/some file.gco", "/some/folder/and", "some file.gco"),
+        (("some", "folder", "and", "some file.gco"), "/some/folder/and", "some file.gco"),
+        ("some file.gco", "/", "some file.gco"),
+        (("some file.gco",), "/", "some file.gco"),
         ("", "/", ""),
         ("some/folder/with/trailing/slash/", "/some/folder/with/trailing/slash", ""),
         (("some", "folder", ""), "/some/folder", ""),

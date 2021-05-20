@@ -13,7 +13,7 @@ import pylru
 
 import octoprint.filemanager
 from octoprint.util import atomic_write, is_hidden_path, time_this, to_bytes, to_unicode
-from octoprint.util.text import sanitize
+from octoprint.util.files import sanitize_filename
 
 from . import Storage, StorageError
 
@@ -28,13 +28,14 @@ class LocalFileStorage(Storage):
     This storage type implements :func:`path_on_disk`.
     """
 
-    def __init__(self, basefolder, create=False, key="local"):
+    def __init__(self, basefolder, create=False, key="local", really_universal=False):
         """
         Initializes a ``LocalFileStorage`` instance under the given ``basefolder``, creating the necessary folder
         if necessary and ``create`` is set to ``True``.
 
-        :param string basefolder: the path to the folder under which to create the storage
-        :param bool create:       ``True`` if the folder should be created if it doesn't exist yet, ``False`` otherwise
+        :param string basefolder:     the path to the folder under which to create the storage
+        :param bool create:           ``True`` if the folder should be created if it doesn't exist yet, ``False`` otherwise
+        :param bool really_universal: ``True`` if the file names should be forced to really universal, ``False`` otherwise
         """
         self._logger = logging.getLogger(__name__)
 
@@ -46,6 +47,8 @@ class LocalFileStorage(Storage):
                 "{basefolder} is not a valid directory".format(**locals()),
                 code=StorageError.INVALID_DIRECTORY,
             )
+
+        self._really_universal = really_universal
 
         import threading
 
@@ -738,22 +741,10 @@ class LocalFileStorage(Storage):
     def sanitize_name(self, name):
         """
         Raises a :class:`ValueError` for a ``name`` containing ``/`` or ``\\``. Otherwise
-        slugifies the given ``name`` by converting it to ASCII, leaving ``-``, ``_``, ``.``,
-        ``(``, and ``)`` as is.
+        sanitizes the given ``name`` using ``octoprint.files.sanitize_filename``. Also
+        strips leading ``.``s.
         """
-        name = to_unicode(name)
-
-        if name is None:
-            return None
-
-        if "/" in name or "\\" in name:
-            raise ValueError("name must not contain / or \\")
-
-        result = sanitize(name, safe_chars="-_.()[] ").replace(" ", "_")
-        if result and result != "." and result != ".." and result[0] == ".":
-            # hidden files under *nix
-            result = result[1:]
-        return result
+        return sanitize_filename(name, really_universal=self._really_universal)
 
     def sanitize_path(self, path):
         """
@@ -772,7 +763,10 @@ class LocalFileStorage(Storage):
         path_elements = path.split("/")
         joined_path = self.basefolder
         for path_element in path_elements:
-            joined_path = os.path.join(joined_path, self.sanitize_name(path_element))
+            if path_element == ".." or path_element == ".":
+                joined_path = os.path.join(joined_path, path_element)
+            else:
+                joined_path = os.path.join(joined_path, self.sanitize_name(path_element))
         path = os.path.realpath(joined_path)
         if not path.startswith(self.basefolder):
             raise ValueError(
