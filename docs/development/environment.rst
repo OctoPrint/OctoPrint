@@ -159,21 +159,17 @@ First download & install:
 
   * `Git for Windows <https://git-for-windows.github.io/>`_
 
-  * Python 3 & dependencies:
+  * `Latest *stable* Python 3 release from python.org <https://www.python.org/downloads/windows/>`_
 
-    * `Latest *stable* Python 3 release from python.org <https://www.python.org/downloads/windows/>`_
+    * make sure to have the installer add Python to the ``PATH`` and have it install ``pip`` too
+    * it's recommended to install Python 3 into ``C:\Python3`` - if you select
+      different install locations please substitute accordingly
+    * it's also recommended to install for all users
 
-      * make sure to have the installer add Python to the ``PATH`` and have it install ``pip`` too
-      * it's recommended to install Python 3 into ``C:\Python3`` - if you select
-        different install locations please substitute accordingly
-      * it's also recommended to install for all users
+  * `Build Tools For Visual Studio 2019 <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019>`_
 
-    * `Build Tools For Visual Studio 2019 <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019>`_
-
-      * install "C++ build tools" and ensure the latest versions of "MSVCv142 - VS 2019 C++ x64/x86 build tools" and
-        "Windows 10 SDK" are checked under individual components.
-
-  * (optional) Python 2 & dependencies:
+    * install "C++ build tools" and ensure the latest versions of "MSVCv142 - VS 2019 C++ x64/x86 build tools" and
+      "Windows 10 SDK" are checked under individual components.
 
 
 Open the Git Bash you just installed and in that:
