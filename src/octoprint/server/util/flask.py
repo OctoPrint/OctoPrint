@@ -556,8 +556,10 @@ class OctoPrintFlaskResponse(flask.Response):
         if samesite is not None:
             samesite = samesite.lower()
         if samesite == "none":
-            samesite = None
-        if samesite not in (None, "strict", "lax"):
+            # Must be string "None"
+            samesite = "None"
+        if samesite not in ("None", "strict", "lax"):
+            # If NoneType, the cookie is not set
             samesite = None
         kwargs["samesite"] = samesite
 

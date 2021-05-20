@@ -500,7 +500,7 @@ class OctoPrintFlaskResponseTest(unittest.TestCase):
 
     @data(
         [None, None, False, None, None],
-        [None, None, False, "none", None],
+        [None, None, False, "none", "None"],
         [None, None, False, "lax", "lax"],
         [None, None, False, "StRiCt", "strict"],
         [None, None, False, "INVALID", None],

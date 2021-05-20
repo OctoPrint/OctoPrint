@@ -195,11 +195,11 @@ Job information
      - The file that is the target of the current print job
    * - ``estimatedPrintTime``
      - 0..1
-     - Integer
+     - Float
      - The estimated print time for the file, in seconds.
    * - ``lastPrintTime``
      - 0..1
-     - Integer
+     - Float
      - The print time of the last print of the file, in seconds.
    * - ``filament``
      - 0..1
@@ -207,7 +207,7 @@ Job information
      - Information regarding the estimated filament usage of the print job
    * - ``filament.length``
      - 0..1
-     - Integer
+     - Float
      - Length of filament used, in mm
    * - ``filament.volume``
      - 0..1
@@ -419,7 +419,7 @@ GCODE analysis information
      - Description
    * - ``estimatedPrintTime``
      - 0..1
-     - Integer
+     - Float
      - The estimated print time of the file, in seconds
    * - ``filament``
      - 0..1
@@ -427,7 +427,7 @@ GCODE analysis information
      - The estimated usage of filament
    * - ``filament.tool{n}.length``
      - 0..1
-     - Integer
+     - Float
      - The length of filament used, in mm
    * - ``filament.tool{n}.volume``
      - 0..1

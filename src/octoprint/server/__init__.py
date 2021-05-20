@@ -407,7 +407,10 @@ class Server:
         storage_managers[
             octoprint.filemanager.FileDestinations.LOCAL
         ] = octoprint.filemanager.storage.LocalFileStorage(
-            self._settings.getBaseFolder("uploads")
+            self._settings.getBaseFolder("uploads"),
+            really_universal=self._settings.getBoolean(
+                ["feature", "enforceReallyUniversalFilenames"]
+            ),
         )
 
         fileManager = octoprint.filemanager.FileManager(

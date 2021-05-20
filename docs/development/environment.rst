@@ -22,7 +22,7 @@ below.
       * ``git clone https://github.com/OctoPrint/OctoPrint.git``
 
   * Enter the checked out source folder: ``cd OctoPrint``
-  * Create virtual environments in the checked out source folder for both Python 2 and Python 3 to use for
+  * Create a virtual environment in the checked out source folder to use for
     installing and running OctoPrint and its dependencies. Creating virtual environments avoids potential versioning
     issues for the dependencies with system wide installed instances:
 
@@ -34,10 +34,7 @@ below.
        binary cannot be found on your ``PATH`` like this you'll need to specify the full path to it here,
        e.g. ``virtualenv --python=/path/to/python3/bin/python venv``
 
-  * Activate one of the virtual environments (the Python 3 venv should be considered the
-    primary one at this point):
-
-    * ``source venv/bin/activate`` (Linux, macOS) or ``source venv/Scripts/activate`` (Git Bash under Windows, see below)
+  * Activate the virtual environment: ``source venv/bin/activate`` (Linux, macOS) or ``source venv/Scripts/activate`` (Git Bash under Windows, see below)
 
   * Update ``pip`` in the virtual environment:
 
@@ -62,22 +59,9 @@ When the virtual environment is activated you can then:
   * run the test suite from the checked out source folder via ``pytest``
   * trigger the pre-commit check suite manually from the checked out source folder via
     ``pre-commit run --hook-stage manual --all-files``
-
-To switch the activated virtual environment, simply activate the new environment as described above.
-
-To deactivate the virtual environment and return to the system's default Python: ``deactivate``.
-
-If you also want to be able to build the documentation that resides in the ``docs`` subfolder, you need to activate
-the *Python 3* environment and install the docs dependencies as well:
-
-  * ``source venv3/bin/activate`` (Linux, macOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
-  * ``pip install -e '.[develop,plugins,docs]'``
-
-Go to the directory `docs` and you can then build the documentation:
-
-  * ``sphinx-build -b html . _build``
-
-The documentation will be available in the newly created ``_build`` directory. You can simply browse it locally by opening ``index.html``
+  * build the documentation running ``sphinx-build -b html . _build`` in the ``docs``
+    folder -- the documentation will be available in the newly created ``_build``
+    directory. You can simply browse it locally by opening ``index.html``
 
 .. _sec-development-environment-source-linux:
 
@@ -94,7 +78,7 @@ installed:
 
     .. code-block:: none
 
-       sudo apt-get install python3 python3-pip python3-dev python3-setuptools python3-virtualenv python3 python3-virtualenv python3-dev git libyaml-dev build-essential
+       sudo apt-get install python3 python3-pip python3-dev python3-setuptools python3-virtualenv git libyaml-dev build-essential
 
 .. todo::
 
@@ -131,9 +115,9 @@ First download & install:
   * `The current Python 3.8 Windows x86 executable installer <https://www.python.org/downloads/windows/>`_
 
     * make sure to have the installer add Python to the ``PATH`` and have it install ``pip`` too
-    * it's recommended to install Python 2.7 into ``C:\Python27`` and Python 3 into ``C:\Python38`` - if you select
+    * it's recommended to install Python 3 into ``C:\Python3`` - if you select
       different install locations please substitute accordingly
-    * it's also recommended to have both versions get installed for all users
+    * it's also recommended to install for all users
 
   * `Build Tools for Visual Studio 2019 <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019>`_
 
@@ -257,6 +241,8 @@ PyCharm
     - **(macOS)** "PyCharm" > "Preferences ..." > "Project: OctoPrint" > "Project Interpreter" > "Add ..." >
       "Virtualenv Environment > "Existing Environment", select OctoPrint ``venv`` folder (e.g. ``~/devel/OctoPrint/venv``).
 
+    If desired, repeat for any other additional Python venvs (e.g. different versions).
+
   - Right click "src" in project tree, mark as source folder
   - Add Run/Debug Configuration, select "Python":
 
@@ -320,7 +306,7 @@ PyCharm
     * disable "Auto-save edited files to trigger the watched"
     * enable "Trigger the watched on external changes"
 
-To switch between Python 2 and 3, all you need to do now is change the Project Default Interpreter and restart
+To switch between virtual environments (e.g. various Python 3 versions), all you need to do now is change the Project Default Interpreter and restart
 OctoPrint. On current PyCharm versions you can do that right from a small selection field in the footer of the IDE.
 Otherwise go through Settings.
 

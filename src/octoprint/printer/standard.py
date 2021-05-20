@@ -1159,13 +1159,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                         )
 
                 try:
-                    printTimeLeft, printTimeLeftOrigin = estimator.estimate(
+                    ptl, printTimeLeftOrigin = estimator.estimate(
                         progress,
                         printTime,
                         cleanedPrintTime,
                         statisticalTotalPrintTime,
                         statisticalTotalPrintTimeType,
                     )
+                    printTimeLeft = int(ptl)
                 except Exception:
                     self._logger.exception(
                         f"Error while estimating print time via {estimator}"

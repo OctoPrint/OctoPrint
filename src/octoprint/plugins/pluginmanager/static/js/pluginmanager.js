@@ -693,11 +693,15 @@ $(function () {
             }
 
             OctoPrint.plugins.pluginmanager
-                .getRepository(!!options.refresh)
+                .getRepository(!!options.refresh, {ifModified: true})
                 .fail(function () {
                     deferred.reject();
                 })
-                .done(function (data) {
+                .done(function (data, status, xhr) {
+                    // Don't update if cached - requires ifModified: true to pass through
+                    // the 304 status, otherwise it fakes it and produces 200 all the time.
+                    if (xhr.status === 304) return;
+
                     self.fromRepositoryResponse(data.repository);
                     self.online(data.online !== undefined ? data.online : true);
                     deferred.resolveWith(data);

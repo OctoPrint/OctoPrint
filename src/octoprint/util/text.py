@@ -12,6 +12,12 @@ _UNICODE_VARIATIONS = re.compile("[\uFE00-\uFE0F]", re.U)
 _SLUGIFIES = {}
 
 
+def demojify(text):
+    text = to_unicode(text)
+    text = remove_unicode_variations(text)
+    return demojize(text, delimiters=("", ""))
+
+
 def sanitize(text, safe_chars="-_.", demoji=True):
     """
     Sanitizes text by running it through slugify and optionally emoji translating.
@@ -44,8 +50,7 @@ def sanitize(text, safe_chars="-_.", demoji=True):
 
     text = to_unicode(text)
     if demoji:
-        text = remove_unicode_variations(text)
-        text = demojize(text, delimiters=("", ""))
+        text = demojify(text)
     return slugify(text)
 
 

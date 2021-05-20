@@ -5852,7 +5852,7 @@ msgid "\n"
 "                    web interface now by clicking the button below.\n"
 "                "
 msgstr "\n"
-"    Die Serverversion hat sich geändert, ein Neuladen des Webinterfaces ist notwendig. Das wird evtl. laufenden Printjobs nicht unterbrechen. Bitte lade das Webinterface jetzt neu, indem du auf den Button unten klickst."
+"    Die Serverversion hat sich geändert, ein Neuladen des Webinterfaces ist notwendig. Das wird evtl. laufende Printjobs nicht unterbrechen. Bitte lade das Webinterface jetzt neu, indem du auf den Button unten klickst."
 
 #: src/octoprint/templates/sidebar/connection.jinja2:8
 msgid "Save connection settings"
