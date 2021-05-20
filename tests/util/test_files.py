@@ -33,7 +33,7 @@ class FilesUtilTest(unittest.TestCase):
         ("NUL.gcode", "NUL_.gcode"),
         ("LPT1", "LPT1_"),
         (".test.gcode", "test.gcode"),
-        ("..text.gcode", "test.gcode"),
+        ("..test.gcode", "test.gcode"),
     )
     @unpack
     def test_sanitize_filename(self, filename, expected):
