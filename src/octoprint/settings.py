@@ -288,6 +288,7 @@ default_settings = {
         "uploadOverwriteConfirmation": True,
         "autoUppercaseBlacklist": ["M117", "M118"],
         "g90InfluencesExtruder": False,
+        "enforceReallyUniversalFilenames": False,
     },
     "folder": {
         "uploads": None,

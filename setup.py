@@ -84,6 +84,7 @@ INSTALL_REQUIRES_PYTHON3 = [
     "feedparser>=6.0.2,<7",
     "zeroconf>=0.24,<0.25",
     "immutabledict>=1.2.0,<2",
+    "pathvalidate>=2.4.1,<3",
 ]
 
 # OSX specific requirements
