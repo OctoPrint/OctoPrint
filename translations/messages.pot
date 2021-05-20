@@ -803,7 +803,7 @@ msgstr ""
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:85
 #: src/octoprint/templates/recovery.jinja2:104
-msgid "Exclude uploaded files & metadata from backup"
+msgid "Exclude uploaded files (& associated metadata) from backup"
 msgstr ""
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:93
