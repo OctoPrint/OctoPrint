@@ -79,7 +79,7 @@
 <p>{{ _('Create a new backup of the current state.') }}</p>
 
 <form class="form-horizontal" onsubmit="return false;">
-    <div class="control-group">
+    <div class="control-group" title="All files in the uploads folder and subfolders. These are the files in the files list, plus any metadata that has been generated for those files.">
         <div class="controls">
             <label class="checkbox">
                 <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files (& associated metadata) from backup') }}
