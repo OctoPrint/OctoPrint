@@ -1637,7 +1637,7 @@ class ReprapGcodeProtocol(
             self._sd_status_poller.cancel()
             self._sd_status_poller = None
 
-        if not error:
+        if not error and self.state in ProtocolState.OPERATIONAL_STATES:
             try:
                 self.send_script("beforePrinterDisconnected")
                 stop = time.monotonic() + 10.0  # TODO make somehow configurable
