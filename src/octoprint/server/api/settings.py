@@ -18,6 +18,7 @@ from octoprint.server import pluginManager, printer, userManager
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.settings import settings, valid_boolean_trues
+from octoprint.events import Events, eventManager
 
 # ~~ settings
 
@@ -330,6 +331,10 @@ def getSettings():
     plugin_settings = _get_plugin_settings()
     if len(plugin_settings):
         data["plugins"] = plugin_settings
+
+    eventManager().fire(
+        Events.SETTINGS_LOADED, payload={"user_agent": request.user_agent}
+    )
 
     return jsonify(data)
 

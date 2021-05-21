@@ -133,6 +133,7 @@ class Events(object):
 
     # Settings
     SETTINGS_UPDATED = "SettingsUpdated"
+    SETTINGS_LOADED = "SettingsLoaded"
 
     @classmethod
     def register_event(cls, event, prefix=None):

@@ -62,6 +62,8 @@ class TrackingPlugin(
         return {
             "enabled": None,
             "unique_id": None,
+            "user_agent_collection": True,
+            "most_recent_user_agent": None,
             "server": TRACKING_URL,
             "ping": 15 * 60,
             "pong": 24 * 60 * 60,
@@ -119,7 +121,11 @@ class TrackingPlugin(
         if not self._settings.get_boolean(["enabled"]):
             return
 
-        if event in (
+        if event == Events.SETTINGS_LOADED:
+            self._handle_settings_event(event, payload)
+        
+
+        elif event in (
             Events.PRINT_STARTED,
             Events.PRINT_DONE,
             Events.PRINT_FAILED,
@@ -519,6 +525,7 @@ class TrackingPlugin(
             "cores": self._environment["hardware"]["cores"],
             "freq": self._environment["hardware"]["freq"],
             "ram": self._environment["hardware"]["ram"],
+            "most_recent_user_agent": self._settings.get(["most_recent_user_agent"])
         }
 
         if (
@@ -534,6 +541,15 @@ class TrackingPlugin(
 
         return payload
 
+    def _handle_settings_event(self, event, payload):
+        if not self._settings.get_boolean(["user_agent_collection"]):
+            if self._settings.get("most_recent_user_agent"):
+                self._settings.set(["most_recent_user_agent"], None)
+                self._settings.save()
+            return
+        if self._settings.get(["most_recent_user_agent"]) != payload.get("user_agent"):
+            self._settings.set(["most_recent_user_agent"], payload.get("user_agent"))
+            self._settings.save()
 
 __plugin_name__ = "Anonymous Usage Tracking"
 __plugin_description__ = (

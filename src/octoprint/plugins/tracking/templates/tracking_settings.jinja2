@@ -26,6 +26,9 @@
                 <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.pong"> {{ _('Regular pong every 24h (incl. plugin list)') }}
             </label>
             <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.user_agent_collection"> {{ _('Add most recent web browser version details (user agent) to pong') }}
+            </label>
+            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.startup"> {{ _('Server startup & shutdown') }}
             </label>
             <label class="checkbox">
