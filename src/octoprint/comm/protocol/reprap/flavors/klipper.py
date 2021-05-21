@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 from octoprint.comm.protocol.reprap.flavors import StandardFlavor
 
 
-class ReprapFirmwareFlavor(StandardFlavor):
+class KlipperFlavor(StandardFlavor):
 
     key = "klipper"
     name = "Klipper"
