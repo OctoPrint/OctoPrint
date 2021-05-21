@@ -73,6 +73,7 @@ class StandardFlavor(metaclass=FlavorMeta):
     ]
     asynchronous_commands = ["G0", "G1", "G2", "G3"]
     blocked_commands = ["M0", "M1"]
+    ignored_commands = []
     pausing_commands = ["M0", "M1", "M25"]
     emergency_commands = ["M112", "M108", "M410"]
 

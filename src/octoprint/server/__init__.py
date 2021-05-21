@@ -1337,7 +1337,10 @@ class Server:
 
         storage_managers = {
             octoprint.filemanager.FileDestinations.LOCAL: LocalFileStorage(
-                self._settings.getBaseFolder("uploads")
+                self._settings.getBaseFolder("uploads"),
+                really_universal=self._settings.get(
+                    ["feature", "enforceReallyUniversalFilenames"]
+                ),
             ),
             octoprint.filemanager.FileDestinations.SDCARD: PrinterSDStorage(),
         }

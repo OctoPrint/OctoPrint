@@ -128,6 +128,13 @@ class SerialTransport(Transport):
                 default=True,
                 advanced=True,
             ),
+            BooleanType(
+                "low_latency",
+                gettext("Request low latency mode on the serial port (if supported)"),
+                help=gettext(""),
+                default=True,
+                advanced=True,
+            ),
             ChoiceType(
                 "parity",
                 gettext("Parity"),
@@ -315,6 +322,7 @@ class SerialTransport(Transport):
         self._apply_parity_workaround(serial_obj, **kwargs)
         serial_obj.open()
         self._set_close_exec(serial_obj, **kwargs)
+        self._set_low_latency(serial_obj, **kwargs)
 
         return serial_obj
 
@@ -384,6 +392,23 @@ class SerialTransport(Transport):
             # noinspection PyProtectedMember
             set_close_exec(serial_obj._port_handle)
 
+        return serial_obj
+
+    @classmethod
+    def _set_low_latency(cls, serial_obj, **kwargs):
+        use_low_latency = kwargs.get("low_latency", False)
+        if hasattr(serial_obj, "set_low_latency_mode"):
+            if use_low_latency:
+                try:
+                    serial_obj.set_low_latency_mode(True)
+                except Exception:
+                    logging.getLogger(__name__).exception(
+                        "Could not set low latency mode on serial port"
+                    )
+        else:
+            logging.getLogger(__name__).info(
+                "Platform doesn't support low latency mode on serial port"
+            )
         return serial_obj
 
     def __str__(self):

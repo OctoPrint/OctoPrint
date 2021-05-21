@@ -275,6 +275,15 @@ class ReprapGcodeProtocol(
                             ),
                         ),
                         SmallListType(
+                            "ignored_commands",
+                            gettext("Ignored commands"),
+                            help=gettext(
+                                "Use this to specify commands that should never be sent "
+                                "to the printer but not produce a warning either. Just "
+                                "the G or M code, comma separated."
+                            ),
+                        ),
+                        SmallListType(
                             "checksum_requiring_commands",
                             gettext("Checksum requiring commands"),
                             help=gettext(
@@ -3288,6 +3297,14 @@ class ReprapGcodeProtocol(
                 self.pause_processing(tags=command.tags)
 
             if command.code in self.flavor.blocked_commands:
+                # TODO evaluate "notify_suppressed_commands" and trigger notification if needed
+                self._logger.info(
+                    "Not sending {} to printer, it's configured as a blocked command".format(
+                        command
+                    )
+                )
+                return (None,)
+            elif command.code in self.flavor.ignored_commands:
                 # TODO evaluate "notify_suppressed_commands" and trigger notification if needed
                 self._logger.info(
                     "Not sending {} to printer, it's configured as a blocked command".format(
