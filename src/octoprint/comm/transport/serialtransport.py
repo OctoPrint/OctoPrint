@@ -331,19 +331,20 @@ class SerialTransport(Transport):
         focus = kwargs["connect_via"]
 
         if focus == "port":
-            return cls._create_serial_for_port_and_baudrate(
-                kwargs.get("port"), kwargs.get("baudrate")
-            )
+            port = kwargs.pop("port")
+            baudrate = kwargs.pop("baudrate")
+            return cls._create_serial_for_port_and_baudrate(port, baudrate, **kwargs)
 
         elif focus == "usbid":
             from serial.tools.list_ports import comports
 
-            usbid = kwargs.get("usbid")
+            usbid = kwargs.pop("usbid")
+            baudrate = kwargs.pop("baudrate")
             vid, pid = usbid.split(":")
             for port in comports():
                 if f"{port.vid:04x}" == vid and f"{port.pid:04x}" == pid:
                     return cls._create_serial_for_port_and_baudrate(
-                        port.device, kwargs.get("baudrate")
+                        port.device, baudrate, **kwargs
                     )
             else:
                 raise ValueError(f"Can't find USB ID to connect to: {usbid}")

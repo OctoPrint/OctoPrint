@@ -69,6 +69,17 @@ $(function () {
                             override ? override[p.name] : undefined
                         );
                     });
+                } else if (option.type === "conditionalgroup") {
+                    value = convertValue(value, option);
+                    option.expertParameters = {};
+                    _.each(option.groups, function (group, key) {
+                        _.each(group, function (o) {
+                            extendOption(o);
+                        });
+                        option.expertParameters[key] = _.any(group, function (p) {
+                            return p.expert;
+                        });
+                    });
                 } else {
                     value = convertValue(value, option, override);
                 }
@@ -460,6 +471,12 @@ $(function () {
                             result[parameter.name] = parameter.value();
                             result[parameter.group.name] = toOptions(
                                 parameter.group.params
+                            );
+                        } else if (parameter.type === "conditionalgroup") {
+                            result[parameter.name] = parameter.value();
+                            _.extend(
+                                result,
+                                toOptions(parameter.groups[parameter.value()])
                             );
                         } else if (
                             parameter.type === "list" ||

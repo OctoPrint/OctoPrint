@@ -68,6 +68,16 @@
         </div>
     </div>
 </script>
+<script type="text/html" id="connection_dialog_template_url">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <input class="input-block-level" type="text" data-bind="value: $data.value, attr: {placeholder: $data.default}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
 <script type="text/html" id="connection_dialog_template_integer">
     <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
         <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
@@ -201,4 +211,31 @@
             </div>
         </div>
     </fieldset>
+</script>
+<script type="text/html" id="connection_dialog_template_conditionalgroup">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+
+    <!-- ko foreach: $data.groups[$data.value()] -->
+    <!-- ko if: !expert -->
+    <!-- ko template: { name: 'connection_dialog_template_' + $data.type, data: $data } --><!-- /ko -->
+    <!-- /ko -->
+    <!-- /ko -->
+
+    <div class="advanced_options" data-bind="visible: $data.expertParameters[$data.value]">
+        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Expert options') }}</a></small></div>
+        <div class="hide">
+            <!-- ko foreach: $data.groups[$data.value()] -->
+            <!-- ko if: expert -->
+            <!-- ko template: { name: 'connection_dialog_template_' + $data.type, data: $data } --><!-- /ko -->
+            <!-- /ko -->
+            <!-- /ko -->
+        </div>
+    </div>
 </script>

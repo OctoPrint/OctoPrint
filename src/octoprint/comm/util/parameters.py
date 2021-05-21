@@ -39,7 +39,10 @@ def get_param_dict(data, options):
         if key not in options_by_name:
             continue
         option = options_by_name[key]
+
         result[key] = option.convert(value)
+        if option.type == "conditionalgroup":
+            result.update(get_param_dict(data, option.groups[value]))
     return result
 
 
