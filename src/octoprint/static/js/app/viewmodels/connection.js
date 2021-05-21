@@ -73,8 +73,12 @@ $(function () {
                     value = convertValue(value, option);
                     option.expertParameters = {};
                     _.each(option.groups, function (group, key) {
-                        _.each(group, function (o) {
-                            extendOption(o);
+                        _.each(group, function (p) {
+                            extendOption(
+                                p,
+                                undefined,
+                                override ? override[p.name] : undefined
+                            );
                         });
                         option.expertParameters[key] = _.any(group, function (p) {
                             return p.expert;
@@ -174,28 +178,22 @@ $(function () {
                     })
                 );
 
+                var processParameters = function (parameters, profile_parameters) {
+                    _.each(parameters, function (option) {
+                        var override = profile_parameters;
+                        if (option.group) {
+                            override = profile_parameters[option.group.name];
+                        }
+                        extendOption(option, profile_parameters[option.name], override);
+                    });
+                };
+
                 protocolParameters = self.protocolParameters();
-                _.each(protocolParameters, function (option) {
-                    extendOption(
-                        option,
-                        profile.protocol_parameters[option.name],
-                        option.group
-                            ? profile.protocol_parameters[option.group.name]
-                            : undefined
-                    );
-                });
+                processParameters(protocolParameters, profile.protocol_parameters);
                 self.protocolParameters(protocolParameters);
 
                 transportParameters = self.transportParameters();
-                _.each(transportParameters, function (option) {
-                    extendOption(
-                        option,
-                        profile.transport_parameters[option.name],
-                        option.group
-                            ? profile.transport_parameters[option.group.name]
-                            : undefined
-                    );
-                });
+                processParameters(transportParameters, profile.transport_parameters);
                 self.transportParameters(transportParameters);
             } else {
                 self.selectedPrinter(undefined);
@@ -474,7 +472,7 @@ $(function () {
                             );
                         } else if (parameter.type === "conditionalgroup") {
                             result[parameter.name] = parameter.value();
-                            _.extend(
+                            result = Object.assign(
                                 result,
                                 toOptions(parameter.groups[parameter.value()])
                             );
