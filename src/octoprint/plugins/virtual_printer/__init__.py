@@ -54,6 +54,7 @@ class VirtualPrinterPlugin(
             "capabilities": {
                 "AUTOREPORT_TEMP": True,
                 "AUTOREPORT_SD_STATUS": True,
+                "AUTOREPORT_POS": False,
                 "EMERGENCY_PARSER": True,
                 "EXTENDED_M20": False,
             },

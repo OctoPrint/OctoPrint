@@ -124,6 +124,7 @@ default_settings = {
             "temperatureAutoreport": 2,
             "sdStatus": 1,
             "sdStatusAutoreport": 1,
+            "posAutoreport": 5,
             "resendOk": 0.5,
             "baudrateDetectionPause": 1.0,
             "positionLogWait": 10.0,
@@ -178,6 +179,7 @@ default_settings = {
         "capabilities": {
             "autoreport_temp": True,
             "autoreport_sdstatus": True,
+            "autoreport_pos": True,
             "busy_protocol": True,
             "emergency_parser": True,
             "extended_m20": True,
@@ -436,6 +438,10 @@ default_settings = {
         {
             "name": "Suppress SD status messages",
             "regex": r"(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)",
+        },
+        {
+            "name": "Suppress position messages",
+            "regex": r"(Send:\s+(N\d+\s+)?M114)|(Recv:\s+(ok\s+)?X:[+-]?([0-9]*[.])?[0-9]+\s+Y:[+-]?([0-9]*[.])?[0-9]+\s+Z:[+-]?([0-9]*[.])?[0-9]+\s+E\d*:[+-]?([0-9]*[.])?[0-9]+).*",
         },
         {"name": "Suppress wait responses", "regex": r"Recv: wait"},
         {

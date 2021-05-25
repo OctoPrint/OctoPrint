@@ -189,6 +189,7 @@ def getSettings():
             "timeoutSdStatusAutoreport": s.getFloat(
                 ["serial", "timeout", "sdStatusAutoreport"]
             ),
+            "timeoutPosAutoreport": s.getFloat(["serial", "timeout", "posAutoreport"]),
             "timeoutBaudrateDetectionPause": s.getFloat(
                 ["serial", "timeout", "baudrateDetectionPause"]
             ),
@@ -248,6 +249,9 @@ def getSettings():
             ),
             "capAutoreportSdStatus": s.getBoolean(
                 ["serial", "capabilities", "autoreport_sdstatus"]
+            ),
+            "capAutoreportPos": s.getBoolean(
+                ["serial", "capabilities", "autoreport_pos"]
             ),
             "capBusyProtocol": s.getBoolean(["serial", "capabilities", "busy_protocol"]),
             "capEmergencyParser": s.getBoolean(
@@ -722,6 +726,12 @@ def _saveSettings(data):
                 data["serial"]["timeoutSdStatusAutoreport"],
                 min=0.0,
             )
+        if "timeoutPosAutoreport" in data["serial"]:
+            s.setFloat(
+                ["serial", "timeout", "posAutoreport"],
+                data["serial"]["timeoutPosAutoreport"],
+                min=0.0,
+            )
         if "timeoutBaudrateDetectionPause" in data["serial"]:
             s.setFloat(
                 ["serial", "timeout", "baudrateDetectionPause"],
@@ -903,6 +913,11 @@ def _saveSettings(data):
             s.setBoolean(
                 ["serial", "capabilities", "autoreport_sdstatus"],
                 data["serial"]["capAutoreportSdStatus"],
+            )
+        if "capAutoreportPos" in data["serial"]:
+            s.setBoolean(
+                ["serial", "capabilities", "autoreport_pos"],
+                data["serial"]["capAutoreportPos"],
             )
         if "capBusyProtocol" in data["serial"]:
             s.setBoolean(

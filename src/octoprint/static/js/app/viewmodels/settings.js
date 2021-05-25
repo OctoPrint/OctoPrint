@@ -197,6 +197,7 @@ $(function () {
         self.serial_timeoutTemperatureAutoreport = ko.observable(undefined);
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_timeoutSdStatusAutoreport = ko.observable(undefined);
+        self.serial_timeoutPosAutoreport = ko.observable(undefined);
         self.serial_timeoutBaudrateDetectionPause = ko.observable(undefined);
         self.serial_timeoutPositionLogWait = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
@@ -235,6 +236,7 @@ $(function () {
         self.serial_maxTimeoutsLong = ko.observable(undefined);
         self.serial_capAutoreportTemp = ko.observable(undefined);
         self.serial_capAutoreportSdStatus = ko.observable(undefined);
+        self.serial_capAutoreportPos = ko.observable(undefined);
         self.serial_capBusyProtocol = ko.observable(undefined);
         self.serial_capEmergencyParser = ko.observable(undefined);
         self.serial_capExtendedM20 = ko.observable(undefined);
