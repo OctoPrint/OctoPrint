@@ -253,6 +253,7 @@ def getSettings():
             "capEmergencyParser": s.getBoolean(
                 ["serial", "capabilities", "emergency_parser"]
             ),
+            "capExtendedM20": s.getBoolean(["serial", "capabilities", "extended_m20"]),
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
         },
@@ -913,6 +914,11 @@ def _saveSettings(data):
                 ["serial", "capabilities", "emergency_parser"],
                 data["serial"]["capEmergencyParser"],
             )
+        if "capExtendedM20" in data["serial"]:
+            s.setBoolean(
+                ["serial", "capabilities", "extended_m20"],
+                data["serial"]["capExtendedM20"],
+            ),
         if "resendRatioThreshold" in data["serial"]:
             s.setInt(
                 ["serial", "resendRatioThreshold"], data["serial"]["resendRatioThreshold"]

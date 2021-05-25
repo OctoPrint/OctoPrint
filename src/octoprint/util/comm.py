@@ -470,6 +470,7 @@ class MachineCom(object):
     CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
     CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
     CAPABILITY_CHAMBER_TEMP = "CHAMBER_TEMPERATURE"
+    CAPABILITY_EXTENDED_M20 = "EXTENDED_M20"
 
     CAPABILITY_SUPPORT_ENABLED = "enabled"
     CAPABILITY_SUPPORT_DETECTED = "detected"
@@ -588,6 +589,9 @@ class MachineCom(object):
             ),
             self.CAPABILITY_CHAMBER_TEMP: settings().getBoolean(
                 ["serial", "capabilities", "chamber_temp"]
+            ),
+            self.CAPABILITY_EXTENDED_M20: settings().getBoolean(
+                ["serial", "capabilities", "extended_m20"]
             ),
         }
 
@@ -1951,8 +1955,13 @@ class MachineCom(object):
         if tags is None:
             tags = set()
 
+        if self._capability_supported(self.CAPABILITY_EXTENDED_M20):
+            command = "M20 L"
+        else:
+            command = "M20"
+
         self.sendCommand(
-            "M20",
+            command,
             tags=tags
             | {
                 "trigger:comm.refresh_sd_files",
@@ -2388,6 +2397,9 @@ class MachineCom(object):
                                 filename = filename.lower()
                             self._sdFiles.append((filename, size))
                             if longname is not None:
+                                if longname[0] == '"' and longname[-1] == '"':
+                                    # apparently some firmwares enclose the long name in quotes...
+                                    longname = longname[1:-1]
                                 self._sdFilesMap[filename] = longname
                         continue
 

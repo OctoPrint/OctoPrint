@@ -368,6 +368,13 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_capExtendedM20" id="settings-serialCapExtendedM20"> {{ _('Send <code>M20 L</code> instead of <code>M20</code> to use extended SD file lists, if detected as supported by the firmware') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: serial_triggerOkForM29" id="settings-serialTriggerOkForM29"> {{ _('Simulate <code>ok</code> for <code>M29</code>') }}
                                     <span class="help-block">{{ _('Most Marlin forks that were derived from Marlin versions &lt; v1.1.0 do not send an acknowledging <code>ok</code> for a <code>M29</code>. Check this if you run into communication stalls following streaming of a file to your printer\'s SD.') }}</span>
                                 </label>

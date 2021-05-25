@@ -607,7 +607,7 @@ class VirtualPrinter(object):
     def _gcode_M20(self, data):
         # type: (str) -> None
         if self._sdCardReady:
-            self._listSd()
+            self._listSd(incl_long="L" in data)
 
     # noinspection PyUnusedLocal
     def _gcode_M21(self, data):
@@ -1415,10 +1415,13 @@ class VirtualPrinter(object):
             except Exception:
                 self._logger.exception("While handling %r", data)
 
-    def _listSd(self):
+    def _listSd(self, incl_long=False):
         if self._settings.get_boolean(["sdFiles", "size"]):
-            if self._settings.get_boolean(["sdFiles", "longname"]):
-                line = "{dosname} {size} {name}"
+            if self._settings.get_boolean(["sdFiles", "longname"]) or incl_long:
+                if self._settings.get_boolean(["sdFiles", "longname_quoted"]):
+                    line = '{dosname} {size} "{name}"'
+                else:
+                    line = "{dosname} {size} {name}"
             else:
                 line = "{dosname} {size}"
         else:

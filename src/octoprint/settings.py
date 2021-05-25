@@ -180,6 +180,7 @@ default_settings = {
             "autoreport_sdstatus": True,
             "busy_protocol": True,
             "emergency_parser": True,
+            "extended_m20": True,
         },
         "resendRatioThreshold": 10,
         "resendRatioStart": 100,
