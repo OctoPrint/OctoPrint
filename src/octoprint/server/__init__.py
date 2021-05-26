@@ -2056,6 +2056,7 @@ class Server(object):
             "js/lib/moment-with-locales.min.js",
             "js/lib/pusher.color.min.js",
             "js/lib/detectmobilebrowser.js",
+            "js/lib/ua-parser.min.js",
             "js/lib/md5.min.js",
             "js/lib/bootstrap-slider-knockout-binding.js",
             "js/lib/loglevel.min.js",
