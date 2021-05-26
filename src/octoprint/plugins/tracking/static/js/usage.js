@@ -12,7 +12,7 @@ $(function () {
 
         self.onStartupComplete = function () {
             OctoPrint.plugins.tracking.track("webui_load", {
-                browser_name: OctoPrint.coreui.browser.name,
+                browser_name: OctoPrint.coreui.browser.browser_name,
                 browser_version: OctoPrint.coreui.browser.browser_version,
                 os_name: OctoPrint.coreui.browser.os_name,
                 os_version: OctoPrint.coreui.browser.os_version
