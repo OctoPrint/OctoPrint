@@ -61,6 +61,8 @@ class SerialTransport(Transport):
                 [
                     Value("port", title=gettext("Port & baudrate")),
                     Value("usbid", title=gettext("USB ID & baudrate")),
+                    Value("usbserial", title=gettext("USB serial number")),
+                    Value("usbloc", title=gettext("USB port")),
                     Value("url", title=gettext("URL")),
                 ],
                 {
@@ -85,6 +87,39 @@ class SerialTransport(Transport):
                             gettext("USB ID"),
                             cls.get_available_serial_ports("usbid"),
                             lambda value: Value(value),
+                        ),
+                        SuggestionType(
+                            "baudrate",
+                            gettext("Baudrate"),
+                            cls.get_available_baudrates(),
+                            lambda value: Value(value),
+                            default=0,
+                        ),
+                    ],
+                    "usbserial": [
+                        SuggestionType(
+                            "usbserial",
+                            gettext("USB serial number"),
+                            cls.get_available_serial_ports("usbserial"),
+                            lambda value: Value(value),
+                        ),
+                        SuggestionType(
+                            "baudrate",
+                            gettext("Baudrate"),
+                            cls.get_available_baudrates(),
+                            lambda value: Value(value),
+                            default=0,
+                        ),
+                    ],
+                    "usbloc": [
+                        SuggestionType(
+                            "usbloc",
+                            gettext("USB port"),
+                            cls.get_available_serial_ports("usbloc"),
+                            lambda value: Value(value),
+                            help=gettext(
+                                "The port's notation follows this format: `<bus>-<port>[-<port]...`"
+                            ),
                         ),
                         SuggestionType(
                             "baudrate",
@@ -180,11 +215,21 @@ class SerialTransport(Transport):
         matcher = lambda x: True
         if focus == "usbid":
             matcher = lambda x: x.vid and x.pid
+        elif focus == "usbserial":
+            matcher = lambda x: x.serial_number
+        elif focus == "usbloc":
+            matcher = lambda x: x.location
 
         def port_value(port):
             if focus == "usbid":
                 vidpid = f"{port.vid:04x}:{port.pid:04x}"
                 return Value(vidpid, title=f"{port.description} [{vidpid}]")
+            elif focus == "usbserial":
+                usbserial = port.serial_number
+                return Value(usbserial, title=f"{port.description} [{usbserial}]")
+            elif focus == "usbloc":
+                usbloc = port.location
+                return Value(usbloc, title=f"{port.description} [{usbloc}]")
             else:
                 return Value(port.device, title=f"{port.description} [{port.device}]")
 
@@ -330,24 +375,57 @@ class SerialTransport(Transport):
     def _create_serial(cls, **kwargs):
         focus = kwargs["connect_via"]
 
+        def match_port(matcher):
+            from serial.tools.list_ports import comports
+
+            for port in comports():
+                if matcher(port):
+                    return port
+            else:
+                raise ValueError()
+
         if focus == "port":
             port = kwargs.pop("port")
             baudrate = kwargs.pop("baudrate")
             return cls._create_serial_for_port_and_baudrate(port, baudrate, **kwargs)
 
         elif focus == "usbid":
-            from serial.tools.list_ports import comports
-
             usbid = kwargs.pop("usbid")
             baudrate = kwargs.pop("baudrate")
             vid, pid = usbid.split(":")
-            for port in comports():
-                if f"{port.vid:04x}" == vid and f"{port.pid:04x}" == pid:
-                    return cls._create_serial_for_port_and_baudrate(
-                        port.device, baudrate, **kwargs
-                    )
-            else:
+            try:
+                port = match_port(
+                    lambda p: f"{p.vid:04x}" == vid and f"{p.pid:04x}" == pid
+                )
+                return cls._create_serial_for_port_and_baudrate(
+                    port.device, baudrate, **kwargs
+                )
+            except ValueError:
                 raise ValueError(f"Can't find USB ID to connect to: {usbid}")
+
+        elif focus == "usbserial":
+            usbserial = kwargs.pop("usbserial")
+            baudrate = kwargs.pop("baudrate")
+            try:
+                port = match_port(lambda p: p.serial_number == usbserial)
+                return cls._create_serial_for_port_and_baudrate(
+                    port.device, baudrate, **kwargs
+                )
+            except ValueError:
+                raise ValueError(
+                    f"Can't find USB serial number to connect to: {usbserial}"
+                )
+
+        elif focus == "usbloc":
+            usbloc = kwargs.pop("usbloc")
+            baudrate = kwargs.pop("baudrate")
+            try:
+                port = match_port(lambda p: p.location == usbloc)
+                return cls._create_serial_for_port_and_baudrate(
+                    port.device, baudrate, **kwargs
+                )
+            except ValueError:
+                raise ValueError(f"Can't find USB port to connect to: {usbloc}")
 
         elif focus == "url":
             serial_obj = serial.serial_for_url(kwargs.get("url"), do_not_open=True)
