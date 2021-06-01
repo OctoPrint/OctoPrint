@@ -1099,7 +1099,8 @@ class Server:
                 "trying to connect via the default connection profile"
             )
             try:
-                printer.autoconnect()
+                if not printer.autoconnect():
+                    self._logger.info("Could not autoconnect")
             except Exception:
                 self._logger.exception(
                     "Something went wrong while attempting to "

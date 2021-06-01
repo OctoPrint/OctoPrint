@@ -391,13 +391,13 @@ class Printer(
     def autoconnect(self):
         default_connection = self._connection_profile_manager.get_default()
         if default_connection is None:
-            return
+            return False
 
         from octoprint.comm.transport import lookup_transport
 
         transport_class = lookup_transport(default_connection.transport)
         if not transport_class:
-            return
+            return False
 
         transport = transport_class(
             settings=settings(),
@@ -408,6 +408,7 @@ class Printer(
 
         if transport.can_connect(**default_connection.transport_parameters):
             self.connect(connection=default_connection.id)
+            return True
 
     def connect(self, **kwargs):
         """
