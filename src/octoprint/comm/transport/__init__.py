@@ -166,6 +166,11 @@ class Transport(ListenerAware):
             f"Transport state changed from '{old_state}' to '{value}'",
         )
 
+    def can_connect(self, **params):
+        options = self.get_connection_options()
+        param_dict = get_param_dict(params, options)
+        return self.check_connection(**param_dict)
+
     def connect(self, **params):
         if self.state == TransportState.CONNECTED:
             raise TransportAlreadyConnectedError("Already connected, disconnect first")
@@ -197,6 +202,9 @@ class Transport(ListenerAware):
         return True
 
     def drop_connection(self, wait=True):
+        return True
+
+    def check_connection(self, *args, **kwargs):
         return True
 
     def read(self, size=None, timeout=None):

@@ -301,6 +301,13 @@ class SerialTransport(Transport):
 
         return not error
 
+    def check_connection(self, *args, **kwargs):
+        try:
+            self._create_serial(**kwargs)
+            return True
+        except ValueError:
+            return False
+
     def do_read(self, size=None, timeout=None):
         return self._serial.read(size=size)
 
@@ -427,6 +434,7 @@ class SerialTransport(Transport):
         elif focus == "url":
             serial_obj = serial.serial_for_url(kwargs.get("url"), do_not_open=True)
             return serial_obj
+
         else:
             raise ValueError(f"Invalid connect_via: {focus}")
 

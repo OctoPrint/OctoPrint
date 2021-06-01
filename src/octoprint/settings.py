@@ -168,7 +168,7 @@ default_settings = {
     },
     "connection": {
         "log": {"connection": False, "commdebug": False},
-        "profiles": {"default": None},
+        "profiles": {"default": None, "autoconnect_default": False},
         "protocols": {},
         "transports": {},
     },
@@ -1994,7 +1994,8 @@ class Settings:
                     config["connection"] = {}
                 if "profiles" not in config["connection"]:
                     config["connection"]["profiles"] = {}
-                config["connection"]["profiles"]["default"] = "migrated"
+                if not config["connection"]["profiles"]["default"]:
+                    config["connection"]["profiles"]["default"] = "migrated"
             except Exception:
                 self._logger.exception(
                     "Error while trying to save migrated connection profile"

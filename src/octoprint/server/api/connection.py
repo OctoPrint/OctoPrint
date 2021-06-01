@@ -77,15 +77,10 @@ def connectionCommand():
                 abort(400, description="printerProfile is invalid")
             kwargs["profile"] = printerProfile
 
-        if "save" in data and data["save"]:  # TODO
-            """
-            settings().set(["serial", "port"], port)
-            settings().setInt(["serial", "baudrate"], baudrate)
-            printerProfileManager.set_default(kwargs.get("profile"))
-            """
-
         if "autoconnect" in data:
-            settings().setBoolean(["serial", "autoconnect"], data["autoconnect"])
+            settings().setBoolean(
+                ["connection", "profiles", "autoconnect_default"], data["autoconnect"]
+            )
 
         ##~~ legacy
 

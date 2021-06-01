@@ -32,6 +32,9 @@ class VirtualSerialTransport(SerialTransport):
 
         self._serial = virtual.VirtualPrinter(self.pluginSettings, self.datafolder)
 
+    def check_connection(self, *args, **kwargs):
+        return True
+
 
 class VirtualPrinterPlugin(
     octoprint.plugin.SettingsPlugin, octoprint.plugin.TemplatePlugin

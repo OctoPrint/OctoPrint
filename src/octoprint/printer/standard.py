@@ -388,6 +388,27 @@ class Printer(
 
     # ~~ PrinterInterface implementation
 
+    def autoconnect(self):
+        default_connection = self._connection_profile_manager.get_default()
+        if default_connection is None:
+            return
+
+        from octoprint.comm.transport import lookup_transport
+
+        transport_class = lookup_transport(default_connection.transport)
+        if not transport_class:
+            return
+
+        transport = transport_class(
+            settings=settings(),
+            plugin_manager=plugin_manager(),
+            event_bus=eventManager(),
+            printer_profile=default_connection.printer_profile,
+        )
+
+        if transport.can_connect(**default_connection.transport_parameters):
+            self.connect(connection=default_connection.id)
+
     def connect(self, **kwargs):
         """
         Connects to the printer. If port and/or baudrate is provided, uses these settings, otherwise autodetection
