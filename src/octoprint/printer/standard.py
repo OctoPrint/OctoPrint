@@ -549,7 +549,7 @@ class Printer(
             "protocol": selected_protocol,
             "protocol_args": protocol_kwargs,
             "transport": selected_transport,
-            "transport_args": transport_kwargs,
+            "transport_args": transport_connect_kwargs,
             "printer_profile": profile_id,
         }
 

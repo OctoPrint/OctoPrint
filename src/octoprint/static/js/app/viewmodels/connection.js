@@ -45,11 +45,11 @@ $(function () {
             return value;
         };
 
-        var extendOption = function (option, value, override) {
+        var extendOption = function (option, value, data) {
             /**
              * @param option the option to extend
              * @param value the value to apply to the option, or undefined
-             * @param override the currently active override object, or undefined
+             * @param data the currently active data object, or undefined
              */
             if (option.type === "group") {
                 if (value === undefined) {
@@ -59,7 +59,7 @@ $(function () {
                     extendOption(
                         option,
                         value[option.name],
-                        override ? override[option.name] : undefined
+                        data ? data[option.name] : undefined
                     );
                 });
                 option.modified = ko.pureComputed(function () {
@@ -83,7 +83,7 @@ $(function () {
                     value = convertValue(
                         value,
                         option,
-                        override ? override[option.name] : undefined
+                        data ? data[option.name] : undefined
                     );
                     _.each(option.group.params, function (p) {
                         extendOption(
@@ -91,19 +91,19 @@ $(function () {
                             option.defaults[value]
                                 ? option.defaults[value][p.name]
                                 : undefined,
-                            override ? override[option.group.name] : undefined
+                            data ? data[option.group.name] : undefined
                         );
                     });
                 } else if (option.type === "conditionalgroup") {
                     value = convertValue(
                         value,
                         option,
-                        override ? override[option.name] : undefined
+                        data ? data[option.name] : undefined
                     );
                     option.expertParameters = {};
                     _.each(option.groups, function (group, key) {
                         _.each(group, function (p) {
-                            extendOption(p, undefined, override);
+                            extendOption(p, undefined, data);
                         });
                         option.expertParameters[key] = _.any(group, function (p) {
                             return p.expert;
@@ -113,7 +113,7 @@ $(function () {
                     value = convertValue(
                         value,
                         option,
-                        override ? override[option.name] : undefined
+                        data ? data[option.name] : undefined
                     );
                 }
 
@@ -158,9 +158,7 @@ $(function () {
                                                 convertValue(
                                                     d,
                                                     p,
-                                                    override
-                                                        ? override[p.name]
-                                                        : undefined
+                                                    data ? data[p.name] : undefined
                                                 )
                                             );
                                             if (!keepValue) {
@@ -421,7 +419,11 @@ $(function () {
                 self.selectedProtocol(protocol);
                 var protocolParameters = self.protocolParameters();
                 _.each(protocolParameters, function (option) {
-                    extendOption(option, response.current.protocolOptions[option.name]);
+                    extendOption(
+                        option,
+                        response.current.protocolOptions[option.name],
+                        response.current.protocolOptions
+                    );
                 });
                 self.protocolParameters(protocolParameters);
             }
@@ -434,7 +436,11 @@ $(function () {
                 self.selectedTransport(transport);
                 var transportParameters = self.transportParameters();
                 _.each(transportParameters, function (option) {
-                    extendOption(option, response.current.transportOptions[option.name]);
+                    extendOption(
+                        option,
+                        response.current.transportOptions[option.name],
+                        response.current.transportOptions
+                    );
                 });
                 self.transportParameters(transportParameters);
             }
