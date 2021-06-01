@@ -117,9 +117,6 @@ class SerialTransport(Transport):
                             gettext("USB port"),
                             cls.get_available_serial_ports("usbloc"),
                             lambda value: Value(value),
-                            help=gettext(
-                                "The port's notation follows this format: `<bus>-<port>[-<port]...`"
-                            ),
                         ),
                         SuggestionType(
                             "baudrate",

@@ -25,6 +25,11 @@ $(function () {
         };
 
         var convertValue = function (value, option, override) {
+            /**
+             * @param value the value to apply
+             * @param option the option object, to lookup a default if needed
+             * @param override the current override value, or undefined
+             */
             if (override !== undefined) {
                 value = override;
             }
@@ -41,12 +46,26 @@ $(function () {
         };
 
         var extendOption = function (option, value, override) {
+            /**
+             * @param option the option to extend
+             * @param value the value to apply to the option, or undefined
+             * @param override the currently active override object, or undefined
+             */
             if (option.type === "group") {
                 if (value === undefined) {
                     value = {};
                 }
                 _.each(option.params, function (option) {
-                    extendOption(option, value[option.name]);
+                    extendOption(
+                        option,
+                        value[option.name],
+                        override ? override[option.name] : undefined
+                    );
+                });
+                option.modified = ko.pureComputed(function () {
+                    return _.any(option.params, function (p) {
+                        return p.modified();
+                    });
                 });
 
                 option.advancedParameters =
@@ -61,31 +80,42 @@ $(function () {
                     });
             } else {
                 if (option.type === "presetchoice") {
-                    value = convertValue(value, option);
+                    value = convertValue(
+                        value,
+                        option,
+                        override ? override[option.name] : undefined
+                    );
+                    // TODO is this call to extendOption correct wrt to the override?
                     _.each(option.group.params, function (p) {
                         extendOption(
                             p,
-                            option.defaults[option.default][p.name],
-                            override ? override[p.name] : undefined
+                            option.defaults[value]
+                                ? option.defaults[value][p.name]
+                                : undefined,
+                            override ? override[option.group.name] : undefined
                         );
                     });
                 } else if (option.type === "conditionalgroup") {
-                    value = convertValue(value, option);
+                    value = convertValue(
+                        value,
+                        option,
+                        override ? override[option.name] : undefined
+                    );
                     option.expertParameters = {};
                     _.each(option.groups, function (group, key) {
                         _.each(group, function (p) {
-                            extendOption(
-                                p,
-                                undefined,
-                                override ? override[p.name] : undefined
-                            );
+                            extendOption(p, undefined, override);
                         });
                         option.expertParameters[key] = _.any(group, function (p) {
                             return p.expert;
                         });
                     });
                 } else {
-                    value = convertValue(value, option, override);
+                    value = convertValue(
+                        value,
+                        option,
+                        override ? override[option.name] : undefined
+                    );
                 }
 
                 if (option.value) {
@@ -180,11 +210,11 @@ $(function () {
 
                 var processParameters = function (parameters, profile_parameters) {
                     _.each(parameters, function (option) {
-                        var override = profile_parameters;
-                        if (option.group) {
-                            override = profile_parameters[option.group.name];
-                        }
-                        extendOption(option, profile_parameters[option.name], override);
+                        extendOption(
+                            option,
+                            profile_parameters[option.name],
+                            profile_parameters
+                        );
                     });
                 };
 
@@ -333,11 +363,7 @@ $(function () {
 
             _.each(protocols, function (protocol) {
                 _.each(protocol.options, function (option) {
-                    extendOption(
-                        option,
-                        protocolOptions[option.name],
-                        option.group ? protocolOptions[option.group.name] : undefined
-                    );
+                    extendOption(option, protocolOptions[option.name], protocolOptions);
                 });
             });
 
@@ -352,11 +378,7 @@ $(function () {
 
             _.each(transports, function (transport) {
                 _.each(transport.options, function (option) {
-                    extendOption(
-                        option,
-                        transportOptions[option.name],
-                        option.group ? transportOptions[option.group.name] : undefined
-                    );
+                    extendOption(option, transportOptions[option.name], transportOptions);
                 });
             });
 
@@ -463,34 +485,36 @@ $(function () {
                 var toOptions = function (parameters) {
                     var result = {};
                     _.each(parameters, function (parameter) {
+                        var value;
                         if (parameter.type === "group") {
-                            result[parameter.name] = toOptions(parameter.params);
+                            value = toOptions(parameter.params);
                         } else if (parameter.type === "presetchoice") {
-                            result[parameter.name] = parameter.value();
+                            value = parameter.value();
                             result[parameter.group.name] = toOptions(
                                 parameter.group.params
                             );
                         } else if (parameter.type === "conditionalgroup") {
-                            result[parameter.name] = parameter.value();
+                            value = parameter.value();
                             result = Object.assign(
                                 result,
-                                toOptions(parameter.groups[parameter.value()])
+                                toOptions(parameter.groups[value])
                             );
                         } else if (
                             parameter.type === "list" ||
                             parameter.type === "smalllist"
                         ) {
-                            result[parameter.name] = splitTextToArray(
-                                parameter.value(),
-                                ",",
-                                true
-                            );
+                            value = splitTextToArray(parameter.value(), ",", true);
                         } else if (parameter.type === "integer") {
-                            result[parameter.name] = parseInt(parameter.value());
+                            value = parseInt(parameter.value());
                         } else if (parameter.type === "float") {
-                            result[parameter.name] = parseFloat(parameter.value());
+                            value = parseFloat(parameter.value());
                         } else {
-                            result[parameter.name] = parameter.value();
+                            value = parameter.value();
+                        }
+
+                        // and now set the value on the result, if it differs from the default
+                        if (parameter.modified()) {
+                            result[parameter.name] = value;
                         }
                     });
                     return result;

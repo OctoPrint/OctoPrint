@@ -89,7 +89,7 @@ def connectionCommand():
 
         ##~~ legacy
 
-        # TODO remove in 1.5.0
+        # TODO remove in 2.5
 
         if "port" in data.keys():
             kwargs["port"] = data["port"]

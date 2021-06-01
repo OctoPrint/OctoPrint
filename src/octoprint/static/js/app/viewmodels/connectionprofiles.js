@@ -60,7 +60,9 @@ $(function () {
         };
 
         self._sanitize = function (name) {
-            return name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_");
+            return name
+                ? name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_")
+                : undefined;
         };
     }
 
