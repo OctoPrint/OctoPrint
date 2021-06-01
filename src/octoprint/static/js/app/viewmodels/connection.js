@@ -85,7 +85,6 @@ $(function () {
                         option,
                         override ? override[option.name] : undefined
                     );
-                    // TODO is this call to extendOption correct wrt to the override?
                     _.each(option.group.params, function (p) {
                         extendOption(
                             p,
@@ -620,7 +619,9 @@ $(function () {
         };
 
         self._sanitize = function (name) {
-            return name.replace(/[^a-zA-Z0-9\-_.() ]/g, "").replace(/ /g, "_");
+            return name !== undefined
+                ? name.replace(/[^a-zA-Z0-9\-_.() ]/g, "").replace(/ /g, "_")
+                : undefined;
         };
     }
 

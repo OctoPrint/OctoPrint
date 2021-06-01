@@ -1876,7 +1876,7 @@ class ReprapGcodeProtocol(
             self._resend_ok_timer
             and line
             and not getattr(self.flavor, "comm_ok", lambda *a, **kwa: True)(
-                line, lower_line, self._state, self._protected_flags
+                line, lower_line, self._state
             )
         ):
             # we got anything but an ok after a resend request - this means the ok after the resend request

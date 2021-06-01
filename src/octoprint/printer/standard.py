@@ -114,6 +114,8 @@ class Printer(
         self._connection_profile_manager = connectionProfileManager
         self._printer_profile_manager = printerProfileManager
 
+        self._last_connection = {}
+
         # state
         self._latest_temperatures = None
         self._temperature_history = TemperatureHistory(
@@ -426,6 +428,12 @@ class Printer(
                 "connection.log is currently not enabled, you can enable it via Settings > Connection > Log communication to connection.log"
             )
 
+        injections = {
+            "settings": settings(),
+            "plugin_manager": plugin_manager(),
+            "event_bus": eventManager(),
+        }
+
         connection_id = kwargs.get("connection")
         connection = None
         if connection_id is not None:
@@ -438,7 +446,6 @@ class Printer(
             ##~~ Printer profile
             profile_id = kwargs.get("profile", connection.printer_profile)
             self._printer_profile_manager.select(profile_id)
-            profile = self._printer_profile_manager.get_current_or_default()
 
             ##~~ Transport
 
@@ -449,28 +456,12 @@ class Printer(
             )
 
             transport_kwargs = {}
-            transport_kwargs.update(
-                {
-                    "settings": settings(),
-                    "plugin_manager": plugin_manager(),
-                    "event_bus": eventManager(),
-                    "printer_profile": profile,
-                }
-            )
 
             ##~~ Protocol
 
             selected_protocol = kwargs.get("protocol", connection.protocol)
             protocol_kwargs = dict_merge(
                 connection.protocol_parameters, kwargs.get("protocol_options", {})
-            )
-            protocol_kwargs.update(
-                {
-                    "settings": settings(),
-                    "plugin_manager": plugin_manager(),
-                    "event_bus": eventManager(),
-                    "printer_profile": profile,
-                }
             )
 
         else:
@@ -483,7 +474,6 @@ class Printer(
                 profile_id = self._printer_profile_manager.get_default()["id"]
 
             self._printer_profile_manager.select(profile_id)
-            profile = self._printer_profile_manager.get_current_or_default()
 
             ##~~ Transport
 
@@ -504,15 +494,6 @@ class Printer(
                 transport_kwargs = kwargs.get("transport_kwargs", {})
                 transport_connect_kwargs = kwargs.get("transport_options", {})
 
-            transport_kwargs.update(
-                {
-                    "settings": settings(),
-                    "plugin_manager": plugin_manager(),
-                    "event_bus": eventManager(),
-                    "printer_profile": profile,
-                }
-            )
-
             ##~~ Protocol
 
             # TODO make this depend on the printer profile
@@ -523,14 +504,7 @@ class Printer(
             else:
                 protocol_kwargs = kwargs.get("protocol_options", {})
 
-            protocol_kwargs.update(
-                {
-                    "settings": settings(),
-                    "plugin_manager": plugin_manager(),
-                    "event_bus": eventManager(),
-                    "printer_profile": profile,
-                }
-            )
+        profile = self._printer_profile_manager.get_current_or_default()
 
         ##~~ Lookup and create transport instances
 
@@ -540,7 +514,12 @@ class Printer(
         if not transport_class:
             raise ValueError(f"Invalid transport: {selected_transport}")
 
-        transport = transport_class(**transport_kwargs)
+        final_transport_kwargs = {
+            **transport_kwargs,
+            **injections,
+            **{"printer_profile": profile},
+        }
+        transport = transport_class(**final_transport_kwargs)
         self._transport = transport
 
         ##~~ Lookup and create protocol instance
@@ -551,13 +530,28 @@ class Printer(
         if not protocol_class:
             raise ValueError(f"Invalid protocol: {selected_protocol}")
 
-        protocol = protocol_class(**protocol_kwargs)
+        final_protocol_kwargs = {
+            **protocol_kwargs,
+            **injections,
+            **{"printer_profile": profile},
+        }
+        protocol = protocol_class(**final_protocol_kwargs)
         self._protocol = protocol
 
         ##~~ Register everything and connect
 
         self._protocol.register_listener(self)
         self._protocol.connect(self._transport, transport_kwargs=transport_connect_kwargs)
+
+        ##~~ Remember last connection
+        self._last_connection = {
+            "connection": connection_id,
+            "protocol": selected_protocol,
+            "protocol_args": protocol_kwargs,
+            "transport": selected_transport,
+            "transport_args": transport_kwargs,
+            "printer_profile": profile_id,
+        }
 
     def disconnect(self, *args, **kwargs):
         """
@@ -1042,13 +1036,13 @@ class Printer(
     def get_current_connection_parameters(self, *args, **kwargs):
         if self._transport is None or self._protocol is None:
             return {
-                "state": "Closed",
-                "connection": None,
-                "protocol": None,
-                "protocol_args": {},
-                "transport": None,
-                "transport_args": {},
-                "printer_profile": None,
+                "state": "Offline",
+                "connection": self._last_connection.get("connection"),
+                "protocol": self._last_connection.get("protocol"),
+                "protocol_args": self._last_connection.get("protocol_args", {}),
+                "transport": self._last_connection.get("transport"),
+                "transport_args": self._last_connection.get("transport_args", {}),
+                "printer_profile": self._last_connection.get("printer_profile"),
             }
 
         printer_profile = self._printer_profile_manager.get_current_or_default()
