@@ -689,9 +689,9 @@ $(function () {
             var newSrc = self.settings.webcam_streamUrl();
             if (currentSrc != newSrc) {
                 if (newSrc.lastIndexOf("?") > -1) {
-                    newSrc += "&";
+                    newSrc += "&nonce=";
                 } else {
-                    newSrc += "?";
+                    newSrc += "?nonce=";
                 }
                 newSrc += new Date().getTime();
 
