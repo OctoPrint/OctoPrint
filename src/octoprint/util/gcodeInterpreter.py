@@ -227,7 +227,7 @@ class gcode(object):
         self._layers = []
         self._current_layer = None
 
-    def _track_layer(self, pos, arc = None):
+    def _track_layer(self, pos, arc=None):
         if not self._incl_layers:
             return
 
@@ -240,10 +240,10 @@ class gcode(object):
             if arc is not None:
                 self._addArcMinMax(
                     self._current_layer["minmax"],
-                    arc['startAngle'],
-                    arc['endAngle'],
-                    arc['center'],
-                    arc['radius']
+                    arc["startAngle"],
+                    arc["endAngle"],
+                    arc["center"],
+                    arc["radius"],
                 )
 
     def _track_command(self):
@@ -511,8 +511,14 @@ class gcode(object):
                 f = getCodeFloat(line, "F")
 
                 # this is a move or print head stays on position
-                move = x is not None or y is not None or z is not None or \
-                    i is not None or j is not None or r is not None
+                move = (
+                    x is not None
+                    or y is not None
+                    or z is not None
+                    or i is not None
+                    or j is not None
+                    or r is not None
+                )
 
                 oldPos = pos
 
@@ -565,7 +571,9 @@ class gcode(object):
                         # extrusion and move -> oldPos & pos relevant for print area & dimensions
                         self._minMax.record(oldPos)
                         self._minMax.record(pos)
-                        self._addArcMinMax(self._minMax, startAngle, endAngle, centerArc, r)
+                        self._addArcMinMax(
+                            self._minMax, startAngle, endAngle, centerArc, r
+                        )
 
                     totalExtrusion[currentExtruder] += e
                     currentE[currentExtruder] += e
@@ -593,12 +601,15 @@ class gcode(object):
 
                 # process layers if there's extrusion
                 if e:
-                    self._track_layer(pos, {
-                        "startAngle": startAngle,
-                        "endAngle": endAngle,
-                        "center": centerArc,
-                        "radius": r,
-                    })
+                    self._track_layer(
+                        pos,
+                        {
+                            "startAngle": startAngle,
+                            "endAngle": endAngle,
+                            "center": centerArc,
+                            "radius": r,
+                        },
+                    )
 
             elif gcode == "G4":  # Delay
                 S = getCodeFloat(line, "S")
