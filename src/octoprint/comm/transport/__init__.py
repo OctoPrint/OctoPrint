@@ -177,6 +177,7 @@ class Transport(ListenerAware):
         options = self.get_connection_options()
         param_dict = get_param_dict(params, options)
 
+        self.state = TransportState.CONNECTING
         self.create_connection(**param_dict)
 
         self.state = TransportState.CONNECTED
@@ -207,6 +208,14 @@ class Transport(ListenerAware):
     def check_connection(self, *args, **kwargs):
         return True
 
+    def start_autodetection(self, *args, **kwargs):
+        self.do_init_autodetection(*args, **kwargs)
+        self.autodetection_step()
+
+    def autodetection_step(self):
+        self.do_autodetection_step()
+        self.notify_listeners("on_transport_validate_connection", self)
+
     def read(self, size=None, timeout=None):
         data = self.do_read(size=size, timeout=timeout)
         self.notify_listeners("on_transport_log_received_data", self, data)
@@ -226,11 +235,22 @@ class Transport(ListenerAware):
     def do_write(self, data):
         pass
 
+    def do_init_autodetection(self, *args, **kwargs):
+        pass
+
+    def do_autodetection_step(self):
+        pass
+
+    def process_transport_log(self, message):
+        self._logger.info(message)
+        self.notify_listeners("on_transport_log_message", self, message)
+
     def __str__(self):
         return self.__class__.__name__
 
 
 class TransportState:
+    CONNECTING = "connecting"
     CONNECTED = "connected"
     DISCONNECTED = "disconnected"
     DISCONNECTED_WITH_ERROR = "disconnected_with_error"
@@ -367,7 +387,10 @@ class PushingTransportWrapper(TransportWrapper):
         return self._receiver_active
 
     def connect(self, **kwargs):
-        self.transport.connect(**kwargs)
+        try:
+            self.transport.connect(**kwargs)
+        except TransportRequiresAutodetection:
+            self.transport.start_autodetection(**kwargs)
 
         import threading
 
@@ -382,8 +405,8 @@ class PushingTransportWrapper(TransportWrapper):
         self._receiver_active = False
         self.transport.disconnect(*args, **kwargs)
 
-    def wait(self):
-        self._receiver_thread.join()
+    def wait(self, timeout=None):
+        self._receiver_thread.join(timeout)
 
     def _receiver_loop(self):
         while self._receiver_active:
@@ -405,6 +428,12 @@ class TransportListener:
         pass
 
     def on_transport_disconnected(self, transport, error=None):
+        pass
+
+    def on_transport_autodetecting(self, transport):
+        pass
+
+    def on_transport_validate_connection(self, transport):
         pass
 
     def on_transport_log_sent_data(self, transport, data):
@@ -434,4 +463,12 @@ class TimeoutTransportException(TransportException):
 
 
 class EofTransportException(TransportException):
+    pass
+
+
+class TransportRequiresAutodetection(TransportException):
+    pass
+
+
+class TransportOutOfAutodetectionCandidates(TransportException):
     pass

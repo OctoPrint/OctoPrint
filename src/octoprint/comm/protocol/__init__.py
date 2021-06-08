@@ -7,7 +7,12 @@ import logging
 
 import frozendict
 
-from octoprint.comm.transport import TransportListener, TransportState
+from octoprint.comm.transport import (
+    TransportListener,
+    TransportOutOfAutodetectionCandidates,
+    TransportRequiresAutodetection,
+    TransportState,
+)
 from octoprint.comm.util.parameters import register_settings_overlay
 from octoprint.plugin import plugin_manager
 from octoprint.settings import SubSettings
@@ -367,8 +372,11 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
         self._transport.register_listener(self)
 
         if self._transport.state == TransportState.DISCONNECTED:
-            self._transport.connect(*transport_args, **transport_kwargs)
-        self.state = ProtocolState.CONNECTING
+            try:
+                self._transport.connect(*transport_args, **transport_kwargs)
+            except TransportRequiresAutodetection:
+                self._transport.start_autodetection(*transport_args, **transport_kwargs)
+            self.state = ProtocolState.CONNECTING
 
     def disconnect(self, error=False, wait=True, timeout=10.0):
         if self.state in (
@@ -532,6 +540,13 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
 
         message = f"--- {message}"
         self.process_protocol_log(message)
+
+    def on_transport_validate_connection(self, transport):
+        try:
+            self._transport.autodetection_step()
+        except TransportOutOfAutodetectionCandidates:
+            # TODO: handle out of candidates situation gracefully
+            raise
 
     def process_protocol_log(self, message):
         self._connection_logger.debug(message)

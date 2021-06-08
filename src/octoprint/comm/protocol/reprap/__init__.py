@@ -189,6 +189,8 @@ class ReprapGcodeProtocol(
     LOG_PREFIX_MSG = "--- "
     LOG_PREFIX_WARN = "!!! "
 
+    VALIDATION_RETRIES = 3
+
     @classmethod
     def get_connection_options(cls):
         return [
@@ -584,6 +586,25 @@ class ReprapGcodeProtocol(
                         unit="sec",
                     ),
                     FloatType(
+                        "first_validation",
+                        gettext("Initial validation timeout"),
+                        min=1,
+                        unit="sec",
+                        default=10,
+                        advanced=True,
+                        expert=True,
+                    ),
+                    FloatType(
+                        "consecutive_validation",
+                        gettext("Consecutive validation timeout"),
+                        min=1,
+                        unit="sec",
+                        default=2,
+                        advanced=True,
+                        expert=True,
+                    ),
+                    # TODO This needs to go into transport
+                    FloatType(
                         "baudrate_detection_pause",
                         gettext("Initial baudrate detection pause"),
                         expert=True,
@@ -733,6 +754,10 @@ class ReprapGcodeProtocol(
             "communication_busy": kwargs.get("timeouts", {}).get(
                 "communication_timeout_busy", 2.0
             ),
+            "first_validation": kwargs.get("timeouts", {}).get("first_validation", 10.0),
+            "consecutive_validation": kwargs.get("timeouts", {}).get(
+                "consecutive_validation", 2.0
+            ),
         }
         self.interval = {
             "temperature_idle": kwargs.get("intervals", {}).get(
@@ -798,6 +823,7 @@ class ReprapGcodeProtocol(
         }
 
         self._transport = None
+        self._validation_retry = self.VALIDATION_RETRIES
 
         self.internal_state = InternalState(self)
 
@@ -1722,6 +1748,38 @@ class ReprapGcodeProtocol(
     def _job_on_hold_cleared(self):
         self._continue_sending()
 
+    ##~~ Connection validation
+
+    def on_transport_validate_connection(self, transport):
+        self._validation_retry = 0
+        self._attempt_validation()
+
+    def _handle_autodetection_timeout(self):
+        if self._validation_retry < self.VALIDATION_RETRIES:
+            self._attempt_validation()
+        else:
+            # still no dice, try next combo
+            self._transport.autodetection_step()
+
+    def _attempt_validation(self):
+        self._validation_retry += 1
+        timeout = (
+            self.timeouts.get("first_validation", 10)
+            if self._validation_retry == 1
+            else self.timeouts.get("consecutive_validation", 2)
+        )
+        self.internal_state.timeout = self.internal_state.ok_timeout = (
+            time.monotonic() + timeout
+        )
+
+        self.process_protocol_log(
+            f"Handshake attempt #{self._validation_retry} with timeout {timeout}s"
+        )
+
+        hello = self.flavor.command_hello()
+        if hello:
+            self._tickle(hello)
+
     ##~~ Transport logging
 
     def on_transport_log_message(self, transport, data):
@@ -1844,6 +1902,12 @@ class ReprapGcodeProtocol(
             pass
 
     def _on_comm_any(self, line, lower_line):
+        if self.state == ProtocolState.CONNECTING and (
+            not len(line) or time.monotonic() > self.internal_state.ok_timeout
+        ):
+            self._handle_autodetection_timeout()
+            return
+
         timeout, _ = self.flavor.comm_timeout(line, lower_line)
         if not timeout:
             self.internal_state.timeout_consecutive = 0
@@ -1866,11 +1930,6 @@ class ReprapGcodeProtocol(
                 and time.monotonic() > self.internal_state.dwelling_until
             ):
                 self.internal_state.dwelling_until = False
-
-        if self.state == ProtocolState.CONNECTING and len(line):
-            hello = self.flavor.command_hello()
-            if hello:
-                self._tickle(hello)
 
         if (
             self._resend_ok_timer

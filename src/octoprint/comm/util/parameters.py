@@ -34,7 +34,7 @@ def get_param_defaults(options):
 def get_param_dict(data, options):
     options_by_name = {option.name: option for option in options}
 
-    result = {}
+    result = get_param_defaults(options)
     for key, value in data.items():
         if key not in options_by_name:
             continue

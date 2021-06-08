@@ -5,8 +5,13 @@ import logging
 import os
 
 import serial
+from serial.tools.list_ports import comports
 
-from octoprint.comm.transport import Transport
+from octoprint.comm.transport import (
+    Transport,
+    TransportRequiresAutodetection,
+    TransportState,
+)
 from octoprint.comm.util.parameters import (
     BooleanType,
     ChoiceType,
@@ -30,6 +35,7 @@ class SerialTransport(Transport):
     max_write_passes = 5
 
     baudrates = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
+    autodetection_baudrates = [115200, 250000]
     ignored_ports = [
         "/dev/ttyAMA0",
         "/dev/ttyS*",
@@ -42,6 +48,13 @@ class SerialTransport(Transport):
             sep="\n",
             factory=int,
             default=baudrates,
+        ),
+        ListType(
+            "autodetection_baudrates",
+            gettext("Autodetection baudrates"),
+            sep="\n",
+            factory=int,
+            default=autodetection_baudrates,
         ),
         ListType(
             "ignored_ports",
@@ -144,6 +157,14 @@ class SerialTransport(Transport):
     def _get_common_options(cls):
         return [
             IntegerType(
+                "read_timeout",
+                gettext("Read Timeout"),
+                min=1,
+                unit="sec",
+                default=2,
+                advanced=True,
+            ),
+            IntegerType(
                 "write_timeout",
                 gettext("Write Timeout"),
                 min=1,
@@ -207,8 +228,6 @@ class SerialTransport(Transport):
 
     @classmethod
     def get_available_serial_ports(cls, focus):
-        from serial.tools.list_ports import comports
-
         matcher = lambda x: True
         if focus == "usbid":
             matcher = lambda x: x.vid and x.pid
@@ -257,6 +276,10 @@ class SerialTransport(Transport):
         self._serial = None
 
         self._closing = False
+
+        self._autodetect_candidates = None
+        self._autodetect_kwargs = None
+        self._autodetect_timer = None
 
     def create_connection(self, **kwargs):
         factory = self.serial_factory
@@ -309,6 +332,8 @@ class SerialTransport(Transport):
             return False
 
     def do_read(self, size=None, timeout=None):
+        if timeout is not None:
+            self._serial.timeout = timeout
         return self._serial.read(size=size)
 
     def do_write(self, data):
@@ -366,6 +391,67 @@ class SerialTransport(Transport):
     def in_waiting(self):
         return getattr(self._serial, "in_waiting", 0)
 
+    def do_init_autodetection(self, *args, **kwargs):
+        self._autodetect_kwargs = {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ("connect_via", "port", "baudrate")
+        }
+        port = self._find_serial_port(focus=kwargs.get("connect_via"))
+        baudrate = kwargs.get("baudrate")
+
+        if port:
+            port_candidates = [
+                port.device,
+            ]
+        else:
+            port_candidates = [port.device for port in comports()]
+
+        if baudrate:
+            baudrate_candidates = [
+                baudrate,
+            ]
+        else:
+            baudrate_candidates = [*self.autodetection_baudrates]
+
+        self._autodetect_candidates = [
+            (p, b) for b in baudrate_candidates for p in port_candidates
+        ]
+
+        self.process_transport_log(
+            "Performing autodetection with {} port/baudrate candidates: {}".format(
+                len(self._autodetect_candidates),
+                ", ".join(map(lambda x: "{}@{}".format(*x), self._autodetect_candidates)),
+            )
+        )
+
+        return True
+
+    def do_autodetection_step(self):
+        while (
+            len(self._autodetect_candidates) > 0
+            and self.state == TransportState.CONNECTING
+        ):
+            (p, b) = self._autodetect_candidates.pop(0)
+
+            try:
+                self.process_transport_log(f"Trying port {p}@{b}")
+                if self._serial is None or self._serial.port != p:
+                    if not self.create_connection(
+                        connect_via="port",
+                        port=p,
+                        baudrate=b,
+                        **self._autodetect_kwargs,
+                    ):
+                        self.process_transport_log(f"Could not open {p}@{b}, skipping")
+                        continue
+                else:
+                    self._serial.baudrate = b
+
+                return
+            except Exception:
+                self._logger.exception(f"Unexpected error while setting baudrate {b}")
+
     def _default_serial_factory(self, **kwargs):
         serial_obj = self._create_serial(**kwargs)
         self._apply_parity_workaround(serial_obj, **kwargs)
@@ -376,75 +462,62 @@ class SerialTransport(Transport):
         return serial_obj
 
     @classmethod
-    def _create_serial(cls, **kwargs):
-        focus = kwargs["connect_via"]
-
-        def match_port(matcher):
-            from serial.tools.list_ports import comports
-
-            for port in comports():
-                if matcher(port):
-                    return port
-            else:
-                raise ValueError()
+    def _find_serial_port(cls, focus="port", **kwargs):
+        value = kwargs.get(focus)
+        if value is None:
+            return None
 
         if focus == "port":
-            port = kwargs.pop("port")
-            baudrate = kwargs.pop("baudrate")
-            return cls._create_serial_for_port_and_baudrate(port, baudrate, **kwargs)
-
+            matcher = lambda p: p.device == value
         elif focus == "usbid":
-            usbid = kwargs.pop("usbid")
-            baudrate = kwargs.pop("baudrate")
-            vid, pid = usbid.split(":")
-            try:
-                port = match_port(
-                    lambda p: f"{p.vid:04x}" == vid and f"{p.pid:04x}" == pid
-                )
-                return cls._create_serial_for_port_and_baudrate(
-                    port.device, baudrate, **kwargs
-                )
-            except ValueError:
-                raise ValueError(f"Can't find USB ID to connect to: {usbid}")
-
+            vid, pid = value.split(":")
+            matcher = lambda p: f"{p.vid:04x}" == vid and f"{p.pid:04x}" == pid
         elif focus == "usbserial":
-            usbserial = kwargs.pop("usbserial")
-            baudrate = kwargs.pop("baudrate")
-            try:
-                port = match_port(lambda p: p.serial_number == usbserial)
-                return cls._create_serial_for_port_and_baudrate(
-                    port.device, baudrate, **kwargs
-                )
-            except ValueError:
-                raise ValueError(
-                    f"Can't find USB serial number to connect to: {usbserial}"
-                )
-
+            matcher = lambda p: p.serial_number == value
         elif focus == "usbloc":
-            usbloc = kwargs.pop("usbloc")
-            baudrate = kwargs.pop("baudrate")
-            try:
-                port = match_port(lambda p: p.location == usbloc)
-                return cls._create_serial_for_port_and_baudrate(
-                    port.device, baudrate, **kwargs
-                )
-            except ValueError:
-                raise ValueError(f"Can't find USB port to connect to: {usbloc}")
+            matcher = lambda p: p.location == value
+        else:
+            return None
+
+        try:
+            return match_port(matcher)
+        except PortNotFound:
+            return None
+
+    @classmethod
+    def _create_serial(cls, **kwargs):
+        focus = kwargs.pop("connect_via")
+
+        port_based = ("port", "usbid", "usbserial", "usbloc")
+        if focus in port_based:
+            port = cls._find_serial_port(focus=focus, **kwargs)
+            for k in port_based:
+                if k in kwargs:
+                    kwargs.pop(k)
+
+            baudrate = kwargs.pop("baudrate", 0)
+
+            if port is None or baudrate == 0:
+                raise TransportRequiresAutodetection()
+
+            return cls._create_serial_for_port_and_baudrate(
+                port.device, baudrate, **kwargs
+            )
 
         elif focus == "url":
-            serial_obj = serial.serial_for_url(kwargs.get("url"), do_not_open=True)
-            return serial_obj
+            return serial.serial_for_url(kwargs.get("url"), do_not_open=True)
 
         else:
-            raise ValueError(f"Invalid connect_via: {focus}")
+            raise ValueError(f"Invalid focus: {focus}")
 
     @classmethod
     def _create_serial_for_port_and_baudrate(cls, port, baudrate, **kwargs):
         serial_obj = serial.Serial(
             baudrate=baudrate,
-            exclusive=kwargs.get("exclusive"),
-            parity=kwargs.get("parity"),
-            write_timeout=kwargs.get("write_timeout", 10) * 1000,
+            exclusive=kwargs.get("exclusive", True),
+            parity=kwargs.get("parity", serial.PARITY_NONE),
+            timeout=kwargs.get("read_timeout", 2),
+            write_timeout=kwargs.get("write_timeout", 10),
         )
         serial_obj.port = port  # set port only now to prevent auto open
         return serial_obj
@@ -497,6 +570,18 @@ class SerialTransport(Transport):
 
     def __str__(self):
         return "SerialTransport"
+
+
+class PortNotFound(Exception):
+    pass
+
+
+def match_port(matcher):
+    for port in comports():
+        if matcher(port):
+            return port
+    else:
+        raise PortNotFound()
 
 
 if __name__ == "__main__":
