@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import socket
 
 from octoprint.comm.transport import Transport
-from octoprint.comm.util.parameters import IntegerType, TextType
+from octoprint.settings.parameters import IntegerType, TextType
 
 
 class TcpTransport(Transport):

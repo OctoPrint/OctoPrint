@@ -35,6 +35,15 @@ class VirtualSerialTransport(SerialTransport):
     def check_connection(self, *args, **kwargs):
         return True
 
+    def do_init_autodetection(self, *args, **kwargs):
+        pass
+
+    def do_autodetection_step(self):
+        pass
+
+    def __str__(self):
+        return "VirtualSerialTransport"
+
 
 class VirtualPrinterPlugin(
     octoprint.plugin.SettingsPlugin, octoprint.plugin.TemplatePlugin

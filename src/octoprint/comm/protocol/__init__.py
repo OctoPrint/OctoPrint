@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import contextlib
 import copy
 import logging
+from typing import Union
 
 import frozendict
 
@@ -13,9 +14,9 @@ from octoprint.comm.transport import (
     TransportRequiresAutodetection,
     TransportState,
 )
-from octoprint.comm.util.parameters import register_settings_overlay
 from octoprint.plugin import plugin_manager
 from octoprint.settings import SubSettings
+from octoprint.settings.parameters import register_settings_overlay
 from octoprint.util import CountedEvent, to_unicode
 from octoprint.util.listener import ListenerAware
 
@@ -226,6 +227,12 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
 
     settings = []
 
+    LOG_PREFIX_TX = ">>> "
+    LOG_PREFIX_RX = "<<< "
+    LOG_PREFIX_MSG = "--- "
+    LOG_PREFIX_WARN = "!!! "
+    LOG_PREFIX_NONE = ""
+
     @classmethod
     def with_settings(cls, **settings):
         return type(
@@ -322,9 +329,7 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
         if method is not None:
             method(old_state)
 
-        self.process_protocol_log(
-            f"--- Protocol state changed from '{old_state}' to '{new_state}'"
-        )
+        self.log_message(f"Protocol state changed from '{old_state}' to '{new_state}'")
         self.notify_listeners("on_protocol_state", self, old_state, new_state)
 
         name = f"_on_switched_state_{new_state}"
@@ -359,9 +364,7 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
         ):
             raise ProtocolAlreadyConnectedError("Already connected, disconnect first")
 
-        self.process_protocol_log(
-            f"--- Protocol {self} connecting via transport {transport}..."
-        )
+        self.log_message(f"Protocol {self} connecting via transport {transport}...")
 
         if transport_args is None:
             transport_args = []
@@ -392,10 +395,8 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
         else:
             self.state = ProtocolState.DISCONNECTING
 
-        self.process_protocol_log(
-            "--- Protocol {} disconnecting from transport {}...".format(
-                self, self._transport
-            )
+        self.log_message(
+            f"Protocol {self} disconnecting from transport {self._transport}..."
         )
 
         if wait:
@@ -523,23 +524,17 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
     def on_transport_log_received_data(self, transport, data):
         message = to_unicode(data, errors="replace").strip()
         self.notify_listeners("on_protocol_log_received", self, message)
-
-        message = f"<<< {message}"
-        self.process_protocol_log(message)
+        self.log_message(message, prefix=self.LOG_PREFIX_RX, level=None)
 
     def on_transport_log_sent_data(self, transport, data):
         message = to_unicode(data, errors="replace").strip()
         self.notify_listeners("on_protocol_log_sent", self, message)
-
-        message = f">>> {message}"
-        self.process_protocol_log(message)
+        self.log_message(message, prefix=self.LOG_PREFIX_TX, level=None)
 
     def on_transport_log_message(self, transport, data):
         message = to_unicode(data, errors="replace").strip()
         self.notify_listeners("on_protocol_log_message", self, message)
-
-        message = f"--- {message}"
-        self.process_protocol_log(message)
+        self.log_message(message, level=None)
 
     def on_transport_validate_connection(self, transport):
         try:
@@ -548,9 +543,22 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
             # TODO: handle out of candidates situation gracefully
             raise
 
-    def process_protocol_log(self, message):
+    def process_protocol_log(self, message: str):
         self._connection_logger.debug(message)
         self.notify_listeners("on_protocol_log", self, message)
+
+    def log_message(
+        self,
+        message: str,
+        level: Union[int, None] = logging.DEBUG,
+        prefix: str = LOG_PREFIX_MSG,
+    ):
+        if level is not None:
+            self._logger.log(level, message)
+        self.process_protocol_log(prefix + message)
+
+    def log_warning(self, message: str, level: Union[int, None] = logging.WARNING):
+        self.log_message(message, level=level, prefix=self.LOG_PREFIX_WARN)
 
     def _job_on_hold_cleared(self):
         pass

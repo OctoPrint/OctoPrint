@@ -3,6 +3,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import logging
 import os
+import time
 
 import serial
 from serial.tools.list_ports import comports
@@ -12,10 +13,11 @@ from octoprint.comm.transport import (
     TransportRequiresAutodetection,
     TransportState,
 )
-from octoprint.comm.util.parameters import (
+from octoprint.settings.parameters import (
     BooleanType,
     ChoiceType,
     ConditionalGroup,
+    FloatType,
     IntegerType,
     ListType,
     SmallChoiceType,
@@ -40,6 +42,7 @@ class SerialTransport(Transport):
         "/dev/ttyAMA0",
         "/dev/ttyS*",
     ]
+    autodetection_delay = 0.0
 
     settings = [
         ListType(
@@ -62,6 +65,19 @@ class SerialTransport(Transport):
             help=gettext("Serial ports you'd like to ignore"),
             sep="\n",
             default=ignored_ports,
+        ),
+        FloatType(
+            "autodetection_delay",
+            gettext("Initial autodetection delay"),
+            advanced=True,
+            expert=True,
+            default=0.0,
+            unit="sec",
+            help=gettext(
+                "Some controllers need a bit of a breather before autodetection "
+                "after initial connect. If autodetection fails due to a "
+                "hanging controller, try increasing this value."
+            ),
         ),
     ]
 
@@ -418,24 +434,22 @@ class SerialTransport(Transport):
             (p, b) for b in baudrate_candidates for p in port_candidates
         ]
 
-        self.process_transport_log(
+        self.log_message(
             "Performing autodetection with {} port/baudrate candidates: {}".format(
                 len(self._autodetect_candidates),
                 ", ".join(map(lambda x: "{}@{}".format(*x), self._autodetect_candidates)),
-            )
+            ),
+            level=logging.INFO,
         )
 
         return True
 
     def do_autodetection_step(self):
-        while (
-            len(self._autodetect_candidates) > 0
-            and self.state == TransportState.CONNECTING
-        ):
+        while self.state == TransportState.CONNECTING and self._autodetect_candidates:
             (p, b) = self._autodetect_candidates.pop(0)
 
             try:
-                self.process_transport_log(f"Trying port {p}@{b}")
+                self.log_message(f"Trying port {p}@{b}", level=logging.INFO)
                 if self._serial is None or self._serial.port != p:
                     if not self.create_connection(
                         connect_via="port",
@@ -443,14 +457,21 @@ class SerialTransport(Transport):
                         baudrate=b,
                         **self._autodetect_kwargs,
                     ):
-                        self.process_transport_log(f"Could not open {p}@{b}, skipping")
+                        self.log_message(
+                            f"Could not open {p}@{b}, skipping", level=logging.INFO
+                        )
                         continue
                 else:
                     self._serial.baudrate = b
 
+                if self.autodetection_delay:
+                    time.sleep(self.autodetection_delay)
+
                 return
             except Exception:
-                self._logger.exception(f"Unexpected error while setting baudrate {b}")
+                message = f"Unexpected error while setting baudrate {b}, skipping"
+                self._logger.exception(message)
+                self.log_message(message, level=None)
 
     def _default_serial_factory(self, **kwargs):
         serial_obj = self._create_serial(**kwargs)

@@ -53,7 +53,8 @@ from octoprint.comm.transport import (
     Transport,
     TransportListener,
 )
-from octoprint.comm.util.parameters import (
+from octoprint.events import Events
+from octoprint.settings.parameters import (
     BooleanType,
     FloatType,
     IntegerType,
@@ -63,7 +64,6 @@ from octoprint.comm.util.parameters import (
     SmallListType,
     Value,
 )
-from octoprint.events import Events
 from octoprint.util import ResettableTimer, TypeAlreadyInQueue
 from octoprint.util import dummy_gettext as gettext
 from octoprint.util import to_bytes, to_unicode
@@ -183,11 +183,6 @@ class ReprapGcodeProtocol(
     CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
     CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
     CAPABILITY_CHAMBER_TEMP = "CHAMBER_TEMPERATURE"
-
-    LOG_PREFIX_TX = ">>> "
-    LOG_PREFIX_RX = "<<< "
-    LOG_PREFIX_MSG = "--- "
-    LOG_PREFIX_WARN = "!!! "
 
     VALIDATION_RETRIES = 3
 
@@ -417,7 +412,9 @@ class ReprapGcodeProtocol(
                         default=True,
                         warning=True,
                         help=gettext(
-                            "If you disable this, the `pause_position` placeholders in your pause/resume GCODE scripts will stay unpopulated! However, pausing speed might improve slightly."
+                            "If you disable this, the `pause_position` placeholders "
+                            "in your pause/resume GCODE scripts will stay unpopulated! "
+                            "However, pausing speed might improve slightly."
                         ),
                     )
                 ],
@@ -433,7 +430,10 @@ class ReprapGcodeProtocol(
                         default=True,
                         warning=True,
                         help=gettext(
-                            "If you disable this, the `cancel_position` placeholders in your cancel GCODE script and the corresponding data in the print recovery data will stay unpopulated! However, cancelling speed might improve slightly."
+                            "If you disable this, the `cancel_position` placeholders "
+                            "in your cancel GCODE script and the corresponding data in "
+                            "the print recovery data will stay unpopulated! However, "
+                            "cancelling speed might improve slightly."
                         ),
                     ),
                 ],
@@ -603,20 +603,6 @@ class ReprapGcodeProtocol(
                         advanced=True,
                         expert=True,
                     ),
-                    # TODO This needs to go into transport
-                    FloatType(
-                        "baudrate_detection_pause",
-                        gettext("Initial baudrate detection pause"),
-                        expert=True,
-                        default=1.0,
-                        unit="sec",
-                        help=gettext(
-                            "Some controllers need a bit of a breather before baudrate "
-                            "detection after initial connect. If baudrate detection "
-                            "fails due to a hanging controller, try increasing this "
-                            "value."
-                        ),
-                    ),
                     FloatType(
                         "resendok_timeout",
                         gettext("Timeout for `ok` after resend detection"),
@@ -660,6 +646,16 @@ class ReprapGcodeProtocol(
                             "handling."
                         ),
                     ),
+                    IntegerType(
+                        "disconnect_script",
+                        gettext("Disconnect script timeout"),
+                        expert=True,
+                        default=10,
+                        help=gettext(
+                            "How long OctoPrint will wait with full disconnect for the "
+                            "disconnect script to be sent."
+                        ),
+                    ),
                 ],
                 advanced=True,
             ),
@@ -672,7 +668,8 @@ class ReprapGcodeProtocol(
                         gettext("Enable temperature autoreporting if supported"),
                         default=True,
                         help=gettext(
-                            "Uncheck this if you want to disable temperature autoreporting, even if the firmware supports it"
+                            "Uncheck this if you want to disable temperature "
+                            "autoreporting, even if the firmware supports it"
                         ),
                     ),
                     BooleanType(
@@ -680,7 +677,8 @@ class ReprapGcodeProtocol(
                         gettext("Enable sd status autoreporting if supported"),
                         default=True,
                         help=gettext(
-                            "Uncheck this if you want to disable sd status autoreporting, even if the firmware supports it"
+                            "Uncheck this if you want to disable sd status "
+                            "autoreporting, even if the firmware supports it"
                         ),
                     ),
                     BooleanType(
@@ -688,7 +686,9 @@ class ReprapGcodeProtocol(
                         gettext("Use emergency parser if supported"),
                         default=True,
                         help=gettext(
-                            "Uncheck this if you want to disable force-sending emergency commands to compatible printers, even if the firmware supports it"
+                            "Uncheck this if you want to disable force-sending emergency "
+                            "commands to compatible printers, even if the firmware "
+                            "supports it"
                         ),
                     ),
                     BooleanType(
@@ -696,7 +696,8 @@ class ReprapGcodeProtocol(
                         gettext("Use `busy` protocol if supported"),
                         default=True,
                         help=gettext(
-                            "Uncheck this if you want to disable use of the `busy` protocol, even if the firmware supports it"
+                            "Uncheck this if you want to disable use of the `busy` "
+                            "protocol, even if the firmware supports it"
                         ),
                     ),
                     BooleanType(
@@ -704,7 +705,8 @@ class ReprapGcodeProtocol(
                         gettext("Enable chamber temperature management if supported"),
                         default=True,
                         help=gettext(
-                            "Uncheck this if you want to disable chamber temperature management, even if the firmware supports it"
+                            "Uncheck this if you want to disable chamber temperature "
+                            "management, even if the firmware supports it"
                         ),
                     ),
                 ],
@@ -757,6 +759,9 @@ class ReprapGcodeProtocol(
             "first_validation": kwargs.get("timeouts", {}).get("first_validation", 10.0),
             "consecutive_validation": kwargs.get("timeouts", {}).get(
                 "consecutive_validation", 2.0
+            ),
+            "disconnect_script": kwargs.get("timeouts", {}).get(
+                "disconnect_script", 10.0
             ),
         }
         self.interval = {
@@ -978,9 +983,9 @@ class ReprapGcodeProtocol(
     # cancel handling
 
     def _cancel_preparation_failed(self):
-        self.process_protocol_log(
+        self.log_message(
             "Did not receive parseable position data from printer within {}s, "
-            "continuing without it".format(self.timeouts.get("position_log_wait", 10.0))
+            "continuing without it".format(self.timeouts.get("position_log_wait", 10.0)),
         )
         self._cancel_preparation_done()
 
@@ -1083,8 +1088,8 @@ class ReprapGcodeProtocol(
     # pause handling
 
     def _pause_preparation_failed(self):
-        self.process_protocol_log(
-            "Did not receive parseable position data from printer within {}s, "
+        self.log_warning(
+            "Did not receive parsable position data from printer within {}s, "
             "continuing without it".format(self.timeouts.get("position_log_wait", 10.0))
         )
         self._pause_preparation_done()
@@ -1116,8 +1121,8 @@ class ReprapGcodeProtocol(
 
             # wait for current commands to be sent, then switch to paused state
             def finalize():
-                # only switch to PAUSED if we were still PAUSING, to avoid "swallowing" received resumes during
-                # pausing
+                # only switch to PAUSED if we were still PAUSING, to avoid
+                # "swallowing" received resumes during pausing
                 if self.state == ProtocolState.PAUSING:
                     self.state = ProtocolState.PAUSED
 
@@ -1188,6 +1193,8 @@ class ReprapGcodeProtocol(
             self._pause_preparation_done(
                 check_timer=False, suppress_script=not local_handling, user=user
             )
+
+    ##~~ Fdm3dPrinterProtocolMixin
 
     def move(
         self,
@@ -1355,8 +1362,7 @@ class ReprapGcodeProtocol(
                 stats.tx_error_threshold * 100, stats.tx_error_rate * 100
             )
         )
-        self.process_protocol_log(message)
-        self._logger.warning(message)
+        self.log_warning(message)
 
     ##~~
 
@@ -1599,6 +1605,8 @@ class ReprapGcodeProtocol(
 
     def _on_switching_state_connected(self, old_state):
         if old_state == ProtocolState.CONNECTING:
+            self.transport.signal_connected()
+
             self.internal_state.timeout = self.get_timeout("communication")
 
             self._send_command(self.flavor.command_set_line(0))
@@ -1666,7 +1674,7 @@ class ReprapGcodeProtocol(
         if not error and self.state in ProtocolState.OPERATIONAL_STATES:
             try:
                 self.send_script("beforePrinterDisconnected")
-                stop = time.monotonic() + 10.0  # TODO make somehow configurable
+                stop = self.get_timeout("disconnect_script")
                 while (
                     self._command_queue.unfinished_tasks
                     or self._send_queue.unfinished_tasks
@@ -1772,7 +1780,7 @@ class ReprapGcodeProtocol(
             time.monotonic() + timeout
         )
 
-        self.process_protocol_log(
+        self.log_message(
             f"Handshake attempt #{self._validation_retry} with timeout {timeout}s"
         )
 
@@ -1903,7 +1911,11 @@ class ReprapGcodeProtocol(
 
     def _on_comm_any(self, line, lower_line):
         if self.state == ProtocolState.CONNECTING and (
-            not len(line) or time.monotonic() > self.internal_state.ok_timeout
+            not len(line)
+            or (
+                self.internal_state.ok_timeout
+                and time.monotonic() > self.internal_state.ok_timeout
+            )
         ):
             self._handle_autodetection_timeout()
             return
@@ -1968,12 +1980,11 @@ class ReprapGcodeProtocol(
 
         if 0 < consecutive_max < self.internal_state.timeout_consecutive:
             # too many consecutive timeouts, we give up
-            message = (
-                "No response from printer after {} consecutive communication timeouts. "
-                "Have to consider it dead.".format(consecutive_max + 1)
+            self.log_message(
+                f"No response from printer after {consecutive_max + 1} consecutive communication timeouts. "
+                f"Have to consider it dead.",
+                level=logging.INFO,
             )
-            self._logger.info(message)
-            self.process_protocol_log(message)
 
             # TODO error handling
             self.error = "Too many consecutive timeouts"
@@ -2119,15 +2130,8 @@ class ReprapGcodeProtocol(
                 # (prior) resend request.
                 #
                 # We will ignore this resend request and just continue normally.
-                self._logger.debug(
-                    "Ignoring resend request for line {} == current line, we haven't sent that yet so the printer got N-1 twice from us, probably due to a timeout".format(
-                        linenumber
-                    )
-                )
-                self.process_protocol_log(
-                    "Ignoring resend request for line {}, we haven't sent that yet".format(
-                        linenumber
-                    )
+                self.log_message(
+                    f"Ignoring resend request for line {linenumber}, we haven't sent that yet"
                 )
                 return
 
@@ -2141,15 +2145,8 @@ class ReprapGcodeProtocol(
                 and self.internal_state.resend_count
                 < self._current_linenumber - linenumber - 1
             ):
-                self._logger.debug(
-                    "Ignoring resend request for line {}, that still originates from lines we sent before we got the first resend request".format(
-                        linenumber
-                    )
-                )
-                self.process_protocol_log(
-                    "Ignoring resend request for line {}, originates from lines sent earlier".format(
-                        linenumber
-                    )
+                self.log_message(
+                    f"Ignoring resend request for line {linenumber}, originates from lines sent earlier"
                 )
                 self.internal_state.resend_count += 1
                 return
@@ -2219,23 +2216,17 @@ class ReprapGcodeProtocol(
             with self.job_put_on_hold():
                 idle = self._state == ProtocolState.CONNECTED
                 if idle:
-                    message = (
+                    self.log_warning(
                         "Printer sent 'start' while already connected. External reset? "
                         "Resetting state to be on the safe side."
                     )
-                    self.process_protocol_log(message)
-                    self._logger.warning(message)
-
                     self._on_external_reset()
 
                 else:
-                    message = (
+                    self.log_warning(
                         "Printer sent 'start' while processing a job. External reset? "
                         "Aborting job since printer lost state."
                     )
-                    self.process_protocol_log(message)
-                    self._logger.warning(message)
-
                     self._on_external_reset()
                     self.cancel_processing(log_position=False)
 
@@ -2291,13 +2282,11 @@ class ReprapGcodeProtocol(
 
             else:
                 message = (
-                    "--- WARNING! Received an error from the printer's firmware, ignoring that as configured "
-                    "but you might want to investigate what happened here! Error: {}".format(
-                        error
-                    )
+                    f"WARNING! Received an error from the printer's firmware, ignoring that as configured "
+                    f"but you might want to investigate what happened here! Error: {error}"
                 )
                 self._to_logfile_with_terminal(message, level=logging.WARNING)
-                self.process_protocol_log(message)
+                self.log_message(message, level=None)
                 self._clear_to_send.set()
 
     def _on_error_communication(self, error_type):
@@ -2311,9 +2300,9 @@ class ReprapGcodeProtocol(
         if not self.internal_state.busy_detected and self._capability_support.get(
             self.CAPABILITY_BUSY_PROTOCOL, False
         ):
-            self.process_protocol_log(
+            self.log_message(
                 "Printer seems to support the busy protocol, adjusting timeouts and setting busy "
-                "interval accordingly"
+                "interval accordingly",
             )
             self.internal_state.busy_detected = True
 
@@ -2321,37 +2310,26 @@ class ReprapGcodeProtocol(
             self._transport.timeout = new_communication_timeout
             busy_interval = max(int(new_communication_timeout) - 1, 1)
 
-            self._logger.info(
-                "Printer seems to support the busy protocol, telling it to set the busy "
-                'interval to our "communication_busy" timeout - 1s = {}s'.format(
-                    busy_interval
-                )
-            )
-
             self._set_busy_protocol_interval(interval=busy_interval)
 
     def _on_comm_action_command(self, line, lower_line, action):
         if action == "cancel":
-            self.process_protocol_log("Cancelling on request of the printer...")
+            self.log_message("Cancelling on request of the printer...")
             self.cancel_processing()
         elif action == "pause":
-            self.process_protocol_log("Pausing on request of the printer...")
+            self.log_message("Pausing on request of the printer...")
             self.pause_processing()
         elif action == "paused":
-            self.process_protocol_log(
-                "Printer signalled that it paused, switching state..."
-            )
+            self.log_message("Printer signalled that it paused, switching state...")
             self.pause_processing(local_handling=False)
         elif action == "resume":
-            self.process_protocol_log("Resuming on request of the printer...")
+            self.log_message("Resuming on request of the printer...")
             self.resume_processing()
         elif action == "resumed":
-            self.process_protocol_log(
-                "Printer signalled that it resumed, switching state..."
-            )
+            self.log_message("Printer signalled that it resumed, switching state...")
             self.resume_processing(local_handling=False)
         elif action == "disconnect":
-            self.process_protocol_log("Disconnecting on request of the printer...")
+            self.log_message("Disconnecting on request of the printer...", prefix="")
             # TODO inform printer about forced disconnect
             self.disconnect()
         else:
@@ -2583,11 +2561,9 @@ class ReprapGcodeProtocol(
 
             if self.sanity_check_tools:
                 # log to terminal and remember as invalid
-                message = "T{} reported as invalid, reverting to T{}".format(
-                    invalid_tool, fallback_tool
+                self.log_warning(
+                    f"T{invalid_tool} reported as invalid, reverting to T{fallback_tool}"
                 )
-                self.process_protocol_log(self.LOG_PREFIX_WARN + message)
-                self._logger.warning(message)
                 self.notify_listeners(
                     "on_protocol_tool_invalid", self, invalid_tool, fallback_tool
                 )
@@ -2605,10 +2581,9 @@ class ReprapGcodeProtocol(
                 )
             else:
                 # just log to terminal, user disabled sanity check
-                self.process_protocol_log(
-                    self.LOG_PREFIX_WARN
-                    + "T{} reported as invalid by the firmware, but you've "
-                    "disabled tool sanity checking, ignoring".format(invalid_tool)
+                self.log_warning(
+                    f"T{invalid_tool} reported as invalid by the firmware, but you've "
+                    f"disabled tool sanity checking, ignoring"
                 )
 
     def _finish_heatup(self):
@@ -3210,7 +3185,7 @@ class ReprapGcodeProtocol(
                     )
                 )
 
-    ##~~ actual sending via serial
+    ##~~ actual sending via transport
 
     def _needs_checksum(self, command):
         if not self._transport.message_integrity:
@@ -3356,20 +3331,29 @@ class ReprapGcodeProtocol(
                 self.pause_processing(tags=command.tags)
 
             if command.code in self.flavor.blocked_commands:
-                # TODO evaluate "notify_suppressed_commands" and trigger notification if needed
-                self._logger.info(
-                    "Not sending {} to printer, it's configured as a blocked command".format(
-                        command
-                    )
+                message = f"Not sending {command} to printer, it's configured as a blocked command"
+                self.log_message(
+                    message,
+                    level=logging.INFO,
                 )
+                self._event_bus.fire(
+                    Events.COMMAND_SUPPRESSED,
+                    {"command": command, "message": message, "severity": "warn"},
+                )
+
                 return (None,)
+
             elif command.code in self.flavor.ignored_commands:
-                # TODO evaluate "notify_suppressed_commands" and trigger notification if needed
-                self._logger.info(
-                    "Not sending {} to printer, it's configured as a blocked command".format(
-                        command
-                    )
+                message = f"Not sending {command} to printer, it's configured as an ignored command"
+                self.log_message(
+                    message,
+                    level=logging.INFO,
                 )
+                self._event_bus.fire(
+                    Events.COMMAND_SUPPRESSED,
+                    {"command": command, "message": message, "severity": "info"},
+                )
+
                 return (None,)
 
     def _command_phase_sending(self, command, gcode=None):
@@ -3513,8 +3497,7 @@ class ReprapGcodeProtocol(
         if close:
             # close to reset host state
             self.error = "Closing serial port due to emergency stop."
-            self.process_protocol_log(self.LOG_PREFIX_WARN + self.error)
-            self._logger.warning(self.error)
+            self.log_warning(self.error)
             self.disconnect(error=True)
 
         # fire the M112 event since we sent it and we're going to prevent the caller from seeing it

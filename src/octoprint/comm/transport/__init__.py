@@ -4,10 +4,11 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import copy
 import logging
 import time
+from typing import Union
 
-from octoprint.comm.util.parameters import get_param_dict, register_settings_overlay
 from octoprint.plugin import plugin_manager
 from octoprint.settings import SubSettings
+from octoprint.settings.parameters import get_param_dict, register_settings_overlay
 from octoprint.util.listener import ListenerAware
 
 SETTINGS_PATH = ["connection", "transports"]
@@ -178,8 +179,10 @@ class Transport(ListenerAware):
         param_dict = get_param_dict(params, options)
 
         self.state = TransportState.CONNECTING
-        self.create_connection(**param_dict)
+        if self.create_connection(**param_dict):
+            self.signal_connected()
 
+    def signal_connected(self):
         self.state = TransportState.CONNECTED
         self.notify_listeners("on_transport_connected", self)
 
@@ -242,8 +245,12 @@ class Transport(ListenerAware):
         pass
 
     def process_transport_log(self, message):
-        self._logger.info(message)
-        self.notify_listeners("on_transport_log_message", self, message)
+        self.notify_listeners("on_protocol_log", self, message)
+
+    def log_message(self, message: str, level: Union[int, None] = logging.DEBUG):
+        if level is not None:
+            self._logger.log(level, message)
+        self.process_transport_log(message)
 
     def __str__(self):
         return self.__class__.__name__

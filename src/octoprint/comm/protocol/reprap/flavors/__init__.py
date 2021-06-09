@@ -774,10 +774,8 @@ class StandardFlavor(metaclass=FlavorMeta):
 
     def handle_gcode_M140_queuing(self, command):
         if not self._protocol.printer_profile["heatedBed"]:
-            self._protocol.process_protocol_log(
-                'Warn: Not sending "{}", printer profile has no heated bed'.format(
-                    command
-                )
+            self._protocol.log_warning(
+                f'Warn: Not sending "{command}", printer profile has no heated bed'
             )
             return (None,)  # Don't send bed commands if we don't have a heated bed
 
@@ -861,7 +859,7 @@ class StandardFlavor(metaclass=FlavorMeta):
                 "was reported as invalid by the firmware. Make sure your "
                 "printer profile is set up correctly.".format(new_tool)
             )
-            self._protocol.process_protocol_log(self._protocol.LOG_PREFIX_WARN + message)
+            self._protocol.log_warning(message)
             self._protocol.notify_listeners(
                 "on_protocol_message_suppressed",
                 self._protocol,
@@ -890,11 +888,11 @@ class StandardFlavor(metaclass=FlavorMeta):
 
         if not self._protocol.validate_tool(new_tool):
             message = (
-                "Not sending T{}, that tool doesn't exist according to the printer profile or "
-                "was reported as invalid by the firmware. Make sure your "
-                "printer profile is set up correctly.".format(new_tool)
+                f"Not sending T{new_tool}, that tool doesn't exist according to the "
+                f"printer profile or was reported as invalid by the firmware. Make sure "
+                f"your printer profile is set up correctly."
             )
-            self._protocol.process_protocol_log(self._protocol.LOG_PREFIX_WARN + message)
+            self._protocol.log_warning(message)
             self._protocol.notify_listeners(
                 "on_protocol_message_suppressed",
                 self._protocol,
