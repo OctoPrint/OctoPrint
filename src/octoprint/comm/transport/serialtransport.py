@@ -10,6 +10,7 @@ from serial.tools.list_ports import comports
 
 from octoprint.comm.transport import (
     Transport,
+    TransportOutOfAutodetectionCandidates,
     TransportRequiresAutodetection,
     TransportState,
 )
@@ -472,6 +473,9 @@ class SerialTransport(Transport):
                 message = f"Unexpected error while setting baudrate {b}, skipping"
                 self._logger.exception(message)
                 self.log_message(message, level=None)
+
+        if not self._autodetect_candidates:
+            raise TransportOutOfAutodetectionCandidates()
 
     def _default_serial_factory(self, **kwargs):
         serial_obj = self._create_serial(**kwargs)

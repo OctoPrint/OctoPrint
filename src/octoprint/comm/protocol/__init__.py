@@ -374,12 +374,33 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
         self._transport = transport
         self._transport.register_listener(self)
 
-        if self._transport.state == TransportState.DISCONNECTED:
-            try:
-                self._transport.connect(*transport_args, **transport_kwargs)
-            except TransportRequiresAutodetection:
-                self._transport.start_autodetection(*transport_args, **transport_kwargs)
-            self.state = ProtocolState.CONNECTING
+        try:
+            if self._transport.state == TransportState.DISCONNECTED:
+                try:
+                    self._transport.connect(*transport_args, **transport_kwargs)
+                except TransportRequiresAutodetection:
+                    self.log_message(
+                        "Attempting to auto detect correct transport configuration",
+                        level=logging.INFO,
+                    )
+                    self._transport.start_autodetection(
+                        *transport_args, **transport_kwargs
+                    )
+                self.state = ProtocolState.CONNECTING
+
+        except TransportOutOfAutodetectionCandidates:
+            self.log_warning(
+                "Auto detection of transport configuration failed, no more candidates to test"
+            )
+            self._disconnect_transport(wait=False)
+            self.state = ProtocolState.DISCONNECTED
+            raise
+
+        except Exception as ex:
+            self.log_warning(f"There was an error while connecting: {str(ex)}")
+            self._disconnect_transport(wait=False)
+            self.state = ProtocolState.DISCONNECTED
+            raise
 
     def disconnect(self, error=False, wait=True, timeout=10.0):
         if self.state in (
@@ -402,6 +423,16 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
         if wait:
             self.join(timeout=timeout)
 
+        error = self._disconnect_transport(wait=wait) or error
+
+        if error:
+            self.state = ProtocolState.DISCONNECTED_WITH_ERROR
+        else:
+            self.state = ProtocolState.DISCONNECTED
+
+    def _disconnect_transport(self, wait=True):
+        error = False
+
         self._transport.unregister_listener(self)
         if self._transport.state == TransportState.CONNECTED:
             try:
@@ -411,11 +442,9 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
                     f"Error while disconnecting from transport {self._transport}"
                 )
                 error = True
+        self._transport = None
 
-        if error:
-            self.state = ProtocolState.DISCONNECTED_WITH_ERROR
-        else:
-            self.state = ProtocolState.DISCONNECTED
+        return error
 
     def process(self, job, position=0, user=None, tags=None, **kwargs):
         if not job.can_process(self):
@@ -540,8 +569,10 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
         try:
             self._transport.autodetection_step()
         except TransportOutOfAutodetectionCandidates:
-            # TODO: handle out of candidates situation gracefully
-            raise
+            self.log_warning(
+                "Auto detection of transport configuration failed, no more candidates to test"
+            )
+            self.state = ProtocolState.DISCONNECTED
 
     def process_protocol_log(self, message: str):
         self._connection_logger.debug(message)

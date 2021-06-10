@@ -25,9 +25,11 @@ from octoprint.comm.protocol import (
     FileAwareProtocolListener,
     MultiToolAwareProtocolListener,
     PositionAwareProtocolListener,
+    ProtocolAlreadyConnectedError,
     ProtocolListener,
     ProtocolState,
 )
+from octoprint.comm.transport import TransportOutOfAutodetectionCandidates
 from octoprint.events import Events, eventManager
 from octoprint.filemanager import FileDestinations, NoSuchStorage, valid_file_type
 from octoprint.plugin import ProgressPlugin, plugin_manager
@@ -563,17 +565,37 @@ class Printer(
         ##~~ Register everything and connect
 
         self._protocol.register_listener(self)
-        self._protocol.connect(self._transport, transport_kwargs=transport_connect_kwargs)
 
-        ##~~ Remember last connection
-        self._last_connection = {
-            "connection": connection_id,
-            "protocol": selected_protocol,
-            "protocol_args": protocol_kwargs,
-            "transport": selected_transport,
-            "transport_args": transport_connect_kwargs,
-            "printer_profile": profile_id,
-        }
+        try:
+            self._protocol.connect(
+                self._transport, transport_kwargs=transport_connect_kwargs
+            )
+
+            # Remember last connection
+            self._last_connection = {
+                "connection": connection_id,
+                "protocol": selected_protocol,
+                "protocol_args": protocol_kwargs,
+                "transport": selected_transport,
+                "transport_args": transport_connect_kwargs,
+                "printer_profile": profile_id,
+            }
+
+        except ProtocolAlreadyConnectedError:
+            self._logger.error(
+                f"Already connected via protocol {self._protocol} and transport {self._transport}"
+            )
+
+        except TransportOutOfAutodetectionCandidates:
+            self._transport = None
+            self._protocol.unregister_listener(self)
+            self._protocol = None
+
+        except Exception:
+            self._transport = None
+            self._protocol.unregister_listener(self)
+            self._protocol = None
+            raise
 
     def disconnect(self, *args, **kwargs):
         """
@@ -599,12 +621,6 @@ class Printer(
         if self._protocol is None:
             return None
         return self._protocol.transport
-
-    getTransport = util.deprecated(
-        "getTransport has been renamed to get_transport",
-        since="1.2.0-dev-590",
-        includedoc="Replaced by :func:`get_transport`",
-    )
 
     def job_on_hold(self, blocking=True, *args, **kwargs):
         if self._protocol is None:

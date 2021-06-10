@@ -3,8 +3,9 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import copy
 import logging
-import time
 from typing import Union
+
+import serial
 
 from octoprint.plugin import plugin_manager
 from octoprint.settings import SubSettings
@@ -183,6 +184,8 @@ class Transport(ListenerAware):
             self.signal_connected()
 
     def signal_connected(self):
+        if self.state != TransportState.CONNECTING:
+            return
         self.state = TransportState.CONNECTED
         self.notify_listeners("on_transport_connected", self)
 
@@ -216,8 +219,12 @@ class Transport(ListenerAware):
         self.autodetection_step()
 
     def autodetection_step(self):
-        self.do_autodetection_step()
-        self.notify_listeners("on_transport_validate_connection", self)
+        try:
+            self.do_autodetection_step()
+            self.notify_listeners("on_transport_validate_connection", self)
+        except TransportOutOfAutodetectionCandidates:
+            self.state = TransportState.DISCONNECTED
+            raise
 
     def read(self, size=None, timeout=None):
         data = self.do_read(size=size, timeout=timeout)
@@ -326,29 +333,23 @@ class SeparatorAwareTransportWrapper(TransportWrapper):
         self._buffered = bytearray()
 
     def read(self, size=None, timeout=None):
-        start = time.monotonic()
         termlen = len(self.terminator)
-        data = self._buffered
+        timeout = serial.Timeout(timeout)
 
-        while True:
-            # make sure we always read everything that is waiting
-            data += bytearray(self.transport.read(self.transport.in_waiting))
+        while not timeout.expired():
+            self._buffered += self.transport.read(self.transport.in_waiting)
 
             # check for terminator, if it's there we have found our line
-            termpos = data.find(self.terminator)
+            termpos = self._buffered.find(self.terminator)
             if termpos >= 0:
-                # line: everything up to and incl. the terminator
-                line = data[: termpos + termlen]
-
-                # buffered: everything after the terminator
-                self._buffered = data[termpos + termlen :]
-
+                # line: everything up to and incl. the terminator, buffered: rest
+                line = self._buffered[: termpos + termlen]
+                del self._buffered[: termpos + termlen]
                 received = bytes(line)
                 self.notify_listeners("on_transport_log_received_data", self, received)
                 return received
 
-            # check if timeout expired
-            if timeout and time.monotonic() > start + timeout:
+            if timeout.expired():
                 break
 
             # if we arrive here we so far couldn't read a full line, wait for more data
@@ -358,9 +359,7 @@ class SeparatorAwareTransportWrapper(TransportWrapper):
                 break
 
             # add to data and loop
-            data += c
-
-        self._buffered = data
+            self._buffered += c
 
         raise TimeoutTransportException()
 

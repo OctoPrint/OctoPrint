@@ -52,6 +52,7 @@ from octoprint.comm.transport import (
     TimeoutTransportException,
     Transport,
     TransportListener,
+    TransportState,
 )
 from octoprint.events import Events
 from octoprint.settings.parameters import (
@@ -123,6 +124,8 @@ class InternalState:
         self.resend_requested = None
         self.resend_linenumber = None
         self.resend_count = None
+        self.resend_consecutive_linenumber = None
+        self.resend_consecutive_count = None
 
         self.long_running_command = False
 
@@ -397,6 +400,17 @@ class ReprapGcodeProtocol(
                             "If this is checked, OctoPrint will try to send an emergency "
                             "stop command prior to a disconnect due to a (fatal) error "
                             "in order to disable heaters and motors."
+                        ),
+                    ),
+                    IntegerType(
+                        "max_identical_resends",
+                        gettext("Max number of identical requests"),
+                        default=10,
+                        warning=False,
+                        help=gettext(
+                            "After how many resend requests for the same line OctoPrint "
+                            "should consider the firmware to be stuck in a resend loop "
+                            "and abort and disconnect."
                         ),
                     ),
                 ],
@@ -792,6 +806,9 @@ class ReprapGcodeProtocol(
         )
         self.send_emergency_stop = kwargs.get("error_handling", {}).get(
             "send_emergency_stop", True
+        )
+        self.max_identical_resends = kwargs.get("error_handling", {}).get(
+            "max_identical_resends", 10
         )
 
         self.sanity_check_tools = kwargs.get("sanity_checking", {}).get(
@@ -1759,15 +1776,24 @@ class ReprapGcodeProtocol(
     ##~~ Connection validation
 
     def on_transport_validate_connection(self, transport):
+        if transport != self._transport:
+            return
+
+        if transport.state != TransportState.CONNECTING:
+            return
+
         self._validation_retry = 0
         self._attempt_validation()
 
     def _handle_autodetection_timeout(self):
+        if not self.transport or self.transport.state != TransportState.CONNECTING:
+            return
+
         if self._validation_retry < self.VALIDATION_RETRIES:
             self._attempt_validation()
         else:
             # still no dice, try next combo
-            self._transport.autodetection_step()
+            self.transport.autodetection_step()
 
     def _attempt_validation(self):
         self._validation_retry += 1
@@ -1839,8 +1865,8 @@ class ReprapGcodeProtocol(
 
         if data is None:
             # EOF
-            # TODO handle EOF
-            pass
+            self._trigger_error("Transport signalled EOF, disconnecting!", "eof")
+            return
 
         def convert_line(line):
             if line is None:
@@ -1910,11 +1936,15 @@ class ReprapGcodeProtocol(
             pass
 
     def _on_comm_any(self, line, lower_line):
-        if self.state == ProtocolState.CONNECTING and (
-            not len(line)
-            or (
-                self.internal_state.ok_timeout
-                and time.monotonic() > self.internal_state.ok_timeout
+        if (
+            self.state == ProtocolState.CONNECTING
+            and self.transport.state == TransportState.CONNECTING
+            and (
+                not len(line)
+                or (
+                    self.internal_state.ok_timeout
+                    and time.monotonic() > self.internal_state.ok_timeout
+                )
             )
         ):
             self._handle_autodetection_timeout()
@@ -1973,35 +2003,34 @@ class ReprapGcodeProtocol(
         # now increment the timeout counter
         self.internal_state.timeout_consecutive += 1
         self._logger.debug(
-            "Now at {} consecutive timeouts".format(
-                self.internal_state.timeout_consecutive
-            )
+            f"Now at {self.internal_state.timeout_consecutive} consecutive timeouts"
         )
 
         if 0 < consecutive_max < self.internal_state.timeout_consecutive:
             # too many consecutive timeouts, we give up
-            self.log_message(
-                f"No response from printer after {consecutive_max + 1} consecutive communication timeouts. "
-                f"Have to consider it dead.",
+            self.log_warning(
+                f"No response from printer after {consecutive_max + 1} "
+                f"consecutive communication timeouts. "
+                f"Have to consider it dead. {general_message}.",
                 level=logging.INFO,
             )
 
-            # TODO error handling
             self.error = "Too many consecutive timeouts"
-
             self.disconnect(error=True)
 
         elif self.internal_state.resend_requested is not None:
-            message = "Communication timeout during an active resend, resending same line again to trigger response from printer."
+            message = (
+                "Communication timeout during an active resend, resending same "
+                "line again to trigger response from printer."
+            )
             self._logger.info(message)
             self.notify_listeners(
                 "on_protocol_log", self, message + " " + general_message
             )
             if self._send_same_from_resend():
                 self._commdebug_logger.debug(
-                    "on_comm_timeout => clear_to_send.set: timeout during active resend (counter: {})".format(
-                        self._clear_to_send.counter
-                    )
+                    f"on_comm_timeout => clear_to_send.set: timeout during active resend "
+                    f"(counter: {self._clear_to_send.counter})"
                 )
                 self._clear_to_send.set()
 
@@ -2026,9 +2055,8 @@ class ReprapGcodeProtocol(
             )
             if self._send_command(GcodeCommand("M105", type="temperature")):
                 self._commdebug_logger.debug(
-                    "on_comm_timeout => clear_to_send.set: timeout while printing (counter: {})".format(
-                        self._clear_to_send.counter
-                    )
+                    f"on_comm_timeout => clear_to_send.set: timeout while printing "
+                    f"(counter: {self._clear_to_send.counter})"
                 )
                 self._clear_to_send.set()
 
@@ -2040,9 +2068,8 @@ class ReprapGcodeProtocol(
                 "on_protocol_log_message", self, message + " " + general_message
             )
             self._commdebug_logger.debug(
-                "on_comm_timeout => clear_to_send.set: timeout while idle (counter: {})".format(
-                    self._clear_to_send.counter
-                )
+                f"on_comm_timeout => clear_to_send.set: timeout while idle "
+                f"(counter: {self._clear_to_send.counter})"
             )
             self._clear_to_send.set()
 
@@ -2145,23 +2172,35 @@ class ReprapGcodeProtocol(
                 and self.internal_state.resend_count
                 < self._current_linenumber - linenumber - 1
             ):
-                self.log_message(
+                self._logger.info(
                     f"Ignoring resend request for line {linenumber}, originates from lines sent earlier"
                 )
                 self.internal_state.resend_count += 1
                 return
 
             if linenumber not in self._last_lines:
-                self._logger.error(
-                    "Printer requested to resend a line we don't have: {}".format(
-                        linenumber
-                    )
-                )
+                error = f"Printer requested to resend a line we don't have: {linenumber}"
+                self.log_warning(error)
                 if self._is_busy():
-                    # TODO set error state & log
-                    self.cancel_processing(error=True)
+                    self._trigger_error(error, "resend")
                 else:
                     return
+
+            if self.internal_state.resend_consecutive_linenumber == linenumber:
+                self.internal_state.resend_consecutive_count += 1
+                if (
+                    self.internal_state.resend_consecutive_count
+                    >= self.max_identical_resends
+                ):
+                    error_text = (
+                        f"Printer keep requesting line {linenumber} again and "
+                        f"again, communication stuck"
+                    )
+                    self.log_warning(error_text)
+                    self._trigger_error(error_text, "resend_loop")
+            else:
+                self.internal_state.resend_consecutive_linenumber = linenumber
+                self.internal_state.resend_consecutive_count = 0
 
             self.internal_state.resend_requested = linenumber
             self.internal_state.resend_linenumber = linenumber
@@ -2330,8 +2369,16 @@ class ReprapGcodeProtocol(
             self.resume_processing(local_handling=False)
         elif action == "disconnect":
             self.log_message("Disconnecting on request of the printer...", prefix="")
-            # TODO inform printer about forced disconnect
             self.disconnect()
+        elif action == "sd_inserted":
+            self.log_message("Printer reported SD card as inserted")
+            self._on_message_sd_init_ok()
+        elif action == "sd_ejected":
+            self.log_message("Printer reported SD card as ejected")
+            self._on_message_sd_init_fail()
+        elif action == "sd_updated":
+            self.log_message("Printer reported a change on the SD card")
+            self.list_files()
         else:
             for hook in self._action_hooks:
                 try:
@@ -2522,6 +2569,7 @@ class ReprapGcodeProtocol(
 
     def _on_message_sd_init_fail(self):
         self.internal_state.sd_available = False
+        self.internal_state.sd_files = []
         self.notify_listeners(
             "on_protocol_file_storage_available",
             self,
@@ -2698,7 +2746,9 @@ class ReprapGcodeProtocol(
             try:
                 command = self._last_lines[linenumber]
             except KeyError:
-                # TODO what to do?
+                # This should actually never happen, but if it does, all hope is lost
+                error_text = f"Should resend {linenumber}, but can't find it"
+                self._trigger_error(error_text, "resend")
                 return False
 
             result = self._enqueue_for_sending(
