@@ -424,7 +424,7 @@ $(function () {
                 self.uploadButton.bind("click", function () {
                     self._markWorking(
                         gettext("Installing plugin..."),
-                        gettext("Installing plugin from uploaded archive...")
+                        gettext("Installing plugin from uploaded file...")
                     );
                     data.formData = {
                         dependency_links: self.followDependencyLinks()
