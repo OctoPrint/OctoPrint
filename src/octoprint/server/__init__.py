@@ -1348,14 +1348,16 @@ class Server(object):
             ReverseProxiedEnvironment,
         )
 
-        s = settings()
+        app.config["TEMPLATES_AUTO_RELOAD"] = True
+        app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+
+        # we must not set this before TEMPLATES_AUTO_RELOAD is set to True or that won't take
+        app.debug = self._debug
 
         # setup octoprint's flask json serialization/deserialization
         app.json_encoder = OctoPrintJsonEncoder
 
-        app.debug = self._debug
-        app.config["TEMPLATES_AUTO_RELOAD"] = True
-        app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+        s = settings()
 
         secret_key = s.get(["server", "secretKey"])
         if not secret_key:
