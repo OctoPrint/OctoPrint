@@ -27,6 +27,7 @@ from octoprint.access.users import LoginStatusListener
 from octoprint.events import Events
 from octoprint.settings import settings
 from octoprint.util.json import dump as json_dump
+from octoprint.util.version import get_python_version_string
 
 
 class ThreadSafeSession(octoprint.vendor.sockjs.tornado.session.Session):
@@ -221,6 +222,7 @@ class PrinterStateConnection(
                 "version": octoprint.server.VERSION,
                 "display_version": octoprint.server.DISPLAY_VERSION,
                 "branch": octoprint.server.BRANCH,
+                "python_version": get_python_version_string(),
                 "plugin_hash": plugin_hash.hexdigest(),
                 "config_hash": config_hash,
                 "debug": octoprint.server.debug,
