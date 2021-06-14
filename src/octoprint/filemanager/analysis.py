@@ -5,7 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-
+import copy
 import logging
 
 try:
@@ -24,6 +24,20 @@ from octoprint.util import dict_merge
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import monotonic_time
 from octoprint.util.platform import CLOSE_FDS
+
+EMPTY_RESULT = {
+    "_empty": True,
+    "printingArea": {
+        "minX": 0,
+        "maxX": 0,
+        "minY": 0,
+        "maxY": 0,
+        "minZ": 0,
+        "maxZ": 0,
+    },
+    "dimensions": {"width": 0, "height": 0, "depth": 0},
+    "filament": {},
+}
 
 
 class QueueEntry(
@@ -489,6 +503,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
                 raise RuntimeError(error.strip())
             elif "EMPTY:" in output:
                 self._logger.info("Result is empty, no extrusions found")
+                result = copy.deepcopy(EMPTY_RESULT)
             elif "RESULTS:" not in output:
                 raise RuntimeError("No analysis result found")
             else:
