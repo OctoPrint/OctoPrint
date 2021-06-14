@@ -1217,7 +1217,7 @@ $(function () {
             if (response.result) {
                 self._markDone();
             } else {
-                self._markDone(response.reason);
+                self._markDone(response.reason, response.faq);
             }
 
             self._displayPluginManagementNotification(response, action, plugin);
@@ -1233,7 +1233,8 @@ $(function () {
             self.logContents.steps.push({
                 action: action,
                 plugin: plugin,
-                result: response.result
+                result: response.result,
+                faq: response.faq
             });
 
             var title = gettext("Plugin management log");
@@ -1252,6 +1253,7 @@ $(function () {
                 steps = steps.slice(steps.length - 5);
             }
 
+            var negativeResult = false;
             _.each(steps, function (step) {
                 var line = undefined;
 
@@ -1293,7 +1295,14 @@ $(function () {
                             ? '<i class="fa fa-check"></i>'
                             : '<i class="fa fa-remove"></i>'
                     }) +
+                    (step.result === false && step.faq
+                        ? ' (<a href="" target="_blank" rel="noopener noreferer">' +
+                          gettext("Why?") +
+                          "</a>)"
+                        : "") +
                     "</li>";
+
+                negativeResult = negativeResult || step.result === false;
             });
             text += "</ul></p>";
 
@@ -1385,6 +1394,8 @@ $(function () {
                 type = "warning";
             }
 
+            if (negativeResult) type = "error";
+
             var options = {
                 title: title,
                 text: text,
@@ -1432,11 +1443,22 @@ $(function () {
             self.workingDialog.modal({keyboard: false, backdrop: "static", show: true});
         };
 
-        self._markDone = function (error) {
+        self._markDone = function (error, faq) {
             self.working(false);
             if (error) {
                 self.loglines.push({line: gettext("Error!"), stream: "error"});
                 self.loglines.push({line: error, stream: "error"});
+                if (faq) {
+                    self.loglines.push({
+                        line: _.sprintf(
+                            gettext(
+                                "You can find more info on this issue in the FAQ at %(url)s"
+                            ),
+                            {url: faq}
+                        ),
+                        stream: "error"
+                    });
+                }
             } else {
                 self.loglines.push({line: gettext("Done!"), stream: "message"});
             }
