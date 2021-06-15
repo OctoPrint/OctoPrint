@@ -1629,6 +1629,79 @@ octoprint.server.sockjs.emit
    :return: whether to proceed with sending the message (``True``) or not (``False``)
    :rtype: boolean
 
+.. _sec-plugins-hook-system-additional_commands:
+
+octoprint.system.additional_commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: additional_commands_hook(*args, **kwargs)
+
+   .. versionadded:: 1.7.0
+
+   Allows adding additional system commands into the system menu. Handlers must return
+   a list of system command definitions, each definition matching the following data
+   structure:
+
+   .. list-table::
+      :widths: 15 5 10 30
+      :header-rows: 1
+
+      * - Name
+        - Multiplicity
+        - Type
+        - Description
+      * - ``name``
+        - 1
+        - String
+        - The name to display in the menu.
+      * - ``action``
+        - 1
+        - String
+        - An identifier for the action, must only consist of lower case a-z, numbers, ``-`` and ``_`` (``[a-z0-9-_]``).
+      * - ``command``
+        - 1
+        - String
+        - The system command to execute.
+      * - ``confirm``
+        - 0..1
+        - String
+        - An optional message to show as a confirmation dialog before executing the command.
+      * - ``async``
+        - 0..1
+        - bool
+        - If ``True``, the command will be run asynchronously and the API call will return immediately after enqueuing it for execution.
+      * - ``ignore``
+        - 0..1
+        - bool
+        - If ``True``, OctoPrint will ignore the result of the command's (and ``before``'s, if set) execution and return a successful result regardless. Defaults to ``False``.
+      * - ``debug``
+        - 0..1
+        - bool
+        - If ``True``, the command will generate debug output in the log including the command line that's run. Use with care. Defaults to ``False``
+      * - ``before``
+        - 0..1
+        - callable
+        - Optional callable to execute before the actual ``command`` is run. If ``ignore`` is false and this fails in any way, the command will not run and an error returned.
+
+   .. code-block:: python
+
+      def get_additional_commands(*args, **kwargs):
+          return [
+              {
+                  "name": "Just a test",
+                  "action": "test",
+                  "command": "logger This is just a test of an OctoPrint system command from a plugin",
+                  "before": lambda: print("Hello World!")
+              }
+          ]
+
+      __plugin_hooks__ = {
+          "octoprint.system.additional_commands": get_additional_commands
+      }
+
+   :return: a list of command specifications
+   :rtype: list
+
 .. _sec-plugins-hook-timelapse-extensions:
 
 octoprint.timelapse.extensions
