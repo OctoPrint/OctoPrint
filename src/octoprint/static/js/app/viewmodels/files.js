@@ -9,6 +9,8 @@ $(function () {
         self.printerProfiles = parameters[4];
         self.access = parameters[5];
 
+        self.allViewModels = undefined;
+
         self.filesListVisible = ko.observable(true);
         self.showInternalFilename = ko.observable(true);
 
@@ -629,13 +631,32 @@ $(function () {
                 return;
             }
 
+            var proceed = function (p) {
+                var prevented = false;
+                var callback = function () {
+                    OctoPrint.files.select(data.origin, data.path, p);
+                };
+
+                if (p) {
+                    callViewModels(self.allViewModels, "onBeforePrintStart", function (
+                        method
+                    ) {
+                        prevented = prevented || method(callback) === false;
+                    });
+                }
+
+                if (!prevented) {
+                    callback();
+                }
+            };
+
             if (
                 printAfterLoad &&
                 self.listHelper.isSelected(data) &&
                 self.enablePrint(data)
             ) {
                 // file was already selected, just start the print job
-                OctoPrint.job.start();
+                self.printerState.print();
             } else {
                 // select file, start print job (if requested and within dimensions)
                 var withinPrintDimensions = self.evaluatePrintDimensions(data, true);
@@ -650,12 +671,12 @@ $(function () {
                         cancel: gettext("No"),
                         proceed: gettext("Yes"),
                         onproceed: function () {
-                            OctoPrint.files.select(data.origin, data.path, print);
+                            proceed(print);
                         },
                         nofade: true
                     });
                 } else {
-                    OctoPrint.files.select(data.origin, data.path, print);
+                    proceed(print);
                 }
             }
         };
@@ -1717,6 +1738,9 @@ $(function () {
             self.showInternalFilename(
                 self.settingsViewModel.settings.appearance.showInternalFilename()
             );
+        };
+        self.onAllBound = function (allViewModels) {
+            self.allViewModels = allViewModels;
         };
     }
 
