@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 This module contains printer profile related code.
 
@@ -141,6 +139,7 @@ A printer profile is a ``dict`` of the following structure:
 
 .. autoclass:: InvalidProfileError
 """
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
