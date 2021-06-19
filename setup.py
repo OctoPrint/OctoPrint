@@ -31,7 +31,6 @@ INSTALL_REQUIRES = [
     # introduce backwards incompatible changes that might affect plugins, or due to
     # other observed problems
     "markupsafe>=1.1,<2.0",  # Jinja dependency, newer versions require Python 3
-    "tornado==5.1.1",  # newer versions require Python 3
     "markdown>=3.1,<3.2",  # newer versions require Python 3
     "regex!=2018.11.6",  # avoid broken 2018.11.6. See #2874
     # anything below this should be checked on releases for new versions
@@ -70,6 +69,7 @@ INSTALL_REQUIRES = [
 # Python 2 specific requirements
 INSTALL_REQUIRES_PYTHON2 = [
     "feedparser>=5.2.1,<6",  # newer versions require Python 3
+    "tornado==5.1.1",  # newer versions require Python 3
     "futures>=3.3,<4",
     "monotonic>=1.5,<2",
     "scandir>=1.10,<2",
@@ -82,6 +82,7 @@ INSTALL_REQUIRES_PYTHON2 = [
 # Python 3 specific requirements
 INSTALL_REQUIRES_PYTHON3 = [
     "feedparser>=6.0.2,<7",
+    "tornado>=6,<7",  # tornado < 6 is incompatible with Python 3.10
     "zeroconf>=0.24,<0.25",
     "immutabledict>=1.2.0,<2",
     "pathvalidate>=2.4.1,<3",
