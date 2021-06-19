@@ -1169,7 +1169,7 @@ class LocalFileStorage(StorageInterface):
         """
         Raises a :class:`ValueError` for a ``name`` containing ``/`` or ``\\``. Otherwise
         sanitizes the given ``name`` using ``octoprint.files.sanitize_filename``. Also
-        strips leading ``.``s.
+        strips any leading ``.``.
         """
         return sanitize_filename(name, really_universal=self._really_universal)
 

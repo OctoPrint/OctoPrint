@@ -931,7 +931,7 @@ octoprint.comm.transport.serial.additional_port_names
    .. versionadded:: 1.4.1
 
    Return additional port names (not glob patterns!) to use as a serial connection to the printer. Expected to be
-   ``list`` of ``string``s.
+   ``list`` of ``string``.
 
    Useful in combination with :ref:`octoprint.comm.transport.serial.factory <sec-plugins-hook-comm-transport-serial-factory>`
    to implement custom serial-like ports through plugins.
@@ -1191,7 +1191,7 @@ octoprint.plugin.softwareupdate.check_config
 
 See :ref:`here <sec-bundledplugins-softwareupdate-hooks-check_config>`.
 
-.. _sec-plugins-hooks-plugin-printer-additional_state_data
+.. _sec-plugins-hooks-plugin-printer-additional_state_data:
 
 octoprint.printer.additional_state_data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1201,7 +1201,7 @@ octoprint.printer.additional_state_data
    .. versionadded:: 1.5.0
 
    Use this to inject additional data into the data structure returned from the printer backend to the frontend
-   on the push socket or other registered :ref:`~octoprint.printer.PrinterCallback`s. Anything you return here
+   on the push socket or other registered :class:`octoprint.printer.PrinterCallback`. Anything you return here
    will be located beneath ``plugins.<your plugin id>`` in the resulting initial and current data push structure.
 
    The ``initial`` parameter will be ``True`` if this the additional update sent to the callback. Your handler should
@@ -1600,8 +1600,6 @@ octoprint.server.sockjs.register
    Handlers should return either ``True`` or ``False``. ``True`` signals to proceed with normal registration. ``False``
    signals to not register the client.
 
-   See the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` for an example on how to utilize this.
-
    :param object socket: the socket object which is about to be registered
    :param object user: the user currently authenticated on the socket - might be None
    :return: whether to proceed with registration (``True``) or not (``False``)
@@ -1619,8 +1617,6 @@ octoprint.server.sockjs.emit
    Allows plugins to prevent any messages to be emitted on an existing :ref:`push connection <sec-api-push>`.
 
    Handlers should return either ``True`` to allow the message to be emitted, or ``False`` to prevent it.
-
-   See the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` for an example on how to utilize this.
 
    :param object socket: the socket object on which a message is about to be emitted
    :param object user: the user currently authenticated on the socket - might be None
