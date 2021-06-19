@@ -8,7 +8,7 @@ Version information
 
    Retrieve information regarding server and API version. Returns a JSON object with three keys, ``api`` containing
    the API version, ``server`` containing the server version, ``text`` containing the server version including
-   the prefix ``OctoPrint `` (to determine that this is indeed a genuine OctoPrint instance).
+   the prefix ``OctoPrint`` (to determine that this is indeed a genuine OctoPrint instance).
 
    **Example Request**
 
