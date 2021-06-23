@@ -6,6 +6,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
+import re
 
 from flask import abort, jsonify, request
 from flask_login import current_user
@@ -23,6 +24,7 @@ from octoprint.settings import settings, valid_boolean_trues
 
 FOLDER_TYPES = ("uploads", "timelapse", "timelapse_tmp", "logs", "watched")
 FOLDER_MAPPING = {"timelapseTmp": "timelapse_tmp"}
+TIMELAPSE_BITRATE_PATTERN = re.compile(r"\d+[KMGTPEZY]?i?B?", flags=re.IGNORECASE)
 
 
 def _lastmodified():
@@ -585,8 +587,14 @@ def _saveSettings(data):
                 abort(400, description="Invalid webcam.ffmpegCommandline setting")
             else:
                 s.set(["webcam", "ffmpegCommandline"], commandline)
-        if "bitrate" in data["webcam"]:
-            s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
+        if "bitrate" in data["webcam"] and data["webcam"]["bitrate"]:
+            bitrate = str(data["webcam"]["bitrate"])
+            if not TIMELAPSE_BITRATE_PATTERN.match(bitrate):
+                abort(
+                    400,
+                    description="Invalid webcam.bitrate setting, needs to be a valid ffmpeg bitrate",
+                )
+            s.set(["webcam", "bitrate"], bitrate)
         if "ffmpegThreads" in data["webcam"]:
             s.setInt(["webcam", "ffmpegThreads"], data["webcam"]["ffmpegThreads"])
         if "ffmpegVideoCodec" in data["webcam"] and data["webcam"][
