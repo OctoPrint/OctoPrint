@@ -141,6 +141,7 @@ date of first contribution):
   * [Joe Martella](https://github.com/martellaj)
   * [Scott Lahteine](https://github.com/thinkyhead)
   * [Karthikeyan Singaravelan](https://github.com/tirkarthi)
+  * [Ben Sycha](https://github.com/Sycha)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
