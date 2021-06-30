@@ -165,7 +165,9 @@ def plugin_settings(
     )
 
 
-def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
+def plugin_settings_for_settings_plugin(
+    plugin_key, instance, settings=None, defaults=None
+):
     """
     Factory method for creating a :class:`PluginSettings` instance for a given :class:`SettingsPlugin` instance.
 
@@ -173,8 +175,9 @@ def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
 
     Arguments:
         plugin_key (string): The plugin identifier for which to create the settings instance.
-        implementation (octoprint.plugin.SettingsPlugin): The :class:`SettingsPlugin` instance.
+        instance (octoprint.plugin.SettingsPlugin): The :class:`SettingsPlugin` instance.
         settings (octoprint.settings.Settings): The settings instance to use. Defaults to the global OctoPrint settings.
+        defaults (dict): The defaults to use.
 
     Returns:
         PluginSettings or None: A fully initialized :class:`PluginSettings` instance to be used to access the plugin's
@@ -193,6 +196,7 @@ def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
 
     return plugin_settings(
         plugin_key,
+        defaults=defaults,
         get_preprocessors=get_preprocessors,
         set_preprocessors=set_preprocessors,
         settings=settings,

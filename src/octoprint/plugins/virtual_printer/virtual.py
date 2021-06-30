@@ -198,17 +198,19 @@ class VirtualPrinter:
         self._triggerResendWithMissingLinenoAt110 = True
         self._triggerResendWithChecksumMismatchAt115 = True
 
-        readThread = threading.Thread(
+        self._read_thread = threading.Thread(
             target=self._processIncoming,
             name="octoprint.plugins.virtual_printer.wait_thread",
         )
-        readThread.start()
+        self._read_thread.daemon = True
+        self._read_thread.start()
 
-        bufferThread = threading.Thread(
+        self._buffer_thread = threading.Thread(
             target=self._processBuffer,
             name="octoprint.plugins.virtual_printer.buffer_thread",
         )
-        bufferThread.start()
+        self._buffer_thread.daemon = True
+        self._buffer_thread.start()
 
     def __str__(self):
         return "VIRTUAL(read_timeout={read_timeout},write_timeout={write_timeout},options={options})".format(

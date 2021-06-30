@@ -133,6 +133,182 @@ class VirtualPrinterPlugin(
             )
         ]
 
+    def cli_commands(self, cli_group, pass_octoprint_ctx, *args, **kwargs):
+        import os
+        import select
+        import socket
+        import threading
+
+        import click
+
+        from octoprint.util import to_bytes
+
+        from . import virtual
+
+        settings = octoprint.plugin.plugin_settings_for_settings_plugin(
+            "virtual_printer",
+            self,
+            settings=cli_group.settings,
+            defaults=self.get_settings_defaults(),
+        )
+        datafolder = os.path.join(settings.getBaseFolder("data"), "virtual_printer")
+
+        class VirtualPrinterWrapper(virtual.VirtualPrinter):
+            TERMINATOR = b"\n"
+            CHUNK_SIZE = 16
+
+            def __init__(self, *args, **kwargs):
+                self._reader = threading.Thread(
+                    target=self._copy_to_incoming, name="reader"
+                )
+                self._reader.daemon = True
+                self._reader.start()
+
+                super().__init__(*args, **kwargs)
+
+            def wait(self):
+                self._read_thread.join()
+
+            def _copy_to_incoming(self):
+                """Copies received lines to incoming queue"""
+                buffered = bytearray()
+                termlen = len(self.TERMINATOR)
+
+                try:
+                    while True:
+                        chunk = self._do_read(self.CHUNK_SIZE)
+                        print(repr(chunk))
+
+                        buffered.extend(chunk)
+
+                        # check for terminator, if it's there we have found our line
+                        termpos = buffered.find(self.TERMINATOR)
+                        if termpos >= 0:
+                            # line: everything up to and incl. the terminator, buffered: rest
+                            line = buffered[: termpos + termlen]
+                            del buffered[: termpos + termlen]
+                            received = bytes(line)
+                            self.incoming.put(received)
+                except Exception:
+                    self.close()
+                    raise
+
+            def _send(self, line):
+                # type: (str) -> None
+                if not line.endswith("\n"):
+                    line += "\n"
+
+                try:
+                    self._do_write(to_bytes(line, encoding="ascii", errors="replace"))
+                except Exception:
+                    self.close()
+                    raise
+
+            def _do_read(self, size):
+                raise NotImplementedError()
+
+            def _do_write(self, data):
+                raise NotImplementedError()
+
+        class SocketVirtualPrinterWrapper(VirtualPrinterWrapper):
+            def __init__(self, socket, *args, **kwargs):
+                self._socket = socket
+                self._socket.setblocking(False)
+                super().__init__(*args, **kwargs)
+
+            def _do_read(self, size):
+                select.select([self._socket], [], [])
+                return self._socket.recv(size)
+
+            def _do_write(self, data):
+                try:
+                    self._socket.sendall(data)
+                except Exception:
+                    self.close()
+                    raise
+
+        ##~~ TCP Socket
+
+        @click.command("tcp")
+        @click.option("--host", "host", type=str, default="127.0.0.1")
+        @click.option("--port", "port", type=int, default=5543)
+        def tcp_command(host, port):
+            click.echo(f"Creating TCP server on {host}:{port}...")
+            with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as s:
+                s.bind((host, port))
+                s.listen()
+                conn, addr = s.accept()
+                print(f"Connection from {addr}")
+                with conn:
+                    virtual = SocketVirtualPrinterWrapper(conn, settings, datafolder)
+                    virtual.wait()
+
+        commands = [
+            tcp_command,
+        ]
+
+        ##~~ Unix Domain Socket
+
+        if hasattr(socket, "AF_UNIX"):
+
+            @click.command("uds")
+            @click.argument("path", type=click.Path)
+            def uds_command(path):
+                click.echo(f"Creating Unix Domain Socket server on {path}...")
+                with socket.socket(family=socket.AF_UNIX, type=socket.SOCK_STREAM) as s:
+                    s.bind(path)
+                    s.listen()
+                    conn, addr = s.accept()
+                    print(f"Connection from {addr}")
+                    with conn:
+                        virtual = SocketVirtualPrinterWrapper(conn, settings, datafolder)
+                        virtual.wait()
+
+            commands.append(uds_command)
+
+        ##~~ Win32 Named Pipe
+
+        try:
+            from win32 import win32file, win32pipe
+
+            class PipeVirtualPrinterWrapper(VirtualPrinterWrapper):
+                def __init__(self, pipe, *args, **kwargs):
+                    self._pipe = pipe
+                    super().__init__(*args, **kwargs)
+
+                def _do_read(self, size):
+                    result, data = win32file.ReadFile(self._pipe, size, None)
+                    return data
+
+                def _do_write(self, data):
+                    win32file.WriteFile(self._pipe, data)
+
+            @click.command("win32pipe")
+            @click.option("--name", "name", default="OctoPrint-VirtualPrinter")
+            def win32pipe_command(name):
+                click.echo(f"Creating named pipe {name}...")
+                p = win32pipe.CreateNamedPipe(
+                    r"\\.\pipe\\" + name,
+                    win32pipe.PIPE_ACCESS_DUPLEX,
+                    win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
+                    1,
+                    65536,
+                    65536,
+                    300,
+                    None,
+                )
+                win32pipe.ConnectNamedPipe(p, None)
+                virtual = PipeVirtualPrinterWrapper(p, settings, datafolder)
+                virtual.wait()
+
+            commands.append(win32pipe_command)
+        except ImportError:
+            # not supported on this platform
+            pass
+
+        # return collected commands
+        return commands
+
 
 __plugin_name__ = "Virtual Printer"
 __plugin_author__ = "Gina Häußge, based on work by Daid Braam"
@@ -152,5 +328,6 @@ def __plugin_load__():
 
     global __plugin_hooks__
     __plugin_hooks__ = {
-        "octoprint.comm.transport.register": plugin.register_transport_hook
+        "octoprint.comm.transport.register": plugin.register_transport_hook,
+        "octoprint.cli.commands": plugin.cli_commands,
     }
