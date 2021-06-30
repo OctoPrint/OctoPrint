@@ -20,15 +20,30 @@ _registry = {}
 
 def register_transports(settings):
     from .serialtransport import SerialTransport
-    from .sockettransport import SerialOverTcpTransport, TcpTransport
+    from .sockettransport import TCPSocketTransport
 
     # stock transports
     for transport in (
         SerialTransport,
-        TcpTransport,
-        SerialOverTcpTransport,
+        TCPSocketTransport,
     ):
         register_transport(transport, settings, SETTINGS_PATH)
+
+    try:
+        from .sockettransport import UnixDomainSocketTransport
+
+        register_transport(UnixDomainSocketTransport, settings, SETTINGS_PATH)
+    except ImportError:
+        # Not available on this platform
+        pass
+
+    try:
+        from .namedpipetransport import NamedPipeTransport
+
+        register_transport(NamedPipeTransport, settings, SETTINGS_PATH)
+    except ImportError:
+        # Not available on this platform
+        pass
 
     # more transports provided by plugins
     logger = logging.getLogger(__name__)

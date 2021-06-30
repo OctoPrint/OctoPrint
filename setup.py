@@ -69,11 +69,6 @@ INSTALL_REQUIRES = [
     "blinker>=1.4,<2",  # dependency of flask_principal
 ]
 
-# OSX specific requirements
-INSTALL_REQUIRES_OSX = [
-    "appdirs>=1.4.4",
-]
-
 # Additional requirements for optional install options
 EXTRA_REQUIRES = {
     "develop": [
@@ -96,12 +91,18 @@ EXTRA_REQUIRES = {
         "sphinx_rtd_theme",
         "readthedocs-sphinx-ext",
     ],
+    # Windows dependencies
+    ":sys_platform == 'win32'": [
+        "pywin32>=301",
+    ],
+    # Mac dependencies
+    ":sys_platform == 'darwin'": [
+        "appdirs>=1.4.4",
+    ],
 }
 
 # Dependency links for any of the aforementioned dependencies
 DEPENDENCY_LINKS = []
-
-EXTRA_REQUIRES[":sys_platform == 'darwin'"] = INSTALL_REQUIRES_OSX
 
 # -----------------------------------------------------------------------------------------------------------------------
 # Anything below here is just command setup and general setup configuration
