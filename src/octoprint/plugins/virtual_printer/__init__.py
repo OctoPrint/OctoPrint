@@ -268,43 +268,44 @@ class VirtualPrinterPlugin(
 
         ##~~ Win32 Named Pipe
 
-        try:
-            from win32 import win32file, win32pipe
-
-            class PipeVirtualPrinterWrapper(VirtualPrinterWrapper):
-                def __init__(self, pipe, *args, **kwargs):
-                    self._pipe = pipe
-                    super().__init__(*args, **kwargs)
-
-                def _do_read(self, size):
-                    result, data = win32file.ReadFile(self._pipe, size, None)
-                    return data
-
-                def _do_write(self, data):
-                    win32file.WriteFile(self._pipe, data)
-
-            @click.command("win32pipe")
-            @click.option("--name", "name", default="OctoPrint-VirtualPrinter")
-            def win32pipe_command(name):
-                click.echo(f"Creating named pipe {name}...")
-                p = win32pipe.CreateNamedPipe(
-                    r"\\.\pipe\\" + name,
-                    win32pipe.PIPE_ACCESS_DUPLEX,
-                    win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
-                    1,
-                    65536,
-                    65536,
-                    300,
-                    None,
-                )
-                win32pipe.ConnectNamedPipe(p, None)
-                virtual = PipeVirtualPrinterWrapper(p, settings, datafolder)
-                virtual.wait()
-
-            commands.append(win32pipe_command)
-        except ImportError:
-            # not supported on this platform
-            pass
+        # Commented out for now since this is far from working
+        # try:
+        #    from win32 import win32file, win32pipe
+        #
+        #    class PipeVirtualPrinterWrapper(VirtualPrinterWrapper):
+        #        def __init__(self, pipe, *args, **kwargs):
+        #            self._pipe = pipe
+        #            super().__init__(*args, **kwargs)
+        #
+        #        def _do_read(self, size):
+        #            result, data = win32file.ReadFile(self._pipe, size, None)
+        #            return data
+        #
+        #        def _do_write(self, data):
+        #            win32file.WriteFile(self._pipe, data)
+        #
+        #    @click.command("win32pipe")
+        #    @click.option("--name", "name", default="OctoPrint-VirtualPrinter")
+        #    def win32pipe_command(name):
+        #        click.echo(f"Creating named pipe {name}...")
+        #        p = win32pipe.CreateNamedPipe(
+        #            r"\\.\pipe\\" + name,
+        #            win32pipe.PIPE_ACCESS_DUPLEX,
+        #            win32pipe.PIPE_TYPE_MESSAGE | win32pipe.PIPE_WAIT,
+        #            1,
+        #            65536,
+        #            65536,
+        #            300,
+        #            None,
+        #        )
+        #        win32pipe.ConnectNamedPipe(p, None)
+        #        virtual = PipeVirtualPrinterWrapper(p, settings, datafolder)
+        #        virtual.wait()
+        #
+        #    commands.append(win32pipe_command)
+        # except ImportError:
+        #    # not supported on this platform
+        #    pass
 
         # return collected commands
         return commands

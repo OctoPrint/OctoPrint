@@ -1,6 +1,13 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2021 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+"""
+This is currently not included in OctoPrint's available transports since it still contains some horrible
+bugs.
+
+Further testing and development is needed.
+"""
+
 from os import scandir
 
 from flask_babel import gettext

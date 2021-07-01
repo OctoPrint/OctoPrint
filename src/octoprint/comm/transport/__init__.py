@@ -37,13 +37,14 @@ def register_transports(settings):
         # Not available on this platform
         pass
 
-    try:
-        from .namedpipetransport import NamedPipeTransport
-
-        register_transport(NamedPipeTransport, settings, SETTINGS_PATH)
-    except ImportError:
-        # Not available on this platform
-        pass
+    # Commented out for now since this is far from working
+    # try:
+    #    from .namedpipetransport import NamedPipeTransport
+    #
+    #    register_transport(NamedPipeTransport, settings, SETTINGS_PATH)
+    # except ImportError:
+    #    # Not available on this platform
+    #    pass
 
     # more transports provided by plugins
     logger = logging.getLogger(__name__)
