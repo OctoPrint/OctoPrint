@@ -1576,7 +1576,7 @@ class ReprapGcodeProtocol(
             tags={
                 "trigger:protocol.send_script",
                 "source:script",
-                f"script:{script.name}",
+                f"script:{script}",
             },
             part_of_job=part_of_job,
             *lines,
