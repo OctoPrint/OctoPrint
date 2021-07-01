@@ -352,9 +352,7 @@ class SeparatorAwareTransportWrapper(TransportWrapper):
         termlen = len(self.terminator)
         timeout = serial.Timeout(timeout)
 
-        while not timeout.expired():
-            self._buffered += self.transport.read(self.transport.in_waiting)
-
+        def check_for_terminator():
             # check for terminator, if it's there we have found our line
             termpos = self._buffered.find(self.terminator)
             if termpos >= 0:
@@ -362,8 +360,22 @@ class SeparatorAwareTransportWrapper(TransportWrapper):
                 line = self._buffered[: termpos + termlen]
                 del self._buffered[: termpos + termlen]
                 received = bytes(line)
-                self.notify_listeners("on_transport_log_received_data", self, received)
                 return received
+            else:
+                return None
+
+        line = check_for_terminator()
+        if line is not None:
+            self.notify_listeners("on_transport_log_received_data", self, line)
+            return line
+
+        while not timeout.expired():
+            self._buffered += self.transport.read(self.transport.in_waiting)
+
+            line = check_for_terminator()
+            if line is not None:
+                self.notify_listeners("on_transport_log_received_data", self, line)
+                return line
 
             if timeout.expired():
                 break
@@ -437,9 +449,9 @@ class PushingTransportWrapper(TransportWrapper):
                 self.notify_listeners("on_transport_data_pushed", self, data)
             except TimeoutTransportException as ex:
                 self.notify_listeners("on_transport_data_exception", self, ex)
-            except Exception:
+            except Exception as ex:
                 if self._receiver_active:
-                    raise
+                    self.notify_listeners("on_transport_data_exception", self, ex)
 
     def __str__(self):
         return f"PushingTransportWrapper({self.transport})"

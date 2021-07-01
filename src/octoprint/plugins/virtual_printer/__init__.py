@@ -176,8 +176,10 @@ class VirtualPrinterPlugin(
 
                 try:
                     while True:
-                        chunk = self._do_read(self.CHUNK_SIZE)
-                        print(repr(chunk))
+                        try:
+                            chunk = self._do_read(self.CHUNK_SIZE)
+                        except socket.timeout:
+                            continue
 
                         buffered.extend(chunk)
 
@@ -188,6 +190,8 @@ class VirtualPrinterPlugin(
                             line = buffered[: termpos + termlen]
                             del buffered[: termpos + termlen]
                             received = bytes(line)
+
+                            print(f"<<< {received.rstrip()}")
                             self.incoming.put(received)
                 except Exception:
                     self.close()
@@ -200,6 +204,7 @@ class VirtualPrinterPlugin(
 
                 try:
                     self._do_write(to_bytes(line, encoding="ascii", errors="replace"))
+                    print(f">>> {line.rstrip()}")
                 except Exception:
                     self.close()
                     raise
@@ -217,11 +222,16 @@ class VirtualPrinterPlugin(
                 super().__init__(*args, **kwargs)
 
             def _do_read(self, size):
-                select.select([self._socket], [], [])
+                ready = select.select([self._socket], [], [], 2)
+                if self._socket not in ready[0]:
+                    raise socket.timeout()
                 return self._socket.recv(size)
 
             def _do_write(self, data):
                 try:
+                    ready = select.select([], [self._socket], [], 10)
+                    if self._socket not in ready[1]:
+                        raise socket.timeout()
                     self._socket.sendall(data)
                 except Exception:
                     self.close()
@@ -237,11 +247,13 @@ class VirtualPrinterPlugin(
             with socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM) as s:
                 s.bind((host, port))
                 s.listen()
-                conn, addr = s.accept()
-                print(f"Connection from {addr}")
-                with conn:
-                    virtual = SocketVirtualPrinterWrapper(conn, settings, datafolder)
-                    virtual.wait()
+                while True:
+                    conn, addr = s.accept()
+                    print(f"Connection from {addr}")
+                    with conn:
+                        virtual = SocketVirtualPrinterWrapper(conn, settings, datafolder)
+                        virtual.wait()
+                    print(f"Connection closed from {addr}")
 
         commands = [
             tcp_command,
@@ -258,11 +270,15 @@ class VirtualPrinterPlugin(
                 with socket.socket(family=socket.AF_UNIX, type=socket.SOCK_STREAM) as s:
                     s.bind(path)
                     s.listen()
-                    conn, addr = s.accept()
-                    print(f"Connection from {addr}")
-                    with conn:
-                        virtual = SocketVirtualPrinterWrapper(conn, settings, datafolder)
-                        virtual.wait()
+                    while True:
+                        conn, addr = s.accept()
+                        print(f"Connection from {addr}")
+                        with conn:
+                            virtual = SocketVirtualPrinterWrapper(
+                                conn, settings, datafolder
+                            )
+                            virtual.wait()
+                        print(f"Connection closed from {addr}")
 
             commands.append(uds_command)
 

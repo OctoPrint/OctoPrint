@@ -3,8 +3,11 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 import select
 import socket
+import time
 
-from octoprint.comm.transport import Transport
+from flask_babel import gettext
+
+from octoprint.comm.transport import TimeoutTransportException, Transport
 from octoprint.settings.parameters import IntegerType, TextType
 
 
@@ -13,9 +16,35 @@ class SocketTransport(Transport):
     name = "Socket Connection"
     key = "socket"
 
+    BUFSIZE = 4096
+
     @classmethod
     def get_connection_options(cls):
-        return [TextType("host", "Host"), IntegerType("port", "Port", min=1, max=65535)]
+        return [
+            TextType("host", "Host"),
+            IntegerType("port", "Port", min=1, max=65535),
+        ] + cls.get_common_connection_options()
+
+    @classmethod
+    def get_common_connection_options(cls):
+        return [
+            IntegerType(
+                "read_timeout",
+                gettext("Read Timeout"),
+                min=1,
+                unit="sec",
+                default=2,
+                advanced=True,
+            ),
+            IntegerType(
+                "write_timeout",
+                gettext("Write Timeout"),
+                min=1,
+                unit="sec",
+                default=10,
+                advanced=True,
+            ),
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,8 +53,12 @@ class SocketTransport(Transport):
 
     def create_connection(self, **kwargs):
         result = self.create_socket(**kwargs)
+        self._socket.setblocking(False)
         self.set_current_args(**kwargs)
         return result
+
+    def in_waiting(self):
+        return 0  # we don't know how many bytes are waiting, we'll ignore size on do_read
 
     def drop_connection(self, wait=True):
         try:
@@ -36,20 +69,31 @@ class SocketTransport(Transport):
             return False
 
     def do_read(self, size=None, timeout=None):
-        if size is None:
-            size = 16
+        if timeout is None:
+            timeout = self._args.get("read_timeout", 2)
 
-        if timeout is not None:
-            self._socket.setblocking(0)
-            ready = select.select([self._socket], [], [], timeout)
-            if ready[0]:
-                return self._socket.recv(size)
-            raise socket.timeout()
-        else:
-            return self._socket.recv(size)
+        # size is unused here, but is used by other transports
+        ready = select.select([self._socket], [], [], timeout)
+        if not ready[0]:
+            raise TimeoutTransportException()
+        return self._socket.recv(self.BUFSIZE)
 
     def do_write(self, data):
-        self._socket.sendall(data)
+        start = time.monotonic()
+        timeout = self._args.get("write_timeout", 10)
+
+        total_sent = 0
+        while total_sent < len(data):
+            ready = select.select(
+                [], [self._socket], [], timeout - (time.monotonic() - start)
+            )
+            if not ready[1]:
+                raise TimeoutTransportException()
+
+            sent = self._socket.send(data[total_sent:])
+            if sent == 0:
+                raise OSError("Connection closed")
+            total_sent += sent
 
     def create_socket(self, **kwargs):
         raise NotImplementedError()
@@ -71,9 +115,12 @@ class TCPSocketTransport(SocketTransport):
 
     @classmethod
     def get_connection_options(cls):
-        return [TextType("host", "Host"), IntegerType("port", "Port", min=1, max=65535)]
+        return [
+            TextType("host", "Host"),
+            IntegerType("port", "Port", min=1, max=65535),
+        ] + cls.get_common_connection_options()
 
-    def create_socket(self, host=None, port=None):
+    def create_socket(self, host=None, port=None, **kwargs):
         if host is None:
             raise ValueError("host must not be None")
         if port is None:
@@ -98,9 +145,9 @@ if hasattr(socket, "AF_UNIX"):
 
         @classmethod
         def get_connection_options(cls):
-            return [TextType("path", "Path")]
+            return [TextType("path", "Path")] + cls.get_common_connection_options()
 
-        def create_socket(self, path=None):
+        def create_socket(self, path=None, **kwargs):
             if path is None:
                 raise ValueError("path must not be None")
 
