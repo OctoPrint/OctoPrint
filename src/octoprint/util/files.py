@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2021 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -15,7 +12,7 @@ def _sfn_really_universal(name):
     ### taken from pathvalidate library
 
     _WINDOWS_RESERVED_FILE_NAMES = ("CON", "PRN", "AUX", "CLOCK$", "NUL") + tuple(
-        "{:s}{:d}".format(name, num)
+        f"{name:s}{num:d}"
         for name, num in itertools.product(("COM", "LPT"), range(1, 10))
     )
     _MACOS_RESERVED_FILE_NAMES = (":",)
