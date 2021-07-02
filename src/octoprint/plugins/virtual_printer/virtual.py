@@ -167,6 +167,7 @@ class VirtualPrinter:
 
         self._temperature_reporter = None
         self._sdstatus_reporter = None
+        self._pos_reporter = None
 
         self.current_line = 0
         self.lastN = 0
@@ -577,7 +578,7 @@ class VirtualPrinter:
     # noinspection PyUnusedLocal
     def _gcode_M20(self, data: str) -> None:
         if self._sdCardReady:
-            self._listSd()
+            self._listSd(incl_long="L" in data)
 
     # noinspection PyUnusedLocal
     def _gcode_M21(self, data: str) -> None:
@@ -660,27 +661,9 @@ class VirtualPrinter:
                 self._busyInterval = interval
 
     # noinspection PyUnusedLocal
-    def _gcode_M114(self, data: str) -> bool:
-        m114FormatString = self._settings.get(["m114FormatString"])
-        e = {index: value for index, value in enumerate(self._lastE)}
-        e["current"] = self._lastE[self.currentExtruder]
-        e["all"] = " ".join(
-            [
-                "E{}:{}".format(num, self._lastE[self.currentExtruder])
-                for num in range(self.extruderCount)
-            ]
-        )
-        output = m114FormatString.format(
-            x=self._lastX,
-            y=self._lastY,
-            z=self._lastZ,
-            e=e,
-            f=self._lastF,
-            a=int(self._lastX * 100),
-            b=int(self._lastY * 100),
-            c=int(self._lastZ * 100),
-        )
-
+    def _gcode_M114(self, data):
+        # type: (str) -> bool
+        output = self._generatePositionOutput()
         if not self._okBeforeCommandOutput:
             ok = self._ok()
             if ok:
@@ -705,7 +688,24 @@ class VirtualPrinter:
             except AttributeError:
                 self._send("echo:")
 
-    def _gcode_M155(self, data: str) -> None:
+    def _gcode_M154(self, data):
+        # type: (str) -> None
+        matchS = re.search(r"S([0-9]+)", data)
+        if matchS is not None:
+            interval = int(matchS.group(1))
+            if self._pos_reporter is not None:
+                self._pos_reporter.cancel()
+
+            if interval > 0:
+                self._pos_reporter = RepeatedTimer(
+                    interval, lambda: self._send(self._generatePositionOutput())
+                )
+                self._pos_reporter.start()
+            else:
+                self._pos_reporter = None
+
+    def _gcode_M155(self, data):
+        # type: (str) -> None
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             interval = int(matchS.group(1))
@@ -1351,10 +1351,13 @@ class VirtualPrinter:
             except Exception:
                 self._logger.exception("While handling %r", data)
 
-    def _listSd(self):
+    def _listSd(self, incl_long=False):
         if self._settings.get_boolean(["sdFiles", "size"]):
-            if self._settings.get_boolean(["sdFiles", "longname"]):
-                line = "{dosname} {size} {name}"
+            if self._settings.get_boolean(["sdFiles", "longname"]) or incl_long:
+                if self._settings.get_boolean(["sdFiles", "longname_quoted"]):
+                    line = '{dosname} {size} "{name}"'
+                else:
+                    line = "{dosname} {size} {name}"
             else:
                 line = "{dosname} {size}"
         else:
@@ -1432,6 +1435,29 @@ class VirtualPrinter:
             )
         else:
             self._send("Not SD printing")
+
+    def _generatePositionOutput(self):
+        # type: () -> str
+        m114FormatString = self._settings.get(["m114FormatString"])
+        e = {index: value for index, value in enumerate(self._lastE)}
+        e["current"] = self._lastE[self.currentExtruder]
+        e["all"] = " ".join(
+            [
+                "E{}:{}".format(num, self._lastE[self.currentExtruder])
+                for num in range(self.extruderCount)
+            ]
+        )
+        output = m114FormatString.format(
+            x=self._lastX,
+            y=self._lastY,
+            z=self._lastZ,
+            e=e,
+            f=self._lastF,
+            a=int(self._lastX * 100),
+            b=int(self._lastY * 100),
+            c=int(self._lastZ * 100),
+        )
+        return output
 
     def _generateTemperatureOutput(self):
         # type: () -> str

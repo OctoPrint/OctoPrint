@@ -260,11 +260,22 @@ def init_logging(
 
     # default logging configuration
     if default_config is None:
+        simple_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         default_config = {
             "version": 1,
             "formatters": {
-                "simple": {
-                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                "simple": {"format": simple_format},
+                "colored": {
+                    "class": "colorlog.ColoredFormatter",
+                    "format": "%(log_color)s" + simple_format,
+                    "log_colors": {
+                        "DEBUG": "light_white",
+                        "INFO": "white",
+                        "WARNING": "yellow",
+                        "ERROR": "red",
+                        "CRITICAL": "bold_red",
+                    },
+                    "reset": True,
                 },
                 "serial": {"format": "%(asctime)s - %(message)s"},
                 "timings": {"format": "%(asctime)s - %(message)s"},
@@ -274,7 +285,7 @@ def init_logging(
                 "console": {
                     "class": "octoprint.logging.handlers.OctoPrintStreamHandler",
                     "level": "DEBUG",
-                    "formatter": "simple",
+                    "formatter": "colored",
                     "stream": "ext://sys.stdout",
                 },
                 "file": {

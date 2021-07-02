@@ -118,8 +118,7 @@ Announced Services
 ZeroConf Service ``_http._tcp``
 +++++++++++++++++++++++++++++++
 
-If :ref:`pybonjour <sec-bundledplugins-discovery-firststeps-pybonjour>` is
-correctly installed, OctoPrint will announce itself on the network via ZeroConf
+OctoPrint will announce itself on the network via ZeroConf
 as service ``_http._tcp``, with the TXT record containing the standard fields.
 
 See also `this documentation of _http._tcp TXT records <http://www.dns-sd.org/txtrecords.html>`_
@@ -130,8 +129,7 @@ for more information.
 ZeroConf Service ``_octoprint._tcp``
 ++++++++++++++++++++++++++++++++++++
 
-If :ref:`pybonjour <sec-bundledplugins-discovery-firststeps-pybonjour>` is
-correctly installed, OctoPrint will announce itself on the network via ZeroConf
+OctoPrint will announce itself on the network via ZeroConf
 as service ``_octoprint._tcp``. The TXT record may contain the following fields:
 
   * ``path``: path prefix to actual OctoPrint instance, inherited from ``_http._tcp``
