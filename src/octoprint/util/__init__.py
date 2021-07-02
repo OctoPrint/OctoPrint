@@ -1813,3 +1813,20 @@ def generate_api_key():
 
 def map_boolean(value, true_text, false_text):
     return true_text if value else false_text
+
+
+class Timeout:
+    def __init__(self, duration):
+        self._duration = duration
+        self._start = time.monotonic()
+
+    @property
+    def expired(self):
+        return self.remaining <= 0
+
+    @property
+    def remaining(self):
+        return self._start + self._duration - time.monotonic()
+
+    def reset(self):
+        self._start = time.monotonic()

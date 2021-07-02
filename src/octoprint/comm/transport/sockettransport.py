@@ -62,6 +62,7 @@ class SocketTransport(Transport):
 
     def drop_connection(self, wait=True):
         try:
+            self._logger.debug(f"Closing down socket {self._socket}...")
             self._socket.close()
             return True
         except Exception:

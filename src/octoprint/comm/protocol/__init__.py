@@ -548,7 +548,8 @@ class Protocol(ListenerAware, TransportListener, ProtocolErrorStatsListener):
         self.state = ProtocolState.CONNECTED
 
     def on_transport_disconnected(self, transport, error=None):
-        self.disconnect(error=error is not None)
+        self.error = error
+        self.disconnect(error=error is not None, wait=False)
 
     def on_transport_log_received_data(self, transport, data):
         message = to_unicode(data, errors="replace").strip()

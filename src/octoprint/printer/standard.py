@@ -605,12 +605,18 @@ class Printer(
         self.cancel_print()
 
         if self._protocol is not None and self._protocol.state not in (
+            ProtocolState.DISCONNECTING,
             ProtocolState.DISCONNECTED,
+            ProtocolState.DISCONNECTING_WITH_ERROR,
             ProtocolState.DISCONNECTED_WITH_ERROR,
         ):
             self._protocol.disconnect()
             self._protocol.unregister_listener(self)
+
+        if self._protocol is not None:
             self._protocol = None
+
+        if self._transport is not None:
             self._transport = None
 
         self.unselect_job()
@@ -1428,14 +1434,16 @@ class Printer(
                 original_estimate_type = None
 
                 try:
-                    (ptl, print_time_left_origin,) = self._job.estimator.estimate(
+                    (
+                        print_time_left,
+                        print_time_left_origin,
+                    ) = self._job.estimator.estimate(
                         progress,
                         print_time,
                         cleaned_print_time,
                         original_estimate,
                         original_estimate_type,
                     )
-                    print_time_left = int(ptl)
                 except Exception:
                     self._logger.exception(
                         "Error while estimating print time via {}".format(
@@ -1673,8 +1681,8 @@ class Printer(
         if old_state == ProtocolState.PROCESSING:
             if self._job is not None:
                 if new_state in (
-                    ProtocolState.DISCONNECTED,
-                    ProtocolState.DISCONNECTED_WITH_ERROR,
+                    ProtocolState.DISCONNECTING,
+                    ProtocolState.DISCONNECTING_WITH_ERROR,
                 ):
                     payload = self._job.job.event_payload()
                     if payload:
@@ -1707,10 +1715,9 @@ class Printer(
                 except Exception:
                     self._logger.exception("Error while pausing the analysis queue")
 
-        elif (
-            new_state
-            in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR)
-            and old_state != ProtocolState.DISCONNECTING
+        if new_state in (
+            ProtocolState.DISCONNECTED,
+            ProtocolState.DISCONNECTED_WITH_ERROR,
         ):
             self.disconnect()
             self._set_current_z(None)

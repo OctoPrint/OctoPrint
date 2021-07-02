@@ -5,11 +5,10 @@ import copy
 import logging
 from typing import Union
 
-import serial
-
 from octoprint.plugin import plugin_manager
 from octoprint.settings import SubSettings
 from octoprint.settings.parameters import get_param_dict, register_settings_overlay
+from octoprint.util import Timeout
 from octoprint.util.listener import ListenerAware
 
 SETTINGS_PATH = ["connection", "transports"]
@@ -350,7 +349,7 @@ class SeparatorAwareTransportWrapper(TransportWrapper):
 
     def read(self, size=None, timeout=None):
         termlen = len(self.terminator)
-        timeout = serial.Timeout(timeout)
+        timeout = Timeout(timeout)
 
         def check_for_terminator():
             # check for terminator, if it's there we have found our line
@@ -364,24 +363,28 @@ class SeparatorAwareTransportWrapper(TransportWrapper):
             else:
                 return None
 
+        # do we already have a full line in the buffer?
         line = check_for_terminator()
         if line is not None:
             self.notify_listeners("on_transport_log_received_data", self, line)
             return line
 
-        while not timeout.expired():
-            self._buffered += self.transport.read(self.transport.in_waiting)
+        # we don't have a full line yet, read more data
+        while not timeout.expired:
+            self._buffered += self.transport.read(
+                size=self.transport.in_waiting, timeout=timeout.remaining
+            )
 
             line = check_for_terminator()
             if line is not None:
                 self.notify_listeners("on_transport_log_received_data", self, line)
                 return line
 
-            if timeout.expired():
+            if timeout.expired:
                 break
 
             # if we arrive here we so far couldn't read a full line, wait for more data
-            c = self.transport.read(1)
+            c = self.transport.read(size=1, timeout=timeout.remaining)
             if not c:
                 # EOF
                 break

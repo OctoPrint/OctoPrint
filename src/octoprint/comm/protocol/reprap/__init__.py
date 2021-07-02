@@ -1849,6 +1849,8 @@ class ReprapGcodeProtocol(
             self._receive("")
         elif isinstance(exception, EofTransportException):
             self._receive(None)
+        else:
+            self.disconnect(error=True, wait=False)
 
     def _receive(self, data):
         for name, hook in self._gcode_hooks["receiving"].items():
