@@ -77,6 +77,7 @@ INSTALL_REQUIRES_PYTHON2 = [
     "typing>=3.7.4.1,<4",
     "enum34>=1.1.10,<1.2",
     "frozendict>=1.2,<2",
+    "colorlog<5",
 ]
 
 # Python 3 specific requirements
@@ -86,6 +87,7 @@ INSTALL_REQUIRES_PYTHON3 = [
     "zeroconf>=0.24,<0.25",
     "immutabledict>=1.2.0,<2",
     "pathvalidate>=2.4.1,<3",
+    "colorlog>=5.0.1,<6",
 ]
 
 # OSX specific requirements
