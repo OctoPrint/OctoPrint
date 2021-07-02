@@ -1,9 +1,5 @@
 import logging
-
-try:
-    from urllib import parse as urlparse
-except ImportError:
-    import urlparse
+from urllib import parse as urlparse
 
 
 class TornadoAccessFilter(logging.Filter):
