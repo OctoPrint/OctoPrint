@@ -155,6 +155,16 @@
                         <span class="help-inline">{{ _('Autoreport interval to request from firmware')}}</span>
                     </div>
                 </div>
+                <div class="control-group" title="{{ _('Position interval to request from autoreport capable firmwares. A value of 0 disables autoreporting by the firmware.')|edq }}">
+                    <label class="control-label" for="settings-serialTimeoutPosAutoreport">{{ _('Position autoreport interval') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutPosAutoreport" id="settings-serialTimeoutPosAutoreport">
+                            <span class="add-on">s</span>
+                        </div>
+                        <span class="help-inline">{{ _('Autoreport interval to request from firmware')}}</span>
+                    </div>
+                </div>
             </fieldset>
             <fieldset id="settings_serial_timeouts_timeouts">
                 <legend>{{ _('Timeouts') }}</legend>
@@ -354,6 +364,13 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_capAutoreportPos" id="settings-serialCapAutoreportPos"> {{ _('Support position autoreporting by firmware, if detected') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: serial_capEmergencyParser" id="settings-serialCapEmergencyParser"> {{ _('Send emergency GCODES <code>M108</code> and <code>M410</code> without waiting for acknowledgement, if detected as supported by the firmware') }}
                                 </label>
                             </div>
@@ -362,6 +379,13 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: serial_capBusyProtocol" id="settings-serialCapBusyProtocol"> {{ _('Support <code>busy</code> protocol, if detected') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_capExtendedM20" id="settings-serialCapExtendedM20"> {{ _('Send <code>M20 L</code> instead of <code>M20</code> to use extended SD file lists, if detected as supported by the firmware') }}
                                 </label>
                             </div>
                         </div>

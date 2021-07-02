@@ -42,7 +42,12 @@ $(function () {
                 opera: false,
 
                 mobile: false,
-                desktop: false
+                desktop: false,
+
+                browser_name: "unknown",
+                browser_version: "unknown",
+                os_name: "unknown",
+                os_version: "unknown"
             },
             viewmodels: {},
             startedUp: false
@@ -117,6 +122,12 @@ $(function () {
 
         exports.browser.mobile = $.browser.mobile;
         exports.browser.desktop = !exports.browser.mobile;
+
+        var uap = UAParser();
+        exports.browser.browser_name = uap.browser.name;
+        exports.browser.browser_version = uap.browser.version;
+        exports.browser.os_name = uap.os.name;
+        exports.browser.os_version = uap.os.version;
 
         if (exports.browser.safari) {
             $("html").addClass("safari");

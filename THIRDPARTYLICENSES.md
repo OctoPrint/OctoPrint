@@ -35,6 +35,7 @@
   * [pusher.color.js](http://cache.preserve.io/5g18q0pw/index.html) (original link dead): MIT
   * [SockJS](https://github.com/sockjs/sockjs-client): MIT
   * [sprintf-js](http://alexei.ro/): BSD
+  * [UAParser.js](https://faisalman.github.io/ua-parser-js/): MIT
 
 ## Server
 

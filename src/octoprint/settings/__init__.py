@@ -104,6 +104,7 @@ default_settings = {
             "temperatureAutoreport": 2,
             "sdStatus": 1,
             "sdStatusAutoreport": 1,
+            "posAutoreport": 5,
             "resendOk": 0.5,
             "baudrateDetectionPause": 1.0,
             "positionLogWait": 10.0,
@@ -158,8 +159,10 @@ default_settings = {
         "capabilities": {
             "autoreport_temp": True,
             "autoreport_sdstatus": True,
+            "autoreport_pos": True,
             "busy_protocol": True,
             "emergency_parser": True,
+            "extended_m20": True,
         },
         "resendRatioThreshold": 10,
         "resendRatioStart": 100,
@@ -245,7 +248,7 @@ default_settings = {
         "flipH": False,
         "flipV": False,
         "rotate90": False,
-        "ffmpegCommandline": '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y {filters} "{output}"',
+        "ffmpegCommandline": '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b:v {bitrate} -f {containerformat} -y {filters} "{output}"',
         "timelapse": {
             "type": "off",
             "options": {},
@@ -422,6 +425,10 @@ default_settings = {
         {
             "name": "Suppress SD status messages",
             "regex": r"(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)",
+        },
+        {
+            "name": "Suppress position messages",
+            "regex": r"(Send:\s+(N\d+\s+)?M114)|(Recv:\s+(ok\s+)?X:[+-]?([0-9]*[.])?[0-9]+\s+Y:[+-]?([0-9]*[.])?[0-9]+\s+Z:[+-]?([0-9]*[.])?[0-9]+\s+E\d*:[+-]?([0-9]*[.])?[0-9]+).*",
         },
         {"name": "Suppress wait responses", "regex": r"Recv: wait"},
         {
@@ -732,10 +739,16 @@ class Settings:
     def sanity_check_folders(self, folders=None):
         if folders is None:
             folders = default_settings["folder"].keys()
+
+        folder_map = {}
         for folder in folders:
-            self.getBaseFolder(
-                folder, check_writable=True, deep_check_writable=True, log_error=True
+            folder_map[folder] = self.getBaseFolder(
+                folder, check_writable=True, deep_check_writable=True
             )
+
+        # validate uniqueness of folder paths
+        if len(folder_map.values()) != len(set(folder_map.values())):
+            raise DuplicateFolderPaths(folders)
 
     def _get_default_folder(self, type):
         folder = default_settings["folder"][type]
@@ -1023,7 +1036,6 @@ class Settings:
 
         if migrate:
             self._migrate_config()
-        self._validate_config()
 
         self._forget_hashes()
 
@@ -2001,15 +2013,6 @@ class Settings:
                     "Error while trying to save migrated connection profile"
                 )
 
-    def _validate_config(self):
-        # validate uniqueness of folder paths
-        folder_keys = self.get(["folder"], merged=True).keys()
-        folders = {
-            folder_key: self.getBaseFolder(folder_key) for folder_key in folder_keys
-        }
-        if len(folders.values()) != len(set(folders.values())):
-            raise DuplicateFolderPaths(folders)
-
     def backup(self, suffix=None, path=None, ext=None, hidden=False):
         import shutil
 
@@ -2271,7 +2274,6 @@ class Settings:
         type,
         create=True,
         allow_fallback=True,
-        log_error=False,
         check_writable=True,
         deep_check_writable=False,
     ):
@@ -2292,23 +2294,20 @@ class Settings:
                 create=create,
                 check_writable=check_writable,
                 deep_check_writable=deep_check_writable,
-                log_error=log_error,
             )
         except Exception:
             if folder != default_folder and allow_fallback:
-                if log_error:
-                    self._logger.error(
-                        "Invalid configured {} folder at {}, attempting to "
-                        "fall back on default folder at {}".format(
-                            type, folder, default_folder
-                        )
+                self._logger.exception(
+                    "Invalid configured {} folder at {}, attempting to "
+                    "fall back on default folder at {}".format(
+                        type, folder, default_folder
                     )
+                )
                 _validate_folder(
                     default_folder,
                     create=create,
                     check_writable=check_writable,
                     deep_check_writable=deep_check_writable,
-                    log_error=log_error,
                 )
                 folder = default_folder
 
@@ -2723,9 +2722,7 @@ def _default_basedir(applicationName):
         return os.path.expanduser(os.path.join("~", "." + applicationName.lower()))
 
 
-def _validate_folder(
-    folder, create=True, check_writable=True, deep_check_writable=False, log_error=False
-):
+def _validate_folder(folder, create=True, check_writable=True, deep_check_writable=False):
     logger = logging.getLogger(__name__)
 
     if not os.path.exists(folder):
@@ -2738,8 +2735,7 @@ def _validate_folder(
             try:
                 os.makedirs(folder)
             except Exception:
-                if log_error:
-                    logger.exception(f"Could not create {folder}")
+                logger.exception(f"Could not create {folder}")
                 raise OSError(
                     "Folder for type {} at {} does not exist and creation failed".format(
                         type, folder
@@ -2771,6 +2767,5 @@ def _validate_folder(
                     f.write("test")
                 os.remove(testfile)
             except Exception:
-                if log_error:
-                    logger.exception(f"Could not write test file to {folder}")
+                logger.exception(f"Could not write test file to {testfile}")
                 raise OSError(error)

@@ -3,6 +3,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
+import re
 
 from flask import abort, jsonify, request
 from flask_login import current_user
@@ -19,6 +20,7 @@ from octoprint.settings import settings, valid_boolean_trues
 
 FOLDER_TYPES = ("uploads", "timelapse", "timelapse_tmp", "logs", "watched")
 FOLDER_MAPPING = {"timelapseTmp": "timelapse_tmp"}
+TIMELAPSE_BITRATE_PATTERN = re.compile(r"\d+[KMGTPEZY]?i?B?", flags=re.IGNORECASE)
 
 
 def _lastmodified():
@@ -173,6 +175,7 @@ def getSettings():
             "timeoutSdStatusAutoreport": s.getFloat(
                 ["serial", "timeout", "sdStatusAutoreport"]
             ),
+            "timeoutPosAutoreport": s.getFloat(["serial", "timeout", "posAutoreport"]),
             "timeoutBaudrateDetectionPause": s.getFloat(
                 ["serial", "timeout", "baudrateDetectionPause"]
             ),
@@ -233,10 +236,14 @@ def getSettings():
             "capAutoreportSdStatus": s.getBoolean(
                 ["serial", "capabilities", "autoreport_sdstatus"]
             ),
+            "capAutoreportPos": s.getBoolean(
+                ["serial", "capabilities", "autoreport_pos"]
+            ),
             "capBusyProtocol": s.getBoolean(["serial", "capabilities", "busy_protocol"]),
             "capEmergencyParser": s.getBoolean(
                 ["serial", "capabilities", "emergency_parser"]
             ),
+            "capExtendedM20": s.getBoolean(["serial", "capabilities", "extended_m20"]),
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
         },
@@ -554,8 +561,14 @@ def _saveSettings(data):
                 abort(400, description="Invalid webcam.ffmpegCommandline setting")
             else:
                 s.set(["webcam", "ffmpegCommandline"], commandline)
-        if "bitrate" in data["webcam"]:
-            s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
+        if "bitrate" in data["webcam"] and data["webcam"]["bitrate"]:
+            bitrate = str(data["webcam"]["bitrate"])
+            if not TIMELAPSE_BITRATE_PATTERN.match(bitrate):
+                abort(
+                    400,
+                    description="Invalid webcam.bitrate setting, needs to be a valid ffmpeg bitrate",
+                )
+            s.set(["webcam", "bitrate"], bitrate)
         if "ffmpegThreads" in data["webcam"]:
             s.setInt(["webcam", "ffmpegThreads"], data["webcam"]["ffmpegThreads"])
         if "ffmpegVideoCodec" in data["webcam"] and data["webcam"][
@@ -693,6 +706,12 @@ def _saveSettings(data):
             s.setFloat(
                 ["serial", "timeout", "sdStatusAutoreport"],
                 data["serial"]["timeoutSdStatusAutoreport"],
+                min=0.0,
+            )
+        if "timeoutPosAutoreport" in data["serial"]:
+            s.setFloat(
+                ["serial", "timeout", "posAutoreport"],
+                data["serial"]["timeoutPosAutoreport"],
                 min=0.0,
             )
         if "timeoutBaudrateDetectionPause" in data["serial"]:
@@ -877,6 +896,11 @@ def _saveSettings(data):
                 ["serial", "capabilities", "autoreport_sdstatus"],
                 data["serial"]["capAutoreportSdStatus"],
             )
+        if "capAutoreportPos" in data["serial"]:
+            s.setBoolean(
+                ["serial", "capabilities", "autoreport_pos"],
+                data["serial"]["capAutoreportPos"],
+            )
         if "capBusyProtocol" in data["serial"]:
             s.setBoolean(
                 ["serial", "capabilities", "busy_protocol"],
@@ -887,6 +911,11 @@ def _saveSettings(data):
                 ["serial", "capabilities", "emergency_parser"],
                 data["serial"]["capEmergencyParser"],
             )
+        if "capExtendedM20" in data["serial"]:
+            s.setBoolean(
+                ["serial", "capabilities", "extended_m20"],
+                data["serial"]["capExtendedM20"],
+            ),
         if "resendRatioThreshold" in data["serial"]:
             s.setInt(
                 ["serial", "resendRatioThreshold"], data["serial"]["resendRatioThreshold"]

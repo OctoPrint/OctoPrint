@@ -79,10 +79,10 @@
 <p>{{ _('Create a new backup of the current state.') }}</p>
 
 <form class="form-horizontal" onsubmit="return false;">
-    <div class="control-group">
+    <div class="control-group" title="{{ _('All files in the uploads folder and subfolders. These are the files in the Files List, plus any metadata that has been generated for those files.')|edq }}">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files & metadata from backup') }}
+                <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files (& associated metadata) from backup') }}
             </label>
         </div>
     </div>

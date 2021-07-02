@@ -64,6 +64,7 @@ INSTALL_REQUIRES = [
     "zeroconf>=0.24,<0.25",
     "zipstream-new>=1.1.8,<1.2",
     "pathvalidate>=2.4.1,<3",
+    "colorlog>=5.0.1,<6",
     # vendor bundled dependencies
     "unidecode>=0.04.14,<0.05",  # dependency of awesome-slugify
     "blinker>=1.4,<2",  # dependency of flask_principal
