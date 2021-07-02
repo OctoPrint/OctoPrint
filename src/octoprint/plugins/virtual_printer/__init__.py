@@ -193,6 +193,14 @@ class VirtualPrinterPlugin(
 
                             print(f"<<< {received.rstrip()}")
                             self.incoming.put(received)
+                except ConnectionAbortedError:
+                    self.close()
+                except ValueError as ex:
+                    self.close()
+                    if "file descriptor cannot be a negative number" in str(ex):
+                        pass
+                    else:
+                        raise
                 except Exception:
                     self.close()
                     raise
@@ -228,14 +236,10 @@ class VirtualPrinterPlugin(
                 return self._socket.recv(size)
 
             def _do_write(self, data):
-                try:
-                    ready = select.select([], [self._socket], [], 10)
-                    if self._socket not in ready[1]:
-                        raise socket.timeout()
-                    self._socket.sendall(data)
-                except Exception:
-                    self.close()
-                    raise
+                ready = select.select([], [self._socket], [], 10)
+                if self._socket not in ready[1]:
+                    raise socket.timeout()
+                self._socket.sendall(data)
 
         ##~~ TCP Socket
 

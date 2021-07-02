@@ -705,6 +705,8 @@ class VirtualPrinter:
             for cap, enabled in self._capabilities.items():
                 self._send("Cap:{}:{}".format(cap.upper(), "1" if enabled else "0"))
 
+        self._send("echo:OctoPrint Virtual Printer reporting for duty")
+
     def _gcode_M117(self, data: str) -> None:
         # we'll just use this to echo a message, to allow playing around with pause triggers
         if self._echoOnM117:
