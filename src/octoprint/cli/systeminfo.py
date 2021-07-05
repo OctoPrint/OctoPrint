@@ -90,6 +90,14 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None):
         if os.path.exists(logpath):
             z.write(logpath, arcname=log, compress_type=compress_type)
 
+    # add additional logs as needed
+    for log, logpath in {
+        "webcamd.log": "/var/log/webcamd.log",
+        "haproxy.log": "/var/log/haproxy.log",
+    }.items():
+        if os.path.exists(logpath) and os.access(logpath, os.R_OK):
+            z.write(logpath, arcname=log, compress_type=compress_type)
+
     return z
 
 
