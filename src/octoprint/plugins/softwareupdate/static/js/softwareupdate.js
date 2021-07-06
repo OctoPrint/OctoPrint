@@ -130,6 +130,7 @@ $(function () {
             [],
             0
         );
+        self.updatelog = ko.observableArray([]);
 
         self.availableAndPossible = ko.pureComputed(function () {
             return _.filter(self.versions.items(), function (info) {
@@ -160,6 +161,10 @@ $(function () {
                 self.performCheck();
             } else {
                 self._closePopup();
+            }
+
+            if (self.loginState.hasPermission(self.access.permissions.ADMIN)) {
+                self.requestUpdatelog();
             }
         };
 
@@ -554,6 +559,16 @@ $(function () {
                 .always(function () {
                     self.checking(false);
                 });
+        };
+
+        self.fromUpdatelogResponse = function (response) {
+            self.updatelog(response.updatelog);
+        };
+
+        self.requestUpdatelog = function () {
+            OctoPrint.plugins.softwareupdate
+                .getUpdatelog()
+                .done(self.fromUpdatelogResponse);
         };
 
         self.iconTitleForEntry = function (data) {

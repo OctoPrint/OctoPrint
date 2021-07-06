@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import datetime
+
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -47,6 +49,8 @@ MINIMUM_PYTHON = "2.7.9"
 MINIMUM_SETUPTOOLS = "39.0.1"
 MINIMUM_PIP = "9.0.3"
 
+DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
+
 
 ##~~ Plugin
 
@@ -91,6 +95,10 @@ class SoftwareUpdatePlugin(
         self._overlay_cache_ttl = 0
         self._overlay_cache_timestamp = None
 
+        self._update_log = []
+        self._update_log_path = None
+        self._update_log_dirty = False
+
         self._environment_supported = True
         self._environment_versions = {}
         self._environment_ready = threading.Event()
@@ -112,6 +120,11 @@ class SoftwareUpdatePlugin(
             self.get_plugin_data_folder(), "versioncache.yaml"
         )
         self._load_version_cache()
+
+        self._update_log_path = os.path.join(
+            self.get_plugin_data_folder(), "updatelog.yaml"
+        )
+        self._load_update_log()
 
         self._overlay_cache_ttl = self._settings.get_int(["check_overlay_ttl"]) * 60
 
@@ -500,6 +513,91 @@ class SoftwareUpdatePlugin(
             pass
         self._version_cache_dirty = True
 
+    def _load_update_log(self):
+        if not os.path.isfile(self._update_log_path):
+            return
+
+        import yaml
+
+        try:
+            with io.open(self._update_log_path, "rt", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+        except Exception:
+            self._logger.exception("Error while loading update log from disk")
+        else:
+            # clean up data older than updatelog_cutoff hours
+            before_cleanup = len(data)
+            cutoff = (
+                datetime.datetime.now()
+                - datetime.timedelta(minutes=self._settings.get_int(["updatelog_cutoff"]))
+            ).strftime(DATETIME_FORMAT)
+            data = list(
+                filter(
+                    lambda x: x.get("datetime") and x["datetime"] > cutoff,
+                    data,
+                )
+            )
+            cleaned_up = len(data) - before_cleanup
+            if cleaned_up:
+                self._logger.info(
+                    "Cleaned up {} old update log entries".format(cleaned_up)
+                )
+
+            self._update_log = sorted(data, key=lambda x: x["datetime"], reverse=True)
+            self._update_log_dirty = False
+
+            self._logger.info("Loaded update log from disk")
+
+    def _save_update_log(self):
+        import yaml
+
+        from octoprint.util import atomic_write
+
+        with atomic_write(
+            self._update_log_path, mode="wt", max_permissions=0o666
+        ) as file_obj:
+            yaml.safe_dump(
+                self._update_log,
+                stream=file_obj,
+                default_flow_style=False,
+                indent=2,
+                allow_unicode=True,
+            )
+            self._update_log_dirty = False
+
+        self._logger.info("Saved update log to disk")
+
+    def _add_update_log_entry(
+        self,
+        target,
+        current_version,
+        target_version,
+        success,
+        text,
+        display_name=None,
+        release_notes="",
+        save=True,
+    ):
+        if display_name is None:
+            display_name = target
+
+        self._update_log.append(
+            {
+                "datetime": datetime.datetime.now().strftime(DATETIME_FORMAT),
+                "target": target,
+                "current_version": current_version,
+                "target_version": target_version,
+                "display_name": display_name,
+                "release_notes": release_notes if release_notes else "",
+                "success": success,
+                "text": text,
+            }
+        )
+        self._update_log_dirty = True
+
+        if save:
+            self._save_update_log()
+
     # ~~ SettingsPlugin API
 
     def get_settings_defaults(self):
@@ -544,13 +642,14 @@ class SoftwareUpdatePlugin(
                 },
             },
             "pip_command": None,
-            "cache_ttl": 24 * 60,
+            "cache_ttl": 24 * 60,  # 1 day
             "notify_users": True,
             "ignore_throttled": False,
             "minimum_free_storage": 150,
             "check_overlay_url": "https://plugins.octoprint.org/update_check_overlay.json",
             "check_overlay_py2_url": "https://plugins.octoprint.org/update_check_overlay_py2.json",
-            "check_overlay_ttl": 6 * 60,
+            "check_overlay_ttl": 6 * 60,  # 6 hours
+            "updatelog_cutoff": 30 * 24 * 60,  # 30 days
             "credentials": {
                 "github": None,
                 "bitbucket_user": None,
@@ -606,6 +705,7 @@ class SoftwareUpdatePlugin(
         else:
             data["octoprint_checkout_folder"] = None
             data["octoprint_type"] = None
+            data["octoprint_release_channel"] = None
 
         # ~~ pip check settings
 
@@ -921,6 +1021,21 @@ class SoftwareUpdatePlugin(
         return data
 
     # ~~ BluePrint API
+
+    @octoprint.plugin.BlueprintPlugin.route("/updatelog", methods=["GET"])
+    @no_firstrun_access
+    @Permissions.ADMIN.require(403)
+    def get_update_log(self):
+        def view():
+            return flask.jsonify(updatelog=self._update_log)
+
+        def lastmodified():
+            if os.path.exists(self._update_log_path):
+                return os.stat(self._update_log_path).st_mtime
+            else:
+                return 0
+
+        return with_revalidation_checking(lastmodified_factory=lastmodified)(view)()
 
     @octoprint.plugin.BlueprintPlugin.route("/check", methods=["GET"])
     @no_firstrun_access
@@ -1372,28 +1487,9 @@ class SoftwareUpdatePlugin(
                         local_name = target_information["local"]["name"]
                         local_value = target_information["local"]["value"]
 
-                        release_notes = None
-                        if (
-                            target_information
-                            and target_information["remote"]
-                            and target_information["remote"]["value"]
-                        ):
-                            if (
-                                "release_notes" in populated_check
-                                and populated_check["release_notes"]
-                            ):
-                                release_notes = populated_check["release_notes"]
-                            elif "release_notes" in target_information["remote"]:
-                                release_notes = target_information["remote"][
-                                    "release_notes"
-                                ]
-
-                            if release_notes:
-                                release_notes = release_notes.format(
-                                    octoprint_version=VERSION,
-                                    target_name=target_information["remote"]["name"],
-                                    target_version=target_information["remote"]["value"],
-                                )
+                        release_notes = self._get_release_notes(
+                            target_information, populated_check
+                        )
 
                         information[target] = {
                             "updateAvailable": target_update_available,
@@ -1461,6 +1557,24 @@ class SoftwareUpdatePlugin(
             information, update_available, update_possible = self._get_versions_data
 
         return information, update_available, update_possible
+
+    def _get_release_notes(self, information, populated_check):
+        release_notes = None
+
+        if information and information["remote"] and information["remote"]["value"]:
+            if populated_check.get("release_notes"):
+                release_notes = populated_check["release_notes"]
+            elif "release_notes" in information["remote"]:
+                release_notes = information["remote"]["release_notes"]
+
+            if release_notes:
+                release_notes = release_notes.format(
+                    octoprint_version=VERSION,
+                    target_name=information["remote"]["name"],
+                    target_version=information["remote"]["value"],
+                )
+
+        return release_notes
 
     def _get_check_hash(self, check):
         def dict_to_sorted_repr(d):
@@ -1706,6 +1820,9 @@ class SoftwareUpdatePlugin(
             # we might have needed to update the config, so we'll save that now
             self._settings.save()
 
+            # we also need to save our update log changes
+            self._save_update_log()
+
             # also, we are now longer updating
             self._update_in_progress = False
 
@@ -1759,8 +1876,22 @@ class SoftwareUpdatePlugin(
         information, update_available, update_possible, _, _ = self._get_current_version(
             target, check, online=online, credentials=credentials
         )
+        populated_check = self._populated_check(target, check)
+
+        def add_update_log(success, text):
+            self._add_update_log_entry(
+                target,
+                information["local"]["value"],
+                information["remote"]["value"],
+                success,
+                text,
+                display_name=populated_check["displayName"],
+                release_notes=self._get_release_notes(information, populated_check),
+                save=False,
+            )
 
         if not update_available and not force:
+            add_update_log(False, "Target is already up to date")
             return False, None
 
         if not update_possible:
@@ -1769,6 +1900,7 @@ class SoftwareUpdatePlugin(
                     target
                 )
             )
+            add_update_log(False, "Update not possible, missing information")
             return False, None
 
         if not information.get("compatible", True):
@@ -1777,6 +1909,7 @@ class SoftwareUpdatePlugin(
                     target
                 )
             )
+            add_update_log(False, "Update is incompatible")
             return False, None
 
         # determine the target version to update to
@@ -1807,7 +1940,6 @@ class SoftwareUpdatePlugin(
 
         ### The actual update procedure starts here...
 
-        populated_check = self._populated_check(target, check)
         try:
             self._logger.info(
                 "Starting update of {} to {}...".format(target, target_version)
@@ -1846,6 +1978,7 @@ class SoftwareUpdatePlugin(
                     "reason": "Unknown update type",
                 },
             )
+            add_update_log(False, "Update failed, unknown update type")
             return False, None
 
         except exceptions.CannotUpdateOffline:
@@ -1862,6 +1995,8 @@ class SoftwareUpdatePlugin(
                     "reason": "No internet connection",
                 },
             )
+            add_update_log(False, "No internet connection")
+            return False, None
 
         except Exception as e:
             self._logger.exception(
@@ -1895,6 +2030,7 @@ class SoftwareUpdatePlugin(
                         "reason": "unknown",
                     },
                 )
+            add_update_log(False, "Update failed")
 
         else:
             # make sure that any external changes to config.yaml are loaded into the system
@@ -1905,6 +2041,8 @@ class SoftwareUpdatePlugin(
 
             del self._version_cache[target]
             self._version_cache_dirty = True
+
+            add_update_log(True, "Update successful")
 
         return target_error, target_result
 
