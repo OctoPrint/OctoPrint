@@ -183,9 +183,11 @@ class SoftwareUpdatePlugin(
                     target_version=entry["target_version"],
                     success="SUCCESS" if entry["success"] else "FAILED",
                     text=entry["text"]
-                    + " (Release notes: {})".format(entry["release_notes"])
-                    if entry["release_notes"]
-                    else "",
+                    + (
+                        " (Release notes: {})".format(entry["release_notes"])
+                        if entry["release_notes"]
+                        else ""
+                    ),
                 )
                 result.append(line)
             return "\n".join(result)
