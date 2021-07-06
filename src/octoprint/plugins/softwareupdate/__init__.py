@@ -49,7 +49,7 @@ MINIMUM_PYTHON = "2.7.9"
 MINIMUM_SETUPTOOLS = "39.0.1"
 MINIMUM_PIP = "9.0.3"
 
-DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 ##~~ Plugin
@@ -98,6 +98,7 @@ class SoftwareUpdatePlugin(
         self._update_log = []
         self._update_log_path = None
         self._update_log_dirty = False
+        self._update_log_mutex = threading.RLock()
 
         self._environment_supported = True
         self._environment_versions = {}
@@ -163,6 +164,36 @@ class SoftwareUpdatePlugin(
                 "dangerous": True,
             },
         ]
+
+    # Additional bundle contents
+
+    def get_additional_bundle_files(self, *args, **kwargs):
+        console_log = self._settings.get_plugin_logfile_path(postfix="console")
+
+        def updatelog():
+            if not self._update_log:
+                self._load_update_log()
+
+            result = []
+            for entry in self._update_log:
+                line = "{datetime} - {display_name} - {current_version} -> {target_version} - {success} - {text}".format(
+                    datetime=entry["datetime"].replace("T", " "),
+                    display_name=entry["display_name"],
+                    current_version=entry["current_version"],
+                    target_version=entry["target_version"],
+                    success="SUCCESS" if entry["success"] else "FAILED",
+                    text=entry["text"]
+                    + " (Release notes: {})".format(entry["release_notes"])
+                    if entry["release_notes"]
+                    else "",
+                )
+                result.append(line)
+            return "\n".join(result)
+
+        return {
+            os.path.basename(console_log): console_log,
+            "plugin_softwareupdate_update.log": updatelog,
+        }
 
     def on_startup(self, host, port):
         console_logging_handler = logging.handlers.RotatingFileHandler(
@@ -531,11 +562,14 @@ class SoftwareUpdatePlugin(
                 datetime.datetime.now()
                 - datetime.timedelta(minutes=self._settings.get_int(["updatelog_cutoff"]))
             ).strftime(DATETIME_FORMAT)
-            data = list(
-                filter(
-                    lambda x: x.get("datetime") and x["datetime"] > cutoff,
-                    data,
-                )
+            data = sorted(
+                list(
+                    filter(
+                        lambda x: x.get("datetime") and x["datetime"] > cutoff,
+                        data,
+                    )
+                ),
+                key=lambda x: x["datetime"],
             )
             cleaned_up = len(data) - before_cleanup
             if cleaned_up:
@@ -543,8 +577,9 @@ class SoftwareUpdatePlugin(
                     "Cleaned up {} old update log entries".format(cleaned_up)
                 )
 
-            self._update_log = sorted(data, key=lambda x: x["datetime"], reverse=True)
-            self._update_log_dirty = False
+            with self._update_log_mutex:
+                self._update_log = data
+                self._update_log_dirty = False
 
             self._logger.info("Loaded update log from disk")
 
@@ -553,17 +588,18 @@ class SoftwareUpdatePlugin(
 
         from octoprint.util import atomic_write
 
-        with atomic_write(
-            self._update_log_path, mode="wt", max_permissions=0o666
-        ) as file_obj:
-            yaml.safe_dump(
-                self._update_log,
-                stream=file_obj,
-                default_flow_style=False,
-                indent=2,
-                allow_unicode=True,
-            )
-            self._update_log_dirty = False
+        with self._update_log_mutex:
+            with atomic_write(
+                self._update_log_path, mode="wt", max_permissions=0o666
+            ) as file_obj:
+                yaml.safe_dump(
+                    sorted(self._update_log, key=lambda x: x["datetime"]),
+                    stream=file_obj,
+                    default_flow_style=False,
+                    indent=2,
+                    allow_unicode=True,
+                )
+                self._update_log_dirty = False
 
         self._logger.info("Saved update log to disk")
 
@@ -581,22 +617,23 @@ class SoftwareUpdatePlugin(
         if display_name is None:
             display_name = target
 
-        self._update_log.append(
-            {
-                "datetime": datetime.datetime.now().strftime(DATETIME_FORMAT),
-                "target": target,
-                "current_version": current_version,
-                "target_version": target_version,
-                "display_name": display_name,
-                "release_notes": release_notes if release_notes else "",
-                "success": success,
-                "text": text,
-            }
-        )
-        self._update_log_dirty = True
+        with self._update_log_mutex:
+            self._update_log.append(
+                {
+                    "datetime": datetime.datetime.now().strftime(DATETIME_FORMAT),
+                    "target": target,
+                    "current_version": current_version,
+                    "target_version": target_version,
+                    "display_name": display_name,
+                    "release_notes": release_notes if release_notes else "",
+                    "success": success,
+                    "text": text,
+                },
+            )
+            self._update_log_dirty = True
 
-        if save:
-            self._save_update_log()
+            if save:
+                self._save_update_log()
 
     # ~~ SettingsPlugin API
 
@@ -1027,7 +1064,17 @@ class SoftwareUpdatePlugin(
     @Permissions.ADMIN.require(403)
     def get_update_log(self):
         def view():
-            return flask.jsonify(updatelog=self._update_log)
+            return flask.jsonify(updatelog=list(reversed(self._update_log)))
+
+        def etag(lm=None):
+            hash = hashlib.sha1()
+
+            def hash_update(value):
+                value = value.encode("utf-8")
+                hash.update(value)
+
+            hash_update(repr(self._update_log))
+            return hash.hexdigest()
 
         def lastmodified():
             if os.path.exists(self._update_log_path):
@@ -1035,7 +1082,9 @@ class SoftwareUpdatePlugin(
             else:
                 return 0
 
-        return with_revalidation_checking(lastmodified_factory=lastmodified)(view)()
+        return with_revalidation_checking(
+            etag_factory=etag, lastmodified_factory=lastmodified
+        )(view)()
 
     @octoprint.plugin.BlueprintPlugin.route("/check", methods=["GET"])
     @no_firstrun_access
@@ -2347,4 +2396,5 @@ def __plugin_load__():
         "octoprint.cli.commands": cli.commands,
         "octoprint.events.register_custom_events": _register_custom_events,
         "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+        "octoprint.systeminfo.additional_bundle_files": __plugin_implementation__.get_additional_bundle_files,
     }

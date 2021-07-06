@@ -248,6 +248,12 @@ class PluginManagerPlugin(
             },
         ]
 
+    # Additional bundle contents
+
+    def get_additional_bundle_files(self, *args, **kwargs):
+        console_log = self._settings.get_plugin_logfile_path(postfix="console")
+        return {os.path.basename(console_log): console_log}
+
     ##~~ StartupPlugin
 
     def on_after_startup(self):
@@ -2158,6 +2164,7 @@ def __plugin_load__():
         "octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types,
         "octoprint.events.register_custom_events": _register_custom_events,
         "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+        "octoprint.systeminfo.additional_bundle_files": __plugin_implementation__.get_additional_bundle_files,
     }
 
     global __plugin_helpers__
