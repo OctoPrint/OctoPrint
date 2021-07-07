@@ -1105,7 +1105,7 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
           * the current and seen versions are identical
           * the current version is None and the seen version is not
-          * the current version is less or equal than the seen one
+          * the seen version is not None and the current version is less or equal than the seen one
 
         .. code-block:: none
 
@@ -1157,7 +1157,7 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
         return (
             (current == seen)
             or (current is None and seen is not None)
-            or (current <= seen)
+            or (seen is not None and current <= seen)
         )
 
 
