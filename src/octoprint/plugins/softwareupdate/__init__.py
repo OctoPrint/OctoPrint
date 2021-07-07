@@ -637,6 +637,17 @@ class SoftwareUpdatePlugin(
             if save:
                 self._save_update_log()
 
+    def _is_octoprint_outdated_and_can_update(self):
+        information, update_available, update_possible = self.get_current_versions()
+        if not update_available or not update_possible or "octoprint" not in information:
+            return False
+
+        octoprint_information = information["octoprint"]
+        return (
+            octoprint_information["updateAvailable"]
+            and octoprint_information["updatePossible"]
+        )
+
     # ~~ SettingsPlugin API
 
     def get_settings_defaults(self):
@@ -1089,9 +1100,13 @@ class SoftwareUpdatePlugin(
         )(view)()
 
     @octoprint.plugin.BlueprintPlugin.route("/check", methods=["GET"])
-    @no_firstrun_access
-    @Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.require(403)
     def check_for_update(self):
+        if (
+            not Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.can()
+            and not self._settings.global_get(["server", "firstRun"])
+        ):
+            flask.abort(403)
+
         request_data = flask.request.values
 
         if "targets" in request_data or "check" in request_data:
@@ -1241,9 +1256,13 @@ class SoftwareUpdatePlugin(
         )(view)()
 
     @octoprint.plugin.BlueprintPlugin.route("/update", methods=["POST"])
-    @no_firstrun_access
-    @Permissions.PLUGIN_SOFTWAREUPDATE_UPDATE.require(403)
     def perform_update(self):
+        if (
+            not Permissions.PLUGIN_SOFTWAREUPDATE_UPDATE.can()
+            and not self._settings.global_get(["server", "firstRun"])
+        ):
+            flask.abort(403)
+
         throttled = self._get_throttled()
         if (
             throttled
@@ -1394,20 +1413,49 @@ class SoftwareUpdatePlugin(
     def get_template_configs(self):
         from flask_babel import gettext
 
-        return [{"type": "settings", "name": gettext("Software Update")}]
+        templates = [
+            {"type": "settings", "name": gettext("Software Update")},
+        ]
+
+        if self._is_wizard_update_required():
+            templates.append(
+                {
+                    "type": "wizard",
+                    "name": gettext("Update?"),
+                    "template": "softwareupdate_wizard_update.jinja2",
+                    "suffix": "_update",
+                }
+            )
+
+        if self._is_settings_wizard_required():
+            templates.append(
+                {
+                    "type": "wizard",
+                    "name": gettext("Software Update"),
+                    "template": "softwareupdate_wizard_settings.jinja2",
+                    "suffix": "_settings",
+                }
+            )
+
+        return templates
 
     ##~~ WizardPlugin API
 
-    def is_wizard_required(self):
+    def _is_wizard_update_required(self):
+        firstrun = self._settings.global_get(["server", "firstRun"])
+        return firstrun and self._is_octoprint_outdated_and_can_update()
+
+    def _is_settings_wizard_required(self):
         checks = self._get_configured_checks()
         check = checks.get("octoprint", None)
         checkout_folder = self._get_octoprint_checkout_folder(checks=checks)
-        return (
-            check
-            and "method" in check
-            and check["method"] == "update_script"
-            and not checkout_folder
-        )
+        return check and check.get("method") == "update_script" and not checkout_folder
+
+    def is_wizard_required(self):
+        return self._is_wizard_update_required() or self._is_settings_wizard_required()
+
+    def get_wizard_version(self):
+        return 1
 
     ##~~ EventHandlerPlugin API
 
@@ -1441,6 +1489,8 @@ class SoftwareUpdatePlugin(
         checks = self._get_configured_checks()
         if check_targets is None:
             check_targets = list(checks.keys())
+
+        # TODO: caching doesn't take check_targets into account!
 
         update_available = False
         update_possible = False
