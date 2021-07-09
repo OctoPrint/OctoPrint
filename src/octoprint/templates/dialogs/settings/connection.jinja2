@@ -25,19 +25,20 @@
                 </div>
             </fieldset>
         </div>
+        <!-- ko allowBindings: false -->
         <div id="settings_connection_connectionprofiles" class="tab-pane">
-            <table class="table table-striped table-hover table-condensed table-hover" id="settings_connectionProfiles_profiles" data-bind="visible: connectionProfiles.profiles.items().length > 0" style="display: none">
+            <table class="table table-striped table-hover table-condensed table-hover" id="settings_connectionProfiles_profiles" data-bind="visible: profiles.items().length > 0" style="display: none">
                 <thead>
                 <tr>
                     <th class="settings_connectionProfiles_profiles_name">{{ _('Name') }}</th>
                     <th class="settings_connectionProfiles_profiles_action">{{ _('Action') }}</th>
                 </tr>
                 </thead>
-                <tbody data-bind="foreach: connectionProfiles.profiles.paginatedItems">
+                <tbody data-bind="foreach: profiles.paginatedItems">
                 <tr data-bind="attr: {title: name}">
-                    <td class="settings_connectionProfiles_profiles_name"><span class="fa fa-star" data-bind="invisible: !is_default()"></span> <span data-bind="text: name"></span></td>
+                    <td class="settings_connectionProfiles_profiles_name"><span class="fa fa-star" data-bind="invisible: !isDefault()"></span> <span data-bind="text: name"></span></td>
                     <td class="settings_connectionProfiles_profiles_action">
-                        <a href="javascript:void(0)" class="fa fa-star" title="{{ _('Set as default profile') }}" data-bind="click: function() { if ($root.connectionProfiles.canMakeDefault($data) && !$root.connectionProfiles.requestInProgress()) { $root.connectionProfiles.makeDefault($data); } }, css: {disabled: !$root.connectionProfiles.canMakeDefault($data) || $root.connectionProfiles.requestInProgress()}, enabled: $root.connectionProfiles.canMakeDefault($data) && !$root.connectionProfiles.requestInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-trash-o" title="{{ _('Delete Profile') }}" data-bind="click: function() { if ($root.connectionProfiles.canRemove($data) && !$root.connectionProfiles.requestInProgress()) { $root.connectionProfiles.removeProfile($data); } }, css: {disabled: !$root.connectionProfiles.canRemove($data) || $root.connectionProfiles.requestInProgress()}, enabled: $root.connectionProfiles.canRemove($data) && !$root.connectionProfiles.requestInProgress()"></a>
+                        &nbsp;<a href="javascript:void(0)" class="fa fa-star" title="{{ _('Set as default profile') }}" data-bind="click: function() { if ($root.canMakeDefault($data) && !$root.requestInProgress()) { $root.makeDefault($data); } }, css: {disabled: !$root.canMakeDefault($data) || $root.requestInProgress()}, enabled: $root.canMakeDefault($data) && !$root.requestInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-pencil" title="{{ _('Edit profile') }}" data-bind="click: function() { if (!$root.requestInProgress()) { $root.editProfile($data); } }, css: {disabled: $root.requestInProgress()}, enabled: !$root.requestInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-trash-o" title="{{ _('Delete Profile') }}" data-bind="click: function() { if ($root.canRemove($data) && !$root.requestInProgress()) { $root.removeProfile($data); } }, css: {disabled: !$root.canRemove($data) || $root.requestInProgress()}, enabled: $root.canRemove($data) && !$root.requestInProgress()"></a>
                     </td>
                 </tr>
                 </tbody>
@@ -45,15 +46,16 @@
 
             <div class="pagination pagination-mini pagination-centered">
                 <ul>
-                    <li data-bind="css: {disabled: connectionProfiles.profiles.currentPage() === 0}"><a href="#" data-bind="click: connectionProfiles.profiles.prevPage">«</a></li>
+                    <li data-bind="css: {disabled: profiles.currentPage() === 0}"><a href="#" data-bind="click: profiles.prevPage">«</a></li>
                 </ul>
-                <ul data-bind="foreach: connectionProfiles.profiles.pages">
-                    <li data-bind="css: { active: $data.number === $root.connectionProfiles.profiles.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.connectionProfiles.profiles.changePage($data.number); }"></a></li>
+                <ul data-bind="foreach: profiles.pages">
+                    <li data-bind="css: { active: $data.number === $root.profiles.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.profiles.changePage($data.number); }"></a></li>
                 </ul>
                 <ul>
-                    <li data-bind="css: {disabled: connectionProfiles.profiles.currentPage() === connectionProfiles.profiles.lastPage()}"><a href="#" data-bind="click: connectionProfiles.profiles.nextPage">»</a></li>
+                    <li data-bind="css: {disabled: profiles.currentPage() === profiles.lastPage()}"><a href="#" data-bind="click: profiles.nextPage">»</a></li>
                 </ul>
             </div>
         </div>
+        <!--/ko-->
     </div>
 </form>

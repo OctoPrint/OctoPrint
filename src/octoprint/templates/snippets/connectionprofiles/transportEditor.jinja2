@@ -1,0 +1,16 @@
+<!-- ko foreach: profile.transportParameters -->
+<!-- ko if: !expert -->
+<!-- ko template: { name: 'connectionprofile_editor_template_' + $data.type, data: $data } --><!-- /ko -->
+<!-- /ko -->
+<!-- /ko -->
+
+<div class="advanced_options" data-bind="visible: profile.expertTransportParameters">
+    <div><small><a class="muted" href="javascript:void(0)" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Expert options') }}</a></small></div>
+    <div class="hide">
+        <!-- ko foreach: profile.transportParameters -->
+        <!-- ko if: expert -->
+        <!-- ko template: { name: 'connectionprofile_editor_template_' + $data.type, data: $data } --><!-- /ko -->
+        <!-- /ko -->
+        <!-- /ko -->
+    </div>
+</div>

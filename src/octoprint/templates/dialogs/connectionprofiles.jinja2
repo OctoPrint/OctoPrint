@@ -1,49 +1,272 @@
-<div id="connectionprofiles_save_dialog" class="modal hide fade-in">
+<div id="connectionprofiles_editor_dialog" class="modal hide fade-in">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Save connection profile') }}</h3>
+        <h3 data-bind="text: editor.dialogTitle">{{ _('Edit connection profile') }}</h3>
     </div>
     <div class="modal-body">
-        <form class="form-horizontal" action="javascript:void(0)">
-            <div class="control-group">
-                <label class="control-label">{{ _('Name') }}</label>
-                <div class="controls">
-                    <input class="input-block-level" type="text" data-bind="value: editor.name, valueUpdate: 'afterkeydown'">
+        <div class="full-sized-box">
+            <form class="form-horizontal" action="javascript:void(0)">
+                <ul class="nav nav-pills">
+                    <li class="active"><a href="#connectionprofiles_editor_dialog_general" data-toggle="tab">{{ _('General') }}</a></li>
+                    <li><a href="#connectionprofiles_editor_dialog_printer" data-toggle="tab">{{ _('Printer profile') }}</a></li>
+                    <li><a href="#connectionprofiles_editor_dialog_protocol" data-toggle="tab">{{ _('Protocol') }}</a></li>
+                    <li><a href="#connectionprofiles_editor_dialog_transport" data-toggle="tab">{{ _('Transport') }}</a></li>
+                </ul>
+
+                <div class="tab-content">
+                    <div id="connectionprofiles_editor_dialog_general" class="tab-pane active">
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Name') }}</label>
+                            <div class="controls">
+                                <input class="input-block-level" type="text" data-bind="value: editor.profile.name, valueUpdate: 'afterkeydown'">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Identifier') }}</label>
+                            <div class="controls">
+                                <input class="input-block-level" type="text" data-bind="value: editor.profile.identifier, attr: {placeholder: editor.profile.identifierPlaceholder}">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: editor.profile.overwrite"> {{ _('Overwrite existing profile') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: editor.profile.autoconnect"> {{ _('Attempt auto connect on server start') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: editor.profile.makeDefault"> {{ _('Make default') }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="connectionprofiles_editor_dialog_printer" class="tab-pane">
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Printer profile') }}</label>
+                            <div class="controls">
+                                <select class="input-block-level" data-bind="options: availablePrinterProfiles, optionsText: 'name', value: editor.profile.printerProfile"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="connectionprofiles_editor_dialog_protocol" class="tab-pane">
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Protocol') }}</label>
+                            <div class="controls">
+                                <select class="input-block-level" data-bind="options: availableProtocols, optionsText: 'name', value: editor.profile.protocol"></select>
+                            </div>
+                        </div>
+                        <!--ko let: { profile: editor.profile }-->
+                        {% include "snippets/connectionprofiles/protocolEditor.jinja2" %}
+                        <!--/ko-->
+                    </div>
+                    <div id="connectionprofiles_editor_dialog_transport" class="tab-pane">
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Transport') }}</label>
+                            <div class="controls">
+                                <select class="input-block-level" data-bind="options: availableTransports, optionsText: 'name', value: editor.profile.transport"></select>
+                            </div>
+                        </div>
+                        <!--ko let: { profile: editor.profile }-->
+                        {% include "snippets/connectionprofiles/transportEditor.jinja2" %}
+                        <!--/ko-->
+                    </div>
                 </div>
-            </div>
-            <div class="control-group">
-                <label class="control-label">{{ _('Identifier') }}</label>
-                <div class="controls">
-                    <input class="input-block-level" type="text" data-bind="value: editor.identifier, attr: {placeholder: editor.identifierPlaceholder}">
-                </div>
-            </div>
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: editor.overwrite"> {{ _('Overwrite existing profile') }}
-                    </label>
-                </div>
-            </div>
-            <!--
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox"> {{ _('Make default') }}
-                    </label>
-                </div>
-            </div>
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox"> {{ _('Attempt auto connect on server start') }}
-                    </label>
-                </div>
-            </div>
-            -->
-        </form>
+            </form>
+        </div>
     </div>
     <div class="modal-footer">
         <a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</a>
-        <a href="javascript:void(0)" class="btn" aria-hidden="true" data-bind="text: editor.buttonText, click: editor.confirm">{{ _('Save') }}</a>
+        <a href="javascript:void(0)" class="btn" aria-hidden="true" data-bind="text: editor.buttonText, click: confirm">{{ _('Save') }}</a>
     </div>
 </div>
+
+<script type="text/html" id="connectionprofile_editor_template_text">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <input class="input-block-level" type="text" data-bind="value: $data.value, attr: {placeholder: $data.default}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connectionprofile_editor_template_url">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <input class="input-block-level" type="text" data-bind="value: $data.value, attr: {placeholder: $data.default}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connectionprofile_editor_template_integer">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <!-- ko if: $data.unit -->
+            <div class="input-append">
+                <input class="input-small" type="number" step="1" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+                <span class="add-on" data-bind="text: $data.unit"></span>
+            </div>
+            <!-- /ko -->
+            <!-- ko ifnot: $data.unit -->
+            <input class="input-small" type="number" step="1" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <!-- /ko -->
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connectionprofile_editor_template_float">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <!-- ko if: $data.unit -->
+            <div class="input-append">
+                <input class="input-small" type="number" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+                <span class="add-on" data-bind="text: $data.unit"></span>
+            </div>
+            <!-- /ko -->
+            <!-- ko ifnot: $data.unit -->
+            <input class="input-small" type="number" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <!-- /ko -->
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connectionprofile_editor_template_choice">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connectionprofile_editor_template_presetchoice">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+    <!-- ko template: { name: 'connectionprofile_editor_template_group', data: group } --><!-- /ko -->
+</script>
+<script type="text/html" id="connectionprofile_editor_template_smallchoice">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <!-- ko foreach: choices -->
+            <label class="radio">
+                <input type="radio" data-bind="attr: { name: 'connectionprofile_editor_' + $parent.name + '_group' }, value: $data.value, checked: $parent.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"> <span data-bind="markdownInline: $data.title"></span> <span class="label label-important" data-bind="visible: $data.warning">{{ _('Warning') }}</span>  <!-- ko foreach: $data.labels --><span class="label" data-bind="text: $data"></span><!-- /ko -->
+                <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+            </label>
+            <!-- /ko -->
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connectionprofile_editor_template_boolean">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"> <span data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></span> <span class="label label-important" data-bind="visible: $data.warning">{{ _('Warning') }}</span> <!-- ko foreach: $data.labels --><span class="label" data-bind="text: $data"></span><!-- /ko -->
+            </label>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connectionprofile_editor_template_suggestion">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.suggestions, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connectionprofile_editor_template_list">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <textarea data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></textarea>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connectionprofile_editor_template_smalllist">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="connectionprofile_editor_template_group">
+    <fieldset>
+        <legend data-bind="markdownInline: $data.title"></legend>
+        <p data-bind="visible: $data.help, markdownInline: $data.help"></p>
+        <!-- ko foreach: params -->
+        <!-- ko if: !expert -->
+        <!-- ko template: { name: 'connectionprofile_editor_template_' + $data.type, data: $data } --><!-- /ko -->
+        <!-- /ko -->
+        <!-- /ko -->
+
+        <div class="advanced_options" data-bind="visible: expertParameters">
+            <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Expert options') }}</a></small></div>
+            <div class="hide">
+                <!-- ko foreach: params -->
+                <!-- ko if: expert -->
+                <!-- ko template: { name: 'connectionprofile_editor_template_' + $data.type, data: $data } --><!-- /ko -->
+                <!-- /ko -->
+                <!-- /ko -->
+            </div>
+        </div>
+    </fieldset>
+</script>
+<script type="text/html" id="connectionprofile_editor_template_conditionalgroup">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+
+    <!-- ko foreach: $data.groups[$data.value()] -->
+    <!-- ko if: !expert -->
+    <!-- ko template: { name: 'connectionprofile_editor_template_' + $data.type, data: $data } --><!-- /ko -->
+    <!-- /ko -->
+    <!-- /ko -->
+
+    <div class="advanced_options" data-bind="visible: $data.expertParameters[$data.value]">
+        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Expert options') }}</a></small></div>
+        <div class="hide">
+            <!-- ko foreach: $data.groups[$data.value()] -->
+            <!-- ko if: expert -->
+            <!-- ko template: { name: 'connectionprofile_editor_template_' + $data.type, data: $data } --><!-- /ko -->
+            <!-- /ko -->
+            <!-- /ko -->
+        </div>
+    </div>
+</script>

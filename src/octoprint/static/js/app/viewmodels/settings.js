@@ -4,9 +4,8 @@ $(function () {
 
         self.loginState = parameters[0];
         self.access = parameters[1];
-        self.connectionProfiles = parameters[2];
-        self.printerProfiles = parameters[3];
-        self.about = parameters[4];
+        self.printerProfiles = parameters[2];
+        self.about = parameters[3];
 
         // TODO: remove in upcoming version, this is only for backwards compatibility
         self.users = parameters[5];
@@ -1526,7 +1525,6 @@ $(function () {
         dependencies: [
             "loginStateViewModel",
             "accessViewModel",
-            "connectionProfilesViewModel",
             "printerProfilesViewModel",
             "aboutViewModel",
             "usersViewModel"

@@ -1,80 +1,10 @@
 $(function () {
-    function ConnectionProfileEditorViewModel() {
-        var self = this;
-
-        self.active = ko.observable(false);
-        self.deferred = undefined;
-
-        self.buttonText = ko.observable(gettext("Save"));
-
-        self.dialog = $("#connectionprofiles_save_dialog");
-
-        self.profile = undefined;
-
-        self.name = ko.observable();
-        self.identifier = ko.observable();
-        self.identifierPlaceholder = ko.observable();
-
-        self.overwrite = ko.observable(false);
-        self.makeDefault = ko.observable(false);
-
-        self.name.subscribe(function () {
-            self.identifierPlaceholder(self._sanitize(self.name()).toLowerCase());
-        });
-
-        self.showDialog = function (profile, button) {
-            if (button) {
-                self.buttonText(button);
-            } else {
-                self.buttonText(gettext("Save"));
-            }
-
-            self.profile = profile;
-
-            self.name(profile.name);
-            self.identifier(profile.identifier);
-
-            self.overwrite(profile.identifier !== undefined);
-
-            self.deferred = $.Deferred();
-            self.dialog.modal("show");
-            return self.deferred.promise();
-        };
-
-        self.confirm = function () {
-            self.profile.id = self.identifier();
-            if (self.profile.id === undefined) {
-                self.profile.id = self.identifierPlaceholder();
-            }
-
-            self.profile.name = self.name();
-
-            OctoPrint.connectionprofiles
-                .set(self.profile.id, self.profile, self.overwrite(), self.makeDefault())
-                .done(function (response) {
-                    self.dialog.modal("hide");
-                    if (self.deferred) {
-                        self.deferred.resolve(response.profile);
-                    }
-                });
-        };
-
-        self._sanitize = function (name) {
-            return name
-                ? name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_")
-                : undefined;
-        };
-    }
-
     function ConnectionProfilesViewModel(parameters) {
         var self = this;
 
-        self.loginState = parameters[0];
-        self.access = parameters[1];
+        self.connection = parameters[0];
 
         self.requestInProgress = ko.observable(false);
-
-        self.editor = new ConnectionProfileEditorViewModel();
 
         self.profiles = new ItemListHelper(
             "connectionProfiles",
@@ -97,63 +27,48 @@ $(function () {
         self.defaultProfile = ko.observable();
         self.currentProfile = ko.observable();
 
-        self.makeDefault = function (data) {
-            return OctoPrint.connectionprofiles
-                .update(data.id, {default: true})
-                .done(function () {
-                    self.requestData();
-                });
+        self.connection.availableConnectionProfiles.subscribe(function () {
+            var profiles = self.connection.availableConnectionProfiles();
+            self.profiles.updateItems(profiles);
+        });
+        self.connection.preferredConnectionProfile.subscribe(function (profileId) {
+            self.defaultProfile(profileId);
+        });
+        self.connection.selectedConnectionProfile.subscribe(function (profile) {
+            var profileId = profile ? profile.id : undefined;
+            self.currentProfile(profileId);
+        });
+
+        self.editProfile = function (data) {
+            self.connection.editor.showEditDialog(data);
         };
 
         self.canMakeDefault = function (data) {
-            return !data.is_default();
+            return !data.isDefault();
+        };
+
+        self.makeDefault = function (data) {
+            self.requestInProgress(true);
+            return OctoPrint.connectionprofiles
+                .update(data.id, {default: true})
+                .done(function () {
+                    self.connection.requestData().always(function () {
+                        self.requestInProgress(false);
+                    });
+                });
         };
 
         self.canRemove = function (data) {
-            return !data.is_current() && !data.is_default();
-        };
-
-        self.requestData = function () {
-            if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
-                return;
-            }
-
-            return OctoPrint.connectionprofiles.list().done(self.fromResponse);
-        };
-
-        self.fromResponse = function (data) {
-            var items = [];
-            var defaultProfile = undefined;
-            var currentProfile = undefined;
-            _.each(data.profiles, function (profile) {
-                if (profile.default) {
-                    defaultProfile = profile.id;
-                }
-                if (profile.current) {
-                    currentProfile = profile.id;
-                }
-                profile.is_default = ko.observable(profile.default);
-                profile.is_current = ko.observable(profile.current);
-                items.push(profile);
-            });
-            self.profiles.updateItems(items);
-            self.defaultProfile(defaultProfile);
-
-            if (currentProfile) {
-                self.currentProfile(currentProfile);
-            } else {
-                // shouldn't normally happen, but just to not have anything else crash...
-                log.warn(
-                    "Current printer profile could not be detected, using default values"
-                );
-                self.currentProfile(undefined);
-            }
+            return !data.isCurrent() && !data.isDefault();
         };
 
         self.removeProfile = function (data) {
             var proceed = function () {
+                self.requestInProgress(true);
                 OctoPrint.connectionprofiles.delete(data.id).done(function () {
-                    self.requestData();
+                    self.connection.requestData().always(function () {
+                        self.requestInProgress(false);
+                    });
                 });
             };
 
@@ -167,17 +82,11 @@ $(function () {
                 onproceed: proceed
             });
         };
-
-        self.onSettingsShown = self.requestData;
-
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.requestData();
-        };
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: ConnectionProfilesViewModel,
-        dependencies: ["loginStateViewModel", "accessViewModel"],
-        elements: ["#connectionprofiles_save_dialog"]
+        dependencies: ["connectionViewModel"],
+        elements: ["#settings_connection_connectionprofiles"]
     });
 });
