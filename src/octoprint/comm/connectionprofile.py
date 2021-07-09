@@ -192,7 +192,7 @@ class ConnectionProfileManager:
         if os.path.exists(path) and not allow_overwrite:
             raise SaveError(
                 "Profile {} already exists and overwriting is not allowed".format(
-                    profile["id"]
+                    profile.id
                 )
             )
 
@@ -210,10 +210,8 @@ class ConnectionProfileManager:
                     allow_unicode=True,
                 )
         except Exception as e:
-            self._logger.exception(
-                "Error while trying to save profile {}".format(profile["id"])
-            )
-            raise SaveError("Cannot save profile {}: {}".format(profile["id"], e))
+            self._logger.exception(f"Error while trying to save profile {profile.id}")
+            raise SaveError(f"Cannot save profile {profile.id}: {e}")
 
     def _remove_from_path(self, path):
         try:

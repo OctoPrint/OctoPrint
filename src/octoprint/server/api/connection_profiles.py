@@ -2,6 +2,8 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import logging
+
 from flask import jsonify, make_response, request
 from werkzeug.exceptions import BadRequest
 
@@ -98,6 +100,7 @@ def connectionProfileSet(identifier):
     except SaveError:
         return make_response(f"Profile {profile.id} could not be saved", 400)
     except Exception as e:
+        logging.getLogger(__name__).exception(e)
         return make_response(
             f"Could not save profile due to an unexpected error: {e}", 500
         )
