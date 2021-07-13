@@ -18,7 +18,7 @@ repos:
       - id: pyupgrade
         args: ["--py37-plus"]
   - repo: https://github.com/OctoPrint/codemods
-    rev: 0.4.0
+    rev: devel
     hooks:
       - id: codemod_detect_past_builtins_imports
         args: ["--ignore", "src/octoprint/vendor"]
