@@ -136,12 +136,18 @@ class VirtualPrinterPlugin(
         ]
 
     def cli_commands(self, cli_group, pass_octoprint_ctx, *args, **kwargs):
+        import fcntl
         import os
+        import pty
         import select
         import socket
+        import stat
+        import sys
+        import termios
         import threading
 
         import click
+        import serial
 
         from octoprint.util import to_bytes
 
@@ -160,6 +166,7 @@ class VirtualPrinterPlugin(
             CHUNK_SIZE = 16
 
             def __init__(self, *args, **kwargs):
+                self._mutex = threading.Lock()
                 self._reader = threading.Thread(
                     target=self._copy_to_incoming, name="reader"
                 )
@@ -178,9 +185,10 @@ class VirtualPrinterPlugin(
 
                 try:
                     while True:
-                        try:
+                        with self._mutex:
                             chunk = self._do_read(self.CHUNK_SIZE)
-                        except socket.timeout:
+
+                        if len(chunk) == 0:
                             continue
 
                         buffered.extend(chunk)
@@ -193,7 +201,7 @@ class VirtualPrinterPlugin(
                             del buffered[: termpos + termlen]
                             received = bytes(line)
 
-                            print(f"<<< {received.rstrip()}")
+                            print(f"<<< {received.rstrip().decode('utf-8')}")
                             self.incoming.put(received)
                 except ConnectionAbortedError:
                     self.close()
@@ -213,7 +221,8 @@ class VirtualPrinterPlugin(
                     line += "\n"
 
                 try:
-                    self._do_write(to_bytes(line, encoding="ascii", errors="replace"))
+                    with self._mutex:
+                        self._do_write(to_bytes(line, encoding="ascii", errors="replace"))
                     print(f">>> {line.rstrip()}")
                 except Exception:
                     self.close()
@@ -232,16 +241,46 @@ class VirtualPrinterPlugin(
                 super().__init__(*args, **kwargs)
 
             def _do_read(self, size):
+                data = b""
                 ready = select.select([self._socket], [], [], 2)
-                if self._socket not in ready[0]:
-                    raise socket.timeout()
-                return self._socket.recv(size)
+                if self._socket in ready[0]:
+                    data = self._socket.recv(size)
+
+                return data
 
             def _do_write(self, data):
                 ready = select.select([], [self._socket], [], 10)
-                if self._socket not in ready[1]:
-                    raise socket.timeout()
-                self._socket.sendall(data)
+                if self._socket in ready[1]:
+                    self._socket.sendall(data)
+
+        class PTYVirtualPrinterWrapper(VirtualPrinterWrapper):
+            def __init__(self, fd, *args, **kwargs):
+                self._fd = fd
+                super().__init__(*args, **kwargs)
+
+            def _do_read(self, size):
+                data = b""
+                try:
+                    data = os.read(self._fd, size)
+                except BlockingIOError:
+                    pass
+
+                return data
+
+            def _do_write(self, data):
+                os.write(self._fd, data)
+
+        class SerialVirtualPrinterWrapper(VirtualPrinterWrapper):
+            def __init__(self, serial_obj, *args, **kwargs):
+                self._serial = serial_obj
+                super().__init__(*args, **kwargs)
+
+            def _do_read(self, size):
+                data = self._serial.read(size)
+                return data
+
+            def _do_write(self, data):
+                self._serial.write(data)
 
         ##~~ TCP Socket
 
@@ -270,23 +309,101 @@ class VirtualPrinterPlugin(
         if hasattr(socket, "AF_UNIX"):
 
             @click.command("uds")
-            @click.argument("path", type=click.Path)
+            @click.option(
+                "--path",
+                "path",
+                type=click.Path(),
+                default="/tmp/octoprint-virtual_printer",
+            )
             def uds_command(path):
+                if os.path.exists(path):
+                    fd = os.open(path, os.O_PATH)
+                    mode = os.fstat(fd).st_mode
+                    os.close(fd)
+                    if stat.S_ISSOCK(mode):
+                        os.unlink(path)
+                    else:
+                        print(
+                            f"{path} already exists and is not a socket. Unable to continue."
+                        )
+                        sys.exit(1)
+
                 click.echo(f"Creating Unix Domain Socket server on {path}...")
+
                 with socket.socket(family=socket.AF_UNIX, type=socket.SOCK_STREAM) as s:
                     s.bind(path)
                     s.listen()
                     while True:
-                        conn, addr = s.accept()
-                        print(f"Connection from {addr}")
+                        conn, _ = s.accept()
+                        print("Connection opened")
                         with conn:
                             virtual = SocketVirtualPrinterWrapper(
                                 conn, settings, datafolder
                             )
                             virtual.wait()
-                        print(f"Connection closed from {addr}")
+                        print("Connection closed")
 
             commands.append(uds_command)
+
+        ##~~ Unix PTY
+
+        @click.command("pty")
+        @click.option(
+            "--path", "path", type=click.Path(), default="/tmp/octoprint-virtual_printer"
+        )
+        def pty_command(path):
+            if os.path.islink(path):
+                realpath = os.path.realpath(path)
+                if not os.path.exists(realpath):
+                    os.unlink(path)
+                else:
+                    print(
+                        f"{path} already exists as a valid symlink. Unable to continue."
+                    )
+                    sys.exit(1)
+            elif os.path.exists(path):
+                print(f"{path} already exists. Unable to continue.")
+                sys.exit(1)
+
+            click.echo(f"Creating Unix PTY on {path}...")
+
+            mfd, sfd = pty.openpty()
+            sfd_path = os.ttyname(sfd)
+            os.symlink(sfd_path, path)
+            fcntl.fcntl(
+                mfd, fcntl.F_SETFL, fcntl.fcntl(mfd, fcntl.F_GETFL) | os.O_NONBLOCK
+            )
+            attrs = termios.tcgetattr(mfd)
+            attrs[3] = attrs[3] & ~termios.ECHO
+            termios.tcsetattr(mfd, termios.TCSADRAIN, attrs)
+
+            virtual = PTYVirtualPrinterWrapper(mfd, settings, datafolder)
+            virtual.wait()
+
+        commands.append(pty_command)
+
+        ##~~ Serial
+
+        @click.command("serial")
+        @click.option("--port", "port", type=str, required=True)
+        @click.option("--baud", "baud", type=int, required=True)
+        def serial_command(port, baud):
+            try:
+                serial_obj = serial.Serial(
+                    port=port, baudrate=baud, write_timeout=0, timeout=0
+                )
+            except serial.SerialException as ex:
+                print(ex)
+                sys.exit(1)
+
+            serial_obj.flushInput()
+
+            click.echo(f"Serving from serial port {port} at {baud} baud...")
+
+            virtual = SerialVirtualPrinterWrapper(serial_obj, settings, datafolder)
+            virtual.wait()
+
+        commands.append(serial_command)
 
         ##~~ Win32 Named Pipe
 
