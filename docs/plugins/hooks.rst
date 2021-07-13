@@ -1698,6 +1698,37 @@ octoprint.system.additional_commands
    :return: a list of command specifications
    :rtype: list
 
+.. _sec-plugins-hook-systeminfo-additional_bundle_files:
+
+octoprint.systeminfo.additional_bundle_files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: additional_bundle_files_hook(*args, **kwargs)
+
+   .. versionadded:: 1.7.0
+
+   Allows bundled plugins to extend the list of files to include in the systeminfo bundle.
+   Note that this hook will ignore third party plugins. Handlers must return a dictionary
+   mapping file names in the bundle to either local log paths on disk or a ``callable``
+   that will be called to generate the file's content inside the bundle.
+
+   **Example**
+
+   Add a plugin's ``console`` log file to the systeminfo bundle:
+
+   .. code-block:: python
+
+      def get_additional_bundle_files(*args, **kwargs):
+        console_log = self._settings.get_plugin_logfile_path(postfix="console")
+        return {os.path.basename(console_log): console_log}
+
+      __plugin_hooks__ = {
+          "octoprint.systeminfo.additional_bundle_files": get_additional_bundle_files
+      }
+
+   :return: a dictionary mapping bundle file names to bundle file content
+   :rtype: dict
+
 .. _sec-plugins-hook-timelapse-extensions:
 
 octoprint.timelapse.extensions

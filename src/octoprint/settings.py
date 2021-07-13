@@ -357,6 +357,7 @@ default_settings = {
                 ],
                 "usersettings": ["access", "interface"],
                 "wizard": [
+                    "plugin_softwareupdate_update",
                     "plugin_backup",
                     "plugin_corewizard_acl",
                     "plugin_corewizard_onlinecheck",
