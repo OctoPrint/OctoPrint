@@ -185,18 +185,10 @@ $(function () {
         return result;
     };
 
-    function EditedConnectionProfile(
-        printerProfiles,
-        protocols,
-        transports,
-        cleanProfile
-    ) {
+    function EditedConnectionProfile(connectionViewModel) {
         var self = this;
 
-        self.printerProfiles = printerProfiles;
-        self.protocols = protocols;
-        self.transports = transports;
-        self.cleanProfile = cleanProfile;
+        self.connectionViewModel = connectionViewModel;
 
         self.isNew = ko.observable(true);
 
@@ -265,29 +257,16 @@ $(function () {
             self.isNew(data === undefined);
 
             if (data === undefined) {
-                data = self.cleanProfile();
+                data = self.connectionViewModel.cleanProfile();
             }
 
             self.identifier(data.id);
             self.name(data.name);
-
             self.printerProfile(
-                _.find(self.printerProfiles(), function (p) {
-                    return p.id === data.printer_profile;
-                })
+                self.connectionViewModel.printerProfileLookup[data.printer_profile]
             );
-
-            self.protocol(
-                _.find(self.protocols(), function (p) {
-                    return p.key === data.protocol;
-                })
-            );
-
-            self.transport(
-                _.find(self.transports(), function (p) {
-                    return p.key === data.transport;
-                })
-            );
+            self.protocol(self.connectionViewModel.protocolLookup[data.protocol]);
+            self.transport(self.connectionViewModel.transportLookup[data.transport]);
 
             var processParameters = function (parameters, profile_parameters) {
                 _.each(parameters, function (option) {
@@ -317,10 +296,10 @@ $(function () {
             var profile = {
                 id: identifier,
                 name: self.name(),
-                printerProfile: self.printerProfile(),
-                protocol: self.protocol(),
+                printer_profile: self.printerProfile().id,
+                protocol: self.protocol().key,
                 protocol_parameters: toOptions(self.protocolParameters()),
-                transport: self.transport(),
+                transport: self.transport().key,
                 transport_parameters: toOptions(self.transportParameters())
             };
             return profile;
@@ -333,13 +312,10 @@ $(function () {
         };
     }
 
-    function ConnectionProfileEditorViewModel(parameters) {
+    function ConnectionProfileEditorViewModel(connectionViewModel) {
         var self = this;
 
-        self.availablePrinterProfiles = parameters[0];
-        self.availableProtocols = parameters[1];
-        self.availableTransports = parameters[2];
-        self.cleanProfile = parameters[3];
+        self.connection = connectionViewModel;
 
         self.active = ko.observable(false);
         self.deferred = undefined;
@@ -349,13 +325,10 @@ $(function () {
 
         self.dialog = $("#connectionprofiles_editor_dialog");
 
-        self.profile = new EditedConnectionProfile(
-            self.availablePrinterProfiles,
-            self.availableProtocols,
-            self.availableTransports,
-            self.cleanProfile
-        );
+        self.profile = new EditedConnectionProfile(self.connection);
         self.overwrite = ko.observable(false);
+        self.showOverwrite = ko.observable(true);
+
         self.makeDefault = ko.observable(false);
         self.showMakeDefault = ko.observable(false);
 
@@ -368,6 +341,18 @@ $(function () {
             options = options || {};
             options.title = options.title || gettext("Edit connection profile");
             options.button = options.button || gettext("Update");
+            options.showOverwrite =
+                options.showOverwrite !== undefined ? options.showOverwrite : false;
+
+            return self.showDialog(profile, options);
+        };
+
+        self.showSaveAsDialog = function (profile, options) {
+            options = options || {};
+            options.title = options.title || gettext("Edit connection profile");
+            options.button = options.button || gettext("Update");
+            options.showOverwrite =
+                options.showOverwrite !== undefined ? options.showOverwrite : true;
 
             return self.showDialog(profile, options);
         };
@@ -385,6 +370,7 @@ $(function () {
                 self.buttonText(gettext("Save"));
             }
 
+            self.showOverwrite(!!options.showOverwrite);
             self.showMakeDefault(!!options.showMakeDefault);
 
             self.profile.fromProfileData(profile);
@@ -405,7 +391,7 @@ $(function () {
 
         self.confirm = function () {
             var profile = self.profile.toProfileData();
-            var overwrite = self.overwrite();
+            var overwrite = !self.showOverwrite() || self.overwrite();
             var makeDefault = self.showMakeDefault() && self.makeDefault();
 
             OctoPrint.connectionprofiles
@@ -495,6 +481,19 @@ $(function () {
         self.availablePrinterProfiles = ko.observableArray();
         self.selectedPrinter = ko.observable();
         self.preferredPrinter = ko.observable();
+        self.printerProfileLookup = {};
+
+        self.availablePrinterProfiles.subscribe(function () {
+            self.printerProfileLookup = {};
+            _.each(self.availablePrinterProfiles(), function (profile) {
+                self.printerProfileLookup[profile.id] = profile;
+            });
+        });
+
+        self.lookupPrinterProfileName = function (id) {
+            var profile = self.printerProfileLookup[id];
+            return profile ? profile.name : id;
+        };
 
         // Protocols
 
@@ -507,6 +506,14 @@ $(function () {
         self.showAdvancedProtocolOptions = function () {
             $("#connection_protocol_dialog").modal("show");
         };
+        self.protocolLookup = {};
+
+        self.availableProtocols.subscribe(function () {
+            self.protocolLookup = {};
+            _.each(self.availableProtocols(), function (protocol) {
+                self.protocolLookup[protocol.key] = protocol;
+            });
+        });
 
         self.selectedProtocol.subscribe(function () {
             var protocol = self.selectedProtocol();
@@ -528,6 +535,11 @@ $(function () {
             );
         });
 
+        self.lookupProtocolName = function (key) {
+            var protocol = self.protocolLookup[key];
+            return protocol ? protocol.name : key;
+        };
+
         // Transports
 
         self.availableTransports = ko.observableArray();
@@ -539,6 +551,14 @@ $(function () {
         self.showAdvancedTransportOptions = function () {
             $("#connection_transport_dialog").modal("show");
         };
+        self.transportLookup = {};
+
+        self.availableTransports.subscribe(function () {
+            self.transportLookup = {};
+            _.each(self.availableTransports(), function (transport) {
+                self.transportLookup[transport.key] = transport;
+            });
+        });
 
         self.selectedTransport.subscribe(function () {
             var transport = self.selectedTransport();
@@ -560,14 +580,12 @@ $(function () {
             );
         });
 
-        // Profile editor
+        self.lookupTransportName = function (key) {
+            var transport = self.transportLookup[key];
+            return transport ? transport.name : key;
+        };
 
-        self.editor = new ConnectionProfileEditorViewModel([
-            self.availablePrinterProfiles,
-            self.availableProtocols,
-            self.availableTransports,
-            self.cleanProfile
-        ]);
+        // Profile editor
 
         self.cleanProfile = function () {
             return {
@@ -580,6 +598,8 @@ $(function () {
                 transport_parameters: {}
             };
         };
+
+        self.editor = new ConnectionProfileEditorViewModel(self);
 
         // Various other bits
 
@@ -605,6 +625,8 @@ $(function () {
 
         self.refreshVisible = ko.observable(true);
 
+        // Data exchange
+
         self.requestData = function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
                 return;
@@ -620,18 +642,6 @@ $(function () {
             self.preferredPrinter(response.options.printerProfilePreference);
 
             //~~ Available options...
-
-            // connection profiles
-            var connections = response.options.connectionProfiles;
-            _.each(connections, function (c) {
-                c.isDefault = ko.pureComputed(function () {
-                    return c.id === self.preferredConnectionProfile();
-                });
-                c.isCurrent = ko.pureComputed(function () {
-                    return c.id === self.selectedConnectionProfile();
-                });
-            });
-            self.availableConnectionProfiles(connections);
 
             // printer profiles
             var printers = response.options.printerProfiles;
@@ -674,6 +684,18 @@ $(function () {
             });
 
             self.availableTransports(transports);
+
+            // connection profiles
+            var connections = response.options.connectionProfiles;
+            _.each(connections, function (c) {
+                c.isDefault = ko.pureComputed(function () {
+                    return c.id === self.preferredConnectionProfile();
+                });
+                c.isCurrent = ko.pureComputed(function () {
+                    return c.id === self.selectedConnectionProfile();
+                });
+            });
+            self.availableConnectionProfiles(connections);
 
             //~~ Currently active config
 
@@ -816,7 +838,7 @@ $(function () {
                     }
 
                     self.editor
-                        .showDialog(profile, {button: gettext("Save & Connect")})
+                        .showSaveAsDialog(profile, {button: gettext("Save & Connect")})
                         .done(function (profile) {
                             OctoPrint.connection.connect({connection: profile.id});
                         });
@@ -849,6 +871,8 @@ $(function () {
                 }
             }
         };
+
+        // events
 
         self.onEventSettingsUpdated = function () {
             self.requestData();

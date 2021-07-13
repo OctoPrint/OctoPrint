@@ -1,0 +1,51 @@
+<h3>{{ _('Connection Profiles') }}</h3>
+
+<table class="table table-condensed table-hover" id="settings_connectionProfiles_profiles" data-bind="visible: profiles.items().length > 0" style="display: none">
+    <thead>
+    <tr>
+        <th class="settings_connectionProfiles_profiles_default"></th>
+        <th class="settings_connectionProfiles_profiles_name">{{ _('Name') }}</th>
+        <th class="settings_connectionProfiles_profiles_details">{{ _('Details') }}</th>
+        <th class="settings_connectionProfiles_profiles_action">{{ _('Action') }}</th>
+    </tr>
+    </thead>
+    <tbody data-bind="foreach: profiles.paginatedItems">
+    <tr data-bind="attr: {title: name}">
+        <td class="settings_connectionProfiles_profiles_default"><span class="fa fa-star" data-bind="invisible: !isDefault()"></span></td>
+        <td class="settings_connectionProfiles_profiles_name" data-bind="text: $data.name"></td>
+        <td class="settings_connectionProfiles_profiles_details">
+            <table class="table settings_connectionProfiles_profiles_details_table">
+                <tr>
+                    <th class="settings_connectionProfiles_profiles_details_key">{{ _('Printer Profile') }}</th>
+                    <td class="settings_connectionProfiles_profiles_details_value" data-bind="text: $root.connection.lookupPrinterProfileName($data.printer_profile)"></td>
+                </tr>
+                <tr>
+                    <th class="settings_connectionProfiles_profiles_details_key">{{ _('Protocol') }}</th>
+                    <td class="settings_connectionProfiles_profiles_details_value" data-bind="text: $root.connection.lookupProtocolName($data.protocol)"></td>
+                </tr>
+                <tr>
+                    <th class="settings_connectionProfiles_profiles_details_key">{{ _('Transport') }}</th>
+                    <td class="settings_connectionProfiles_profiles_details_value" data-bind="text: $root.connection.lookupTransportName($data.transport)"></td>
+                </tr>
+            </table>
+        </td>
+        <td class="settings_connectionProfiles_profiles_action">
+            &nbsp;<a href="javascript:void(0)" class="fa fa-star" title="{{ _('Set as default profile') }}" data-bind="click: function() { if ($root.canMakeDefault($data) && !$root.requestInProgress()) { $root.makeDefault($data); } }, css: {disabled: !$root.canMakeDefault($data) || $root.requestInProgress()}, enabled: $root.canMakeDefault($data) && !$root.requestInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-pencil" title="{{ _('Edit profile') }}" data-bind="click: function() { if (!$root.requestInProgress()) { $root.editProfile($data); } }, css: {disabled: $root.requestInProgress()}, enabled: !$root.requestInProgress()"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-trash-o" title="{{ _('Delete Profile') }}" data-bind="click: function() { if ($root.canRemove($data) && !$root.requestInProgress()) { $root.removeProfile($data); } }, css: {disabled: !$root.canRemove($data) || $root.requestInProgress()}, enabled: $root.canRemove($data) && !$root.requestInProgress()"></a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="pagination pagination-mini pagination-centered">
+    <ul>
+        <li data-bind="css: {disabled: profiles.currentPage() === 0}"><a href="#" data-bind="click: profiles.prevPage">«</a></li>
+    </ul>
+    <ul data-bind="foreach: profiles.pages">
+        <li data-bind="css: { active: $data.number === $root.profiles.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.profiles.changePage($data.number); }"></a></li>
+    </ul>
+    <ul>
+        <li data-bind="css: {disabled: profiles.currentPage() === profiles.lastPage()}"><a href="#" data-bind="click: profiles.nextPage">»</a></li>
+    </ul>
+</div>
+
+<button class="btn pull-right" data-bind="click: function() { $root.addProfile(); }"><i class="fas fa-plus"></i> {{ _('Add Profile...') }}</button>

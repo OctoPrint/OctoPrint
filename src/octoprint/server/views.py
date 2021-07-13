@@ -970,12 +970,20 @@ def fetch_template_data(refresh=False):
     # settings dialog
 
     templates["settings"]["entries"] = {
-        "section_printer": (gettext("Printer & Connection"), None),
+        "section_printer": (gettext("Connection & Printer"), None),
         "connection": (
-            gettext("Connection"),
+            gettext("General"),
             {
                 "template": "dialogs/settings/connection.jinja2",
                 "_div": "settings_connection",
+                "custom_bindings": False,
+            },
+        ),
+        "connectionprofiles": (
+            gettext("Connection Profiles"),
+            {
+                "template": "dialogs/settings/connectionprofiles.jinja2",
+                "_div": "settings_connectionProfiles",
                 "custom_bindings": True,
             },
         ),

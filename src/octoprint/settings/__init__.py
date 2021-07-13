@@ -344,6 +344,7 @@ default_settings = {
                 "settings": [
                     "section_printer",
                     "connection",
+                    "connectionprofiles",
                     "printerprofiles",
                     "temperatures",
                     "terminalfilters",

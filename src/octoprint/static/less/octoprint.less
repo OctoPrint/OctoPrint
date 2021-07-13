@@ -446,9 +446,32 @@ table {
     }
 
     // Connection profiles
+    &.settings_connectionProfiles_profiles_default {
+      width: 16px;
+      text-align: center;
+    }
+
     &.settings_connectionProfiles_profiles_name {
+      width: 200px;
       text-overflow: ellipsis;
       text-align: left;
+    }
+
+    &.settings_connectionProfiles_profiles_details {
+      table.settings_connectionProfiles_profiles_details_table {
+        font-size: 0.8em;
+        margin-bottom: 0;
+
+        .settings_connectionProfiles_profiles_details_key {
+          width: 100px;
+        }
+
+        th,
+        td {
+          border: 0;
+          padding: 0;
+        }
+      }
     }
 
     &.settings_connectionProfiles_profiles_action {

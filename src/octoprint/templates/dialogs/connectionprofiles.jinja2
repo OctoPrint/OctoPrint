@@ -27,7 +27,7 @@
                                 <input class="input-block-level" type="text" data-bind="value: editor.profile.identifier, attr: {placeholder: editor.profile.identifierPlaceholder}">
                             </div>
                         </div>
-                        <div class="control-group">
+                        <div data-bind="visible: editor.showOverwrite" class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: editor.profile.overwrite"> {{ _('Overwrite existing profile') }}
@@ -41,7 +41,7 @@
                                 </label>
                             </div>
                         </div>
-                        <div class="control-group">
+                        <div data-bind="visible: editor.showMakeDefault" class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: editor.profile.makeDefault"> {{ _('Make default') }}

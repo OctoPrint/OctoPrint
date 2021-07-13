@@ -22,7 +22,7 @@ $(function () {
             "name",
             [],
             [],
-            10
+            5
         );
         self.defaultProfile = ko.observable();
         self.currentProfile = ko.observable();
@@ -39,8 +39,22 @@ $(function () {
             self.currentProfile(profileId);
         });
 
+        self.addProfile = function () {
+            return self.connection.editor.showAddDialog().done(function () {
+                self.requestInProgress(true);
+                self.connection.requestData().always(function () {
+                    self.requestInProgress(false);
+                });
+            });
+        };
+
         self.editProfile = function (data) {
-            self.connection.editor.showEditDialog(data);
+            return self.connection.editor.showEditDialog(data).done(function () {
+                self.requestInProgress(true);
+                self.connection.requestData().always(function () {
+                    self.requestInProgress(false);
+                });
+            });
         };
 
         self.canMakeDefault = function (data) {
@@ -87,6 +101,6 @@ $(function () {
     OCTOPRINT_VIEWMODELS.push({
         construct: ConnectionProfilesViewModel,
         dependencies: ["connectionViewModel"],
-        elements: ["#settings_connection_connectionprofiles"]
+        elements: ["#settings_connectionProfiles"]
     });
 });
