@@ -131,6 +131,14 @@ $(function () {
             0
         );
 
+        self.octoprintData = {
+            item: undefined,
+            current: ko.observable("unknown"),
+            available: ko.observable("unknown")
+        };
+
+        self.updatelog = ko.observableArray([]);
+
         self.availableAndPossible = ko.pureComputed(function () {
             return _.filter(self.versions.items(), function (info) {
                 return info.updateAvailable && info.updatePossible;
@@ -160,6 +168,10 @@ $(function () {
                 self.performCheck();
             } else {
                 self._closePopup();
+            }
+
+            if (self.loginState.hasPermission(self.access.permissions.ADMIN)) {
+                self.requestUpdatelog();
             }
         };
 
@@ -355,6 +367,12 @@ $(function () {
                         self.performCheck(false, false, false, [key]);
                     });
                 };
+
+                if (key === "octoprint") {
+                    self.octoprintData.item = value;
+                    self.octoprintData.current(value.information.local.name);
+                    self.octoprintData.available(value.information.remote.name);
+                }
 
                 versions.push(value);
             });
@@ -556,6 +574,16 @@ $(function () {
                 });
         };
 
+        self.fromUpdatelogResponse = function (response) {
+            self.updatelog(response.updatelog);
+        };
+
+        self.requestUpdatelog = function () {
+            OctoPrint.plugins.softwareupdate
+                .getUpdatelog()
+                .done(self.fromUpdatelogResponse);
+        };
+
         self.iconTitleForEntry = function (data) {
             if (data.updatePossible) {
                 return "";
@@ -656,8 +684,10 @@ $(function () {
 
         self.performUpdate = function (force, items) {
             if (
-                !self.loginState.hasPermission(
-                    self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE
+                !(
+                    self.loginState.hasPermission(
+                        self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE
+                    ) || CONFIG_FIRST_RUN
                 )
             )
                 return;
@@ -720,8 +750,10 @@ $(function () {
         self.update = function (force, items) {
             if (
                 self.updateInProgress ||
-                !self.loginState.hasPermission(
-                    self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE
+                !(
+                    self.loginState.hasPermission(
+                        self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE
+                    ) || CONFIG_FIRST_RUN
                 )
             ) {
                 self._updateClicked = false;
@@ -1139,7 +1171,8 @@ $(function () {
         elements: [
             "#settings_plugin_softwareupdate",
             "#softwareupdate_confirmation_dialog",
-            "#wizard_plugin_softwareupdate"
+            "#wizard_plugin_softwareupdate_update",
+            "#wizard_plugin_softwareupdate_settings"
         ]
     });
 });

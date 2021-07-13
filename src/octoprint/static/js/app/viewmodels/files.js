@@ -967,8 +967,8 @@ $(function () {
             if (data["gcodeAnalysis"]) {
                 if (
                     data["gcodeAnalysis"]["_empty"] ||
-                    (data["gcodeAnalysis"]["dimensions"] &&
-                        data["gcodeAnalysis"]["dimensions"]["width"] === 0 &&
+                    !data["gcodeAnalysis"]["dimensions"] ||
+                    (data["gcodeAnalysis"]["dimensions"]["width"] === 0 &&
                         data["gcodeAnalysis"]["dimensions"]["depth"] === 0 &&
                         data["gcodeAnalysis"]["dimensions"]["height"] === 0)
                 ) {
