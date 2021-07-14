@@ -48,7 +48,6 @@ api = Blueprint("api", __name__)
 
 from . import access as api_access  # noqa: F401,E402
 from . import connection as api_connection  # noqa: F401,E402
-from . import connection_profiles as api_connection_profiles  # noqa: F401,E402
 from . import files as api_files  # noqa: F401,E402
 from . import job as api_job  # noqa: F401,E402
 from . import languages as api_languages  # noqa: F401,E402

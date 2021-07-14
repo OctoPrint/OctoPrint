@@ -2,9 +2,13 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import abort, jsonify, request
+import logging
+
+from flask import abort, jsonify, make_response, request
+from werkzeug.exceptions import BadRequest
 
 from octoprint.access.permissions import Permissions
+from octoprint.comm.connectionprofile import InvalidProfileError, SaveError
 from octoprint.comm.protocol import all_protocols
 from octoprint.comm.transport import all_transports
 from octoprint.server import (
@@ -13,17 +17,16 @@ from octoprint.server import (
     printer,
     printerProfileManager,
 )
-from octoprint.server.api import api
-from octoprint.server.util.flask import get_json_command_from_request, no_firstrun_access
+from octoprint.server.api import api, valid_boolean_trues
+from octoprint.server.util.flask import (
+    get_json_command_from_request,
+    no_firstrun_access,
+    with_revalidation_checking,
+)
 from octoprint.settings import settings
+from octoprint.util import dict_merge
 
-
-def _convert_transport_options(options):
-    return [option.as_dict() for option in options]
-
-
-def _convert_protocol_options(options):
-    return [option.as_dict() for option in options]
+##~~ Connection state & commands
 
 
 @api.route("/connection", methods=["GET"])
@@ -39,8 +42,7 @@ def connectionState():
         "transport": params["transport"],
         "transportOptions": params["transport_args"],
     }
-
-    return jsonify({"current": current, "options": _get_options()})
+    return jsonify(current=current)
 
 
 @api.route("/connection", methods=["POST"])
@@ -104,29 +106,15 @@ def connectionCommand():
     return NO_CONTENT
 
 
-def _get_options():
-    transports = []
-    for transport in all_transports():
-        transports.append(
-            {
-                "name": transport.name,
-                "key": transport.key,
-                "options": _convert_transport_options(transport.get_connection_options()),
-            }
-        )
+##~~ Connection options (profiles, protocols, transports)
 
-    protocols = []
-    for protocol in all_protocols():
-        protocols.append(
-            {
-                "name": protocol.name,
-                "key": protocol.key,
-                "options": _convert_protocol_options(protocol.get_connection_options()),
-            }
-        )
 
-    profile_options = printerProfileManager.get_all()
-    default_profile = printerProfileManager.get_default()
+@api.route("/connection/options", methods=["GET"])
+@Permissions.STATUS.require(403)
+def connectionOptions():
+
+    printer_profiles = printerProfileManager.get_all()
+    default_printer = printerProfileManager.get_default()
 
     connection_profiles = connectionProfileManager.get_all()
     default_connection = connectionProfileManager.get_default()
@@ -139,21 +127,250 @@ def _get_options():
                 if "name" in printer_profile
                 else printer_profile["id"],
             }
-            for printer_profile in profile_options.values()
+            for printer_profile in printer_profiles.values()
             if "id" in printer_profile
         ],
         "connectionProfiles": [
             connection_profile.as_dict()
             for connection_profile in connection_profiles.values()
         ],
-        "printerProfilePreference": default_profile["id"]
-        if "id" in default_profile
+        "printerProfilePreference": default_printer["id"]
+        if "id" in default_printer
         else None,
         "connectionProfilePreference": default_connection.id
         if default_connection
         else None,
-        "protocols": protocols,
-        "transports": transports,
+        "protocols": _get_protocols(),
+        "transports": _get_transports(),
     }
 
-    return options
+    return jsonify(options=options)
+
+
+##~~ Connection profiles
+
+
+def _connection_profiles_lastmodified():
+    return connectionProfileManager.last_modified
+
+
+def _connection_profiles_etag(lm=None):
+    if lm is None:
+        lm = _connection_profiles_lastmodified()
+
+    import hashlib
+
+    hash = hashlib.sha1()
+
+    def hash_update(value):
+        value = value.encode("utf-8")
+        hash.update(value)
+
+    hash_update(str(lm))
+    hash_update(repr(connectionProfileManager.get_default()))
+    hash_update(repr(connectionProfileManager.get_current()))
+    return hash.hexdigest()
+
+
+@api.route("/connection/profiles", methods=["GET"])
+@with_revalidation_checking(
+    etag_factory=_connection_profiles_etag,
+    lastmodified_factory=_connection_profiles_lastmodified,
+    unless=lambda: request.values.get("force", "false") in valid_boolean_trues,
+)
+@no_firstrun_access
+@Permissions.CONNECTION.require(403)
+def connectionProfilesList():
+    all_profiles = connectionProfileManager.get_all()
+    return jsonify({"profiles": _convert_connection_profiles(all_profiles)})
+
+
+@api.route("/connection/profiles/<string:identifier>", methods=["GET"])
+@no_firstrun_access
+@Permissions.CONNECTION.require(403)
+def connectionProfilesGet(identifier):
+    profile = connectionProfileManager.get(identifier)
+    if profile is None:
+        return make_response(f"Unknown profile: {identifier}", 404)
+    else:
+        return jsonify({"profile": _convert_connection_profile(profile)})
+
+
+@api.route("/connection/profiles/<string:identifier>", methods=["PUT"])
+@no_firstrun_access
+@Permissions.CONNECTION.require(403)
+def connectionProfileSet(identifier):
+    if "application/json" not in request.headers["Content-Type"]:
+        return make_response("Expected content-type JSON", 400)
+
+    try:
+        json_data = request.get_json()
+    except BadRequest:
+        return make_response("Malformed JSON body in request", 400)
+
+    if json_data is None:
+        return make_response("Malformed JSON body in request", 400)
+
+    if "profile" not in json_data:
+        return make_response("No profile included in request", 400)
+
+    allow_overwrite = json_data.get("overwrite", False)
+    make_default = json_data.get("default", False)
+
+    new_profile = json_data["profile"]
+    if "name" not in new_profile:
+        return make_response("Profile does not contain mandatory 'name' field", 400)
+
+    if "id" not in new_profile:
+        new_profile["id"] = identifier
+
+    profile = connectionProfileManager.to_profile(new_profile)
+
+    try:
+        connectionProfileManager.save(
+            profile, allow_overwrite=allow_overwrite, make_default=make_default
+        )
+    except InvalidProfileError:
+        return make_response("Profile is invalid", 400)
+    except SaveError:
+        return make_response(f"Profile {profile.id} could not be saved", 400)
+    except Exception as e:
+        logging.getLogger(__name__).exception(e)
+        return make_response(
+            f"Could not save profile due to an unexpected error: {e}", 500
+        )
+    else:
+        return jsonify({"profile": _convert_connection_profile(profile)})
+
+
+@api.route("/connection/profiles/<string:identifier>", methods=["DELETE"])
+@no_firstrun_access
+@Permissions.SETTINGS.require(403)
+def connectionProfilesDelete(identifier):
+    current_profile = connectionProfileManager.get_current()
+    if current_profile and current_profile.id == identifier:
+        return make_response(
+            f"Cannot delete currently selected profile: {identifier}", 409
+        )
+
+    default_profile = connectionProfileManager.get_default()
+    if default_profile and default_profile.id == identifier:
+        return make_response(f"Cannot delete default profile: {identifier}", 409)
+
+    connectionProfileManager.remove(identifier)
+    return NO_CONTENT
+
+
+@api.route("/connection/profiles/<string:identifier>", methods=["PATCH"])
+@no_firstrun_access
+@Permissions.SETTINGS.require(403)
+def connectionProfilesUpdate(identifier):
+    if "application/json" not in request.headers["Content-Type"]:
+        return make_response("Expected content-type JSON", 400)
+
+    try:
+        json_data = request.get_json()
+    except BadRequest:
+        return make_response("Malformed JSON body in request", 400)
+
+    if json_data is None:
+        return make_response("Malformed JSON body in request", 400)
+
+    if "profile" not in json_data:
+        return make_response("No profile included in request", 400)
+
+    profile = connectionProfileManager.get(identifier)
+    if profile is None:
+        return make_response("Profile {} doesn't exist", 404)
+
+    profile_data = json_data["profile"]
+    make_default = profile_data.pop("default", False)
+    profile_data.pop("id", None)
+
+    merged_profile_data = dict_merge(profile.as_dict(), profile_data)
+    new_profile = connectionProfileManager.to_profile(merged_profile_data)
+
+    try:
+        saved_profile = connectionProfileManager.save(
+            new_profile, allow_overwrite=True, make_default=make_default
+        )
+    except InvalidProfileError:
+        return make_response("Profile is invalid", 400)
+    except SaveError:
+        return make_response(f"Profile {profile.id} could not be saved", 400)
+    except Exception as e:
+        return make_response(
+            f"Could not save profile due to an unexpected error: {e}", 500
+        )
+    else:
+        return jsonify({"profile": _convert_connection_profile(saved_profile)})
+
+
+def _convert_connection_profiles(profiles):
+    result = {}
+    for identifier, profile in profiles.items():
+        result[identifier] = _convert_connection_profile(profile)
+    return result
+
+
+def _convert_connection_profile(profile):
+    current = connectionProfileManager.get_current()
+    default = connectionProfileManager.get_default()
+
+    result = profile.as_dict()
+    result["current"] = profile.id == current.id if current is not None else False
+    result["default"] = profile.id == default.id if default is not None else False
+    return result
+
+
+##~~ Protocols
+
+
+@api.route("/connection/protocols", methods=["GET"])
+@no_firstrun_access
+@Permissions.CONNECTION.require(403)
+def getProtocols():
+    return jsonify({"protocols": _get_protocols()})
+
+
+##~~ Transports
+
+
+@api.route("/connection/transports", methods=["GET"])
+@no_firstrun_access
+@Permissions.CONNECTION.require(403)
+def getTransports():
+    return jsonify({"transports": _get_transports()})
+
+
+##~~ Helpers
+
+
+def _get_protocols():
+    protocols = []
+    for protocol in all_protocols():
+        protocols.append(
+            {
+                "name": protocol.name,
+                "key": protocol.key,
+                "options": _convert_options(protocol.get_connection_options()),
+            }
+        )
+    return protocols
+
+
+def _get_transports():
+    transports = []
+    for transport in all_transports():
+        transports.append(
+            {
+                "name": transport.name,
+                "key": transport.key,
+                "options": _convert_options(transport.get_connection_options()),
+            }
+        )
+    return transports
+
+
+def _convert_options(options):
+    return [option.as_dict() for option in options]

@@ -15,6 +15,13 @@ $(function () {
 
     var convertValue = function (value, option, override) {
         /**
+         * Picks the right value to apply based on value, defaults and overrides.
+         *
+         * override > value > override
+         *
+         * In case of list or smalllist, the value will also be converted from a
+         * list to a comma separated string.
+         *
          * @param value the value to apply
          * @param option the option object, to lookup a default if needed
          * @param override the current override value, or undefined
@@ -34,44 +41,34 @@ $(function () {
         return value;
     };
 
-    var extendOption = function (option, value, data) {
+    var setOptionValue = function (option, value, data) {
         /**
+         * Sets the given value on the given option.
+         *
+         * In case of a group option, the value will be considered a dictionary of values
+         * to apply to the children of the group.
+         *
          * @param option the option to extend
          * @param value the value to apply to the option, or undefined
          * @param data the currently active data object, or undefined
          */
+
         if (option.type === "group") {
             if (value === undefined) {
                 value = {};
             }
             _.each(option.params, function (option) {
-                extendOption(
+                setOptionValue(
                     option,
                     value[option.name],
                     data ? data[option.name] : undefined
                 );
             });
-            option.modified = ko.pureComputed(function () {
-                return _.any(option.params, function (p) {
-                    return p.modified();
-                });
-            });
-
-            option.advancedParameters =
-                option.advanced ||
-                _.any(option.params, function (p) {
-                    return p.advanced;
-                });
-            option.expertParameters =
-                option.expert ||
-                _.any(option.params, function (p) {
-                    return p.expert;
-                });
         } else {
             if (option.type === "presetchoice") {
                 value = convertValue(value, option, data ? data[option.name] : undefined);
                 _.each(option.group.params, function (p) {
-                    extendOption(
+                    setOptionValue(
                         p,
                         option.defaults[value]
                             ? option.defaults[value][p.name]
@@ -84,7 +81,7 @@ $(function () {
                 option.expertParameters = {};
                 _.each(option.groups, function (group, key) {
                     _.each(group, function (p) {
-                        extendOption(p, undefined, data);
+                        setOptionValue(p, undefined, data);
                     });
                     option.expertParameters[key] = _.any(group, function (p) {
                         return p.expert;
@@ -94,64 +91,7 @@ $(function () {
                 value = convertValue(value, option, data ? data[option.name] : undefined);
             }
 
-            if (option.value) {
-                option.value(value);
-            } else {
-                option.value = ko.observable(value);
-                option.defaultValue = ko.observable(option.default);
-                option.reset = function () {
-                    option.value(option.defaultValue());
-                };
-
-                option.modified = ko.pureComputed(function () {
-                    // noinspection EqualityComparisonWithCoercionJS
-                    return option.value() != option.defaultValue();
-                });
-
-                if (option.type === "presetchoice" && option.defaults) {
-                    option.group.advancedParameters =
-                        option.group.advanced ||
-                        _.any(option.group.params, function (p) {
-                            return p.advanced;
-                        });
-                    option.group.expertParameters =
-                        option.group.expert ||
-                        _.any(option.group.params, function (p) {
-                            return p.expert;
-                        });
-
-                    var updateDefaults = function (keepValue) {
-                        keepValue = !!keepValue;
-
-                        var choice = _.find(option.choices, function (c) {
-                            return c.value === option.value();
-                        });
-                        if (choice) {
-                            _.each(option.group.params, function (p) {
-                                if (option.defaults[choice.value]) {
-                                    var d = option.defaults[choice.value][p.name];
-                                    if (d !== undefined) {
-                                        p.defaultValue(
-                                            convertValue(
-                                                d,
-                                                p,
-                                                data ? data[p.name] : undefined
-                                            )
-                                        );
-                                        if (!keepValue) {
-                                            p.value(p.defaultValue());
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    };
-                    option.value.subscribe(function () {
-                        updateDefaults();
-                    });
-                    updateDefaults(true);
-                }
-            }
+            option.value(value);
         }
     };
 
@@ -413,14 +353,24 @@ $(function () {
         self.printerProfiles = parameters[2];
         self.access = parameters[3];
 
+        self.sychronizeSettings = function (observable, settings) {
+            var parameters = observable();
+            _.each(parameters, function (option) {
+                setOptionValue(
+                    option,
+                    settings ? settings[option.name] : undefined,
+                    settings
+                );
+            });
+            observable(parameters);
+        };
+
         // Connection profiles
 
         self.availableConnectionProfiles = ko.observableArray();
         self.preferredConnectionProfile = ko.observable();
         self.selectedConnectionProfile = ko.observable(undefined);
         self.selectedConnectionProfile.subscribe(function () {
-            var protocolParameters, transportParameters;
-
             var profile = self.selectedConnectionProfile();
 
             if (profile) {
@@ -439,40 +389,10 @@ $(function () {
                         return t.key === profile.transport;
                     })
                 );
-
-                var processParameters = function (parameters, profile_parameters) {
-                    _.each(parameters, function (option) {
-                        extendOption(
-                            option,
-                            profile_parameters[option.name],
-                            profile_parameters
-                        );
-                    });
-                };
-
-                protocolParameters = self.protocolParameters();
-                processParameters(protocolParameters, profile.protocol_parameters);
-                self.protocolParameters(protocolParameters);
-
-                transportParameters = self.transportParameters();
-                processParameters(transportParameters, profile.transport_parameters);
-                self.transportParameters(transportParameters);
             } else {
                 self.selectedPrinter(undefined);
                 self.selectedProtocol(undefined);
                 self.selectedTransport(undefined);
-
-                protocolParameters = self.protocolParameters();
-                _.each(protocolParameters, function (option) {
-                    extendOption(option);
-                });
-                self.protocolParameters(protocolParameters);
-
-                transportParameters = self.transportParameters();
-                _.each(transportParameters, function (option) {
-                    extendOption(option);
-                });
-                self.transportParameters(transportParameters);
             }
         });
 
@@ -517,21 +437,26 @@ $(function () {
 
         self.selectedProtocol.subscribe(function () {
             var protocol = self.selectedProtocol();
+            var protocolOptions = [];
             if (protocol) {
-                self.protocolParameters(protocol.options);
-            } else {
-                self.protocolParameters([]);
+                protocolOptions = protocol.options;
             }
 
             self.advancedProtocolParameters(
-                _.any(self.protocolParameters(), function (p) {
+                _.any(protocolOptions, function (p) {
                     return p.advanced;
                 })
             );
             self.expertProtocolParameters(
-                _.any(self.protocolParameters(), function (p) {
+                _.any(protocolOptions, function (p) {
                     return p.expert;
                 })
+            );
+
+            var connectionProfile = self.selectedConnectionProfile();
+            self.sychronizeSettings(
+                self.protocolParameters,
+                connectionProfile ? connectionProfile.protocol_parameters : undefined
             );
         });
 
@@ -577,6 +502,12 @@ $(function () {
                 _.any(self.transportParameters(), function (p) {
                     return p.expert;
                 })
+            );
+
+            var connectionProfile = self.selectedConnectionProfile();
+            self.sychronizeSettings(
+                self.transportParameters,
+                connectionProfile ? connectionProfile.transport_parameters : undefined
             );
         });
 
@@ -632,22 +563,154 @@ $(function () {
                 return;
             }
 
-            return OctoPrint.connection.getSettings().done(self.fromResponse);
+            var deferred = $.Deferred();
+
+            var options = OctoPrint.connection.getOptions();
+            var current = OctoPrint.connection.getSettings();
+
+            $.when(options, current).done(function (options, current) {
+                var data = {
+                    options: options[0].options,
+                    current: current[0].current
+                };
+
+                self.fromResponse(data);
+
+                deferred.resolve(data);
+            });
+
+            return deferred.promise();
         };
 
-        self.fromResponse = function (response) {
-            //~~ Preferences...
+        self.requestOptionsData = function () {
+            if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
+                return;
+            }
+            return OctoPrint.connection.getOptions().done(self.fromOptionsRespons);
+        };
 
-            self.preferredConnectionProfile(response.options.connectionProfilePreference);
-            self.preferredPrinter(response.options.printerProfilePreference);
+        self.requestCurrentData = function () {
+            if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
+                return;
+            }
+            return OctoPrint.connection.getSettings().done(self.fromCurrentResponse);
+        };
 
-            //~~ Available options...
+        self.fromResponse = function (data) {
+            // first the options...
+            self.fromOptionsResponse(data.options);
+
+            // ...then the current config
+            self.fromCurrentResponse(data.current);
+        };
+
+        self.fromOptionsResponse = function (options) {
+            var extendOption = function (option) {
+                if (option.type === "group") {
+                    _.each(option.params, function (param) {
+                        extendOption(param);
+                    });
+
+                    option.modified = ko.pureComputed(function () {
+                        return _.any(option.params, function (p) {
+                            return p.modified();
+                        });
+                    });
+
+                    option.advancedParameters =
+                        option.advanced ||
+                        _.any(option.params, function (p) {
+                            return p.advanced;
+                        });
+                    option.expertParameters =
+                        option.expert ||
+                        _.any(option.params, function (p) {
+                            return p.expert;
+                        });
+                } else {
+                    if (option.type === "presetchoice") {
+                        _.each(option.group.params, function (option) {
+                            extendOption(option);
+                        });
+                    }
+
+                    if (option.type === "conditionalgroup") {
+                        option.expertParameters = {};
+                        _.each(option.groups, function (group, key) {
+                            _.each(group, function (option) {
+                                extendOption(option);
+                            });
+                            option.expertParameters[key] = _.any(group, function (p) {
+                                return p.expert;
+                            });
+                        });
+                    }
+
+                    option.value = ko.observable(option.default);
+                    option.defaultValue = ko.observable(option.default);
+                    option.reset = function () {
+                        option.value(option.defaultValue());
+                    };
+
+                    option.modified = ko.pureComputed(function () {
+                        // noinspection EqualityComparisonWithCoercionJS
+                        return option.value() != option.defaultValue();
+                    });
+
+                    if (option.type === "presetchoice" && option.defaults) {
+                        option.group.advancedParameters =
+                            option.group.advanced ||
+                            _.any(option.group.params, function (p) {
+                                return p.advanced;
+                            });
+                        option.group.expertParameters =
+                            option.group.expert ||
+                            _.any(option.group.params, function (p) {
+                                return p.expert;
+                            });
+
+                        var updateDefaults = function (keepValue) {
+                            keepValue = !!keepValue;
+
+                            var choice = _.find(option.choices, function (c) {
+                                return c.value === option.value();
+                            });
+                            if (choice) {
+                                _.each(option.group.params, function (p) {
+                                    if (option.defaults[choice.value]) {
+                                        var d = option.defaults[choice.value][p.name];
+                                        if (d !== undefined) {
+                                            p.defaultValue(convertValue(d, p));
+                                            if (!keepValue) {
+                                                p.value(p.defaultValue());
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        };
+                        option.value.subscribe(function () {
+                            updateDefaults();
+                        });
+                        updateDefaults(true);
+                    }
+                }
+            };
+
+            var extendOptions = function (input) {
+                _.each(input, function (i) {
+                    _.each(i.options, function (option) {
+                        extendOption(option);
+                    });
+                });
+            };
 
             // printer profiles
-            var printers = response.options.printerProfiles;
+            self.preferredPrinter(options.printerProfilePreference);
+            var printers = options.printerProfiles;
             _.each(printers, function (p) {
                 p.isDefault = ko.pureComputed(function () {
-                    return p.id === preferredPrinter();
+                    return p.id === self.preferredPrinter();
                 });
                 p.isCurrent = ko.pureComputed(function () {
                     return p.id === self.selectedPrinter();
@@ -656,37 +719,22 @@ $(function () {
             self.availablePrinterProfiles(printers);
 
             // protocols
-            var protocols = response.options.protocols;
-            var protocolOptions = response.current.protocolOptions;
-            if (!protocolOptions) {
-                protocolOptions = {};
-            }
-
-            _.each(protocols, function (protocol) {
-                _.each(protocol.options, function (option) {
-                    extendOption(option, protocolOptions[option.name], protocolOptions);
-                });
-            });
-
+            var protocols = options.protocols;
+            extendOptions(protocols);
             self.availableProtocols(protocols);
 
             // transports
-            var transports = response.options.transports;
-            var transportOptions = response.current.transportOptions;
-            if (!transportOptions) {
-                transportOptions = {};
-            }
-
-            _.each(transports, function (transport) {
-                _.each(transport.options, function (option) {
-                    extendOption(option, transportOptions[option.name], transportOptions);
-                });
-            });
-
+            var transports = options.transports;
+            extendOptions(transports);
             self.availableTransports(transports);
 
             // connection profiles
-            var connections = response.options.connectionProfiles;
+            //
+            // this has to be processed after the rest for the
+            // subscriptions to fire off in the right order
+
+            self.preferredConnectionProfile(options.connectionProfilePreference);
+            var connections = options.connectionProfiles;
             _.each(connections, function (c) {
                 c.isDefault = ko.pureComputed(function () {
                     return c.id === self.preferredConnectionProfile();
@@ -696,17 +744,17 @@ $(function () {
                 });
             });
             self.availableConnectionProfiles(connections);
+        };
 
-            //~~ Currently active config
-
-            var connectionKey = response.current.connection;
+        self.fromCurrentResponse = function (current) {
+            var connectionKey = current.connection;
             if (!connectionKey) {
-                connectionKey = response.options.connectionProfilePreference;
+                connectionKey = self.preferredConnectionProfile();
             }
 
             if (connectionKey) {
                 // there's currently a connection profile selected on the server
-                var connection = _.find(connections, function (c) {
+                var connection = _.find(self.availableConnectionProfiles(), function (c) {
                     return c.id === connectionKey;
                 });
                 self.selectedConnectionProfile(connection);
@@ -715,21 +763,21 @@ $(function () {
                 self.saveSettings(false);
             }
 
-            var printerKey = response.current.profile;
+            var printerKey = current.profile;
             if (!connectionKey && !printerKey) {
-                printerKey = response.options.printerProfilePreference;
+                printerKey = self.preferredPrinter();
             }
 
             if (printerKey) {
-                var printer = _.find(printers, function (p) {
+                var printer = _.find(self.availablePrinterProfiles(), function (p) {
                     return p.id === printerKey;
                 });
                 self.selectedPrinter(printer);
             }
 
-            var protocolKey = response.current.protocol;
+            var protocolKey = current.protocol;
             if (protocolKey) {
-                var protocol = _.find(protocols, function (p) {
+                var protocol = _.find(self.availableProtocols(), function (p) {
                     return p.key === protocolKey;
                 });
                 self.selectedProtocol(protocol);
@@ -737,16 +785,16 @@ $(function () {
                 _.each(protocolParameters, function (option) {
                     extendOption(
                         option,
-                        response.current.protocolOptions[option.name],
-                        response.current.protocolOptions
+                        current.protocolOptions[option.name],
+                        current.protocolOptions
                     );
                 });
                 self.protocolParameters(protocolParameters);
             }
 
-            var transportKey = response.current.transport;
+            var transportKey = current.transport;
             if (transportKey) {
-                var transport = _.find(transports, function (t) {
+                var transport = _.find(self.availableTransports(), function (t) {
                     return t.key === transportKey;
                 });
                 self.selectedTransport(transport);
@@ -754,8 +802,8 @@ $(function () {
                 _.each(transportParameters, function (option) {
                     extendOption(
                         option,
-                        response.current.transportOptions[option.name],
-                        response.current.transportOptions
+                        current.transportOptions[option.name],
+                        current.transportOptions
                     );
                 });
                 self.transportParameters(transportParameters);
@@ -879,11 +927,11 @@ $(function () {
         };
 
         self.onEventConnected = function () {
-            self.requestData();
+            self.requestCurrentData();
         };
 
         self.onEventDisconnected = function () {
-            self.requestData();
+            self.requestCurrentData();
         };
 
         self.onStartup = function () {

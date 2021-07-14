@@ -5,7 +5,7 @@
         factory(global.OctoPrintClient, global.$);
     }
 })(this, function (OctoPrintClient, $) {
-    var url = "api/connectionprofiles";
+    var url = "api/connection/profiles";
 
     var profileUrl = function (profile) {
         return url + "/" + profile;
