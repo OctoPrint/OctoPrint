@@ -1,7 +1,8 @@
 name: "Pull Request Automation"
 on:
   pull_request_target:
-    types: ["opened", "synchronize", "reopened", "edited", "labeled", "unlabeled"]
+    #types: ["opened", "synchronize", "reopened", "edited", "labeled", "unlabeled"]
+    types: ["opened"]
 
 jobs:
   pr-automation:
