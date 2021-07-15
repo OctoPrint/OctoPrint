@@ -247,7 +247,7 @@ class VirtualPrinterPlugin(
                 if self._socket in ready[1]:
                     self._socket.sendall(data)
 
-        class PTYVirtualPrinterWrapper(VirtualPrinterWrapper):
+        class FileVirtualPrinterWrapper(VirtualPrinterWrapper):
             def __init__(self, fd, *args, **kwargs):
                 self._fd = fd
                 super().__init__(*args, **kwargs)
@@ -382,7 +382,7 @@ class VirtualPrinterPlugin(
                 attrs[3] = attrs[3] & ~termios.ECHO
                 termios.tcsetattr(mfd, termios.TCSADRAIN, attrs)
 
-                virtual = PTYVirtualPrinterWrapper(mfd, settings, datafolder)
+                virtual = FileVirtualPrinterWrapper(mfd, settings, datafolder)
                 virtual.wait()
 
             commands.append(pty_command)
