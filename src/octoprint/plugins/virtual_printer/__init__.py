@@ -146,7 +146,7 @@ class VirtualPrinterPlugin(
         import click
         import serial
 
-        from octoprint.util import to_bytes
+        from octoprint.util import to_bytes, to_unicode
 
         from . import virtual
 
@@ -196,7 +196,7 @@ class VirtualPrinterPlugin(
                             del buffered[: termpos + termlen]
                             received = bytes(line)
 
-                            print(f"<<< {received.rstrip().decode('utf-8')}")
+                            print(f"<<< {to_unicode(received.rstrip())}")
                             self.incoming.put(received)
                 except ConnectionAbortedError:
                     self.close()
