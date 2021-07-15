@@ -136,14 +136,11 @@ class VirtualPrinterPlugin(
         ]
 
     def cli_commands(self, cli_group, pass_octoprint_ctx, *args, **kwargs):
-        import fcntl
         import os
-        import pty
         import select
         import socket
         import stat
         import sys
-        import termios
         import threading
 
         import click
@@ -344,40 +341,51 @@ class VirtualPrinterPlugin(
 
         ##~~ Unix PTY
 
-        @click.command("pty")
-        @click.option(
-            "--path", "path", type=click.Path(), default="/tmp/octoprint-virtual_printer"
-        )
-        def pty_command(path):
-            if os.path.islink(path):
-                realpath = os.path.realpath(path)
-                if not os.path.exists(realpath):
-                    os.unlink(path)
-                else:
-                    print(
-                        f"{path} already exists as a valid symlink. Unable to continue."
-                    )
-                    sys.exit(1)
-            elif os.path.exists(path):
-                print(f"{path} already exists. Unable to continue.")
-                sys.exit(1)
+        try:
+            import fcntl
+            import pty
+            import termios
+        except ImportError:
+            pass
+        else:
 
-            click.echo(f"Creating Unix PTY on {path}...")
-
-            mfd, sfd = pty.openpty()
-            sfd_path = os.ttyname(sfd)
-            os.symlink(sfd_path, path)
-            fcntl.fcntl(
-                mfd, fcntl.F_SETFL, fcntl.fcntl(mfd, fcntl.F_GETFL) | os.O_NONBLOCK
+            @click.command("pty")
+            @click.option(
+                "--path",
+                "path",
+                type=click.Path(),
+                default="/tmp/octoprint-virtual_printer",
             )
-            attrs = termios.tcgetattr(mfd)
-            attrs[3] = attrs[3] & ~termios.ECHO
-            termios.tcsetattr(mfd, termios.TCSADRAIN, attrs)
+            def pty_command(path):
+                if os.path.islink(path):
+                    realpath = os.path.realpath(path)
+                    if not os.path.exists(realpath):
+                        os.unlink(path)
+                    else:
+                        print(
+                            f"{path} already exists as a valid symlink. Unable to continue."
+                        )
+                        sys.exit(1)
+                elif os.path.exists(path):
+                    print(f"{path} already exists. Unable to continue.")
+                    sys.exit(1)
 
-            virtual = PTYVirtualPrinterWrapper(mfd, settings, datafolder)
-            virtual.wait()
+                click.echo(f"Creating Unix PTY on {path}...")
 
-        commands.append(pty_command)
+                mfd, sfd = pty.openpty()
+                sfd_path = os.ttyname(sfd)
+                os.symlink(sfd_path, path)
+                fcntl.fcntl(
+                    mfd, fcntl.F_SETFL, fcntl.fcntl(mfd, fcntl.F_GETFL) | os.O_NONBLOCK
+                )
+                attrs = termios.tcgetattr(mfd)
+                attrs[3] = attrs[3] & ~termios.ECHO
+                termios.tcsetattr(mfd, termios.TCSADRAIN, attrs)
+
+                virtual = PTYVirtualPrinterWrapper(mfd, settings, datafolder)
+                virtual.wait()
+
+            commands.append(pty_command)
 
         ##~~ Serial
 
