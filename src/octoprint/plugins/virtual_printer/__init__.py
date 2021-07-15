@@ -314,9 +314,9 @@ class VirtualPrinterPlugin(
             )
             def uds_command(path):
                 if os.path.exists(path):
-                    fd = os.open(path, os.O_PATH)
-                    mode = os.fstat(fd).st_mode
-                    os.close(fd)
+                    with os.open(path, os.O_PATH) as fd:
+                        mode = os.fstat(fd).st_mode
+
                     if stat.S_ISSOCK(mode):
                         os.unlink(path)
                     else:
