@@ -166,7 +166,6 @@ class VirtualPrinterPlugin(
             CHUNK_SIZE = 16
 
             def __init__(self, *args, **kwargs):
-                self._mutex = threading.Lock()
                 self._reader = threading.Thread(
                     target=self._copy_to_incoming, name="reader"
                 )
@@ -185,8 +184,7 @@ class VirtualPrinterPlugin(
 
                 try:
                     while True:
-                        with self._mutex:
-                            chunk = self._do_read(self.CHUNK_SIZE)
+                        chunk = self._do_read(self.CHUNK_SIZE)
 
                         if len(chunk) == 0:
                             continue
@@ -221,8 +219,7 @@ class VirtualPrinterPlugin(
                     line += "\n"
 
                 try:
-                    with self._mutex:
-                        self._do_write(to_bytes(line, encoding="ascii", errors="replace"))
+                    self._do_write(to_bytes(line, encoding="ascii", errors="replace"))
                     print(f">>> {line.rstrip()}")
                 except Exception:
                     self.close()
