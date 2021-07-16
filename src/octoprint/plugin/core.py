@@ -33,8 +33,11 @@ import pkg_resources
 import pkginfo
 
 import octoprint.vendor.imp as imp
+from octoprint.settings import settings
 from octoprint.util import sv, time_this, to_unicode
 from octoprint.util.version import get_python_version_string, is_python_compatible
+
+DEFAULT_HOOK_ORDER = 1000
 
 
 # noinspection PyDeprecation
@@ -1638,6 +1641,13 @@ class PluginManager:
                 )
                 continue
 
+            if not order:
+                order = DEFAULT_HOOK_ORDER
+
+            override = settings().getInt(["plugins", "_hookOrder", name, hook])
+            if override:
+                order = override
+
             self._plugin_hooks[hook].append((order, name, callback))
             self._sort_hooks(hook)
 
@@ -1680,6 +1690,9 @@ class PluginManager:
                     )
                 )
                 continue
+
+            if not order:
+                order = DEFAULT_HOOK_ORDER
 
             try:
                 self._plugin_hooks[hook].remove((order, name, callback))
@@ -2125,11 +2138,12 @@ class PluginManager:
                                 impl[0], sorting_context
                             )
                         )
-                        sorting_value = None
+                        sorting_value = DEFAULT_HOOK_ORDER
+                else:
+                    sorting_value = DEFAULT_HOOK_ORDER
 
             plugin_info = self.get_plugin_info(impl[0], require_enabled=False)
             return (
-                sorting_value is None,
                 sv(sorting_value),
                 not plugin_info.bundled if plugin_info else True,
                 sv(impl[0]),
@@ -2223,7 +2237,7 @@ class PluginManager:
     def _sort_hooks(self, hook):
         self._plugin_hooks[hook] = sorted(
             self._plugin_hooks[hook],
-            key=lambda x: (x[0] is None, sv(x[0]), sv(x[1]), sv(x[2])),
+            key=lambda x: (sv(x[0]), sv(x[1]), sv(x[2])),
         )
 
     def _get_callback_and_order(self, hook):
