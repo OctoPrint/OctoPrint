@@ -976,7 +976,7 @@ def fetch_template_data(refresh=False):
             {
                 "template": "dialogs/settings/connection.jinja2",
                 "_div": "settings_connection",
-                "custom_bindings": False,
+                "custom_bindings": True,
             },
         ),
         "connectionprofiles": (

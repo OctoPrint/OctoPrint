@@ -24,6 +24,7 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.settings import settings
+from octoprint.settings.parameters import get_param_structure
 from octoprint.util import dict_merge
 
 ##~~ Connection state & commands
@@ -353,7 +354,8 @@ def _get_protocols():
             {
                 "name": protocol.name,
                 "key": protocol.key,
-                "options": _convert_options(protocol.get_connection_options()),
+                "options": get_param_structure(protocol.get_connection_options()),
+                "settings": get_param_structure(protocol.settings),
             }
         )
     return protocols
@@ -366,11 +368,8 @@ def _get_transports():
             {
                 "name": transport.name,
                 "key": transport.key,
-                "options": _convert_options(transport.get_connection_options()),
+                "options": get_param_structure(transport.get_connection_options()),
+                "settings": get_param_structure(transport.settings),
             }
         )
     return transports
-
-
-def _convert_options(options):
-    return [option.as_dict() for option in options]

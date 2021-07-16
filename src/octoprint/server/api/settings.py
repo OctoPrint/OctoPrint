@@ -15,6 +15,11 @@ from octoprint.server import pluginManager, userManager
 from octoprint.server.api import api
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.settings import settings, valid_boolean_trues
+from octoprint.settings.parameters import (
+    get_param_dict,
+    get_param_structure,
+    save_params_to_settings,
+)
 
 # ~~ settings
 
@@ -248,10 +253,12 @@ def getSettings():
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
         },
         "connection": {
+            "protocols": _get_protocol_settings(),
+            "transports": _get_transport_settings(),
             "log": {
                 "connection": s.getBoolean(["connection", "log", "connection"]),
                 "commdebug": s.getBoolean(["connection", "log", "commdebug"]),
-            }
+            },
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -372,6 +379,50 @@ def _get_plugin_settings():
     return data
 
 
+def _get_protocol_settings():
+    from octoprint.comm.protocol import all_protocols
+
+    current = settings().get(["connection", "protocols"], merged=True)
+
+    result = {}
+    for protocol in all_protocols():
+        result[protocol.key] = get_param_dict(
+            current.get(protocol.key, {}), protocol.settings
+        )
+    return result
+
+
+def _get_protocol_structure():
+    from octoprint.comm.protocol import all_protocols
+
+    result = {}
+    for protocol in all_protocols():
+        result[protocol.key] = get_param_structure(protocol.settings)
+    return result
+
+
+def _get_transport_settings():
+    from octoprint.comm.transport import all_transports
+
+    current = settings().get(["connection", "transports"], merged=True)
+
+    result = {}
+    for transport in all_transports():
+        result[transport.key] = get_param_dict(
+            current.get(transport.key, {}), transport.settings
+        )
+    return result
+
+
+def _get_transport_structure():
+    from octoprint.comm.transport import all_transports
+
+    result = {}
+    for transport in all_transports():
+        result[transport.key] = get_param_structure(transport.settings)
+    return result
+
+
 @api.route("/settings", methods=["POST"])
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
@@ -387,6 +438,19 @@ def setSettings():
     if response:
         return response
     return getSettings()
+
+
+@api.route("/settings/structure", methods=["GET"])
+@no_firstrun_access
+@Permissions.SETTINGS.require(403)
+def fetchSettingsStructure():
+    structure = {
+        "connection": {
+            "protocols": _get_protocol_structure(),
+            "transports": _get_transport_structure(),
+        },
+    }
+    return jsonify(structure)
 
 
 @api.route("/settings/templates", methods=["GET"])
@@ -959,6 +1023,12 @@ def _saveSettings(data):
             toggle_log("connection", "CONNECTION")
             toggle_log("commdebug", "COMMDEBUG")
 
+        if "protocols" in data["connection"]:
+            _set_protocol_settings(data["connection"]["protocols"])
+
+        if "transports" in data["connection"]:
+            _set_transport_settings(data["connection"]["transports"])
+
     if "temperature" in data:
         if "profiles" in data["temperature"]:
             result = []
@@ -1134,3 +1204,30 @@ def _saveSettings(data):
                     )
 
     s.save(trigger_event=True)
+
+
+def _set_protocol_settings(data):
+    from octoprint.comm.protocol import all_protocols
+
+    base_path = ["connection", "protocols"]
+
+    for protocol in all_protocols():
+        if protocol.key in data:
+            save_params_to_settings(
+                protocol.settings, settings(), base_path + [protocol.key]
+            )
+
+
+def _set_transport_settings(data):
+    from octoprint.comm.transport import all_transports
+
+    base_path = ["connection", "transports"]
+
+    for transport in all_transports():
+        if transport.key in data:
+            save_params_to_settings(
+                data[transport.key],
+                transport.settings,
+                settings(),
+                base_path + [transport.key],
+            )

@@ -4,9 +4,11 @@
         <h3>{{ _('Protocol Parameters') }}</h3>
     </div>
     <div class="modal-body">
-        <!--ko let: { profile: { protocolParameters: protocolParameters, expertProtocolParameters:expertProtocolParameters } }-->
-        {% include 'snippets/connectionprofiles/protocolEditor.jinja2' %}
-        <!--/ko-->
+        <form class="form-horizontal">
+            <!--ko let: { profile: { protocolParameters: protocolParameters, expertProtocolParameters: expertProtocolParameters } }-->
+            {% include 'snippets/connectionprofiles/protocolEditor.jinja2' %}
+            <!--/ko-->
+        </form>
     </div>
     <div class="modal-footer">
         <a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</a>
@@ -19,9 +21,11 @@
         <h3>{{ _('Transport Parameters') }}</h3>
     </div>
     <div class="modal-body">
-        <!--ko let: { profile: { transportParameters: transportParameters, expertTransportParameters:expertProtocolParameters } }-->
-        {% include 'snippets/connectionprofiles/transportEditor.jinja2' %}
-        <!--/ko-->
+        <form class="form-horizontal" action="javascript:void(0)">
+            <!--ko let: { profile: { transportParameters: transportParameters, expertTransportParameters: expertTransportParameters } }-->
+            {% include 'snippets/connectionprofiles/transportEditor.jinja2' %}
+            <!--/ko-->
+        </form>
     </div>
     <div class="modal-footer">
         <a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</a>

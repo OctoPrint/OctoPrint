@@ -13,7 +13,7 @@ $(function () {
         });
     };
 
-    var convertValue = function (value, option, override) {
+    var convertValueFromBackend = function (value, option, override) {
         /**
          * Picks the right value to apply based on value, defaults and overrides.
          *
@@ -34,10 +34,27 @@ $(function () {
             value = option.default;
         }
 
-        if (value && (option.type === "list" || option.type === "smalllist")) {
-            value = value.join(", ");
+        if (value) {
+            if (option.type === "list") {
+                value = value.join("\n");
+            } else if (option.type === "smalllist") {
+                value = value.join(",");
+            }
         }
 
+        return value;
+    };
+
+    var convertValueToBackend = function (value, option) {
+        if (option.type === "list") {
+            value = splitTextToArray(value, "\n", true);
+        } else if (option.type === "smalllist") {
+            value = splitTextToArray(value, ",", true);
+        } else if (option.type === "integer") {
+            value = parseInt(value);
+        } else if (option.type === "float") {
+            value = parseFloat(value);
+        }
         return value;
     };
 
@@ -66,7 +83,11 @@ $(function () {
             });
         } else {
             if (option.type === "presetchoice") {
-                value = convertValue(value, option, data ? data[option.name] : undefined);
+                value = convertValueFromBackend(
+                    value,
+                    option,
+                    data ? data[option.name] : undefined
+                );
                 _.each(option.group.params, function (p) {
                     setOptionValue(
                         p,
@@ -77,7 +98,11 @@ $(function () {
                     );
                 });
             } else if (option.type === "conditionalgroup") {
-                value = convertValue(value, option, data ? data[option.name] : undefined);
+                value = convertValueFromBackend(
+                    value,
+                    option,
+                    data ? data[option.name] : undefined
+                );
                 option.expertParameters = {};
                 _.each(option.groups, function (group, key) {
                     _.each(group, function (p) {
@@ -88,7 +113,11 @@ $(function () {
                     });
                 });
             } else {
-                value = convertValue(value, option, data ? data[option.name] : undefined);
+                value = convertValueFromBackend(
+                    value,
+                    option,
+                    data ? data[option.name] : undefined
+                );
             }
 
             option.value(value);
@@ -107,17 +136,11 @@ $(function () {
             } else if (parameter.type === "conditionalgroup") {
                 value = parameter.value();
                 result = Object.assign(result, toOptions(parameter.groups[value]));
-            } else if (parameter.type === "list" || parameter.type === "smalllist") {
-                value = splitTextToArray(parameter.value(), ",", true);
-            } else if (parameter.type === "integer") {
-                value = parseInt(parameter.value());
-            } else if (parameter.type === "float") {
-                value = parseFloat(parameter.value());
             } else {
-                value = parameter.value();
+                value = convertValueToBackend(parameter.value(), parameter);
             }
 
-            // and now set the value on the result, if it differs from the default
+            // set the value on the result, if it differs from the default
             if (parameter.modified()) {
                 result[parameter.name] = value;
             }
@@ -421,8 +444,17 @@ $(function () {
         self.selectedProtocol = ko.observable();
         self.preferredProtocol = ko.observable();
         self.protocolParameters = ko.observable();
-        self.advancedProtocolParameters = ko.observable();
-        self.expertProtocolParameters = ko.observable();
+        self.advancedProtocolParameters = ko.pureComputed(function () {
+            return _.any(self.protocolParameters(), function (p) {
+                return p.advanced;
+            });
+        });
+        self.expertProtocolParameters = ko.pureComputed(function () {
+            return _.any(self.protocolParameters(), function (p) {
+                return p.expert;
+            });
+        });
+
         self.showAdvancedProtocolOptions = function () {
             $("#connection_protocol_dialog").modal("show");
         };
@@ -441,17 +473,7 @@ $(function () {
             if (protocol) {
                 protocolOptions = protocol.options;
             }
-
-            self.advancedProtocolParameters(
-                _.any(protocolOptions, function (p) {
-                    return p.advanced;
-                })
-            );
-            self.expertProtocolParameters(
-                _.any(protocolOptions, function (p) {
-                    return p.expert;
-                })
-            );
+            self.protocolParameters(protocolOptions);
 
             var connectionProfile = self.selectedConnectionProfile();
             self.sychronizeSettings(
@@ -471,8 +493,16 @@ $(function () {
         self.selectedTransport = ko.observable();
         self.preferredTransport = ko.observable();
         self.transportParameters = ko.observableArray();
-        self.advancedTransportParameters = ko.observable();
-        self.expertTransportParameters = ko.observable();
+        self.advancedTransportParameters = ko.pureComputed(function () {
+            return _.any(self.transportParameters(), function (p) {
+                return p.advanced;
+            });
+        });
+        self.expertTransportParameters = ko.pureComputed(function () {
+            return _.any(self.transportParameters(), function (p) {
+                return p.expert;
+            });
+        });
         self.showAdvancedTransportOptions = function () {
             $("#connection_transport_dialog").modal("show");
         };
@@ -487,22 +517,11 @@ $(function () {
 
         self.selectedTransport.subscribe(function () {
             var transport = self.selectedTransport();
+            var transportOptions = [];
             if (transport) {
-                self.transportParameters(transport.options);
-            } else {
-                self.transportParameters([]);
+                transportOptions = transport.options;
             }
-
-            self.advancedTransportParameters(
-                _.any(self.transportParameters(), function (p) {
-                    return p.advanced;
-                })
-            );
-            self.expertTransportParameters(
-                _.any(self.transportParameters(), function (p) {
-                    return p.expert;
-                })
-            );
+            self.transportParameters(transportOptions);
 
             var connectionProfile = self.selectedConnectionProfile();
             self.sychronizeSettings(
@@ -605,10 +624,14 @@ $(function () {
         };
 
         self.fromOptionsResponse = function (options) {
-            var extendOption = function (option) {
+            var extendOption = function (option, valueNode) {
+                if (!valueNode) {
+                    valueNode = {};
+                }
+
                 if (option.type === "group") {
                     _.each(option.params, function (param) {
-                        extendOption(param);
+                        extendOption(param, valueNode[option.name]);
                     });
 
                     option.modified = ko.pureComputed(function () {
@@ -630,7 +653,7 @@ $(function () {
                 } else {
                     if (option.type === "presetchoice") {
                         _.each(option.group.params, function (option) {
-                            extendOption(option);
+                            extendOption(option, valueNode[option.name]); // TODO
                         });
                     }
 
@@ -638,7 +661,7 @@ $(function () {
                         option.expertParameters = {};
                         _.each(option.groups, function (group, key) {
                             _.each(group, function (option) {
-                                extendOption(option);
+                                extendOption(option, valueNode[option.name]); // TODO
                             });
                             option.expertParameters[key] = _.any(group, function (p) {
                                 return p.expert;
@@ -646,12 +669,28 @@ $(function () {
                         });
                     }
 
-                    option.value = ko.observable(option.default);
-                    option.defaultValue = ko.observable(option.default);
-                    option.reset = function () {
-                        option.value(option.defaultValue());
-                    };
+                    var defaultValue = convertValueFromBackend(option.default, option);
+                    option.defaultValue = ko.observable(defaultValue);
 
+                    if (valueNode && _.isFunction(valueNode)) {
+                        option.value = ko.pureComputed({
+                            read: function () {
+                                return convertValueFromBackend(valueNode(), option);
+                            },
+                            write: function (value) {
+                                valueNode(convertValueToBackend(value, option));
+                            },
+                            owner: this
+                        });
+                        option.reset = function () {
+                            valueNode(defaultValue);
+                        };
+                    } else {
+                        option.value = ko.observable(defaultValue);
+                        option.reset = function () {
+                            option.value(defaultValue);
+                        };
+                    }
                     option.modified = ko.pureComputed(function () {
                         // noinspection EqualityComparisonWithCoercionJS
                         return option.value() != option.defaultValue();
@@ -680,7 +719,7 @@ $(function () {
                                     if (option.defaults[choice.value]) {
                                         var d = option.defaults[choice.value][p.name];
                                         if (d !== undefined) {
-                                            p.defaultValue(convertValue(d, p));
+                                            p.defaultValue(convertValueFromBackend(d, p));
                                             if (!keepValue) {
                                                 p.value(p.defaultValue());
                                             }
@@ -697,10 +736,16 @@ $(function () {
                 }
             };
 
-            var extendOptions = function (input) {
+            var extendOptions = function (input, settings) {
+                if (!settings) settings = {};
                 _.each(input, function (i) {
+                    var node = settings[i.key];
+
                     _.each(i.options, function (option) {
                         extendOption(option);
+                    });
+                    _.each(i.settings, function (option) {
+                        extendOption(option, node ? node[option.name] : {});
                     });
                 });
             };
@@ -720,12 +765,12 @@ $(function () {
 
             // protocols
             var protocols = options.protocols;
-            extendOptions(protocols);
+            extendOptions(protocols, self.settings.settings.connection.protocols);
             self.availableProtocols(protocols);
 
             // transports
             var transports = options.transports;
-            extendOptions(transports);
+            extendOptions(transports, self.settings.settings.connection.transports);
             self.availableTransports(transports);
 
             // connection profiles
@@ -757,6 +802,9 @@ $(function () {
                 var connection = _.find(self.availableConnectionProfiles(), function (c) {
                     return c.id === connectionKey;
                 });
+
+                // this will also set printer profile, protocol and transport through
+                // subscriptions
                 self.selectedConnectionProfile(connection);
             } else {
                 self.adjustConnectionParameters(true);
@@ -781,16 +829,20 @@ $(function () {
                     return p.key === protocolKey;
                 });
                 self.selectedProtocol(protocol);
-                var protocolParameters = self.protocolParameters();
-                _.each(protocolParameters, function (option) {
-                    extendOption(
-                        option,
-                        current.protocolOptions[option.name],
-                        current.protocolOptions
-                    );
-                });
-                self.protocolParameters(protocolParameters);
+            } else {
+                self.selectedProtocol(self.availableProtocols()[0]);
             }
+
+            var protocolParameters = self.protocolParameters();
+            _.each(protocolParameters, function (option) {
+                setOptionValue(
+                    option,
+                    current.protocolOptions[option.name],
+                    current.protocolOptions
+                );
+            });
+            self.protocolParameters(protocolParameters);
+            console.log(protocolParameters);
 
             var transportKey = current.transport;
             if (transportKey) {
@@ -798,16 +850,19 @@ $(function () {
                     return t.key === transportKey;
                 });
                 self.selectedTransport(transport);
-                var transportParameters = self.transportParameters();
-                _.each(transportParameters, function (option) {
-                    extendOption(
-                        option,
-                        current.transportOptions[option.name],
-                        current.transportOptions
-                    );
-                });
-                self.transportParameters(transportParameters);
+            } else {
+                self.selectedProtocol(self.availableProtocols()[0]);
             }
+
+            var transportParameters = self.transportParameters();
+            _.each(transportParameters, function (option) {
+                setOptionValue(
+                    option,
+                    current.transportOptions[option.name],
+                    current.transportOptions
+                );
+            });
+            self.transportParameters(transportParameters);
         };
 
         self.fromHistoryData = function (data) {
@@ -963,6 +1018,7 @@ $(function () {
         ],
         elements: [
             "#connection_wrapper",
+            "#settings_connection",
             "#connection_protocol_dialog",
             "#connection_transport_dialog",
             "#connectionprofiles_editor_dialog"

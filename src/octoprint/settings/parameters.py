@@ -46,6 +46,53 @@ def get_param_dict(data, options):
     return result
 
 
+def get_param_structure(options):
+    return [option.as_dict() for option in options]
+
+
+def save_params_to_settings(data, options, settings, path):
+    if data is None:
+        data = {}
+
+    for option in options:
+        if option.type == "group":
+            save_params_to_settings(
+                data.get(option.name), option.params, settings, path + [option.name]
+            )
+        elif option.type == "presetchoice":
+            save_params_to_settings(
+                data.get(option.group.name),
+                option.group.params,
+                settings,
+                path + [option.group.name],
+            )
+        elif option.type == "conditionalgroup":
+            save_params_to_settings(
+                data.get(option.name),
+                option.groups[option.value],
+                settings,
+                path + [option.name],
+            )
+        else:
+            save_param_to_settings(
+                data.get(option.name), option, settings, path + [option.name]
+            )
+
+
+def save_param_to_settings(value, option, settings, path):
+    if value is None:
+        return
+
+    if option.type == "integer":
+        settings.setInt(path, value)
+    elif option.type == "float":
+        settings.setFloat(path, value)
+    elif option.type == "boolean":
+        settings.setBoolean(path, value)
+    else:
+        settings.set(path, value)
+
+
 class ParamType:
     type = "generic"
 

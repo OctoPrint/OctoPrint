@@ -1,20 +1,70 @@
-<form class="form-horizontal">
-    <fieldset id="settings_serial_general_logging">
-        <legend>{{ _('Logging') }}</legend>
-        <div class="control-group">
-            <div class="controls">
-                <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: connection_log_connection" id="settings-connectionLogConnection"> {{ _('Log communication to <code>connection.log</code>') }} <span class="label label-important">{{ _('Warning') }}</span>
-                    <span class="help-block">{{ _('While this can negatively impact performance, a <code>connection.log</code> can be incredibly useful for debugging any issues observed in the communication between OctoPrint and your printer.') }}</span>
-                </label>
-            </div>
-        </div>
-        <div class="control-group">
-            <div class="controls">
-                <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: connection_log_commdebug" id="settings-connectionLogCommdebug"> {{ _('Log debug information about communication to <code>commdebug.log</code>') }} <span class="label label-important">{{ _('Warning') }}</span>
-                </label>
-            </div>
-        </div>
-    </fieldset>
-</form>
+<ul class="nav nav-pills">
+    <li id="settings_accesscontrol_users_link" class="active">
+        <a href="#settings_connection_general" data-toggle="tab">{{ _('General') }}</a>
+    </li>
+    <li id="settings_accesscontrol_groups_link">
+        <a href="#settings_connection_protocols" data-toggle="tab">{{ _('Protocols') }}</a>
+    </li>
+    <li id="settings_accesscontrol_groups_link">
+        <a href="#settings_connection_transports" data-toggle="tab">{{ _('Transports') }}</a>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane active" id="settings_connection_general">
+        <form class="form-horizontal">
+            <fieldset id="settings_connection_general_logging">
+                <legend>{{ _('Logging') }}</legend>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: settings.connection_log_connection" id="settings-connectionLogConnection"> {{ _('Log communication to <code>connection.log</code>') }} <span class="label label-important">{{ _('Warning') }}</span>
+                            <span class="help-block">{{ _('While this can negatively impact performance, a <code>connection.log</code> can be incredibly useful for debugging any issues observed in the communication between OctoPrint and your printer.') }}</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: settings.connection_log_commdebug" id="settings-connectionLogCommdebug"> {{ _('Log debug information about communication to <code>commdebug.log</code>') }} <span class="label label-important">{{ _('Warning') }}</span>
+                        </label>
+                    </div>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    <div class="tab-pane" id="settings_connection_protocols">
+        <form class="form-horizontal">
+            <!-- ko foreach: availableProtocols -->
+            <fieldset>
+                <legend data-bind="text: name"></legend>
+                <!-- ko if: settings.length -->
+                <!-- ko foreach: settings -->
+                <!-- ko template: { name: 'connectionprofile_editor_template_' + $data.type, data: $data } --><!-- /ko -->
+                <!-- /ko -->
+                <!-- /ko -->
+                <!-- ko if: settings.length === 0 -->
+                <p><em>{{ _('There are no overall settings for this transport.') }}</em></p>
+                <!-- /ko -->
+            </fieldset>
+            <!-- /ko -->
+        </form>
+    </div>
+    <div class="tab-pane" id="settings_connection_transports">
+        <form class="form-horizontal">
+            <!-- ko foreach: availableTransports -->
+            <fieldset>
+                <legend data-bind="text: name"></legend>
+                <!-- ko if: settings.length -->
+                <!-- ko foreach: settings -->
+                <!-- ko template: { name: 'connectionprofile_editor_template_' + $data.type, data: $data } --><!-- /ko -->
+                <!-- /ko -->
+                <!-- /ko -->
+                <!-- ko if: settings.length === 0 -->
+                <p></p><em>{{ _('There are no overall settings for this transport.') }}</em></p>
+                <!-- /ko -->
+            </fieldset>
+            <!-- /ko -->
+        </form>
+    </div>
+</div>
