@@ -301,6 +301,10 @@ gcodeToEvent = {
     # motors on/off
     "M80": Events.POWER_ON,
     "M81": Events.POWER_OFF,
+    # filament change
+    "M600": Events.FILAMENT_CHANGE,
+    "M701": Events.FILAMENT_CHANGE,
+    "M702": Events.FILAMENT_CHANGE,
 }
 
 
