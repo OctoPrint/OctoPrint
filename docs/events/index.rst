@@ -608,7 +608,7 @@ EStop
    An ``M112`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 FilamentChange
-  An ''M600'', ''M701'' or ''M702'' was sent to the printer through OctoPrint (not triggered when printing from SD!)
+  An ``M600``, ``M701`` or ``M702`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 
 PositionUpdate
