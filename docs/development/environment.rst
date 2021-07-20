@@ -390,9 +390,8 @@ Otherwise go through Settings.
 
 Visual Studio Code (vscode)
 ---------------------------
-  - Install Visual Studio from https://code.visualstudio.com/Download
+  - Install Visual Studio Code from https://code.visualstudio.com/Download
   - Open folder select OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
-    settings.json
 
   - Create a directory '.vscode' if not already present in the root of the project
 
@@ -449,7 +448,7 @@ Visual Studio Code (vscode)
           "version": "0.2.0",
           "configurations": [
               {
-                  "name": "Octoprint",
+                  "name": "OctoPrint",
                   "type": "python",
                   "request": "launch",
                   "module": "octoprint",
@@ -477,11 +476,10 @@ Visual Studio Code (vscode)
 
   * Pressing f5 will now start OctoPrint in debug
 
-  * Your terminal inside vscode uses the virtrual python environment
+  * Your terminal inside vscode uses the virtual python environment
 
   * Saving a file will run an auto formatter and import sort
   
   * Ctrl + shift + b can be used to run the 'build docs' task to rebuild the documentation
 
   
-
