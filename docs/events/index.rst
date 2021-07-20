@@ -610,6 +610,7 @@ EStop
 FilamentChange
   An ``M600``, ``M701`` or ``M702`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
+  .. versionadded:: 1.7.0
 
 PositionUpdate
    The response to an ``M114`` was received by OctoPrint. The payload contains the current position information
