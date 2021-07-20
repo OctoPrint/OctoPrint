@@ -1,0 +1,181 @@
+<script type="text/html" id="parameter_template_controls_text">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <input class="input-block-level" type="text" data-bind="value: $data.value, attr: {placeholder: $data.default}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="parameter_template_controls_url">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <input class="input-block-level" type="text" data-bind="value: $data.value, attr: {placeholder: $data.default}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="parameter_template_controls_integer">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <!-- ko if: $data.unit -->
+            <div class="input-append">
+                <input class="input-small" type="number" step="1" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+                <span class="add-on" data-bind="text: $data.unit"></span>
+            </div>
+            <!-- /ko -->
+            <!-- ko ifnot: $data.unit -->
+            <input class="input-small" type="number" step="1" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <!-- /ko -->
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="parameter_template_controls_float">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <!-- ko if: $data.unit -->
+            <div class="input-append">
+                <input class="input-small" type="number" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+                <span class="add-on" data-bind="text: $data.unit"></span>
+            </div>
+            <!-- /ko -->
+            <!-- ko ifnot: $data.unit -->
+            <input class="input-small" type="number" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <!-- /ko -->
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="parameter_template_controls_choice">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="parameter_template_controls_presetchoice">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+    <!-- ko template: { name: 'parameter_template_controls_group', data: group } --><!-- /ko -->
+</script>
+<script type="text/html" id="parameter_template_controls_smallchoice">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <!-- ko foreach: choices -->
+            <label class="radio">
+                <input type="radio" data-bind="attr: { name: 'connectionprofile_editor_' + $parent.name + '_group' }, value: $data.value, checked: $parent.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"> <span data-bind="markdownInline: $data.title"></span> <span class="label label-important" data-bind="visible: $data.warning">{{ _('Warning') }}</span>  <!-- ko foreach: $data.labels --><span class="label" data-bind="text: $data"></span><!-- /ko -->
+                <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+            </label>
+            <!-- /ko -->
+        </div>
+    </div>
+</script>
+<script type="text/html" id="parameter_template_controls_boolean">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"> <span data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></span> <span class="label label-important" data-bind="visible: $data.warning">{{ _('Warning') }}</span> <!-- ko foreach: $data.labels --><span class="label" data-bind="text: $data"></span><!-- /ko -->
+            </label>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="parameter_template_controls_suggestion">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.suggestions, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="parameter_template_controls_list">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <textarea data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></textarea>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="parameter_template_controls_smalllist">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+</script>
+<script type="text/html" id="parameter_template_controls_group">
+    <fieldset>
+        <legend data-bind="markdownInline: $data.title"></legend>
+        <p data-bind="visible: $data.help, markdownInline: $data.help"></p>
+        <!-- ko foreach: params -->
+        <!-- ko if: !expert -->
+        <!-- ko template: { name: 'parameter_template_controls_' + $data.type, data: $data } --><!-- /ko -->
+        <!-- /ko -->
+        <!-- /ko -->
+
+        <div class="advanced_options" data-bind="visible: expertParameters">
+            <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Expert options') }}</a></small></div>
+            <div class="hide">
+                <!-- ko foreach: params -->
+                <!-- ko if: expert -->
+                <!-- ko template: { name: 'parameter_template_controls_' + $data.type, data: $data } --><!-- /ko -->
+                <!-- /ko -->
+                <!-- /ko -->
+            </div>
+        </div>
+    </fieldset>
+</script>
+<script type="text/html" id="parameter_template_controls_conditionalgroup">
+    <div class="control-group" data-bind="css: { 'control-changed': $data.modified }">
+        <a href="javascript:void(0)" class="fa fa-undo control-undo" title="Reset to default" data-bind="click: reset, visible: $data.modified() && $root.isErrorOrClosed()"></a>
+        <label class="control-label" data-bind="markdownInline: $data.title, css: { 'control-changed': $data.modified }"></label>
+        <div class="controls">
+            <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+            <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+        </div>
+    </div>
+
+    <!-- ko foreach: $data.groups[$data.value()] -->
+    <!-- ko if: !expert -->
+    <!-- ko template: { name: 'parameter_template_controls_' + $data.type, data: $data } --><!-- /ko -->
+    <!-- /ko -->
+    <!-- /ko -->
+
+    <div class="advanced_options" data-bind="visible: $data.expertParameters[$data.value]">
+        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Expert options') }}</a></small></div>
+        <div class="hide">
+            <!-- ko foreach: $data.groups[$data.value()] -->
+            <!-- ko if: expert -->
+            <!-- ko template: { name: 'parameter_template_controls_' + $data.type, data: $data } --><!-- /ko -->
+            <!-- /ko -->
+            <!-- /ko -->
+        </div>
+    </div>
+</script>

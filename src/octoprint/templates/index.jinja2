@@ -169,9 +169,14 @@
             <!-- End of dialogs -->
 
             <!-- Overlays -->
-            {% include 'overlays/dragndrop.jinja2' %}
-            {% include 'overlays/offline.jinja2' %}
-            {% include 'overlays/reloadui.jinja2' %}
+            {% include 'generic/overlays/dragndrop.jinja2' %}
+            {% include 'generic/overlays/offline.jinja2' %}
+            {% include 'generic/overlays/reloadui.jinja2' %}
+            <!-- End of overlays -->
+
+            <!-- Parameters -->
+            {% include 'generic/parameters/form.jinja2' %}
+            {% include 'generic/parameters/controls.jinja2' %}
             <!-- End of overlays -->
 
             {% include 'stylesheets.jinja2' %}

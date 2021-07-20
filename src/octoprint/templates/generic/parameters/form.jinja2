@@ -1,0 +1,88 @@
+<script type="text/html" id="parameter_template_form_description">
+    <p data-bind="markdownInline: $data.value"></p>
+</script>
+<script type="text/html" id="parameter_template_form_text">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <input class="input-block-level" type="text" data-bind="value: $data.value, attr: {placeholder: $data.default}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+    <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
+</script>
+<script type="text/html" id="parameter_template_form_url">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <input class="input-block-level" type="text" data-bind="value: $data.value, attr: {placeholder: $data.default}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+    <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
+</script>
+<script type="text/html" id="parameter_template_form_integer">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <input class="input-block-level" type="number" step="1" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+    <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
+</script>
+<script type="text/html" id="parameter_template_form_float">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <input class="input-block-level" type="number" data-bind="value: $data.value, attr: {placeholder: $data.default, min: $data.min, max: $data.max}, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+    <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
+</script>
+<script type="text/html" id="parameter_template_form_choice">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+    <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
+</script>
+<script type="text/html" id="parameter_template_form_smallchoice">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <!-- ko foreach: choices -->
+    <label class="radio">
+        <input type="radio" data-bind="attr: { name: 'connection_dialog_' + $parent.name + '_group' }, value: $data.value, checked: $parent.value"> <span data-bind="text: $data.title"></span>
+        <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
+    </label>
+    <!-- /ko -->
+    <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
+</script>
+<script type="text/html" id="parameter_template_form_boolean">
+    <label class="checkbox">
+        <input type="checkbox" data-bind="checked: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"> <span data-bind="text: $data.title"></span>
+        <span class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></span>
+    </label>
+    <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
+</script>
+<script type="text/html" id="parameter_template_form_suggestion">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <select class="input-block-level" data-bind="options: $data.suggestions, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+    <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
+</script>
+<script type="text/html" id="parameter_template_form_list">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <textarea data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></textarea>
+    <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
+</script>
+<script type="text/html" id="parameter_template_form_smalllist">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <input type="text" class="input-block-level" data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+    <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
+</script>
+<script type="text/html" id="parameter_template_form_group">
+    <label data-bind="text: $data.title"></label>
+    <!-- ko foreach: params -->
+    <!-- ko template: { name: 'parameter_template_form_' + $data.type, data: $data } --><!-- /ko -->
+    <!-- /ko -->
+</script>
+<script type="text/html" id="parameter_template_form_presetchoice">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+    <!-- ko if: !$data.group.advanced -->
+    <label data-bind="text: $data.group.title"></label>
+    <!-- ko foreach: $data.group.params -->
+    <!-- ko if: !advanced -->
+    <!-- ko template: { name: 'parameter_template_form_' + $data.type, data: $data } --><!-- /ko -->
+    <!-- /ko -->
+    <!-- /ko -->
+    <!-- /ko -->
+</script>
+<script type="text/html" id="parameter_template_form_conditionalgroup">
+    <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
+    <select class="input-block-level" data-bind="options: $data.choices, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+
+    <!-- ko foreach: $data.groups[$data.value()] -->
+    <!-- ko if: !advanced -->
+    <!-- ko template: { name: 'parameter_template_form_' + $data.type, data: $data } --><!-- /ko -->
+    <!-- /ko -->
+    <!-- /ko -->
+</script>

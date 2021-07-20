@@ -40,7 +40,7 @@
                 <legend data-bind="text: name"></legend>
                 <!-- ko if: settings.length -->
                 <!-- ko foreach: settings -->
-                <!-- ko template: { name: 'connectionprofile_editor_template_' + $data.type, data: $data } --><!-- /ko -->
+                <!-- ko template: { name: 'parameter_template_controls_' + $data.type, data: $data } --><!-- /ko -->
                 <!-- /ko -->
                 <!-- /ko -->
                 <!-- ko if: settings.length === 0 -->
@@ -57,7 +57,7 @@
                 <legend data-bind="text: name"></legend>
                 <!-- ko if: settings.length -->
                 <!-- ko foreach: settings -->
-                <!-- ko template: { name: 'connectionprofile_editor_template_' + $data.type, data: $data } --><!-- /ko -->
+                <!-- ko template: { name: 'parameter_template_controls_' + $data.type, data: $data } --><!-- /ko -->
                 <!-- /ko -->
                 <!-- /ko -->
                 <!-- ko if: settings.length === 0 -->
