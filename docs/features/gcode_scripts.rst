@@ -70,7 +70,8 @@ Context
 All GCODE scripts have access to the following template variables through the template context:
 
   * ``printer_profile``: The currently selected :ref:`Printer Profile <sec-modules-printer-profile>`, including
-    information such as the extruder count, the build volume size, the filament diameter etc.
+    information such as the extruder count, the build volume size, the filament diameter etc. The individual properties
+    follow the common data model for :ref:`printer profiles <sec-api-printerprofiles-datamodel-profile>`.
   * ``last_position``: Last position reported by the printer via `M114` (might be unset if no `M114` was sent so far!).
     Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
     current tool ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no
