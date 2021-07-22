@@ -52,7 +52,7 @@ __plugin_name__ = "Events"
 __plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_author__ = "jneilliii"
 __plugin_license__ = "AGPLv3"
-__plugin_description__ = (
+__plugin_description__ = gettext(
     "Plugin to configure event subscriptions available in config.yaml."
 )
 __plugin_implementation__ = eventsPlugin()
