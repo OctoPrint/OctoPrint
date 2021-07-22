@@ -32,7 +32,7 @@ class eventsPlugin(
         return {"js": ["js/events.js"]}
 
     def get_template_configs(self):
-        return [{"type": "settings", "custom_bindings": True}]
+        return [{"type": "settings", "custom_bindings": True, "name": gettext("Events")}]
 
     def get_additional_permissions(self):
         return [
