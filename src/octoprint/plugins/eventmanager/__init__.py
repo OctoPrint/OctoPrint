@@ -7,7 +7,7 @@ import octoprint.plugin
 from octoprint.access import ADMIN_GROUP
 
 
-class eventsPlugin(
+class EventsPlugin(
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
@@ -32,7 +32,13 @@ class eventsPlugin(
         return {"js": ["js/events.js"]}
 
     def get_template_configs(self):
-        return [{"type": "settings", "custom_bindings": True, "name": gettext("Events")}]
+        return [
+            {
+                "type": "settings",
+                "custom_bindings": True,
+                "name": gettext("Event Manager"),
+            }
+        ]
 
     def get_additional_permissions(self):
         return [
@@ -48,11 +54,11 @@ class eventsPlugin(
         ]
 
 
-__plugin_name__ = "Events"
+__plugin_name__ = gettext("Event Manager")
 __plugin_pythoncompat__ = ">=2.7,<4"
 __plugin_author__ = "jneilliii"
 __plugin_license__ = "AGPLv3"
 __plugin_description__ = gettext(
     "Plugin to configure event subscriptions available in config.yaml."
 )
-__plugin_implementation__ = eventsPlugin()
+__plugin_implementation__ = EventsPlugin()
