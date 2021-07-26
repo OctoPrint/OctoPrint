@@ -45,7 +45,15 @@
 </script>
 <script type="text/html" id="parameter_template_form_suggestion">
     <label data-bind="text: $data.title, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></label>
-    <select class="input-block-level" data-bind="options: $data.suggestions, optionsText: 'title', optionsValue: 'value', value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()"></select>
+    <div class="input-append">
+        <input type="text" data-bind="value: $data.value, css: {disabled: !$root.isErrorOrClosed()}, enable: $root.isErrorOrClosed()">
+        <div class="btn-group">
+            <button class="btn dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+            <ul class="dropdown-menu pull-right" data-bind="foreach: $data.suggestions">
+                <li data-bind="attr: { 'data-value': $data.value }"><a href="javascript:void(0)" data-bind="text: $data.title, click: function() { $parent.value($data.value) }"></a></li>
+            </ul>
+        </div>
+    </div>
     <small class="help-block" data-bind="visible: $data.help, markdownInline: $data.help"></small>
 </script>
 <script type="text/html" id="parameter_template_form_list">
