@@ -233,7 +233,7 @@ $(function () {
 
             var processParameters = function (parameters, profile_parameters) {
                 _.each(parameters, function (option) {
-                    extendOption(
+                    setOptionValue(
                         option,
                         profile_parameters[option.name],
                         profile_parameters
