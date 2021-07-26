@@ -2,16 +2,16 @@
  * View model for OctoPrint-EventCoordinator
  *
  * Author: jneilliii
- * License: MIT
+ * License: AGPLv3
  */
 $(function () {
-    function EventcoordinatorViewModel(parameters) {
+    function eventManagerViewModel(parameters) {
         var self = this;
 
         self.settingsViewModel = parameters[0];
-        self.selected_command = ko.observable();
+        self.selectedCommand = ko.observable();
 
-        self.event_details = function (data) {
+        self.eventDetails = function (data) {
             if (data === false) {
                 return {
                     event: ko.observable(""),
@@ -32,26 +32,26 @@ $(function () {
         };
 
         self.addEvent = function () {
-            self.selected_command(self.event_details(false));
-            self.settingsViewModel.settings.plugins.events.subscriptions.push(
-                self.selected_command()
+            self.selectedCommand(self.eventDetails(false));
+            self.settingsViewModel.settings.plugins.eventmanager.subscriptions.push(
+                self.selectedCommand()
             );
-            $("#EventCoordinatorEditor").modal("show");
+            $("#EventManagerEditor").modal("show");
         };
 
         self.editEvent = function (data) {
-            self.selected_command(self.event_details(data));
-            $("#EventCoordinatorEditor").modal("show");
+            self.selectedCommand(self.eventDetails(data));
+            $("#EventManagerEditor").modal("show");
         };
 
         self.removeEvent = function (data) {
-            self.settingsViewModel.settings.plugins.events.subscriptions.remove(data);
+            self.settingsViewModel.settings.plugins.eventmanager.subscriptions.remove(data);
         };
     }
 
     OCTOPRINT_VIEWMODELS.push({
-        construct: EventcoordinatorViewModel,
+        construct: eventManagerViewModel,
         dependencies: ["settingsViewModel"],
-        elements: ["#settings_plugin_events"]
+        elements: ["#settings_plugin_eventmanager"]
     });
 });
