@@ -4153,27 +4153,7 @@ class MachineCom(object):
             self._lastResendNumber = lineToResend
             self._currentResendCount = 0
 
-            if (
-                self._resendDelta > len(self._lastLines)
-                or len(self._lastLines) == 0
-                or self._resendDelta < 0
-            ):
-                error_text = "Printer requested line {} but no sufficient history is available, can't resend".format(
-                    lineToResend
-                )
-                self._log(error_text)
-                self._logger.warning(
-                    error_text
-                    + ". Printer requested line {}, current line is {}, line history has {} entries.".format(
-                        lineToResend, self._current_line, len(self._lastLines)
-                    )
-                )
-                if self.isPrinting():
-                    # abort the print & disconnect, there's nothing we can do to rescue it
-                    self._trigger_error(error_text, "resend")
-                else:
-                    # reset resend delta, we can't do anything about it
-                    self._resendDelta = None
+            self._resendCheckPossibility(lineToResend)
 
             # if we log resends, make sure we don't log more resends than the set rate within a window
             #
@@ -4241,9 +4221,14 @@ class MachineCom(object):
                 # resend_ok_timer, so make sure that resendDelta is actually still set (see #2632)
                 return False
 
-            cmd = self._lastLines[-self._resendDelta].decode("ascii")
             lineNumber = self._current_line - self._resendDelta
 
+            if not self._resendCheckPossibility(lineNumber):
+                # Something has gone wrong if we get here, but we already logged and
+                # handled it.
+                return False
+
+            cmd = self._lastLines[-self._resendDelta].decode("ascii")
             result = self._enqueue_for_sending(cmd, linenumber=lineNumber, resend=True)
 
             self._resendDelta -= 1
@@ -4257,6 +4242,33 @@ class MachineCom(object):
                 self._send_queue.resend_active = False
 
             return result
+
+    def _resendCheckPossibility(self, lineno):
+        if (
+            self._resendDelta > len(self._lastLines)
+            or len(self._lastLines) == 0
+            or self._resendDelta < 0
+        ):
+            error_text = "Should resend line {} but no sufficient history is available, can't resend".format(
+                lineno
+            )
+            self._log(error_text)
+            self._logger.warning(
+                error_text
+                + ". Line to resend is {}, current line is {}, line history has {} entries.".format(
+                    lineno, self._current_line, len(self._lastLines)
+                )
+            )
+            if self.isPrinting():
+                # abort the print & disconnect, there's nothing we can do to rescue it
+                self._trigger_error(error_text, "resend")
+            else:
+                # reset resend delta, we can't do anything about it
+                self._resendDelta = None
+
+            return False
+        else:
+            return True
 
     def _sendCommand(self, cmd, cmd_type=None, on_sent=None, tags=None):
         # Make sure we are only handling one sending job at a time
