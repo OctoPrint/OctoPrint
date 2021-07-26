@@ -7,7 +7,7 @@ import octoprint.plugin
 from octoprint.access import ADMIN_GROUP
 
 
-class EventsPlugin(
+class EventManagerPlugin(
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
@@ -61,4 +61,4 @@ __plugin_license__ = "AGPLv3"
 __plugin_description__ = gettext(
     "Plugin to configure event subscriptions available in config.yaml."
 )
-__plugin_implementation__ = EventsPlugin()
+__plugin_implementation__ = EventManagerPlugin()

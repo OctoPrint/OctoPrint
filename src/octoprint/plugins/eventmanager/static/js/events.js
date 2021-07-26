@@ -45,7 +45,9 @@ $(function () {
         };
 
         self.removeEvent = function (data) {
-            self.settingsViewModel.settings.plugins.eventmanager.subscriptions.remove(data);
+            self.settingsViewModel.settings.plugins.eventmanager.subscriptions.remove(
+                data
+            );
         };
     }
 
