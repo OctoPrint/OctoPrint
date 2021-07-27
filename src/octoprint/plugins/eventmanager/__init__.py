@@ -19,7 +19,7 @@ class EventManagerPlugin(
         }
         events = self._settings.global_get(["events"])
         if events:
-            my_settings["subscriptions"] = events["subscriptions"]
+            my_settings["subscriptions"] = events.get("subscriptions", [])
         return my_settings
 
     def on_settings_save(self, data):
