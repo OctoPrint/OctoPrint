@@ -51,7 +51,7 @@ class FilesUtilTest(unittest.TestCase):
     @pathvalidate_unavailable_only
     @data(
         ("file with space.gcode", "file_with_space.gcode"),
-        ("Wölfe 🐺.gcode", "Wolfe_wolf_face.gcode"),
+        ("Wölfe 🐺.gcode", "Wolfe_wolf.gcode"),
     )
     @unpack
     def test_sanitize_filename_pvu(self, filename, expected):
