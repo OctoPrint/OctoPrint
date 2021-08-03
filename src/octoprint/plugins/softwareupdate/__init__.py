@@ -70,6 +70,8 @@ class SoftwareUpdatePlugin(
 
     OCTOPRINT_RESTART_TYPES = ("pip", "single_file_plugin")
 
+    VALID_RESTART_TYPES = ("octoprint", "environment")
+
     DATA_FORMAT_VERSION = "v4"
 
     CHECK_OVERLAY_KEY = "softwareupdate_check_overlay"
@@ -638,15 +640,45 @@ class SoftwareUpdatePlugin(
                 self._save_update_log()
 
     def _is_octoprint_outdated_and_can_update(self):
-        information, update_available, update_possible = self.get_current_versions()
-        if not update_available or not update_possible or "octoprint" not in information:
+        checks = self._get_configured_checks()
+        check = checks.get("octoprint", None)
+        if not check:
             return False
 
-        octoprint_information = information["octoprint"]
-        return (
-            octoprint_information["updateAvailable"]
-            and octoprint_information["updatePossible"]
+        check = self._populated_check("octoprint", check)
+        credentials = self._settings.get(["credentials"], merged=True)
+
+        _, update_available, update_possible, _, _ = self._get_current_version(
+            "octoprint", check, credentials=credentials
         )
+        if not update_available or not update_possible:
+            return False
+
+        restart_type = self._get_restart_type(check)
+        restart_command = self._get_restart_command(restart_type)
+        return restart_command is not None
+
+    def _get_restart_type(self, check):
+        if check.get("restart") in self.VALID_RESTART_TYPES:
+            return check["restart"]
+        elif "pip" in check or check.get("method") in self.OCTOPRINT_RESTART_TYPES:
+            return "octoprint"
+        else:
+            target_restart_type = None
+
+        return target_restart_type
+
+    def _get_restart_command(self, restart_type):
+        if restart_type == "octoprint":
+            return self._settings.global_get(
+                ["server", "commands", "serverRestartCommand"]
+            )
+        elif restart_type == "environment":
+            return self._settings.global_get(
+                ["server", "commands", "systemRestartCommand"]
+            )
+        else:
+            return None
 
     # ~~ SettingsPlugin API
 
@@ -1100,6 +1132,8 @@ class SoftwareUpdatePlugin(
         )(view)()
 
     @octoprint.plugin.BlueprintPlugin.route("/check", methods=["GET"])
+    @no_firstrun_access
+    @Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.require(403)
     def check_for_update(self):
         if (
             not Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.can()
@@ -1443,7 +1477,11 @@ class SoftwareUpdatePlugin(
 
     def _is_wizard_update_required(self):
         firstrun = self._settings.global_get(["server", "firstRun"])
-        return firstrun and self._is_octoprint_outdated_and_can_update()
+        return (
+            firstrun
+            and self._is_octoprint_outdated_and_can_update()
+            and not self._is_settings_wizard_required()
+        )
 
     def _is_settings_wizard_required(self):
         checks = self._get_configured_checks()
@@ -1456,6 +1494,14 @@ class SoftwareUpdatePlugin(
 
     def get_wizard_version(self):
         return 1
+
+    def get_wizard_details(self):
+        result = {}
+        if self._is_wizard_update_required():
+            information, _, _ = self.get_current_versions()
+            data = information.get("octoprint", {})
+            result["update"] = data
+        return result
 
     ##~~ EventHandlerPlugin API
 
@@ -1900,15 +1946,7 @@ class SoftwareUpdatePlugin(
                 if target_result is not None:
                     target_results[target] = target_result
 
-                    if "restart" in check:
-                        target_restart_type = check["restart"]
-                    elif (
-                        "pip" in check
-                        or check.get("method") in self.OCTOPRINT_RESTART_TYPES
-                    ):
-                        target_restart_type = "octoprint"
-                    else:
-                        target_restart_type = None
+                    target_restart_type = self._get_restart_type(check)
 
                     # if our update requires a restart we have to determine which type
                     if restart_type is None or (
@@ -1939,16 +1977,7 @@ class SoftwareUpdatePlugin(
                 # one of our updates requires a restart of either type "octoprint" or "environment". Let's see if
                 # we can actually perform that
 
-                restart_command = None
-                if restart_type == "octoprint":
-                    restart_command = self._settings.global_get(
-                        ["server", "commands", "serverRestartCommand"]
-                    )
-                elif restart_type == "environment":
-                    restart_command = self._settings.global_get(
-                        ["server", "commands", "systemRestartCommand"]
-                    )
-
+                restart_command = self._get_restart_command(restart_type)
                 if restart_command:
                     self._send_client_message(
                         "restarting",
