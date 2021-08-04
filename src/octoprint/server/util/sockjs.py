@@ -96,11 +96,12 @@ class PrinterStateConnection(
         "*": [],
     }
 
+    # TODO: Permissions should be overridable from plugins, this special case stuff here is a hack
     _emit_permissions = {
         "connected": [],
         "reauthRequired": [],
         "plugin": lambda payload: []
-        if payload.get("plugin") == "backup"
+        if payload.get("plugin") in ("backup", "softwareupdate")
         and settings().getBoolean(["server", "firstRun"])
         else [Permissions.STATUS],
         "*": [Permissions.STATUS],

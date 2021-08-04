@@ -1,5 +1,6 @@
 approve_label: "approved"
 problem_label: "needs some work"
+ignore_label: "skip validation"
 
 allowed_targets: ["maintenance", "devel", "staging/maintenance", "staging/devel"]
 forbidden_sources:

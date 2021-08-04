@@ -607,6 +607,11 @@ Eject
 EStop
    An ``M112`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
+FilamentChange
+  An ``M600``, ``M701`` or ``M702`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
+
+  .. versionadded:: 1.7.0
+
 PositionUpdate
    The response to an ``M114`` was received by OctoPrint. The payload contains the current position information
    parsed from the response and (in the case of the selected tool ``t`` and the current feedrate ``f``) tracked

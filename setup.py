@@ -24,7 +24,7 @@ INSTALL_REQUIRES = [
     # additional OctoPrint plugins that are maintained on a different release cycle
     "OctoPrint-FileCheck>=2021.2.23",
     "OctoPrint-FirmwareCheck>=2021.2.4",
-    "OctoPrint-PiSupport>=2021.3.26",
+    "OctoPrint-PiSupport>=2021.8.2",
     # the following dependencies are non trivial to update since later versions
     # introduce backwards incompatible changes that might affect plugins, or due to
     # other observed problems
@@ -35,12 +35,12 @@ INSTALL_REQUIRES = [
     "flask>=1.1.2,<2",
     "Jinja2>=2.11.2,<3",
     "Flask-Login>=0.5,<0.6",  # flask-login doesn't use semver & breaks stuff on minor version increases
-    "Flask-Babel>=1.0,<2",
+    "Flask-Babel>=1.0,<2",  # newer versions require Python 3
     "Flask-Assets>=2.0,<3",
-    "werkzeug>=1.0.1,<2",
-    "itsdangerous>=1.1.0,<2",
-    "cachelib>=0.1,<1",
-    "PyYAML>=5.3.1,<6",
+    "werkzeug>=1.0.1,<2",  # newer versions require Python 3
+    "itsdangerous>=1.1.0,<2",  # newer versions require Python 3
+    "cachelib>=0.1,<0.2",  # newer versions require Python 3
+    "PyYAML>=5.4.1,<6",
     "pyserial>=3.4,<4",
     "netaddr>=0.7.19,<1",
     "watchdog==1.0.0",
@@ -53,26 +53,26 @@ INSTALL_REQUIRES = [
     "semantic_version>=2.8.5,<3",
     "psutil>=5.7,<6",
     "Click>=7.1.2,<8",
-    "feedparser>=6.0.2,<7",
+    "feedparser>=6.0.8,<7",
     "future>=0.18.2,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
     "websocket-client>=0.57,<1",
     "wrapt>=1.12.1,<2",
     "emoji>=0.5.4,<1",
-    "immutabledict>=1.2.0,<2",
+    "immutabledict>=2.1,<3",
     "sentry-sdk>=0.15.1,<1",
     "filetype>=1.0.7,<2",
-    "zeroconf>=0.24,<0.25",
+    "zeroconf>=0.33,<0.34",
     "zipstream-new>=1.1.8,<1.2",
     "pathvalidate>=2.4.1,<3",
     "colorlog>=5.0.1,<6",
     # vendor bundled dependencies
-    "unidecode>=0.04.14,<0.05",  # dependency of awesome-slugify
+    "unidecode",  # dependency of awesome-slugify, leave w/o range to not cause dependency hell w/ Octolapse deps
     "blinker>=1.4,<2",  # dependency of flask_principal
 ]
 
 # OSX specific requirements
 INSTALL_REQUIRES_OSX = [
-    "appdirs>=1.4.4",
+    "appdirs>=1.4.4,<2",
 ]
 
 # Additional requirements for optional install options

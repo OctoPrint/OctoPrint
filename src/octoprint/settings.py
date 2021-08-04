@@ -350,6 +350,7 @@ default_settings = {
                     "plugin_pluginmanager",
                     "plugin_softwareupdate",
                     "plugin_announcements",
+                    "plugin_eventmanager",
                     "plugin_backup",
                     "plugin_tracking",
                     "plugin_errortracking",

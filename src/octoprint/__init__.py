@@ -266,16 +266,16 @@ def init_logging(
             "formatters": {
                 "simple": {"format": simple_format},
                 "colored": {
-                    "class": "colorlog.ColoredFormatter",
-                    "format": "%(log_color)s" + simple_format,
+                    "()": "colorlog.ColoredFormatter",
+                    "format": "%(log_color)s" + simple_format + "%(reset)s",
+                    "reset": True,
                     "log_colors": {
-                        "DEBUG": "light_white",
+                        "DEBUG": "cyan",
                         "INFO": "white",
                         "WARNING": "yellow",
                         "ERROR": "red",
                         "CRITICAL": "bold_red",
                     },
-                    "reset": True,
                 },
                 "serial": {"format": "%(asctime)s - %(message)s"},
                 "timings": {"format": "%(asctime)s - %(message)s"},

@@ -146,6 +146,8 @@ date of first contribution):
   * ["sparxooo"](https://github.com/sparxooo)
   * ["Stevil Knevil"](https://github.com/StevilKnevil)
   * [ldursw](https://github.com/ldursw)
+  * [Ian Wilt](https://github.com/ianwiltdotcom)
+  * [Ben Sycha](https://github.com/Sycha)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
