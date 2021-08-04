@@ -5979,7 +5979,6 @@ msgid "System Information"
 msgstr "Systeminformation"
 
 #: src/octoprint/templates/dialogs/about/systeminfo.jinja2:3
-#, fuzzy
 msgid ""
 "Please always share a Systeminfo Bundle when requesting support on the "
 "forums or\n"
