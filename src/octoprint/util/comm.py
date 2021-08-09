@@ -3752,19 +3752,18 @@ class MachineCom(object):
                 # noinspection PyProtectedMember
                 set_close_exec(serial_obj._port_handle)
 
-            if hasattr(serial_obj, "set_low_latency_mode"):
-                try:
-                    serial_obj.set_low_latency_mode(
-                        settings().getBoolean(["serial", "lowLatency"])
+            if settings().getBoolean(["serial", "lowLatency"]):
+                if hasattr(serial_obj, "set_low_latency_mode"):
+                    try:
+                        serial_obj.set_low_latency_mode(True)
+                    except Exception:
+                        self._logger.exception(
+                            "Could not set low latency mode on serial port, continuing without"
+                        )
+                else:
+                    self._logger.info(
+                        "Platform doesn't support low latency mode on serial port"
                     )
-                except Exception:
-                    self._logger.exception(
-                        "Could not set low latency mode on serial port, continuing without"
-                    )
-            else:
-                self._logger.info(
-                    "Platform doesn't support low latency mode on serial port"
-                )
 
             return BufferedReadlineWrapper(serial_obj)
 
