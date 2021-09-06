@@ -188,6 +188,25 @@ regex_firmware_splitter = re.compile(r"(^|\s+)([A-Z][A-Z0-9_]*):")
 regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 """Regex to use for request line numbers in resend requests"""
 
+regex_serial_devices = re.compile(r"^(?:ttyUSB|ttyACM|tty\.usb|cu\.|cuaU|ttyS|rfcomm).*")
+"""Regex used to filter out valid tty devices"""
+
+
+def _searchFiles(directory, pattern):
+    """
+    Searches the directory for files matching the regex pattern
+
+    We could use glob, but that might require multiple glob executions (and
+    multiple directory file listings), which can end up being slow on the
+    low-end devices we support.
+    """
+    result = []
+    with os.scandir(directory) as it:
+        for entry in it:
+            if pattern.match(entry.name):
+                result.append(entry.path)
+    return result
+
 
 def serialList():
     if os.name == "nt":
@@ -204,15 +223,7 @@ def serialList():
             pass
 
     else:
-        candidates = (
-            glob.glob("/dev/ttyUSB*")
-            + glob.glob("/dev/ttyACM*")
-            + glob.glob("/dev/tty.usb*")
-            + glob.glob("/dev/cu.*")
-            + glob.glob("/dev/cuaU*")
-            + glob.glob("/dev/ttyS*")
-            + glob.glob("/dev/rfcomm*")
-        )
+        candidates = _searchFiles("/dev", regex_serial_devices)
 
     # additional ports
     additionalPorts = settings().get(["serial", "additionalPorts"])
