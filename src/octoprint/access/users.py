@@ -5,7 +5,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import hashlib
-import io
 import logging
 import os
 import uuid
@@ -14,7 +13,6 @@ import uuid
 from builtins import bytes, range
 
 import wrapt
-import yaml
 from flask_login import AnonymousUserMixin, UserMixin
 from past.builtins import basestring
 from werkzeug.local import LocalProxy
@@ -24,7 +22,7 @@ from octoprint.access.permissions import OctoPrintPermission, Permissions
 from octoprint.settings import settings as s
 from octoprint.util import atomic_write, deprecated, generate_api_key
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import monotonic_time, to_bytes
+from octoprint.util import monotonic_time, to_bytes, yaml
 
 
 class UserManager(GroupChangeListener, object):
@@ -519,64 +517,60 @@ class FilebasedUserManager(UserManager):
 
     def _load(self):
         if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
-            # noinspection PyBroadException
-            with io.open(self._userfile, "rt", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+            data = yaml.load_from_file(path=self._userfile)
 
-                if not data or not isinstance(data, dict):
-                    self._logger.fatal(
-                        "{} does not contain a valid map of users. Fix "
-                        "the file, or remove it, then restart OctoPrint.".format(
-                            self._userfile
-                        )
+            if not data or not isinstance(data, dict):
+                self._logger.fatal(
+                    "{} does not contain a valid map of users. Fix "
+                    "the file, or remove it, then restart OctoPrint.".format(
+                        self._userfile
                     )
-                    raise CorruptUserStorage()
+                )
+                raise CorruptUserStorage()
 
-                for name, attributes in data.items():
-                    if not isinstance(attributes, dict):
-                        continue
+            for name, attributes in data.items():
+                if not isinstance(attributes, dict):
+                    continue
 
-                    permissions = []
-                    if "permissions" in attributes:
-                        permissions = attributes["permissions"]
+                permissions = []
+                if "permissions" in attributes:
+                    permissions = attributes["permissions"]
 
-                    if "groups" in attributes:
-                        groups = set(attributes["groups"])
-                    else:
-                        groups = {self._group_manager.user_group}
+                if "groups" in attributes:
+                    groups = set(attributes["groups"])
+                else:
+                    groups = {self._group_manager.user_group}
 
-                    # migrate from roles to permissions
-                    if "roles" in attributes and "permissions" not in attributes:
-                        self._logger.info(
-                            "Migrating user {} to new granular permission system".format(
-                                name
-                            )
-                        )
-
-                        groups |= set(self._migrate_roles_to_groups(attributes["roles"]))
-                        self._dirty = True
-
-                    apikey = None
-                    if "apikey" in attributes:
-                        apikey = attributes["apikey"]
-                    settings = {}
-                    if "settings" in attributes:
-                        settings = attributes["settings"]
-
-                    self._users[name] = User(
-                        username=name,
-                        passwordHash=attributes["password"],
-                        active=attributes["active"],
-                        permissions=self._to_permissions(*permissions),
-                        groups=self._to_groups(*groups),
-                        apikey=apikey,
-                        settings=settings,
+                # migrate from roles to permissions
+                if "roles" in attributes and "permissions" not in attributes:
+                    self._logger.info(
+                        "Migrating user {} to new granular permission system".format(name)
                     )
-                    for sessionid in self._sessionids_by_userid.get(name, set()):
-                        if sessionid in self._session_users_by_session:
-                            self._session_users_by_session[sessionid].update_user(
-                                self._users[name]
-                            )
+
+                    groups |= set(self._migrate_roles_to_groups(attributes["roles"]))
+                    self._dirty = True
+
+                apikey = None
+                if "apikey" in attributes:
+                    apikey = attributes["apikey"]
+                settings = {}
+                if "settings" in attributes:
+                    settings = attributes["settings"]
+
+                self._users[name] = User(
+                    username=name,
+                    passwordHash=attributes["password"],
+                    active=attributes["active"],
+                    permissions=self._to_permissions(*permissions),
+                    groups=self._to_groups(*groups),
+                    apikey=apikey,
+                    settings=settings,
+                )
+                for sessionid in self._sessionids_by_userid.get(name, set()):
+                    if sessionid in self._session_users_by_session:
+                        self._session_users_by_session[sessionid].update_user(
+                            self._users[name]
+                        )
 
             if self._dirty:
                 self._save()
@@ -608,9 +602,7 @@ class FilebasedUserManager(UserManager):
         with atomic_write(
             self._userfile, mode="wt", permissions=0o600, max_permissions=0o666
         ) as f:
-            yaml.safe_dump(
-                data, f, default_flow_style=False, indent=2, allow_unicode=True
-            )
+            yaml.save_to_file(data, file=f, pretty=True)
             self._dirty = False
         self._load()
 

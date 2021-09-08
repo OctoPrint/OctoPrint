@@ -5,7 +5,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import logging
 import os
 from collections import namedtuple
@@ -16,6 +15,7 @@ import octoprint.plugin
 import octoprint.util
 from octoprint.events import Events, eventManager
 from octoprint.util import get_fully_qualified_classname as fqcn
+from octoprint.util import yaml
 
 from .analysis import AnalysisQueue, QueueEntry  # noqa: F401
 from .destinations import FileDestinations  # noqa: F401
@@ -941,8 +941,6 @@ class FileManager(object):
     def save_recovery_data(self, origin, path, pos):
         import time
 
-        import yaml
-
         from octoprint.util import atomic_write
 
         data = {
@@ -953,9 +951,7 @@ class FileManager(object):
         }
         try:
             with atomic_write(self._recovery_file, mode="wt", max_permissions=0o666) as f:
-                yaml.safe_dump(
-                    data, stream=f, default_flow_style=False, indent=2, allow_unicode=True
-                )
+                yaml.save_to_file(data, file=f, pretty=True)
         except Exception:
             self._logger.exception(
                 "Could not write recovery data to file {}".format(self._recovery_file)
@@ -976,11 +972,9 @@ class FileManager(object):
         if not os.path.isfile(self._recovery_file):
             return None
 
-        import yaml
-
         try:
-            with io.open(self._recovery_file, "rt", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+            data = yaml.load_from_file(path=self._recovery_file)
+
             if not isinstance(data, dict) or not all(
                 map(lambda x: x in data, ("origin", "path", "pos", "date"))
             ):

@@ -10,7 +10,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import copy
 import hashlib
-import io
 import logging
 import logging.handlers
 import os
@@ -34,7 +33,7 @@ from octoprint.server.util.flask import (
     no_firstrun_access,
     with_revalidation_checking,
 )
-from octoprint.util import dict_merge, get_formatted_size, to_unicode
+from octoprint.util import dict_merge, get_formatted_size, to_unicode, yaml
 from octoprint.util.pip import create_pip_caller
 from octoprint.util.version import (
     get_comparable_version,
@@ -476,11 +475,8 @@ class SoftwareUpdatePlugin(
         if not os.path.isfile(self._version_cache_path):
             return
 
-        import yaml
-
         try:
-            with io.open(self._version_cache_path, "rt", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+            data = yaml.load_from_file(path=self._version_cache_path)
             timestamp = os.stat(self._version_cache_path).st_mtime
         except Exception:
             self._logger.exception("Error while loading version cache from disk")
@@ -517,8 +513,6 @@ class SoftwareUpdatePlugin(
                 self._logger.exception("Error parsing in version cache data")
 
     def _save_version_cache(self):
-        import yaml
-
         from octoprint._version import get_versions
         from octoprint.util import atomic_write
 
@@ -528,13 +522,7 @@ class SoftwareUpdatePlugin(
         with atomic_write(
             self._version_cache_path, mode="wt", max_permissions=0o666
         ) as file_obj:
-            yaml.safe_dump(
-                self._version_cache,
-                stream=file_obj,
-                default_flow_style=False,
-                indent=2,
-                allow_unicode=True,
-            )
+            yaml.save_to_file(self._version_cache, file=file_obj, pretty=True)
 
         self._version_cache_dirty = False
         self._version_cache_timestamp = time.time()
@@ -552,11 +540,8 @@ class SoftwareUpdatePlugin(
         if not os.path.isfile(self._update_log_path):
             return
 
-        import yaml
-
         try:
-            with io.open(self._update_log_path, "rt", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+            data = yaml.load_from_file(path=self._update_log_path)
         except Exception:
             self._logger.exception("Error while loading update log from disk")
         else:
@@ -588,20 +573,16 @@ class SoftwareUpdatePlugin(
             self._logger.info("Loaded update log from disk")
 
     def _save_update_log(self):
-        import yaml
-
         from octoprint.util import atomic_write
 
         with self._update_log_mutex:
             with atomic_write(
                 self._update_log_path, mode="wt", max_permissions=0o666
             ) as file_obj:
-                yaml.safe_dump(
+                yaml.save_to_file(
                     sorted(self._update_log, key=lambda x: x["datetime"]),
-                    stream=file_obj,
-                    default_flow_style=False,
-                    indent=2,
-                    allow_unicode=True,
+                    file=file_obj,
+                    pretty=True,
                 )
                 self._update_log_dirty = False
 

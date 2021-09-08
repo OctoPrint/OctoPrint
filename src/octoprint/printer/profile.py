@@ -147,7 +147,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import copy
-import io
 import logging
 import os
 
@@ -157,7 +156,13 @@ except ImportError:
     from scandir import scandir
 
 from octoprint.settings import settings
-from octoprint.util import dict_contains_keys, dict_merge, dict_sanitize, is_hidden_path
+from octoprint.util import (
+    dict_contains_keys,
+    dict_merge,
+    dict_sanitize,
+    is_hidden_path,
+    yaml,
+)
 
 
 class SaveError(Exception):
@@ -507,10 +512,7 @@ class PrinterProfileManager(object):
         if not os.path.exists(path) or not os.path.isfile(path):
             return None
 
-        import yaml
-
-        with io.open(path, "rt", encoding="utf-8") as f:
-            profile = yaml.safe_load(f)
+        profile = yaml.load_from_file(path=path)
 
         if profile is None or not isinstance(profile, dict):
             raise InvalidProfileError("Profile is None or not a dictionary")
@@ -542,15 +544,11 @@ class PrinterProfileManager(object):
                 "Profile %s already exists and not allowed to overwrite" % profile["id"]
             )
 
-        import yaml
-
         from octoprint.util import atomic_write
 
         try:
             with atomic_write(path, mode="wt", max_permissions=0o666) as f:
-                yaml.safe_dump(
-                    profile, f, default_flow_style=False, indent=2, allow_unicode=True
-                )
+                yaml.save_to_file(profile, file=f, pretty=True)
         except Exception as e:
             self._logger.exception(
                 "Error while trying to save profile %s" % profile["id"]
