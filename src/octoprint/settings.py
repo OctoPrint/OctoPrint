@@ -31,11 +31,9 @@ import re
 import sys
 import time
 
-import yaml
-import yaml.parser
-
-# noinspection PyCompatibility
+# noinspection PyCompatibilitys
 from past.builtins import basestring
+from yaml import YAMLError
 
 try:
     from collections import ChainMap
@@ -58,6 +56,7 @@ from octoprint.util import (
     dict_merge,
     generate_api_key,
     is_hidden_path,
+    yaml,
 )
 
 _APPNAME = "OctoPrint"
@@ -956,9 +955,7 @@ class Settings(object):
 
     @property
     def effective_yaml(self):
-        import yaml
-
-        return yaml.safe_dump(self.effective)
+        return yaml.dump(self.effective)
 
     @property
     def effective_hash(self):
@@ -974,9 +971,7 @@ class Settings(object):
 
     @property
     def config_yaml(self):
-        import yaml
-
-        return yaml.safe_dump(self._config)
+        return yaml.dump(self._config)
 
     @property
     def config_hash(self):
@@ -1028,10 +1023,10 @@ class Settings(object):
         if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
             with io.open(self._configfile, "rt", encoding="utf-8", errors="replace") as f:
                 try:
-                    self._config = yaml.safe_load(f)
+                    self._config = yaml.load_from_file(file=f)
                     self._mtime = self.last_modified
 
-                except yaml.YAMLError as e:
+                except YAMLError as e:
                     details = str(e)
 
                     if hasattr(e, "problem_mark"):
@@ -1097,8 +1092,7 @@ class Settings(object):
 
         if isinstance(overlay, basestring):
             if os.path.exists(overlay) and os.path.isfile(overlay):
-                with io.open(overlay, "rt", encoding="utf-8", errors="replace") as f:
-                    config = yaml.safe_load(f)
+                config = yaml.load_from_file(path=overlay)
         elif isinstance(overlay, dict):
             config = overlay
         else:
@@ -1119,7 +1113,7 @@ class Settings(object):
         assert isinstance(overlay, dict)
 
         if key is None:
-            overlay_yaml = yaml.safe_dump(overlay)
+            overlay_yaml = yaml.dump(overlay)
             import hashlib
 
             hash = hashlib.md5()
@@ -1688,13 +1682,7 @@ class Settings(object):
                 permissions=0o600,
                 max_permissions=0o666,
             ) as configFile:
-                yaml.safe_dump(
-                    self._config,
-                    configFile,
-                    default_flow_style=False,
-                    indent=2,
-                    allow_unicode=True,
-                )
+                yaml.save_to_file(self._config, file=configFile)
                 self._dirty = False
         except Exception:
             self._logger.exception("Error while saving config.yaml!")

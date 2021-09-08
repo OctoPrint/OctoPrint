@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-import io
 import os
 import threading
 from collections import defaultdict
 
 import flask
-import yaml
 from flask_babel import gettext
 
 import octoprint.plugin
@@ -16,7 +14,13 @@ from octoprint.access.permissions import Permissions
 from octoprint.server import NO_CONTENT, admin_permission, current_user
 from octoprint.server.util.flask import no_firstrun_access, restricted_access
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import ResettableTimer, atomic_write, generate_api_key, monotonic_time
+from octoprint.util import (
+    ResettableTimer,
+    atomic_write,
+    generate_api_key,
+    monotonic_time,
+    yaml,
+)
 
 CUTOFF_TIME = 10 * 60  # 10min
 POLL_TIMEOUT = 5  # 5 seconds
@@ -441,10 +445,7 @@ class AppKeysPlugin(
                 return
 
             try:
-                with io.open(
-                    self._key_path, "rt", encoding="utf-8", errors="strict"
-                ) as f:
-                    persisted = yaml.safe_load(f)
+                persisted = yaml.load_from_file(path=self._key_path)
             except Exception:
                 self._logger.exception(
                     "Could not load application keys from {}".format(self._key_path)
@@ -469,7 +470,7 @@ class AppKeysPlugin(
 
             try:
                 with atomic_write(self._key_path, mode="wt") as f:
-                    yaml.safe_dump(to_persist, f, allow_unicode=True)
+                    yaml.save_to_file(to_persist, file=f)
             except Exception:
                 self._logger.exception(
                     "Could not write application keys to {}".format(self._key_path)

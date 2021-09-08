@@ -8,6 +8,8 @@ import sys
 
 import click
 
+from octoprint.util import yaml
+
 click.disable_unicode_literals_warning = True
 
 # ~~ "octoprint util" commands
@@ -97,8 +99,6 @@ def gcode_command(
 
     import time
 
-    import yaml
-
     from octoprint.util import monotonic_time
     from octoprint.util.gcodeInterpreter import gcode
 
@@ -156,14 +156,7 @@ def gcode_command(
         sys.exit(-1)
 
     click.echo("RESULTS:")
-    click.echo(
-        yaml.safe_dump(
-            interpreter.get_result(),
-            default_flow_style=False,
-            indent=2,
-            allow_unicode=True,
-        )
-    )
+    click.echo(yaml.dump(interpreter.get_result(), pretty=True))
 
 
 if __name__ == "__main__":

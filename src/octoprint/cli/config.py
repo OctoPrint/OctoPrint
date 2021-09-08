@@ -10,10 +10,10 @@ import logging
 import pprint
 
 import click
-import yaml
 
 from octoprint import FatalStartupError, init_settings
 from octoprint.cli import get_ctx_obj_option, standard_options
+from octoprint.util import yaml
 
 click.disable_unicode_literals_warning = True
 
@@ -217,9 +217,7 @@ def get_command(ctx, path, as_json=False, as_yaml=False, as_raw=False):
     if as_json:
         output = json.dumps(value)
     elif as_yaml:
-        output = yaml.safe_dump(
-            value, default_flow_style=False, indent=2, allow_unicode=True
-        )
+        output = yaml.dump(value, pretty=True)
     elif as_raw:
         output = value
     else:
@@ -243,9 +241,7 @@ def effective_command(ctx, as_json=False, as_yaml=False, as_raw=False):
     if as_json:
         output = json.dumps(value)
     elif as_yaml:
-        output = yaml.safe_dump(
-            value, default_flow_style=False, indent=2, allow_unicode=True
-        )
+        output = yaml.dump(value, pretty=True)
     elif as_raw:
         output = value
     else:
