@@ -1060,18 +1060,14 @@ function showProgressModal(options, promise) {
 
     var progress = $('<div class="progress progress-text-centered"></div>');
     var progressBar = $('<div class="bar"></div>').addClass(barClassSuccess);
-    var progressTextBack = $('<span class="progress-text-back"></span>');
-    var progressTextFront = $('<span class="progress-text-front"></span>').width(
-        progress.width()
-    );
+    var progressText = $('<span class="progress-text-back"></span>');
 
     if (max === undefined) {
         progress.addClass("progress-striped active");
         progressBar.width("100%");
     }
 
-    progressBar.append(progressTextFront);
-    progress.append(progressTextBack).append(progressBar);
+    progress.append(progressBar).append(progressText);
 
     var button = $('<button class="btn">' + buttonText + "</button>")
         .prop("disabled", true)
@@ -1127,9 +1123,16 @@ function showProgressModal(options, promise) {
 
             // update progress bar
             progressBar.width(String(value) + "%");
-            progressTextFront.text(short);
-            progressTextBack.text(short);
-            progressTextFront.width(progress.width());
+            progressText.text(short);
+            if (value < 50 && progressText.hasClass("progress-text-front")) {
+                progressText
+                    .removeClass("progress-text-front")
+                    .addClass("progress-text-back");
+            } else if (value >= 50 && progressText.hasClass("progress-text-back")) {
+                progressText
+                    .removeClass("progress-text-back")
+                    .addClass("progress-text-front");
+            }
 
             // if not successful, apply failure class
             if (!success && !progressBar.hasClass(barClassFailure)) {
