@@ -453,6 +453,13 @@ $(function () {
                     hls.loadSource(self.webcam_streamUrl());
                     hls.attachMedia(video_element);
                 }
+            } else if (streamType == "webrtc") {
+                webcam_element = $(
+                    '<video id="webcam_webrtc" muted autoplay style="width: 100%"/>'
+                );
+                video_element = webcam_element[0];
+
+                startWebRTC(video_element, self.webcam_streamUrl());
             } else {
                 throw "Unknown stream type " + streamType;
             }

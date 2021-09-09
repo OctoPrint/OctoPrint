@@ -41,6 +41,7 @@ $(function () {
         self.webcamLoaded = ko.observable(false);
         self.webcamMjpgEnabled = ko.observable(false);
         self.webcamHlsEnabled = ko.observable(false);
+        self.webcamWebRTCEnabled = ko.observable(false);
         self.webcamError = ko.observable(false);
 
         self.keycontrolActive = ko.observable(false);
@@ -524,6 +525,8 @@ $(function () {
                 self._switchToMjpgWebcam();
             } else if (streamType == "hls") {
                 self._switchToHlsWebcam();
+            } else if (streamType == "webrtc") {
+                self._switchToWebRTCWebcam();
             } else {
                 throw "Unknown stream type " + streamType;
             }
@@ -708,6 +711,7 @@ $(function () {
 
                 self.webcamHlsEnabled(false);
                 self.webcamMjpgEnabled(true);
+                self.webcamWebRTCEnabled(false);
             }
         };
 
@@ -729,6 +733,17 @@ $(function () {
 
             self.webcamMjpgEnabled(false);
             self.webcamHlsEnabled(true);
+            self.webcamWebRTCEnabled(false);
+        };
+
+        self._switchToWebRTCWebcam = function () {
+            var video = document.getElementById("webcam_webrtc");
+
+            startWebRTC(video, self.settings.webcam_streamUrl());
+
+            self.webcamMjpgEnabled(false);
+            self.webcamHlsEnabled(false);
+            self.webcamWebRTCEnabled(true);
         };
     }
 

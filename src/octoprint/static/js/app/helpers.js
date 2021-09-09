@@ -1543,6 +1543,10 @@ var copyToClipboard = function (text) {
 
 var determineWebcamStreamType = function (streamUrl) {
     if (streamUrl) {
+        if (streamUrl.startsWith("webrtc://")) {
+            return "webrtc";
+        }
+
         var lastDotPosition = streamUrl.lastIndexOf(".");
         var firstQuotationSignPosition = streamUrl.indexOf("?");
         if (
@@ -1618,4 +1622,68 @@ var deepMerge = function (target, source) {
     });
 
     return target;
+};
+
+var negotiateWebRTC = function (streamUrl) {
+    pc.addTransceiver("video", {direction: "recvonly"});
+    pc.addTransceiver("audio", {direction: "recvonly"});
+    return pc
+        .createOffer()
+        .then(function (offer) {
+            return pc.setLocalDescription(offer);
+        })
+        .then(function () {
+            // Wait for ICE gathering to complete
+            return new Promise(function (resolve) {
+                if (pc.iceGatheringState === "complete") {
+                    resolve();
+                } else {
+                    function checkState() {
+                        if (pc.iceGatheringState === "complete") {
+                            pc.removeEventListener("icegatheringstatechange", checkState);
+                            resolve();
+                        }
+                    }
+                    pc.addEventListener("icegatheringstatechange", checkState);
+                }
+            });
+        })
+        .then(function () {
+            var offer = pc.localDescription;
+            streamUrl = streamUrl.slice("webrtc://".length);
+            return fetch("http://" + streamUrl, {
+                body: JSON.stringify({
+                    sdp: offer.sdp,
+                    type: offer.type
+                }),
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                method: "POST"
+            });
+        })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (answer) {
+            return pc.setRemoteDescription(answer);
+        })
+        .catch(function (e) {
+            console.error(e);
+        });
+};
+
+var startWebRTC = function (videoElement, streamUrl) {
+    var config = {
+        sdpSemantics: "unified-plan",
+        iceServers: [{urls: ["stun:stun.l.google.com:19302"]}]
+    };
+    pc = new RTCPeerConnection(config);
+    pc.addEventListener("track", function (evt) {
+        if (evt.track.kind == "video") {
+            videoElement.srcObject = evt.streams[0];
+        }
+    });
+
+    negotiateWebRTC(streamUrl);
 };
