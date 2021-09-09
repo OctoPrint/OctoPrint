@@ -62,7 +62,6 @@ INSTALL_REQUIRES = [
     "filetype>=1.0.7,<2",
     "zipstream-new>=1.1.8,<1.2",
     # vendor bundled dependencies
-    "unidecode",  # dependency of awesome-slugify, leave w/o range to not cause dependency hell w/ Octolapse deps
     "blinker>=1.4,<2",  # dependency of flask_principal
 ]
 
@@ -78,6 +77,8 @@ INSTALL_REQUIRES_PYTHON2 = [
     "enum34>=1.1.10,<1.2",
     "frozendict==1.2",  # newer versions from different maintainer require Python 3
     "colorlog<5",  # newer versions require Python 3
+    # vendor bundled dependencies
+    "unidecode<1.3",  # dependency of awesome-slugify, newer versions require Python 3
 ]
 
 # Python 3 specific requirements
@@ -88,6 +89,8 @@ INSTALL_REQUIRES_PYTHON3 = [
     "immutabledict>=2.1,<3",
     "pathvalidate>=2.4.1,<3",
     "colorlog>=5.0.1,<6",
+    # vendor bundled dependencies
+    "unidecode",  # dependency of awesome-slugify, leave w/o range to not cause dependency hell w/ Octolapse deps
 ]
 
 # OSX specific requirements
