@@ -24,6 +24,11 @@ try:
 except ImportError:
     import Queue as queue
 
+try:
+    from os import scandir
+except ImportError:
+    from scandir import scandir
+
 import logging
 from collections import deque
 
@@ -192,22 +197,6 @@ regex_serial_devices = re.compile(r"^(?:ttyUSB|ttyACM|tty\.usb|cu\.|cuaU|ttyS|rf
 """Regex used to filter out valid tty devices"""
 
 
-def _searchFiles(directory, pattern):
-    """
-    Searches the directory for files matching the regex pattern
-
-    We could use glob, but that might require multiple glob executions (and
-    multiple directory file listings), which can end up being slow on the
-    low-end devices we support.
-    """
-    result = []
-    with os.scandir(directory) as it:
-        for entry in it:
-            if pattern.match(entry.name):
-                result.append(entry.path)
-    return result
-
-
 def serialList():
     if os.name == "nt":
         candidates = []
@@ -223,7 +212,11 @@ def serialList():
             pass
 
     else:
-        candidates = _searchFiles("/dev", regex_serial_devices)
+        candidates = []
+        with scandir("/dev") as it:
+            for entry in it:
+                if regex_serial_devices.match(entry.name):
+                    candidates.append(entry.path)
 
     # additional ports
     additionalPorts = settings().get(["serial", "additionalPorts"])
