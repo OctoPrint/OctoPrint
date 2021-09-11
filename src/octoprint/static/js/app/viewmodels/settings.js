@@ -439,6 +439,7 @@ $(function () {
             );
             var streamType = determineWebcamStreamType(self.webcam_streamUrl());
             var webcam_element;
+            var webrtc_peer_connection;
             if (streamType == "mjpg") {
                 webcam_element = $('<img src="' + self.webcam_streamUrl() + '">');
             } else if (streamType == "hls") {
@@ -459,7 +460,10 @@ $(function () {
                 );
                 video_element = webcam_element[0];
 
-                startWebRTC(video_element, self.webcam_streamUrl());
+                webrtc_peer_connection = startWebRTC(
+                    video_element,
+                    self.webcam_streamUrl()
+                );
             } else {
                 throw "Unknown stream type " + streamType;
             }
@@ -475,6 +479,10 @@ $(function () {
                 message: message,
                 onclose: function () {
                     self.testWebcamStreamUrlBusy(false);
+                    if (webrtc_peer_connection != null) {
+                        webrtc_peer_connection.close();
+                        webrtc_peer_connection = null;
+                    }
                 }
             });
         };

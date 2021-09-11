@@ -43,6 +43,7 @@ $(function () {
         self.webcamHlsEnabled = ko.observable(false);
         self.webcamWebRTCEnabled = ko.observable(false);
         self.webcamError = ko.observable(false);
+        self.webRTCPeerConnection = null;
 
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
@@ -739,7 +740,22 @@ $(function () {
         self._switchToWebRTCWebcam = function () {
             var video = document.getElementById("webcam_webrtc");
 
-            startWebRTC(video, self.settings.webcam_streamUrl());
+            // Close any existing, disconnected connection
+            if (
+                self.webRTCPeerConnection != null &&
+                self.webRTCPeerConnection.connectionState != "connected"
+            ) {
+                self.webRTCPeerConnection.close();
+                self.webRTCPeerConnection = null;
+            }
+
+            // Open a new connection if necessary
+            if (self.webRTCPeerConnection == null) {
+                self.webRTCPeerConnection = startWebRTC(
+                    video,
+                    self.settings.webcam_streamUrl()
+                );
+            }
 
             self.webcamMjpgEnabled(false);
             self.webcamHlsEnabled(false);

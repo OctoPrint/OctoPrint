@@ -1686,4 +1686,5 @@ var startWebRTC = function (videoElement, streamUrl) {
     });
 
     negotiateWebRTC(streamUrl);
+    return pc;
 };
