@@ -22,7 +22,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import copy
 import fnmatch
 import io
 import logging
@@ -54,6 +53,7 @@ from octoprint.util import (
     CaseInsensitiveSet,
     atomic_write,
     dict_merge,
+    fast_deepcopy,
     generate_api_key,
     is_hidden_path,
     yaml,
@@ -542,17 +542,14 @@ class DuplicateFolderPaths(InvalidSettings):
 
 
 class HierarchicalChainMap(ChainMap):
-    def deep_dict(self, root=None):
-        if root is None:
-            root = self
+    def deep_dict(self):
+        def deep_dict_inner(root):
+            return {
+                key: deep_dict_inner(root[key]) if isinstance(value, dict) else value
+                for key, value in root.items()
+            }
 
-        result = {}
-        for key, value in root.items():
-            if isinstance(value, dict):
-                result[key] = self.deep_dict(root=self.__class__._get_next(key, root))
-            else:
-                result[key] = value
-        return result
+        return deep_dict_inner(self)
 
     def has_path(self, path, only_local=False, only_defaults=False):
         if only_defaults:
@@ -1778,19 +1775,13 @@ class Settings(object):
                 except KeyError:
                     raise NoSuchSettingsPath()
 
-            if preprocessors is not None:
-                try:
-                    preprocessor = self._get_by_path(path, preprocessors)
-                except Exception:
-                    pass
-
-                if callable(preprocessor):
-                    value = preprocessor(value)
+            if callable(preprocessor):
+                value = preprocessor(value)
 
             if do_copy:
                 if isinstance(value, KeysView):
                     value = list(value)
-                value = copy.deepcopy(value)
+                value = fast_deepcopy(value)
 
             if asdict:
                 results[key] = value

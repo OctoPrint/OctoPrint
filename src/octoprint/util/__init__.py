@@ -46,6 +46,11 @@ try:
 except ImportError:
     import Queue as queue
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 # noinspection PyCompatibility
 from past.builtins import basestring, unicode
 
@@ -539,6 +544,18 @@ def is_running_from_source():
     )
 
 
+def fast_deepcopy(obj):
+    # the best way to implement this would be as a C module, that way we'd be able to use
+    # the fast path every time.
+    try:
+        # implemented in C and much faster than deepcopy:
+        # https://stackoverflow.com/a/29385667
+        return pickle.loads(pickle.dumps(obj, -1))
+    except AttributeError:
+        # fall back when something unpickable is found
+        return copy.deepcopy(obj)
+
+
 def dict_merge(a, b, leaf_merger=None, in_place=False):
     """
     Recursively deep-merges two dictionaries.
@@ -587,8 +604,6 @@ def dict_merge(a, b, leaf_merger=None, in_place=False):
         dict: ``b`` deep-merged into ``a``
     """
 
-    from copy import deepcopy
-
     if a is None:
         a = {}
     if b is None:
@@ -600,7 +615,7 @@ def dict_merge(a, b, leaf_merger=None, in_place=False):
     if in_place:
         result = a
     else:
-        result = deepcopy(a)
+        result = fast_deepcopy(a)
 
     for k, v in b.items():
         if k in result and isinstance(result[k], dict):
@@ -617,7 +632,7 @@ def dict_merge(a, b, leaf_merger=None, in_place=False):
                     pass
 
             if merged is None:
-                merged = deepcopy(v)
+                merged = fast_deepcopy(v)
 
             result[k] = merged
     return result
