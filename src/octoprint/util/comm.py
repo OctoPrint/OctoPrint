@@ -5648,9 +5648,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
         """
         PrintingFileInformation.start(self)
         with self._handle_mutex:
-            self._handle = bom_aware_open(
-                self._filename, encoding="utf-8", errors="replace", newline=""
-            )
+            self._handle = bom_aware_open(self._filename, errors="replace", newline="")
             self._pos = self._handle.tell()
             if self._handle.encoding.endswith("-sig"):
                 # Apparently we found an utf-8 bom in the file.

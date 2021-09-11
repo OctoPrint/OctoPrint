@@ -33,9 +33,7 @@ class BomAwareOpenTest(unittest.TestCase):
         """Tests that the contents of a UTF8 file with BOM are loaded correctly (without the BOM)."""
 
         # test
-        with octoprint.util.bom_aware_open(
-            self.filename_utf8_with_bom, encoding="utf-8"
-        ) as f:
+        with octoprint.util.bom_aware_open(self.filename_utf8_with_bom) as f:
             contents = f.readlines()
 
         # assert
@@ -46,9 +44,7 @@ class BomAwareOpenTest(unittest.TestCase):
         """Tests that the contents of a UTF8 file without BOM are loaded correctly."""
 
         # test
-        with octoprint.util.bom_aware_open(
-            self.filename_utf8_without_bom, encoding="utf-8"
-        ) as f:
+        with octoprint.util.bom_aware_open(self.filename_utf8_without_bom) as f:
             contents = f.readlines()
 
         # assert
@@ -60,7 +56,7 @@ class BomAwareOpenTest(unittest.TestCase):
 
         # test
         with octoprint.util.bom_aware_open(
-            self.filename_utf8_with_bom, errors="replace"
+            self.filename_utf8_with_bom, errors="replace", encoding="ascii"
         ) as f:
             contents = f.readlines()
 
@@ -72,7 +68,9 @@ class BomAwareOpenTest(unittest.TestCase):
     def test_bom_aware_open_encoding_error(self):
         """Tests that an encoding error is thrown if not suppressed when opening a UTF8 file as ASCII."""
         try:
-            with octoprint.util.bom_aware_open(self.filename_utf8_without_bom) as f:
+            with octoprint.util.bom_aware_open(
+                self.filename_utf8_without_bom, encoding="ascii"
+            ) as f:
                 f.readlines()
             self.fail("Expected an exception")
         except UnicodeDecodeError:
@@ -85,21 +83,16 @@ class BomAwareOpenTest(unittest.TestCase):
             with octoprint.util.bom_aware_open(
                 self.filename_utf8_without_bom,
                 mode="rt",
-                encoding="utf-8",
                 errors="ignore",
             ) as f:
                 f.readlines()
 
-        calls = [
-            mock.call(self.filename_utf8_without_bom, mode="rb"),
-            mock.call(
-                self.filename_utf8_without_bom,
-                encoding="utf-8",
-                mode="rt",
-                errors="ignore",
-            ),
-        ]
-        mock_open.assert_has_calls(calls)
+        mock_open.assert_called_once_with(
+            self.filename_utf8_without_bom,
+            encoding="utf-8-sig",
+            mode="rt",
+            errors="ignore",
+        )
 
     def test_bom_aware_open_parameters_binary_mode(self):
         """Tests that binary mode raises an AssertionError."""
@@ -108,7 +101,6 @@ class BomAwareOpenTest(unittest.TestCase):
             octoprint.util.bom_aware_open,
             self.filename_utf8_without_bom,
             mode="rb",
-            encoding="utf-8",
             errors="ignore",
         )
 

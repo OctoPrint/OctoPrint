@@ -810,7 +810,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
         if os.stat(path).st_mtime + ttl < time.time():
             return None
 
-        with bom_aware_open(path, encoding="utf-8", mode="rt") as f:
+        with bom_aware_open(path, mode="rt") as f:
             result = yaml.safe_load(f)
 
         if isinstance(result, list):
@@ -824,7 +824,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
             if cache is not None:
                 try:
-                    with bom_aware_open(cache, encoding="utf-8", mode="wt") as f:
+                    with bom_aware_open(cache, mode="wt") as f:
                         yaml.safe_dump(result, f)
                 except Exception as e:
                     logger.info(

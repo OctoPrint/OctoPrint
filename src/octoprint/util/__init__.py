@@ -1078,27 +1078,11 @@ else:
             self.cleanup()
 
 
-def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
-    import codecs
-
+def bom_aware_open(filename, encoding="utf-8", mode="r", **kwargs):
     assert "b" not in mode, "binary mode not support by bom_aware_open"
 
-    codec = codecs.lookup(encoding)
-    encoding = codec.name
-
-    if kwargs is None:
-        kwargs = {}
-
-    potential_bom_attribute = "BOM_" + codec.name.replace("utf-", "utf").upper()
-    if "r" in mode and hasattr(codecs, potential_bom_attribute):
-        # these encodings might have a BOM, so let's see if there is one
-        bom = getattr(codecs, potential_bom_attribute)
-
-        with io.open(filename, mode="rb") as f:
-            header = f.read(4)
-
-        if header.startswith(bom):
-            encoding += "-sig"
+    if encoding in {"utf-8", "utf8"} and "r" in mode:
+        encoding = "utf-8-sig"
 
     return io.open(filename, encoding=encoding, mode=mode, **kwargs)
 
