@@ -67,6 +67,7 @@ INSTALL_REQUIRES = [
     "colorlog>=5.0.1,<6",
     # vendor bundled dependencies
     "blinker>=1.4,<2",  # dependency of flask_principal
+    "unidecode",  # dependency of awesome-slugify, leave w/o range to not cause dependency hell w/ Octolapse deps
 ]
 
 # OSX specific requirements
