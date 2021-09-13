@@ -454,7 +454,7 @@ $(function () {
                     hls.loadSource(self.webcam_streamUrl());
                     hls.attachMedia(video_element);
                 }
-            } else if (streamType == "webrtc") {
+            } else if (isWebRTCAvailable() && streamType == "webrtc") {
                 webcam_element = $(
                     '<video id="webcam_webrtc" muted autoplay playsinline style="width: 100%"/>'
                 );
