@@ -62,7 +62,7 @@
 
             <div class="pull-right">
                 <button class="btn btn-small" data-bind="click: $root.showRepository"><i class="fas fa-plus"></i> {{ _('Get More') }}</button>
-                <a class="btn btn-small" href="/plugin/pluginmanager/export"><i class="fas fa-download"></i> {{ _('Export') }}</a>
+                <a class="btn btn-small" href="{{ url_for('index') }}plugin/pluginmanager/export"><i class="fas fa-download"></i> {{ _('Export') }}</a>
                 <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
                 <a class="btn btn-small" data-toggle="collapse" href="#pluginmanager_info" title="{{ _('Info') }}"><i class="fas fa-lg fa-info-circle text-info" data-bind="css: {'text-error': noticeCount() > 0, 'text-info': noticeCount() <=0 }"></i></a>
             </div>
