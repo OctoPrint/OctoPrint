@@ -1651,22 +1651,19 @@ var negotiateWebRTC = function (streamUrl) {
         .then(function () {
             var offer = pc.localDescription;
             streamUrl = streamUrl.slice("webrtc://".length);
-            return fetch("http://" + streamUrl, {
-                body: JSON.stringify({
+            return $.ajax({
+                url: "http://" + streamUrl,
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
                     sdp: offer.sdp,
                     type: offer.type
                 }),
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                method: "POST"
+                contentType: "application/json; charset=UTF-8"
             });
         })
         .then(function (response) {
-            return response.json();
-        })
-        .then(function (answer) {
-            return pc.setRemoteDescription(answer);
+            return pc.setRemoteDescription(response);
         })
         .catch(function (e) {
             console.error(e);
