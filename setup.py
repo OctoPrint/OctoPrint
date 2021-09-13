@@ -66,7 +66,6 @@ INSTALL_REQUIRES = [
     "pathvalidate>=2.4.1,<3",
     "colorlog>=5.0.1,<6",
     # vendor bundled dependencies
-    "unidecode",  # dependency of awesome-slugify, leave w/o range to not cause dependency hell w/ Octolapse deps
     "blinker>=1.4,<2",  # dependency of flask_principal
 ]
 
