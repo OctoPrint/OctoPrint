@@ -22,7 +22,6 @@ thanks to everyone who contributed!
   * Christian Würthner
   * Christoph Sigrist
   * Creality3D
-  * Dana Voigt
   * David Bounds
   * DeltaMaker 3D Printers
   * Dennis Breining
@@ -35,6 +34,7 @@ thanks to everyone who contributed!
   * Greg Holloway
   * Hog Duske
   * Itay Shem-tov
+  * Jeff Moe
   * Jeremy Cole
   * Joshua Wills
   * Julian Melo
@@ -78,4 +78,4 @@ thanks to everyone who contributed!
   * Ulderico Cirello
   * Ulrich Kempken
 
-and 2347 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2352 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
