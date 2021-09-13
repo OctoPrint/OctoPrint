@@ -1624,6 +1624,10 @@ var deepMerge = function (target, source) {
     return target;
 };
 
+var isWebRTCAvailable = function () {
+    return typeof RTCPeerConnection == "function";
+};
+
 var negotiateWebRTC = function (streamUrl) {
     pc.addTransceiver("video", {direction: "recvonly"});
     pc.addTransceiver("audio", {direction: "recvonly"});

@@ -526,7 +526,7 @@ $(function () {
                 self._switchToMjpgWebcam();
             } else if (streamType == "hls") {
                 self._switchToHlsWebcam();
-            } else if (streamType == "webrtc") {
+            } else if (isWebRTCAvailable() && streamType == "webrtc") {
                 self._switchToWebRTCWebcam();
             } else {
                 throw "Unknown stream type " + streamType;
@@ -738,6 +738,9 @@ $(function () {
         };
 
         self._switchToWebRTCWebcam = function () {
+            if (!isWebRTCAvailable()) {
+                return;
+            }
             var video = document.getElementById("webcam_webrtc");
 
             // Close any existing, disconnected connection
