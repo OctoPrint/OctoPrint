@@ -47,10 +47,9 @@ except ImportError:
     import Queue as queue
 
 try:
-    import cPickle as pickle
+    import cPickle as pickle  # Python 2 has pickle and cPickle, we want cPickle
 except ImportError:
-    import pickle
-
+    import pickle  # Python 3
 # noinspection PyCompatibility
 from past.builtins import basestring, unicode
 
@@ -550,7 +549,7 @@ def fast_deepcopy(obj):
     try:
         # implemented in C and much faster than deepcopy:
         # https://stackoverflow.com/a/29385667
-        return pickle.loads(pickle.dumps(obj, -1))
+        return pickle.loads(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
     except AttributeError:
         # fall back when something unpickable is found
         return copy.deepcopy(obj)
