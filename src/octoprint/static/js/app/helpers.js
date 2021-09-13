@@ -1625,7 +1625,16 @@ var deepMerge = function (target, source) {
 };
 
 var isWebRTCAvailable = function () {
-    return typeof RTCPeerConnection == "function";
+    return (
+        typeof RTCPeerConnection == "function" &&
+        typeof RTCPeerConnection.prototype.addEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.addTransceiver == "function" &&
+        typeof RTCPeerConnection.prototype.createOffer == "function" &&
+        typeof RTCPeerConnection.prototype.setLocalDescription == "function" &&
+        typeof RTCPeerConnection.prototype.removeEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.addEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.setRemoteDescription == "function"
+    );
 };
 
 var negotiateWebRTC = function (streamUrl) {
