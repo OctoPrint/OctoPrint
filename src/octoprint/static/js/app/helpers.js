@@ -1543,7 +1543,7 @@ var copyToClipboard = function (text) {
 
 var determineWebcamStreamType = function (streamUrl) {
     if (streamUrl) {
-        if (streamUrl.startsWith("webrtc://")) {
+        if (streamUrl.startsWith("webrtc")) {
             return "webrtc";
         }
 
@@ -1663,9 +1663,11 @@ var negotiateWebRTC = function (streamUrl) {
         })
         .then(function () {
             var offer = pc.localDescription;
-            streamUrl = streamUrl.slice("webrtc://".length);
+            // webrtc://host.com becomes http://host.com
+            // webrtcs://host.com becomes https://host.com
+            streamUrl = "http" + streamUrl.slice("webrtc".length);
             return $.ajax({
-                url: "http://" + streamUrl,
+                url: streamUrl,
                 type: "POST",
                 dataType: "json",
                 data: JSON.stringify({
