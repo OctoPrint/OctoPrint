@@ -456,7 +456,7 @@ $(function () {
                 }
             } else if (isWebRTCAvailable() && streamType == "webrtc") {
                 webcam_element = $(
-                    '<video id="webcam_webrtc" muted autoplay playsinline style="width: 100%"/>'
+                    '<video id="webcam_webrtc" muted autoplay playsinline controls style="width: 100%"/>'
                 );
                 video_element = webcam_element[0];
 
