@@ -14,6 +14,7 @@ import contextlib
 import copy
 import fnmatch
 import glob
+import io
 import os
 import re
 import threading
@@ -48,10 +49,10 @@ from octoprint.util import (
     ResettableTimer,
     TypeAlreadyInQueue,
     TypedQueue,
-    bom_aware_open,
     chunks,
     filter_non_ascii,
     filter_non_utf8,
+    get_bom,
     get_exception_string,
     monotonic_time,
     sanitize_ascii,
@@ -5648,18 +5649,17 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
         """
         PrintingFileInformation.start(self)
         with self._handle_mutex:
-            self._handle = bom_aware_open(
-                self._filename, encoding="utf-8", errors="replace", newline=""
+            bom = get_bom(self._filename, encoding="utf-8-sig")
+            self._handle = io.open(
+                self._filename, encoding="utf-8-sig", errors="replace", newline=""
             )
             self._pos = self._handle.tell()
-            if self._handle.encoding.endswith("-sig"):
+            if bom:
                 # Apparently we found an utf-8 bom in the file.
                 # We need to add its length to our pos because it will
                 # be stripped transparently and we'll have no chance
                 # catching that.
-                import codecs
-
-                self._pos += len(codecs.BOM_UTF8)
+                self._pos += len(bom)
             self._read_lines = 0
 
     def close(self):
