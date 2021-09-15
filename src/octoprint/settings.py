@@ -545,7 +545,9 @@ class HierarchicalChainMap(ChainMap):
     def deep_dict(self):
         def deep_dict_inner(root):
             return {
-                key: deep_dict_inner(root[key]) if isinstance(value, dict) else value
+                key: deep_dict_inner(self.__class__._get_next(key, root))
+                if isinstance(value, dict)
+                else value
                 for key, value in root.items()
             }
 
