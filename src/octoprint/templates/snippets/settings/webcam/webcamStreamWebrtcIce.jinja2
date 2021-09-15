@@ -1,7 +1,7 @@
-<div class="control-group" title="{{ _('Endpoint to use for WebRTC ICE')|edq }}">
+<div class="control-group" title="{{ _('ICE server (STUN and/or TURN) to use for WebRTC')|edq }}">
     <label class="control-label" for="settings-webcamStreamWebrtcIce">{{ _('WebRTC ICE endpoint') }}</label>
     <div class="controls">
         <input type="text" class="input-block-level" data-bind="value: webcam_streamWebrtcIce, valueUpdate: 'afterkeydown'" id="settings-webcamStreamWebrtcIce">
-        <span class="help-block"><span class="label">{{ _('WebRTC') }}</span> {% trans %}Only used for WebRTC streams. Provide the endpoint to use for WebRTC's Interactive Connectivity Establishment (ICE). Usually a STUN server. If unsure, leave at the default of <code>stun:stun.l.google.com:19302</code>.{% endtrans %}</span>
+        <span class="help-block"><span class="label">{{ _('WebRTC') }}</span> {% trans %}Only used for WebRTC streams. Optionally specify the ICE server (STUN and/or TURN) to use for WebRTC. If unsure, leave at the default of <code>stun:stun.l.google.com:19302</code>.{% endtrans %}</span>
     </div>
 </div>
