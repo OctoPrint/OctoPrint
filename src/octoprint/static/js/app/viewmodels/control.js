@@ -757,7 +757,7 @@ $(function () {
                 self.webRTCPeerConnection = startWebRTC(
                     video,
                     self.settings.webcam_streamUrl(),
-                    [self.settings.webcam_streamWebrtcIce()]
+                    self.settings.webcam_streamWebrtcIceServers()
                 );
             }
 

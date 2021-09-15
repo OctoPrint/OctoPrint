@@ -1686,11 +1686,12 @@ var negotiateWebRTC = function (streamUrl) {
 };
 
 var startWebRTC = function (videoElement, streamUrl, iceServers) {
-    iceServers = iceServers || ["stun:stun.l.google.com:19302"];
     var config = {
-        sdpSemantics: "unified-plan",
-        iceServers: [{urls: iceServers}]
+        sdpSemantics: "unified-plan"
     };
+    if (iceServers) {
+        config.iceServers = [{urls: iceServers}];
+    }
     pc = new RTCPeerConnection(config);
     pc.addEventListener("track", function (evt) {
         if (evt.track.kind == "video") {
