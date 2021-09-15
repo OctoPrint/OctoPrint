@@ -129,7 +129,7 @@ def getSettings():
             "streamUrl": s.get(["webcam", "stream"]),
             "streamRatio": s.get(["webcam", "streamRatio"]),
             "streamTimeout": s.getInt(["webcam", "streamTimeout"]),
-            "streamWebrtcIce": s.get(["webcam", "streamWebrtcIce"]),
+            "streamWebrtcIceServers": s.get(["webcam", "streamWebrtcIceServers"]),
             "snapshotUrl": s.get(["webcam", "snapshot"]),
             "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
             "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
@@ -550,8 +550,13 @@ def _saveSettings(data):
             s.set(["webcam", "streamRatio"], data["webcam"]["streamRatio"])
         if "streamTimeout" in data["webcam"]:
             s.setInt(["webcam", "streamTimeout"], data["webcam"]["streamTimeout"])
-        if "streamWebrtcIce" in data["webcam"]:
-            s.set(["webcam", "streamWebrtcIce"], data["webcam"]["streamWebrtcIce"])
+        if "streamWebrtcIceServers" in data["webcam"] and isinstance(
+            data["webcam"]["streamWebrtcIceServers"], (list, tuple)
+        ):
+            s.set(
+                ["webcam", "streamWebrtcIceServers"],
+                data["webcam"]["streamWebrtcIceServers"],
+            )
         if "snapshotUrl" in data["webcam"]:
             s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
         if "snapshotTimeout" in data["webcam"]:

@@ -249,7 +249,7 @@ default_settings = {
         "stream": None,
         "streamRatio": "16:9",
         "streamTimeout": 5,
-        "streamWebrtcIce": "stun:stun.l.google.com:19302",
+        "streamWebrtcIceServers": ["stun:stun.l.google.com:19302"],
         "snapshot": None,
         "snapshotTimeout": 5,
         "snapshotSslValidation": True,
