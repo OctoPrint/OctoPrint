@@ -1333,6 +1333,11 @@ $(function () {
                     profiles: function (value) {
                         self.temperature_profiles($.extend(true, [], value));
                     }
+                },
+                webcam: {
+                    streamWebrtcIceServers: function (value) {
+                        self.webcam_streamWebrtcIceServers(value.join(", "));
+                    }
                 }
             };
 
