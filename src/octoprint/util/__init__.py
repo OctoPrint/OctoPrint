@@ -50,6 +50,7 @@ try:
     import cPickle as pickle  # Python 2 has pickle and cPickle, we want cPickle
 except ImportError:
     import pickle  # Python 3
+
 # noinspection PyCompatibility
 from past.builtins import basestring, unicode
 
@@ -550,7 +551,7 @@ def fast_deepcopy(obj):
         # implemented in C and much faster than deepcopy:
         # https://stackoverflow.com/a/29385667
         return pickle.loads(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
-    except AttributeError:
+    except (AttributeError, pickle.PicklingError):
         # fall back when something unpickable is found
         return copy.deepcopy(obj)
 
