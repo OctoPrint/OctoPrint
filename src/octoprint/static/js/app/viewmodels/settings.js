@@ -153,6 +153,7 @@ $(function () {
         self.webcam_streamUrl = ko.observable(undefined);
         self.webcam_streamRatio = ko.observable(undefined);
         self.webcam_streamTimeout = ko.observable(undefined);
+        self.webcam_streamWebrtcIce = ko.observable(undefined);
         self.webcam_snapshotUrl = ko.observable(undefined);
         self.webcam_snapshotTimeout = ko.observable(undefined);
         self.webcam_snapshotSslValidation = ko.observable(undefined);
@@ -462,7 +463,8 @@ $(function () {
 
                 webrtc_peer_connection = startWebRTC(
                     video_element,
-                    self.webcam_streamUrl()
+                    self.webcam_streamUrl(),
+                    [self.webcam_streamWebrtcIce()]
                 );
             } else {
                 throw "Unknown stream type " + streamType;
