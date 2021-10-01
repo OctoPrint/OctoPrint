@@ -54,6 +54,7 @@ INSTALL_REQUIRES = [
     "pkginfo>=1.7.1,<2",
     "requests>=2.26.0,<3",
     "semantic_version>=2.8.5,<3",
+    "frozendict>=2.0,<3",
     "psutil>=5.8,<6",
     "Click>=7.1.2,<8",  # newer versions require Python 3
     "future>=0.18.2,<1",
@@ -76,7 +77,6 @@ INSTALL_REQUIRES_PYTHON2 = [
     "chainmap>=1.0.3,<2",
     "typing>=3.10.0.0,<4",
     "enum34>=1.1.10,<1.2",
-    "frozendict==1.2",  # newer versions from different maintainer require Python 3
     "colorlog<5",  # newer versions require Python 3
     # vendor bundled dependencies
     "unidecode<1.3",  # dependency of awesome-slugify, newer versions require Python 3
@@ -87,7 +87,6 @@ INSTALL_REQUIRES_PYTHON3 = [
     "feedparser>=6.0.8,<7",
     "tornado>=6,<7",  # tornado < 6 is incompatible with Python 3.10
     "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
-    "immutabledict>=2.1,<3",
     "pathvalidate>=2.4.1,<3",
     "colorlog>=5.0.1,<6",
     # vendor bundled dependencies
