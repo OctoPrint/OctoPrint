@@ -43,7 +43,7 @@
         <form class="form-signin">
             <h2 class="form-signin-heading" data-test-id="login-title">{{ _('Please log in') }}</h2>
 
-            <div id="login-error" class="alert alert-error" data-test-id="login-error">{{ _('Incorrect username or password.') }}</div>
+            <div id="login-error" class="alert alert-error" data-test-id="login-error">{{ _('Incorrect username or password. Hint: Both are case sensitive!') }}</div>
             <div id="login-offline" class="alert alert-error">{{ _('Server is currently offline.') }} <a id="login-reconnect" href="javascript:void(0)">{{ _('Reconnect...') }}</a></div>
 
             {% if logged_in %}<p>
