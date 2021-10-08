@@ -272,6 +272,7 @@ You'll need a user account with administrator privileges.
     * ``brew install python``
 
   * Install `pip <https://pip.pypa.io/en/stable/installation/#supported-methods>`_
+
     * ``python -m ensurepip --upgrade``
 
   * Install `virtualenv <https://virtualenv.pypa.io/>`_
