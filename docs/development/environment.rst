@@ -271,6 +271,9 @@ You'll need a user account with administrator privileges.
     * ``ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"``
     * ``brew install python``
 
+  * Install `pip <https://pip.pypa.io/en/stable/installation/#supported-methods>`_
+    * ``python -m ensurepip --upgrade``
+
   * Install `virtualenv <https://virtualenv.pypa.io/>`_
 
     * ``pip install virtualenv``
