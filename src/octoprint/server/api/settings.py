@@ -1122,7 +1122,7 @@ def _saveSettings(data):
                     plugin.on_settings_save(data["plugins"][plugin_id])
                 except TypeError:
                     logger.warning(
-                        "Could not save settings for plugin {name} ({version}) since it called super(...)".format(
+                        "Could not save settings for plugin {name} ({version}). It may have called super(...)".format(
                             name=plugin._plugin_name, version=plugin._plugin_version
                         )
                     )
@@ -1133,7 +1133,8 @@ def _saveSettings(data):
                         "Please contact the plugin's author and ask to update the plugin to use a direct call like"
                     )
                     logger.warning(
-                        "octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead."
+                        "octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead.",
+                        exc_info=True,
                     )
                 except Exception:
                     logger.exception(
