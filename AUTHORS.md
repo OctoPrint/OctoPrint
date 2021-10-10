@@ -143,6 +143,9 @@ date of first contribution):
   * [Karthikeyan Singaravelan](https://github.com/tirkarthi)
   * [Ben Sycha](https://github.com/Sycha)
   * [Sven Samoray](https://github.com/thelastWallE)
+  * [John Boiles](https://github.com/johnboiles)
+  * [Adam DeMuri](https://github.com/ademuri)
+  * [Daniel Shenkle](https://github.com/DShenkle)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
