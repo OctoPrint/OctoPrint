@@ -123,17 +123,15 @@ $(function () {
             return estimatedPrintTimeStringHlpr(formatDuration);
         });
         self.estimatedFilamentNeededString = ko.pureComputed(function () {
-
             if (self.progress() && self.filament()) {
-
                 var filamentObj = self.filament();
                 var totalFilamentNeeded = 0;
 
-                for (let i = 0; i < filamentObj.length; i++) {
+                for (var i = 0; i < filamentObj.length; i++) {
                     totalFilamentNeeded += filamentObj[i].data().length;
                 }
- 
-                var amountLeft = totalFilamentNeeded * (1 - (self.progress() / 100));
+
+                var amountLeft = totalFilamentNeeded * (1 - self.progress() / 100);
 
                 return amountLeft.toFixed() + " mm";
             }
