@@ -23,8 +23,15 @@ from contextlib import contextmanager
 from past.builtins import basestring
 
 import octoprint.filemanager
-from octoprint.util import atomic_write, is_hidden_path, time_this, to_bytes, to_unicode
-from octoprint.util.text import sanitize
+from octoprint.util import (
+    atomic_write,
+    is_hidden_path,
+    time_this,
+    to_bytes,
+    to_unicode,
+    yaml,
+)
+from octoprint.util.files import sanitize_filename
 
 
 class StorageInterface(object):
@@ -468,13 +475,14 @@ class LocalFileStorage(StorageInterface):
     This storage type implements :func:`path_on_disk`.
     """
 
-    def __init__(self, basefolder, create=False):
+    def __init__(self, basefolder, create=False, really_universal=False):
         """
         Initializes a ``LocalFileStorage`` instance under the given ``basefolder``, creating the necessary folder
         if necessary and ``create`` is set to ``True``.
 
-        :param string basefolder: the path to the folder under which to create the storage
-        :param bool create:       ``True`` if the folder should be created if it doesn't exist yet, ``False`` otherwise
+        :param string basefolder:     the path to the folder under which to create the storage
+        :param bool create:           ``True`` if the folder should be created if it doesn't exist yet, ``False`` otherwise
+        :param bool really_universal: ``True`` if the file names should be forced to really universal, ``False`` otherwise
         """
         self._logger = logging.getLogger(__name__)
 
@@ -486,6 +494,8 @@ class LocalFileStorage(StorageInterface):
                 "{basefolder} is not a valid directory".format(**locals()),
                 code=StorageError.INVALID_DIRECTORY,
             )
+
+        self._really_universal = really_universal
 
         import threading
 
@@ -512,10 +522,7 @@ class LocalFileStorage(StorageInterface):
         if os.path.exists(old_metadata_path):
             # load the old metadata file
             try:
-                with io.open(old_metadata_path, "rt", encoding="utf-8") as f:
-                    import yaml
-
-                    self._old_metadata = yaml.safe_load(f)
+                self._old_metadata = yaml.load_from_file(path=old_metadata_path)
             except Exception:
                 self._logger.exception("Error while loading old metadata file")
 
@@ -1165,22 +1172,10 @@ class LocalFileStorage(StorageInterface):
     def sanitize_name(self, name):
         """
         Raises a :class:`ValueError` for a ``name`` containing ``/`` or ``\\``. Otherwise
-        slugifies the given ``name`` by converting it to ASCII, leaving ``-``, ``_``, ``.``,
-        ``(``, and ``)`` as is.
+        sanitizes the given ``name`` using ``octoprint.files.sanitize_filename``. Also
+        strips any leading ``.``.
         """
-        name = to_unicode(name)
-
-        if name is None:
-            return None
-
-        if "/" in name or "\\" in name:
-            raise ValueError("name must not contain / or \\")
-
-        result = sanitize(name, safe_chars="-_.()[] ").replace(" ", "_")
-        if result and result != "." and result != ".." and result[0] == ".":
-            # hidden files under *nix
-            result = result[1:]
-        return result
+        return sanitize_filename(name, really_universal=self._really_universal)
 
     def sanitize_path(self, path):
         """
@@ -1199,7 +1194,10 @@ class LocalFileStorage(StorageInterface):
         path_elements = path.split("/")
         joined_path = self.basefolder
         for path_element in path_elements:
-            joined_path = os.path.join(joined_path, self.sanitize_name(path_element))
+            if path_element == ".." or path_element == ".":
+                joined_path = os.path.join(joined_path, path_element)
+            else:
+                joined_path = os.path.join(joined_path, self.sanitize_name(path_element))
         path = os.path.realpath(joined_path)
         if not path.startswith(self.basefolder):
             raise ValueError(
@@ -1909,8 +1907,6 @@ class LocalFileStorage(StorageInterface):
         # we switched to json in 1.3.9 - if we still have yaml here, migrate it now
         import json
 
-        import yaml
-
         with self._get_persisted_metadata_lock(path):
             metadata_path_yaml = os.path.join(path, ".metadata.yaml")
             metadata_path_json = os.path.join(path, ".metadata.json")
@@ -1931,16 +1927,13 @@ class LocalFileStorage(StorageInterface):
                     )
                 return
 
-            with io.open(metadata_path_yaml, "rt", encoding="utf-8") as f:
-                try:
-                    metadata = yaml.safe_load(f)
-                except Exception:
-                    self._logger.exception(
-                        "Error while reading .metadata.yaml from {path}".format(
-                            **locals()
-                        )
-                    )
-                    return
+            try:
+                metadata = yaml.load_from_file(path=metadata_path_yaml)
+            except Exception:
+                self._logger.exception(
+                    "Error while reading .metadata.yaml from {path}".format(**locals())
+                )
+                return
 
             if not isinstance(metadata, dict):
                 # looks invalid, ignore it

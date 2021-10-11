@@ -1161,6 +1161,9 @@ class TimelapseRenderJob(object):
         logger = logging.getLogger(__name__)
 
         ### Not all players can handle non-mpeg2 in VOB format
+        if not videocodec:
+            videocodec = "libx264"
+
         if videocodec == "mpeg2video":
             containerformat = "vob"
         else:
@@ -1171,14 +1174,16 @@ class TimelapseRenderJob(object):
         )
         placeholders = {
             "ffmpeg": ffmpeg,
-            "fps": str(fps),
+            "fps": str(fps if fps else "25"),
             "input": input,
             "output": output,
             "videocodec": videocodec,
-            "threads": str(threads),
-            "bitrate": str(bitrate),
+            "threads": str(threads if threads else "1"),
+            "bitrate": str(bitrate if bitrate else "10000k"),
             "containerformat": containerformat,
-            "filters": "-vf " + sarge.shell_quote(filter_string) if filter_string else "",
+            "filters": ("-vf " + sarge.shell_quote(filter_string))
+            if filter_string
+            else "",
         }
 
         logger.debug("Rendering movie to {}".format(output))

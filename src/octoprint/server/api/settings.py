@@ -6,6 +6,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
+import re
 
 from flask import abort, jsonify, request
 from flask_login import current_user
@@ -23,6 +24,7 @@ from octoprint.settings import settings, valid_boolean_trues
 
 FOLDER_TYPES = ("uploads", "timelapse", "timelapse_tmp", "logs", "watched")
 FOLDER_MAPPING = {"timelapseTmp": "timelapse_tmp"}
+TIMELAPSE_BITRATE_PATTERN = re.compile(r"\d+[KMGTPEZY]?i?B?", flags=re.IGNORECASE)
 
 
 def _lastmodified():
@@ -127,6 +129,7 @@ def getSettings():
             "streamUrl": s.get(["webcam", "stream"]),
             "streamRatio": s.get(["webcam", "streamRatio"]),
             "streamTimeout": s.getInt(["webcam", "streamTimeout"]),
+            "streamWebrtcIceServers": s.get(["webcam", "streamWebrtcIceServers"]),
             "snapshotUrl": s.get(["webcam", "snapshot"]),
             "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
             "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
@@ -139,6 +142,7 @@ def getSettings():
             "flipH": s.getBoolean(["webcam", "flipH"]),
             "flipV": s.getBoolean(["webcam", "flipV"]),
             "rotate90": s.getBoolean(["webcam", "rotate90"]),
+            "cacheBuster": s.getBoolean(["webcam", "cacheBuster"]),
         },
         "feature": {
             "temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
@@ -164,6 +168,7 @@ def getSettings():
             "port": connectionOptions["portPreference"],
             "baudrate": connectionOptions["baudratePreference"],
             "exclusive": s.getBoolean(["serial", "exclusive"]),
+            "lowLatency": s.getBoolean(["serial", "lowLatency"]),
             "portOptions": connectionOptions["ports"],
             "baudrateOptions": connectionOptions["baudrates"],
             "autoconnect": s.getBoolean(["serial", "autoconnect"]),
@@ -187,6 +192,7 @@ def getSettings():
             "timeoutSdStatusAutoreport": s.getFloat(
                 ["serial", "timeout", "sdStatusAutoreport"]
             ),
+            "timeoutPosAutoreport": s.getFloat(["serial", "timeout", "posAutoreport"]),
             "timeoutBaudrateDetectionPause": s.getFloat(
                 ["serial", "timeout", "baudrateDetectionPause"]
             ),
@@ -201,6 +207,7 @@ def getSettings():
             "longRunningCommands": s.get(["serial", "longRunningCommands"]),
             "checksumRequiringCommands": s.get(["serial", "checksumRequiringCommands"]),
             "blockedCommands": s.get(["serial", "blockedCommands"]),
+            "ignoredCommands": s.get(["serial", "ignoredCommands"]),
             "pausingCommands": s.get(["serial", "pausingCommands"]),
             "emergencyCommands": s.get(["serial", "emergencyCommands"]),
             "helloCommand": s.get(["serial", "helloCommand"]),
@@ -246,10 +253,14 @@ def getSettings():
             "capAutoreportSdStatus": s.getBoolean(
                 ["serial", "capabilities", "autoreport_sdstatus"]
             ),
+            "capAutoreportPos": s.getBoolean(
+                ["serial", "capabilities", "autoreport_pos"]
+            ),
             "capBusyProtocol": s.getBoolean(["serial", "capabilities", "busy_protocol"]),
             "capEmergencyParser": s.getBoolean(
                 ["serial", "capabilities", "emergency_parser"]
             ),
+            "capExtendedM20": s.getBoolean(["serial", "capabilities", "extended_m20"]),
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
         },
@@ -539,6 +550,13 @@ def _saveSettings(data):
             s.set(["webcam", "streamRatio"], data["webcam"]["streamRatio"])
         if "streamTimeout" in data["webcam"]:
             s.setInt(["webcam", "streamTimeout"], data["webcam"]["streamTimeout"])
+        if "streamWebrtcIceServers" in data["webcam"] and isinstance(
+            data["webcam"]["streamWebrtcIceServers"], (list, tuple)
+        ):
+            s.set(
+                ["webcam", "streamWebrtcIceServers"],
+                data["webcam"]["streamWebrtcIceServers"],
+            )
         if "snapshotUrl" in data["webcam"]:
             s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
         if "snapshotTimeout" in data["webcam"]:
@@ -577,8 +595,14 @@ def _saveSettings(data):
                 abort(400, description="Invalid webcam.ffmpegCommandline setting")
             else:
                 s.set(["webcam", "ffmpegCommandline"], commandline)
-        if "bitrate" in data["webcam"]:
-            s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
+        if "bitrate" in data["webcam"] and data["webcam"]["bitrate"]:
+            bitrate = str(data["webcam"]["bitrate"])
+            if not TIMELAPSE_BITRATE_PATTERN.match(bitrate):
+                abort(
+                    400,
+                    description="Invalid webcam.bitrate setting, needs to be a valid ffmpeg bitrate",
+                )
+            s.set(["webcam", "bitrate"], bitrate)
         if "ffmpegThreads" in data["webcam"]:
             s.setInt(["webcam", "ffmpegThreads"], data["webcam"]["ffmpegThreads"])
         if "ffmpegVideoCodec" in data["webcam"] and data["webcam"][
@@ -593,6 +617,8 @@ def _saveSettings(data):
             s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
         if "rotate90" in data["webcam"]:
             s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
+        if "cacheBuster" in data["webcam"]:
+            s.setBoolean(["webcam", "cacheBuster"], data["webcam"]["cacheBuster"])
 
     if "feature" in data:
         if "temperatureGraph" in data["feature"]:
@@ -643,7 +669,7 @@ def _saveSettings(data):
         if "runAt" in data["gcodeAnalysis"]:
             s.set(["gcodeAnalysis", "runAt"], data["gcodeAnalysis"]["runAt"])
         if "bedZ" in data["gcodeAnalysis"]:
-            s.setBoolean(["gcodeAnalysis", "bedZ"], data["gcodeAnalysis"]["bedZ"])
+            s.setFloat(["gcodeAnalysis", "bedZ"], data["gcodeAnalysis"]["bedZ"])
 
     if "serial" in data:
         if "autoconnect" in data["serial"]:
@@ -654,6 +680,8 @@ def _saveSettings(data):
             s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
         if "exclusive" in data["serial"]:
             s.setBoolean(["serial", "exclusive"], data["serial"]["exclusive"])
+        if "lowLatency" in data["serial"]:
+            s.setBoolean(["serial", "lowLatency"], data["serial"]["lowLatency"])
         if "timeoutConnection" in data["serial"]:
             s.setFloat(
                 ["serial", "timeout", "connection"],
@@ -714,6 +742,12 @@ def _saveSettings(data):
                 data["serial"]["timeoutSdStatusAutoreport"],
                 min=0.0,
             )
+        if "timeoutPosAutoreport" in data["serial"]:
+            s.setFloat(
+                ["serial", "timeout", "posAutoreport"],
+                data["serial"]["timeoutPosAutoreport"],
+                min=0.0,
+            )
         if "timeoutBaudrateDetectionPause" in data["serial"]:
             s.setFloat(
                 ["serial", "timeout", "baudrateDetectionPause"],
@@ -763,6 +797,10 @@ def _saveSettings(data):
             data["serial"]["blockedCommands"], (list, tuple)
         ):
             s.set(["serial", "blockedCommands"], data["serial"]["blockedCommands"])
+        if "ignoredCommands" in data["serial"] and isinstance(
+            data["serial"]["ignoredCommands"], (list, tuple)
+        ):
+            s.set(["serial", "ignoredCommands"], data["serial"]["ignoredCommands"])
         if "pausingCommands" in data["serial"] and isinstance(
             data["serial"]["pausingCommands"], (list, tuple)
         ):
@@ -892,6 +930,11 @@ def _saveSettings(data):
                 ["serial", "capabilities", "autoreport_sdstatus"],
                 data["serial"]["capAutoreportSdStatus"],
             )
+        if "capAutoreportPos" in data["serial"]:
+            s.setBoolean(
+                ["serial", "capabilities", "autoreport_pos"],
+                data["serial"]["capAutoreportPos"],
+            )
         if "capBusyProtocol" in data["serial"]:
             s.setBoolean(
                 ["serial", "capabilities", "busy_protocol"],
@@ -902,6 +945,11 @@ def _saveSettings(data):
                 ["serial", "capabilities", "emergency_parser"],
                 data["serial"]["capEmergencyParser"],
             )
+        if "capExtendedM20" in data["serial"]:
+            s.setBoolean(
+                ["serial", "capabilities", "extended_m20"],
+                data["serial"]["capExtendedM20"],
+            ),
         if "resendRatioThreshold" in data["serial"]:
             s.setInt(
                 ["serial", "resendRatioThreshold"], data["serial"]["resendRatioThreshold"]
@@ -1074,7 +1122,7 @@ def _saveSettings(data):
                     plugin.on_settings_save(data["plugins"][plugin_id])
                 except TypeError:
                     logger.warning(
-                        "Could not save settings for plugin {name} ({version}) since it called super(...)".format(
+                        "Could not save settings for plugin {name} ({version}). It may have called super(...)".format(
                             name=plugin._plugin_name, version=plugin._plugin_version
                         )
                     )
@@ -1085,7 +1133,8 @@ def _saveSettings(data):
                         "Please contact the plugin's author and ask to update the plugin to use a direct call like"
                     )
                     logger.warning(
-                        "octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead."
+                        "octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead.",
+                        exc_info=True,
                     )
                 except Exception:
                     logger.exception(

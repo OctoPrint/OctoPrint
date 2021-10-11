@@ -660,7 +660,7 @@ Permission record
      - Human readable description of the permission
    * - ``needs``
      - 1
-     - :ref:`Needs object <sec-api-access-datamodel-general-needs>`
+     - :ref:`Needs object <sec-api-datamodel-access-needs>`
      - Needs assigned to the permission
 
 .. _sec-api-datamodel-access-groups:

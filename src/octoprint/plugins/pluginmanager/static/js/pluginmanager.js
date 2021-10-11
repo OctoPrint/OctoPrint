@@ -424,7 +424,7 @@ $(function () {
                 self.uploadButton.bind("click", function () {
                     self._markWorking(
                         gettext("Installing plugin..."),
-                        gettext("Installing plugin from uploaded archive...")
+                        gettext("Installing plugin from uploaded file...")
                     );
                     data.formData = {
                         dependency_links: self.followDependencyLinks()
@@ -693,11 +693,15 @@ $(function () {
             }
 
             OctoPrint.plugins.pluginmanager
-                .getRepository(!!options.refresh)
+                .getRepository(!!options.refresh, {ifModified: true})
                 .fail(function () {
                     deferred.reject();
                 })
-                .done(function (data) {
+                .done(function (data, status, xhr) {
+                    // Don't update if cached - requires ifModified: true to pass through
+                    // the 304 status, otherwise it fakes it and produces 200 all the time.
+                    if (xhr.status === 304) return;
+
                     self.fromRepositoryResponse(data.repository);
                     self.online(data.online !== undefined ? data.online : true);
                     deferred.resolveWith(data);
@@ -1213,7 +1217,7 @@ $(function () {
             if (response.result) {
                 self._markDone();
             } else {
-                self._markDone(response.reason);
+                self._markDone(response.reason, response.faq);
             }
 
             self._displayPluginManagementNotification(response, action, plugin);
@@ -1229,7 +1233,8 @@ $(function () {
             self.logContents.steps.push({
                 action: action,
                 plugin: plugin,
-                result: response.result
+                result: response.result,
+                faq: response.faq
             });
 
             var title = gettext("Plugin management log");
@@ -1248,6 +1253,7 @@ $(function () {
                 steps = steps.slice(steps.length - 5);
             }
 
+            var negativeResult = false;
             _.each(steps, function (step) {
                 var line = undefined;
 
@@ -1289,7 +1295,14 @@ $(function () {
                             ? '<i class="fa fa-check"></i>'
                             : '<i class="fa fa-remove"></i>'
                     }) +
+                    (step.result === false && step.faq
+                        ? ' (<a href="" target="_blank" rel="noopener noreferer">' +
+                          gettext("Why?") +
+                          "</a>)"
+                        : "") +
                     "</li>";
+
+                negativeResult = negativeResult || step.result === false;
             });
             text += "</ul></p>";
 
@@ -1381,6 +1394,8 @@ $(function () {
                 type = "warning";
             }
 
+            if (negativeResult) type = "error";
+
             var options = {
                 title: title,
                 text: text,
@@ -1428,11 +1443,22 @@ $(function () {
             self.workingDialog.modal({keyboard: false, backdrop: "static", show: true});
         };
 
-        self._markDone = function (error) {
+        self._markDone = function (error, faq) {
             self.working(false);
             if (error) {
                 self.loglines.push({line: gettext("Error!"), stream: "error"});
                 self.loglines.push({line: error, stream: "error"});
+                if (faq) {
+                    self.loglines.push({
+                        line: _.sprintf(
+                            gettext(
+                                "You can find more info on this issue in the FAQ at %(url)s"
+                            ),
+                            {url: faq}
+                        ),
+                        stream: "error"
+                    });
+                }
             } else {
                 self.loglines.push({line: gettext("Done!"), stream: "message"});
             }

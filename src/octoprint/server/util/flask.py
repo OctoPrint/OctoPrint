@@ -34,7 +34,7 @@ import octoprint.server
 import octoprint.vendor.flask_principal as flask_principal
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
-from octoprint.util import DefaultOrderedDict, deprecated
+from octoprint.util import DefaultOrderedDict, deprecated, yaml
 from octoprint.util.json import JsonEncoding
 from octoprint.util.net import is_lan_address
 
@@ -567,8 +567,10 @@ class OctoPrintFlaskResponse(flask.Response):
         if samesite is not None:
             samesite = samesite.lower()
         if samesite == "none":
-            samesite = None
-        if samesite not in (None, "strict", "lax"):
+            # Must be string "None"
+            samesite = "None"
+        if samesite not in ("None", "strict", "lax"):
+            # If NoneType, the cookie is not set
             samesite = None
         kwargs["samesite"] = samesite
 
@@ -1021,13 +1023,10 @@ class PreemptiveCache(object):
         return all_data
 
     def get_all_data(self):
-        import yaml
-
         cache_data = None
         with self._lock:
             try:
-                with io.open(self.cachefile, "rt") as f:
-                    cache_data = yaml.safe_load(f)
+                cache_data = yaml.load_from_file(path=self.cachefile)
             except IOError as e:
                 import errno
 
@@ -1050,20 +1049,12 @@ class PreemptiveCache(object):
         return cache_data.get(root, list())
 
     def set_all_data(self, data):
-        import yaml
-
         from octoprint.util import atomic_write
 
         with self._lock:
             try:
                 with atomic_write(self.cachefile, "wt", max_permissions=0o666) as handle:
-                    yaml.safe_dump(
-                        data,
-                        handle,
-                        default_flow_style=False,
-                        indent=2,
-                        allow_unicode=True,
-                    )
+                    yaml.save_to_file(data, file=handle, pretty=True)
             except Exception:
                 self._logger.exception("Error while writing {}".format(self.cachefile))
 
@@ -1702,7 +1693,6 @@ def collect_core_assets(preferred_stylesheet="css"):
     assets["js"] = [
         "js/app/bindings/allowbindings.js",
         "js/app/bindings/contextmenu.js",
-        "js/app/bindings/copywidth.js",
         "js/app/bindings/invisible.js",
         "js/app/bindings/popover.js",
         "js/app/bindings/qrcode.js",

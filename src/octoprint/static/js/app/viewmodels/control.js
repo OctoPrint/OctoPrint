@@ -41,7 +41,9 @@ $(function () {
         self.webcamLoaded = ko.observable(false);
         self.webcamMjpgEnabled = ko.observable(false);
         self.webcamHlsEnabled = ko.observable(false);
+        self.webcamWebRTCEnabled = ko.observable(false);
         self.webcamError = ko.observable(false);
+        self.webRTCPeerConnection = null;
 
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
@@ -513,12 +515,19 @@ $(function () {
                 clearTimeout(self.webcamDisableTimeout);
             }
 
+            // IF disabled then we dont need to do anything
+            if (self.settings.webcam_webcamEnabled() == false) {
+                return;
+            }
+
             // Determine stream type and switch to corresponding webcam.
             var streamType = determineWebcamStreamType(self.settings.webcam_streamUrl());
             if (streamType == "mjpg") {
                 self._switchToMjpgWebcam();
             } else if (streamType == "hls") {
                 self._switchToHlsWebcam();
+            } else if (isWebRTCAvailable() && streamType == "webrtc") {
+                self._switchToWebRTCWebcam();
             } else {
                 throw "Unknown stream type " + streamType;
             }
@@ -688,12 +697,14 @@ $(function () {
 
             var newSrc = self.settings.webcam_streamUrl();
             if (currentSrc != newSrc) {
-                if (newSrc.lastIndexOf("?") > -1) {
-                    newSrc += "&";
-                } else {
-                    newSrc += "?";
+                if (self.settings.webcam_cacheBuster()) {
+                    if (newSrc.lastIndexOf("?") > -1) {
+                        newSrc += "&";
+                    } else {
+                        newSrc += "?";
+                    }
+                    newSrc += new Date().getTime();
                 }
-                newSrc += new Date().getTime();
 
                 self.webcamLoaded(false);
                 self.webcamError(false);
@@ -701,13 +712,19 @@ $(function () {
 
                 self.webcamHlsEnabled(false);
                 self.webcamMjpgEnabled(true);
+                self.webcamWebRTCEnabled(false);
             }
         };
 
         self._switchToHlsWebcam = function () {
             var video = document.getElementById("webcam_hls");
 
-            if (video.canPlayType("application/vnd.apple.mpegurl")) {
+            // Check for native playback options: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canPlayType
+            if (
+                video != null &&
+                typeof video.canPlayType != undefined &&
+                video.canPlayType("application/vnd.apple.mpegurl") == "probably"
+            ) {
                 video.src = self.settings.webcam_streamUrl();
             } else if (Hls.isSupported()) {
                 var hls = new Hls();
@@ -717,6 +734,36 @@ $(function () {
 
             self.webcamMjpgEnabled(false);
             self.webcamHlsEnabled(true);
+            self.webcamWebRTCEnabled(false);
+        };
+
+        self._switchToWebRTCWebcam = function () {
+            if (!isWebRTCAvailable()) {
+                return;
+            }
+            var video = document.getElementById("webcam_webrtc");
+
+            // Close any existing, disconnected connection
+            if (
+                self.webRTCPeerConnection != null &&
+                self.webRTCPeerConnection.connectionState != "connected"
+            ) {
+                self.webRTCPeerConnection.close();
+                self.webRTCPeerConnection = null;
+            }
+
+            // Open a new connection if necessary
+            if (self.webRTCPeerConnection == null) {
+                self.webRTCPeerConnection = startWebRTC(
+                    video,
+                    self.settings.webcam_streamUrl(),
+                    self.settings.webcam_streamWebrtcIceServers()
+                );
+            }
+
+            self.webcamMjpgEnabled(false);
+            self.webcamHlsEnabled(false);
+            self.webcamWebRTCEnabled(true);
         };
     }
 

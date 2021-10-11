@@ -1571,6 +1571,7 @@ class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
         from octoprint.server import (
             connectivityChecker,
             environmentDetector,
+            pluginManager,
             printer,
             safe_mode,
         )
@@ -1587,7 +1588,10 @@ class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
         )
 
         z = get_systeminfo_bundle(
-            systeminfo, settings().getBaseFolder("logs"), printer=printer
+            systeminfo,
+            settings().getBaseFolder("logs"),
+            printer=printer,
+            plugin_manager=pluginManager,
         )
 
         self.set_header("Content-Type", "application/zip")

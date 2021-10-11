@@ -755,7 +755,7 @@ function showMessageDialog(msg, options) {
 
     var modal = $("<div></div>").addClass("modal hide");
     if (!nofade) {
-        modal.addClass("fade");
+        modal.addClass("fade-in");
     }
     modal
         .append($("<div></div>").addClass("modal-header").append(modalHeader))
@@ -845,7 +845,7 @@ function showConfirmationDialog(msg, onacknowledge, options) {
 
     var modal = $("<div></div>").addClass("modal hide");
     if (!nofade) {
-        modal.addClass("fade");
+        modal.addClass("fade-in");
     }
 
     var buttons = $("<div></div>").addClass("modal-footer").append(cancelButton);
@@ -963,7 +963,7 @@ function showSelectionDialog(options) {
     // create modal and do final wiring up
     var modal = $("<div></div>").addClass("modal hide");
     if (!nofade) {
-        modal.addClass("fade");
+        modal.addClass("fade-in");
     }
     if (!cancel) {
         modal.data("backdrop", "static").data("keyboard", "false");
@@ -1060,18 +1060,14 @@ function showProgressModal(options, promise) {
 
     var progress = $('<div class="progress progress-text-centered"></div>');
     var progressBar = $('<div class="bar"></div>').addClass(barClassSuccess);
-    var progressTextBack = $('<span class="progress-text-back"></span>');
-    var progressTextFront = $('<span class="progress-text-front"></span>').width(
-        progress.width()
-    );
+    var progressText = $('<span class="progress-text-back"></span>');
 
     if (max === undefined) {
         progress.addClass("progress-striped active");
         progressBar.width("100%");
     }
 
-    progressBar.append(progressTextFront);
-    progress.append(progressTextBack).append(progressBar);
+    progress.append(progressBar).append(progressText);
 
     var button = $('<button class="btn">' + buttonText + "</button>")
         .prop("disabled", true)
@@ -1092,7 +1088,7 @@ function showProgressModal(options, promise) {
     }
 
     var modal = $("<div></div>")
-        .addClass("modal hide fade")
+        .addClass("modal hide fade-in")
         .addClass(dialogClass)
         .append($("<div></div>").addClass("modal-header").append(modalHeader))
         .append(modalBody)
@@ -1127,9 +1123,16 @@ function showProgressModal(options, promise) {
 
             // update progress bar
             progressBar.width(String(value) + "%");
-            progressTextFront.text(short);
-            progressTextBack.text(short);
-            progressTextFront.width(progress.width());
+            progressText.text(short);
+            if (value < 50 && progressText.hasClass("progress-text-front")) {
+                progressText
+                    .removeClass("progress-text-front")
+                    .addClass("progress-text-back");
+            } else if (value >= 50 && progressText.hasClass("progress-text-back")) {
+                progressText
+                    .removeClass("progress-text-back")
+                    .addClass("progress-text-front");
+            }
 
             // if not successful, apply failure class
             if (!success && !progressBar.hasClass(barClassFailure)) {
@@ -1540,6 +1543,10 @@ var copyToClipboard = function (text) {
 
 var determineWebcamStreamType = function (streamUrl) {
     if (streamUrl) {
+        if (streamUrl.startsWith("webrtc")) {
+            return "webrtc";
+        }
+
         var lastDotPosition = streamUrl.lastIndexOf(".");
         var firstQuotationSignPosition = streamUrl.indexOf("?");
         if (
@@ -1615,4 +1622,83 @@ var deepMerge = function (target, source) {
     });
 
     return target;
+};
+
+var isWebRTCAvailable = function () {
+    return (
+        typeof RTCPeerConnection == "function" &&
+        typeof RTCPeerConnection.prototype.addEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.addTransceiver == "function" &&
+        typeof RTCPeerConnection.prototype.createOffer == "function" &&
+        typeof RTCPeerConnection.prototype.setLocalDescription == "function" &&
+        typeof RTCPeerConnection.prototype.removeEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.addEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.setRemoteDescription == "function"
+    );
+};
+
+var negotiateWebRTC = function (streamUrl) {
+    pc.addTransceiver("video", {direction: "recvonly"});
+    pc.addTransceiver("audio", {direction: "recvonly"});
+    return pc
+        .createOffer()
+        .then(function (offer) {
+            return pc.setLocalDescription(offer);
+        })
+        .then(function () {
+            // Wait for ICE gathering to complete
+            return new Promise(function (resolve) {
+                if (pc.iceGatheringState === "complete") {
+                    resolve();
+                } else {
+                    function checkState() {
+                        if (pc.iceGatheringState === "complete") {
+                            pc.removeEventListener("icegatheringstatechange", checkState);
+                            resolve();
+                        }
+                    }
+                    pc.addEventListener("icegatheringstatechange", checkState);
+                }
+            });
+        })
+        .then(function () {
+            var offer = pc.localDescription;
+            // webrtc://host.com becomes http://host.com
+            // webrtcs://host.com becomes https://host.com
+            streamUrl = "http" + streamUrl.slice("webrtc".length);
+            return $.ajax({
+                url: streamUrl,
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    sdp: offer.sdp,
+                    type: offer.type
+                }),
+                contentType: "application/json; charset=UTF-8"
+            });
+        })
+        .then(function (response) {
+            return pc.setRemoteDescription(response);
+        })
+        .catch(function (e) {
+            console.error(e);
+        });
+};
+
+var startWebRTC = function (videoElement, streamUrl, iceServers) {
+    var config = {
+        sdpSemantics: "unified-plan"
+    };
+    if (iceServers) {
+        config.iceServers = [{urls: iceServers}];
+    }
+    pc = new RTCPeerConnection(config);
+    pc.addEventListener("track", function (evt) {
+        if (evt.track.kind == "video") {
+            videoElement.srcObject = evt.streams[0];
+        }
+    });
+
+    negotiateWebRTC(streamUrl);
+    return pc;
 };

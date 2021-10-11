@@ -410,7 +410,10 @@ class Server(object):
         storage_managers[
             octoprint.filemanager.FileDestinations.LOCAL
         ] = octoprint.filemanager.storage.LocalFileStorage(
-            self._settings.getBaseFolder("uploads")
+            self._settings.getBaseFolder("uploads"),
+            really_universal=self._settings.getBoolean(
+                ["feature", "enforceReallyUniversalFilenames"]
+            ),
         )
 
         fileManager = octoprint.filemanager.FileManager(
@@ -1345,14 +1348,16 @@ class Server(object):
             ReverseProxiedEnvironment,
         )
 
-        s = settings()
+        app.config["TEMPLATES_AUTO_RELOAD"] = True
+        app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+
+        # we must not set this before TEMPLATES_AUTO_RELOAD is set to True or that won't take
+        app.debug = self._debug
 
         # setup octoprint's flask json serialization/deserialization
         app.json_encoder = OctoPrintJsonEncoder
 
-        app.debug = self._debug
-        app.config["TEMPLATES_AUTO_RELOAD"] = True
-        app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+        s = settings()
 
         secret_key = s.get(["server", "secretKey"])
         if not secret_key:
@@ -1387,6 +1392,10 @@ class Server(object):
         @app.before_request
         def before_request():
             g.locale = self._get_locale()
+
+            # used for performance measurement
+            g.start_time = octoprint.util.monotonic_time()
+
             if self._debug and "perfprofile" in request.args:
                 try:
                     from pyinstrument import Profiler
@@ -1409,6 +1418,11 @@ class Server(object):
                 g.perfprofiler.stop()
                 output_html = g.perfprofiler.output_html()
                 return make_response(output_html)
+
+            if hasattr(g, "start_time"):
+                end_time = octoprint.util.monotonic_time()
+                duration_ms = int((end_time - g.start_time) * 1000)
+                response.headers.add("Server-Timing", "app;dur={}".format(duration_ms))
 
             return response
 
@@ -2053,11 +2067,11 @@ class Server(object):
             "js/lib/moment-with-locales.min.js",
             "js/lib/pusher.color.min.js",
             "js/lib/detectmobilebrowser.js",
+            "js/lib/ua-parser.min.js",
             "js/lib/md5.min.js",
             "js/lib/bootstrap-slider-knockout-binding.js",
             "js/lib/loglevel.min.js",
             "js/lib/sockjs.min.js",
-            "js/lib/ResizeSensor.js",
             "js/lib/hls.js",
             "js/lib/less.js",
         ]

@@ -131,6 +131,14 @@ $(function () {
             0
         );
 
+        self.octoprintData = {
+            item: undefined,
+            current: ko.observable("unknown"),
+            available: ko.observable("unknown")
+        };
+
+        self.updatelog = ko.observableArray([]);
+
         self.availableAndPossible = ko.pureComputed(function () {
             return _.filter(self.versions.items(), function (info) {
                 return info.updateAvailable && info.updatePossible;
@@ -160,6 +168,10 @@ $(function () {
                 self.performCheck();
             } else {
                 self._closePopup();
+            }
+
+            if (self.loginState.hasPermission(self.access.permissions.ADMIN)) {
+                self.requestUpdatelog();
             }
         };
 
@@ -294,68 +306,79 @@ $(function () {
             );
         };
 
+        self._enrichInformation = function (key, information) {
+            information["key"] = key;
+
+            if (
+                !information.hasOwnProperty("displayName") ||
+                information.displayName === ""
+            ) {
+                information.displayName = information.key;
+            }
+            if (
+                !information.hasOwnProperty("displayVersion") ||
+                information.displayVersion === ""
+            ) {
+                information.displayVersion = information.information.local.name;
+            }
+            if (
+                !information.hasOwnProperty("releaseNotes") ||
+                information.releaseNotes === ""
+            ) {
+                information.releaseNotes = undefined;
+            }
+
+            var fullNameTemplate = gettext("%(name)s: %(version)s");
+            information.fullNameLocal = _.sprintf(fullNameTemplate, {
+                name: _.escape(information.displayName),
+                version: _.escape(information.displayVersion)
+            });
+
+            var fullNameRemoteVars = {
+                name: _.escape(information.displayName),
+                version: gettext("unknown")
+            };
+            if (
+                information.hasOwnProperty("information") &&
+                information.information.hasOwnProperty("remote") &&
+                information.information.remote.hasOwnProperty("name")
+            ) {
+                fullNameRemoteVars.version = _.escape(
+                    information.information.remote.name
+                );
+            }
+            information.fullNameRemote = _.sprintf(fullNameTemplate, fullNameRemoteVars);
+
+            if (information.releaseChannels && information.releaseChannels.current) {
+                information.releaseChannels.current = ko.observable(
+                    information.releaseChannels.current
+                );
+                information.releaseChannels.current.subscribe(function (selected) {
+                    var patch = {};
+                    patch[key] = {channel: selected};
+                    OctoPrint.plugins.softwareupdate.configure(patch).done(function () {
+                        self.performCheck(false, false, false, [key]);
+                    });
+                });
+            }
+
+            information.toggleDisabled = function () {
+                var patch = {};
+                patch[key] = {disabled: !information.disabled};
+                OctoPrint.plugins.softwareupdate.configure(patch).done(function () {
+                    self.performCheck(false, false, false, [key]);
+                });
+            };
+
+            return information;
+        };
+
         self.fromCheckResponse = function (data, ignoreSeen, showIfNothingNew) {
             self.cacheTimestamp(data.timestamp);
 
             var versions = [];
             _.each(data.information, function (value, key) {
-                value["key"] = key;
-
-                if (!value.hasOwnProperty("displayName") || value.displayName === "") {
-                    value.displayName = value.key;
-                }
-                if (
-                    !value.hasOwnProperty("displayVersion") ||
-                    value.displayVersion === ""
-                ) {
-                    value.displayVersion = value.information.local.name;
-                }
-                if (!value.hasOwnProperty("releaseNotes") || value.releaseNotes === "") {
-                    value.releaseNotes = undefined;
-                }
-
-                var fullNameTemplate = gettext("%(name)s: %(version)s");
-                value.fullNameLocal = _.sprintf(fullNameTemplate, {
-                    name: _.escape(value.displayName),
-                    version: _.escape(value.displayVersion)
-                });
-
-                var fullNameRemoteVars = {
-                    name: _.escape(value.displayName),
-                    version: gettext("unknown")
-                };
-                if (
-                    value.hasOwnProperty("information") &&
-                    value.information.hasOwnProperty("remote") &&
-                    value.information.remote.hasOwnProperty("name")
-                ) {
-                    fullNameRemoteVars.version = _.escape(value.information.remote.name);
-                }
-                value.fullNameRemote = _.sprintf(fullNameTemplate, fullNameRemoteVars);
-
-                if (value.releaseChannels && value.releaseChannels.current) {
-                    value.releaseChannels.current = ko.observable(
-                        value.releaseChannels.current
-                    );
-                    value.releaseChannels.current.subscribe(function (selected) {
-                        var patch = {};
-                        patch[key] = {channel: selected};
-                        OctoPrint.plugins.softwareupdate
-                            .configure(patch)
-                            .done(function () {
-                                self.performCheck(false, false, false, [key]);
-                            });
-                    });
-                }
-
-                value.toggleDisabled = function () {
-                    var patch = {};
-                    patch[key] = {disabled: !value.disabled};
-                    OctoPrint.plugins.softwareupdate.configure(patch).done(function () {
-                        self.performCheck(false, false, false, [key]);
-                    });
-                };
-
+                self._enrichInformation(key, value);
                 versions.push(value);
             });
             self.versions.updateItems(versions);
@@ -556,6 +579,16 @@ $(function () {
                 });
         };
 
+        self.fromUpdatelogResponse = function (response) {
+            self.updatelog(response.updatelog);
+        };
+
+        self.requestUpdatelog = function () {
+            OctoPrint.plugins.softwareupdate
+                .getUpdatelog()
+                .done(self.fromUpdatelogResponse);
+        };
+
         self.iconTitleForEntry = function (data) {
             if (data.updatePossible) {
                 return "";
@@ -655,12 +688,7 @@ $(function () {
         };
 
         self.performUpdate = function (force, items) {
-            if (
-                !self.loginState.hasPermission(
-                    self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE
-                )
-            )
-                return;
+            if (!self.updateAccess()) return;
             if (self.printerState.isPrinting()) return;
 
             self.updateInProgress = true;
@@ -717,13 +745,16 @@ $(function () {
             return self.update(force, self.availableAndPossibleAndEnabled());
         };
 
-        self.update = function (force, items) {
-            if (
-                self.updateInProgress ||
-                !self.loginState.hasPermission(
+        self.updateAccess = function () {
+            return (
+                self.loginState.hasPermission(
                     self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE
-                )
-            ) {
+                ) || CONFIG_FIRST_RUN
+            );
+        };
+
+        self.update = function (force, items) {
+            if (self.updateInProgress || !self.updateAccess()) {
                 self._updateClicked = false;
                 return;
             }
@@ -819,8 +850,10 @@ $(function () {
 
         self._showWorkingDialog = function (title) {
             if (
-                !self.loginState.hasPermission(
-                    self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK
+                !(
+                    self.loginState.hasPermission(
+                        self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK
+                    ) || CONFIG_FIRST_RUN
                 )
             ) {
                 return;
@@ -895,6 +928,21 @@ $(function () {
         self.onEventConnectivityChanged = function (payload) {
             if (!payload || !payload.new) return;
             self.performCheck();
+        };
+
+        self.onWizardDetails = function (data) {
+            if (
+                data.softwareupdate &&
+                data.softwareupdate.details &&
+                data.softwareupdate.details.update
+            ) {
+                var value = data.softwareupdate.details.update;
+                self._enrichInformation("octoprint", value);
+
+                self.octoprintData.item = value;
+                self.octoprintData.current(value.information.local.name);
+                self.octoprintData.available(value.information.remote.name);
+            }
         };
 
         self.onDataUpdaterReconnect = function () {
@@ -1139,7 +1187,8 @@ $(function () {
         elements: [
             "#settings_plugin_softwareupdate",
             "#softwareupdate_confirmation_dialog",
-            "#wizard_plugin_softwareupdate"
+            "#wizard_plugin_softwareupdate_update",
+            "#wizard_plugin_softwareupdate_settings"
         ]
     });
 });

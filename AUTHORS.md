@@ -141,11 +141,17 @@ date of first contribution):
   * [Joe Martella](https://github.com/martellaj)
   * [Scott Lahteine](https://github.com/thinkyhead)
   * [Karthikeyan Singaravelan](https://github.com/tirkarthi)
+  * [Yvan Rodrigues](https://github.com/TwoRedCells)
+  * [Elton Law](https://github.com/eltonlaw)
+  * ["sparxooo"](https://github.com/sparxooo)
+  * ["Stevil Knevil"](https://github.com/StevilKnevil)
+  * [ldursw](https://github.com/ldursw)
+  * [Ian Wilt](https://github.com/ianwiltdotcom)
   * [Ben Sycha](https://github.com/Sycha)
-  * [Sven Samoray](https://github.com/thelastWallE)
   * [John Boiles](https://github.com/johnboiles)
   * [Adam DeMuri](https://github.com/ademuri)
   * [Daniel Shenkle](https://github.com/DShenkle)
+  * [Sven Samoray](https://github.com/thelastWallE)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

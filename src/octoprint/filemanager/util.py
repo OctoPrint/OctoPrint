@@ -83,7 +83,7 @@ class StreamWrapper(AbstractFileWrapper):
     A wrapper allowing processing of one or more consecutive streams.
 
     Arguments:
-        *streams: One or more :py:`io.IOBase` streams to process one after another to save to storage.
+        *streams: One or more :py:class:`io.IOBase` streams to process one after another to save to storage.
     """
 
     def __init__(self, filename, *streams):
@@ -124,7 +124,7 @@ class MultiStream(io.RawIOBase):
     their contents in the order they are provided to the constructor.
 
     Arguments:
-        *streams: One or more :py:`io.IOBase` streams to concatenate.
+        *streams: One or more :py:class:`io.IOBase` streams to concatenate.
     """
 
     def __init__(self, *streams):

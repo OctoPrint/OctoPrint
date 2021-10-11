@@ -227,7 +227,7 @@ class gcode(object):
         self._layers = []
         self._current_layer = None
 
-    def _track_layer(self, pos):
+    def _track_layer(self, pos, arc=None):
         if not self._incl_layers:
             return
 
@@ -237,6 +237,14 @@ class gcode(object):
 
         elif self._current_layer:
             self._current_layer["minmax"].record(pos)
+            if arc is not None:
+                self._addArcMinMax(
+                    self._current_layer["minmax"],
+                    arc["startAngle"],
+                    arc["endAngle"],
+                    arc["center"],
+                    arc["radius"],
+                )
 
     def _track_command(self):
         if self._current_layer:
@@ -492,6 +500,117 @@ class gcode(object):
                 if e:
                     self._track_layer(pos)
 
+            if gcode in ("G2", "G3"):  # Arc Move
+                x = getCodeFloat(line, "X")
+                y = getCodeFloat(line, "Y")
+                z = getCodeFloat(line, "Z")
+                e = getCodeFloat(line, "E")
+                i = getCodeFloat(line, "I")
+                j = getCodeFloat(line, "J")
+                r = getCodeFloat(line, "R")
+                f = getCodeFloat(line, "F")
+
+                # this is a move or print head stays on position
+                move = (
+                    x is not None
+                    or y is not None
+                    or z is not None
+                    or i is not None
+                    or j is not None
+                    or r is not None
+                )
+
+                oldPos = pos
+
+                # Use new coordinates if provided. If not provided, use prior coordinates (minus tool offset)
+                # in absolute and 0.0 in relative mode.
+                newPos = Vector3D(
+                    x * scale if x is not None else (0.0 if relativeMode else pos.x),
+                    y * scale if y is not None else (0.0 if relativeMode else pos.y),
+                    z * scale if z is not None else (0.0 if relativeMode else pos.z),
+                )
+
+                if relativeMode:
+                    # Relative mode: add to current position
+                    pos += newPos
+                else:
+                    # Absolute mode: apply tool offsets
+                    pos = newPos
+
+                if f is not None and f != 0:
+                    feedrate = f
+
+                # get radius and offset
+                i = 0 if i is None else i
+                j = 0 if j is None else j
+                r = math.sqrt(i * i + j * j) if r is None else r
+
+                # calculate angles
+                centerArc = Vector3D(oldPos.x + i, oldPos.y + j, oldPos.z)
+                startAngle = math.atan2(oldPos.y - centerArc.y, oldPos.x - centerArc.x)
+                endAngle = math.atan2(pos.y - centerArc.y, pos.x - centerArc.x)
+
+                if gcode == "G2":
+                    startAngle, endAngle = endAngle, startAngle
+                if startAngle < 0:
+                    startAngle += math.pi * 2
+                if endAngle < 0:
+                    endAngle += math.pi * 2
+
+                # from now on we only think in counter-clockwise direction
+
+                if e is not None:
+                    if relativeMode or relativeE:
+                        # e is already relative, nothing to do
+                        pass
+                    else:
+                        e -= currentE[currentExtruder]
+
+                    # If move with extrusion, calculate new min/max coordinates of model
+                    if e > 0 and move:
+                        # extrusion and move -> oldPos & pos relevant for print area & dimensions
+                        self._minMax.record(oldPos)
+                        self._minMax.record(pos)
+                        self._addArcMinMax(
+                            self._minMax, startAngle, endAngle, centerArc, r
+                        )
+
+                    totalExtrusion[currentExtruder] += e
+                    currentE[currentExtruder] += e
+                    maxExtrusion[currentExtruder] = max(
+                        maxExtrusion[currentExtruder], totalExtrusion[currentExtruder]
+                    )
+
+                    if currentExtruder == 0 and len(currentE) > 1 and duplicationMode:
+                        # Copy first extruder length to other extruders
+                        for i in range(1, len(currentE)):
+                            totalExtrusion[i] += e
+                            currentE[i] += e
+                            maxExtrusion[i] = max(maxExtrusion[i], totalExtrusion[i])
+                else:
+                    e = 0
+
+                # move time in x, y, z, will be 0 if no movement happened
+                moveTimeXYZ = abs((oldPos - pos).length / feedrate)
+
+                # time needed for extruding, will be 0 if no extrusion happened
+                extrudeTime = abs(e / feedrate)
+
+                # time to add is maximum of both
+                totalMoveTimeMinute += max(moveTimeXYZ, extrudeTime)
+
+                # process layers if there's extrusion
+                if e:
+                    self._track_layer(
+                        pos,
+                        {
+                            "startAngle": startAngle,
+                            "endAngle": endAngle,
+                            "center": centerArc,
+                            "radius": r,
+                        },
+                    )
+
             elif gcode == "G4":  # Delay
                 S = getCodeFloat(line, "S")
                 if S is not None:
@@ -644,6 +763,30 @@ class gcode(object):
                 zlib.decompress(base64.b64decode(comment[len(prefix) :])).split(b"\b"),
             )
         }
+
+    def _intersectsAngle(self, start, end, angle):
+        if end < start and angle == 0:
+            # angle crosses 0 degrees
+            return True
+        else:
+            return start <= angle <= end
+
+    def _addArcMinMax(self, minmax, startAngle, endAngle, centerArc, radius):
+        startDeg = math.degrees(startAngle)
+        endDeg = math.degrees(endAngle)
+
+        if self._intersectsAngle(startDeg, endDeg, 0):
+            # arc crosses positive x
+            minmax.max.x = max(minmax.max.x, centerArc.x + radius)
+        if self._intersectsAngle(startDeg, endDeg, 90):
+            # arc crosses positive y
+            minmax.max.y = max(minmax.max.y, centerArc.y + radius)
+        if self._intersectsAngle(startDeg, endDeg, 180):
+            # arc crosses negative x
+            minmax.min.x = min(minmax.min.x, centerArc.x - radius)
+        if self._intersectsAngle(startDeg, endDeg, 270):
+            # arc crosses negative y
+            minmax.min.y = min(minmax.min.y, centerArc.y - radius)
 
     def get_result(self):
         result = {

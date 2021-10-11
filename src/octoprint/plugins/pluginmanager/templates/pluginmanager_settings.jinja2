@@ -23,7 +23,8 @@
 {% macro pluginmanager_throttled() %}
 <div class="alert" data-bind="visible: throttled">{% trans %}
     The system OctoPrint is running on is currently throttled. Due to that it's not possible to install new
-    plugins in order to avoid possible issues caused by system instability.
+    plugins in order to avoid possible issues caused by system instability. Read more on
+    this in <a href="https://faq.octoprint.org/pi-issues" target="_blank" rel="noopener noreferrer">the FAQ</a>.
 {% endtrans %}</div>
 {% endmacro %}
 
@@ -37,7 +38,7 @@
 {% macro pluginmanager_requesterror() %}
 <div class="alert" data-bind="visible: requestError()">{% trans %}
     There appears to have been an error retrieving the plugin data from the backend. Please report this
-    in the bug tracker & be sure to include all requested logs.
+    in the bug tracker & be sure to include all requested information.
 {% endtrans %}</div>
 {% endmacro %}
 
@@ -61,7 +62,7 @@
 
             <div class="pull-right">
                 <button class="btn btn-small" data-bind="click: $root.showRepository"><i class="fas fa-plus"></i> {{ _('Get More') }}</button>
-                <a class="btn btn-small" href="/plugin/pluginmanager/export"><i class="fas fa-download"></i> {{ _('Export') }}</a>
+                <a class="btn btn-small" href="{{ url_for('index') }}plugin/pluginmanager/export"><i class="fas fa-download"></i> {{ _('Export') }}</a>
                 <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
                 <a class="btn btn-small" data-toggle="collapse" href="#pluginmanager_info" title="{{ _('Info') }}"><i class="fas fa-lg fa-info-circle text-info" data-bind="css: {'text-error': noticeCount() > 0, 'text-info': noticeCount() <=0 }"></i></a>
             </div>
@@ -188,7 +189,7 @@
     </div>
 </div>
 
-<div id="settings_plugin_pluginmanager_workingdialog" class="modal hide fade">
+<div id="settings_plugin_pluginmanager_workingdialog" class="modal hide fade-in">
     <div class="modal-header">
         <h3 data-bind="text: workingTitle"></h3>
     </div>
@@ -200,7 +201,7 @@
     </div>
 </div>
 
-<div id="settings_plugin_pluginmanager_repositorydialog" class="modal hide fade">
+<div id="settings_plugin_pluginmanager_repositorydialog" class="modal hide fade-in">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
         <h3>{{ _('Install new Plugins...') }}</h3>
@@ -346,7 +347,7 @@
     </div>
 </div>
 
-<div id="settings_plugin_pluginmanager_configurationdialog" class="modal hide fade">
+<div id="settings_plugin_pluginmanager_configurationdialog" class="modal hide fade-in">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
         <h3>{{ _('Plugin Configuration') }}</h3>

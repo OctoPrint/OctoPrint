@@ -1,0 +1,9 @@
+<h3>{{ _('Update?') }}</h3>
+
+{% trans %}<p>
+    You are about to set up OctoPrint <span data-bind="text: octoprintData.current"></span>
+    but <span data-bind="text: octoprintData.available"></span> is available. It is strongly
+    recommended to update to the latest version before you continue.
+</p>{% endtrans %}
+
+<a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$root.octoprintData.item]) }" class="btn btn-primary btn-block">{{ _('Update') }}</a>

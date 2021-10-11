@@ -113,6 +113,47 @@ class BomAwareOpenTest(unittest.TestCase):
         )
 
 
+class GetBomTest(unittest.TestCase):
+    """
+    Tests for :func:`octoprint.util.get_bom`.
+    """
+
+    def setUp(self):
+        self.filename_utf8_with_bom = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)), "_files", "utf8_with_bom.txt"
+        )
+        self.filename_utf8_without_bom = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)), "_files", "utf8_without_bom.txt"
+        )
+
+    def test_get_bom_no_bom(self):
+        """Tests that no BOM is returned if no BOM is present."""
+
+        # test
+        bom = octoprint.util.get_bom(self.filename_utf8_without_bom, "utf-8-sig")
+
+        # assert
+        self.assertIsNone(bom)
+
+    def test_get_bom_utf8_bom(self):
+        """Tests that a UTF8 BOM is returned if present."""
+
+        # test
+        bom = octoprint.util.get_bom(self.filename_utf8_with_bom, "utf-8-sig")
+
+        # assert
+        self.assertEqual(bom, b"\xef\xbb\xbf")
+
+    def test_get_bom_wrong_encoding(self):
+        """Tests that an UTF8 BOM is only returned if proper encoding was set."""
+
+        # test
+        bom = octoprint.util.get_bom(self.filename_utf8_with_bom, "utf-16-le")
+
+        # assert
+        self.assertIsNone(bom)
+
+
 class TestAtomicWrite(unittest.TestCase):
     """
     Tests for :func:`octoprint.util.atomic_write`.

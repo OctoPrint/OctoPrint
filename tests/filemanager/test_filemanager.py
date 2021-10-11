@@ -382,9 +382,11 @@ class FileManagerTest(unittest.TestCase):
         )
 
     @mock.patch("octoprint.util.atomic_write", create=True)
-    @mock.patch("yaml.safe_dump", create=True)
+    @mock.patch("octoprint.util.yaml.save_to_file", create=True)
     @mock.patch("time.time")
-    def test_save_recovery_data(self, mock_time, mock_yaml_safe_dump, mock_atomic_write):
+    def test_save_recovery_data(
+        self, mock_time, mock_yaml_save_to_file, mock_atomic_write
+    ):
         import os
 
         now = 123456789
@@ -411,16 +413,14 @@ class FileManagerTest(unittest.TestCase):
             "date": now,
         }
 
-        mock_yaml_safe_dump.assert_called_with(
+        mock_yaml_save_to_file.assert_called_with(
             expected,
-            stream=mock_atomic_write_handle,
-            default_flow_style=False,
-            indent=2,
-            allow_unicode=True,
+            file=mock_atomic_write_handle,
+            pretty=True,
         )
 
     @mock.patch("octoprint.util.atomic_write", create=True)
-    @mock.patch("yaml.safe_dump", create=True)
+    @mock.patch("octoprint.util.yaml.save_to_file", create=True)
     @mock.patch("time.time")
     def test_save_recovery_data_with_error(
         self, mock_time, mock_yaml_safe_dump, mock_atomic_write
@@ -471,8 +471,6 @@ class FileManagerTest(unittest.TestCase):
     def test_get_recovery_data(self, mock_isfile):
         import os
 
-        import yaml
-
         recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
 
         data = {
@@ -481,16 +479,14 @@ class FileManagerTest(unittest.TestCase):
             "pos": 1234,
             "date": 123456789,
         }
-        text_data = yaml.dump(data)
 
-        with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(read_data=text_data)) as m:
-            # moved safe_load to here so we could mock up the return value properly
-            with mock.patch("yaml.safe_load", return_value=data) as n:
-                result = self.file_manager.get_recovery_data()
+        # moved safe_load to here so we could mock up the return value properly
+        with mock.patch("octoprint.util.yaml.load_from_file", return_value=data) as n:
+            result = self.file_manager.get_recovery_data()
 
-                self.assertDictEqual(data, result)
-                n.assert_called_with(m())
-                mock_isfile.assert_called_with(recovery_file)
+            self.assertDictEqual(data, result)
+            n.assert_called_with(path=recovery_file)
+            mock_isfile.assert_called_with(recovery_file)
 
     @mock.patch("os.path.isfile")
     def test_get_recovery_data_no_file(self, mock_isfile):
@@ -501,17 +497,17 @@ class FileManagerTest(unittest.TestCase):
         self.assertIsNone(result)
 
     @mock.patch("os.path.isfile")
-    @mock.patch("yaml.safe_load")
+    @mock.patch("octoprint.util.yaml.load_from_file")
     @mock.patch("os.remove")
     def test_get_recovery_data_broken_file(
-        self, mock_remove, mock_yaml_safe_load, mock_isfile
+        self, mock_remove, mock_yaml_load, mock_isfile
     ):
         import os
 
         recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
 
         mock_isfile.return_value = True
-        mock_yaml_safe_load.side_effect = RuntimeError
+        mock_yaml_load.side_effect = RuntimeError
 
         result = self.file_manager.get_recovery_data()
 

@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 This module represents OctoPrint's settings management. Within this module the default settings for the core
 application are defined and the instance of the :class:`Settings` is held, which offers getter and setter
@@ -18,12 +16,12 @@ of various types and the configuration file itself.
    :members:
    :undoc-members:
 """
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import copy
 import fnmatch
 import io
 import logging
@@ -32,11 +30,9 @@ import re
 import sys
 import time
 
-import yaml
-import yaml.parser
-
-# noinspection PyCompatibility
+# noinspection PyCompatibilitys
 from past.builtins import basestring
+from yaml import YAMLError
 
 try:
     from collections import ChainMap
@@ -57,8 +53,10 @@ from octoprint.util import (
     CaseInsensitiveSet,
     atomic_write,
     dict_merge,
+    fast_deepcopy,
     generate_api_key,
     is_hidden_path,
+    yaml,
 )
 
 _APPNAME = "OctoPrint"
@@ -110,6 +108,7 @@ default_settings = {
         "port": None,
         "baudrate": None,
         "exclusive": True,
+        "lowLatency": True,
         "autoconnect": False,
         "log": False,
         "timeout": {
@@ -123,6 +122,7 @@ default_settings = {
             "temperatureAutoreport": 2,
             "sdStatus": 1,
             "sdStatusAutoreport": 1,
+            "posAutoreport": 5,
             "resendOk": 0.5,
             "baudrateDetectionPause": 1.0,
             "positionLogWait": 10.0,
@@ -135,6 +135,7 @@ default_settings = {
         "blacklistedBaudrates": [],
         "longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226", "M600"],
         "blockedCommands": ["M0", "M1"],
+        "ignoredCommands": [],
         "pausingCommands": ["M0", "M1", "M25"],
         "emergencyCommands": ["M112", "M108", "M410"],
         "checksumRequiringCommands": ["M110"],
@@ -176,8 +177,10 @@ default_settings = {
         "capabilities": {
             "autoreport_temp": True,
             "autoreport_sdstatus": True,
+            "autoreport_pos": True,
             "busy_protocol": True,
             "emergency_parser": True,
+            "extended_m20": True,
         },
         "resendRatioThreshold": 10,
         "resendRatioStart": 100,
@@ -246,6 +249,7 @@ default_settings = {
         "stream": None,
         "streamRatio": "16:9",
         "streamTimeout": 5,
+        "streamWebrtcIceServers": ["stun:stun.l.google.com:19302"],
         "snapshot": None,
         "snapshotTimeout": 5,
         "snapshotSslValidation": True,
@@ -257,7 +261,7 @@ default_settings = {
         "flipH": False,
         "flipV": False,
         "rotate90": False,
-        "ffmpegCommandline": '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b {bitrate} -f {containerformat} -y {filters} "{output}"',
+        "ffmpegCommandline": '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b:v {bitrate} -f {containerformat} -y {filters} "{output}"',
         "timelapse": {
             "type": "off",
             "options": {},
@@ -265,6 +269,7 @@ default_settings = {
             "fps": 25,
         },
         "cleanTmpAfterDays": 7,
+        "cacheBuster": False,
     },
     "gcodeAnalysis": {
         "maxExtruders": 10,
@@ -285,6 +290,7 @@ default_settings = {
         "uploadOverwriteConfirmation": True,
         "autoUppercaseBlacklist": ["M117", "M118"],
         "g90InfluencesExtruder": False,
+        "enforceReallyUniversalFilenames": False,
     },
     "folder": {
         "uploads": None,
@@ -369,6 +375,7 @@ default_settings = {
                     "plugin_pluginmanager",
                     "plugin_softwareupdate",
                     "plugin_announcements",
+                    "plugin_eventmanager",
                     "plugin_backup",
                     "plugin_tracking",
                     "plugin_errortracking",
@@ -376,6 +383,7 @@ default_settings = {
                 ],
                 "usersettings": ["access", "interface"],
                 "wizard": [
+                    "plugin_softwareupdate_update",
                     "plugin_backup",
                     "plugin_corewizard_acl",
                     "plugin_corewizard_onlinecheck",
@@ -431,6 +439,10 @@ default_settings = {
         {
             "name": "Suppress SD status messages",
             "regex": r"(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)|(Recv: Not SD printing)",
+        },
+        {
+            "name": "Suppress position messages",
+            "regex": r"(Send:\s+(N\d+\s+)?M114)|(Recv:\s+(ok\s+)?X:[+-]?([0-9]*[.])?[0-9]+\s+Y:[+-]?([0-9]*[.])?[0-9]+\s+Z:[+-]?([0-9]*[.])?[0-9]+\s+E\d*:[+-]?([0-9]*[.])?[0-9]+).*",
         },
         {"name": "Suppress wait responses", "regex": r"Recv: wait"},
         {
@@ -531,17 +543,16 @@ class DuplicateFolderPaths(InvalidSettings):
 
 
 class HierarchicalChainMap(ChainMap):
-    def deep_dict(self, root=None):
-        if root is None:
-            root = self
+    def deep_dict(self):
+        def deep_dict_inner(root):
+            return {
+                key: deep_dict_inner(self.__class__._get_next(key, root))
+                if isinstance(value, dict)
+                else value
+                for key, value in root.items()
+            }
 
-        result = {}
-        for key, value in root.items():
-            if isinstance(value, dict):
-                result[key] = self.deep_dict(root=self.__class__._get_next(key, root))
-            else:
-                result[key] = value
-        return result
+        return deep_dict_inner(self)
 
     def has_path(self, path, only_local=False, only_defaults=False):
         if only_defaults:
@@ -745,10 +756,16 @@ class Settings(object):
     def sanity_check_folders(self, folders=None):
         if folders is None:
             folders = default_settings["folder"].keys()
+
+        folder_map = {}
         for folder in folders:
-            self.getBaseFolder(
-                folder, check_writable=True, deep_check_writable=True, log_error=True
+            folder_map[folder] = self.getBaseFolder(
+                folder, check_writable=True, deep_check_writable=True
             )
+
+        # validate uniqueness of folder paths
+        if len(folder_map.values()) != len(set(folder_map.values())):
+            raise DuplicateFolderPaths(folders)
 
     def _get_default_folder(self, type):
         folder = default_settings["folder"][type]
@@ -938,9 +955,7 @@ class Settings(object):
 
     @property
     def effective_yaml(self):
-        import yaml
-
-        return yaml.safe_dump(self.effective)
+        return yaml.dump(self.effective)
 
     @property
     def effective_hash(self):
@@ -956,9 +971,7 @@ class Settings(object):
 
     @property
     def config_yaml(self):
-        import yaml
-
-        return yaml.safe_dump(self._config)
+        return yaml.dump(self._config)
 
     @property
     def config_hash(self):
@@ -1010,10 +1023,10 @@ class Settings(object):
         if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
             with io.open(self._configfile, "rt", encoding="utf-8", errors="replace") as f:
                 try:
-                    self._config = yaml.safe_load(f)
+                    self._config = yaml.load_from_file(file=f)
                     self._mtime = self.last_modified
 
-                except yaml.YAMLError as e:
+                except YAMLError as e:
                     details = str(e)
 
                     if hasattr(e, "problem_mark"):
@@ -1036,7 +1049,6 @@ class Settings(object):
 
         if migrate:
             self._migrate_config()
-        self._validate_config()
 
         self._forget_hashes()
 
@@ -1080,8 +1092,7 @@ class Settings(object):
 
         if isinstance(overlay, basestring):
             if os.path.exists(overlay) and os.path.isfile(overlay):
-                with io.open(overlay, "rt", encoding="utf-8", errors="replace") as f:
-                    config = yaml.safe_load(f)
+                config = yaml.load_from_file(path=overlay)
         elif isinstance(overlay, dict):
             config = overlay
         else:
@@ -1102,7 +1113,7 @@ class Settings(object):
         assert isinstance(overlay, dict)
 
         if key is None:
-            overlay_yaml = yaml.safe_dump(overlay)
+            overlay_yaml = yaml.dump(overlay)
             import hashlib
 
             hash = hashlib.md5()
@@ -1634,15 +1645,6 @@ class Settings(object):
             return True
         return False
 
-    def _validate_config(self):
-        # validate uniqueness of folder paths
-        folder_keys = self.get(["folder"], merged=True).keys()
-        folders = {
-            folder_key: self.getBaseFolder(folder_key) for folder_key in folder_keys
-        }
-        if len(folders.values()) != len(set(folders.values())):
-            raise DuplicateFolderPaths(folders)
-
     def backup(self, suffix=None, path=None, ext=None, hidden=False):
         import shutil
 
@@ -1680,13 +1682,7 @@ class Settings(object):
                 permissions=0o600,
                 max_permissions=0o666,
             ) as configFile:
-                yaml.safe_dump(
-                    self._config,
-                    configFile,
-                    default_flow_style=False,
-                    indent=2,
-                    allow_unicode=True,
-                )
+                yaml.save_to_file(self._config, file=configFile)
                 self._dirty = False
         except Exception:
             self._logger.exception("Error while saving config.yaml!")
@@ -1782,19 +1778,13 @@ class Settings(object):
                 except KeyError:
                     raise NoSuchSettingsPath()
 
-            if preprocessors is not None:
-                try:
-                    preprocessor = self._get_by_path(path, preprocessors)
-                except Exception:
-                    pass
-
-                if callable(preprocessor):
-                    value = preprocessor(value)
+            if callable(preprocessor):
+                value = preprocessor(value)
 
             if do_copy:
                 if isinstance(value, KeysView):
                     value = list(value)
-                value = copy.deepcopy(value)
+                value = fast_deepcopy(value)
 
             if asdict:
                 results[key] = value
@@ -1904,7 +1894,6 @@ class Settings(object):
         type,
         create=True,
         allow_fallback=True,
-        log_error=False,
         check_writable=True,
         deep_check_writable=False,
     ):
@@ -1925,23 +1914,20 @@ class Settings(object):
                 create=create,
                 check_writable=check_writable,
                 deep_check_writable=deep_check_writable,
-                log_error=log_error,
             )
         except Exception:
             if folder != default_folder and allow_fallback:
-                if log_error:
-                    self._logger.error(
-                        "Invalid configured {} folder at {}, attempting to "
-                        "fall back on default folder at {}".format(
-                            type, folder, default_folder
-                        )
+                self._logger.exception(
+                    "Invalid configured {} folder at {}, attempting to "
+                    "fall back on default folder at {}".format(
+                        type, folder, default_folder
                     )
+                )
                 _validate_folder(
                     default_folder,
                     create=create,
                     check_writable=check_writable,
                     deep_check_writable=deep_check_writable,
-                    log_error=log_error,
                 )
                 folder = default_folder
 
@@ -2219,9 +2205,7 @@ def _default_basedir(applicationName):
         return os.path.expanduser(os.path.join("~", "." + applicationName.lower()))
 
 
-def _validate_folder(
-    folder, create=True, check_writable=True, deep_check_writable=False, log_error=False
-):
+def _validate_folder(folder, create=True, check_writable=True, deep_check_writable=False):
     logger = logging.getLogger(__name__)
 
     if not os.path.exists(folder):
@@ -2234,8 +2218,7 @@ def _validate_folder(
             try:
                 os.makedirs(folder)
             except Exception:
-                if log_error:
-                    logger.exception("Could not create {}".format(folder))
+                logger.exception("Could not create {}".format(folder))
                 raise IOError(
                     "Folder for type {} at {} does not exist and creation failed".format(
                         type, folder
@@ -2267,6 +2250,5 @@ def _validate_folder(
                     f.write("test")
                 os.remove(testfile)
             except Exception:
-                if log_error:
-                    logger.exception("Could not write test file to {}".format(folder))
+                logger.exception("Could not write test file to {}".format(testfile))
                 raise IOError(error)
