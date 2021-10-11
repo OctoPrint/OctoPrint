@@ -2401,9 +2401,15 @@ class Plugin(object):
         pass
 
     def on_plugin_enabled(self):
+        """
+        Called by the plugin core when the plugin was enabled. Override this to react to the event.
+        """
         pass
 
     def on_plugin_disabled(self):
+        """
+        Called by the plugin core when the plugin was disabled. Override this to react to the event.
+        """
         pass
 
 

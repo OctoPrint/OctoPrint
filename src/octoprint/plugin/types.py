@@ -125,6 +125,14 @@ class OctoPrintPlugin(Plugin):
             os.makedirs(self._data_folder)
         return self._data_folder
 
+    def on_plugin_pending_uninstall(self):
+        """
+        Called by the plugin manager when the plugin is pending uninstall. Override this to react to the event.
+
+        NOT called during plugin uninstalls triggered outside of OctoPrint!
+        """
+        pass
+
 
 class ReloadNeedingPlugin(Plugin):
     """
