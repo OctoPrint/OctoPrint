@@ -44,10 +44,10 @@ from octoprint.util.version import (
 
 from . import cli, exceptions, updaters, util, version_checks
 
-# OctoPi 0.15+
-MINIMUM_PYTHON = "2.7.9"
-MINIMUM_SETUPTOOLS = "39.0.1"
-MINIMUM_PIP = "9.0.3"
+# OctoPi 0.16+
+MINIMUM_PYTHON = "2.7.13"
+MINIMUM_SETUPTOOLS = "40.7.1"
+MINIMUM_PIP = "19.0.1"
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
