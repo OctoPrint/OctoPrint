@@ -134,9 +134,6 @@ $(function () {
                 }
  
                 var amountLeft = totalFilamentNeeded * (1 - (self.progress() / 100));
-                
-                console.log(totalFilamentNeeded);
-                console.log(self.progress());
 
                 return amountLeft.toFixed() + " mm";
             }
