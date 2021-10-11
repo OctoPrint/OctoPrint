@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 This module represents OctoPrint's plugin subsystem. This includes management and helper methods as well as the
 registered plugin types.
@@ -14,6 +12,7 @@ registered plugin types.
 .. autoclass:: PluginSettings
    :members:
 """
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -67,7 +66,8 @@ def plugin_manager(
             this defaults to the entry point ``octoprint.plugin``.
         plugin_disabled_list (list): A list of plugin identifiers that are currently disabled. If not provided this
             defaults to all plugins for which ``enabled`` is set to ``False`` in the settings.
-        plugin_blacklist (list): A list of plugin identifiers/identifier-version tuples that are currently blacklisted.
+        plugin_blacklist (list): A list of plugin identifiers/identifier-requirement tuples
+            that are currently blacklisted.
         plugin_restart_needing_hooks (list): A list of hook namespaces which cause a plugin to need a restart in order
             be enabled/disabled. Does not have to contain full hook identifiers, will be matched with startswith similar
             to logging handlers

@@ -14,7 +14,7 @@ jobs:
       - name: 🚀 Repository Dispatch
         uses: peter-evans/repository-dispatch@v1
         with:
-          token: ${{ secrets.DOCS_ACCESS_TOKEN }}
+          token: ${{ secrets.REPODISPATCH_TOKEN }}
           repository: OctoPrint/docs.octoprint.org
           event-type: docs
           client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'

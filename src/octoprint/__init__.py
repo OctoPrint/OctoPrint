@@ -287,11 +287,22 @@ def init_logging(
 
     # default logging configuration
     if default_config is None:
+        simple_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         default_config = {
             "version": 1,
             "formatters": {
-                "simple": {
-                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                "simple": {"format": simple_format},
+                "colored": {
+                    "()": "colorlog.ColoredFormatter",
+                    "format": "%(log_color)s" + simple_format + "%(reset)s",
+                    "reset": True,
+                    "log_colors": {
+                        "DEBUG": "cyan",
+                        "INFO": "white",
+                        "WARNING": "yellow",
+                        "ERROR": "red",
+                        "CRITICAL": "bold_red",
+                    },
                 },
                 "serial": {"format": "%(asctime)s - %(message)s"},
                 "timings": {"format": "%(asctime)s - %(message)s"},
@@ -301,7 +312,7 @@ def init_logging(
                 "console": {
                     "class": "octoprint.logging.handlers.OctoPrintStreamHandler",
                     "level": "DEBUG",
-                    "formatter": "simple",
+                    "formatter": "colored",
                     "stream": "ext://sys.stdout",
                 },
                 "file": {
@@ -734,7 +745,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
     import yaml
 
     from octoprint.util import bom_aware_open
-    from octoprint.util.version import is_octoprint_compatible
+    from octoprint.util.version import is_octoprint_compatible, is_python_compatible
 
     logger = log.getLogger(__name__ + ".startup")
 
@@ -765,13 +776,19 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
             ):
                 continue
 
-            if "version" in entry:
+            if "pythonversions" in entry and not is_python_compatible(
+                *entry["pythonversions"]
+            ):
+                continue
+
+            if "pluginversions" in entry:
                 logger.debug(
-                    "Blacklisted plugin: {}, version: {}".format(
-                        entry["plugin"], entry["version"]
+                    "Blacklisted plugin: {}, versions: {}".format(
+                        entry["plugin"], ", ".join(entry["pluginversions"])
                     )
                 )
-                result.append((entry["plugin"], entry["version"]))
+                for version in entry["pluginversions"]:
+                    result.append((entry["plugin"], version))
             elif "versions" in entry:
                 logger.debug(
                     "Blacklisted plugin: {}, versions: {}".format(
@@ -779,7 +796,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
                     )
                 )
                 for version in entry["versions"]:
-                    result.append((entry["plugin"], version))
+                    result.append((entry["plugin"], "=={}".format(version)))
             else:
                 logger.debug("Blacklisted plugin: {}".format(entry["plugin"]))
                 result.append(entry["plugin"])

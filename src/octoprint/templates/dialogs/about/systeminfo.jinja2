@@ -1,13 +1,19 @@
 <h3>{{ _('System Information') }}</h3>
 
-<p>{% trans %}Please copy/paste the following when requesting support on the forums or
+<p>{% trans %}Please always share a Systeminfo Bundle when requesting support on the forums or
     when opening a new bug report:{% endtrans %}</p>
 
-<p data-bind="foreach: systeminfo">
-    <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span><br />
-</p>
+<p><a href="{{ url_for('index', _external=True) }}downloads/systeminfo.zip" class="btn btn-primary"><i class="fas fa-download"></i> {{ _('Download Systeminfo Bundle') }}</a></p>
 
+<p>{% trans %}You can view Systeminfo Bundles at <a href="https://bundleviewer.octoprint.org" target="_blank" rel="noopener noreferrer">bundleviewer.octoprint.org</a>{% endtrans %}</p>
 
-<a href="{{ url_for('index', _external=True) }}downloads/systeminfo.zip" class="btn btn-primary"><i class="fas fa-download"></i> {{ _('Download Systeminfo Bundle') }}</a>
+<div class="more">
+    <div><small><a href="javascript:void(0)" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.more', container: '.hide' }"><i class="fas fa-caret-right"></i> {{ _('More') }}</a></small></div>
+    <div class="hide">
+        <p data-bind="foreach: systeminfo">
+            <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span><br />
+        </p>
 
-<a href="javascript:void(0)" class="btn" data-bind="click: copySystemInfo"><i class="far fa-copy"></i> {{ _('Copy') }}</a>
+        <a href="javascript:void(0)" class="btn" data-bind="click: copySystemInfo"><i class="far fa-copy"></i> {{ _('Copy') }}</a>
+    </div>
+</div>

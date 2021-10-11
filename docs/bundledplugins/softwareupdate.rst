@@ -197,20 +197,24 @@ types are currently recognized:
     * ``prerelease``: ``True`` or ``False``, default ``False``, set to
       ``True`` to also include releases on Github marked as prerelease.
     * ``prerelease_branches``: Prerelease channel definitions, optional. List of:
+
       * ``branch``: Branch associated with the channel, acts as ID
       * ``name``: Human readable name of the release channel
       * ``commitish``: List of values to check against ``target_commitish``
         field in Github release data - release will only be included if the
         values match. Defaults to being unset, in which case the ``branch``
         will be matched.
+
       .. versionadded:: 1.2.16
     * ``stable_branch``: Stable channel definition, optional. Structure:
+
       * ``branch``: Branch associated with the channel, acts as ID
       * ``name``: Human readable name of the release channel
       * ``commitish``: List of values to check against ``target_commitish``
         field in Github release data - release will only be included if the
         values match. Defaults to being unset, in which case the ``branch``
         will be matched.
+
       .. versionadded:: 1.2.16
     * ``prerelease_channel``: Release channel to limit updates to. If set only
       those releases will be included if their ``target_commitish`` matches
@@ -218,6 +222,7 @@ types are currently recognized:
       included in ``prerelease_channels`` or the ``stable_channel``. Only
       taken into account if ``prerelease`` is ``true``.
       .. versionadded:: 1.2.16
+
     * ``release_compare``: Method to use to compare between current version
       information and release versions on Github. One of ``python`` (version
       comparison using ``pkg_resources.parse_version``, newer version detected

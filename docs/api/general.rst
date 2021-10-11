@@ -44,8 +44,7 @@ For testing purposes it is also possible to supply the API key via a query param
 Please be advised that clients should use the header field variant if at all possible.
 
 If the key is missing or invalid, OctoPrint will treat the request as it would any unauthenticated anonymous request to the endpoint.
-Consequently, if the bundled :ref:`ForceLogin plugin <sec-bundledplugins-forcelogin>` is active (which is the default), that means
-that any requests without or with an invalid API key targeting other API endpoints than :ref:`Login <sec-api-general-login>`
+That means that any requests without or with an invalid API key targeting other API endpoints than :ref:`Login <sec-api-general-login>`
 will be denied with a :http:statuscode:`403`.
 
 .. warning::

@@ -70,6 +70,13 @@
                     </div>
                 </div>
                 <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: serial_lowLatency" id="settings-serialLowLatency"> {{ _('Request low latency mode on the serial port') }}
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
                     <label class="control-label">{{ _('Apply parity double open workaround')}}</label>
                     <div class="controls">
                         <label class="radio">
@@ -143,6 +150,16 @@
                     <div class="controls">
                         <div class="input-append">
                             <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutSdStatusAutoreport" id="settings-serialTimeoutSdStatusAutoreport">
+                            <span class="add-on">s</span>
+                        </div>
+                        <span class="help-inline">{{ _('Autoreport interval to request from firmware')}}</span>
+                    </div>
+                </div>
+                <div class="control-group" title="{{ _('Position interval to request from autoreport capable firmwares. A value of 0 disables autoreporting by the firmware.')|edq }}">
+                    <label class="control-label" for="settings-serialTimeoutPosAutoreport">{{ _('Position autoreport interval') }}</label>
+                    <div class="controls">
+                        <div class="input-append">
+                            <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutPosAutoreport" id="settings-serialTimeoutPosAutoreport">
                             <span class="add-on">s</span>
                         </div>
                         <span class="help-inline">{{ _('Autoreport interval to request from firmware')}}</span>
@@ -347,6 +364,13 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_capAutoreportPos" id="settings-serialCapAutoreportPos"> {{ _('Support position autoreporting by firmware, if detected') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: serial_capEmergencyParser" id="settings-serialCapEmergencyParser"> {{ _('Send emergency GCODES <code>M108</code> and <code>M410</code> without waiting for acknowledgement, if detected as supported by the firmware') }}
                                 </label>
                             </div>
@@ -355,6 +379,13 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: serial_capBusyProtocol" id="settings-serialCapBusyProtocol"> {{ _('Support <code>busy</code> protocol, if detected') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_capExtendedM20" id="settings-serialCapExtendedM20"> {{ _('Send <code>M20 L</code> instead of <code>M20</code> to use extended SD file lists, if detected as supported by the firmware') }}
                                 </label>
                             </div>
                         </div>
@@ -399,6 +430,13 @@
                     <div class="controls">
                         <input type="text" class="input-block-level" id="settings-serialBlockedCommands" data-bind="value: serial_blockedCommands">
                         <span class="help-inline">{{ _('Use this to specify commands that should never be sent to the printer. Just the G or M code, comma separated. Defaults to <code>M0</code> and <code>M1</code> since most firmware will block until a button on the controller has been pressed if it receives either of those two commands.') }}</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="settings-serialIgnoredCommands">{{ _('Ignored commands') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" id="settings-serialIgnoredCommands" data-bind="value: serial_ignoredCommands">
+                        <span class="help-inline">{{ _('Use this to specify commands that should be silently ignored and never be sent to the printer. Just the G or M code, comma separated. Unlike blocked commands above, there will be no warning popup when these commands are encountered.') }}</span>
                     </div>
                 </div>
                 <div class="control-group">

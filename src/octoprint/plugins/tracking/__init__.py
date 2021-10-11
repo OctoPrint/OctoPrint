@@ -38,6 +38,7 @@ class TrackingPlugin(
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.WizardPlugin,
     octoprint.plugin.EventHandlerPlugin,
+    octoprint.plugin.SimpleApiPlugin,
 ):
     def __init__(self):
         self._environment = None
@@ -76,6 +77,7 @@ class TrackingPlugin(
                 "printer_safety_check": True,
                 "throttled": True,
                 "slicing": True,
+                "webui_load": True,
             },
         }
 
@@ -93,6 +95,26 @@ class TrackingPlugin(
         if enabled is None and self._settings.get(["enabled"]):
             # tracking was just enabled, let's start up tracking
             self._start_tracking()
+
+    ##~~ SimpleApiPlugin
+
+    def get_api_commands(self):
+        return {"track": ["event", "payload"]}
+
+    def on_api_command(self, command, data):
+        if command != "track":
+            return
+
+        event = data.pop("event")
+        if event == "webui_load":
+            payload = data.get("payload", {})
+            browser_name = payload.get("browser_name")
+            browser_version = payload.get("browser_version")
+            os_name = payload.get("os_name")
+            os_version = payload.get("os_version")
+
+            if all((browser_name, browser_version, os_name, os_version)):
+                self._track_webui_load(browser_name, browser_version, os_name, os_version)
 
     ##~~ EnvironmentDetectionPlugin
 
@@ -191,7 +213,7 @@ class TrackingPlugin(
     ##~~ AssetPlugin
 
     def get_assets(self):
-        return {"js": ["js/usage.js"]}
+        return {"js": ["js/usage.js"], "clientjs": ["clientjs/usage.js"]}
 
     ##~~ WizardPlugin
 
@@ -279,6 +301,18 @@ class TrackingPlugin(
             return
 
         self._track("shutdown")
+
+    def _track_webui_load(self, browser_name, browser_version, os_name, os_version):
+        if not self._settings.get_boolean(["events", "webui_load"]):
+            return
+
+        self._track(
+            "webui_load",
+            browser_name=browser_name,
+            browser_version=browser_version,
+            os_name=os_name,
+            os_version=os_version,
+        )
 
     def _track_plugin_event(self, event, payload):
         if not self._settings.get_boolean(["events", "plugin"]):

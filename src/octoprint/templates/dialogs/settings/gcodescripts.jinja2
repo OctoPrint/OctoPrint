@@ -53,16 +53,16 @@
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label">{{ _('After connection to printer is established') }}</label>
+        <label class="control-label">{{ _('After serial connection to printer is established') }}</label>
         <div class="controls">
             <textarea rows="8" class="block monospace" data-bind="value: scripts_gcode_afterPrinterConnected"></textarea>
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label">{{ _('Before connection to printer is closed') }}</label>
+        <label class="control-label">{{ _('Before serial connection to printer is closed') }}</label>
         <div class="controls">
             <textarea rows="8" class="block monospace" data-bind="value: scripts_gcode_beforePrinterDisconnected"></textarea>
-            <small>{{ _('Anything you put here will only be executed when closing the connection actively. If the connection to the printer is suddenly lost nothing will be sent.') }}</small>
+            <small>{{ _('Anything you put here will only be executed when closing the serial connection actively. If the serial connection to the printer is suddenly lost nothing will be sent.') }}</small>
         </div>
     </div>
 </form>

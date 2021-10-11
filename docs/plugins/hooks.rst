@@ -931,7 +931,7 @@ octoprint.comm.transport.serial.additional_port_names
    .. versionadded:: 1.4.1
 
    Return additional port names (not glob patterns!) to use as a serial connection to the printer. Expected to be
-   ``list`` of ``string``s.
+   ``list`` of ``string``.
 
    Useful in combination with :ref:`octoprint.comm.transport.serial.factory <sec-plugins-hook-comm-transport-serial-factory>`
    to implement custom serial-like ports through plugins.
@@ -1191,7 +1191,7 @@ octoprint.plugin.softwareupdate.check_config
 
 See :ref:`here <sec-bundledplugins-softwareupdate-hooks-check_config>`.
 
-.. _sec-plugins-hooks-plugin-printer-additional_state_data
+.. _sec-plugins-hooks-plugin-printer-additional_state_data:
 
 octoprint.printer.additional_state_data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1201,7 +1201,7 @@ octoprint.printer.additional_state_data
    .. versionadded:: 1.5.0
 
    Use this to inject additional data into the data structure returned from the printer backend to the frontend
-   on the push socket or other registered :ref:`~octoprint.printer.PrinterCallback`s. Anything you return here
+   on the push socket or other registered :class:`octoprint.printer.PrinterCallback`. Anything you return here
    will be located beneath ``plugins.<your plugin id>`` in the resulting initial and current data push structure.
 
    The ``initial`` parameter will be ``True`` if this the additional update sent to the callback. Your handler should
@@ -1430,7 +1430,7 @@ octoprint.server.api.after_request
 octoprint.server.api.before_request
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: after_request_handlers_hook(*args, **kwargs)
+.. py:function:: before_request_handlers_hook(*args, **kwargs)
 
    .. versionadded:: 1.3.10
 
@@ -1600,8 +1600,6 @@ octoprint.server.sockjs.register
    Handlers should return either ``True`` or ``False``. ``True`` signals to proceed with normal registration. ``False``
    signals to not register the client.
 
-   See the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` for an example on how to utilize this.
-
    :param object socket: the socket object which is about to be registered
    :param object user: the user currently authenticated on the socket - might be None
    :return: whether to proceed with registration (``True``) or not (``False``)
@@ -1620,14 +1618,116 @@ octoprint.server.sockjs.emit
 
    Handlers should return either ``True`` to allow the message to be emitted, or ``False`` to prevent it.
 
-   See the bundled :ref:`Forcelogin Plugin <sec-bundledplugins-forcelogin>` for an example on how to utilize this.
-
    :param object socket: the socket object on which a message is about to be emitted
    :param object user: the user currently authenticated on the socket - might be None
    :param string message: the message type about to be emitted
    :param dict payload: the payload of the message about to be emitted (may be None)
    :return: whether to proceed with sending the message (``True``) or not (``False``)
    :rtype: boolean
+
+.. _sec-plugins-hook-system-additional_commands:
+
+octoprint.system.additional_commands
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: additional_commands_hook(*args, **kwargs)
+
+   .. versionadded:: 1.7.0
+
+   Allows adding additional system commands into the system menu. Handlers must return
+   a list of system command definitions, each definition matching the following data
+   structure:
+
+   .. list-table::
+      :widths: 15 5 10 30
+      :header-rows: 1
+
+      * - Name
+        - Multiplicity
+        - Type
+        - Description
+      * - ``name``
+        - 1
+        - String
+        - The name to display in the menu.
+      * - ``action``
+        - 1
+        - String
+        - An identifier for the action, must only consist of lower case a-z, numbers, ``-`` and ``_`` (``[a-z0-9-_]``).
+      * - ``command``
+        - 1
+        - String
+        - The system command to execute.
+      * - ``confirm``
+        - 0..1
+        - String
+        - An optional message to show as a confirmation dialog before executing the command.
+      * - ``async``
+        - 0..1
+        - bool
+        - If ``True``, the command will be run asynchronously and the API call will return immediately after enqueuing it for execution.
+      * - ``ignore``
+        - 0..1
+        - bool
+        - If ``True``, OctoPrint will ignore the result of the command's (and ``before``'s, if set) execution and return a successful result regardless. Defaults to ``False``.
+      * - ``debug``
+        - 0..1
+        - bool
+        - If ``True``, the command will generate debug output in the log including the command line that's run. Use with care. Defaults to ``False``
+      * - ``before``
+        - 0..1
+        - callable
+        - Optional callable to execute before the actual ``command`` is run. If ``ignore`` is false and this fails in any way, the command will not run and an error returned.
+
+   .. code-block:: python
+
+      def get_additional_commands(*args, **kwargs):
+          return [
+              {
+                  "name": "Just a test",
+                  "action": "test",
+                  "command": "logger This is just a test of an OctoPrint system command from a plugin",
+                  "before": lambda: print("Hello World!")
+              }
+          ]
+
+      __plugin_hooks__ = {
+          "octoprint.system.additional_commands": get_additional_commands
+      }
+
+   :return: a list of command specifications
+   :rtype: list
+
+.. _sec-plugins-hook-systeminfo-additional_bundle_files:
+
+octoprint.systeminfo.additional_bundle_files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: additional_bundle_files_hook(*args, **kwargs)
+
+   .. versionadded:: 1.7.0
+
+   Allows bundled plugins to extend the list of files to include in the systeminfo bundle.
+   Note that this hook will ignore third party plugins. Handlers must return a dictionary
+   mapping file names in the bundle to either local log paths on disk or a ``callable``
+   that will be called to generate the file's content inside the bundle.
+
+   **Example**
+
+   Add a plugin's ``console`` log file to the systeminfo bundle:
+
+   .. code-block:: python
+
+      def get_additional_bundle_files(*args, **kwargs):
+        console_log = self._settings.get_plugin_logfile_path(postfix="console")
+        return {os.path.basename(console_log): console_log}
+
+      __plugin_hooks__ = {
+          "octoprint.systeminfo.additional_bundle_files": get_additional_bundle_files
+      }
+
+   :return: a dictionary mapping bundle file names to bundle file content
+   :rtype: dict
 
 .. _sec-plugins-hook-timelapse-extensions:
 

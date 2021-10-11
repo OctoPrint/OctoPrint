@@ -589,6 +589,15 @@ Issue a file command
 
      Requires the ``FILES_SELECT`` permission.
 
+   unselect
+     Unselects the currently selected file for printing.
+
+     Upon success, a status code of :http:statuscode:`204` and an empty body is returned. If no file is selected
+     or there already is an active print job, a :http:statuscode:`409` is returned. If path isn't ``current```
+     or the filename of the current selection, a :http:statuscode:`400` is returned
+
+     Requires the ``FILES_SELECT`` permission.
+
    slice
      Slices an STL file into GCODE. Note that this is an asynchronous operation that will take place in the background
      after the response has been sent back to the client. Additional parameters are:

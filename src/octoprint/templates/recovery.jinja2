@@ -61,7 +61,7 @@
                 <ul class="nav nav-list">
                     <li class="nav-header">{{ _('Navigation') }}</li>
                     <li><a href="#system-commands">{{ _('System commands') }}</a></li>
-                    <li><a href="#system-info">{{ _('System info') }}</a></li>
+                    <li><a href="#system-info">{{ _('System info bundle') }}</a></li>
                     <li data-bind="visible: printerConnected"><a href="#printer-control">{{ _('Printer control') }}</a></li>
                     <li data-bind="visible: backupSupported"><a href="#backups">{{ _('Backups') }}</a></li>
                 </ul>
@@ -78,12 +78,8 @@
                 </div>
 
                 <div style="margin-bottom: 2em">
-                    <h1 id="system-info">{{ _('System info') }}</h1>
-                    <p data-bind="foreach: systemInfo">
-                        <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span><br />
-                    </p>
-                    <a href="{{ url_for('index', _external=True) }}downloads/systeminfo.zip" class="btn btn-primary"><i class="fas fa-download"></i> {{ _('Download Systeminfo Bundle') }}</a>
-                    <a href="javascript:void(0)" class="btn" data-bind="click: copySystemInfo"><i class="far fa-copy"></i> {{ _('Copy') }}</a>
+                    <h1 id="system-info">{{ _('System info bundle') }}</h1>
+                    <a href="{{ url_for('index', _external=True) }}downloads/systeminfo.zip" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> {{ _('Download Systeminfo Bundle') }}</a>
                 </div>
 
                 <div data-bind="visible: printerConnected" style="margin-bottom: 2em">
@@ -98,10 +94,10 @@
 
                     <h2>{{ _('Create backup') }}</h2>
                     <form class="form-horizontal" onsubmit="return false;">
-                        <div class="control-group">
+                        <div class="control-group" title="{{ _('All files in the uploads folder and subfolders. These are the files in the Files List, plus any metadata that has been generated for those files.')|edq }}">
                             <div class="controls">
                                 <label class="checkbox">
-                                    <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files & metadata from backup') }}
+                                    <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files (& associated metadata) from backup') }}
                                 </label>
                             </div>
                         </div>
@@ -161,7 +157,7 @@
         </div>
     </div>
 
-    <div id="workdialog" class="modal hide fade">
+    <div id="workdialog" class="modal hide fade-in">
         <div class="modal-header">
             <h3 data-bind="text: workTitle"></h3>
         </div>

@@ -4,4 +4,3 @@ octoprint.settings
 ------------------
 
 .. automodule:: octoprint.settings
-   :members:

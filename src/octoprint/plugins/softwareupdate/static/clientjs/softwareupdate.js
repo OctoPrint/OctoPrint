@@ -12,6 +12,7 @@
         this.checkUrl = url + "check";
         this.updateUrl = url + "update";
         this.configureUrl = url + "configure";
+        this.updatelogUrl = url + "updatelog";
     };
 
     OctoPrintSoftwareUpdateClient.prototype.checkEntries = function (
@@ -86,6 +87,10 @@
 
     OctoPrintSoftwareUpdateClient.prototype.configure = function (data, opts) {
         return this.base.postJson(this.configureUrl, data, opts);
+    };
+
+    OctoPrintSoftwareUpdateClient.prototype.getUpdatelog = function (opts) {
+        return this.base.get(this.updatelogUrl, opts);
     };
 
     OctoPrintClient.registerPluginComponent(

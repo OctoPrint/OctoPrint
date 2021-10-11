@@ -176,3 +176,21 @@ jobs:
         uses: pypa/gh-action-pypi-publish@master
         with:
           password: ${{ secrets.pypi_password }}
+
+  notify-custopizer-build:
+    name: 📧 Notify OctoPi-UpToDate
+    if: github.event_name == 'release'
+    needs: publish-on-pypi
+    runs-on: ubuntu-latest
+    steps:
+      - name: 👀 Determine version
+        run: |
+          OCTOPRINT_VERSION=$(echo $GITHUB_REF | cut -d/ -f3)
+          echo "OCTOPRINT_VERSION=$OCTOPRINT_VERSION" >> $GITHUB_ENV
+      - name: 🚀 Repository Dispatch
+        uses: peter-evans/repository-dispatch@v1
+        with:
+          token: ${{ secrets.REPODISPATCH_TOKEN }}
+          repository: OctoPrint/OctoPi-UpToDate
+          event-type: octoprint_release
+          client-payload: '{"version": "${{ env.OCTOPRINT_VERSION }}"}'

@@ -6,6 +6,8 @@ $(function () {
         self.settings = parameters[1];
         self.access = parameters[2];
 
+        self.allViewModels = undefined;
+
         self.stateString = ko.observable(undefined);
         self.errorString = ko.observable(undefined);
         self.hasErrorString = ko.pureComputed(function () {
@@ -433,8 +435,25 @@ $(function () {
                     }
                 });
             } else {
+                var proceed = function (p) {
+                    var prevented = false;
+                    var callback = function () {
+                        OctoPrint.job.start();
+                    };
+
+                    callViewModels(self.allViewModels, "onBeforePrintStart", function (
+                        method
+                    ) {
+                        prevented = prevented || method(callback) === false;
+                    });
+
+                    if (!prevented) {
+                        callback();
+                    }
+                };
+
                 if (!self.settings.feature_printStartConfirmation()) {
-                    OctoPrint.job.start();
+                    proceed();
                 } else {
                     showConfirmationDialog({
                         message: gettext(
@@ -443,9 +462,7 @@ $(function () {
                         question: gettext("Do you want to start the print job now?"),
                         cancel: gettext("No"),
                         proceed: gettext("Yes"),
-                        onproceed: function () {
-                            OctoPrint.job.start();
-                        },
+                        onproceed: proceed,
                         nofade: true
                     });
                 }
@@ -478,6 +495,10 @@ $(function () {
                     nofade: true
                 });
             }
+        };
+
+        self.onAllBound = function (allViewModels) {
+            self.allViewModels = allViewModels;
         };
     }
 

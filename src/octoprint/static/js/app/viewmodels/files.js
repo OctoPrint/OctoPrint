@@ -9,6 +9,8 @@ $(function () {
         self.printerProfiles = parameters[4];
         self.access = parameters[5];
 
+        self.allViewModels = undefined;
+
         self.filesListVisible = ko.observable(true);
         self.showInternalFilename = ko.observable(true);
 
@@ -83,6 +85,20 @@ $(function () {
         self.moveEntry = ko.observable({name: "", display: "", path: ""}); // is there a better way to do this?
         self.moveSource = ko.observable(undefined);
         self.moveDestination = ko.observable(undefined);
+        self.moveSourceFilename = ko.observable(undefined);
+        self.moveDestinationFilename = ko.observable(undefined);
+        self.moveDestinationFullpath = ko.pureComputed(function () {
+            // Join the paths for renaming
+            if (self.moveSourceFilename() != self.moveDestinationFilename()) {
+                if (self.moveDestination() === "/") {
+                    return self.moveDestination() + self.moveDestinationFilename();
+                } else {
+                    return self.moveDestination() + "/" + self.moveDestinationFilename();
+                }
+            } else {
+                return self.moveDestination();
+            }
+        });
         self.moveError = ko.observable("");
 
         self.folderList = ko.observableArray(["/"]);
@@ -103,6 +119,7 @@ $(function () {
         self.allItems = ko.observable(undefined);
         self.currentPath = ko.observable("");
         self.uploadProgressText = ko.observable();
+        self.uploadProgressPercentage = ko.observable();
 
         // list style incl. persistence
         var listStyleStorageKey = "gcodeFiles.currentListStyle";
@@ -163,18 +180,22 @@ $(function () {
             listHelperExclusiveFilters.push(SUPPORTED_FILETYPES);
         }
 
+        var sortByName = function (a, b) {
+            // sorts ascending
+            if (a["display"].toLowerCase() < b["display"].toLowerCase()) return -1;
+            if (a["display"].toLowerCase() > b["display"].toLowerCase()) return 1;
+            return 0;
+        };
+
         self.listHelper = new ItemListHelper(
             "gcodeFiles",
             {
-                name: function (a, b) {
-                    // sorts ascending
-                    if (a["display"].toLowerCase() < b["display"].toLowerCase())
-                        return -1;
-                    if (a["display"].toLowerCase() > b["display"].toLowerCase()) return 1;
-                    return 0;
-                },
+                name: sortByName,
                 upload: function (a, b) {
                     // sorts descending
+                    if (a["date"] === undefined && b["date"] === undefined) {
+                        return sortByName(a, b);
+                    }
                     if (b["date"] === undefined || a["date"] > b["date"]) return -1;
                     if (a["date"] === undefined || a["date"] < b["date"]) return 1;
                     return 0;
@@ -610,13 +631,32 @@ $(function () {
                 return;
             }
 
+            var proceed = function (p) {
+                var prevented = false;
+                var callback = function () {
+                    OctoPrint.files.select(data.origin, data.path, p);
+                };
+
+                if (p) {
+                    callViewModels(self.allViewModels, "onBeforePrintStart", function (
+                        method
+                    ) {
+                        prevented = prevented || method(callback) === false;
+                    });
+                }
+
+                if (!prevented) {
+                    callback();
+                }
+            };
+
             if (
                 printAfterLoad &&
                 self.listHelper.isSelected(data) &&
                 self.enablePrint(data)
             ) {
                 // file was already selected, just start the print job
-                OctoPrint.job.start();
+                self.printerState.print();
             } else {
                 // select file, start print job (if requested and within dimensions)
                 var withinPrintDimensions = self.evaluatePrintDimensions(data, true);
@@ -631,12 +671,12 @@ $(function () {
                         cancel: gettext("No"),
                         proceed: gettext("Yes"),
                         onproceed: function () {
-                            OctoPrint.files.select(data.origin, data.path, print);
+                            proceed(print);
                         },
                         nofade: true
                     });
                 } else {
-                    OctoPrint.files.select(data.origin, data.path, print);
+                    proceed(print);
                 }
             }
         };
@@ -675,6 +715,8 @@ $(function () {
             self.moveError("");
             self.moveSource(current);
             self.moveDestination(current);
+            self.moveSourceFilename(entry.name);
+            self.moveDestinationFilename(entry.name);
             self.moveDialog.modal("show");
         };
 
@@ -923,60 +965,72 @@ $(function () {
         self.getAdditionalData = function (data) {
             var output = "";
             if (data["gcodeAnalysis"]) {
-                if (data["gcodeAnalysis"]["dimensions"]) {
-                    var dimensions = data["gcodeAnalysis"]["dimensions"];
-                    output +=
-                        gettext("Model size") +
-                        ": " +
-                        _.sprintf(
-                            "%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm",
-                            dimensions
-                        );
-                    output += "<br>";
-                }
                 if (
-                    data["gcodeAnalysis"]["filament"] &&
-                    typeof data["gcodeAnalysis"]["filament"] === "object"
+                    data["gcodeAnalysis"]["_empty"] ||
+                    !data["gcodeAnalysis"]["dimensions"] ||
+                    (data["gcodeAnalysis"]["dimensions"]["width"] === 0 &&
+                        data["gcodeAnalysis"]["dimensions"]["depth"] === 0 &&
+                        data["gcodeAnalysis"]["dimensions"]["height"] === 0)
                 ) {
-                    var filament = data["gcodeAnalysis"]["filament"];
-                    if (_.keys(filament).length === 1) {
+                    output += gettext("Model contains no extrusion.<br>");
+                } else {
+                    if (data["gcodeAnalysis"]["dimensions"]) {
+                        var dimensions = data["gcodeAnalysis"]["dimensions"];
                         output +=
-                            gettext("Filament") +
+                            gettext("Model size") +
                             ": " +
-                            formatFilament(
-                                data["gcodeAnalysis"]["filament"]["tool" + 0]
-                            ) +
-                            "<br>";
-                    } else if (_.keys(filament).length > 1) {
-                        _.each(filament, function (f, k) {
-                            if (
-                                !_.startsWith(k, "tool") ||
-                                !f ||
-                                !f.hasOwnProperty("length") ||
-                                f["length"] <= 0
-                            )
-                                return;
+                            _.sprintf(
+                                "%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm",
+                                dimensions
+                            );
+                        output += "<br>";
+                    }
+                    if (
+                        data["gcodeAnalysis"]["filament"] &&
+                        typeof data["gcodeAnalysis"]["filament"] === "object"
+                    ) {
+                        var filament = data["gcodeAnalysis"]["filament"];
+                        if (_.keys(filament).length === 1) {
                             output +=
                                 gettext("Filament") +
-                                " (" +
-                                gettext("Tool") +
-                                " " +
-                                k.substr("tool".length) +
-                                "): " +
-                                formatFilament(f) +
+                                ": " +
+                                formatFilament(
+                                    data["gcodeAnalysis"]["filament"]["tool" + 0]
+                                ) +
                                 "<br>";
-                        });
+                        } else if (_.keys(filament).length > 1) {
+                            _.each(filament, function (f, k) {
+                                if (
+                                    !_.startsWith(k, "tool") ||
+                                    !f ||
+                                    !f.hasOwnProperty("length") ||
+                                    f["length"] <= 0
+                                )
+                                    return;
+                                output +=
+                                    gettext("Filament") +
+                                    " (" +
+                                    gettext("Tool") +
+                                    " " +
+                                    k.substr("tool".length) +
+                                    "): " +
+                                    formatFilament(f) +
+                                    "<br>";
+                            });
+                        }
                     }
+                    output +=
+                        gettext("Estimated print time") +
+                        ": " +
+                        (self.settingsViewModel.appearance_fuzzyTimes()
+                            ? formatFuzzyPrintTime(
+                                  data["gcodeAnalysis"]["estimatedPrintTime"]
+                              )
+                            : formatDuration(
+                                  data["gcodeAnalysis"]["estimatedPrintTime"]
+                              )) +
+                        "<br>";
                 }
-                output +=
-                    gettext("Estimated print time") +
-                    ": " +
-                    (self.settingsViewModel.appearance_fuzzyTimes()
-                        ? formatFuzzyPrintTime(
-                              data["gcodeAnalysis"]["estimatedPrintTime"]
-                          )
-                        : formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"])) +
-                    "<br>";
             }
             if (data["prints"] && data["prints"]["last"]) {
                 output +=
@@ -1290,6 +1344,7 @@ $(function () {
             self.uploadProgress.addClass("progress-striped").addClass("active");
             self.uploadProgressBar.css("width", "100%");
             if (payload.progressAvailable) {
+                self.uploadProgressPercentage(percentage);
                 self.uploadProgressText(
                     _.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0})
                 );
@@ -1304,18 +1359,21 @@ $(function () {
                     percentage: Math.round(progress)
                 })
             );
+            self.uploadProgressPercentage(Math.round(progress));
         };
 
         self.onEventSlicingCancelled = function (payload) {
             self.uploadProgress.removeClass("progress-striped").removeClass("active");
             self.uploadProgressBar.css("width", "0%");
             self.uploadProgressText("");
+            self.uploadProgressPercentage(0);
         };
 
         self.onEventSlicingDone = function (payload) {
             self.uploadProgress.removeClass("progress-striped").removeClass("active");
             self.uploadProgressBar.css("width", "0%");
             self.uploadProgressText("");
+            self.uploadProgressPercentage(0);
 
             new PNotify({
                 title: gettext("Slicing done"),
@@ -1337,6 +1395,7 @@ $(function () {
             self.uploadProgress.removeClass("progress-striped").removeClass("active");
             self.uploadProgressBar.css("width", "0%");
             self.uploadProgressText("");
+            self.uploadProgressPercentage(0);
 
             var html = _.sprintf(
                 gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"),
@@ -1365,6 +1424,7 @@ $(function () {
         self.onEventTransferStarted = function (payload) {
             self.uploadProgress.addClass("progress-striped").addClass("active");
             self.uploadProgressBar.css("width", "100%");
+            self.uploadProgressPercentage(100);
             self.uploadProgressText(gettext("Streaming ..."));
         };
 
@@ -1372,6 +1432,7 @@ $(function () {
             self.uploadProgress.removeClass("progress-striped").removeClass("active");
             self.uploadProgressBar.css("width", "0");
             self.uploadProgressText("");
+            self.uploadProgressPercentage(0);
 
             new PNotify({
                 title: gettext("Streaming done"),
@@ -1395,6 +1456,7 @@ $(function () {
             self.uploadProgress.removeClass("progress-striped").removeClass("active");
             self.uploadProgressBar.css("width", "0");
             self.uploadProgressText("");
+            self.uploadProgressPercentage(0);
 
             new PNotify({
                 title: gettext("Streaming failed"),
@@ -1453,6 +1515,7 @@ $(function () {
         self._setProgressBar = function (percentage, text, active) {
             self.uploadProgressBar.css("width", percentage + "%");
             self.uploadProgressText(text);
+            self.uploadProgressPercentage(percentage);
 
             if (active) {
                 self.uploadProgress.addClass("progress-striped active");
@@ -1676,6 +1739,9 @@ $(function () {
             self.showInternalFilename(
                 self.settingsViewModel.settings.appearance.showInternalFilename()
             );
+        };
+        self.onAllBound = function (allViewModels) {
+            self.allViewModels = allViewModels;
         };
     }
 

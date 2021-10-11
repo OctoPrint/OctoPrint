@@ -410,7 +410,10 @@ class Server(object):
         storage_managers[
             octoprint.filemanager.FileDestinations.LOCAL
         ] = octoprint.filemanager.storage.LocalFileStorage(
-            self._settings.getBaseFolder("uploads")
+            self._settings.getBaseFolder("uploads"),
+            really_universal=self._settings.getBoolean(
+                ["feature", "enforceReallyUniversalFilenames"]
+            ),
         )
 
         fileManager = octoprint.filemanager.FileManager(
@@ -1345,14 +1348,16 @@ class Server(object):
             ReverseProxiedEnvironment,
         )
 
-        s = settings()
+        app.config["TEMPLATES_AUTO_RELOAD"] = True
+        app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+
+        # we must not set this before TEMPLATES_AUTO_RELOAD is set to True or that won't take
+        app.debug = self._debug
 
         # setup octoprint's flask json serialization/deserialization
         app.json_encoder = OctoPrintJsonEncoder
 
-        app.debug = self._debug
-        app.config["TEMPLATES_AUTO_RELOAD"] = True
-        app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+        s = settings()
 
         secret_key = s.get(["server", "secretKey"])
         if not secret_key:
@@ -2053,11 +2058,11 @@ class Server(object):
             "js/lib/moment-with-locales.min.js",
             "js/lib/pusher.color.min.js",
             "js/lib/detectmobilebrowser.js",
+            "js/lib/ua-parser.min.js",
             "js/lib/md5.min.js",
             "js/lib/bootstrap-slider-knockout-binding.js",
             "js/lib/loglevel.min.js",
             "js/lib/sockjs.min.js",
-            "js/lib/ResizeSensor.js",
             "js/lib/hls.js",
             "js/lib/less.js",
         ]

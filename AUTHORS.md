@@ -141,6 +141,12 @@ date of first contribution):
   * [Joe Martella](https://github.com/martellaj)
   * [Scott Lahteine](https://github.com/thinkyhead)
   * [Karthikeyan Singaravelan](https://github.com/tirkarthi)
+  * [Yvan Rodrigues](https://github.com/TwoRedCells)
+  * [Elton Law](https://github.com/eltonlaw)
+  * ["sparxooo"](https://github.com/sparxooo)
+  * ["Stevil Knevil"](https://github.com/StevilKnevil)
+  * [ldursw](https://github.com/ldursw)
+  * [Ian Wilt](https://github.com/ianwiltdotcom)
   * [Ben Sycha](https://github.com/Sycha)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by

@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 This module bundles all of OctoPrint's supported plugin implementation types as well as their common parent
 class, :class:`OctoPrintPlugin`.
@@ -17,6 +15,7 @@ Please note that the plugin implementation types are documented in the section
    :members:
 
 """
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -673,7 +672,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
                 object.
 
         Returns:
-            bool: ``True`` if the the implementation will serve the request,
+            bool: ``True`` if the implementation will serve the request,
                 ``False`` otherwise.
         """
         return False
@@ -1106,7 +1105,7 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
           * the current and seen versions are identical
           * the current version is None and the seen version is not
-          * the current version is less or equal than the seen one
+          * the seen version is not None and the current version is less or equal than the seen one
 
         .. code-block:: none
 
@@ -1158,7 +1157,7 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
         return (
             (current == seen)
             or (current is None and seen is not None)
-            or (current <= seen)
+            or (seen is not None and current <= seen)
         )
 
 

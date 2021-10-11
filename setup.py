@@ -25,70 +25,77 @@ SETUP_REQUIRES = ["markdown>=3.1,<3.2"]  # newer versions require Python 3
 INSTALL_REQUIRES = [
     # additional OctoPrint plugins that are maintained on a different release cycle
     "OctoPrint-FileCheck>=2021.2.23",
-    "OctoPrint-FirmwareCheck>=2021.2.4",
-    "OctoPrint-PiSupport>=2021.3.26",
+    "OctoPrint-FirmwareCheck>=2021.8.11",
+    "OctoPrint-PiSupport>=2021.8.2",
     # the following dependencies are non trivial to update since later versions
     # introduce backwards incompatible changes that might affect plugins, or due to
     # other observed problems
     "markupsafe>=1.1,<2.0",  # Jinja dependency, newer versions require Python 3
-    "tornado==5.1.1",  # newer versions require Python 3
     "markdown>=3.1,<3.2",  # newer versions require Python 3
     "regex!=2018.11.6",  # avoid broken 2018.11.6. See #2874
     # anything below this should be checked on releases for new versions
-    "flask>=1.1.2,<2",
-    "Jinja2>=2.11.2,<3",
+    "flask>=1.1.4,<2",  # newer versions require Python 3
+    "Jinja2>=2.11.3,<3",  # newer versions require Python 3
     "Flask-Login>=0.5,<0.6",  # flask-login doesn't use semver & breaks stuff on minor version increases
-    "Flask-Babel>=1.0,<2",
+    "Flask-Babel>=1.0,<2",  # newer versions require Python 3
     "Flask-Assets>=2.0,<3",
-    "werkzeug>=1.0.1,<2",
-    "itsdangerous>=1.1.0,<2",
-    "cachelib>=0.1,<1",
-    "PyYAML>=5.3.1,<6",
+    "werkzeug>=1.0.1,<2",  # newer versions require Python 3
+    "itsdangerous>=1.1.0,<2",  # newer versions require Python 3
+    "cachelib>=0.1,<0.2",  # newer versions require Python 3
+    "PyYAML>=5.4.1,<6",
     "pyserial>=3.4,<4",
-    "netaddr>=0.7.19,<1",
-    "watchdog==0.10.4",  # watchdog dropped Py>3.6 on 0.10.5 point release...
-    "sarge==0.1.5post0",
-    "netifaces>=0.10.9,<1",
+    "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
+    "watchdog==0.10.4",  # newer versions require Python 3
+    "sarge==0.1.6",
+    "netifaces>=0.11,<1",
     "pylru>=1.2,<2",
-    "pkginfo>=1.5.0.1,<2",
-    "requests>=2.23.0,<3",
+    "pkginfo>=1.7.1,<2",
+    "requests>=2.26.0,<3",
     "semantic_version>=2.8.5,<3",
-    "psutil>=5.7,<6",
-    "Click>=7.1.2,<8",
+    "psutil>=5.8,<6",
+    "Click>=7.1.2,<8",  # newer versions require Python 3
     "future>=0.18.2,<1",
-    "websocket-client>=0.57,<1",
+    "websocket-client>=0.59,<1",  # newer versions require Python 3
     "wrapt>=1.12.1,<2",
-    "emoji>=0.5.4,<1",
-    "sentry-sdk>=0.15.1,<1",
+    "emoji>=1.4.2,<2",
+    "sentry-sdk>=1.3.1,<2",
     "filetype>=1.0.7,<2",
     "zipstream-new>=1.1.8,<1.2",
     # vendor bundled dependencies
-    "unidecode>=0.04.14,<0.05",  # dependency of awesome-slugify
     "blinker>=1.4,<2",  # dependency of flask_principal
 ]
 
 # Python 2 specific requirements
 INSTALL_REQUIRES_PYTHON2 = [
     "feedparser>=5.2.1,<6",  # newer versions require Python 3
+    "tornado==5.1.1",  # newer versions require Python 3
     "futures>=3.3,<4",
-    "monotonic>=1.5,<2",
+    "monotonic>=1.6,<2",
     "scandir>=1.10,<2",
     "chainmap>=1.0.3,<2",
-    "typing>=3.7.4.1,<4",
+    "typing>=3.10.0.0,<4",
     "enum34>=1.1.10,<1.2",
-    "frozendict>=1.2,<2",
+    "frozendict==1.2",  # newer versions from different maintainer require Python 3
+    "colorlog<5",  # newer versions require Python 3
+    # vendor bundled dependencies
+    "unidecode<1.3",  # dependency of awesome-slugify, newer versions require Python 3
 ]
 
 # Python 3 specific requirements
 INSTALL_REQUIRES_PYTHON3 = [
-    "feedparser>=6.0.2,<7",
-    "zeroconf>=0.24,<0.25",
-    "immutabledict>=1.2.0,<2",
+    "feedparser>=6.0.8,<7",
+    "tornado>=6,<7",  # tornado < 6 is incompatible with Python 3.10
+    "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
+    "immutabledict>=2.1,<3",
+    "pathvalidate>=2.4.1,<3",
+    "colorlog>=5.0.1,<6",
+    # vendor bundled dependencies
+    "unidecode",  # dependency of awesome-slugify, leave w/o range to not cause dependency hell w/ Octolapse deps
 ]
 
 # OSX specific requirements
 INSTALL_REQUIRES_OSX = [
-    "appdirs>=1.4.4",
+    "appdirs>=1.4.4,<2",
 ]
 
 # Additional requirements for optional install options

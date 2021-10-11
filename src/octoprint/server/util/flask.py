@@ -567,8 +567,10 @@ class OctoPrintFlaskResponse(flask.Response):
         if samesite is not None:
             samesite = samesite.lower()
         if samesite == "none":
-            samesite = None
-        if samesite not in (None, "strict", "lax"):
+            # Must be string "None"
+            samesite = "None"
+        if samesite not in ("None", "strict", "lax"):
+            # If NoneType, the cookie is not set
             samesite = None
         kwargs["samesite"] = samesite
 
@@ -1702,7 +1704,6 @@ def collect_core_assets(preferred_stylesheet="css"):
     assets["js"] = [
         "js/app/bindings/allowbindings.js",
         "js/app/bindings/contextmenu.js",
-        "js/app/bindings/copywidth.js",
         "js/app/bindings/invisible.js",
         "js/app/bindings/popover.js",
         "js/app/bindings/qrcode.js",

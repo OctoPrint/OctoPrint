@@ -109,6 +109,7 @@ def map_repository_entry(entry):
 already_installed_string = "Requirement already satisfied (use --upgrade to upgrade)"
 success_string = "Successfully installed"
 failure_string = "Could not install"
+python_mismatch_string = "requires a different Python:"
 
 
 class PluginManagerPlugin(
@@ -246,6 +247,12 @@ class PluginManagerPlugin(
                 "dangerous": True,
             },
         ]
+
+    # Additional bundle contents
+
+    def get_additional_bundle_files(self, *args, **kwargs):
+        console_log = self._settings.get_plugin_logfile_path(postfix="console")
+        return {os.path.basename(console_log): console_log}
 
     ##~~ StartupPlugin
 
@@ -958,6 +965,22 @@ class PluginManagerPlugin(
                     self._send_result_notification("install", result)
                     return result
 
+        if any(map(lambda x: python_mismatch_string in x, stderr)):
+            self._logger.error(
+                "Installing the plugin from {} failed, pip reported a Python version mismatch".format(
+                    source
+                )
+            )
+            result = {
+                "result": False,
+                "source": source,
+                "source_type": source_type,
+                "reason": "Pip reported a Python version mismatch",
+                "faq": "https://faq.octoprint.org/plugin-python-mismatch",
+            }
+            self._send_result_notification("install", result)
+            return result
+
         try:
             result_line = list(
                 filter(
@@ -1112,6 +1135,42 @@ class PluginManagerPlugin(
         destination = os.path.join(self._settings.global_get_basefolder("plugins"), name)
         plugin_id, _ = os.path.splitext(name)
 
+        # check python compatibility
+        PYTHON_MISMATCH = {
+            "result": False,
+            "source": source,
+            "source_type": source_type,
+            "reason": "Plugin could not be installed",
+            "faq": "https://faq.octoprint.org/plugin-python-mismatch",
+        }
+
+        try:
+            metadata = octoprint.plugin.core.parse_plugin_metadata(path)
+        except SyntaxError:
+            self._logger.exception(
+                "Installing plugin from {} failed, there's a Python version mismatch".format(
+                    source
+                )
+            )
+            result = PYTHON_MISMATCH
+            self._send_result_notification("install", result)
+            return result
+
+        pythoncompat = metadata.get(
+            octoprint.plugin.core.ControlProperties.attr_pythoncompat,
+            octoprint.plugin.core.ControlProperties.default_pythoncompat,
+        )
+        if not is_python_compatible(pythoncompat):
+            self._logger.exception(
+                "Installing plugin from {} failed, there's a Python version mismatch".format(
+                    source
+                )
+            )
+            result = PYTHON_MISMATCH
+            self._send_result_notification("install", result)
+            return result
+
+        # copy plugin
         try:
             self._log_call("cp {} {}".format(path, destination))
             shutil.copy(path, destination)
@@ -2105,6 +2164,7 @@ def __plugin_load__():
         "octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types,
         "octoprint.events.register_custom_events": _register_custom_events,
         "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+        "octoprint.systeminfo.additional_bundle_files": __plugin_implementation__.get_additional_bundle_files,
     }
 
     global __plugin_helpers__
