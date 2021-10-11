@@ -1269,6 +1269,14 @@ class PluginManagerPlugin(
             )
             abort(500, description="Could not uninstall plugin, its origin is unknown")
 
+        if plugin.implementation:
+            try:
+                plugin.implementation.on_plugin_pending_uninstall()
+            except Exception:
+                self._logger.exception(
+                    "Error while calling on_plugin_pending_uninstall on the plugin, proceeding regardless"
+                )
+
         if plugin.origin.type == "entry_point":
             # plugin is installed through entry point, need to use pip to uninstall it
             origin = plugin.origin[3]
