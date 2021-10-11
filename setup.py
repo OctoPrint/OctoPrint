@@ -25,7 +25,7 @@ SETUP_REQUIRES = ["markdown>=3.1,<3.2"]  # newer versions require Python 3
 INSTALL_REQUIRES = [
     # additional OctoPrint plugins that are maintained on a different release cycle
     "OctoPrint-FileCheck>=2021.2.23",
-    "OctoPrint-FirmwareCheck>=2021.2.4",
+    "OctoPrint-FirmwareCheck>=2021.8.11",
     "OctoPrint-PiSupport>=2021.8.2",
     # the following dependencies are non trivial to update since later versions
     # introduce backwards incompatible changes that might affect plugins, or due to
