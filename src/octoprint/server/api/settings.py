@@ -124,6 +124,7 @@ def getSettings():
             "streamUrl": s.get(["webcam", "stream"]),
             "streamRatio": s.get(["webcam", "streamRatio"]),
             "streamTimeout": s.getInt(["webcam", "streamTimeout"]),
+            "streamWebrtcIceServers": s.get(["webcam", "streamWebrtcIceServers"]),
             "snapshotUrl": s.get(["webcam", "snapshot"]),
             "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
             "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
@@ -528,6 +529,13 @@ def _saveSettings(data):
             s.set(["webcam", "streamRatio"], data["webcam"]["streamRatio"])
         if "streamTimeout" in data["webcam"]:
             s.setInt(["webcam", "streamTimeout"], data["webcam"]["streamTimeout"])
+        if "streamWebrtcIceServers" in data["webcam"] and isinstance(
+            data["webcam"]["streamWebrtcIceServers"], (list, tuple)
+        ):
+            s.set(
+                ["webcam", "streamWebrtcIceServers"],
+                data["webcam"]["streamWebrtcIceServers"],
+            )
         if "snapshotUrl" in data["webcam"]:
             s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
         if "snapshotTimeout" in data["webcam"]:
@@ -1093,7 +1101,7 @@ def _saveSettings(data):
                     plugin.on_settings_save(data["plugins"][plugin_id])
                 except TypeError:
                     logger.warning(
-                        "Could not save settings for plugin {name} ({version}) since it called super(...)".format(
+                        "Could not save settings for plugin {name} ({version}). It may have called super(...)".format(
                             name=plugin._plugin_name, version=plugin._plugin_version
                         )
                     )
@@ -1104,7 +1112,8 @@ def _saveSettings(data):
                         "Please contact the plugin's author and ask to update the plugin to use a direct call like"
                     )
                     logger.warning(
-                        "octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead."
+                        "octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead.",
+                        exc_info=True,
                     )
                 except Exception:
                     logger.exception(

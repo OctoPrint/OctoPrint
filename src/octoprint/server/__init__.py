@@ -1385,6 +1385,10 @@ class Server:
         @app.before_request
         def before_request():
             g.locale = self._get_locale()
+
+            # used for performance measurement
+            g.start_time = octoprint.util.monotonic_time()
+
             if self._debug and "perfprofile" in request.args:
                 try:
                     from pyinstrument import Profiler
@@ -1407,6 +1411,11 @@ class Server:
                 g.perfprofiler.stop()
                 output_html = g.perfprofiler.output_html()
                 return make_response(output_html)
+
+            if hasattr(g, "start_time"):
+                end_time = octoprint.util.monotonic_time()
+                duration_ms = int((end_time - g.start_time) * 1000)
+                response.headers.add("Server-Timing", f"app;dur={duration_ms}")
 
             return response
 

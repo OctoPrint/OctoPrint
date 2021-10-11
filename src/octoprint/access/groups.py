@@ -6,12 +6,10 @@ import logging
 import os
 from functools import partial
 
-import yaml
-
 from octoprint.access import ADMIN_GROUP, GUEST_GROUP, READONLY_GROUP, USER_GROUP
 from octoprint.access.permissions import OctoPrintPermission, Permissions
 from octoprint.settings import settings
-from octoprint.util import atomic_write
+from octoprint.util import atomic_write, yaml
 from octoprint.vendor.flask_principal import Need, Permission
 
 GroupNeed = partial(Need, "group")
@@ -226,8 +224,7 @@ class FilebasedGroupManager(GroupManager):
     def _load(self):
         if os.path.exists(self._groupfile) and os.path.isfile(self._groupfile):
             try:
-                with open(self._groupfile, encoding="utf-8") as f:
-                    data = yaml.safe_load(f)
+                data = yaml.load_from_file(path=self._groupfile)
 
                 if "groups" not in data:
                     groups = data
@@ -343,11 +340,7 @@ class FilebasedGroupManager(GroupManager):
         with atomic_write(
             self._groupfile, mode="wt", permissions=0o600, max_permissions=0o666
         ) as f:
-            import yaml
-
-            yaml.safe_dump(
-                data, f, default_flow_style=False, indent=2, allow_unicode=True
-            )
+            yaml.save_to_file(data, file=f, pretty=True)
             self._dirty = False
         self._load()
 

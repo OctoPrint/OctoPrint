@@ -12,6 +12,7 @@ import octoprint.plugin
 import octoprint.util
 from octoprint.events import Events, eventManager
 from octoprint.util import get_fully_qualified_classname as fqcn
+from octoprint.util import yaml
 
 from .analysis import AnalysisQueue, QueueEntry  # noqa: F401
 from .destinations import FileDestinations  # noqa: F401
@@ -935,8 +936,6 @@ class FileManager:
     def save_recovery_data(self, origin, path, pos):
         import time
 
-        import yaml
-
         from octoprint.util import atomic_write
 
         data = {
@@ -947,9 +946,7 @@ class FileManager:
         }
         try:
             with atomic_write(self._recovery_file, mode="wt", max_permissions=0o666) as f:
-                yaml.safe_dump(
-                    data, stream=f, default_flow_style=False, indent=2, allow_unicode=True
-                )
+                yaml.save_to_file(data, file=f, pretty=True)
         except Exception:
             self._logger.exception(
                 f"Could not write recovery data to file {self._recovery_file}"
@@ -970,11 +967,9 @@ class FileManager:
         if not os.path.isfile(self._recovery_file):
             return None
 
-        import yaml
-
         try:
-            with open(self._recovery_file, encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+            data = yaml.load_from_file(path=self._recovery_file)
+
             if not isinstance(data, dict) or not all(
                 map(lambda x: x in data, ("origin", "path", "pos", "date"))
             ):

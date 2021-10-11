@@ -10,7 +10,7 @@ from octoprint.events import Events
 from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import default_settings
-from octoprint.util import is_hidden_path, to_bytes
+from octoprint.util import is_hidden_path, to_bytes, yaml
 from octoprint.util.pip import create_pip_caller
 from octoprint.util.platform import is_os_compatible
 from octoprint.util.version import (
@@ -1190,10 +1190,7 @@ class BackupPlugin(
                             on_restore_failed(path)
                         return False
 
-                    import yaml
-
-                    with open(configfile, encoding="utf-8") as f:
-                        configdata = yaml.safe_load(f)
+                    configdata = yaml.load_from_file(path=configfile)
 
                     userfile = os.path.join(temp, "basedir", "users.yaml")
                     if not os.path.exists(userfile):

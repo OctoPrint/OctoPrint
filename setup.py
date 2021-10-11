@@ -23,12 +23,13 @@ SETUP_REQUIRES = [
 INSTALL_REQUIRES = [
     # additional OctoPrint plugins that are maintained on a different release cycle
     "OctoPrint-FileCheck>=2021.2.23",
-    "OctoPrint-FirmwareCheck>=2021.2.4",
+    "OctoPrint-FirmwareCheck>=2021.10.11",
     "OctoPrint-PiSupport>=2021.8.2",
     # the following dependencies are non trivial to update since later versions
     # introduce backwards incompatible changes that might affect plugins, or due to
     # other observed problems
     "regex!=2018.11.6",  # avoid broken 2018.11.6. See #2874
+    "wrapt>=1.12.1,<1.13",  # newer versions fail to build on OctoPi 0.15
     # anything below this should be checked on releases for new versions
     "tornado>=6.0.4,<7",
     "markdown>=3.2.2,<4",

@@ -364,10 +364,9 @@ def init_logging(
 
         config_from_file = {}
         if os.path.exists(logging_file) and os.path.isfile(logging_file):
-            import yaml
+            from octoprint.util import yaml
 
-            with open(logging_file, encoding="utf-8") as f:
-                config_from_file = yaml.safe_load(f)
+            config_from_file = yaml.load_from_file(path=logging_file)
 
         # we merge that with the default config
         if config_from_file is not None and isinstance(config_from_file, dict):
@@ -713,9 +712,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
     import time
 
     import requests
-    import yaml
 
-    from octoprint.util import bom_aware_open
     from octoprint.util.version import is_octoprint_compatible, is_python_compatible
 
     logger = log.getLogger(__name__ + ".startup")
@@ -781,8 +778,9 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
         if os.stat(path).st_mtime + ttl < time.time():
             return None
 
-        with bom_aware_open(path, encoding="utf-8", mode="rt") as f:
-            result = yaml.safe_load(f)
+        from octoprint.util import yaml
+
+        result = yaml.load_from_file(path=path)
 
         if isinstance(result, list):
             return result
@@ -795,8 +793,9 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
             if cache is not None:
                 try:
-                    with bom_aware_open(cache, encoding="utf-8", mode="wt") as f:
-                        yaml.safe_dump(result, f)
+                    from octoprint.util import yaml
+
+                    yaml.save_to_file(result, path=cache)
                 except Exception as e:
                     logger.info(
                         "Fetched plugin blacklist but couldn't write it to its cache file: %s",

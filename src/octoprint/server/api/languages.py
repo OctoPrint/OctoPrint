@@ -17,6 +17,7 @@ from octoprint.plugin import plugin_manager
 from octoprint.server.api import api
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import settings
+from octoprint.util import yaml
 
 
 @api.route("/languages", methods=["GET"])
@@ -40,11 +41,8 @@ def getInstalledLanguagePacks():
 
             meta_path = os.path.join(path, "meta.yaml")
             if os.path.isfile(meta_path):
-                import yaml
-
                 try:
-                    with open(meta_path, encoding="utf-8") as f:
-                        meta = yaml.safe_load(f)
+                    meta = yaml.load_from_file(path=meta_path)
                 except Exception:
                     logging.getLogger(__name__).exception("Could not load %s", meta_path)
                     pass

@@ -4,7 +4,6 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import os
 from os import scandir
 
-import yaml
 from flask import abort, jsonify, request, url_for
 from flask_babel import gettext
 from werkzeug.exceptions import BadRequest
@@ -16,7 +15,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access, redirect_to_tornado
 from octoprint.settings import settings
-from octoprint.util import is_hidden_path
+from octoprint.util import is_hidden_path, yaml
 
 
 class LoggingPlugin(
@@ -180,10 +179,7 @@ class LoggingPlugin(
 
         config_from_file = {}
         if os.path.exists(logging_file) and os.path.isfile(logging_file):
-            import yaml
-
-            with open(logging_file, encoding="utf-8") as f:
-                config_from_file = yaml.safe_load(f)
+            config_from_file = yaml.load_from_file(path=logging_file)
         return config_from_file
 
     def _get_logging_levels(self):
@@ -233,9 +229,7 @@ class LoggingPlugin(
         with octoprint.util.atomic_write(
             self._get_logging_file(), mode="wt", max_permissions=0o666
         ) as f:
-            yaml.safe_dump(
-                config, f, default_flow_style=False, indent=2, allow_unicode=True
-            )
+            yaml.save_to_file(config, file=f, pretty=True)
 
         # set runtime logging levels now
         for logger, level in new_levels.items():

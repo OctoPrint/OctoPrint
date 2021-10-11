@@ -14,6 +14,7 @@ from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import dict_merge
 from octoprint.util import get_fully_qualified_classname as fqcn
+from octoprint.util import yaml
 from octoprint.util.platform import CLOSE_FDS
 
 EMPTY_RESULT = {
@@ -401,7 +402,6 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
         import sys
 
         import sarge
-        import yaml
 
         if self._current.analysis and all(
             map(
@@ -495,7 +495,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
                 raise RuntimeError("No analysis result found")
             else:
                 _, output = output.split("RESULTS:")
-                analysis = yaml.safe_load(output)
+                analysis = yaml.load_from_file(file=output)
 
                 result["printingArea"] = analysis["printing_area"]
                 result["dimensions"] = analysis["dimensions"]

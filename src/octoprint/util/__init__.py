@@ -7,12 +7,14 @@ OctoPrint's source code.
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
+import codecs
 import collections
 import contextlib
 import copy
 import glob
 import logging
 import os
+import pickle  # Python 3
 import queue
 import re
 import shutil
@@ -521,6 +523,18 @@ def is_running_from_source():
     )
 
 
+def fast_deepcopy(obj):
+    # the best way to implement this would be as a C module, that way we'd be able to use
+    # the fast path every time.
+    try:
+        # implemented in C and much faster than deepcopy:
+        # https://stackoverflow.com/a/29385667
+        return pickle.loads(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
+    except (AttributeError, pickle.PicklingError):
+        # fall back when something unpickable is found
+        return copy.deepcopy(obj)
+
+
 def dict_merge(a, b, leaf_merger=None, in_place=False):
     """
     Recursively deep-merges two dictionaries.
@@ -569,8 +583,6 @@ def dict_merge(a, b, leaf_merger=None, in_place=False):
         dict: ``b`` deep-merged into ``a``
     """
 
-    from copy import deepcopy
-
     if a is None:
         a = {}
     if b is None:
@@ -582,7 +594,7 @@ def dict_merge(a, b, leaf_merger=None, in_place=False):
     if in_place:
         result = a
     else:
-        result = deepcopy(a)
+        result = fast_deepcopy(a)
 
     for k, v in b.items():
         if k in result and isinstance(result[k], dict):
@@ -599,7 +611,7 @@ def dict_merge(a, b, leaf_merger=None, in_place=False):
                     pass
 
             if merged is None:
-                merged = deepcopy(v)
+                merged = fast_deepcopy(v)
 
             result[k] = merged
     return result
@@ -1060,7 +1072,9 @@ else:
             self.cleanup()
 
 
+@deprecated("Please use io.open with '-sig' encoding instead", since="1.8.0")
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
+    # TODO Remove in 2.0.0
     import codecs
 
     assert "b" not in mode, "binary mode not support by bom_aware_open"
@@ -1083,6 +1097,35 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
             encoding += "-sig"
 
     return open(filename, encoding=encoding, mode=mode, **kwargs)
+
+
+BOMS = {
+    "utf-8-sig": codecs.BOM_UTF8,
+    "utf-16-le": codecs.BOM_UTF16_LE,
+    "utf-16-be": codecs.BOM_UTF16_BE,
+    "utf-32-le": codecs.BOM_UTF32_LE,
+    "utf-32-be": codecs.BOM_UTF32_BE,
+}
+
+
+def get_bom(filename, encoding):
+    """
+    Check if the file has a BOM and if so return it.
+
+    Params:
+        filename (str): The file to check.
+        encoding (str): The encoding to check for.
+
+    Returns:
+        (bytes) the BOM or None if there is no BOM.
+    """
+    with open(filename, mode="rb") as f:
+        header = f.read(4)
+
+    for enc, bom in BOMS.items():
+        if header.startswith(bom) and encoding.lower() == enc:
+            return bom
+    return None
 
 
 def is_hidden_path(path):
