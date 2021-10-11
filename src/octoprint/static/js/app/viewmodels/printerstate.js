@@ -122,6 +122,26 @@ $(function () {
         self.estimatedPrintTimeExactString = ko.pureComputed(function () {
             return estimatedPrintTimeStringHlpr(formatDuration);
         });
+        self.estimatedFilamentNeededString = ko.pureComputed(function () {
+
+            if (self.progress() && self.filament()) {
+
+                var filamentObj = self.filament();
+                var totalFilamentNeeded = 0;
+
+                for (let i = 0; i < filamentObj.length; i++) {
+                    totalFilamentNeeded += filamentObj[i].data().length;
+                }
+ 
+                var amountLeft = totalFilamentNeeded * (1 - (self.progress() / 100));
+                
+                console.log(totalFilamentNeeded);
+                console.log(self.progress());
+
+                return amountLeft.toFixed() + " mm";
+            }
+            return "-";
+        });
         self.byteString = ko.pureComputed(function () {
             if (!self.filesize()) return "-";
             var filepos = self.filepos() ? formatSize(self.filepos()) : "-";
