@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
-import io
-
 from octoprint.util import bom_aware_open
 
 
@@ -38,7 +33,7 @@ def load_from_file(file=None, path=None):
 def _save_to_file_base(data, file=None, path=None, pretty=False, **kwargs):
     if path is not None:
         assert file is None
-        with io.open(path, "wt", encoding="utf-8") as f:
+        with open(path, "wt", encoding="utf-8") as f:
             return _save_to_file_base(data, file=f, pretty=pretty, **kwargs)
 
     if file is not None:
