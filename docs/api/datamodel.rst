@@ -195,11 +195,11 @@ Job information
      - The file that is the target of the current print job
    * - ``estimatedPrintTime``
      - 0..1
-     - Integer
+     - Float
      - The estimated print time for the file, in seconds.
    * - ``lastPrintTime``
      - 0..1
-     - Integer
+     - Float
      - The print time of the last print of the file, in seconds.
    * - ``filament``
      - 0..1
@@ -207,7 +207,7 @@ Job information
      - Information regarding the estimated filament usage of the print job
    * - ``filament.length``
      - 0..1
-     - Integer
+     - Float
      - Length of filament used, in mm
    * - ``filament.volume``
      - 0..1
@@ -365,6 +365,14 @@ Files
      - 0..1
      - :ref:`GCODE analysis information <sec-api-datamodel-files-gcodeanalysis>`
      - Information from the analysis of the GCODE file, if available. Left out in abridged version.
+   * - ``prints``
+     - 0..1
+     - :ref:`Print history information <sec-api-datamodel-files-prints>`
+     - Information about previous prints of the file. Left out if the file has never been printed.
+   * - ``statistics``
+     - 0..1
+     - :ref:`Print statistics information <sec-api-datamodel-files-stats>`
+     - Statistics about the file, based on the previous print times. Left out if the file has never been printed.
 
 .. _sec-api-datamodel-files-fileabridged:
 
@@ -419,7 +427,7 @@ GCODE analysis information
      - Description
    * - ``estimatedPrintTime``
      - 0..1
-     - Integer
+     - Float
      - The estimated print time of the file, in seconds
    * - ``filament``
      - 0..1
@@ -427,7 +435,7 @@ GCODE analysis information
      - The estimated usage of filament
    * - ``filament.tool{n}.length``
      - 0..1
-     - Integer
+     - Float
      - The length of filament used, in mm
    * - ``filament.tool{n}.volume``
      - 0..1
@@ -505,6 +513,62 @@ References
      - URL
      - The model from which this file was generated (e.g. an STL, currently not used). Never present for
        folders.
+
+.. _sec-api-datamodel-files-prints:
+
+Print History
+-------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``success``
+     - 1
+     - Number
+     - Number of successful prints
+   * - ``failure``
+     - 1
+     - Number
+     - Number of failed prints
+   * - ``last.date``
+     - 1
+     - Unix Timestamp
+     - Last date this file was printed
+   * - ``last.printTime``
+     - 1
+     - Float
+     - Last print time in seconds
+   * - ``last.success``
+     - 1
+     - Boolean
+     - Whether the last print was a success or not
+
+.. _sec-api-datamodel-files-stats:
+
+Print Statistics
+----------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``averagePrintTime``
+     - 1
+     - Object
+     - Object that maps printer profile names to the last print time of the file, in seconds
+   * - ``lastPrintTime``
+     - 1
+     - Object
+     - Object that maps printer profile names to the average print time of the file, in seconds
 
 .. _sec-api-datamodel-access:
 
@@ -596,7 +660,7 @@ Permission record
      - Human readable description of the permission
    * - ``needs``
      - 1
-     - :ref:`Needs object <sec-api-access-datamodel-general-needs>`
+     - :ref:`Needs object <sec-api-datamodel-access-needs>`
      - Needs assigned to the permission
 
 .. _sec-api-datamodel-access-groups:

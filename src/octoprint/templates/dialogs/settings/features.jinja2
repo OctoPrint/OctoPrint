@@ -52,7 +52,8 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_g90InfluencesExtruder" id="settings-g90InfluencesExtruder"> {{ _('<code>G90</code>/<code>G91</code> overrides relative extruder mode') }} <span class="label">{{ _('Smoothieware') }}</span>
+                <input type="checkbox" data-bind="checked: feature_g90InfluencesExtruder" id="settings-g90InfluencesExtruder">
+                {{ _('<code>G90</code>/<code>G91</code> overrides relative extruder mode') }} <span class="label">{{ _('Smoothieware') }}</span> <span class="label">{{ _('Marlin 2+') }} </span>
                 <span class="help-block">{{ _('This is used by the GCODE analysis in the backend and the viewer in the frontend to interpret your sliced files correctly.') }}</span>
             </label>
         </div>

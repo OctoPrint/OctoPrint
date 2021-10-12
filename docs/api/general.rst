@@ -44,8 +44,7 @@ For testing purposes it is also possible to supply the API key via a query param
 Please be advised that clients should use the header field variant if at all possible.
 
 If the key is missing or invalid, OctoPrint will treat the request as it would any unauthenticated anonymous request to the endpoint.
-Consequently, if the bundled :ref:`ForceLogin plugin <sec-bundledplugins-forcelogin>` is active (which is the default), that means
-that any requests without or with an invalid API key targeting other API endpoints than :ref:`Login <sec-api-general-login>`
+That means that any requests without or with an invalid API key targeting other API endpoints than :ref:`Login <sec-api-general-login>`
 will be denied with a :http:statuscode:`403`.
 
 .. warning::
@@ -134,13 +133,23 @@ check the corresponding checkbox in the API settings dialog.
 
    Support for CORS can be enabled in the "API" settings
 
-.. note::
+.. warning::
+
    This means any browser page can send requests to the OctoPrint API. Authorization is still required however.
 
 If CORS is not enabled you will get errors like the following::
 
    XMLHttpRequest cannot load http://localhost:8081/api/files. No 'Access-Control-Allow-Origin'
    header is present on the requested resource.
+
+
+.. note::
+
+   For security reasons, OctoPrint will not set the ``Access-Control-Allow-Credentials``
+   header, even if CORS support is enabled. That means that cookies will not be sent by
+   the browser to OctoPrint, effectively making it impossible to authenticate through
+   the login mechanism (or reusing an existing login session). When accessing OctoPrint
+   via CORS, you'll therefore always need to use an API key.
 
 .. _sec-api-general-login:
 
@@ -164,6 +173,12 @@ Login
       Previous versions of this API endpoint did return a :http:statuscode:`401` in case of a username/password
       mismatch or an unknown user. That was incompatible with basic authentication since it was a wrong use of
       the :http:statuscode:`401` code and got therefore changed as part of a bug fix.
+
+   .. note::
+
+      You cannot use this endpoint to login from a third party page via CORS, see above. You can however use it
+      to retrieve user information via passive login with an API key (e.g. if you need the ``session`` to authenticate
+      on the web socket.
 
    :json passive:  If present, performs a passive login only, returning information about the current user that's
                    active either through an existing session or the used API key

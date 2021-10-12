@@ -513,6 +513,11 @@ $(function () {
                 clearTimeout(self.webcamDisableTimeout);
             }
 
+            // IF disabled then we dont need to do anything
+            if (self.settings.webcam_webcamEnabled() == false) {
+                return;
+            }
+
             // Determine stream type and switch to corresponding webcam.
             var streamType = determineWebcamStreamType(self.settings.webcam_streamUrl());
             if (streamType == "mjpg") {
@@ -688,12 +693,14 @@ $(function () {
 
             var newSrc = self.settings.webcam_streamUrl();
             if (currentSrc != newSrc) {
-                if (newSrc.lastIndexOf("?") > -1) {
-                    newSrc += "&";
-                } else {
-                    newSrc += "?";
+                if (self.settings.webcam_cacheBuster()) {
+                    if (newSrc.lastIndexOf("?") > -1) {
+                        newSrc += "&";
+                    } else {
+                        newSrc += "?";
+                    }
+                    newSrc += new Date().getTime();
                 }
-                newSrc += new Date().getTime();
 
                 self.webcamLoaded(false);
                 self.webcamError(false);
@@ -707,7 +714,12 @@ $(function () {
         self._switchToHlsWebcam = function () {
             var video = document.getElementById("webcam_hls");
 
-            if (video.canPlayType("application/vnd.apple.mpegurl")) {
+            // Check for native playback options: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canPlayType
+            if (
+                video != null &&
+                typeof video.canPlayType != undefined &&
+                video.canPlayType("application/vnd.apple.mpegurl") == "probably"
+            ) {
                 video.src = self.settings.webcam_streamUrl();
             } else if (Hls.isSupported()) {
                 var hls = new Hls();

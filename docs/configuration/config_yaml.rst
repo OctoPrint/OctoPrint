@@ -708,6 +708,11 @@ Use the following settings to configure the serial connection to the printer:
      - M0
      - M1
 
+     # Commands which should not be sent to the printer and just silently ignored.
+     # An example of when you may wish to use this could be useful if you wish to manually change a filament on M600, 
+     # by using that as a Pausing command (below)
+     ignoredCommands:
+
      # Commands which should cause OctoPrint to pause any ongoing prints.
      pausingCommands:
      - M0
@@ -904,9 +909,9 @@ Use the following settings to configure the server:
 
      # Settings for further configuration of the cookies that OctoPrint sets (login, remember me, ...)
      cookies:
-       # SameSite setting to use on the cookies. Possible values are None, Lax and Strict. Defaults to None but
-       # be advised that browsers will soon force this to Lax unless also being set as Secure and served over
-       # https, which will cause issues with embedding OctoPrint in frames.
+       # SameSite setting to use on the cookies. Possible values are None, Lax and Strict. Defaults to not set but
+       # be advised that many browsers now default to Lax unless set as Secure, explicitly setting the cookie type
+       # here and served over https, which causes issues with embedding OctoPrint in frames.
        #
        # See also https://www.chromestatus.com/feature/5088147346030592,
        # https://www.chromestatus.com/feature/5633521622188032 and issue #3482

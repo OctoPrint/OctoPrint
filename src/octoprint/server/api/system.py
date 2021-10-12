@@ -6,6 +6,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import collections
 import logging
+import re
 import threading
 
 import psutil
@@ -15,6 +16,7 @@ from flask_babel import gettext
 
 from octoprint.access.permissions import Permissions
 from octoprint.logging import prefix_multilines
+from octoprint.plugin import plugin_manager
 from octoprint.server import NO_CONTENT
 from octoprint.server.api import api
 from octoprint.server.util.flask import get_remote_address, no_firstrun_access
@@ -98,6 +100,7 @@ def performSystemAction():
 def retrieveSystemCommands():
     return jsonify(
         core=_to_client_specs(_get_core_command_specs()),
+        plugin=_to_client_specs(_get_plugin_command_specs()),
         custom=_to_client_specs(_get_custom_command_specs()),
     )
 
@@ -110,6 +113,8 @@ def retrieveSystemCommandsForSource(source):
         specs = _get_core_command_specs()
     elif source == "custom":
         specs = _get_custom_command_specs()
+    elif source == "plugin":
+        specs = _get_plugin_command_specs()
     else:
         abort(404)
 
@@ -225,6 +230,8 @@ def _get_command_spec(source, action):
         return _get_core_command_spec(action)
     elif source == "custom":
         return _get_custom_command_spec(action)
+    elif source == "plugin":
+        return _get_plugin_command_spec(action)
     else:
         return None
 
@@ -288,6 +295,50 @@ def _get_core_command_spec(action):
     return available_actions[action]
 
 
+_plugin_action_regex = re.compile(r"[a-z0-9_-]+")
+
+
+def _get_plugin_command_specs(plugin=None):
+    specs = collections.OrderedDict()
+
+    hooks = plugin_manager().get_hooks("octoprint.system.additional_commands")
+    if plugin is not None:
+        if plugin in hooks:
+            hooks = {plugin: hooks[plugin]}
+        else:
+            hooks = {}
+
+    for name, hook in hooks.items():
+        try:
+            plugin_specs = hook()
+            for spec in plugin_specs:
+                action = spec.get("action")
+                if (
+                    not action
+                    or action == "divider"
+                    or not _plugin_action_regex.match(action)
+                ):
+                    continue
+                action = name.lower() + ":" + action
+
+                copied = dict(spec)
+                copied["source"] = "plugin"
+                copied["action"] = action
+                specs[action] = copied
+        except Exception:
+            logging.getLogger(__name__).exception(
+                "Error while fetching additional actions from plugin {}".format(name),
+                extra={"plugin": name},
+            )
+    return specs
+
+
+def _get_plugin_command_spec(action):
+    plugin = action.split(":", 1)[0]
+    available_actions = _get_plugin_command_specs(plugin=plugin)
+    return available_actions.get(action)
+
+
 def _get_custom_command_specs():
     specs = collections.OrderedDict()
     dividers = 0
@@ -307,10 +358,7 @@ def _get_custom_command_specs():
 
 def _get_custom_command_spec(action):
     available_actions = _get_custom_command_specs()
-    if action not in available_actions:
-        return None
-
-    return available_actions[action]
+    return available_actions.get(action)
 
 
 class CommandFailed(Exception):

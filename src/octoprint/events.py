@@ -106,6 +106,7 @@ class Events(object):
     REGISTERED_MESSAGE_RECEIVED = "RegisteredMessageReceived"
     COMMAND_SUPPRESSED = "CommandSuppressed"
     INVALID_TOOL_REPORTED = "InvalidToolReported"
+    FILAMENT_CHANGE = "FilamentChange"
 
     # Timelapse
     CAPTURE_START = "CaptureStart"

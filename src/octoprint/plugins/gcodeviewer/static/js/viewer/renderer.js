@@ -56,6 +56,8 @@ GCODE.renderer = (function () {
         showHead: false,
         showSegmentStarts: false,
         sizeSegmentStart: 2 * pixelRatio,
+        showDebugArcs: false,
+        chromeArcFix: false,
 
         moveModel: true,
         zoomInOnModel: false,
@@ -345,12 +347,80 @@ GCODE.renderer = (function () {
         };
     }
 
+    // replace arc for chrome, code from https://stackoverflow.com/a/11689752
+    var bezierArc = function (x, y, radius, startAngle, endAngle, anticlockwise) {
+        // Signed length of curve
+        var signedLength;
+        var tau = 2 * Math.PI;
+
+        if (!anticlockwise && endAngle - startAngle >= tau) {
+            signedLength = tau;
+        } else if (anticlockwise && startAngle - endAngle >= tau) {
+            signedLength = -tau;
+        } else {
+            var delta = endAngle - startAngle;
+            signedLength = delta - tau * Math.floor(delta / tau);
+
+            // If very close to a full number of revolutions, make it full
+            if (Math.abs(delta) > 1e-12 && signedLength < 1e-12) signedLength = tau;
+
+            // Adjust if anti-clockwise
+            if (anticlockwise && signedLength > 0) signedLength = signedLength - tau;
+        }
+
+        // Minimum number of curves; 1 per quadrant.
+        var minCurves = Math.ceil(Math.abs(signedLength) / (Math.PI / 2));
+
+        // Number of curves; square-root of radius (or minimum)
+        var numCurves = Math.ceil(Math.max(minCurves, Math.sqrt(radius)));
+
+        // "Radius" of control points to ensure that the middle point
+        // of the curve is exactly on the circle radius.
+        var cpRadius = radius * (2 - Math.cos(signedLength / (numCurves * 2)));
+
+        // Angle step per curve
+        var step = signedLength / numCurves;
+
+        // Draw the circle
+        this.lineTo(x + radius * Math.cos(startAngle), y + radius * Math.sin(startAngle));
+        for (
+            var i = 0, a = startAngle + step, a2 = startAngle + step / 2;
+            i < numCurves;
+            ++i, a += step, a2 += step
+        )
+            this.quadraticCurveTo(
+                x + cpRadius * Math.cos(a2),
+                y + cpRadius * Math.sin(a2),
+                x + radius * Math.cos(a),
+                y + radius * Math.sin(a)
+            );
+    };
+
+    var applyContextPatches = function () {
+        if (!ctx.origArc) ctx.origArc = ctx.arc;
+        ctx.circle = function (x, y, r) {
+            ctx.origArc(x, y, r, 0, 2 * Math.PI, true);
+        };
+
+        if (navigator.userAgent.toLowerCase().indexOf("chrome") > -1) {
+            if (renderOptions["chromeArcFix"]) {
+                ctx.arc = bezierArc;
+                log.info("Chrome Arc Fix enabled");
+            } else {
+                ctx.arc = ctx.origArc;
+                log.info("Chrome Arc Fix disabled");
+            }
+        }
+    };
+
     var startCanvas = function () {
         var jqueryCanvas = $(renderOptions["container"]);
         //jqueryCanvas.css("background-color", renderOptions["bgColorOffGrid"]);
         canvas = jqueryCanvas[0];
 
         ctx = canvas.getContext("2d");
+        applyContextPatches();
+
         canvas.style.height = canvas.height + "px";
         canvas.style.width = canvas.width + "px";
         canvas.height = canvas.height * pixelRatio;
@@ -544,7 +614,7 @@ GCODE.renderer = (function () {
 
         // draw origin
         ctx.beginPath();
-        ctx.arc(0, 0, 2, 0, Math.PI * 2, true);
+        ctx.circle(0, 0, 2);
         ctx.stroke();
 
         ctx.strokeStyle = renderOptions["colorGrid"];
@@ -588,7 +658,7 @@ GCODE.renderer = (function () {
 
         // outline
         var r = renderOptions["bed"]["r"];
-        ctx.arc(0, 0, r, 0, Math.PI * 2, true);
+        ctx.circle(0, 0, r);
 
         // origin
         ctx.moveTo(-1 * r, 0);
@@ -602,7 +672,7 @@ GCODE.renderer = (function () {
 
         // draw origin
         ctx.beginPath();
-        ctx.arc(0, 0, 2, 0, Math.PI * 2, true);
+        ctx.circle(0, 0, 2);
         ctx.stroke();
 
         ctx.strokeStyle = renderOptions["colorGrid"];
@@ -736,6 +806,17 @@ GCODE.renderer = (function () {
         ctx.moveTo(x1, y2);
         ctx.lineTo(x2, y1);
         ctx.stroke();
+    };
+
+    var drawDebugArc = function (arc, ccw) {
+        ctx.moveTo(arc.x, arc.y);
+        ctx.lineTo(arc.startX, arc.startY);
+        ctx.moveTo(arc.x, arc.y);
+        ctx.lineTo(arc.endX, arc.endY);
+        ctx.moveTo(arc.startX, arc.startY);
+        ctx.lineTo(arc.endX, arc.endY);
+        ctx.moveTo(arc.startX, arc.startY);
+        ctx.arc(arc.x, arc.y, arc.r, arc.startAngle, arc.endAngle, ccw);
     };
 
     var drawLayer = function (layerNum, fromProgress, toProgress, isNotCurrentLayer) {
@@ -884,14 +965,14 @@ GCODE.renderer = (function () {
 
         var prevPathType = "fill";
         function strokePathIfNeeded(newPathType, strokeStyle) {
-            if (newPathType != prevPathType || newPathType == "fill") {
-                if (prevPathType != "fill") {
+            if (newPathType !== prevPathType || newPathType === "fill") {
+                if (prevPathType !== "fill") {
                     ctx.stroke();
                 }
                 prevPathType = newPathType;
 
                 ctx.beginPath();
-                if (newPathType != "fill") {
+                if (newPathType !== "fill") {
                     ctx.strokeStyle = strokeStyle;
                     ctx.moveTo(prevX, prevY);
                 }
@@ -952,14 +1033,15 @@ GCODE.renderer = (function () {
                     ctx.lineWidth = renderOptions["extrusionWidth"] * lineWidthFactor;
                     if (cmd.direction !== undefined && cmd.direction !== 0) {
                         var arc = getArcParams(cmd);
-                        ctx.arc(
-                            arc.x,
-                            arc.y,
-                            arc.r,
-                            arc.startAngle,
-                            arc.endAngle,
-                            cmd.direction < 0
-                        ); // Y-axis is inverted so direction is also inverted
+                        var ccw = cmd.direction < 0; // Y-axis is inverted so direction is also inverted
+
+                        if (renderOptions["showDebugArcs"] && !isNotCurrentLayer) {
+                            strokePathIfNeeded("debugarc", "#ff0000");
+                            drawDebugArc(arc, ccw);
+                            strokePathIfNeeded("extrude", getColorLineForTool(tool));
+                        }
+
+                        ctx.arc(arc.x, arc.y, arc.r, arc.startAngle, arc.endAngle, ccw);
                     } else {
                         ctx.lineTo(x, y);
                     }
@@ -999,7 +1081,7 @@ GCODE.renderer = (function () {
                 .alpha(alpha)
                 .html();
             ctx.beginPath();
-            ctx.arc(prevX, prevY, sizeHeadSpot, 0, Math.PI * 2, true);
+            ctx.circle(prevX, prevY, sizeHeadSpot);
             ctx.fill();
         }
     };
@@ -1172,6 +1254,7 @@ GCODE.renderer = (function () {
         setOption: function (options) {
             var mustRefresh = false;
             var mustReset = false;
+            var mustReapplyPatches = false;
             var dirty = false;
             for (var opt in options) {
                 if (!renderOptions.hasOwnProperty(opt) || !options.hasOwnProperty(opt))
@@ -1188,7 +1271,8 @@ GCODE.renderer = (function () {
                         "zoomInOnModel",
                         "bed",
                         "invertAxes",
-                        "onViewportChange"
+                        "onViewportChange",
+                        "chromeArcFix"
                     ]) > -1
                 ) {
                     mustRefresh = true;
@@ -1197,12 +1281,19 @@ GCODE.renderer = (function () {
                 if ($.inArray(opt, ["bed", "onViewportChange"]) > -1) {
                     mustReset = true;
                 }
+
+                if ($.inArray(opt, ["chromeArcFix"]) > -1) {
+                    mustReapplyPatches = true;
+                }
             }
 
             if (!dirty) return;
             if (initialized) {
                 if (mustReset) {
                     resetViewport();
+                }
+                if (mustReapplyPatches) {
+                    applyContextPatches();
                 }
                 if (mustRefresh) {
                     this.refresh();

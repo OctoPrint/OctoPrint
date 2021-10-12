@@ -58,7 +58,7 @@
     <!-- /ko -->
 </script>
 
-<div id="settings-usersEditorDialog" class="modal hide fade">
+<div id="settings-usersEditorDialog" class="modal hide fade-in">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
         <h3 data-bind="text: $root.access.users.editor.header"></h3>
@@ -130,7 +130,7 @@
     </div>
 </div>
 
-<div id="settings-usersDialogChangePassword" class="modal hide fade">
+<div id="settings-usersDialogChangePassword" class="modal hide fade-in">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
         <h3>{{ _('Change password for user "%(user)s"', user='<span data-bind="text: $root.access.users.editor.name"></span>') }}</h3>

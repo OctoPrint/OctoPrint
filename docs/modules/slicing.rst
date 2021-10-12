@@ -4,7 +4,6 @@ octoprint.slicing
 -----------------
 
 .. automodule:: octoprint.slicing
-   :members:
 
 .. _sec-modules-slicing-exceptions:
 
@@ -12,4 +11,3 @@ octoprint.slicing.exceptions
 ----------------------------
 
 .. automodule:: octoprint.slicing.exceptions
-   :members:

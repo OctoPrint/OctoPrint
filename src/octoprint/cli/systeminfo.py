@@ -42,7 +42,7 @@ def get_systeminfo(environment_detector, connectivity_checker, additional_fields
     return flattened
 
 
-def get_systeminfo_bundle(systeminfo, logbase, printer=None):
+def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None):
     from octoprint.util import to_bytes
 
     systeminfotxt = []
@@ -83,12 +83,40 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None):
     for log in (
         "octoprint.log",
         "serial.log",
-        "plugin_softwareupdate_console.log",
-        "plugin_pluginmanager_console.log",
     ):
         logpath = os.path.join(logbase, log)
         if os.path.exists(logpath):
             z.write(logpath, arcname=log, compress_type=compress_type)
+
+    # add additional bundle contents from bundled plugins
+    if plugin_manager:
+        for name, hook in plugin_manager.get_hooks(
+            "octoprint.systeminfo.additional_bundle_files"
+        ).items():
+            try:
+                plugin = plugin_manager.get_plugin_info(name)
+                if not plugin.bundled:
+                    # we only support this for bundled plugins because we don't want
+                    # third party logs to blow up the bundles
+                    continue
+
+                logs = hook()
+
+                for log, content in logs.items():
+                    if isinstance(content, str):
+                        # log path
+                        if os.path.exists(content) and os.access(content, os.R_OK):
+                            z.write(content, arcname=log, compress_type=compress_type)
+                    elif callable(content):
+                        # content generating callable
+                        z.writestr(log, to_bytes(content()), compress_type=compress_type)
+            except Exception:
+                logging.getLogger(__name__).exception(
+                    "Error while retrieving additional bundle contents for plugin {}".format(
+                        name
+                    ),
+                    extra={"plugin": name},
+                )
 
     return z
 
@@ -140,7 +168,9 @@ def systeminfo_command(ctx, path, **kwargs):
             zipfilename = os.path.join(path, get_systeminfo_bundle_name())
             click.echo("Writing systeminfo bundle to {}...".format(zipfilename))
 
-            z = get_systeminfo_bundle(systeminfo, settings.getBaseFolder("logs"))
+            z = get_systeminfo_bundle(
+                systeminfo, settings.getBaseFolder("logs"), plugin_manager=plugin_manager
+            )
             try:
                 with open(zipfilename, "wb") as f:
                     for data in z:

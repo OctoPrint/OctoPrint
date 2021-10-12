@@ -81,7 +81,7 @@ Retrieve a group
 
    Retrieves an individual group record.
 
-   Will return a :http:statuscode:`200` with a :ref:`group record <sec-api-access-datamodel-groups-grouprecord>`
+   Will return a :http:statuscode:`200` with a :ref:`group record <sec-api-access-datamodel-groups-list>`
    as body.
 
    Requires the ``SETTINGS`` permission.
@@ -156,7 +156,7 @@ Retrieve a user
 
    Retrieves information about a user.
 
-   Will return a :http:statuscode:`200` with a :ref:`user record <sec-api-access-datamodel-users-userrecord>`
+   Will return a :http:statuscode:`200` with a :ref:`user record <sec-api-datamodel-access>`
    as body.
 
    Requires either the ``SETTINGS`` permission or to be logged in as the user.

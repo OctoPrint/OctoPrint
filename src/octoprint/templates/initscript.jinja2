@@ -29,6 +29,7 @@
     var VERSION = "{{ version.number|e }}";
     var DISPLAY_VERSION = "{{ version.display|e }}";
     var BRANCH = "{{ version.branch|e }}";
+    var PYTHON_VERSION = "{{ python_version|e }}";
     var LOCALE = "{{ g.locale|e }}";
     var AVAILABLE_LOCALES = {{ locales|tojson }};
     var SUPPORTED_FILETYPES = {{ supportedFiletypes|tojson }};

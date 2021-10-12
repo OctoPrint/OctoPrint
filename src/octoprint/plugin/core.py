@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 In this module resides the core data structures and logic of the plugin system.
 
@@ -20,6 +18,7 @@ In this module resides the core data structures and logic of the plugin system.
    :members:
 
 """
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -67,6 +66,182 @@ def _find_module(name, path=None):
 def _load_module(name, spec):
     f, filename, details = spec
     return imp.load_module(name, f, filename, details)
+
+
+def parse_plugin_metadata(path):
+    result = {}
+    logger = logging.getLogger(__name__)
+
+    if not path:
+        return result
+
+    if os.path.isdir(path):
+        path = os.path.join(path, "__init__.py")
+
+    if not os.path.isfile(path):
+        return result
+
+    if not path.endswith(".py"):
+        # we only support parsing plain text source files
+        return result
+
+    logger.debug("Parsing plugin metadata from AST of {}".format(path))
+
+    try:
+        import ast
+
+        with io.open(path, "rb") as f:
+            root = ast.parse(f.read(), filename=path)
+
+        assignments = list(
+            filter(lambda x: isinstance(x, ast.Assign) and x.targets, root.body)
+        )
+        function_defs = list(
+            filter(lambda x: isinstance(x, ast.FunctionDef) and x.name, root.body)
+        )
+        all_relevant = assignments + function_defs
+
+        def extract_target_ids(node):
+            return list(
+                map(
+                    lambda x: x.id,
+                    filter(lambda x: isinstance(x, ast.Name), node.targets),
+                )
+            )
+
+        def extract_names(node):
+            if isinstance(node, ast.Assign):
+                return extract_target_ids(node)
+            elif isinstance(node, ast.FunctionDef):
+                return [
+                    node.name,
+                ]
+            else:
+                return []
+
+        for key in (
+            ControlProperties.attr_name,
+            ControlProperties.attr_version,
+            ControlProperties.attr_author,
+            ControlProperties.attr_description,
+            ControlProperties.attr_url,
+            ControlProperties.attr_license,
+            ControlProperties.attr_pythoncompat,
+        ):
+            for a in reversed(assignments):
+                targets = extract_target_ids(a)
+                if key in targets:
+                    if isinstance(a.value, ast.Str):
+                        result[key] = a.value.s
+
+                    elif (
+                        isinstance(a.value, ast.Call)
+                        and hasattr(a.value, "func")
+                        and a.value.func.id == "gettext"
+                        and a.value.args
+                        and isinstance(a.value.args[0], ast.Str)
+                    ):
+                        result[key] = a.value.args[0].s
+
+                    break
+
+        for key in (ControlProperties.attr_hidden,):
+            for a in reversed(assignments):
+                targets = extract_target_ids(a)
+                if key in targets:
+                    if isinstance(a.value, ast.Name) and a.value.id in (
+                        "True",
+                        "False",
+                    ):
+                        result[key] = bool(a.value.id)
+
+                    break
+
+        for a in reversed(all_relevant):
+            targets = extract_names(a)
+            if any(map(lambda x: x in targets, ControlProperties.all())):
+                result["has_control_properties"] = True
+                break
+
+    except SyntaxError:
+        raise
+    except Exception:
+        logger.exception("Error while parsing AST from {}".format(path))
+
+    return result
+
+
+class ControlProperties(object):
+    attr_name = "__plugin_name__"
+    """ Module attribute from which to retrieve the plugin's human readable name. """
+
+    attr_description = "__plugin_description__"
+    """ Module attribute from which to retrieve the plugin's description. """
+
+    attr_disabling_DISCOURAGED = "__plugin_disabling_discouraged__"
+    """ Module attribute from which to retrieve the reason why disabling the plugin is discouraged. Only effective if ``self.bundled`` is True. """
+
+    attr_version = "__plugin_version__"
+    """ Module attribute from which to retrieve the plugin's version. """
+
+    attr_author = "__plugin_author__"
+    """ Module attribute from which to retrieve the plugin's author. """
+
+    attr_url = "__plugin_url__"
+    """ Module attribute from which to retrieve the plugin's website URL. """
+
+    attr_license = "__plugin_license__"
+    """ Module attribute from which to retrieve the plugin's license. """
+
+    attr_pythoncompat = "__plugin_pythoncompat__"
+    """
+    Module attribute from which to retrieve the plugin's python compatibility string.
+
+    If unset a default of ``>=2.7,<3`` will be assumed, meaning that the plugin will be considered compatible to
+    Python 2 but not Python 3.
+
+    To mark a plugin as Python 3 compatible, a string of ``>=2.7,<4`` is recommended.
+
+    Bundled plugins will automatically be assumed to be compatible.
+    """
+
+    attr_hidden = "__plugin_hidden__"
+    """
+    Module attribute from which to determine if the plugin's hidden or not.
+
+    Only evaluated for bundled plugins, in order to hide them from the Plugin Manager
+    and similar places.
+    """
+
+    attr_hooks = "__plugin_hooks__"
+    """ Module attribute from which to retrieve the plugin's provided hooks. """
+
+    attr_implementation = "__plugin_implementation__"
+    """ Module attribute from which to retrieve the plugin's provided mixin implementation. """
+
+    attr_helpers = "__plugin_helpers__"
+    """ Module attribute from which to retrieve the plugin's provided helpers. """
+
+    attr_check = "__plugin_check__"
+    """ Module attribute which to call to determine if the plugin can be loaded. """
+
+    attr_load = "__plugin_load__"
+    """ Module attribute which to call when loading the plugin. """
+
+    attr_unload = "__plugin_unload__"
+    """ Module attribute which to call when unloading the plugin. """
+
+    attr_enable = "__plugin_enable__"
+    """ Module attribute which to call when enabling the plugin. """
+
+    attr_disable = "__plugin_disable__"
+    """ Module attribute which to call when disabling the plugin. """
+
+    default_pythoncompat = ">=2.7,<3"
+
+    @classmethod
+    def all(cls):
+        return [getattr(cls, key) for key in dir(cls) if key.startswith("attr_")]
 
 
 _EntryPointOrigin = namedtuple(
@@ -159,71 +334,6 @@ class PluginInfo(object):
         url (str): URL of the website of the plugin
         license (str): License of the plugin
     """
-
-    attr_name = "__plugin_name__"
-    """ Module attribute from which to retrieve the plugin's human readable name. """
-
-    attr_description = "__plugin_description__"
-    """ Module attribute from which to retrieve the plugin's description. """
-
-    attr_disabling_discouraged = "__plugin_disabling_discouraged__"
-    """ Module attribute from which to retrieve the reason why disabling the plugin is discouraged. Only effective if ``self.bundled`` is True. """
-
-    attr_version = "__plugin_version__"
-    """ Module attribute from which to retrieve the plugin's version. """
-
-    attr_author = "__plugin_author__"
-    """ Module attribute from which to retrieve the plugin's author. """
-
-    attr_url = "__plugin_url__"
-    """ Module attribute from which to retrieve the plugin's website URL. """
-
-    attr_license = "__plugin_license__"
-    """ Module attribute from which to retrieve the plugin's license. """
-
-    attr_pythoncompat = "__plugin_pythoncompat__"
-    """
-    Module attribute from which to retrieve the plugin's python compatibility string.
-
-    If unset a default of ``>=2.7,<3`` will be assumed, meaning that the plugin will be considered compatible to
-    Python 2 but not Python 3.
-
-    To mark a plugin as Python 3 compatible, a string of ``>=2.7,<4`` is recommended.
-
-    Bundled plugins will automatically be assumed to be compatible.
-    """
-
-    attr_hidden = "__plugin_hidden__"
-    """
-    Module attribute from which to determine if the plugin's hidden or not.
-
-    Only evaluated for bundled plugins, in order to hide them from the Plugin Manager
-    and similar places.
-    """
-
-    attr_hooks = "__plugin_hooks__"
-    """ Module attribute from which to retrieve the plugin's provided hooks. """
-
-    attr_implementation = "__plugin_implementation__"
-    """ Module attribute from which to retrieve the plugin's provided mixin implementation. """
-
-    attr_helpers = "__plugin_helpers__"
-    """ Module attribute from which to retrieve the plugin's provided helpers. """
-
-    attr_check = "__plugin_check__"
-    """ Module attribute which to call to determine if the plugin can be loaded. """
-
-    attr_load = "__plugin_load__"
-    """ Module attribute which to call when loading the plugin. """
-
-    attr_unload = "__plugin_unload__"
-    """ Module attribute which to call when unloading the plugin. """
-
-    attr_enable = "__plugin_enable__"
-    """ Module attribute which to call when enabling the plugin. """
-
-    attr_disable = "__plugin_disable__"
-    """ Module attribute which to call when disabling the plugin. """
 
     def __init__(
         self,
@@ -428,7 +538,9 @@ class PluginInfo(object):
             str: Name of the plugin, fallback is the plugin's identifier.
         """
         return self._get_instance_attribute(
-            self.__class__.attr_name, defaults=(self._name, self.key), incl_metadata=True
+            ControlProperties.attr_name,
+            defaults=(self._name, self.key),
+            incl_metadata=True,
         )
 
     @property
@@ -442,7 +554,9 @@ class PluginInfo(object):
             str or None: Description of the plugin.
         """
         return self._get_instance_attribute(
-            self.__class__.attr_description, default=self._description, incl_metadata=True
+            ControlProperties.attr_description,
+            default=self._description,
+            incl_metadata=True,
         )
 
     @property
@@ -457,7 +571,7 @@ class PluginInfo(object):
         """
         return (
             self._get_instance_attribute(
-                self.__class__.attr_disabling_discouraged, default=False
+                ControlProperties.attr_disabling_DISCOURAGED, default=False
             )
             if self.bundled
             else False
@@ -476,7 +590,7 @@ class PluginInfo(object):
             self._version
             if self._version is not None
             else self._get_instance_attribute(
-                self.__class__.attr_version, default=self._version, incl_metadata=True
+                ControlProperties.attr_version, default=self._version, incl_metadata=True
             )
         )
 
@@ -490,7 +604,7 @@ class PluginInfo(object):
             str or None: Author of the plugin.
         """
         return self._get_instance_attribute(
-            self.__class__.attr_author, default=self._author, incl_metadata=True
+            ControlProperties.attr_author, default=self._author, incl_metadata=True
         )
 
     @property
@@ -503,7 +617,7 @@ class PluginInfo(object):
             str or None: Website URL for the plugin.
         """
         return self._get_instance_attribute(
-            self.__class__.attr_url, default=self._url, incl_metadata=True
+            ControlProperties.attr_url, default=self._url, incl_metadata=True
         )
 
     @property
@@ -516,7 +630,7 @@ class PluginInfo(object):
             str or None: License of the plugin.
         """
         return self._get_instance_attribute(
-            self.__class__.attr_license, default=self._license, incl_metadata=True
+            ControlProperties.attr_license, default=self._license, incl_metadata=True
         )
 
     @property
@@ -529,7 +643,7 @@ class PluginInfo(object):
             str: Python compatibility string of the plugin
         """
         return self._get_instance_attribute(
-            self.__class__.attr_pythoncompat, default=">=2.7,<3", incl_metadata=True
+            ControlProperties.attr_pythoncompat, default=">=2.7,<3", incl_metadata=True
         )
 
     @property
@@ -541,7 +655,7 @@ class PluginInfo(object):
             bool: Whether the plugin should be flagged as hidden or not
         """
         return self._get_instance_attribute(
-            self.__class__.attr_hidden, default=False, incl_metadata=True
+            ControlProperties.attr_hidden, default=False, incl_metadata=True
         )
 
     @property
@@ -553,7 +667,7 @@ class PluginInfo(object):
         Returns:
             dict: Hooks provided by the plugin.
         """
-        return self._get_instance_attribute(self.__class__.attr_hooks, default={})
+        return self._get_instance_attribute(ControlProperties.attr_hooks, default={})
 
     @property
     def implementation(self):
@@ -565,7 +679,7 @@ class PluginInfo(object):
             object: Implementation provided by the plugin.
         """
         return self._get_instance_attribute(
-            self.__class__.attr_implementation, default=None
+            ControlProperties.attr_implementation, default=None
         )
 
     @property
@@ -577,7 +691,7 @@ class PluginInfo(object):
         Returns:
             dict: Helpers provided by the plugin.
         """
-        return self._get_instance_attribute(self.__class__.attr_helpers, default={})
+        return self._get_instance_attribute(ControlProperties.attr_helpers, default={})
 
     @property
     def check(self):
@@ -590,7 +704,7 @@ class PluginInfo(object):
                 otherwise.
         """
         return self._get_instance_attribute(
-            self.__class__.attr_check, default=lambda: True
+            ControlProperties.attr_check, default=lambda: True
         )
 
     @property
@@ -603,7 +717,7 @@ class PluginInfo(object):
             callable: Load method for the plugin module.
         """
         return self._get_instance_attribute(
-            self.__class__.attr_load, default=lambda: True
+            ControlProperties.attr_load, default=lambda: True
         )
 
     @property
@@ -616,7 +730,7 @@ class PluginInfo(object):
             callable: Unload method for the plugin module.
         """
         return self._get_instance_attribute(
-            self.__class__.attr_unload, default=lambda: True
+            ControlProperties.attr_unload, default=lambda: True
         )
 
     @property
@@ -629,7 +743,7 @@ class PluginInfo(object):
             callable: Enable method for the plugin module.
         """
         return self._get_instance_attribute(
-            self.__class__.attr_enable, default=lambda: True
+            ControlProperties.attr_enable, default=lambda: True
         )
 
     @property
@@ -642,7 +756,7 @@ class PluginInfo(object):
             callable: Disable method for the plugin module.
         """
         return self._get_instance_attribute(
-            self.__class__.attr_disable, default=lambda: True
+            ControlProperties.attr_disable, default=lambda: True
         )
 
     def _get_instance_attribute(
@@ -670,11 +784,7 @@ class PluginInfo(object):
 
     @property
     def control_properties(self):
-        return [
-            getattr(self.__class__, key)
-            for key in dir(self.__class__)
-            if key.startswith("attr_")
-        ]
+        return ControlProperties.all()
 
     @property
     def looks_like_plugin(self):
@@ -684,113 +794,14 @@ class PluginInfo(object):
         return self.parsed_metadata.get("has_control_properties", False)
 
     def _parse_metadata(self):
-        result = {}
-
-        path = self.location
-        if not path:
-            return result
-
-        if os.path.isdir(path):
-            path = os.path.join(self.location, "__init__.py")
-
-        if not os.path.isfile(path):
-            return result
-
-        if not path.endswith(".py"):
-            # we only support parsing plain text source files
-            return result
-
-        self._logger.debug(
-            "Parsing plugin metadata for {} from AST of {}".format(self.key, path)
-        )
-
         try:
-            import ast
-
-            with io.open(path, "rb") as f:
-                root = ast.parse(f.read(), filename=path)
-
-            assignments = list(
-                filter(lambda x: isinstance(x, ast.Assign) and x.targets, root.body)
-            )
-            function_defs = list(
-                filter(lambda x: isinstance(x, ast.FunctionDef) and x.name, root.body)
-            )
-            all_relevant = assignments + function_defs
-
-            def extract_target_ids(node):
-                return list(
-                    map(
-                        lambda x: x.id,
-                        filter(lambda x: isinstance(x, ast.Name), node.targets),
-                    )
-                )
-
-            def extract_names(node):
-                if isinstance(node, ast.Assign):
-                    return extract_target_ids(node)
-                elif isinstance(node, ast.FunctionDef):
-                    return [
-                        node.name,
-                    ]
-                else:
-                    return []
-
-            for key in (
-                self.__class__.attr_name,
-                self.__class__.attr_version,
-                self.__class__.attr_author,
-                self.__class__.attr_description,
-                self.__class__.attr_url,
-                self.__class__.attr_license,
-                self.__class__.attr_pythoncompat,
-            ):
-                for a in reversed(assignments):
-                    targets = extract_target_ids(a)
-                    if key in targets:
-                        if isinstance(a.value, ast.Str):
-                            result[key] = a.value.s
-
-                        elif (
-                            isinstance(a.value, ast.Call)
-                            and hasattr(a.value, "func")
-                            and a.value.func.id == "gettext"
-                            and a.value.args
-                            and isinstance(a.value.args[0], ast.Str)
-                        ):
-                            result[key] = a.value.args[0].s
-
-                        break
-
-            for key in (self.__class__.attr_hidden,):
-                for a in reversed(assignments):
-                    targets = extract_target_ids(a)
-                    if key in targets:
-                        if isinstance(a.value, ast.Name) and a.value.id in (
-                            "True",
-                            "False",
-                        ):
-                            result[key] = bool(a.value.id)
-
-                        break
-
-            for a in reversed(all_relevant):
-                targets = extract_names(a)
-                if any(map(lambda x: x in targets, self.control_properties)):
-                    result["has_control_properties"] = True
-                    break
-
+            return parse_plugin_metadata(self.location)
         except SyntaxError:
             self._logger.exception(
-                "Invalid syntax in {} for plugin {}".format(path, self.key)
+                "Invalid syntax in plugin file of plugin {}".format(self.key)
             )
             self.invalid_syntax = True
-        except Exception:
-            self._logger.exception(
-                "Error while parsing AST from {} for plugin {}".format(path, self.key)
-            )
-
-        return result
+            return {}
 
 
 class PluginManager(object):
@@ -837,11 +848,27 @@ class PluginManager(object):
         if plugin_considered_bundled is None:
             plugin_considered_bundled = []
 
+        processed_blacklist = []
+        for entry in plugin_blacklist:
+            if isinstance(entry, tuple):
+                key, version = entry
+                try:
+                    processed_blacklist.append(
+                        (key, pkg_resources.Requirement.parse(version))
+                    )
+                except Exception:
+                    self.logger.warning(
+                        "Invalid version requirement {} for blacklist "
+                        "entry {}, ignoring".format(version, key)
+                    )
+            else:
+                processed_blacklist.append(entry)
+
         self.plugin_folders = plugin_folders
         self.plugin_bases = plugin_bases
         self.plugin_entry_points = plugin_entry_points
         self.plugin_disabled_list = plugin_disabled_list
-        self.plugin_blacklist = plugin_blacklist
+        self.plugin_blacklist = processed_blacklist
         self.plugin_restart_needing_hooks = plugin_restart_needing_hooks
         self.plugin_obsolete_hooks = plugin_obsolete_hooks
         self.plugin_validators = plugin_validators
@@ -1310,7 +1337,7 @@ class PluginManager(object):
         def matches_plugin(entry):
             if isinstance(entry, (tuple, list)) and len(entry) == 2:
                 entry_key, entry_version = entry
-                return entry_key == key and entry_version == version
+                return entry_key == key and version in entry_version
             return False
 
         return any(map(lambda entry: matches_plugin(entry), self.plugin_blacklist))

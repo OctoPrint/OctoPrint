@@ -301,6 +301,10 @@ gcodeToEvent = {
     # motors on/off
     "M80": Events.POWER_ON,
     "M81": Events.POWER_OFF,
+    # filament change
+    "M600": Events.FILAMENT_CHANGE,
+    "M701": Events.FILAMENT_CHANGE,
+    "M702": Events.FILAMENT_CHANGE,
 }
 
 
@@ -467,9 +471,11 @@ class MachineCom(object):
 
     CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
     CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
+    CAPABILITY_AUTOREPORT_POS = "AUTOREPORT_POS"
     CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
     CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
     CAPABILITY_CHAMBER_TEMP = "CHAMBER_TEMPERATURE"
+    CAPABILITY_EXTENDED_M20 = "EXTENDED_M20"
 
     CAPABILITY_SUPPORT_ENABLED = "enabled"
     CAPABILITY_SUPPORT_DETECTED = "detected"
@@ -580,6 +586,9 @@ class MachineCom(object):
             self.CAPABILITY_AUTOREPORT_SD_STATUS: settings().getBoolean(
                 ["serial", "capabilities", "autoreport_sdstatus"]
             ),
+            self.CAPABILITY_AUTOREPORT_POS: settings().getBoolean(
+                ["serial", "capabilities", "autoreport_pos"]
+            ),
             self.CAPABILITY_BUSY_PROTOCOL: settings().getBoolean(
                 ["serial", "capabilities", "busy_protocol"]
             ),
@@ -588,6 +597,9 @@ class MachineCom(object):
             ),
             self.CAPABILITY_CHAMBER_TEMP: settings().getBoolean(
                 ["serial", "capabilities", "chamber_temp"]
+            ),
+            self.CAPABILITY_EXTENDED_M20: settings().getBoolean(
+                ["serial", "capabilities", "extended_m20"]
             ),
         }
 
@@ -612,6 +624,7 @@ class MachineCom(object):
 
         self._temperature_autoreporting = False
         self._sdstatus_autoreporting = False
+        self._pos_autoreporting = False
         self._busy_protocol_detected = False
         self._busy_protocol_support = False
 
@@ -645,6 +658,7 @@ class MachineCom(object):
             ["serial", "checksumRequiringCommands"]
         )
         self._blocked_commands = settings().get(["serial", "blockedCommands"])
+        self._ignored_commands = settings().get(["serial", "ignoredCommands"])
         self._pausing_commands = settings().get(["serial", "pausingCommands"])
         self._emergency_commands = settings().get(["serial", "emergencyCommands"])
         self._sanity_check_tools = settings().getBoolean(["serial", "sanityCheckTools"])
@@ -1650,6 +1664,14 @@ class MachineCom(object):
         tags=None,
         external_sd=False,
     ):
+        cancel_tags = {"trigger:comm.cancel", "trigger:cancel"}
+        abort_heatup_tags = cancel_tags | {
+            "trigger:abort_heatup",
+        }
+        record_position_tags = cancel_tags | {
+            "trigger:record_position",
+        }
+
         if tags is None:
             tags = set()
 
@@ -1674,42 +1696,47 @@ class MachineCom(object):
             self.cancelFileTransfer()
             return
 
-        def _on_M400_sent():
-            # we don't call on_print_job_cancelled on our callback here
-            # because we do this only after our M114 has been answered
-            # by the firmware
-            self._record_cancel_data = True
-
-            with self._cancel_mutex:
-                if self._cancel_position_timer is not None:
-                    self._cancel_position_timer.cancel()
-                self._cancel_position_timer = ResettableTimer(
-                    self._timeout_intervals.get("positionLogWait", 10.0),
-                    self._cancel_preparation_failed,
-                )
-                self._cancel_position_timer.daemon = True
-                self._cancel_position_timer.start()
-            self.sendCommand(
-                "M114",
-                part_of_job=True,
-                tags=tags
-                | {"trigger:comm.cancel", "trigger:cancel", "trigger:record_position"},
-            )
-
         self._callback.on_comm_print_job_cancelling(
             firmware_error=firmware_error, user=user
         )
 
         with self._jobLock:
+            pos_autoreporting = self._pos_autoreporting
+
             self._changeState(self.STATE_CANCELLING)
+
+            def _reenable_pos_autoreport():
+                if pos_autoreporting:
+                    self._set_autoreport_pos_interval(tags=record_position_tags)
+
+            def _on_M400_sent():
+                # we don't call on_print_job_cancelled on our callback here
+                # because we do this only after our M114 has been answered
+                # by the firmware
+                self._record_cancel_data = True
+
+                with self._cancel_mutex:
+                    if self._cancel_position_timer is not None:
+                        self._cancel_position_timer.cancel()
+                    self._cancel_position_timer = ResettableTimer(
+                        self._timeout_intervals.get("positionLogWait", 10.0),
+                        self._cancel_preparation_failed,
+                    )
+                    self._cancel_position_timer.daemon = True
+                    self._cancel_position_timer.start()
+                self.sendCommand(
+                    "M114",
+                    on_sent=_reenable_pos_autoreport,
+                    part_of_job=True,
+                    tags=tags | record_position_tags,
+                )
 
             if self._abort_heatup_on_cancel:
                 # abort any ongoing heatups immediately to get back control over the printer
                 self.sendCommand(
                     "M108",
                     part_of_job=False,
-                    tags=tags
-                    | {"trigger:comm.cancel", "trigger:cancel", "trigger:abort_heatup"},
+                    tags=tags | abort_heatup_tags,
                     force=True,
                 )
 
@@ -1718,33 +1745,35 @@ class MachineCom(object):
                     self.sendCommand(
                         "M25",
                         part_of_job=True,
-                        tags=tags | {"trigger:comm.cancel", "trigger:cancel"},
+                        tags=tags | cancel_tags,
                     )  # pause print
                     self.sendCommand(
                         "M27",
                         part_of_job=True,
-                        tags=tags | {"trigger:comm.cancel", "trigger:cancel"},
+                        tags=tags | cancel_tags,
                     )  # get current byte position in file
                     self.sendCommand(
                         "M26 S0",
                         part_of_job=True,
-                        tags=tags | {"trigger:comm.cancel", "trigger:cancel"},
+                        tags=tags | cancel_tags,
                     )  # reset position in file to byte 0
 
             if self._log_position_on_cancel and not disable_log_position:
                 with self._action_users_mutex:
                     self._action_users["cancel"] = user
 
+                # disable position autoreporting if enabled
+                if pos_autoreporting:
+                    self._set_autoreport_pos_interval(
+                        interval=0,
+                        part_of_job=True,
+                        tags=tags | record_position_tags,
+                    )
                 self.sendCommand(
                     "M400",
                     on_sent=_on_M400_sent,
                     part_of_job=True,
-                    tags=tags
-                    | {
-                        "trigger:comm.cancel",
-                        "trigger:cancel",
-                        "trigger:record_position",
-                    },
+                    tags=tags | record_position_tags,
                 )
                 self._continue_sending()
             else:
@@ -1794,6 +1823,12 @@ class MachineCom(object):
         if not self._currentFile:
             return
 
+        pause_tags = {"trigger:comm.set_pause", "trigger:pause"}
+        resume_tags = {"trigger:comm.set_pause", "trigger:resume"}
+        record_position_tags = pause_tags | {
+            "trigger:record_position",
+        }
+
         if tags is None:
             tags = set()
 
@@ -1817,6 +1852,7 @@ class MachineCom(object):
             return
 
         with self._jobLock:
+            pos_autoreporting = self._pos_autoreporting
             if not pause and self._state in valid_paused_states:
                 if self._pauseWaitStartTime:
                     self._pauseWaitTimeLost = self._pauseWaitTimeLost + (
@@ -1834,12 +1870,12 @@ class MachineCom(object):
                         self.sendCommand(
                             "M24",
                             part_of_job=True,
-                            tags=tags | {"trigger:comm.set_pause", "trigger:resume"},
+                            tags=tags | resume_tags,
                         )
                     self.sendCommand(
                         "M27",
                         part_of_job=True,
-                        tags=tags | {"trigger:comm.set_pause", "trigger:resume"},
+                        tags=tags | resume_tags,
                     )
 
                 def finalize():
@@ -1860,8 +1896,12 @@ class MachineCom(object):
                     self.sendCommand(
                         "M25",
                         part_of_job=True,
-                        tags=tags | {"trigger:comm.set_pause", "trigger:pause"},
+                        tags=tags | pause_tags,
                     )  # pause print
+
+                def _reenable_pos_autoreport():
+                    if pos_autoreporting:
+                        self._set_autoreport_pos_interval(tags=record_position_tags)
 
                 def _on_M400_sent():
                     # we don't call on_print_job_paused on our callback here
@@ -1881,29 +1921,27 @@ class MachineCom(object):
                         self._pause_position_timer.start()
                     self.sendCommand(
                         "M114",
+                        on_sent=_reenable_pos_autoreport,
                         part_of_job=True,
-                        tags=tags
-                        | {
-                            "trigger:comm.set_pause",
-                            "trigger:pause",
-                            "trigger:record_position",
-                        },
+                        tags=tags | record_position_tags,
                     )
 
                 if self._log_position_on_pause and local_handling:
                     with self._action_users_mutex:
                         self._action_users["pause"] = user
 
+                    # disable position autoreporting if enabled
+                    if pos_autoreporting:
+                        self._set_autoreport_pos_interval(
+                            interval=0,
+                            part_of_job=True,
+                            tags=tags | record_position_tags,
+                        )
                     self.sendCommand(
                         "M400",
                         on_sent=_on_M400_sent,
                         part_of_job=True,
-                        tags=tags
-                        | {
-                            "trigger:comm.set_pause",
-                            "trigger:pause",
-                            "trigger:record_position",
-                        },
+                        tags=tags | record_position_tags,
                     )
                     self._continue_sending()
                 else:
@@ -1950,8 +1988,13 @@ class MachineCom(object):
         if tags is None:
             tags = set()
 
+        if self._capability_supported(self.CAPABILITY_EXTENDED_M20):
+            command = "M20 L"
+        else:
+            command = "M20"
+
         self.sendCommand(
-            "M20",
+            command,
             tags=tags
             | {
                 "trigger:comm.refresh_sd_files",
@@ -2387,6 +2430,9 @@ class MachineCom(object):
                                 filename = filename.lower()
                             self._sdFiles.append((filename, size))
                             if longname is not None:
+                                if longname[0] == '"' and longname[-1] == '"':
+                                    # apparently some firmwares enclose the long name in quotes...
+                                    longname = longname[1:-1]
                                 self._sdFilesMap[filename] = longname
                         continue
 
@@ -2732,6 +2778,11 @@ class MachineCom(object):
                                     "Firmware states that it supports sd status autoreporting"
                                 )
                                 self._set_autoreport_sdstatus_interval()
+                            elif capability == self.CAPABILITY_AUTOREPORT_POS and enabled:
+                                self._logger.info(
+                                    "Firmware states that it supports position autoreporting"
+                                )
+                                self._set_autoreport_pos_interval()
                             elif (
                                 capability == self.CAPABILITY_EMERGENCY_PARSER and enabled
                             ):
@@ -3464,6 +3515,20 @@ class MachineCom(object):
             tags={"trigger:comm.set_autoreport_sdstatus_interval"},
         )
 
+    def _set_autoreport_pos_interval(self, interval=None, part_of_job=False, tags=None):
+        if tags is None:
+            tags = set()
+        if interval is None:
+            try:
+                interval = int(self._timeout_intervals.get("posAutoreport", 5))
+            except Exception:
+                interval = 5
+        self.sendCommand(
+            "M154 S{}".format(interval),
+            part_of_job=part_of_job,
+            tags=tags | {"trigger:comm.set_autoreport_pos_interval"},
+        )
+
     def _set_busy_protocol_interval(self, interval=None, callback=None):
         if interval is None:
             try:
@@ -3536,6 +3601,8 @@ class MachineCom(object):
             self._set_autoreport_temperature_interval()
         if self._sdstatus_autoreporting:
             self._set_autoreport_sdstatus_interval()
+        if self._pos_autoreporting:
+            self._set_autoreport_pos_interval()
         if self._busy_protocol_support:
             self._set_busy_protocol_interval()
 
@@ -3684,6 +3751,19 @@ class MachineCom(object):
                 # win32
                 # noinspection PyProtectedMember
                 set_close_exec(serial_obj._port_handle)
+
+            if settings().getBoolean(["serial", "lowLatency"]):
+                if hasattr(serial_obj, "set_low_latency_mode"):
+                    try:
+                        serial_obj.set_low_latency_mode(True)
+                    except Exception:
+                        self._logger.exception(
+                            "Could not set low latency mode on serial port, continuing without"
+                        )
+                else:
+                    self._logger.info(
+                        "Platform doesn't support low latency mode on serial port"
+                    )
 
             return BufferedReadlineWrapper(serial_obj)
 
@@ -4072,27 +4152,7 @@ class MachineCom(object):
             self._lastResendNumber = lineToResend
             self._currentResendCount = 0
 
-            if (
-                self._resendDelta > len(self._lastLines)
-                or len(self._lastLines) == 0
-                or self._resendDelta < 0
-            ):
-                error_text = "Printer requested line {} but no sufficient history is available, can't resend".format(
-                    lineToResend
-                )
-                self._log(error_text)
-                self._logger.warning(
-                    error_text
-                    + ". Printer requested line {}, current line is {}, line history has {} entries.".format(
-                        lineToResend, self._current_line, len(self._lastLines)
-                    )
-                )
-                if self.isPrinting():
-                    # abort the print & disconnect, there's nothing we can do to rescue it
-                    self._trigger_error(error_text, "resend")
-                else:
-                    # reset resend delta, we can't do anything about it
-                    self._resendDelta = None
+            self._resendCheckPossibility(lineToResend)
 
             # if we log resends, make sure we don't log more resends than the set rate within a window
             #
@@ -4160,9 +4220,14 @@ class MachineCom(object):
                 # resend_ok_timer, so make sure that resendDelta is actually still set (see #2632)
                 return False
 
-            cmd = self._lastLines[-self._resendDelta].decode("ascii")
             lineNumber = self._current_line - self._resendDelta
 
+            if not self._resendCheckPossibility(lineNumber):
+                # Something has gone wrong if we get here, but we already logged and
+                # handled it.
+                return False
+
+            cmd = self._lastLines[-self._resendDelta].decode("ascii")
             result = self._enqueue_for_sending(cmd, linenumber=lineNumber, resend=True)
 
             self._resendDelta -= 1
@@ -4176,6 +4241,33 @@ class MachineCom(object):
                 self._send_queue.resend_active = False
 
             return result
+
+    def _resendCheckPossibility(self, lineno):
+        if (
+            self._resendDelta > len(self._lastLines)
+            or len(self._lastLines) == 0
+            or self._resendDelta < 0
+        ):
+            error_text = "Should resend line {} but no sufficient history is available, can't resend".format(
+                lineno
+            )
+            self._log(error_text)
+            self._logger.warning(
+                error_text
+                + ". Line to resend is {}, current line is {}, line history has {} entries.".format(
+                    lineno, self._current_line, len(self._lastLines)
+                )
+            )
+            if self.isPrinting():
+                # abort the print & disconnect, there's nothing we can do to rescue it
+                self._trigger_error(error_text, "resend")
+            else:
+                # reset resend delta, we can't do anything about it
+                self._resendDelta = None
+
+            return False
+        else:
+            return True
 
     def _sendCommand(self, cmd, cmd_type=None, on_sent=None, tags=None):
         # Make sure we are only handling one sending job at a time
@@ -5112,6 +5204,16 @@ class MachineCom(object):
                 self.CAPABILITY_AUTOREPORT_SD_STATUS, False
             ) and (interval > 0)
 
+    def _gcode_M154_sending(
+        self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
+    ):
+        match = regexes_parameters["intS"].search(cmd)
+        if match:
+            interval = int(match.group("value"))
+            self._pos_autoreporting = self._firmware_capabilities.get(
+                self.CAPABILITY_AUTOREPORT_SD_STATUS, False
+            ) and (interval > 0)
+
     def _gcode_M33_sending(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
@@ -5294,6 +5396,21 @@ class MachineCom(object):
                         "command": cmd,
                         "message": message,
                         "severity": "warn",
+                    },
+                )
+                return (None,)
+            if gcode in self._ignored_commands:
+                message = "Not sending {} to printer, it's configured as an ignored command".format(
+                    gcode
+                )
+                self._log("Info: " + message)
+                self._logger.info(message)
+                eventManager().fire(
+                    Events.COMMAND_SUPPRESSED,
+                    {
+                        "command": cmd,
+                        "message": message,
+                        "severity": "info",
                     },
                 )
                 return (None,)

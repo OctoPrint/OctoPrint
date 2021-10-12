@@ -17,8 +17,7 @@
     <script type="text/html" id="files_template_machinecode">
         <div class="btn btn-mini toggleAdditionalData pull-right" data-bind="click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }" title="{{ _('Additional data')|edq }}"><i class="fas fa-chevron-down"></i></div>
         <div class="title clickable" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, false); } else { return; } }, css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: display"></div>
-        <div class="internal" data-bind="visible: display && name != display && $root.showInternalFilename">{{ _('Internal') }}: <span data-bind="text: name"></span>
-        <span data-bind="text: $root.showInternalFilename"></span> </div>
+        <div class="internal" data-bind="visible: display && name != display && $root.showInternalFilename">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
         <div class="uploaded">{{ _('Uploaded') }}: <span data-bind="text: formatTimeAgo(date), attr: {title: formatDate(date)}"></span></div>
         <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
         <div class="additionalInfo hide" data-bind="html: $root.getAdditionalData($data)"></div>
@@ -84,10 +83,8 @@
         {% endif %}
     </div>
     <div id="gcode_upload_progress" class="progress progress-text-centered">
-        <span class="progress-text-back" data-bind="text: uploadProgressText"></span>
-        <div class="bar">
-            <span class="progress-text-front" data-bind="copyWidth: ':parent :parent :parent :parent form', text: uploadProgressText"></span>
-        </div>
+        <div class="bar"></div>
+        <span class="progress-text-back" data-bind="css: { 'progress-text-front': (uploadProgressPercentage() >= 50), 'progress-text-back': (uploadProgressPercentage() < 50) }, text: uploadProgressText()"></span>
     </div>
     <div>
         <small class="muted">{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>

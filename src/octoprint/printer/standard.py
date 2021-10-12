@@ -516,7 +516,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     )
                 )
 
-        command = "G1 {}".format(
+        command = "G0 {}".format(
             " ".join(["{}{}".format(axis.upper(), amt) for axis, amt in axes.items()])
         )
 
@@ -1191,6 +1191,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                         statisticalTotalPrintTime,
                         statisticalTotalPrintTimeType,
                     )
+                    if printTimeLeft is not None:
+                        printTimeLeft = int(printTimeLeft)
                 except Exception:
                     self._logger.exception(
                         "Error while estimating print time via {}".format(estimator)
@@ -1331,33 +1333,29 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     self._logger.exception("Error generating fileData")
                     fileData = None
                 if fileData is not None:
-                    if "display" in fileData:
+                    if fileData.get("display"):
                         display_name = fileData["display"]
-                    if "analysis" in fileData:
-                        if (
-                            estimatedPrintTime is None
-                            and "estimatedPrintTime" in fileData["analysis"]
+                    if isinstance(fileData.get("analysis"), dict):
+                        if estimatedPrintTime is None and fileData["analysis"].get(
+                            "estimatedPrintTime"
                         ):
                             estimatedPrintTime = fileData["analysis"][
                                 "estimatedPrintTime"
                             ]
-                        if "filament" in fileData["analysis"]:
+                        if fileData["analysis"].get("filament"):
                             filament = fileData["analysis"]["filament"]
-                    if "statistics" in fileData:
+                    if isinstance(fileData.get("statistics"), dict):
                         printer_profile = (
                             self._printerProfileManager.get_current_or_default()["id"]
                         )
-                        if (
-                            "averagePrintTime" in fileData["statistics"]
-                            and printer_profile
-                            in fileData["statistics"]["averagePrintTime"]
+                        if printer_profile in fileData["statistics"].get(
+                            "averagePrintTime", {}
                         ):
                             averagePrintTime = fileData["statistics"]["averagePrintTime"][
                                 printer_profile
                             ]
-                        if (
-                            "lastPrintTime" in fileData["statistics"]
-                            and printer_profile in fileData["statistics"]["lastPrintTime"]
+                        if printer_profile in fileData["statistics"].get(
+                            "lastPrintTime", {}
                         ):
                             lastPrintTime = fileData["statistics"]["lastPrintTime"][
                                 printer_profile

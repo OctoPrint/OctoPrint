@@ -28,10 +28,21 @@ $(function () {
                     action.actionSource = "core";
                     actions.push(action);
                 });
-                if (response.custom && response.custom.length) {
+                if (
+                    (response.custom && response.custom.length) ||
+                    (response.plugin && response.plugin.length)
+                ) {
                     actions.push({action: "divider"});
                 }
             }
+            _.each(response.plugin, function (data) {
+                var action = _.extend({}, data);
+                action.actionSource = "plugin";
+                actions.push(action);
+                if (response.custom && response.custom.length) {
+                    actions.push({action: "divider"});
+                }
+            });
             _.each(response.custom, function (data) {
                 var action = _.extend({}, data);
                 action.actionSource = "custom";
