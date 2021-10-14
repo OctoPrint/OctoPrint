@@ -95,7 +95,7 @@ jobs:
   test-e2e:
     name: 🧪 E2E tests
     needs: build
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-latest
     steps:
       - name: ⬇ Checkout code
         uses: actions/checkout@v2
