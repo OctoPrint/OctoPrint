@@ -21,8 +21,7 @@ $(function () {
 
     passwordElement.keypress(function (event) {
         if (event.which == 13) {
-            buttonElement.focus();
-            buttonElement.click();
+            passwordElement.blur();
         }
     });
 
