@@ -80,7 +80,7 @@ INSTALL_REQUIRES_OSX = [
 EXTRA_REQUIRES = {
     "develop": [
         # Testing dependencies
-        "pytest>=5.4.3,<6",
+        "pytest>=6.2.5,<7",
         "pytest-doctest-custom>=1.0.0,<2",
         "ddt",
         # pre-commit
