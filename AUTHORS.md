@@ -149,6 +149,7 @@ date of first contribution):
   * [Ian Wilt](https://github.com/ianwiltdotcom)
   * [Ben Sycha](https://github.com/Sycha)
   * [Bryan Kenote](https://github.com/bryankenote)
+  * [Christian Würthner](https://github.com/crysxd)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
