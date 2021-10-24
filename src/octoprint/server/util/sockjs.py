@@ -6,6 +6,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
+import re
 import threading
 import time
 
@@ -171,6 +172,13 @@ class PrinterStateConnection(
         self._registered = False
         self._authed = False
 
+        self._usesSelectiveSubscription = False
+        self._subscribedToPlugins = []
+        self._subscribedToEvents = []
+        self._subscribedToCurrent = False
+        self._pendingHistoryMessage = False
+        self._logsFilterRegex = None
+
     @staticmethod
     def _get_remote_address(info):
         forwarded_for = info.headers.get("X-Forwarded-For")
@@ -230,6 +238,7 @@ class PrinterStateConnection(
                 "safe_mode": octoprint.server.safe_mode,
                 "online": self._connectivityChecker.online,
                 "permissions": [permission.as_dict() for permission in Permissions.all()],
+                "supports_selective_subscription": True,
             },
         )
 
@@ -270,6 +279,9 @@ class PrinterStateConnection(
         if "auth" in message:
             try:
                 parts = message["auth"].split(":")
+                usesSelectiveSubscription = message.get(
+                    "uses_selective_subscription", False
+                )
                 if not len(parts) == 2:
                     raise ValueError()
             except ValueError:
@@ -292,6 +304,15 @@ class PrinterStateConnection(
                     )
                     self._on_logout()
 
+            if usesSelectiveSubscription:
+                self._usesSelectiveSubscription = True
+                self._logger.debug("Client makes use of selective subscriptions")
+            else:
+                self._usesSelectiveSubscription = False
+                self._logger.debug(
+                    "Client does not use selective subscriptions, sending all messages"
+                )
+
             self._register()
 
         elif "throttle" in message:
@@ -313,8 +334,72 @@ class PrinterStateConnection(
                     )
                 )
 
+        elif "subscribe" in message:
+            try:
+                subscribe = message["subscribe"]
+
+                current = subscribe.get("current", False)
+                if not isinstance(current, bool):
+                    raise ValueError("current is not a boolean")
+
+                logsFilterRegex = subscribe.get("logsFilterRegex", None)
+                if not isinstance(logsFilterRegex, str) and logsFilterRegex is not None:
+                    raise ValueError("logsFilterRegex is not a string")
+
+                pluginsMixed = subscribe.get("plugins", [])
+                if isinstance(pluginsMixed, list):
+                    plugins = pluginsMixed
+                elif pluginsMixed is False:
+                    plugins = []
+                elif pluginsMixed is True:
+                    plugins = None
+                else:
+                    raise ValueError("plugins is not a list or boolean")
+
+                eventsMixed = subscribe.get("events", [])
+                if isinstance(eventsMixed, list):
+                    events = eventsMixed
+                elif eventsMixed is False:
+                    events = []
+                elif eventsMixed is True:
+                    events = None
+                else:
+                    raise ValueError("events is not a list or boolean")
+
+            except ValueError as e:
+                self._logger.warning(
+                    "Got invalid subscription message from client {}, ignoring: {!r} ({}) ".format(
+                        self._remoteAddress, message["subscribe"], str(e)
+                    )
+                )
+            else:
+                wasSubscribedToCurrent = self._subscribedToCurrent
+                self._subscribedToPlugins = plugins
+                self._subscribedToEvents = events
+                self._subscribedToCurrent = current
+                if logsFilterRegex is not None:
+                    self._logsFilterRegex = re.compile(logsFilterRegex)
+                else:
+                    self._logsFilterRegex = None
+
+                if self._subscribedToCurrent and not wasSubscribedToCurrent:
+                    self._logger.debug("Client now subscribed to current messages")
+                    # setting the callback will trigger a history message to be send
+                    self._pendingHistoryMessage = True
+                    self._printer.send_initial_callback(self)
+
+                elif not self._subscribedToCurrent and wasSubscribedToCurrent:
+                    self._logger.debug("Client no longer subscribed to current messages")
+
     def on_printer_send_current_data(self, data):
         if not self._user.has_permission(Permissions.STATUS):
+            return
+
+        if self._usesSelectiveSubscription and not self._subscribedToCurrent:
+            return
+
+        if self._pendingHistoryMessage:
+            self._logger.debug("History message not yet send, dropping current message")
             return
 
         # make sure we rate limit the updates according to our throttle factor
@@ -373,7 +458,7 @@ class PrinterStateConnection(
             {
                 "serverTime": time.time(),
                 "temps": temperatures,
-                "logs": logs,
+                "logs": self._filterLogs(logs),
                 "messages": messages,
                 "busyFiles": busy_files,
             }
@@ -381,9 +466,21 @@ class PrinterStateConnection(
         self._emit("current", payload=data)
 
     def on_printer_send_initial_data(self, data):
+        if self._usesSelectiveSubscription and not self._subscribedToCurrent:
+            self._logger.debug("Not subscribed, dropping history")
+            return
+
+        self._pendingHistoryMessage = False
         data_to_send = dict(data)
+        data_to_send["logs"] = self._filterLogs(data_to_send.get("logs", []))
         data_to_send["serverTime"] = time.time()
         self._emit("history", payload=data_to_send)
+
+    def _filterLogs(self, logs):
+        if not self._usesSelectiveSubscription or self._logsFilterRegex is None:
+            return logs
+
+        return [line for line in logs if self._logsFilterRegex.search(line)]
 
     def sendEvent(self, type, payload=None):
         permissions = self._event_permissions.get(type, self._event_permissions["*"])
@@ -423,6 +520,13 @@ class PrinterStateConnection(
         self._emit("renderProgress", {"progress": progress})
 
     def on_plugin_message(self, plugin, data, permissions=None):
+        if (
+            self._usesSelectiveSubscription
+            and self._subscribedToPlugins is not None
+            and plugin not in self._subscribedToPlugins
+        ):
+            return
+
         self._emit(
             "plugin", payload={"plugin": plugin, "data": data}, permissions=permissions
         )
@@ -475,6 +579,13 @@ class PrinterStateConnection(
             self._sendReauthRequired("modified")
 
     def _onEvent(self, event, payload):
+        if (
+            self._usesSelectiveSubscription
+            and self._subscribedToEvents is not None
+            and event not in self._subscribedToEvents
+        ):
+            return
+
         self.sendEvent(event, payload)
 
     def _register(self):
