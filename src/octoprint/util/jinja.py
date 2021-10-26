@@ -117,6 +117,28 @@ class SelectedFilesWithConversionLoader(SelectedFilesLoader):
         return contents
 
 
+class WarningLoader(BaseLoader):
+    """
+    Logs a warning if the loader is used to successfully load a template.
+    """
+
+    def __init__(self, loader, warning_message):
+        self.loader = loader
+        self.warning_message = warning_message
+
+    def get_source(self, environment, template):
+        import logging
+
+        try:
+            contents, filename, uptodate = self.loader.get_source(environment, template)
+            logging.getLogger(__name__).warning(
+                self.warning_message.format(template=template, filename=filename)
+            )
+            return contents, filename, uptodate
+        except TemplateNotFound:
+            raise
+
+
 def get_all_template_paths(loader):
     def walk_folder(folder):
         files = []

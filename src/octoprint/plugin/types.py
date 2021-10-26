@@ -400,6 +400,10 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
     ``TemplatePlugin`` is a :class:`~octoprint.plugin.core.ReloadNeedingPlugin`.
     """
 
+    @property
+    def template_folder_key(self):
+        return "plugin_{}".format(self._identifier)
+
     def get_template_configs(self):
         """
         Allows configuration of injected navbar, sidebar, tab and settings templates (and also additional templates of
