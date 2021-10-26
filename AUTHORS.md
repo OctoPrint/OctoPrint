@@ -152,6 +152,7 @@ date of first contribution):
   * [Adam DeMuri](https://github.com/ademuri)
   * [Daniel Shenkle](https://github.com/DShenkle)
   * [Bryan Kenote](https://github.com/bryankenote)
+  * [Sven Samoray](https://github.com/thelastWallE)
   * [Christian Würthner](https://github.com/crysxd)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
