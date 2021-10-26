@@ -153,6 +153,7 @@ date of first contribution):
   * [Daniel Shenkle](https://github.com/DShenkle)
   * [Bryan Kenote](https://github.com/bryankenote)
   * [Sven Samoray](https://github.com/thelastWallE)
+  * [Quinn Damerell](https://github.com/QuinnDamerell)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
