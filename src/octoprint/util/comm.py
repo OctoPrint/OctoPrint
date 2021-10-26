@@ -2642,6 +2642,58 @@ class MachineCom(object):
                         except ValueError:
                             pass
 
+                ##~~ Firmware capability report triggered by M115
+                elif lower_line.startswith("cap:"):
+                    parsed = parse_capability_line(lower_line)
+                    if parsed is not None:
+                        capability, enabled = parsed
+                        self._firmware_capabilities[capability] = enabled
+
+                        if self._capability_support.get(capability, False):
+                            if capability == self.CAPABILITY_AUTOREPORT_TEMP and enabled:
+                                self._logger.info(
+                                    "Firmware states that it supports temperature autoreporting"
+                                )
+                                self._set_autoreport_temperature_interval()
+                            elif (
+                                capability == self.CAPABILITY_AUTOREPORT_SD_STATUS
+                                and enabled
+                            ):
+                                self._logger.info(
+                                    "Firmware states that it supports sd status autoreporting"
+                                )
+                                self._set_autoreport_sdstatus_interval()
+                            elif capability == self.CAPABILITY_AUTOREPORT_POS and enabled:
+                                self._logger.info(
+                                    "Firmware states that it supports position autoreporting"
+                                )
+                                self._set_autoreport_pos_interval()
+                            elif (
+                                capability == self.CAPABILITY_EMERGENCY_PARSER and enabled
+                            ):
+                                self._logger.info(
+                                    "Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first"
+                                )
+
+                        # notify plugins
+                        for name, hook in self._firmware_info_hooks[
+                            "capabilities"
+                        ].items():
+                            try:
+                                hook(
+                                    self,
+                                    capability,
+                                    enabled,
+                                    copy.copy(self._firmware_capabilities),
+                                )
+                            except Exception:
+                                self._logger.exception(
+                                    "Error processing firmware capability hook {}:".format(
+                                        name
+                                    ),
+                                    extra={"plugin": name},
+                                )
+
                 ##~~ firmware name & version
                 elif "NAME:" in line or line.startswith("NAME."):
                     # looks like a response to M115
@@ -2761,58 +2813,6 @@ class MachineCom(object):
                         self._callback.on_comm_firmware_info(
                             firmware_name, copy.copy(data)
                         )
-
-                ##~~ Firmware capability report triggered by M115
-                elif lower_line.startswith("cap:"):
-                    parsed = parse_capability_line(lower_line)
-                    if parsed is not None:
-                        capability, enabled = parsed
-                        self._firmware_capabilities[capability] = enabled
-
-                        if self._capability_support.get(capability, False):
-                            if capability == self.CAPABILITY_AUTOREPORT_TEMP and enabled:
-                                self._logger.info(
-                                    "Firmware states that it supports temperature autoreporting"
-                                )
-                                self._set_autoreport_temperature_interval()
-                            elif (
-                                capability == self.CAPABILITY_AUTOREPORT_SD_STATUS
-                                and enabled
-                            ):
-                                self._logger.info(
-                                    "Firmware states that it supports sd status autoreporting"
-                                )
-                                self._set_autoreport_sdstatus_interval()
-                            elif capability == self.CAPABILITY_AUTOREPORT_POS and enabled:
-                                self._logger.info(
-                                    "Firmware states that it supports position autoreporting"
-                                )
-                                self._set_autoreport_pos_interval()
-                            elif (
-                                capability == self.CAPABILITY_EMERGENCY_PARSER and enabled
-                            ):
-                                self._logger.info(
-                                    "Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first"
-                                )
-
-                        # notify plugins
-                        for name, hook in self._firmware_info_hooks[
-                            "capabilities"
-                        ].items():
-                            try:
-                                hook(
-                                    self,
-                                    capability,
-                                    enabled,
-                                    copy.copy(self._firmware_capabilities),
-                                )
-                            except Exception:
-                                self._logger.exception(
-                                    "Error processing firmware capability hook {}:".format(
-                                        name
-                                    ),
-                                    extra={"plugin": name},
-                                )
 
                 ##~~ invalid extruder
                 elif "invalid extruder" in lower_line:
