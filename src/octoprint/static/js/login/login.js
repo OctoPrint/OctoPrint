@@ -39,6 +39,7 @@ $(function () {
             .fail(function () {
                 usernameElement.val("");
                 passwordElement.val("");
+                usernameElement.focus();
 
                 overlayElement.removeClass("in");
                 errorElement.addClass("in");
