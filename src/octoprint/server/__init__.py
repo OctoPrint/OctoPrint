@@ -258,7 +258,8 @@ class Server(object):
 
         self._lifecycle_callbacks = defaultdict(list)
 
-        self._template_searchpaths = []
+        self._plugin_template_loader = None
+        self._plugin_template_fallback_loader = None
 
         self._intermediary_server = None
 
@@ -1543,12 +1544,14 @@ class Server(object):
 
         import octoprint.util.jinja
 
-        filesystem_loader = octoprint.util.jinja.FilteredFileSystemLoader(
-            [], path_filter=lambda x: not octoprint.util.is_hidden_path(x)
+        self._plugin_template_loader = jinja2.PrefixLoader({})
+        self._plugin_template_fallback_loader = (
+            octoprint.util.jinja.FilteredFileSystemLoader(
+                [], path_filter=lambda x: not octoprint.util.is_hidden_path(x)
+            )
         )
-        filesystem_loader.searchpath = self._template_searchpaths
 
-        loaders = [app.jinja_loader, filesystem_loader]
+        loaders = [app.jinja_loader, self._plugin_template_loader]
         if octoprint.util.is_running_from_source():
             from markdown import markdown
 
@@ -1562,6 +1565,14 @@ class Server(object):
                     files, conversion=markdown
                 )
             )
+
+        warning_message = "DeprecationWarning: Used relative path '{template}' to load/import plugin template '{filename}'. This is deprecated. You should switch to using paths with plugin prefix, e.g. 'plugin_example/{template}'"
+        loaders.append(
+            octoprint.util.jinja.WarningLoader(
+                self._plugin_template_fallback_loader,
+                warning_message,
+            )
+        )
 
         jinja_loader = jinja2.ChoiceLoader(loaders)
         app.jinja_loader = jinja_loader
@@ -1737,14 +1748,32 @@ class Server(object):
                 )
 
     def _register_additional_template_plugin(self, plugin):
+        import octoprint.util.jinja
+
         folder = plugin.get_template_folder()
-        if folder is not None and folder not in self._template_searchpaths:
-            self._template_searchpaths.append(folder)
+        if (
+            folder is not None
+            and plugin.template_folder_key not in self._plugin_template_loader.mapping
+        ):
+            loader = octoprint.util.jinja.FilteredFileSystemLoader(
+                [plugin.get_template_folder()],
+                path_filter=lambda x: not octoprint.util.is_hidden_path(x),
+            )
+
+            self._plugin_template_loader.mapping[plugin.template_folder_key] = loader
+            self._plugin_template_fallback_loader.searchpath.append(folder)
 
     def _unregister_additional_template_plugin(self, plugin):
         folder = plugin.get_template_folder()
-        if folder is not None and folder in self._template_searchpaths:
-            self._template_searchpaths.remove(folder)
+        if (
+            folder is not None
+            and plugin.template_folder_key in self._plugin_template_loader.mapping
+        ):
+            del self._plugin_template_loader.mapping[plugin.template_folder_key]
+            try:
+                self._plugin_template_fallback_loader.searchpath.remove(folder)
+            except ValueError:
+                pass
 
     def _setup_blueprints(self):
         # do not remove or the index view won't be found
