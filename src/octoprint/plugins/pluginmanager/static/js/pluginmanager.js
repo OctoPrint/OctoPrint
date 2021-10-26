@@ -50,7 +50,7 @@ $(function () {
                     return !item.enabled;
                 }
             },
-            "popularity",
+            "name",
             [],
             [
                 ["bundled", "3rdparty"],
@@ -138,7 +138,7 @@ $(function () {
                     return !plugin.abandoned;
                 }
             },
-            "title",
+            "popularity",
             ["filter_installed", "filter_incompatible"],
             [],
             0
