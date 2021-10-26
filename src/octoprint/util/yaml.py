@@ -3,8 +3,6 @@ from __future__ import absolute_import
 
 import io
 
-from octoprint.util import bom_aware_open
-
 
 def load_from_file(file=None, path=None):
     """
@@ -17,7 +15,7 @@ def load_from_file(file=None, path=None):
     """
     if path is not None:
         assert file is None
-        with bom_aware_open(path, mode="rt", encoding="utf-8") as f:
+        with io.open(path, mode="rt", encoding="utf-8-sig") as f:
             return load_from_file(file=f)
 
     if file is not None:
