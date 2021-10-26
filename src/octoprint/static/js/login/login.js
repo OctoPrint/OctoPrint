@@ -15,15 +15,8 @@ $(function () {
     var offlineElement = $("#login-offline");
     var buttonElement = $("#login-button");
     var reconnectElement = $("#login-reconnect");
-    var passwordElement = $("#login-password");
 
     var ignoreDisconnect = false;
-
-    passwordElement.keypress(function (event) {
-        if (event.which == 13) {
-            passwordElement.blur();
-        }
-    });
 
     buttonElement.click(function () {
         var usernameElement = $("#login-user");
@@ -46,6 +39,7 @@ $(function () {
             .fail(function () {
                 usernameElement.val("");
                 passwordElement.val("");
+                usernameElement.focus();
 
                 overlayElement.removeClass("in");
                 errorElement.addClass("in");
