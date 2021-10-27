@@ -79,9 +79,9 @@ jobs:
             what has happened.
 
 
-            Please upload **a bundle zip file** to the original issue post. Actually upload the file please and
+            Please **edit your original post above** and upload **a bundle zip file**. Actually upload the file please and
             do not paste some link to a cloud provider, we want to have everything in one place here. Also do
-            not unpack, repack or otherwise modify the bundle, share it **exactly** like you get it from OctoPrint.
+            not unpack, repack or otherwise modify the bundle or its name, share it **exactly** like you get it from OctoPrint.
 
 
             Without the availability of a bundle, your issue will have to be closed.
