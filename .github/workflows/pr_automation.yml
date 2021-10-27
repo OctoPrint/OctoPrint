@@ -16,7 +16,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            # fetch a fresh set of labels, they might have changed earlier
+            // fetch a fresh set of labels, they might have changed earlier
             const issueLabels = await github.rest.issues.listLabelsOnIssue({
               owner: context.repo.owner,
               repo: context.repo.repo,
