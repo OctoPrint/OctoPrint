@@ -117,6 +117,20 @@ class SelectedFilesWithConversionLoader(SelectedFilesLoader):
         return contents
 
 
+class PrefixChoiceLoader(BaseLoader):
+    def __init__(self, loader):
+        self.loader = loader
+
+    def get_source(self, environment, template):
+        for prefix in sorted(self.loader.mapping.keys()):
+            try:
+                return self.loader.mapping[prefix].get_source(environment, template)
+            except TemplateNotFound:
+                pass
+
+        raise TemplateNotFound(template)
+
+
 class WarningLoader(BaseLoader):
     """
     Logs a warning if the loader is used to successfully load a template.

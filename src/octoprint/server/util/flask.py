@@ -17,6 +17,7 @@ import time
 import flask
 import flask.json
 import flask.sessions
+import flask.templating
 import flask_assets
 import flask_login
 import netaddr
@@ -600,6 +601,36 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
         if flask.g.get("login_via_apikey", False):
             return
         return super(OctoPrintSessionInterface, self).save_session(app, session, response)
+
+
+# ~~ jinja environment
+
+
+class PrefixAwareJinjaEnvironment(flask.templating.Environment):
+    def __init__(self, *args, **kwargs):
+        flask.templating.Environment.__init__(self, *args, **kwargs)
+        self.prefix_loader = None
+        self._cached_templates = {}
+
+    def join_path(self, template, parent):
+        if parent and "/" in parent:
+            prefix, _ = parent.split("/", 1)
+            if template in self._templates_for_prefix(prefix) and not template.startswith(
+                prefix + "/"
+            ):
+                return prefix + "/" + template
+
+        return template
+
+    def _templates_for_prefix(self, prefix):
+        if prefix in self._cached_templates:
+            return self._cached_templates[prefix]
+
+        templates = []
+        if prefix in self.prefix_loader.mapping:
+            templates = self.prefix_loader.mapping[prefix].list_templates()
+        self._cached_templates[prefix] = templates
+        return templates
 
 
 # ~~ passive login helper
