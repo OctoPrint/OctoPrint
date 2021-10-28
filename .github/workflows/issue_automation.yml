@@ -1,19 +1,18 @@
 name: "Issue Automation"
 on:
   issues:
-    types: [opened, edited, closed, reopened]
+    types: [opened, edited, closed, reopened, labeled, unlabeled]
 
 jobs:
   issue-automation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v2
+      - uses: actions/github-script@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            let labels = [];
+            let labels = context.payload.issue.labels.map(label => label.name);
             let setLabels = false;
-            context.payload.issue.labels.forEach(label => { labels.push(label.name) });
 
             switch (context.payload.action) {
 
@@ -55,7 +54,7 @@ jobs:
             }
 
             if (setLabels) {
-              github.issues.setLabels({
+              github.rest.issues.setLabels({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -67,3 +66,91 @@ jobs:
       #  if: github.event_name == 'issues' && (github.event.action == 'opened' || github.event.action == 'edited')
       #  with:
       #    repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/github-script@v5
+        env:
+          REMINDER: >
+            Hi @${{ github.event.issue.user.login }}!
+
+
+            It looks like you didn't upload a [system info bundle](https://community.octoprint.org/t/29887) as requested by the template.
+            A bundle is required to further process your issue. It contains important logs and
+            system information to be able to put your issue into context and give pointers as to
+            what has happened.
+
+
+            Please **edit your original post above** and upload **a bundle zip file**. Actually upload the file please and
+            do not paste some link to a cloud provider, we want to have everything in one place here. Also do
+            not unpack, repack or otherwise modify the bundle or its name, share it **exactly** like you get it from OctoPrint.
+
+
+            Without the availability of a bundle, your issue will have to be closed.
+
+
+            Thank you for your collaboration.
+          THANKYOU: >
+            Thank you @${{ github.event.issue.user.login }} for adding a bundle! Now this can actually get looked at.
+        with:
+          script: |
+            const { REMINDER, THANKYOU } = process.env;
+            const bundleRegex = /\[(octoprint-systeminfo-\d{14}\.zip)\]\(([^)]+)\)/g;
+            const marker = "<!-- check_for_bundle -->";
+
+            const issueLabels = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            let labels = issueLabels.data.map(label => label.name);
+
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            })
+            const comment = comments.data.find(c => c.user.login === "github-actions[bot]" && c.body.includes(marker));
+
+            if (!labels.includes("triage")) {
+              console.log("No label, deleting comment if needed");
+              if (comment) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id,
+                })
+              }
+              return;
+            }
+
+            const found = !!context.payload.issue.body.match(bundleRegex);
+
+            if (!found) {
+              console.log("No bundle found, posting/updating reminder");
+              const text = REMINDER + "\n" + marker;
+              if (comment && comment.body !== text) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id,
+                  body: text
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: text
+                });
+              }
+            } else if (found && comment) {
+              console.log("Bundle found, saying thanks");
+              const text = REMINDER.split("\n\n").map(line => `~~${line.trim()}~~`).join("\n\n") + "\n\n" + THANKYOU + "\n" + marker;
+              if (comment.body !== text) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id,
+                  body: text
+                });
+              }
+            }
