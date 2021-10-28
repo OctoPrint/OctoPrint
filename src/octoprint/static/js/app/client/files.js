@@ -14,19 +14,19 @@
     };
 
     var resourceForLocation = function (location) {
-        return url + "/" + location;
+        return url + "/" + encodeURIComponent(location);
     };
 
     var downloadForLocation = function (location) {
-        return downloadUrl + "/" + location;
+        return downloadUrl + "/" + encodeURIComponent(location);
     };
 
     var downloadForEntry = function (location, filename) {
-        return downloadForLocation(location) + "/" + filename;
+        return downloadForLocation(location) + "/" + encodeURIComponent(filename);
     };
 
     var resourceForEntry = function (location, filename) {
-        return resourceForLocation(location) + "/" + filename;
+        return resourceForLocation(location) + "/" + encodeURIComponent(filename);
     };
 
     var preProcessList = function (response) {
