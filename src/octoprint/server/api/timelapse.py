@@ -24,6 +24,11 @@ from octoprint.server.util.flask import (
 )
 from octoprint.settings import settings, valid_boolean_trues
 
+try:
+    from urllib.parse import quote as urlquote
+except ImportError:
+    from urllib import quote as urlquote  # noqa: F401
+
 _DATA_FORMAT_VERSION = "v2"
 
 # ~~ timelapse handling
@@ -140,7 +145,7 @@ def getTimelapseData():
     finished_list = []
     for f in files:
         output = dict(f)
-        output["url"] = url_for("index") + "downloads/timelapse/" + f["name"]
+        output["url"] = url_for("index") + "downloads/timelapse/" + urlquote(f["name"])
         finished_list.append(output)
 
     result = {
@@ -160,7 +165,7 @@ def getTimelapseData():
 @Permissions.TIMELAPSE_DOWNLOAD.require(403)
 def downloadTimelapse(filename):
     return redirect_to_tornado(
-        request, url_for("index") + "downloads/timelapse/" + filename
+        request, url_for("index") + "downloads/timelapse/" + urlquote(filename)
     )
 
 
