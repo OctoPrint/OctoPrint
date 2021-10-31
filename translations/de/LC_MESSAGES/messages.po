@@ -7881,7 +7881,7 @@ msgstr "Gedruckt"
 
 #: src/octoprint/templates/sidebar/state.jinja2:29
 msgid "Restart"
-msgstr "Restart"
+msgstr "Neustart"
 
 #: src/octoprint/templates/sidebar/state.jinja2:29
 msgid "Print"
@@ -8998,4 +8998,3 @@ msgstr "Ungerenderte Zeitrafferaufnahme löschen"
 #: src/octoprint/templates/tabs/timelapse.jinja2:201
 msgid "Render timelapse"
 msgstr "Zeitrafferaufnahme rendern"
-
