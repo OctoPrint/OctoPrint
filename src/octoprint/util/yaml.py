@@ -1,6 +1,3 @@
-from octoprint.util import bom_aware_open
-
-
 def load_from_file(file=None, path=None):
     """
     Safely and performantly loads yaml data from the given source. Either a
@@ -12,7 +9,7 @@ def load_from_file(file=None, path=None):
     """
     if path is not None:
         assert file is None
-        with bom_aware_open(path, mode="rt", encoding="utf-8") as f:
+        with open(path, mode="rt", encoding="utf-8-sig") as f:
             return load_from_file(file=f)
 
     if file is not None:

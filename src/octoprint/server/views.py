@@ -1484,6 +1484,12 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 
     if "template" not in data:
         data["template"] = rule["template"](name)
+    data["template"] = implementation.template_folder_key + "/" + data["template"]
+
+    if "template_header" in data:
+        data["template_header"] = (
+            implementation.template_folder_key + "/" + data["template_header"]
+        )
 
     if "name" not in data:
         data["name"] = implementation._plugin_name

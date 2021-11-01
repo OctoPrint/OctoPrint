@@ -24,7 +24,7 @@ INSTALL_REQUIRES = [
     # additional OctoPrint plugins that are maintained on a different release cycle
     "OctoPrint-FileCheck>=2021.2.23",
     "OctoPrint-FirmwareCheck>=2021.10.11",
-    "OctoPrint-PiSupport>=2021.8.2",
+    "OctoPrint-PiSupport>=2021.10.28",
     # the following dependencies are non trivial to update since later versions
     # introduce backwards incompatible changes that might affect plugins, or due to
     # other observed problems

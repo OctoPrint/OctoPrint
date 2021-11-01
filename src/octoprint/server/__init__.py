@@ -254,8 +254,6 @@ class Server:
 
         self._lifecycle_callbacks = defaultdict(list)
 
-        self._template_searchpaths = []
-
         self._intermediary_server = None
 
     def run(self):
@@ -1338,8 +1336,12 @@ class Server:
             OctoPrintFlaskResponse,
             OctoPrintJsonEncoder,
             OctoPrintSessionInterface,
+            PrefixAwareJinjaEnvironment,
             ReverseProxiedEnvironment,
         )
+
+        # we must set this here because setting app.debug will access app.jinja_env
+        app.jinja_environment = PrefixAwareJinjaEnvironment
 
         app.config["TEMPLATES_AUTO_RELOAD"] = True
         app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
@@ -1536,12 +1538,9 @@ class Server:
 
         import octoprint.util.jinja
 
-        filesystem_loader = octoprint.util.jinja.FilteredFileSystemLoader(
-            [], path_filter=lambda x: not octoprint.util.is_hidden_path(x)
-        )
-        filesystem_loader.searchpath = self._template_searchpaths
+        app.jinja_env.prefix_loader = jinja2.PrefixLoader({})
 
-        loaders = [app.jinja_loader, filesystem_loader]
+        loaders = [app.jinja_loader, app.jinja_env.prefix_loader]
         if octoprint.util.is_running_from_source():
             from markdown import markdown
 
@@ -1556,8 +1555,16 @@ class Server:
                 )
             )
 
-        jinja_loader = jinja2.ChoiceLoader(loaders)
-        app.jinja_loader = jinja_loader
+        # TODO: Remove this in 2.0.0
+        warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will soon no longer be supported."
+        loaders.append(
+            octoprint.util.jinja.WarningLoader(
+                octoprint.util.jinja.PrefixChoiceLoader(app.jinja_env.prefix_loader),
+                warning_message,
+            )
+        )
+
+        app.jinja_loader = jinja2.ChoiceLoader(loaders)
 
         self._register_template_plugins()
 
@@ -1728,14 +1735,27 @@ class Server:
                 )
 
     def _register_additional_template_plugin(self, plugin):
+        import octoprint.util.jinja
+
         folder = plugin.get_template_folder()
-        if folder is not None and folder not in self._template_searchpaths:
-            self._template_searchpaths.append(folder)
+        if (
+            folder is not None
+            and plugin.template_folder_key not in app.jinja_env.prefix_loader.mapping
+        ):
+            loader = octoprint.util.jinja.FilteredFileSystemLoader(
+                [plugin.get_template_folder()],
+                path_filter=lambda x: not octoprint.util.is_hidden_path(x),
+            )
+
+            app.jinja_env.prefix_loader.mapping[plugin.template_folder_key] = loader
 
     def _unregister_additional_template_plugin(self, plugin):
         folder = plugin.get_template_folder()
-        if folder is not None and folder in self._template_searchpaths:
-            self._template_searchpaths.remove(folder)
+        if (
+            folder is not None
+            and plugin.template_folder_key in app.jinja_env.prefix_loader.mapping
+        ):
+            del app.jinja_env.prefix_loader.mapping[plugin.template_folder_key]
 
     def _setup_blueprints(self):
         # do not remove or the index view won't be found
