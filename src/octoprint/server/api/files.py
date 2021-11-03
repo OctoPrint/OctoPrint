@@ -327,7 +327,7 @@ def _getFileList(
                         "resource": url_for(
                             ".readGcodeFile",
                             target=FileDestinations.SDCARD,
-                            filename=urlquote(f["name"]),
+                            filename=f["name"],
                             _external=True,
                         )
                     },
@@ -389,7 +389,7 @@ def _getFileList(
                         "resource": url_for(
                             ".readGcodeFile",
                             target=FileDestinations.LOCAL,
-                            filename=urlquote(path + file_or_folder["name"]),
+                            filename=path + file_or_folder["name"],
                             _external=True,
                         )
                     }
@@ -443,7 +443,7 @@ def _getFileList(
                         "resource": url_for(
                             ".readGcodeFile",
                             target=FileDestinations.LOCAL,
-                            filename=urlquote(file_or_folder["path"]),
+                            filename=file_or_folder["path"],
                             _external=True,
                         ),
                         "download": url_for("index", _external=True)
@@ -689,7 +689,7 @@ def uploadGcodeFile(target):
         location = url_for(
             ".readGcodeFile",
             target=FileDestinations.LOCAL,
-            filename=urlquote(filename),
+            filename=filename,
             _external=True,
         )
         files.update(
@@ -714,7 +714,7 @@ def uploadGcodeFile(target):
             location = url_for(
                 ".readGcodeFile",
                 target=FileDestinations.SDCARD,
-                filename=urlquote(sdFilename),
+                filename=sdFilename,
                 _external=True,
             )
             files.update(
@@ -766,7 +766,7 @@ def uploadGcodeFile(target):
         location = url_for(
             ".readGcodeFile",
             target=FileDestinations.LOCAL,
-            filename=urlquote(added_folder),
+            filename=added_folder,
             _external=True,
         )
         folder = {
@@ -1038,7 +1038,7 @@ def gcodeFileCommand(filename, target):
             location = url_for(
                 ".readGcodeFile",
                 target=target,
-                filename=urlquote(full_path),
+                filename=full_path,
                 _external=True,
             )
             result = {
@@ -1159,7 +1159,7 @@ def gcodeFileCommand(filename, target):
             location = url_for(
                 ".readGcodeFile",
                 target=target,
-                filename=urlquote(destination),
+                filename=destination,
                 _external=True,
             )
             result = {
