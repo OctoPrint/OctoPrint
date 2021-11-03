@@ -850,7 +850,7 @@ class PluginManager(object):
 
         processed_blacklist = []
         for entry in plugin_blacklist:
-            if isinstance(entry, tuple):
+            if isinstance(entry, (tuple, list)):
                 key, version = entry
                 try:
                     processed_blacklist.append(
