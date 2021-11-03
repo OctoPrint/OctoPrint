@@ -853,14 +853,14 @@ class PluginManager(object):
             if isinstance(entry, tuple):
                 key, version = entry
                 try:
-                    pkg_resources.Requirement.parse(key + version)
+                    processed_blacklist.append(
+                        (key, pkg_resources.Requirement.parse(key + version))
+                    )
                 except Exception:
                     self.logger.warning(
                         "Invalid version requirement {} for blacklist "
                         "entry {}, ignoring".format(version, key)
                     )
-                else:
-                    processed_blacklist.append([key, version])
             else:
                 processed_blacklist.append(entry)
 
@@ -1340,7 +1340,7 @@ class PluginManager(object):
                 return entry_key == key and version in entry_version
             return False
 
-        return any(map(lambda entry: matches_plugin(entry), self.plugin_blacklist))
+        return any(map(matches_plugin, self.plugin_blacklist))
 
     def reload_plugins(
         self, startup=False, initialize_implementations=True, force_reload=None
