@@ -853,14 +853,14 @@ class PluginManager(object):
             if isinstance(entry, tuple):
                 key, version = entry
                 try:
-                    processed_blacklist.append(
-                        (key, pkg_resources.Requirement.parse(version))
-                    )
+                    pkg_resources.Requirement.parse(key + version)
                 except Exception:
                     self.logger.warning(
                         "Invalid version requirement {} for blacklist "
                         "entry {}, ignoring".format(version, key)
                     )
+                else:
+                    processed_blacklist.append([key, version])
             else:
                 processed_blacklist.append(entry)
 
