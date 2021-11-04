@@ -108,7 +108,7 @@ default_settings = {
         "port": None,
         "baudrate": None,
         "exclusive": True,
-        "lowLatency": True,
+        "lowLatency": False,
         "autoconnect": False,
         "log": False,
         "timeout": {

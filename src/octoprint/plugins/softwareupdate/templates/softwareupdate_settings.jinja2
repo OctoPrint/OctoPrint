@@ -158,11 +158,11 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal" onsubmit="return false;">
-            {% include "snippets/plugins/softwareupdate/versionTracking.jinja2" %}
-            {% include "snippets/plugins/softwareupdate/trackedBranch.jinja2" %}
-            {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
-            {% include "snippets/plugins/softwareupdate/pipTarget.jinja2" %}
-            {% include "snippets/plugins/softwareupdate/pipEnableCheck.jinja2" %}
+            {% include "snippets/versionTracking.jinja2" %}
+            {% include "snippets/trackedBranch.jinja2" %}
+            {% include "snippets/checkoutFolder.jinja2" %}
+            {% include "snippets/pipTarget.jinja2" %}
+            {% include "snippets/pipEnableCheck.jinja2" %}
             <div class="control-group">
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
                 <div class="controls">
