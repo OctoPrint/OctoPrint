@@ -7881,7 +7881,7 @@ msgstr "Gedruckt"
 
 #: src/octoprint/templates/sidebar/state.jinja2:29
 msgid "Restart"
-msgstr "Restart"
+msgstr "Neustart"
 
 #: src/octoprint/templates/sidebar/state.jinja2:29
 msgid "Print"
