@@ -11,6 +11,7 @@ import threading
 import time
 
 import wrapt
+from past.builtins import basestring
 
 import octoprint.access.users
 import octoprint.events
@@ -171,13 +172,10 @@ class PrinterStateConnection(
 
         self._registered = False
         self._authed = False
+        self._initial_data_sent = False
 
-        self._usesSelectiveSubscription = False
-        self._subscribedToPlugins = []
-        self._subscribedToEvents = []
-        self._subscribedToCurrent = False
-        self._pendingHistoryMessage = False
-        self._logsFilterRegex = None
+        self._subscriptions_active = False
+        self._subscriptions = {"state": False, "plugins": [], "events": []}
 
     @staticmethod
     def _get_remote_address(info):
@@ -279,9 +277,6 @@ class PrinterStateConnection(
         if "auth" in message:
             try:
                 parts = message["auth"].split(":")
-                usesSelectiveSubscription = message.get(
-                    "uses_selective_subscription", False
-                )
                 if not len(parts) == 2:
                     raise ValueError()
             except ValueError:
@@ -303,15 +298,6 @@ class PrinterStateConnection(
                         "Unknown user/session combo: {}:{}".format(user_id, user_session)
                     )
                     self._on_logout()
-
-            if usesSelectiveSubscription:
-                self._usesSelectiveSubscription = True
-                self._logger.debug("Client makes use of selective subscriptions")
-            else:
-                self._usesSelectiveSubscription = False
-                self._logger.debug(
-                    "Client does not use selective subscriptions, sending all messages"
-                )
 
             self._register()
 
@@ -335,36 +321,48 @@ class PrinterStateConnection(
                 )
 
         elif "subscribe" in message:
+            if not self._subscriptions_active:
+                self._subscriptions_active = True
+                self._logger.debug("Client makes use of subscriptions")
+
+            def list_or_boolean(value):
+                if isinstance(value, list):
+                    return value
+                elif isinstance(value, bool):
+                    return [] if not value else None
+                else:
+                    raise ValueError("value must be a list or boolean")
+
+            def regex_or_boolean(value):
+                if isinstance(value, basestring):
+                    try:
+                        return re.compile(value)
+                    except Exception:
+                        raise ValueError("value must be a valid regex")
+                elif isinstance(value, bool):
+                    return value
+                else:
+                    raise ValueError("value must be a string or boolean")
+
             try:
                 subscribe = message["subscribe"]
 
-                current = subscribe.get("current", False)
-                if not isinstance(current, bool):
-                    raise ValueError("current is not a boolean")
+                state = subscribe.get("state", False)
+                if isinstance(state, bool):
+                    if state:
+                        state = {"filter_logs": False, "filter_messages": False}
+                elif isinstance(state, dict):
+                    filter_logs = regex_or_boolean(state.get("filter_logs", False))
+                    filter_messages = regex_or_boolean(
+                        state.get("filter_messages", False)
+                    )
+                    state = {
+                        "filter_logs": filter_logs,
+                        "filter_messages": filter_messages,
+                    }
 
-                logsFilterRegex = subscribe.get("logsFilterRegex", None)
-                if not isinstance(logsFilterRegex, str) and logsFilterRegex is not None:
-                    raise ValueError("logsFilterRegex is not a string")
-
-                pluginsMixed = subscribe.get("plugins", [])
-                if isinstance(pluginsMixed, list):
-                    plugins = pluginsMixed
-                elif pluginsMixed is False:
-                    plugins = []
-                elif pluginsMixed is True:
-                    plugins = None
-                else:
-                    raise ValueError("plugins is not a list or boolean")
-
-                eventsMixed = subscribe.get("events", [])
-                if isinstance(eventsMixed, list):
-                    events = eventsMixed
-                elif eventsMixed is False:
-                    events = []
-                elif eventsMixed is True:
-                    events = None
-                else:
-                    raise ValueError("events is not a list or boolean")
+                plugins = list_or_boolean(subscribe.get("plugins", []))
+                events = list_or_boolean(subscribe.get("events", []))
 
             except ValueError as e:
                 self._logger.warning(
@@ -373,33 +371,26 @@ class PrinterStateConnection(
                     )
                 )
             else:
-                wasSubscribedToCurrent = self._subscribedToCurrent
-                self._subscribedToPlugins = plugins
-                self._subscribedToEvents = events
-                self._subscribedToCurrent = current
-                if logsFilterRegex is not None:
-                    self._logsFilterRegex = re.compile(logsFilterRegex)
-                else:
-                    self._logsFilterRegex = None
+                old_state = self._subscriptions["state"]
+                self._subscriptions["state"] = state
+                self._subscriptions["plugins"] = plugins
+                self._subscriptions["events"] = events
 
-                if self._subscribedToCurrent and not wasSubscribedToCurrent:
-                    self._logger.debug("Client now subscribed to current messages")
-                    # setting the callback will trigger a history message to be send
-                    self._pendingHistoryMessage = True
+                if state and not old_state:
+                    # trigger initial data
                     self._printer.send_initial_callback(self)
-
-                elif not self._subscribedToCurrent and wasSubscribedToCurrent:
-                    self._logger.debug("Client no longer subscribed to current messages")
+                elif old_state and not state:
+                    self._initial_data_sent = False
 
     def on_printer_send_current_data(self, data):
         if not self._user.has_permission(Permissions.STATUS):
             return
 
-        if self._usesSelectiveSubscription and not self._subscribedToCurrent:
+        if self._subscriptions_active and not self._subscriptions["state"]:
             return
 
-        if self._pendingHistoryMessage:
-            self._logger.debug("History message not yet send, dropping current message")
+        if not self._initial_data_sent:
+            self._logger.debug("Initial data not yet send, dropping current message")
             return
 
         # make sure we rate limit the updates according to our throttle factor
@@ -427,11 +418,11 @@ class PrinterStateConnection(
             self._temperatureBacklog = []
 
         with self._logBacklogMutex:
-            logs = self._logBacklog
+            logs = self._filter_logs(self._logBacklog)
             self._logBacklog = []
 
         with self._messageBacklogMutex:
-            messages = self._messageBacklog
+            messages = self._filter_messages(self._messageBacklog)
             self._messageBacklog = []
 
         busy_files = [
@@ -458,7 +449,7 @@ class PrinterStateConnection(
             {
                 "serverTime": time.time(),
                 "temps": temperatures,
-                "logs": self._filterLogs(logs),
+                "logs": self._filter_logs(logs),
                 "messages": messages,
                 "busyFiles": busy_files,
             }
@@ -466,21 +457,31 @@ class PrinterStateConnection(
         self._emit("current", payload=data)
 
     def on_printer_send_initial_data(self, data):
-        if self._usesSelectiveSubscription and not self._subscribedToCurrent:
-            self._logger.debug("Not subscribed, dropping history")
+        self._initial_data_sent = True
+        if self._subscriptions_active and not self._subscriptions["state"]:
+            self._logger.debug("Not subscribed to state, dropping history")
             return
 
-        self._pendingHistoryMessage = False
         data_to_send = dict(data)
-        data_to_send["logs"] = self._filterLogs(data_to_send.get("logs", []))
+        data_to_send["logs"] = self._filter_logs(data_to_send.get("logs", []))
+        data_to_send["messages"] = self._filter_messages(data_to_send.get("messages", []))
         data_to_send["serverTime"] = time.time()
         self._emit("history", payload=data_to_send)
 
-    def _filterLogs(self, logs):
-        if not self._usesSelectiveSubscription or self._logsFilterRegex is None:
-            return logs
+    def _filter_state_subscription(self, sub, values):
+        if not self._subscriptions_active or self._subscriptions["state"][sub] is False:
+            return values
 
-        return [line for line in logs if self._logsFilterRegex.search(line)]
+        if self._subscriptions["state"][sub] is True:
+            return []
+
+        return [line for line in values if self._subscriptions["state"][sub].search(line)]
+
+    def _filter_logs(self, logs):
+        return self._filter_state_subscription("filter_logs", logs)
+
+    def _filter_messages(self, messages):
+        return self._filter_state_subscription("filter_messages", messages)
 
     def sendEvent(self, type, payload=None):
         permissions = self._event_permissions.get(type, self._event_permissions["*"])
@@ -521,9 +522,9 @@ class PrinterStateConnection(
 
     def on_plugin_message(self, plugin, data, permissions=None):
         if (
-            self._usesSelectiveSubscription
-            and self._subscribedToPlugins is not None
-            and plugin not in self._subscribedToPlugins
+            self._subscriptions_active
+            and self._subscriptions["plugins"] is not None
+            and plugin not in self._subscriptions["plugins"]
         ):
             return
 
@@ -580,9 +581,9 @@ class PrinterStateConnection(
 
     def _onEvent(self, event, payload):
         if (
-            self._usesSelectiveSubscription
-            and self._subscribedToEvents is not None
-            and event not in self._subscribedToEvents
+            self._subscriptions_active
+            and self._subscriptions["events"] is not None
+            and event not in self._subscriptions["events"]
         ):
             return
 
