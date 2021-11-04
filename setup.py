@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 import sys
 from distutils.command.build_py import build_py as _build_py
 
@@ -26,7 +27,7 @@ INSTALL_REQUIRES = [
     # additional OctoPrint plugins that are maintained on a different release cycle
     "OctoPrint-FileCheck>=2021.2.23",
     "OctoPrint-FirmwareCheck>=2021.10.11",
-    "OctoPrint-PiSupport>=2021.8.2",
+    "OctoPrint-PiSupport>=2021.10.28",
     # the following dependencies are non trivial to update since later versions
     # introduce backwards incompatible changes that might affect plugins, or due to
     # other observed problems
@@ -102,8 +103,10 @@ INSTALL_REQUIRES_OSX = [
 EXTRA_REQUIRES = {
     "develop": [
         # Testing dependencies
-        "mock>=3.0.5,<4",
-        "pytest==4.6.10",
+        "mock>=3.0.5,<4 ; python_version < '3'",
+        "pytest==4.6.10 ; python_version < '3'",
+        "mock>=4,<5 ; python_version >= '3'",
+        "pytest>=6.2.5,<7 ; python_version >= '3'",
         "pytest-doctest-custom>=1.0.0,<2",
         "ddt",
         # pre-commit
@@ -133,6 +136,22 @@ if int(setuptools.__version__.split(".", 1)[0]) < 18:
     assert "bdist_wheel" not in sys.argv
 
     # add optional dependencies for setuptools versions < 18 that don't yet support environment markers
+    def _filter_by_python_version_marker(requirements):
+        for requirement in requirements:
+            req_match = re.match(
+                r"^(?P<req>.+);\s*(?P<marker>python_version.+)$", requirement
+            )
+            if not req_match:
+                yield requirement
+            else:
+                if eval(req_match.group("marker"), {}, {"python_version": sys.version}):
+                    yield req_match.group("req")
+
+    EXTRA_REQUIRES = {
+        extra: list(_filter_by_python_version_marker(extra_requirements))
+        for extra, extra_requirements in EXTRA_REQUIRES.items()
+    }
+
     if sys.version_info[0] < 3:
         INSTALL_REQUIRES += INSTALL_REQUIRES_PYTHON2
     else:
@@ -273,6 +292,8 @@ def params():
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: JavaScript",
         "Topic :: Printing",
