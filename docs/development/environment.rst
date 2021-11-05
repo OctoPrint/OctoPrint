@@ -180,7 +180,7 @@ Open the Git Bash you just installed and in that:
    cd /c/Devel
    git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
-   virtualenv --python=C:\Python3\python.exe venv3
+   virtualenv --python=C:/Python3/python.exe venv3
    source ./venv3/Scripts/activate
    pip install --upgrade pip
    python -m pip install -e '.[develop,plugins,docs]'
@@ -207,7 +207,7 @@ Then:
 .. code-block:: none
 
    cd /c/Devel/OctoPrint
-   virtualenv --python=C:\Python27\python.exe venv2
+   virtualenv --python=C:/Python27/python.exe venv2
    source ./venv2/Scripts/activate
    python -m pip install --upgrade pip
    pip install -e '.[develop,plugins]'
