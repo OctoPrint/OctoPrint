@@ -349,15 +349,13 @@ class PrinterStateConnection(
                 state = subscribe.get("state", False)
                 if isinstance(state, bool):
                     if state:
-                        state = {"filter_logs": False, "filter_messages": False}
+                        state = {"logs": True, "messages": False}
                 elif isinstance(state, dict):
-                    filter_logs = regex_or_boolean(state.get("filter_logs", False))
-                    filter_messages = regex_or_boolean(
-                        state.get("filter_messages", False)
-                    )
+                    logs = regex_or_boolean(state.get("logs", False))
+                    messages = regex_or_boolean(state.get("messages", False))
                     state = {
-                        "filter_logs": filter_logs,
-                        "filter_messages": filter_messages,
+                        "logs": logs,
+                        "messages": messages,
                     }
 
                 plugins = list_or_boolean(subscribe.get("plugins", []))
@@ -468,19 +466,19 @@ class PrinterStateConnection(
         self._emit("history", payload=data_to_send)
 
     def _filter_state_subscription(self, sub, values):
-        if not self._subscriptions_active or self._subscriptions["state"][sub] is False:
+        if not self._subscriptions_active or self._subscriptions["state"][sub] is True:
             return values
 
-        if self._subscriptions["state"][sub] is True:
+        if self._subscriptions["state"][sub] is False:
             return []
 
         return [line for line in values if self._subscriptions["state"][sub].search(line)]
 
     def _filter_logs(self, logs):
-        return self._filter_state_subscription("filter_logs", logs)
+        return self._filter_state_subscription("logs", logs)
 
     def _filter_messages(self, messages):
-        return self._filter_state_subscription("filter_messages", messages)
+        return self._filter_state_subscription("messages", messages)
 
     def sendEvent(self, type, payload=None):
         permissions = self._event_permissions.get(type, self._event_permissions["*"])

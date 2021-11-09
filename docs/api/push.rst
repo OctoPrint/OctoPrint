@@ -59,9 +59,9 @@ OctoPrint's SockJS socket also accepts three commands from the client to the ser
     * ``state``: Either a boolean value indicating whether to generally receive state updates (``current`` and ``history``)
       or not, or a dict with further options for received state updates. Currently the following options are recognized here:
 
-      * ``filter_logs``: A boolean value whether to filter out all log lines (``True``) or not (``False``, default). Alternatively a string with
+      * ``logs``: A boolean value whether to include all log lines (``True``, default) or not (``False``). Alternatively a string with
         a regex pattern can be provided, in which case only log lines matching the pattern will be returned.
-      * ``filter_messages``: Like ``filter_logs`` but for the returned message lines.
+      * ``messages``: Like ``logs`` but for the returned message lines.
 
     * ``plugins``: Either a boolean value indicating whether to generally receive plugin messages, or a list of plugin
       identifiers to receive plugin messages for.
@@ -90,8 +90,8 @@ OctoPrint's SockJS socket also accepts three commands from the client to the ser
        {
          "subscribe": {
            "state": {
-             "filter_logs": "^Recv: Cap",
-             "filter_messages": true
+             "logs": "^Recv: Cap",
+             "messages": false
            },
            "events": true,
            "plugins": true
