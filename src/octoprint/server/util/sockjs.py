@@ -236,7 +236,6 @@ class PrinterStateConnection(
                 "safe_mode": octoprint.server.safe_mode,
                 "online": self._connectivityChecker.online,
                 "permissions": [permission.as_dict() for permission in Permissions.all()],
-                "supports_selective_subscription": True,
             },
         )
 
