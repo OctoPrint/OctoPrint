@@ -74,6 +74,7 @@
   * [watchdog](http://github.com/gorakhargosh/watchdog): Apache License 2.0
   * [websocket-client](https://github.com/liris/websocket-client): LGPLv3
   * [wrapt](http://wrapt.readthedocs.org/): BSD
+  * [zipstream-ng](https://github.com/pR0Ps/zipstream-ng): LGPLv3
 
 ## Development (testing, documentation generation, etc)
 

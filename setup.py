@@ -63,7 +63,7 @@ INSTALL_REQUIRES = [
     "sentry-sdk>=0.15.1,<1",
     "filetype>=1.0.7,<2",
     "zeroconf>=0.33,<0.34",
-    "zipstream-new>=1.1.8,<1.2",
+    "zipstream-ng>=1.3.1,<2.0.0",
     "pathvalidate>=2.4.1,<3",
     "colorlog>=5.0.1,<6",
     # vendor bundled dependencies
