@@ -47,6 +47,7 @@ def getSystemInfo():
     systeminfo = get_systeminfo(
         environmentDetector,
         connectivityChecker,
+        s(),
         {
             "browser.user_agent": request.headers.get("User-Agent"),
             "octoprint.safe_mode": safe_mode is not None,

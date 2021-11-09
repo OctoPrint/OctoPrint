@@ -1580,6 +1580,7 @@ class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
         systeminfo = get_systeminfo(
             environmentDetector,
             connectivityChecker,
+            settings(),
             {
                 "browser.user_agent": self.request.headers.get("User-Agent"),
                 "octoprint.safe_mode": safe_mode is not None,
