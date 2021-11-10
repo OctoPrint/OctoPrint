@@ -33,13 +33,8 @@ except ImportError:
     # Python 2.7
     from collections import Iterable, MutableMapping, Set
 
-try:
-    from immutabledict import immutabledict
-except ImportError:
-    # Python 2
-    from frozendict import frozendict as immutabledict
-
 import past.builtins
+from frozendict import frozendict
 
 try:
     import queue
@@ -1214,23 +1209,23 @@ except ImportError:
         monotonic_time = time.time
 
 
-def thaw_immutabledict(obj):
-    if not isinstance(obj, (dict, immutabledict)):
-        raise ValueError("obj must be a dict or immutabledict instance")
+def thaw_frozendict(obj):
+    if not isinstance(obj, (dict, frozendict)):
+        raise ValueError("obj must be a dict or frozendict instance")
 
     # only true love can thaw a frozen dict
     letitgo = {}
     for key, value in obj.items():
-        if isinstance(value, (dict, immutabledict)):
-            letitgo[key] = thaw_immutabledict(value)
+        if isinstance(value, (dict, frozendict)):
+            letitgo[key] = thaw_frozendict(value)
         else:
             letitgo[key] = copy.deepcopy(value)
     return letitgo
 
 
-thaw_frozendict = deprecated(
-    "thaw_frozendict has been renamed to thaw_immutabledict", since="1.6.0"
-)(thaw_immutabledict)
+thaw_immutabledict = deprecated(
+    "thaw_immutabledict has been renamed back to thaw_frozendict", since="1.8.0"
+)(thaw_frozendict)
 
 
 def utmify(link, source=None, medium=None, name=None, term=None, content=None):
