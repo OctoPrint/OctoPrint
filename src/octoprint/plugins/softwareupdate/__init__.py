@@ -1543,6 +1543,9 @@ class SoftwareUpdatePlugin(
                         if not check:
                             continue
 
+                        if "type" not in check:
+                            continue
+
                         try:
                             populated_check = self._populated_check(target, check)
                             future = executor.submit(
