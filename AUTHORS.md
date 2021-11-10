@@ -154,6 +154,7 @@ date of first contribution):
   * [Bryan Kenote](https://github.com/bryankenote)
   * [Quinn Damerell](https://github.com/QuinnDamerell)
   * [Sven Samoray](https://github.com/thelastWallE)
+  * [Christian Würthner](https://github.com/crysxd)
   * [Maciej Urbański](https://github.com/rooterkyberian)
   * [Adam Wolf](https://github.com/adamwolf)
 
