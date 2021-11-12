@@ -285,6 +285,7 @@ default_settings = {
         "keyboardControl": True,
         "pollWatched": False,
         "modelSizeDetection": True,
+        "rememberFileFolder": False,
         "printStartConfirmation": False,
         "printCancelConfirmation": True,
         "uploadOverwriteConfirmation": True,
