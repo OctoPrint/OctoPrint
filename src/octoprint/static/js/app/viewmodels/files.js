@@ -125,10 +125,11 @@ $(function () {
 
         self._fromLocalStorage = function () {
             var data = loadFromLocalStorage(optionsLocalStorageKey);
-            if (data["currentPath"] !== undefined) {
-                if (self.settingsViewModel.feature_rememberFileFolder()) {
-                    self.currentPath(data["currentPath"]);
-                }
+            if (
+                data["currentPath"] !== undefined &&
+                self.settingsViewModel.feature_rememberFileFolder()
+            ) {
+                self.currentPath(data["currentPath"]);
             }
         };
 
