@@ -150,6 +150,7 @@ def getSettings():
             "keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
             "pollWatched": s.getBoolean(["feature", "pollWatched"]),
             "modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"]),
+            "rememberFileFolder": s.getBoolean(["feature", "rememberFileFolder"]),
             "printStartConfirmation": s.getBoolean(["feature", "printStartConfirmation"]),
             "printCancelConfirmation": s.getBoolean(
                 ["feature", "printCancelConfirmation"]
@@ -636,6 +637,11 @@ def _saveSettings(data):
         if "modelSizeDetection" in data["feature"]:
             s.setBoolean(
                 ["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"]
+            )
+        if "rememberFileFolder" in data["feature"]:
+            s.setBoolean(
+                ["feature", "rememberFileFolder"],
+                data["feature"]["rememberFileFolder"],
             )
         if "printStartConfirmation" in data["feature"]:
             s.setBoolean(

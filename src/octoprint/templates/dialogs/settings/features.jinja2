@@ -17,6 +17,13 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
+                <input type="checkbox" data-bind="checked: feature_rememberFileFolder" id="settings-rememberFileFolder"> {{ _('Remember selected folder in file list') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_printStartConfirmation" id="settings-printStartConfirmation"> {{ _('Confirm before starting a print') }}
             </label>
         </div>

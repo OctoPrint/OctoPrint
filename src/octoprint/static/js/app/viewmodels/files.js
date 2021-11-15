@@ -117,7 +117,27 @@ $(function () {
         self.uploadFilename = ko.observable(undefined);
 
         self.allItems = ko.observable(undefined);
+
+        var optionsLocalStorageKey = "gcodeFiles.options";
+        self._toLocalStorage = function () {
+            saveToLocalStorage(optionsLocalStorageKey, {currentPath: self.currentPath()});
+        };
+
+        self._fromLocalStorage = function () {
+            var data = loadFromLocalStorage(optionsLocalStorageKey);
+            if (
+                data["currentPath"] !== undefined &&
+                self.settingsViewModel.feature_rememberFileFolder()
+            ) {
+                self.currentPath(data["currentPath"]);
+            }
+        };
+
         self.currentPath = ko.observable("");
+        self.currentPath.subscribe(function () {
+            self._toLocalStorage();
+        });
+
         self.uploadProgressText = ko.observable();
         self.uploadProgressPercentage = ko.observable();
 
@@ -1277,6 +1297,7 @@ $(function () {
         self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
             self.updateButtons();
             self.requestData();
+            self._fromLocalStorage();
         };
 
         self.onStartup = function () {
