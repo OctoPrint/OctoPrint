@@ -679,7 +679,9 @@ $(function () {
 
             if (
                 printAfterLoad &&
-                self.listHelper.isSelected(data) &&
+                self.listHelper.isSelectedByMatcher(function (item) {
+                    return item && item.origin === data.origin && item.path === data.path;
+                }) &&
                 self.enablePrint(data)
             ) {
                 // file was already selected, just start the print job
