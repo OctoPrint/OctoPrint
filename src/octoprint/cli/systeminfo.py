@@ -69,10 +69,6 @@ def get_systeminfo(
 def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None):
     from octoprint.util import to_bytes
 
-    systeminfotxt = []
-    for k in sorted(systeminfo.keys()):
-        systeminfotxt.append("{}: {}".format(k, systeminfo[k]))
-
     terminaltxt = None
     if printer and printer.is_operational():
         firmware_info = printer.firmware_info
@@ -93,6 +89,10 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None
     z = zipstream.ZipFile()
 
     # add systeminfo
+    systeminfotxt = []
+    for k in sorted(systeminfo.keys()):
+        systeminfotxt.append("{}: {}".format(k, systeminfo[k]))
+
     z.writestr(
         "systeminfo.txt", to_bytes("\n".join(systeminfotxt)), compress_type=compress_type
     )
