@@ -337,7 +337,7 @@ $(function () {
         };
 
         self.highlightFile = function (file) {
-            if (!file) {
+            if (!file || !file.origin || !file.path) {
                 self.listHelper.selectNone();
                 return;
             }
@@ -352,13 +352,15 @@ $(function () {
                 }
             });
             if (!result) {
-                log.info(
-                    "Couldn't find file " +
-                        file.origin +
-                        ":" +
-                        file.path +
-                        " in current items, not selecting"
-                );
+                if (log.getLevel() <= log.levels.DEBUG) {
+                    log.info(
+                        "Couldn't find file " +
+                            file.origin +
+                            ":" +
+                            file.path +
+                            " in current items, not selecting"
+                    );
+                }
                 self.listHelper.selectNone();
             }
         };
