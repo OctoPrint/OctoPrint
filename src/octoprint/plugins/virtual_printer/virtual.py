@@ -206,6 +206,7 @@ class VirtualPrinter(object):
         self._calculate_resend_every_n(self._settings.get_int(["resend_ratio"]))
 
         self._dont_answer = False
+        self._broken_klipper_connection = False
 
         self._debug_drop_connection = False
 
@@ -289,6 +290,7 @@ class VirtualPrinter(object):
             self._sleepAfter.clear()
 
             self._dont_answer = False
+            self._broken_klipper_connection = False
 
             self._debug_drop_connection = False
 
@@ -510,6 +512,10 @@ class VirtualPrinter(object):
             # actual command handling
             command_match = VirtualPrinter.command_regex.match(data)
             if command_match is not None:
+                if self._broken_klipper_connection:
+                    self._send("!! Lost communication with MCU 'mcu'")
+                    continue
+
                 command = command_match.group(0)
                 letter = command_match.group(1)
 
@@ -1262,6 +1268,9 @@ class VirtualPrinter(object):
             resend_ratio <int:percentage>
             | Sets the resend ratio to the given percentage, simulating noisy lines.
             | Set to 0 to disable noise simulation.
+            toggle_klipper_connection
+            | Toggles the Klipper connection state. If disabled, the printer will
+            | respond to all commands with "!! Lost communication with MCU 'mcu'"
 
             # Reply Timing / Sleeping
 
@@ -1301,6 +1310,8 @@ class VirtualPrinter(object):
             self._send("// action:disconnect")
         elif data == "dont_answer":
             self._dont_answer = True
+        elif data == "toggle_klipper_connection":
+            self._broken_klipper_connection = not self._broken_klipper_connection
         elif data == "trigger_resend_lineno":
             self._prepared_errors.append(
                 lambda cur, last, ln: self._triggerResend(expected=last, actual=last + 1)
@@ -1442,6 +1453,8 @@ class VirtualPrinter(object):
             dosname = get_dos_filename(
                 entry.name, existing_filenames=list(result.keys())
             ).lower()
+            if entry.name.startswith("."):
+                dosname = "." + dosname
             result[dosname] = {
                 "name": entry.name,
                 "path": entry.path,
