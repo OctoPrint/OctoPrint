@@ -471,9 +471,9 @@ def _saveSettings(data):
             for folder in FOLDER_TYPES:
                 future[folder] = s.getBaseFolder(folder)
                 if folder in folders:
-                    future[folder] = data["folder"][folder]
+                    future[folder] = folders[folder]
 
-            for folder in data["folder"]:
+            for folder in folders:
                 if folder not in FOLDER_TYPES:
                     continue
                 for other_folder in FOLDER_TYPES:
