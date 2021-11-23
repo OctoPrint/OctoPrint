@@ -1687,6 +1687,10 @@ class MachineCom(object):
             # we aren't even printing, nothing to cancel...
             return
 
+        if self.isCancelling():
+            # we are already cancelling
+            return
+
         if "source:plugin" in tags:
             for tag in tags:
                 if tag.startswith("plugin:"):
