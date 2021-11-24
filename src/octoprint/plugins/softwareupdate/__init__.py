@@ -39,6 +39,8 @@ from octoprint.util.version import (
     get_comparable_version,
     get_python_version_string,
     is_python_compatible,
+    is_released_octoprint_version,
+    is_stable,
 )
 
 from . import cli, exceptions, updaters, util, version_checks
@@ -66,6 +68,7 @@ class SoftwareUpdatePlugin(
 
     COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
     CURRENT_TRACKING_TYPES = COMMIT_TRACKING_TYPES + ("etag", "lastmodified", "jsondata")
+    RELEASE_TRACKING_TYPES = ("github_release",)
 
     OCTOPRINT_RESTART_TYPES = ("pip", "single_file_plugin")
 
@@ -2202,12 +2205,6 @@ class SoftwareUpdatePlugin(
         result = dict(check)
 
         if target == "octoprint":
-
-            from octoprint.util.version import (
-                is_released_octoprint_version,
-                is_stable_octoprint_version,
-            )
-
             displayName = check.get("displayName")
             if displayName is None:
                 # displayName missing or set to None
@@ -2220,52 +2217,12 @@ class SoftwareUpdatePlugin(
                 displayVersion = "{octoprint_version}"
             result["displayVersion"] = to_unicode(displayVersion, errors="replace")
 
-            stable_branch = "master"
-            release_branches = []
-            if "stable_branch" in check:
-                release_branches.append(check["stable_branch"]["branch"])
-                stable_branch = check["stable_branch"]["branch"]
-            if "prerelease_branches" in check:
-                release_branches += [x["branch"] for x in check["prerelease_branches"]]
             result["released_version"] = is_released_octoprint_version()
 
             if check["type"] in self.COMMIT_TRACKING_TYPES:
                 result["current"] = REVISION if REVISION else "unknown"
             else:
                 result["current"] = VERSION
-
-                if check["type"] == "github_release" and (
-                    check.get("prerelease", None) or not is_stable_octoprint_version()
-                ):
-                    # we are tracking github releases and are either also tracking prerelease OR are currently running
-                    # a non stable version => we need to change some parameters
-
-                    # we compare versions fully, not just the base so that we see a difference
-                    # between RCs + stable for the same version release
-                    result["force_base"] = False
-
-                    if check.get("prerelease", None):
-                        # we are tracking prereleases => we want to be on the correct prerelease channel/branch
-                        channel = check.get("prerelease_channel", None)
-                        if channel:
-                            # if we have a release channel, we also set our update_branch here to our release channel
-                            # in case it's not already set
-                            result["update_branch"] = check.get("update_branch", channel)
-
-                    else:
-                        # we are not tracking prereleases, but aren't on the stable branch either => switch back
-                        # to stable branch on update
-                        result["update_branch"] = check.get(
-                            "update_branch", stable_branch
-                        )
-
-                    if check.get("update_script", None):
-                        # we force an exact version & python unequality check, to be able to downgrade
-                        result["force_exact_version"] = True
-                        result["release_compare"] = "python_unequal"
-                    elif check.get("pip", None):
-                        # we force python unequality check for pip installs, to be able to downgrade
-                        result["release_compare"] = "python_unequal"
 
         elif target == "pip":
             import pkg_resources
@@ -2308,6 +2265,43 @@ class SoftwareUpdatePlugin(
                 result["current"] = check.get(
                     "current", check.get("displayVersion", None)
                 )
+
+        if (
+            check["type"] in self.RELEASE_TRACKING_TYPES
+            and result["current"]
+            and (check.get("prerelease", None) or not is_stable(result["current"]))
+        ):
+            # we are tracking releases and are either also tracking prerelease OR are currently running
+            # a non stable version => we need to change some parameters
+
+            # we compare versions fully, not just the base so that we see a difference
+            # between RCs + stable for the same version release
+            result["force_base"] = False
+
+            if check["type"] == "github_release":
+                if check.get("prerelease", None):
+                    # we are tracking prereleases => we want to be on the correct prerelease channel/branch
+                    channel = check.get("prerelease_channel", None)
+                    if channel:
+                        # if we have a release channel, we also set our update_branch here to our release channel
+                        # in case it's not already set
+                        result["update_branch"] = check.get("update_branch", channel)
+
+                else:
+                    # we are not tracking prereleases, but aren't on the stable branch either => switch back
+                    # to stable branch on update
+                    result["update_branch"] = check.get(
+                        "update_branch",
+                        check.get("stable_branch", {"branch": "main"})["branch"],
+                    )
+
+            if check.get("update_script", None):
+                # we force an exact version & python unequality check, to be able to downgrade
+                result["force_exact_version"] = True
+                result["release_compare"] = "python_unequal"
+            elif check.get("pip", None):
+                # we force python unequality check for pip installs, to be able to downgrade
+                result["release_compare"] = "python_unequal"
 
         if result.get("pip", None):
             if "pip_command" not in result:

@@ -10,6 +10,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 import logging
 
 import pkg_resources
+from past.builtins import basestring
 
 from octoprint import __version__
 
@@ -24,60 +25,15 @@ def get_octoprint_version(cut=None, **kwargs):
 
 
 def is_released_octoprint_version(version=None):
-    """
-    >>> import pkg_resources
-    >>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.6rc3"))
-    True
-    >>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
-    False
-    >>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.6"))
-    True
-    >>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.6.post1+g1234"))
-    True
-    >>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
-    False
-    >>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.7.dev123+g23545"))
-    False
-    """
-
     if version is None:
         version = get_octoprint_version()
-
-    if isinstance(version, tuple):
-        # old setuptools
-        return "*@" not in version
-    else:
-        # new setuptools
-        return "dev" not in version.public
+    return is_release(version)
 
 
 def is_stable_octoprint_version(version=None):
-    """
-    >>> import pkg_resources
-    >>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.6rc3"))
-    False
-    >>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
-    False
-    >>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.6"))
-    True
-    >>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.6.post1+g1234"))
-    True
-    >>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
-    False
-    >>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.7.dev123+g23545"))
-    False
-    """
-
     if version is None:
         version = get_octoprint_version()
-
-    if not is_released_octoprint_version(version=version):
-        return False
-
-    if isinstance(version, tuple):
-        return "*a" not in version and "*b" not in version and "*c" not in version
-    else:
-        return not version.is_prerelease
+    return is_stable(version)
 
 
 def is_octoprint_compatible(*compatibility_entries, **kwargs):
@@ -196,8 +152,67 @@ def get_comparable_version(version_string, cut=None, **kwargs):
     return version
 
 
-def is_prerelease(version_string):
-    version = get_comparable_version(version_string)
+def is_stable(version):
+    """
+    >>> import pkg_resources
+    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.6rc3"))
+    False
+    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
+    False
+    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.6"))
+    True
+    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.6.post1+g1234"))
+    True
+    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
+    False
+    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.7.dev123+g23545"))
+    False
+    """
+
+    if isinstance(version, basestring):
+        version = get_comparable_version(version)
+
+    if not is_release(version):
+        return False
+
+    if isinstance(version, tuple):
+        return "*a" not in version and "*b" not in version and "*c" not in version
+    else:
+        return not version.is_prerelease
+
+
+def is_release(version):
+    """
+    >>> import pkg_resources
+    >>> is_released(pkg_resources.parse_version("1.3.6rc3"))
+    True
+    >>> is_released(pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
+    False
+    >>> is_released(pkg_resources.parse_version("1.3.6"))
+    True
+    >>> is_released(pkg_resources.parse_version("1.3.6.post1+g1234"))
+    True
+    >>> is_released(pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
+    False
+    >>> is_released(pkg_resources.parse_version("1.3.7.dev123+g23545"))
+    False
+    """
+
+    if isinstance(version, basestring):
+        version = get_comparable_version(version)
+
+    if isinstance(version, tuple):
+        # old setuptools
+        return "*@" not in version
+    else:
+        # new setuptools
+        return "dev" not in version.public
+    pass
+
+
+def is_prerelease(version):
+    if isinstance(version, basestring):
+        version = get_comparable_version(version)
 
     if isinstance(version, tuple):
         # old setuptools
