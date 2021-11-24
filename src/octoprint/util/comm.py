@@ -4607,9 +4607,9 @@ class MachineCom(object):
 
         # send it through the phase specific handlers provided by plugins
         for name, hook in self._gcode_hooks[phase].items():
-            new_results = []
-            for command, command_type, gcode, subcode, tags in results:
-                try:
+            try:
+                new_results = []
+                for command, command_type, gcode, subcode, tags in results:
                     hook_results = hook(
                         self,
                         phase,
@@ -4619,17 +4619,7 @@ class MachineCom(object):
                         subcode=subcode,
                         tags=tags,
                     )
-                except Exception:
-                    self._logger.exception(
-                        "Error while processing hook {name} for phase "
-                        "{phase} and command {command}:".format(
-                            name=name,
-                            phase=phase,
-                            command=to_unicode(command, errors="replace"),
-                        ),
-                        extra={"plugin": name},
-                    )
-                else:
+
                     normalized = _normalize_command_handler_result(
                         command,
                         command_type,
@@ -4661,10 +4651,23 @@ class MachineCom(object):
                         new_results.append((command, command_type, gcode, subcode, tags))
                     else:
                         new_results += normalized
-            if not new_results:
-                # hook handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
-                return []
-            results = new_results
+
+            except Exception:
+                self._logger.exception(
+                    "Error while processing hook {name} for phase "
+                    "{phase}:".format(
+                        name=name,
+                        phase=phase,
+                    ),
+                    extra={"plugin": name},
+                )
+
+            else:
+                if not new_results:
+                    # hook handler returned None or empty list for all commands, so
+                    # we'll stop here and return a full out empty result
+                    return []
+                results = new_results
 
         # if it's a gcode command send it through the specific handler if it exists
         new_results = []
