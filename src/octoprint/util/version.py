@@ -155,17 +155,17 @@ def get_comparable_version(version_string, cut=None, **kwargs):
 def is_stable(version):
     """
     >>> import pkg_resources
-    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.6rc3"))
+    >>> is_stable(pkg_resources.parse_version("1.3.6rc3"))
     False
-    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
+    >>> is_stable(pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
     False
-    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.6"))
+    >>> is_stable(pkg_resources.parse_version("1.3.6"))
     True
-    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.6.post1+g1234"))
+    >>> is_stable(pkg_resources.parse_version("1.3.6.post1+g1234"))
     True
-    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
+    >>> is_stable(pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
     False
-    >>> is_stable_octoprint_version(pkg_resources.parse_version("1.3.7.dev123+g23545"))
+    >>> is_stable(pkg_resources.parse_version("1.3.7.dev123+g23545"))
     False
     """
 
@@ -184,17 +184,17 @@ def is_stable(version):
 def is_release(version):
     """
     >>> import pkg_resources
-    >>> is_released(pkg_resources.parse_version("1.3.6rc3"))
+    >>> is_release(pkg_resources.parse_version("1.3.6rc3"))
     True
-    >>> is_released(pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
+    >>> is_release(pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
     False
-    >>> is_released(pkg_resources.parse_version("1.3.6"))
+    >>> is_release(pkg_resources.parse_version("1.3.6"))
     True
-    >>> is_released(pkg_resources.parse_version("1.3.6.post1+g1234"))
+    >>> is_release(pkg_resources.parse_version("1.3.6.post1+g1234"))
     True
-    >>> is_released(pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
+    >>> is_release(pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
     False
-    >>> is_released(pkg_resources.parse_version("1.3.7.dev123+g23545"))
+    >>> is_release(pkg_resources.parse_version("1.3.7.dev123+g23545"))
     False
     """
 
