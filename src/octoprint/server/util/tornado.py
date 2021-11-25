@@ -66,10 +66,6 @@ def enable_per_message_deflate_extension():
     tornado.websocket.WebSocketHandler.get_compression_options = get_compression_options
 
 
-# enabled 5/5: MEASUREMENT: read=9197 written=424
-# disabled:
-
-
 def fix_websocket_check_origin():
     """
     This fixes tornado.websocket.WebSocketHandler.check_origin to do the same origin check against the Host
