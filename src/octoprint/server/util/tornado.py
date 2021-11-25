@@ -101,9 +101,6 @@ def fix_websocket_check_origin():
     tornado.websocket.WebSocketHandler.check_origin = patched_check_origin
 
 
-# 90 kb with compression 5
-# 100 kb without compression
-
 # ~~ More sensible logging
 
 
