@@ -54,6 +54,22 @@ def fix_json_encode():
     tornado.escape.json_encode = fixed_json_encode
 
 
+def enable_per_message_deflate_extension():
+    """
+    This configures tornado.websocket.WebSocketHandler.get_compression_options to support the permessage-deflate extension
+    to the websocket protocol, minimizing data bandwidth if clients support the extension as well
+    """
+
+    def get_compression_options(self):
+        return {"compression_level": 1, "mem_level": 1}
+
+    tornado.websocket.WebSocketHandler.get_compression_options = get_compression_options
+
+
+# enabled 5/5: MEASUREMENT: read=9197 written=424
+# disabled:
+
+
 def fix_websocket_check_origin():
     """
     This fixes tornado.websocket.WebSocketHandler.check_origin to do the same origin check against the Host
@@ -84,6 +100,9 @@ def fix_websocket_check_origin():
 
     tornado.websocket.WebSocketHandler.check_origin = patched_check_origin
 
+
+# 90 kb with compression 5
+# 100 kb without compression
 
 # ~~ More sensible logging
 

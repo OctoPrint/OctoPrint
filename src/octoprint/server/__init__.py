@@ -337,6 +337,7 @@ class Server(object):
         # monkey patch/fix some stuff
         util.tornado.fix_json_encode()
         util.tornado.fix_websocket_check_origin()
+        util.tornado.enable_per_message_deflate_extension()
         util.flask.fix_flask_jsonify()
         util.watchdog.fix_scandir()
 
