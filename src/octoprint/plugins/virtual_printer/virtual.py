@@ -186,6 +186,8 @@ class VirtualPrinter(object):
 
         self._capabilities = self._settings.get(["capabilities"], merged=True)
 
+        self._locked = self._settings.get_boolean(["passwordOnStart"])
+
         self._temperature_reporter = None
         self._sdstatus_reporter = None
         self._pos_reporter = None
@@ -316,6 +318,8 @@ class VirtualPrinter(object):
             if self._settings.get_boolean(["simulateReset"]):
                 for item in self._settings.get(["resetLines"]):
                     self._send(item + "\n")
+
+            self._locked = self._settings.get_boolean(["passwordOnStart"])
 
     @property
     def timeout(self):
@@ -514,10 +518,16 @@ class VirtualPrinter(object):
             if command_match is not None:
                 if self._broken_klipper_connection:
                     self._send("!! Lost communication with MCU 'mcu'")
+                    self._sendOk()
                     continue
 
                 command = command_match.group(0)
                 letter = command_match.group(1)
+
+                if self._locked and command != "M511":
+                    self._send("echo:Printer locked! (Unlock with M511 or LCD)")
+                    self._sendOk()
+                    continue
 
                 try:
                     # if we have a method _gcode_G, _gcode_M or _gcode_T, execute that first
@@ -899,6 +909,21 @@ class VirtualPrinter(object):
                 self._send("busy:processing")
         else:
             time.sleep(timeout)
+
+    # Password Feature - lock with M510, unlock with M511 P<password>.
+    # https://marlinfw.org/docs/gcode/M510.html / https://marlinfw.org/docs/gcode/M511.html
+    def _gcode_M510(self, data):
+        self._locked = True
+
+    def _gcode_M511(self, data):
+        if self._locked:
+            matchP = re.search(r"P([0-9]+)", data)
+            if matchP:
+                password = matchP.group(1)
+                if password == self._settings.get(["password"]):
+                    self._locked = False
+                else:
+                    self._send("Incorrect Password")
 
     # EEPROM management commands
 

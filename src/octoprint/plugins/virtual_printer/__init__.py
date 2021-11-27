@@ -74,6 +74,8 @@ class VirtualPrinterPlugin(
             "enable_eeprom": True,
             "support_M503": True,
             "resend_ratio": 0,
+            "passwordOnStart": False,
+            "password": "1234",
         }
 
     def get_settings_version(self):
