@@ -819,7 +819,7 @@ class DiscoveryPlugin(
 
 __plugin_name__ = "Discovery"
 __plugin_author__ = "Gina Häußge"
-__plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/discovery.html"
+__plugin_url__ = "https://docs.octoprint.org/en/master/bundledplugins/discovery.html"
 __plugin_description__ = (
     "Makes the OctoPrint instance discoverable via Bonjour/Avahi/Zeroconf and uPnP"
 )
