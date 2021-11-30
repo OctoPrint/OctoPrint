@@ -52,6 +52,6 @@ regardless of whether the plugin requires a restart of OctoPrint to be fully uni
 that the Plugin Manager is not the only way to uninstall a plugin from the system, a user may also uninstall it
 manually through the command line, circumventing Plugin Manager completely.
 
-.. image:: ../images/plugins_lifecycle.png
+.. image:: ../images/plugins_lifecycle.svg
    :align: center
    :alt: The lifecycle of OctoPrint plugins.
