@@ -39,6 +39,6 @@ Some plugin types require a reload of the frontend or a restart of OctoPrint for
 can recognize such plugins by their implementations implementing :class:`~octoprint.plugin.ReloadNeedingPlugin` or
 :class:`~octoprint.plugin.RestartNeedingPlugin` or providing handlers for one of the hooks marked correspondingly.
 
-.. image:: ../images/plugins_lifecycle.png
+.. image:: ../images/plugins_lifecycle.svg
    :align: center
    :alt: The lifecycle of OctoPrint plugins.
