@@ -186,7 +186,7 @@ class VirtualPrinter(object):
 
         self._capabilities = self._settings.get(["capabilities"], merged=True)
 
-        self._locked = self._settings.get_boolean(["passwordOnStart"])
+        self._locked = self._settings.get_boolean(["locked"])
 
         self._temperature_reporter = None
         self._sdstatus_reporter = None
@@ -319,7 +319,7 @@ class VirtualPrinter(object):
                 for item in self._settings.get(["resetLines"]):
                     self._send(item + "\n")
 
-            self._locked = self._settings.get_boolean(["passwordOnStart"])
+            self._locked = self._settings.get_boolean(["locked"])
 
     @property
     def timeout(self):
@@ -910,8 +910,9 @@ class VirtualPrinter(object):
         else:
             time.sleep(timeout)
 
-    # Password Feature - lock with M510, unlock with M511 P<password>.
+    # Passcode Feature - lock with M510, unlock with M511 P<passcode>.
     # https://marlinfw.org/docs/gcode/M510.html / https://marlinfw.org/docs/gcode/M511.html
+
     def _gcode_M510(self, data):
         self._locked = True
 
@@ -919,11 +920,11 @@ class VirtualPrinter(object):
         if self._locked:
             matchP = re.search(r"P([0-9]+)", data)
             if matchP:
-                password = matchP.group(1)
-                if password == self._settings.get(["password"]):
+                passcode = matchP.group(1)
+                if passcode == self._settings.get(["passcode"]):
                     self._locked = False
                 else:
-                    self._send("Incorrect Password")
+                    self._send("Incorrect passcode")
 
     # EEPROM management commands
 
