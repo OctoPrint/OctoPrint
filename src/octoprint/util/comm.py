@@ -5411,6 +5411,7 @@ class MachineCom(object):
                     },
                 )
                 return (None,)
+
             if gcode in self._ignored_commands:
                 message = "Not sending {} to printer, it's configured as an ignored command".format(
                     gcode
@@ -5430,7 +5431,11 @@ class MachineCom(object):
     def _command_phase_sending(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
-        if gcode is not None and gcode in self._long_running_commands:
+        if (
+            gcode is not None
+            and gcode in self._long_running_commands
+            or cmd in self._long_running_commands
+        ):
             self._long_running_command = True
 
 
