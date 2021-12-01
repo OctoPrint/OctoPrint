@@ -38,9 +38,31 @@ $(function () {
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
 
+        self.enableConnect = ko.pureComputed(function () {
+            return self.enablePort() || !self.isErrorOrClosed();
+        });
+
         self.buttonText = ko.pureComputed(function () {
             if (self.isErrorOrClosed()) return gettext("Connect");
             else return gettext("Disconnect");
+        });
+
+        self.portCaption = ko.pureComputed(function () {
+            return self.portOptions().length > 0
+                ? "AUTO"
+                : gettext("No serial port found");
+        });
+
+        self.enablePort = ko.pureComputed(function () {
+            return self.portOptions().length > 0 && self.isErrorOrClosed();
+        });
+
+        self.enableSaveSettings = ko.pureComputed(function () {
+            return self.enableConnect() && self.isErrorOrClosed();
+        });
+
+        self.enableAutoConnect = ko.pureComputed(function () {
+            return self.enableConnect() && self.isErrorOrClosed();
         });
 
         self.previousIsOperational = undefined;

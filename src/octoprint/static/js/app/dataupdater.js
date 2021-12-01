@@ -344,6 +344,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                     hide: false
                 });
             } else if (type === "Error" && payload.error) {
+                severity = "error";
                 switch (payload.reason) {
                     case "firmware": {
                         title = gettext("Error reported by printer");
@@ -388,7 +389,14 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                         break;
                     }
                     case "autodetect": {
-                        // ignore
+                        title = gettext("Could not autodetect your printer");
+                        text = _.sprintf(
+                            gettext(
+                                'No working connection parameters could be found. Are you sure your printer is physically connected and supported? Refer to <a href="%(url)s" target="_blank" rel="noopener noreferer">the FAQ</a> for help in debugging this.'
+                            ),
+                            {url: "https://faq.octoprint.org/no-candidates"}
+                        );
+                        severity = "alert";
                         break;
                     }
                     default: {
@@ -410,7 +418,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                     self._printerErrorDisconnectNotification = new PNotify({
                         title: title,
                         text: text,
-                        type: "error",
+                        type: severity,
                         hide: false
                     });
                 }
