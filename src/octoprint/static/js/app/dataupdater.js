@@ -394,7 +394,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                             gettext(
                                 'No working connection parameters could be found. Are you sure your printer is physically connected and supported? Refer to <a href="%(url)s" target="_blank" rel="noopener noreferer">the FAQ</a> for help in debugging this.'
                             ),
-                            {url: "https://faq.octoprint.org/no-candidates"}
+                            {url: "https://faq.octoprint.org/connection-error"}
                         );
                         severity = "alert";
                         break;
