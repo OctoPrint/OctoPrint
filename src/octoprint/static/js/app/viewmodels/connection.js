@@ -48,13 +48,18 @@ $(function () {
         });
 
         self.portCaption = ko.pureComputed(function () {
-            return self.portOptions().length > 0
-                ? "AUTO"
-                : gettext("No serial port found");
+            return self.validPort() ? "AUTO" : gettext("No serial port found");
+        });
+
+        self.validPort = ko.pureComputed(function () {
+            return (
+                self.portOptions().length > 0 ||
+                self.settings.settings.serial.ignoreEmptyPorts()
+            );
         });
 
         self.enablePort = ko.pureComputed(function () {
-            return self.portOptions().length > 0 && self.isErrorOrClosed();
+            return self.validPort() && self.isErrorOrClosed();
         });
 
         self.enableSaveSettings = ko.pureComputed(function () {

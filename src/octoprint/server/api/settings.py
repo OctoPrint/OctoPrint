@@ -264,6 +264,7 @@ def getSettings():
             "capExtendedM20": s.getBoolean(["serial", "capabilities", "extended_m20"]),
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
+            "ignoreEmptyPorts": s.getBoolean(["serial", "ignoreEmptyPorts"]),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -962,6 +963,10 @@ def _saveSettings(data):
             )
         if "resendRatioStart" in data["serial"]:
             s.setInt(["serial", "resendRatioStart"], data["serial"]["resendRatioStart"])
+        if "ignoreEmptyPorts" in data["serial"]:
+            s.setBoolean(
+                ["serial", "ignoreEmptyPorts"], data["serial"]["ignoreEmptyPorts"]
+            )
 
         oldLog = s.getBoolean(["serial", "log"])
         if "log" in data["serial"]:
