@@ -396,7 +396,6 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                             ),
                             {url: "https://faq.octoprint.org/connection-error"}
                         );
-                        severity = "alert";
                         break;
                     }
                     default: {
