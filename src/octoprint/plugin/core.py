@@ -907,13 +907,9 @@ class PluginManager(object):
 
     def _detect_python_environment(self):
         import sys
-        from distutils.command.install import install as cmd_install
-        from distutils.dist import Distribution
+        import sysconfig
 
-        cmd = cmd_install(Distribution())
-        cmd.finalize_options()
-
-        self._python_install_dir = cmd.install_lib
+        self._python_install_dir = sysconfig.get_path("purelib")
         self._python_prefix = os.path.realpath(sys.prefix)
         self._python_virtual_env = hasattr(sys, "real_prefix") or (
             hasattr(sys, "base_prefix")
