@@ -1423,9 +1423,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         import flask
 
         kwargs = self.get_blueprint_kwargs()
-        blueprint = flask.Blueprint(
-            "plugin." + self._identifier, self._identifier, **kwargs
-        )
+        blueprint = flask.Blueprint(self._identifier, self._identifier, **kwargs)
 
         # we now iterate over all members of ourselves and look if we find an attribute
         # that has data originating from one of our decorators - we ignore anything
