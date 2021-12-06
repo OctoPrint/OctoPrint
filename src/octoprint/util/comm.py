@@ -34,10 +34,10 @@ from octoprint.util import (
     ResettableTimer,
     TypeAlreadyInQueue,
     TypedQueue,
-    bom_aware_open,
     chunks,
     filter_non_ascii,
     filter_non_utf8,
+    get_bom,
     get_exception_string,
     sanitize_ascii,
     to_unicode,
@@ -173,6 +173,9 @@ regex_firmware_splitter = re.compile(r"(^|\s+)([A-Z][A-Z0-9_]*):")
 regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 """Regex to use for request line numbers in resend requests"""
 
+regex_serial_devices = re.compile(r"^(?:ttyUSB|ttyACM|tty\.usb|cu\.|cuaU|ttyS|rfcomm).*")
+"""Regex used to filter out valid tty devices"""
+
 
 def serialList():
     if os.name == "nt":
@@ -189,15 +192,11 @@ def serialList():
             pass
 
     else:
-        candidates = (
-            glob.glob("/dev/ttyUSB*")
-            + glob.glob("/dev/ttyACM*")
-            + glob.glob("/dev/tty.usb*")
-            + glob.glob("/dev/cu.*")
-            + glob.glob("/dev/cuaU*")
-            + glob.glob("/dev/ttyS*")
-            + glob.glob("/dev/rfcomm*")
-        )
+        candidates = []
+        with os.scandir("/dev") as it:
+            for entry in it:
+                if regex_serial_devices.match(entry.name):
+                    candidates.append(entry.path)
 
     # additional ports
     additionalPorts = settings().get(["serial", "additionalPorts"])
@@ -286,6 +285,10 @@ gcodeToEvent = {
     # motors on/off
     "M80": Events.POWER_ON,
     "M81": Events.POWER_OFF,
+    # filament change
+    "M600": Events.FILAMENT_CHANGE,
+    "M701": Events.FILAMENT_CHANGE,
+    "M702": Events.FILAMENT_CHANGE,
 }
 
 
@@ -1660,6 +1663,10 @@ class MachineCom:
             # we aren't even printing, nothing to cancel...
             return
 
+        if self.isCancelling():
+            # we are already cancelling
+            return
+
         if "source:plugin" in tags:
             for tag in tags:
                 if tag.startswith("plugin:"):
@@ -2615,6 +2622,58 @@ class MachineCom:
                         except ValueError:
                             pass
 
+                ##~~ Firmware capability report triggered by M115
+                elif lower_line.startswith("cap:"):
+                    parsed = parse_capability_line(lower_line)
+                    if parsed is not None:
+                        capability, enabled = parsed
+                        self._firmware_capabilities[capability] = enabled
+
+                        if self._capability_support.get(capability, False):
+                            if capability == self.CAPABILITY_AUTOREPORT_TEMP and enabled:
+                                self._logger.info(
+                                    "Firmware states that it supports temperature autoreporting"
+                                )
+                                self._set_autoreport_temperature_interval()
+                            elif (
+                                capability == self.CAPABILITY_AUTOREPORT_SD_STATUS
+                                and enabled
+                            ):
+                                self._logger.info(
+                                    "Firmware states that it supports sd status autoreporting"
+                                )
+                                self._set_autoreport_sdstatus_interval()
+                            elif capability == self.CAPABILITY_AUTOREPORT_POS and enabled:
+                                self._logger.info(
+                                    "Firmware states that it supports position autoreporting"
+                                )
+                                self._set_autoreport_pos_interval()
+                            elif (
+                                capability == self.CAPABILITY_EMERGENCY_PARSER and enabled
+                            ):
+                                self._logger.info(
+                                    "Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first"
+                                )
+
+                        # notify plugins
+                        for name, hook in self._firmware_info_hooks[
+                            "capabilities"
+                        ].items():
+                            try:
+                                hook(
+                                    self,
+                                    capability,
+                                    enabled,
+                                    copy.copy(self._firmware_capabilities),
+                                )
+                            except Exception:
+                                self._logger.exception(
+                                    "Error processing firmware capability hook {}:".format(
+                                        name
+                                    ),
+                                    extra={"plugin": name},
+                                )
+
                 ##~~ firmware name & version
                 elif "NAME:" in line or line.startswith("NAME."):
                     # looks like a response to M115
@@ -2734,58 +2793,6 @@ class MachineCom:
                         self._callback.on_comm_firmware_info(
                             firmware_name, copy.copy(data)
                         )
-
-                ##~~ Firmware capability report triggered by M115
-                elif lower_line.startswith("cap:"):
-                    parsed = parse_capability_line(lower_line)
-                    if parsed is not None:
-                        capability, enabled = parsed
-                        self._firmware_capabilities[capability] = enabled
-
-                        if self._capability_support.get(capability, False):
-                            if capability == self.CAPABILITY_AUTOREPORT_TEMP and enabled:
-                                self._logger.info(
-                                    "Firmware states that it supports temperature autoreporting"
-                                )
-                                self._set_autoreport_temperature_interval()
-                            elif (
-                                capability == self.CAPABILITY_AUTOREPORT_SD_STATUS
-                                and enabled
-                            ):
-                                self._logger.info(
-                                    "Firmware states that it supports sd status autoreporting"
-                                )
-                                self._set_autoreport_sdstatus_interval()
-                            elif capability == self.CAPABILITY_AUTOREPORT_POS and enabled:
-                                self._logger.info(
-                                    "Firmware states that it supports position autoreporting"
-                                )
-                                self._set_autoreport_pos_interval()
-                            elif (
-                                capability == self.CAPABILITY_EMERGENCY_PARSER and enabled
-                            ):
-                                self._logger.info(
-                                    "Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first"
-                                )
-
-                        # notify plugins
-                        for name, hook in self._firmware_info_hooks[
-                            "capabilities"
-                        ].items():
-                            try:
-                                hook(
-                                    self,
-                                    capability,
-                                    enabled,
-                                    copy.copy(self._firmware_capabilities),
-                                )
-                            except Exception:
-                                self._logger.exception(
-                                    "Error processing firmware capability hook {}:".format(
-                                        name
-                                    ),
-                                    extra={"plugin": name},
-                                )
 
                 ##~~ invalid extruder
                 elif "invalid extruder" in lower_line:
@@ -3726,19 +3733,18 @@ class MachineCom:
                 # noinspection PyProtectedMember
                 set_close_exec(serial_obj._port_handle)
 
-            if hasattr(serial_obj, "set_low_latency_mode"):
-                try:
-                    serial_obj.set_low_latency_mode(
-                        settings().getBoolean(["serial", "lowLatency"])
+            if settings().getBoolean(["serial", "lowLatency"]):
+                if hasattr(serial_obj, "set_low_latency_mode"):
+                    try:
+                        serial_obj.set_low_latency_mode(True)
+                    except Exception:
+                        self._logger.exception(
+                            "Could not set low latency mode on serial port, continuing without"
+                        )
+                else:
+                    self._logger.info(
+                        "Platform doesn't support low latency mode on serial port"
                     )
-                except Exception:
-                    self._logger.exception(
-                        "Could not set low latency mode on serial port, continuing without"
-                    )
-            else:
-                self._logger.info(
-                    "Platform doesn't support low latency mode on serial port"
-                )
 
             return BufferedReadlineWrapper(serial_obj)
 
@@ -4127,27 +4133,7 @@ class MachineCom:
             self._lastResendNumber = lineToResend
             self._currentResendCount = 0
 
-            if (
-                self._resendDelta > len(self._lastLines)
-                or len(self._lastLines) == 0
-                or self._resendDelta < 0
-            ):
-                error_text = "Printer requested line {} but no sufficient history is available, can't resend".format(
-                    lineToResend
-                )
-                self._log(error_text)
-                self._logger.warning(
-                    error_text
-                    + ". Printer requested line {}, current line is {}, line history has {} entries.".format(
-                        lineToResend, self._current_line, len(self._lastLines)
-                    )
-                )
-                if self.isPrinting():
-                    # abort the print & disconnect, there's nothing we can do to rescue it
-                    self._trigger_error(error_text, "resend")
-                else:
-                    # reset resend delta, we can't do anything about it
-                    self._resendDelta = None
+            self._resendCheckPossibility(lineToResend)
 
             # if we log resends, make sure we don't log more resends than the set rate within a window
             #
@@ -4215,9 +4201,14 @@ class MachineCom:
                 # resend_ok_timer, so make sure that resendDelta is actually still set (see #2632)
                 return False
 
-            cmd = self._lastLines[-self._resendDelta].decode("ascii")
             lineNumber = self._current_line - self._resendDelta
 
+            if not self._resendCheckPossibility(lineNumber):
+                # Something has gone wrong if we get here, but we already logged and
+                # handled it.
+                return False
+
+            cmd = self._lastLines[-self._resendDelta].decode("ascii")
             result = self._enqueue_for_sending(cmd, linenumber=lineNumber, resend=True)
 
             self._resendDelta -= 1
@@ -4231,6 +4222,33 @@ class MachineCom:
                 self._send_queue.resend_active = False
 
             return result
+
+    def _resendCheckPossibility(self, lineno):
+        if (
+            self._resendDelta > len(self._lastLines)
+            or len(self._lastLines) == 0
+            or self._resendDelta < 0
+        ):
+            error_text = "Should resend line {} but no sufficient history is available, can't resend".format(
+                lineno
+            )
+            self._log(error_text)
+            self._logger.warning(
+                error_text
+                + ". Line to resend is {}, current line is {}, line history has {} entries.".format(
+                    lineno, self._current_line, len(self._lastLines)
+                )
+            )
+            if self.isPrinting():
+                # abort the print & disconnect, there's nothing we can do to rescue it
+                self._trigger_error(error_text, "resend")
+            else:
+                # reset resend delta, we can't do anything about it
+                self._resendDelta = None
+
+            return False
+        else:
+            return True
 
     def _sendCommand(self, cmd, cmd_type=None, on_sent=None, tags=None):
         # Make sure we are only handling one sending job at a time
@@ -4561,9 +4579,9 @@ class MachineCom:
 
         # send it through the phase specific handlers provided by plugins
         for name, hook in self._gcode_hooks[phase].items():
-            new_results = []
-            for command, command_type, gcode, subcode, tags in results:
-                try:
+            try:
+                new_results = []
+                for command, command_type, gcode, subcode, tags in results:
                     hook_results = hook(
                         self,
                         phase,
@@ -4573,17 +4591,7 @@ class MachineCom:
                         subcode=subcode,
                         tags=tags,
                     )
-                except Exception:
-                    self._logger.exception(
-                        "Error while processing hook {name} for phase "
-                        "{phase} and command {command}:".format(
-                            name=name,
-                            phase=phase,
-                            command=to_unicode(command, errors="replace"),
-                        ),
-                        extra={"plugin": name},
-                    )
-                else:
+
                     normalized = _normalize_command_handler_result(
                         command,
                         command_type,
@@ -4615,10 +4623,23 @@ class MachineCom:
                         new_results.append((command, command_type, gcode, subcode, tags))
                     else:
                         new_results += normalized
-            if not new_results:
-                # hook handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
-                return []
-            results = new_results
+
+            except Exception:
+                self._logger.exception(
+                    "Error while processing hook {name} for phase "
+                    "{phase}:".format(
+                        name=name,
+                        phase=phase,
+                    ),
+                    extra={"plugin": name},
+                )
+
+            else:
+                if not new_results:
+                    # hook handler returned None or empty list for all commands, so
+                    # we'll stop here and return a full out empty result
+                    return []
+                results = new_results
 
         # if it's a gcode command send it through the specific handler if it exists
         new_results = []
@@ -5359,6 +5380,7 @@ class MachineCom:
                     },
                 )
                 return (None,)
+
             if gcode in self._ignored_commands:
                 message = "Not sending {} to printer, it's configured as an ignored command".format(
                     gcode
@@ -5378,7 +5400,11 @@ class MachineCom:
     def _command_phase_sending(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
-        if gcode is not None and gcode in self._long_running_commands:
+        if (
+            gcode is not None
+            and gcode in self._long_running_commands
+            or cmd in self._long_running_commands
+        ):
             self._long_running_command = True
 
 
@@ -5604,18 +5630,17 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
         """
         PrintingFileInformation.start(self)
         with self._handle_mutex:
-            self._handle = bom_aware_open(
-                self._filename, encoding="utf-8", errors="replace", newline=""
+            bom = get_bom(self._filename, encoding="utf-8-sig")
+            self._handle = open(
+                self._filename, encoding="utf-8-sig", errors="replace", newline=""
             )
             self._pos = self._handle.tell()
-            if self._handle.encoding.endswith("-sig"):
+            if bom:
                 # Apparently we found an utf-8 bom in the file.
                 # We need to add its length to our pos because it will
                 # be stripped transparently and we'll have no chance
                 # catching that.
-                import codecs
-
-                self._pos += len(codecs.BOM_UTF8)
+                self._pos += len(bom)
             self._read_lines = 0
 
     def close(self):

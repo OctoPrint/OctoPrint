@@ -14,19 +14,19 @@
     };
 
     var resourceForLocation = function (location) {
-        return url + "/" + location;
+        return url + "/" + OctoPrintClient.escapePath(location);
     };
 
     var downloadForLocation = function (location) {
-        return downloadUrl + "/" + location;
+        return downloadUrl + "/" + OctoPrintClient.escapePath(location);
     };
 
     var downloadForEntry = function (location, filename) {
-        return downloadForLocation(location) + "/" + filename;
+        return downloadForLocation(location) + "/" + OctoPrintClient.escapePath(filename);
     };
 
     var resourceForEntry = function (location, filename) {
-        return resourceForLocation(location) + "/" + filename;
+        return resourceForLocation(location) + "/" + OctoPrintClient.escapePath(filename);
     };
 
     var preProcessList = function (response) {

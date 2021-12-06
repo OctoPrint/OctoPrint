@@ -8,9 +8,9 @@ import sys
 import threading
 
 import psutil
-import yaml
 
 from octoprint.plugin import EnvironmentDetectionPlugin
+from octoprint.util import yaml
 from octoprint.util.platform import get_os
 from octoprint.util.version import get_python_version_string
 
@@ -165,9 +165,7 @@ class EnvironmentDetector:
                 self.run_detection()
             environment = copy.deepcopy(self._cache)
 
-        dumped_environment = yaml.safe_dump(
-            environment, default_flow_style=False, indent=2, allow_unicode=True
-        ).strip()
+        dumped_environment = yaml.dump(environment, pretty=True).strip()
         environment_lines = "\n".join(
             map(lambda l: f"|  {l}", dumped_environment.split("\n"))
         )

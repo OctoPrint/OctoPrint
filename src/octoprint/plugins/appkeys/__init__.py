@@ -4,16 +4,20 @@ import time
 from collections import defaultdict
 
 import flask
-import yaml
 from flask_babel import gettext
 
 import octoprint.plugin
-from octoprint.access import ADMIN_GROUP
+from octoprint.access import ADMIN_GROUP, USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.server import NO_CONTENT, admin_permission, current_user
-from octoprint.server.util.flask import no_firstrun_access, restricted_access
+from octoprint.server.util import require_login_with
+from octoprint.server.util.flask import (
+    add_non_caching_response_headers,
+    no_firstrun_access,
+    restricted_access,
+)
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import ResettableTimer, atomic_write, generate_api_key
+from octoprint.util import ResettableTimer, atomic_write, generate_api_key, yaml
 
 CUTOFF_TIME = 10 * 60  # 10min
 POLL_TIMEOUT = 5  # 5 seconds
@@ -121,7 +125,14 @@ class AppKeysPlugin(
                 "roles": ["admin"],
                 "dangerous": True,
                 "default_groups": [ADMIN_GROUP],
-            }
+            },
+            {
+                "key": "GRANT",
+                "name": "Grant access",
+                "description": gettext("Allows to grant app access"),
+                "roles": ["user"],
+                "default_groups": [USER_GROUP],
+            },
         ]
 
     ##~~ TemplatePlugin
@@ -165,6 +176,9 @@ class AppKeysPlugin(
             user_id = data["user"]
 
         app_token, user_token = self._add_pending_decision(app_name, user_id=user_id)
+        auth_dialog = flask.url_for(
+            "plugin.appkeys.handle_auth_dialog", app_token=app_token, _external=True
+        ) + (f"?user={user_id}" if user_id else "")
 
         self._plugin_manager.send_plugin_message(
             self._identifier,
@@ -175,7 +189,7 @@ class AppKeysPlugin(
                 "user_id": user_id,
             },
         )
-        response = flask.jsonify(app_token=app_token)
+        response = flask.jsonify(app_token=app_token, auth_dialog=auth_dialog)
         response.status_code = 201
         response.headers["Location"] = flask.url_for(
             ".handle_decision_poll", app_token=app_token, _external=True
@@ -200,12 +214,59 @@ class AppKeysPlugin(
 
         return flask.abort(404)
 
+    @octoprint.plugin.BlueprintPlugin.route("/auth/<app_token>")
+    @no_firstrun_access
+    def handle_auth_dialog(self, app_token):
+        user_id = current_user.get_name()
+        required_user = flask.request.args.get("user", None)
+
+        pendings = self._get_pending_by_app_token(app_token)
+        if not pendings:
+            return flask.abort(404)
+
+        response = require_login_with(
+            permissions=[Permissions.PLUGIN_APPKEYS_GRANT], user_id=required_user
+        )
+        if response:
+            return response
+
+        pending = None
+        for p in pendings:
+            if p.user_id == required_user or (not required_user and p.user_id == user_id):
+                pending = p
+                break
+        else:
+            return flask.abort(404)
+
+        app_id = pending.app_id
+        user_token = pending.user_token
+        redirect_url = flask.request.args.get("redirect", "")
+
+        response = flask.make_response(
+            flask.render_template(
+                "plugin_appkeys/appkeys_authdialog.jinja2",
+                app=app_id,
+                user=user_id,
+                user_token=user_token,
+                redirect_url=redirect_url,
+                theming=[],
+                request_text=gettext(
+                    '"<strong>%(app)s</strong>" has requested access to control OctoPrint through the API.'
+                ).replace("%(app)s", app_id),
+            )
+        )
+        return add_non_caching_response_headers(response)
+
     @octoprint.plugin.BlueprintPlugin.route("/decision/<user_token>", methods=["POST"])
     @restricted_access
     def handle_decision(self, user_token):
         data = flask.request.json
         if "decision" not in data:
             flask.abort(400, description="No decision provided")
+
+        if not Permissions.PLUGIN_APPKEYS_GRANT.can():
+            flask.abort(403, description="No permission to grant app access")
+
         decision = data["decision"] in valid_boolean_trues
         user_id = current_user.get_name()
 
@@ -438,8 +499,7 @@ class AppKeysPlugin(
                 return
 
             try:
-                with open(self._key_path, encoding="utf-8", errors="strict") as f:
-                    persisted = yaml.safe_load(f)
+                persisted = yaml.load_from_file(path=self._key_path)
             except Exception:
                 self._logger.exception(
                     f"Could not load application keys from {self._key_path}"
@@ -464,7 +524,7 @@ class AppKeysPlugin(
 
             try:
                 with atomic_write(self._key_path, mode="wt") as f:
-                    yaml.safe_dump(to_persist, f, allow_unicode=True)
+                    yaml.save_to_file(to_persist, file=f)
             except Exception:
                 self._logger.exception(
                     f"Could not write application keys to {self._key_path}"

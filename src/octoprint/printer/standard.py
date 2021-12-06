@@ -14,7 +14,7 @@ import threading
 import time
 from collections import namedtuple
 
-from immutabledict import immutabledict
+from frozendict import frozendict
 
 import octoprint.util.json
 from octoprint import util as util
@@ -106,7 +106,7 @@ class Printer(
         self._logger_job = logging.getLogger(f"{__name__}.job")
 
         self._dict = (
-            immutabledict
+            frozendict
             if settings().getBoolean(["devel", "useFrozenDictForPrinterState"])
             else dict
         )
@@ -251,7 +251,7 @@ class Printer(
 
     @property
     def firmware_info(self):
-        return immutabledict(self._firmware_info) if self._firmware_info else None
+        return frozendict(self._firmware_info) if self._firmware_info else None
 
     # ~~ handling of PrinterCallbacks
 
@@ -1038,11 +1038,11 @@ class Printer(
             return self._protocol.error
 
     def get_current_data(self, *args, **kwargs):
-        return util.thaw_immutabledict(self._state_monitor.get_current_data())
+        return util.thaw_frozendict(self._state_monitor.get_current_data())
 
     def get_current_job(self):
         data = self._state_monitor.get_current_data()
-        return util.thaw_immutabledict(data["job"])
+        return util.thaw_frozendict(data["job"])
 
     def get_current_temperatures(self, *args, **kwargs):
         if self._protocol is not None:
@@ -1444,6 +1444,8 @@ class Printer(
                         original_estimate,
                         original_estimate_type,
                     )
+                    if print_time_left is not None:
+                        print_time_left = int(print_time_left)
                 except Exception:
                     self._logger.exception(
                         "Error while estimating print time via {}".format(

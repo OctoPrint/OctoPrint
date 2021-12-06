@@ -27,20 +27,22 @@ from octoprint.server.util.flask import (
     no_firstrun_access,
     with_revalidation_checking,
 )
-from octoprint.util import dict_merge, get_formatted_size, to_unicode
+from octoprint.util import dict_merge, get_formatted_size, to_unicode, yaml
 from octoprint.util.pip import create_pip_caller
 from octoprint.util.version import (
     get_comparable_version,
     get_python_version_string,
     is_python_compatible,
+    is_released_octoprint_version,
+    is_stable,
 )
 
 from . import cli, exceptions, updaters, util, version_checks
 
-# OctoPi 0.15+
-MINIMUM_PYTHON = "2.7.9"
-MINIMUM_SETUPTOOLS = "39.0.1"
-MINIMUM_PIP = "9.0.3"
+# OctoPi 0.16+
+MINIMUM_PYTHON = "2.7.13"
+MINIMUM_SETUPTOOLS = "40.7.1"
+MINIMUM_PIP = "19.0.1"
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -60,8 +62,11 @@ class SoftwareUpdatePlugin(
 
     COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
     CURRENT_TRACKING_TYPES = COMMIT_TRACKING_TYPES + ("etag", "lastmodified", "jsondata")
+    RELEASE_TRACKING_TYPES = ("github_release",)
 
     OCTOPRINT_RESTART_TYPES = ("pip", "single_file_plugin")
+
+    VALID_RESTART_TYPES = ("octoprint", "environment")
 
     DATA_FORMAT_VERSION = "v4"
 
@@ -463,11 +468,8 @@ class SoftwareUpdatePlugin(
         if not os.path.isfile(self._version_cache_path):
             return
 
-        import yaml
-
         try:
-            with open(self._version_cache_path, encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+            data = yaml.load_from_file(path=self._version_cache_path)
             timestamp = os.stat(self._version_cache_path).st_mtime
         except Exception:
             self._logger.exception("Error while loading version cache from disk")
@@ -504,8 +506,6 @@ class SoftwareUpdatePlugin(
                 self._logger.exception("Error parsing in version cache data")
 
     def _save_version_cache(self):
-        import yaml
-
         from octoprint._version import get_versions
         from octoprint.util import atomic_write
 
@@ -515,13 +515,7 @@ class SoftwareUpdatePlugin(
         with atomic_write(
             self._version_cache_path, mode="wt", max_permissions=0o666
         ) as file_obj:
-            yaml.safe_dump(
-                self._version_cache,
-                stream=file_obj,
-                default_flow_style=False,
-                indent=2,
-                allow_unicode=True,
-            )
+            yaml.save_to_file(self._version_cache, file=file_obj, pretty=True)
 
         self._version_cache_dirty = False
         self._version_cache_timestamp = time.time()
@@ -539,11 +533,8 @@ class SoftwareUpdatePlugin(
         if not os.path.isfile(self._update_log_path):
             return
 
-        import yaml
-
         try:
-            with open(self._update_log_path, encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+            data = yaml.load_from_file(path=self._update_log_path)
         except Exception:
             self._logger.exception("Error while loading update log from disk")
         else:
@@ -573,20 +564,16 @@ class SoftwareUpdatePlugin(
             self._logger.info("Loaded update log from disk")
 
     def _save_update_log(self):
-        import yaml
-
         from octoprint.util import atomic_write
 
         with self._update_log_mutex:
             with atomic_write(
                 self._update_log_path, mode="wt", max_permissions=0o666
             ) as file_obj:
-                yaml.safe_dump(
+                yaml.save_to_file(
                     sorted(self._update_log, key=lambda x: x["datetime"]),
-                    stream=file_obj,
-                    default_flow_style=False,
-                    indent=2,
-                    allow_unicode=True,
+                    file=file_obj,
+                    pretty=True,
                 )
                 self._update_log_dirty = False
 
@@ -625,15 +612,45 @@ class SoftwareUpdatePlugin(
                 self._save_update_log()
 
     def _is_octoprint_outdated_and_can_update(self):
-        information, update_available, update_possible = self.get_current_versions()
-        if not update_available or not update_possible or "octoprint" not in information:
+        checks = self._get_configured_checks()
+        check = checks.get("octoprint", None)
+        if not check:
             return False
 
-        octoprint_information = information["octoprint"]
-        return (
-            octoprint_information["updateAvailable"]
-            and octoprint_information["updatePossible"]
+        check = self._populated_check("octoprint", check)
+        credentials = self._settings.get(["credentials"], merged=True)
+
+        _, update_available, update_possible, _, _ = self._get_current_version(
+            "octoprint", check, credentials=credentials
         )
+        if not update_available or not update_possible:
+            return False
+
+        restart_type = self._get_restart_type(check)
+        restart_command = self._get_restart_command(restart_type)
+        return restart_command is not None
+
+    def _get_restart_type(self, check):
+        if check.get("restart") in self.VALID_RESTART_TYPES:
+            return check["restart"]
+        elif "pip" in check or check.get("method") in self.OCTOPRINT_RESTART_TYPES:
+            return "octoprint"
+        else:
+            target_restart_type = None
+
+        return target_restart_type
+
+    def _get_restart_command(self, restart_type):
+        if restart_type == "octoprint":
+            return self._settings.global_get(
+                ["server", "commands", "serverRestartCommand"]
+            )
+        elif restart_type == "environment":
+            return self._settings.global_get(
+                ["server", "commands", "systemRestartCommand"]
+            )
+        else:
+            return None
 
     # ~~ SettingsPlugin API
 
@@ -1087,6 +1104,8 @@ class SoftwareUpdatePlugin(
         )(view)()
 
     @octoprint.plugin.BlueprintPlugin.route("/check", methods=["GET"])
+    @no_firstrun_access
+    @Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.require(403)
     def check_for_update(self):
         if (
             not Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.can()
@@ -1428,7 +1447,11 @@ class SoftwareUpdatePlugin(
 
     def _is_wizard_update_required(self):
         firstrun = self._settings.global_get(["server", "firstRun"])
-        return firstrun and self._is_octoprint_outdated_and_can_update()
+        return (
+            firstrun
+            and self._is_octoprint_outdated_and_can_update()
+            and not self._is_settings_wizard_required()
+        )
 
     def _is_settings_wizard_required(self):
         checks = self._get_configured_checks()
@@ -1441,6 +1464,14 @@ class SoftwareUpdatePlugin(
 
     def get_wizard_version(self):
         return 1
+
+    def get_wizard_details(self):
+        result = {}
+        if self._is_wizard_update_required():
+            information, _, _ = self.get_current_versions()
+            data = information.get("octoprint", {})
+            result["update"] = data
+        return result
 
     ##~~ EventHandlerPlugin API
 
@@ -1499,6 +1530,9 @@ class SoftwareUpdatePlugin(
                             continue
 
                         if not check:
+                            continue
+
+                        if "type" not in check:
                             continue
 
                         try:
@@ -1881,15 +1915,7 @@ class SoftwareUpdatePlugin(
                 if target_result is not None:
                     target_results[target] = target_result
 
-                    if "restart" in check:
-                        target_restart_type = check["restart"]
-                    elif (
-                        "pip" in check
-                        or check.get("method") in self.OCTOPRINT_RESTART_TYPES
-                    ):
-                        target_restart_type = "octoprint"
-                    else:
-                        target_restart_type = None
+                    target_restart_type = self._get_restart_type(check)
 
                     # if our update requires a restart we have to determine which type
                     if restart_type is None or (
@@ -1920,16 +1946,7 @@ class SoftwareUpdatePlugin(
                 # one of our updates requires a restart of either type "octoprint" or "environment". Let's see if
                 # we can actually perform that
 
-                restart_command = None
-                if restart_type == "octoprint":
-                    restart_command = self._settings.global_get(
-                        ["server", "commands", "serverRestartCommand"]
-                    )
-                elif restart_type == "environment":
-                    restart_command = self._settings.global_get(
-                        ["server", "commands", "systemRestartCommand"]
-                    )
-
+                restart_command = self._get_restart_command(restart_type)
                 if restart_command:
                     self._send_client_message(
                         "restarting",
@@ -2166,12 +2183,6 @@ class SoftwareUpdatePlugin(
         result = dict(check)
 
         if target == "octoprint":
-
-            from octoprint.util.version import (
-                is_released_octoprint_version,
-                is_stable_octoprint_version,
-            )
-
             displayName = check.get("displayName")
             if displayName is None:
                 # displayName missing or set to None
@@ -2184,52 +2195,12 @@ class SoftwareUpdatePlugin(
                 displayVersion = "{octoprint_version}"
             result["displayVersion"] = to_unicode(displayVersion, errors="replace")
 
-            stable_branch = "master"
-            release_branches = []
-            if "stable_branch" in check:
-                release_branches.append(check["stable_branch"]["branch"])
-                stable_branch = check["stable_branch"]["branch"]
-            if "prerelease_branches" in check:
-                release_branches += [x["branch"] for x in check["prerelease_branches"]]
             result["released_version"] = is_released_octoprint_version()
 
             if check["type"] in self.COMMIT_TRACKING_TYPES:
                 result["current"] = REVISION if REVISION else "unknown"
             else:
                 result["current"] = VERSION
-
-                if check["type"] == "github_release" and (
-                    check.get("prerelease", None) or not is_stable_octoprint_version()
-                ):
-                    # we are tracking github releases and are either also tracking prerelease OR are currently running
-                    # a non stable version => we need to change some parameters
-
-                    # we compare versions fully, not just the base so that we see a difference
-                    # between RCs + stable for the same version release
-                    result["force_base"] = False
-
-                    if check.get("prerelease", None):
-                        # we are tracking prereleases => we want to be on the correct prerelease channel/branch
-                        channel = check.get("prerelease_channel", None)
-                        if channel:
-                            # if we have a release channel, we also set our update_branch here to our release channel
-                            # in case it's not already set
-                            result["update_branch"] = check.get("update_branch", channel)
-
-                    else:
-                        # we are not tracking prereleases, but aren't on the stable branch either => switch back
-                        # to stable branch on update
-                        result["update_branch"] = check.get(
-                            "update_branch", stable_branch
-                        )
-
-                    if check.get("update_script", None):
-                        # we force an exact version & python unequality check, to be able to downgrade
-                        result["force_exact_version"] = True
-                        result["release_compare"] = "python_unequal"
-                    elif check.get("pip", None):
-                        # we force python unequality check for pip installs, to be able to downgrade
-                        result["release_compare"] = "python_unequal"
 
         elif target == "pip":
             import pkg_resources
@@ -2272,6 +2243,43 @@ class SoftwareUpdatePlugin(
                 result["current"] = check.get(
                     "current", check.get("displayVersion", None)
                 )
+
+        if (
+            check["type"] in self.RELEASE_TRACKING_TYPES
+            and result["current"]
+            and (check.get("prerelease", None) or not is_stable(result["current"]))
+        ):
+            # we are tracking releases and are either also tracking prerelease OR are currently running
+            # a non stable version => we need to change some parameters
+
+            # we compare versions fully, not just the base so that we see a difference
+            # between RCs + stable for the same version release
+            result["force_base"] = False
+
+            if check["type"] == "github_release":
+                if check.get("prerelease", None):
+                    # we are tracking prereleases => we want to be on the correct prerelease channel/branch
+                    channel = check.get("prerelease_channel", None)
+                    if channel:
+                        # if we have a release channel, we also set our update_branch here to our release channel
+                        # in case it's not already set
+                        result["update_branch"] = check.get("update_branch", channel)
+
+                else:
+                    # we are not tracking prereleases, but aren't on the stable branch either => switch back
+                    # to stable branch on update
+                    result["update_branch"] = check.get(
+                        "update_branch",
+                        check.get("stable_branch", {"branch": "main"})["branch"],
+                    )
+
+            if check.get("update_script", None):
+                # we force an exact version & python unequality check, to be able to downgrade
+                result["force_exact_version"] = True
+                result["release_compare"] = "python_unequal"
+            elif check.get("pip", None):
+                # we force python unequality check for pip installs, to be able to downgrade
+                result["release_compare"] = "python_unequal"
 
         if result.get("pip", None):
             if "pip_command" not in result:
@@ -2397,7 +2405,7 @@ def _register_custom_events(*args, **kwargs):
 
 __plugin_name__ = "Software Update"
 __plugin_author__ = "Gina Häußge"
-__plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html"
+__plugin_url__ = "https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html"
 __plugin_description__ = "Allows receiving update notifications and performing updates of OctoPrint and plugins"
 __plugin_disabling_discouraged__ = gettext(
     "Without this plugin OctoPrint will no longer be able to "

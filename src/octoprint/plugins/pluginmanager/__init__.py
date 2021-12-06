@@ -1251,6 +1251,14 @@ class PluginManagerPlugin(
             )
             abort(500, description="Could not uninstall plugin, its origin is unknown")
 
+        if plugin.implementation:
+            try:
+                plugin.implementation.on_plugin_pending_uninstall()
+            except Exception:
+                self._logger.exception(
+                    "Error while calling on_plugin_pending_uninstall on the plugin, proceeding regardless"
+                )
+
         if plugin.origin.type == "entry_point":
             # plugin is installed through entry point, need to use pip to uninstall it
             origin = plugin.origin[3]
@@ -2113,7 +2121,7 @@ def _register_custom_events(*args, **kwargs):
 
 __plugin_name__ = "Plugin Manager"
 __plugin_author__ = "Gina Häußge"
-__plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html"
+__plugin_url__ = "https://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html"
 __plugin_description__ = "Allows installing and managing OctoPrint plugins"
 __plugin_license__ = "AGPLv3"
 __plugin_pythoncompat__ = ">=2.7,<4"

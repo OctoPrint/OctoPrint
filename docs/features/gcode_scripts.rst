@@ -38,6 +38,8 @@ The following GCODE scripts are sent by OctoPrint automatically:
   * ``afterPrintDone``: Sent just after a print job finished. Defaults to an empty script.
   * ``afterPrintPaused``: Sent just after a print job was paused. Defaults to an empty script.
   * ``beforePrintResumed``: Sent just before a print job is resumed. Defaults to an empty script.
+  * ``beforeToolChange``: Sent just before a tool change command (``Tn``) is issued.
+  * ``afterToolChange``: Sent just after a tool change command (``Tn``) is issued
 
 .. note::
 
@@ -70,7 +72,8 @@ Context
 All GCODE scripts have access to the following template variables through the template context:
 
   * ``printer_profile``: The currently selected :ref:`Printer Profile <sec-modules-printer-profile>`, including
-    information such as the extruder count, the build volume size, the filament diameter etc.
+    information such as the extruder count, the build volume size, the filament diameter etc. The individual properties
+    follow the common data model for :ref:`printer profiles <sec-api-printerprofiles-datamodel-profile>`.
   * ``last_position``: Last position reported by the printer via `M114` (might be unset if no `M114` was sent so far!).
     Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
     current tool ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no
@@ -106,6 +109,11 @@ There are a few additional template variables available for the following specif
       "Log position on cancel" under Settings > Serial > Advanced options!
     * ``cancel_temperature``: Last known temperature values when the print was cancelled. See ``last_temperature`` above
       for the structure to expect here.
+
+  * ``beforeToolChange`` and ``afterToolChange``
+
+    * ``tool.old``: The number of the previous tool
+    * ``tool.new``: The number of the new tool
 
 
 .. warning::

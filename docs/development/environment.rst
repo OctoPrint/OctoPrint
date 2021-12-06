@@ -134,7 +134,7 @@ Open the Git Bash you just installed and in that:
    cd /c/Devel
    git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
-   virtualenv --python=C:\Python38\python.exe venv
+   virtualenv --python=C:/Python3/python.exe venv3
    source ./venv/Scripts/activate
    python -m pip install --upgrade pip
    python -m pip install -e '.[develop,plugins,docs]'
@@ -198,6 +198,10 @@ You'll need a user account with administrator privileges.
 
     * ``ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"``
     * ``brew install python``
+
+  * Install `pip <https://pip.pypa.io/en/stable/installation/#supported-methods>`_
+
+    * ``python -m ensurepip --upgrade``
 
   * Install `virtualenv <https://virtualenv.pypa.io/>`_
 
@@ -315,3 +319,102 @@ Otherwise go through Settings.
    Make sure you are running a PyCharm version of 2016.1 or later, or manually fix
    `a debugger bug contained in earlier versions <https://youtrack.jetbrains.com/issue/PY-18365>`_ or plugin management
    will not work in your developer install when running OctoPrint from PyCharm in debug mode.
+
+Visual Studio Code (vscode)
+---------------------------
+
+  - Install Visual Studio Code from `code.visualstudio.com <https://code.visualstudio.com/Download>`_
+  - Open folder select OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
+
+  - Create a directory ``.vscode`` if not already present in the root of the project
+
+  - Create the following files inside the ``.vscode`` directory
+
+    settings.json
+      .. code-block:: json
+
+         {
+             "python.defaultInterpreterPath": "venv3/bin/python",
+             "python.formatting.provider": "black",
+             "python.formatting.blackArgs": [
+                 "--config",
+                 "black.toml"
+             ],
+             "editor.formatOnSave": true,
+             "python.sortImports.args": [
+                 "--profile=black",
+             ],
+             "[python]": {
+                 "editor.codeActionsOnSave": {
+                     "source.organizeImports": true
+                 }
+             },
+             "python.linting.pylintEnabled": false,
+             "python.linting.flake8Enabled": true,
+             "python.linting.enabled": true
+         }
+
+    tasks.json
+      .. code-block:: json
+
+         {
+           "version": "2.0.0",
+           "tasks": [
+             {
+                 "label": "clean build artifacts",
+                 "type": "shell",
+                 "command": "python ./setup.py clean"
+             },
+             {
+                 "label": "build docs",
+                 "type": "shell",
+                 "command": "sphinx-build -b html ./docs ./docs/_build"
+             }
+           ]
+         }
+
+
+    launch.json
+      .. code-block:: json
+
+         {
+           "version": "0.2.0",
+           "configurations": [
+               {
+                   "name": "OctoPrint",
+                   "type": "python",
+                   "request": "launch",
+                   "module": "octoprint",
+                   "args": [
+                       "serve",
+                       "--debug"
+                   ],
+                   "cwd": "${workspaceFolder}/src",
+                   "preLaunchTask": "clean build artifacts"
+               }
+           ]
+         }
+
+  In the terminal install the python extension by running this command:
+
+    .. code-block:: bash
+
+      code --install-extension ms-python.python
+
+  In vscode terminal, or with venv active install code formatter black and linter flake8 by running:
+
+    .. code-block:: bash
+
+      python -m pip install -U black flake8 flake8-bugbear
+
+  Summary of vscode config:
+
+  * Pressing ``F5`` will now start OctoPrint in debug mode
+
+  * Your terminal inside vscode uses the virtual python environment
+
+  * Saving a file will run an auto formatter and import sort
+
+  * ``Ctrl+Shift+B`` can be used to run the ``build docs`` task to rebuild the documentation
+
+

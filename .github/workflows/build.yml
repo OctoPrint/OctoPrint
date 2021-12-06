@@ -50,7 +50,7 @@ jobs:
     name: 🧪 Unit tests
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9"]
+        python: ["3.7", "3.8", "3.9", "3.10"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -70,7 +70,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9"]
+        python: ["3.7", "3.8", "3.9", "3.10"]
         installable: ["wheel", "sdist"]
     runs-on: ubuntu-latest
     steps:
@@ -95,7 +95,7 @@ jobs:
   test-e2e:
     name: 🧪 E2E tests
     needs: build
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-latest
     steps:
       - name: ⬇ Checkout code
         uses: actions/checkout@v2
@@ -183,10 +183,14 @@ jobs:
     needs: publish-on-pypi
     runs-on: ubuntu-latest
     steps:
+      - name: 👀 Determine version
+        run: |
+          OCTOPRINT_VERSION=$(echo $GITHUB_REF | cut -d/ -f3)
+          echo "OCTOPRINT_VERSION=$OCTOPRINT_VERSION" >> $GITHUB_ENV
       - name: 🚀 Repository Dispatch
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.REPODISPATCH_TOKEN }}
           repository: OctoPrint/OctoPi-UpToDate
           event-type: octoprint_release
-          client-payload: '{"version": "${{ github.ref }}"}'
+          client-payload: '{"version": "${{ env.OCTOPRINT_VERSION }}"}'

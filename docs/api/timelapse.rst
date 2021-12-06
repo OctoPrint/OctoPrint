@@ -226,6 +226,10 @@ For timelapse type ``zchange``.
      - 1
      - float
      - Size of retraction Z hop to detect and ignore for z-based snapshots
+   * - ``minDelay``
+     - 1
+     - int
+     - Snapshots will be rate limited against this interval, to prevent performance issues with vase mode/continuous z prints
 
 .. _sec-api-timelapse-datamodel-config-timed:
 

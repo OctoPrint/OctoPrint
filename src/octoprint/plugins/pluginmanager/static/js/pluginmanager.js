@@ -50,7 +50,7 @@ $(function () {
                     return !item.enabled;
                 }
             },
-            "popularity",
+            "name",
             [],
             [
                 ["bundled", "3rdparty"],
@@ -58,6 +58,10 @@ $(function () {
             ],
             0
         );
+        self.plugins.currentFilters.subscribe(function () {
+            self.clearPluginsSelection();
+        });
+        self.pluginLookup = {};
 
         self.repositoryplugins = new ItemListHelper(
             "plugin.pluginmanager.repositoryplugins",
@@ -138,7 +142,7 @@ $(function () {
                     return !plugin.abandoned;
                 }
             },
-            "title",
+            "popularity",
             ["filter_installed", "filter_incompatible"],
             [],
             0
@@ -168,6 +172,8 @@ $(function () {
             [],
             0
         );
+
+        self.selectedPlugins = ko.observableArray([]);
 
         self.uploadElement = $("#settings_plugin_pluginmanager_repositorydialog_upload");
         self.uploadButton = $(
@@ -274,14 +280,21 @@ $(function () {
             return !self.printerState.isBusy();
         });
 
-        self.enableToggle = function (data) {
+        self.enableBulk = function (data) {
+            return self.enableToggle(data, true) && !data.bundled;
+        };
+
+        self.enableToggle = function (data, ignoreToggling) {
             var command = self._getToggleCommand(data);
             var not_safemode_victim = !data.safe_mode_victim;
             var not_blacklisted = !data.blacklisted;
             var not_incompatible = !data.incompatible;
+
+            ignoreToggling = !!ignoreToggling;
+
             return (
                 self.enableManagement() &&
-                !self.toggling() &&
+                (ignoreToggling || !self.toggling()) &&
                 (command === "disable" ||
                     (not_safemode_victim && not_blacklisted && not_incompatible)) &&
                 data.key !== "pluginmanager"
@@ -508,7 +521,9 @@ $(function () {
 
             var installedPlugins = [];
             var noticeCount = 0;
+            var lookup = {};
             _.each(data, function (plugin) {
+                lookup[plugin.key] = plugin;
                 installedPlugins.push(plugin.key);
 
                 if (evalNotices && plugin.notifications && plugin.notifications.length) {
@@ -537,6 +552,7 @@ $(function () {
             if (evalNotices) self.noticeCount(noticeCount);
             self.installedPlugins(installedPlugins);
             self.plugins.updateItems(data);
+            self.pluginLookup = lookup;
         };
 
         self.fromOrphanResponse = function (data) {
@@ -800,6 +816,171 @@ $(function () {
                     performDisabling();
                 }
             }
+        };
+
+        self._bulkOperation = function (
+            plugins,
+            title,
+            message,
+            successText,
+            failureText,
+            statusText,
+            callback,
+            alreadyCheck
+        ) {
+            var deferred = $.Deferred();
+            var promise = deferred.promise();
+            var options = {
+                title: title,
+                message: _.sprintf(message, {count: plugins.length}),
+                max: plugins.length,
+                output: true
+            };
+            showProgressModal(options, promise);
+
+            var handle = function (key) {
+                var d = $.Deferred();
+
+                var plugin = self.pluginLookup[key];
+                if (!plugin) {
+                    deferred.notify(
+                        _.sprintf(
+                            gettext("Can't resolve plugin with key %(key)s, skipping..."),
+                            {key: key}
+                        ),
+                        false
+                    );
+                    d.reject();
+                    return d.promise();
+                }
+                if (!self.enableBulk(plugin)) {
+                    deferred.notify(
+                        _.sprintf(
+                            gettext(
+                                "Plugin %(plugin)s doesn't support bulk operations, skipping..."
+                            ),
+                            {plugin: plugin.name || key}
+                        ),
+                        false
+                    );
+                    d.reject();
+                    return d.promise();
+                }
+                if (alreadyCheck(plugin)) {
+                    deferred.notify(
+                        _.sprintf(
+                            gettext(
+                                "Plugin %(plugin)s is already %(status)s (or pending), skipping..."
+                            ),
+                            {
+                                plugin: plugin.name || key,
+                                status: statusText
+                            }
+                        ),
+                        true
+                    );
+                    d.reject();
+                    return d.promise();
+                }
+
+                callback(plugin)
+                    .done(function () {
+                        deferred.notify(
+                            _.sprintf(successText, {plugin: plugin.name || key}),
+                            true
+                        );
+                        d.resolve();
+                    })
+                    .fail(function () {
+                        deferred.notify(
+                            _.sprintf(failureText, {plugin: plugin.name || key}),
+                            false
+                        );
+                        d.reject();
+                    });
+                return d.promise();
+            };
+
+            var operations = [];
+            _.each(plugins, function (key) {
+                operations.push(handle(key));
+            });
+            $.when.apply($, _.map(operations, wrapPromiseWithAlways)).done(function () {
+                deferred.resolve();
+                self.requestPluginData();
+            });
+            return promise;
+        };
+
+        self.enableSelectedPlugins = function () {
+            if (self.selectedPlugins().length === 0) return;
+
+            var callback = function (plugin) {
+                return OctoPrint.plugins.pluginmanager.enable(plugin.key);
+            };
+            var check = function (plugin) {
+                return plugin.enabled || plugin.pending_enable;
+            };
+
+            self.toggling(true);
+            self._bulkOperation(
+                self.selectedPlugins(),
+                gettext("Enabling plugins"),
+                gettext("Enabling %(count)i plugins"),
+                gettext("Enabled plugin %(plugin)s..."),
+                gettext("Enabling plugin %(plugin)s failed, continuing..."),
+                gettext("enabled"),
+                callback,
+                check
+            )
+                .done(function () {
+                    self.selectedPlugins([]);
+                })
+                .always(function () {
+                    self.toggling(false);
+                });
+        };
+
+        self.disableSelectedPlugins = function () {
+            if (self.selectedPlugins().length === 0) return;
+
+            var callback = function (plugin) {
+                return OctoPrint.plugins.pluginmanager.disable(plugin.key);
+            };
+            var check = function (plugin) {
+                return !plugin.enabled || plugin.pending_disable;
+            };
+
+            self.toggling(true);
+            self._bulkOperation(
+                self.selectedPlugins(),
+                gettext("Disabling plugins"),
+                gettext("Disabling %(count)i plugins"),
+                gettext("Disabled plugin %(plugin)s..."),
+                gettext("Disabling plugin %(plugin)s failed, continuing..."),
+                gettext("disabled"),
+                callback,
+                check
+            )
+                .done(function () {
+                    self.selectedPlugins([]);
+                })
+                .always(function () {
+                    self.toggling(false);
+                });
+        };
+
+        self.selectAllVisiblePlugins = function () {
+            var selection = [];
+            _.each(self.plugins.paginatedItems(), function (plugin) {
+                if (!self.enableBulk(plugin)) return;
+                selection.push(plugin.key);
+            });
+            self.selectedPlugins(selection);
+        };
+
+        self.clearPluginsSelection = function () {
+            self.selectedPlugins([]);
         };
 
         self.showRepository = function () {

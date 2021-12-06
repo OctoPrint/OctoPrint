@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import atexit
 import base64
+import functools
 import logging
 import logging.config
 import mimetypes
@@ -11,6 +12,7 @@ import os
 import re
 import signal
 import sys
+import time
 import uuid  # noqa: F401
 from collections import OrderedDict, defaultdict
 
@@ -256,8 +258,6 @@ class Server:
 
         self._lifecycle_callbacks = defaultdict(list)
 
-        self._template_searchpaths = []
-
         self._intermediary_server = None
 
     def run(self):
@@ -305,6 +305,9 @@ class Server:
         debug = self._debug
         safe_mode = self._safe_mode
 
+        if safe_mode:
+            self._log_safe_mode_start(safe_mode)
+
         if self._v6_only and not octoprint.util.net.HAS_V6:
             raise RuntimeError(
                 "IPv6 only mode configured but system doesn't support IPv6"
@@ -339,6 +342,7 @@ class Server:
         # monkey patch/fix some stuff
         util.tornado.fix_json_encode()
         util.tornado.fix_websocket_check_origin()
+        util.tornado.enable_per_message_deflate_extension()
         util.flask.fix_flask_jsonify()
 
         cli_key = self._setup_cli_key()
@@ -1266,6 +1270,16 @@ class Server:
             )
             self._logger.exception("Stacktrace follows:")
 
+    def _log_safe_mode_start(self, self_mode):
+        self_mode_file = os.path.join(
+            self._settings.getBaseFolder("data"), "last_safe_mode"
+        )
+        try:
+            with open(self_mode_file, "w+", encoding="utf-8") as f:
+                f.write(self_mode)
+        except Exception as ex:
+            self._logger.warn(f"Could not write safe mode file {self_mode_file}: {ex}")
+
     def _create_socket_connection(self, session):
         global printer, fileManager, analysisQueue, userManager, eventManager, connectivityChecker
         return util.sockjs.PrinterStateConnection(
@@ -1347,8 +1361,12 @@ class Server:
             OctoPrintFlaskResponse,
             OctoPrintJsonEncoder,
             OctoPrintSessionInterface,
+            PrefixAwareJinjaEnvironment,
             ReverseProxiedEnvironment,
         )
+
+        # we must set this here because setting app.debug will access app.jinja_env
+        app.jinja_environment = PrefixAwareJinjaEnvironment
 
         app.config["TEMPLATES_AUTO_RELOAD"] = True
         app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
@@ -1394,6 +1412,10 @@ class Server:
         @app.before_request
         def before_request():
             g.locale = self._get_locale()
+
+            # used for performance measurement
+            g.start_time = time.monotonic()
+
             if self._debug and "perfprofile" in request.args:
                 try:
                     from pyinstrument import Profiler
@@ -1416,6 +1438,11 @@ class Server:
                 g.perfprofiler.stop()
                 output_html = g.perfprofiler.output_html()
                 return make_response(output_html)
+
+            if hasattr(g, "start_time"):
+                end_time = time.monotonic()
+                duration_ms = int((end_time - g.start_time) * 1000)
+                response.headers.add("Server-Timing", f"app;dur={duration_ms}")
 
             return response
 
@@ -1536,12 +1563,9 @@ class Server:
 
         import octoprint.util.jinja
 
-        filesystem_loader = octoprint.util.jinja.FilteredFileSystemLoader(
-            [], path_filter=lambda x: not octoprint.util.is_hidden_path(x)
-        )
-        filesystem_loader.searchpath = self._template_searchpaths
+        app.jinja_env.prefix_loader = jinja2.PrefixLoader({})
 
-        loaders = [app.jinja_loader, filesystem_loader]
+        loaders = [app.jinja_loader, app.jinja_env.prefix_loader]
         if octoprint.util.is_running_from_source():
             from markdown import markdown
 
@@ -1556,8 +1580,16 @@ class Server:
                 )
             )
 
-        jinja_loader = jinja2.ChoiceLoader(loaders)
-        app.jinja_loader = jinja_loader
+        # TODO: Remove this in 2.0.0
+        warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will soon no longer be supported."
+        loaders.append(
+            octoprint.util.jinja.WarningLoader(
+                octoprint.util.jinja.PrefixChoiceLoader(app.jinja_env.prefix_loader),
+                warning_message,
+            )
+        )
+
+        app.jinja_loader = jinja2.ChoiceLoader(loaders)
 
         self._register_template_plugins()
 
@@ -1728,14 +1760,27 @@ class Server:
                 )
 
     def _register_additional_template_plugin(self, plugin):
+        import octoprint.util.jinja
+
         folder = plugin.get_template_folder()
-        if folder is not None and folder not in self._template_searchpaths:
-            self._template_searchpaths.append(folder)
+        if (
+            folder is not None
+            and plugin.template_folder_key not in app.jinja_env.prefix_loader.mapping
+        ):
+            loader = octoprint.util.jinja.FilteredFileSystemLoader(
+                [plugin.get_template_folder()],
+                path_filter=lambda x: not octoprint.util.is_hidden_path(x),
+            )
+
+            app.jinja_env.prefix_loader.mapping[plugin.template_folder_key] = loader
 
     def _unregister_additional_template_plugin(self, plugin):
         folder = plugin.get_template_folder()
-        if folder is not None and folder in self._template_searchpaths:
-            self._template_searchpaths.remove(folder)
+        if (
+            folder is not None
+            and plugin.template_folder_key in app.jinja_env.prefix_loader.mapping
+        ):
+            del app.jinja_env.prefix_loader.mapping[plugin.template_folder_key]
 
     def _setup_blueprints(self):
         # do not remove or the index view won't be found
@@ -1743,61 +1788,98 @@ class Server:
         from octoprint.server.api import api
         from octoprint.server.util.flask import make_api_error
 
-        blueprints = OrderedDict()
-        blueprints["/api"] = api
-        json_errors = ["/api"]
+        blueprints = [api]
+        api_endpoints = ["/api"]
+        registrators = [
+            functools.partial(app.register_blueprint, api, url_prefix="/api"),
+        ]
 
         # also register any blueprints defined in BlueprintPlugins
         (
-            blueprint_from_plugins,
-            api_prefixes_from_plugins,
+            blueprints_from_plugins,
+            api_endpoints_from_plugins,
+            registrators_from_plugins,
         ) = self._prepare_blueprint_plugins()
-        blueprints.update(blueprint_from_plugins)
-        json_errors += api_prefixes_from_plugins
+        blueprints += blueprints_from_plugins
+        api_endpoints += api_endpoints_from_plugins
+        registrators += registrators_from_plugins
 
         # and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
-        blueprints.update(self._prepare_asset_plugins())
+        (
+            blueprints_from_assets,
+            registrators_from_assets,
+        ) = self._prepare_asset_plugins()
+        blueprints += blueprints_from_assets
+        registrators += registrators_from_assets
 
         # make sure all before/after_request hook results are attached as well
-        self._add_plugin_request_handlers_to_blueprints(*blueprints.values())
+        self._add_plugin_request_handlers_to_blueprints(*blueprints)
 
         # register everything with the system
-        for url_prefix, blueprint in blueprints.items():
-            app.register_blueprint(blueprint, url_prefix=url_prefix)
+        for registrator in registrators:
+            registrator()
 
         @app.errorhandler(HTTPException)
         def _handle_api_error(ex):
-            if any(map(lambda x: request.path.startswith(x), json_errors)):
+            if any(map(lambda x: request.path.startswith(x), api_endpoints)):
                 return make_api_error(ex.description, ex.code)
             else:
                 return ex
 
     def _prepare_blueprint_plugins(self):
-        blueprints = OrderedDict()
-        api_prefixes = []
+        def register_plugin_blueprint(plugin, blueprint, url_prefix):
+            try:
+                app.register_blueprint(
+                    blueprint, url_prefix=url_prefix, name_prefix="plugin"
+                )
+                self._logger.debug(
+                    f"Registered API of plugin {plugin} under URL prefix {url_prefix}"
+                )
+            except Exception:
+                self._logger.exception(
+                    f"Error while registering blueprint of plugin {plugin}, ignoring it",
+                    extra={"plugin": plugin},
+                )
+
+        blueprints = []
+        api_endpoints = []
+        registrators = []
 
         blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(
             octoprint.plugin.BlueprintPlugin
         )
         for plugin in blueprint_plugins:
-            try:
-                blueprint, prefix = self._prepare_blueprint_plugin(plugin)
-                api_prefixes += map(
-                    lambda x: prefix + x, plugin.get_blueprint_api_prefixes()
-                )
-                blueprints[prefix] = blueprint
-            except Exception:
-                self._logger.exception(
-                    "Error while registering blueprint of "
-                    "plugin {}, ignoring it".format(plugin._identifier),
-                    extra={"plugin": plugin._identifier},
-                )
-                continue
+            blueprint, prefix = self._prepare_blueprint_plugin(plugin)
 
-        return blueprints, api_prefixes
+            blueprints.append(blueprint)
+            api_endpoints += map(
+                lambda x: prefix + x, plugin.get_blueprint_api_prefixes()
+            )
+            registrators.append(
+                functools.partial(
+                    register_plugin_blueprint, plugin._identifier, blueprint, prefix
+                )
+            )
+
+        return blueprints, api_endpoints, registrators
 
     def _prepare_asset_plugins(self):
-        blueprints = OrderedDict()
+        def register_asset_blueprint(plugin, blueprint, url_prefix):
+            try:
+                app.register_blueprint(
+                    blueprint, url_prefix=url_prefix, name_prefix="plugin"
+                )
+                self._logger.debug(
+                    f"Registered assets of plugin {plugin} under URL prefix {url_prefix}"
+                )
+            except Exception:
+                self._logger.exception(
+                    f"Error while registering assets of plugin {plugin}, ignoring it",
+                    extra={"plugin": plugin},
+                )
+
+        blueprints = []
+        registrators = []
 
         asset_plugins = octoprint.plugin.plugin_manager().get_implementations(
             octoprint.plugin.AssetPlugin
@@ -1805,18 +1887,16 @@ class Server:
         for plugin in asset_plugins:
             if isinstance(plugin, octoprint.plugin.BlueprintPlugin):
                 continue
-            try:
-                blueprint, prefix = self._prepare_asset_plugin(plugin)
-                blueprints[prefix] = blueprint
-            except Exception:
-                self._logger.exception(
-                    "Error while registering assets of plugin "
-                    "{}, ignoring it".format(plugin._identifier),
-                    extra={"plugin": plugin._identifier},
-                )
-                continue
+            blueprint, prefix = self._prepare_asset_plugin(plugin)
 
-        return blueprints
+            blueprints.append(blueprint)
+            registrators.append(
+                functools.partial(
+                    register_asset_blueprint, plugin._identifier, blueprint, prefix
+                )
+            )
+
+        return blueprints, registrators
 
     def _prepare_blueprint_plugin(self, plugin):
         name = plugin._identifier
@@ -1832,32 +1912,13 @@ class Server:
             blueprint.before_request(requireLoginRequestHandler)
 
         url_prefix = f"/plugin/{name}"
-        app.register_blueprint(blueprint, url_prefix=url_prefix)
-
-        if self._logger:
-            self._logger.debug(
-                "Registered API of plugin {name} under URL prefix {url_prefix}".format(
-                    name=name, url_prefix=url_prefix
-                )
-            )
-
         return blueprint, url_prefix
 
     def _prepare_asset_plugin(self, plugin):
         name = plugin._identifier
 
         url_prefix = f"/plugin/{name}"
-        blueprint = Blueprint(
-            "plugin." + name, name, static_folder=plugin.get_asset_folder()
-        )
-        app.register_blueprint(blueprint, url_prefix=url_prefix)
-
-        if self._logger:
-            self._logger.debug(
-                "Registered assets of plugin {name} under URL prefix {url_prefix}".format(
-                    name=name, url_prefix=url_prefix
-                )
-            )
+        blueprint = Blueprint(name, name, static_folder=plugin.get_asset_folder())
 
         return blueprint, url_prefix
 

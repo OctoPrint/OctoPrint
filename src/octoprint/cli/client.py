@@ -9,6 +9,7 @@ import click
 import octoprint_client
 from octoprint import FatalStartupError, init_settings
 from octoprint.cli import bulk_options, get_ctx_obj_option
+from octoprint.util import yaml
 
 click.disable_unicode_literals_warning = True
 
@@ -171,10 +172,7 @@ def post_from_file(ctx, path, file_path, json_flag, yaml_flag, timeout):
             with open(file_path) as fp:
                 data = json.load(fp)
         else:
-            import yaml
-
-            with open(file_path) as fp:
-                data = yaml.safe_load(fp)
+            data = yaml.load_from_file(path=file_path)
 
         r = ctx.obj.client.post_json(path, data, timeout=timeout)
     else:

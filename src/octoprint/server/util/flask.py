@@ -14,6 +14,7 @@ from os import scandir
 import flask
 import flask.json
 import flask.sessions
+import flask.templating
 import flask_assets
 import flask_login
 import netaddr
@@ -30,7 +31,7 @@ import octoprint.server
 import octoprint.vendor.flask_principal as flask_principal
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
-from octoprint.util import DefaultOrderedDict, deprecated
+from octoprint.util import DefaultOrderedDict, deprecated, yaml
 from octoprint.util.json import JsonEncoding
 from octoprint.util.net import is_lan_address
 
@@ -591,6 +592,36 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
         return super().save_session(app, session, response)
 
 
+# ~~ jinja environment
+
+
+class PrefixAwareJinjaEnvironment(flask.templating.Environment):
+    def __init__(self, *args, **kwargs):
+        flask.templating.Environment.__init__(self, *args, **kwargs)
+        self.prefix_loader = None
+        self._cached_templates = {}
+
+    def join_path(self, template, parent):
+        if parent and "/" in parent:
+            prefix, _ = parent.split("/", 1)
+            if template in self._templates_for_prefix(prefix) and not template.startswith(
+                prefix + "/"
+            ):
+                return prefix + "/" + template
+
+        return template
+
+    def _templates_for_prefix(self, prefix):
+        if prefix in self._cached_templates:
+            return self._cached_templates[prefix]
+
+        templates = []
+        if prefix in self.prefix_loader.mapping:
+            templates = self.prefix_loader.mapping[prefix].list_templates()
+        self._cached_templates[prefix] = templates
+        return templates
+
+
 # ~~ passive login helper
 
 _cached_local_networks = None
@@ -1008,13 +1039,10 @@ class PreemptiveCache:
         return all_data
 
     def get_all_data(self):
-        import yaml
-
         cache_data = None
         with self._lock:
             try:
-                with open(self.cachefile) as f:
-                    cache_data = yaml.safe_load(f)
+                cache_data = yaml.load_from_file(path=self.cachefile)
             except OSError as e:
                 import errno
 
@@ -1037,20 +1065,12 @@ class PreemptiveCache:
         return cache_data.get(root, list())
 
     def set_all_data(self, data):
-        import yaml
-
         from octoprint.util import atomic_write
 
         with self._lock:
             try:
                 with atomic_write(self.cachefile, "wt", max_permissions=0o666) as handle:
-                    yaml.safe_dump(
-                        data,
-                        handle,
-                        default_flow_style=False,
-                        indent=2,
-                        allow_unicode=True,
-                    )
+                    yaml.save_to_file(data, file=handle, pretty=True)
             except Exception:
                 self._logger.exception(f"Error while writing {self.cachefile}")
 

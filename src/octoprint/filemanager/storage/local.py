@@ -12,7 +12,14 @@ from os import scandir, walk
 import pylru
 
 import octoprint.filemanager
-from octoprint.util import atomic_write, is_hidden_path, time_this, to_bytes, to_unicode
+from octoprint.util import (
+    atomic_write,
+    is_hidden_path,
+    time_this,
+    to_bytes,
+    to_unicode,
+    yaml,
+)
 from octoprint.util.files import sanitize_filename
 
 from . import Storage, StorageError
@@ -73,10 +80,7 @@ class LocalFileStorage(Storage):
         if os.path.exists(old_metadata_path):
             # load the old metadata file
             try:
-                with open(old_metadata_path, encoding="utf-8") as f:
-                    import yaml
-
-                    self._old_metadata = yaml.safe_load(f)
+                self._old_metadata = yaml.load_from_file(path=old_metadata_path)
             except Exception:
                 self._logger.exception("Error while loading old metadata file")
 
@@ -1474,8 +1478,6 @@ class LocalFileStorage(Storage):
         # we switched to json in 1.3.9 - if we still have yaml here, migrate it now
         import json
 
-        import yaml
-
         with self._get_persisted_metadata_lock(path):
             metadata_path_yaml = os.path.join(path, ".metadata.yaml")
             metadata_path_json = os.path.join(path, ".metadata.json")
@@ -1496,16 +1498,13 @@ class LocalFileStorage(Storage):
                     )
                 return
 
-            with open(metadata_path_yaml, encoding="utf-8") as f:
-                try:
-                    metadata = yaml.safe_load(f)
-                except Exception:
-                    self._logger.exception(
-                        "Error while reading .metadata.yaml from {path}".format(
-                            **locals()
-                        )
-                    )
-                    return
+            try:
+                metadata = yaml.load_from_file(path=metadata_path_yaml)
+            except Exception:
+                self._logger.exception(
+                    "Error while reading .metadata.yaml from {path}".format(**locals())
+                )
+                return
 
             if not isinstance(metadata, dict):
                 # looks invalid, ignore it

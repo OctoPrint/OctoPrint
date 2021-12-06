@@ -834,11 +834,11 @@ class PluginManager:
 
         processed_blacklist = []
         for entry in plugin_blacklist:
-            if isinstance(entry, tuple):
+            if isinstance(entry, (tuple, list)):
                 key, version = entry
                 try:
                     processed_blacklist.append(
-                        (key, pkg_resources.Requirement.parse(version))
+                        (key, pkg_resources.Requirement.parse(key + version))
                     )
                 except Exception:
                     self.logger.warning(
@@ -1324,7 +1324,7 @@ class PluginManager:
                 return entry_key == key and version in entry_version
             return False
 
-        return any(map(lambda entry: matches_plugin(entry), self.plugin_blacklist))
+        return any(map(matches_plugin, self.plugin_blacklist))
 
     def reload_plugins(
         self, startup=False, initialize_implementations=True, force_reload=None
@@ -2385,9 +2385,15 @@ class Plugin:
         pass
 
     def on_plugin_enabled(self):
+        """
+        Called by the plugin core when the plugin was enabled. Override this to react to the event.
+        """
         pass
 
     def on_plugin_disabled(self):
+        """
+        Called by the plugin core when the plugin was disabled. Override this to react to the event.
+        """
         pass
 
 

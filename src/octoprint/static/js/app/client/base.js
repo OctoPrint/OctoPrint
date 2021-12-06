@@ -426,5 +426,11 @@
         });
     };
 
+    OctoPrintClient.escapePath = function (path) {
+        return _.map(path.split("/"), function (p) {
+            return encodeURIComponent(p);
+        }).join("/");
+    };
+
     return OctoPrintClient;
 });

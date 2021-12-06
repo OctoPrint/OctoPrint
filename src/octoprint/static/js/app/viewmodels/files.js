@@ -117,7 +117,27 @@ $(function () {
         self.uploadFilename = ko.observable(undefined);
 
         self.allItems = ko.observable(undefined);
+
+        var optionsLocalStorageKey = "gcodeFiles.options";
+        self._toLocalStorage = function () {
+            saveToLocalStorage(optionsLocalStorageKey, {currentPath: self.currentPath()});
+        };
+
+        self._fromLocalStorage = function () {
+            var data = loadFromLocalStorage(optionsLocalStorageKey);
+            if (
+                data["currentPath"] !== undefined &&
+                self.settingsViewModel.feature_rememberFileFolder()
+            ) {
+                self.currentPath(data["currentPath"]);
+            }
+        };
+
         self.currentPath = ko.observable("");
+        self.currentPath.subscribe(function () {
+            self._toLocalStorage();
+        });
+
         self.uploadProgressText = ko.observable();
         self.uploadProgressPercentage = ko.observable();
 
@@ -232,6 +252,7 @@ $(function () {
             listHelperExclusiveFilters,
             0
         );
+        self.selectedFile = undefined;
 
         self.availableFiletypes = ko.pureComputed(function () {
             var mapping = {
@@ -311,34 +332,47 @@ $(function () {
             );
         });
 
-        self.printerState.filepath.subscribe(function (newValue) {
-            self.highlightFilename(newValue);
-        });
-
-        self.highlightCurrentFilename = function () {
-            self.highlightFilename(self.printerState.filepath());
+        self.highlightCurrentFile = function () {
+            self.highlightFile(self.selectedFile);
         };
 
-        self.highlightFilename = function (filename) {
-            if (filename === undefined || filename === null) {
+        self.highlightFile = function (file) {
+            if (!file || !file.origin || !file.path) {
                 self.listHelper.selectNone();
-            } else {
-                self.listHelper.selectItem(function (item) {
-                    if (item.type === "folder") {
-                        return _.startsWith(filename, item.path + "/");
-                    } else {
-                        return item.path === filename;
-                    }
-                });
+                return;
+            }
+
+            var result = self.listHelper.selectItem(function (item) {
+                if (item.origin !== file.origin) return false;
+
+                if (item.type === "folder") {
+                    return _.startsWith(file.path, item.path + "/");
+                } else {
+                    return item.path === file.path;
+                }
+            });
+            if (!result) {
+                if (log.getLevel() <= log.levels.DEBUG) {
+                    log.info(
+                        "Couldn't find file " +
+                            file.origin +
+                            ":" +
+                            file.path +
+                            " in current items, not selecting"
+                    );
+                }
+                self.listHelper.selectNone();
             }
         };
 
         self.fromCurrentData = function (data) {
             self._processStateData(data.state);
+            self._processJobData(data.job);
         };
 
         self.fromHistoryData = function (data) {
             self._processStateData(data.state);
+            self._processJobData(data.job);
         };
 
         self._processStateData = function (data) {
@@ -350,6 +384,21 @@ $(function () {
             self.isReady(data.flags.ready);
             self.isLoading(data.flags.loading);
             self.isSdReady(data.flags.sdReady);
+        };
+
+        self._processJobData = function (data) {
+            if (!data) return;
+
+            if (
+                self.selectedFile &&
+                self.file &&
+                self.selectedFile.origin === data.file.origin &&
+                self.selectedFile.path === data.file.path
+            )
+                return;
+
+            self.selectedFile = data.file;
+            self.highlightFile(data.file);
         };
 
         self._otherRequestInProgress = undefined;
@@ -512,7 +561,7 @@ $(function () {
                 self.totalSpace(response.total);
             }
 
-            self.highlightCurrentFilename();
+            self.highlightCurrentFile();
         };
 
         self.changeFolder = function (data) {
@@ -525,7 +574,7 @@ $(function () {
 
             self.currentPath(data.path);
             self.listHelper.updateItems(data.children);
-            self.highlightCurrentFilename();
+            self.highlightCurrentFile();
         };
 
         self.navigateUp = function () {
@@ -543,7 +592,7 @@ $(function () {
                 self.currentPath("");
                 self.listHelper.updateItems(self.allItems());
             }
-            self.highlightCurrentFilename();
+            self.highlightCurrentFile();
         };
 
         self.showAddFolderDialog = function () {
@@ -652,7 +701,9 @@ $(function () {
 
             if (
                 printAfterLoad &&
-                self.listHelper.isSelected(data) &&
+                self.listHelper.isSelectedByMatcher(function (item) {
+                    return item && item.origin === data.origin && item.path === data.path;
+                }) &&
                 self.enablePrint(data)
             ) {
                 // file was already selected, just start the print job
@@ -1248,6 +1299,7 @@ $(function () {
         self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
             self.updateButtons();
             self.requestData();
+            self._fromLocalStorage();
         };
 
         self.onStartup = function () {

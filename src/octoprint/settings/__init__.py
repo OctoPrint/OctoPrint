@@ -20,7 +20,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import copy
 import fnmatch
 import logging
 import os
@@ -29,15 +28,17 @@ import time
 from collections import ChainMap
 from collections.abc import KeysView
 
-import yaml
-import yaml.parser
+# noinspection PyCompatibilitys
+from yaml import YAMLError
 
 from octoprint.util import (
     CaseInsensitiveSet,
     atomic_write,
     deprecated,
     dict_merge,
+    fast_deepcopy,
     is_hidden_path,
+    yaml,
 )
 
 _APPNAME = "OctoPrint"
@@ -89,7 +90,7 @@ default_settings = {
         "port": None,
         "baudrate": None,
         "exclusive": True,
-        "lowLatency": True,
+        "lowLatency": False,
         "autoconnect": False,
         "log": False,
         "timeout": {
@@ -165,6 +166,7 @@ default_settings = {
         },
         "resendRatioThreshold": 10,
         "resendRatioStart": 100,
+        "ignoreEmptyPorts": False,
         # command specific flags
         "triggerOkForM29": True,
     },
@@ -236,6 +238,7 @@ default_settings = {
         "stream": None,
         "streamRatio": "16:9",
         "streamTimeout": 5,
+        "streamWebrtcIceServers": ["stun:stun.l.google.com:19302"],
         "snapshot": None,
         "snapshotTimeout": 5,
         "snapshotSslValidation": True,
@@ -271,6 +274,7 @@ default_settings = {
         "keyboardControl": True,
         "pollWatched": False,
         "modelSizeDetection": True,
+        "rememberFileFolder": False,
         "printStartConfirmation": False,
         "printCancelConfirmation": True,
         "uploadOverwriteConfirmation": True,
@@ -363,6 +367,7 @@ default_settings = {
                     "plugin_pluginmanager",
                     "plugin_softwareupdate",
                     "plugin_announcements",
+                    "plugin_eventmanager",
                     "plugin_backup",
                     "plugin_tracking",
                     "plugin_errortracking",
@@ -530,17 +535,16 @@ class DuplicateFolderPaths(InvalidSettings):
 
 
 class HierarchicalChainMap(ChainMap):
-    def deep_dict(self, root=None):
-        if root is None:
-            root = self
+    def deep_dict(self):
+        def deep_dict_inner(root):
+            return {
+                key: deep_dict_inner(self.__class__._get_next(key, root))
+                if isinstance(value, dict)
+                else value
+                for key, value in root.items()
+            }
 
-        result = {}
-        for key, value in root.items():
-            if isinstance(value, dict):
-                result[key] = self.deep_dict(root=self.__class__._get_next(key, root))
-            else:
-                result[key] = value
-        return result
+        return deep_dict_inner(self)
 
     def has_path(self, path, only_local=False, only_defaults=False):
         if only_defaults:
@@ -939,9 +943,7 @@ class Settings:
 
     @property
     def effective_yaml(self):
-        import yaml
-
-        return yaml.safe_dump(self.effective)
+        return yaml.dump(self.effective)
 
     @property
     def effective_hash(self):
@@ -957,9 +959,7 @@ class Settings:
 
     @property
     def config_yaml(self):
-        import yaml
-
-        return yaml.safe_dump(self._config)
+        return yaml.dump(self._config)
 
     @property
     def config_hash(self):
@@ -1011,10 +1011,10 @@ class Settings:
         if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
             with open(self._configfile, encoding="utf-8", errors="replace") as f:
                 try:
-                    self._config = yaml.safe_load(f)
+                    self._config = yaml.load_from_file(file=f)
                     self._mtime = self.last_modified
 
-                except yaml.YAMLError as e:
+                except YAMLError as e:
                     details = str(e)
 
                     if hasattr(e, "problem_mark"):
@@ -1078,8 +1078,7 @@ class Settings:
 
         if isinstance(overlay, str):
             if os.path.exists(overlay) and os.path.isfile(overlay):
-                with open(overlay, encoding="utf-8", errors="replace") as f:
-                    config = yaml.safe_load(f)
+                config = yaml.load_from_file(path=overlay)
         elif isinstance(overlay, dict):
             config = overlay
         else:
@@ -1100,7 +1099,7 @@ class Settings:
         assert isinstance(overlay, dict)
 
         if key is None:
-            overlay_yaml = yaml.safe_dump(overlay)
+            overlay_yaml = yaml.dump(overlay)
             import hashlib
 
             hash = hashlib.md5()
@@ -1179,13 +1178,7 @@ class Settings:
                 permissions=0o600,
                 max_permissions=0o666,
             ) as configFile:
-                yaml.safe_dump(
-                    self._config,
-                    configFile,
-                    default_flow_style=False,
-                    indent=2,
-                    allow_unicode=True,
-                )
+                yaml.save_to_file(self._config, file=configFile)
                 self._dirty = False
         except Exception:
             self._logger.exception("Error while saving config.yaml!")
@@ -1281,19 +1274,13 @@ class Settings:
                 except KeyError:
                     raise NoSuchSettingsPath()
 
-            if preprocessors is not None:
-                try:
-                    preprocessor = self._get_by_path(path, preprocessors)
-                except Exception:
-                    pass
-
-                if callable(preprocessor):
-                    value = preprocessor(value)
+            if callable(preprocessor):
+                value = preprocessor(value)
 
             if do_copy:
                 if isinstance(value, KeysView):
                     value = list(value)
-                value = copy.deepcopy(value)
+                value = fast_deepcopy(value)
 
             if asdict:
                 results[key] = value

@@ -123,6 +123,14 @@ class OctoPrintPlugin(Plugin):
             os.makedirs(self._data_folder)
         return self._data_folder
 
+    def on_plugin_pending_uninstall(self):
+        """
+        Called by the plugin manager when the plugin is pending uninstall. Override this to react to the event.
+
+        NOT called during plugin uninstalls triggered outside of OctoPrint!
+        """
+        pass
+
 
 class ReloadNeedingPlugin(Plugin):
     """
@@ -389,6 +397,10 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
     ``TemplatePlugin`` is a :class:`~octoprint.plugin.core.ReloadNeedingPlugin`.
     """
+
+    @property
+    def template_folder_key(self):
+        return f"plugin_{self._identifier}"
 
     def get_template_configs(self):
         """

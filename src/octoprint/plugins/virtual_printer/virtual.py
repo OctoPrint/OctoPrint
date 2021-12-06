@@ -165,6 +165,8 @@ class VirtualPrinter:
 
         self._capabilities = self._settings.get(["capabilities"], merged=True)
 
+        self._locked = self._settings.get_boolean(["locked"])
+
         self._temperature_reporter = None
         self._sdstatus_reporter = None
         self._pos_reporter = None
@@ -185,6 +187,7 @@ class VirtualPrinter:
         self._calculate_resend_every_n(self._settings.get_int(["resend_ratio"]))
 
         self._dont_answer = False
+        self._broken_klipper_connection = False
 
         self._debug_drop_connection = False
 
@@ -274,6 +277,7 @@ class VirtualPrinter:
             self._sleepAfter.clear()
 
             self._dont_answer = False
+            self._broken_klipper_connection = False
 
             self._debug_drop_connection = False
 
@@ -298,6 +302,8 @@ class VirtualPrinter:
             if self._settings.get_boolean(["simulateReset"]):
                 for item in self._settings.get(["resetLines"]):
                     self._send(item + "\n")
+
+            self._locked = self._settings.get_boolean(["locked"])
 
     @property
     def timeout(self):
@@ -493,8 +499,18 @@ class VirtualPrinter:
             # actual command handling
             command_match = VirtualPrinter.command_regex.match(data)
             if command_match is not None:
+                if self._broken_klipper_connection:
+                    self._send("!! Lost communication with MCU 'mcu'")
+                    self._sendOk()
+                    continue
+
                 command = command_match.group(0)
                 letter = command_match.group(1)
+
+                if self._locked and command != "M511":
+                    self._send("echo:Printer locked! (Unlock with M511 or LCD)")
+                    self._sendOk()
+                    continue
 
                 try:
                     # if we have a method _gcode_G, _gcode_M or _gcode_T, execute that first
@@ -844,6 +860,22 @@ class VirtualPrinter:
                 self._send("busy:processing")
         else:
             time.sleep(timeout)
+
+    # Passcode Feature - lock with M510, unlock with M511 P<passcode>.
+    # https://marlinfw.org/docs/gcode/M510.html / https://marlinfw.org/docs/gcode/M511.html
+
+    def _gcode_M510(self, data):
+        self._locked = True
+
+    def _gcode_M511(self, data):
+        if self._locked:
+            matchP = re.search(r"P([0-9]+)", data)
+            if matchP:
+                passcode = matchP.group(1)
+                if passcode == self._settings.get(["passcode"]):
+                    self._locked = False
+                else:
+                    self._send("Incorrect passcode")
 
     # EEPROM management commands
 
@@ -1212,6 +1244,9 @@ class VirtualPrinter:
             resend_ratio <int:percentage>
             | Sets the resend ratio to the given percentage, simulating noisy lines.
             | Set to 0 to disable noise simulation.
+            toggle_klipper_connection
+            | Toggles the Klipper connection state. If disabled, the printer will
+            | respond to all commands with "!! Lost communication with MCU 'mcu'"
 
             # Reply Timing / Sleeping
 
@@ -1251,6 +1286,8 @@ class VirtualPrinter:
             self._send("// action:disconnect")
         elif data == "dont_answer":
             self._dont_answer = True
+        elif data == "toggle_klipper_connection":
+            self._broken_klipper_connection = not self._broken_klipper_connection
         elif data == "trigger_resend_lineno":
             self._prepared_errors.append(
                 lambda cur, last, ln: self._triggerResend(expected=last, actual=last + 1)
@@ -1390,6 +1427,8 @@ class VirtualPrinter:
             dosname = get_dos_filename(
                 entry.name, existing_filenames=list(result.keys())
             ).lower()
+            if entry.name.startswith("."):
+                dosname = "." + dosname
             result[dosname] = {
                 "name": entry.name,
                 "path": entry.path,

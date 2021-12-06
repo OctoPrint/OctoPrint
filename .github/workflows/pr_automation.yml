@@ -1,7 +1,8 @@
 name: "Pull Request Automation"
 on:
   pull_request_target:
-    types: ["opened", "synchronize", "reopened", "edited", "labeled", "unlabeled"]
+    #types: ["opened", "synchronize", "reopened", "edited", "labeled", "unlabeled"]
+    types: ["opened"]
 
 jobs:
   pr-automation:
@@ -10,6 +11,34 @@ jobs:
       - uses: actions/labeler@v3
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // fetch a fresh set of labels, they might have changed earlier
+            const issueLabels = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            let labels = issueLabels.data.map(label => label.name);
+            let setLabels = false;
+
+            let target = context.payload.pull_request.base.ref;
+            if (["maintenance", "devel", "staging/maintenance", "staging/devel", "master"].includes(target)) {
+              labels.push(`targets ${target}`);
+              setLabels = true;
+            }
+
+            if (setLabels) {
+              github.rest.issues.setLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: labels
+              })
+            }
 
       - uses: OctoPrint/actions/pr-validation@main
         with:
