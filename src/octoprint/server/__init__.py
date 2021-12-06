@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import atexit
 import base64
+import functools
 import logging
 import logging.config
 import mimetypes
@@ -11,6 +12,7 @@ import os
 import re
 import signal
 import sys
+import time
 import uuid  # noqa: F401
 from collections import OrderedDict, defaultdict
 
@@ -1403,7 +1405,7 @@ class Server:
             g.locale = self._get_locale()
 
             # used for performance measurement
-            g.start_time = octoprint.util.monotonic_time()
+            g.start_time = time.monotonic()
 
             if self._debug and "perfprofile" in request.args:
                 try:
@@ -1429,7 +1431,7 @@ class Server:
                 return make_response(output_html)
 
             if hasattr(g, "start_time"):
-                end_time = octoprint.util.monotonic_time()
+                end_time = time.monotonic()
                 duration_ms = int((end_time - g.start_time) * 1000)
                 response.headers.add("Server-Timing", f"app;dur={duration_ms}")
 
@@ -1777,61 +1779,98 @@ class Server:
         from octoprint.server.api import api
         from octoprint.server.util.flask import make_api_error
 
-        blueprints = OrderedDict()
-        blueprints["/api"] = api
-        json_errors = ["/api"]
+        blueprints = [api]
+        api_endpoints = ["/api"]
+        registrators = [
+            functools.partial(app.register_blueprint, api, url_prefix="/api"),
+        ]
 
         # also register any blueprints defined in BlueprintPlugins
         (
-            blueprint_from_plugins,
-            api_prefixes_from_plugins,
+            blueprints_from_plugins,
+            api_endpoints_from_plugins,
+            registrators_from_plugins,
         ) = self._prepare_blueprint_plugins()
-        blueprints.update(blueprint_from_plugins)
-        json_errors += api_prefixes_from_plugins
+        blueprints += blueprints_from_plugins
+        api_endpoints += api_endpoints_from_plugins
+        registrators += registrators_from_plugins
 
         # and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
-        blueprints.update(self._prepare_asset_plugins())
+        (
+            blueprints_from_assets,
+            registrators_from_assets,
+        ) = self._prepare_asset_plugins()
+        blueprints += blueprints_from_assets
+        registrators += registrators_from_assets
 
         # make sure all before/after_request hook results are attached as well
-        self._add_plugin_request_handlers_to_blueprints(*blueprints.values())
+        self._add_plugin_request_handlers_to_blueprints(*blueprints)
 
         # register everything with the system
-        for url_prefix, blueprint in blueprints.items():
-            app.register_blueprint(blueprint, url_prefix=url_prefix)
+        for registrator in registrators:
+            registrator()
 
         @app.errorhandler(HTTPException)
         def _handle_api_error(ex):
-            if any(map(lambda x: request.path.startswith(x), json_errors)):
+            if any(map(lambda x: request.path.startswith(x), api_endpoints)):
                 return make_api_error(ex.description, ex.code)
             else:
                 return ex
 
     def _prepare_blueprint_plugins(self):
-        blueprints = OrderedDict()
-        api_prefixes = []
+        def register_plugin_blueprint(plugin, blueprint, url_prefix):
+            try:
+                app.register_blueprint(
+                    blueprint, url_prefix=url_prefix, name_prefix="plugin"
+                )
+                self._logger.debug(
+                    f"Registered API of plugin {plugin} under URL prefix {url_prefix}"
+                )
+            except Exception:
+                self._logger.exception(
+                    f"Error while registering blueprint of plugin {plugin}, ignoring it",
+                    extra={"plugin": plugin},
+                )
+
+        blueprints = []
+        api_endpoints = []
+        registrators = []
 
         blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(
             octoprint.plugin.BlueprintPlugin
         )
         for plugin in blueprint_plugins:
-            try:
-                blueprint, prefix = self._prepare_blueprint_plugin(plugin)
-                api_prefixes += map(
-                    lambda x: prefix + x, plugin.get_blueprint_api_prefixes()
-                )
-                blueprints[prefix] = blueprint
-            except Exception:
-                self._logger.exception(
-                    "Error while registering blueprint of "
-                    "plugin {}, ignoring it".format(plugin._identifier),
-                    extra={"plugin": plugin._identifier},
-                )
-                continue
+            blueprint, prefix = self._prepare_blueprint_plugin(plugin)
 
-        return blueprints, api_prefixes
+            blueprints.append(blueprint)
+            api_endpoints += map(
+                lambda x: prefix + x, plugin.get_blueprint_api_prefixes()
+            )
+            registrators.append(
+                functools.partial(
+                    register_plugin_blueprint, plugin._identifier, blueprint, prefix
+                )
+            )
+
+        return blueprints, api_endpoints, registrators
 
     def _prepare_asset_plugins(self):
-        blueprints = OrderedDict()
+        def register_asset_blueprint(plugin, blueprint, url_prefix):
+            try:
+                app.register_blueprint(
+                    blueprint, url_prefix=url_prefix, name_prefix="plugin"
+                )
+                self._logger.debug(
+                    f"Registered assets of plugin {plugin} under URL prefix {url_prefix}"
+                )
+            except Exception:
+                self._logger.exception(
+                    f"Error while registering assets of plugin {plugin}, ignoring it",
+                    extra={"plugin": plugin},
+                )
+
+        blueprints = []
+        registrators = []
 
         asset_plugins = octoprint.plugin.plugin_manager().get_implementations(
             octoprint.plugin.AssetPlugin
@@ -1839,18 +1878,16 @@ class Server:
         for plugin in asset_plugins:
             if isinstance(plugin, octoprint.plugin.BlueprintPlugin):
                 continue
-            try:
-                blueprint, prefix = self._prepare_asset_plugin(plugin)
-                blueprints[prefix] = blueprint
-            except Exception:
-                self._logger.exception(
-                    "Error while registering assets of plugin "
-                    "{}, ignoring it".format(plugin._identifier),
-                    extra={"plugin": plugin._identifier},
-                )
-                continue
+            blueprint, prefix = self._prepare_asset_plugin(plugin)
 
-        return blueprints
+            blueprints.append(blueprint)
+            registrators.append(
+                functools.partial(
+                    register_asset_blueprint, plugin._identifier, blueprint, prefix
+                )
+            )
+
+        return blueprints, registrators
 
     def _prepare_blueprint_plugin(self, plugin):
         name = plugin._identifier
@@ -1866,32 +1903,13 @@ class Server:
             blueprint.before_request(requireLoginRequestHandler)
 
         url_prefix = f"/plugin/{name}"
-        app.register_blueprint(blueprint, url_prefix=url_prefix)
-
-        if self._logger:
-            self._logger.debug(
-                "Registered API of plugin {name} under URL prefix {url_prefix}".format(
-                    name=name, url_prefix=url_prefix
-                )
-            )
-
         return blueprint, url_prefix
 
     def _prepare_asset_plugin(self, plugin):
         name = plugin._identifier
 
         url_prefix = f"/plugin/{name}"
-        blueprint = Blueprint(
-            "plugin." + name, name, static_folder=plugin.get_asset_folder()
-        )
-        app.register_blueprint(blueprint, url_prefix=url_prefix)
-
-        if self._logger:
-            self._logger.debug(
-                "Registered assets of plugin {name} under URL prefix {url_prefix}".format(
-                    name=name, url_prefix=url_prefix
-                )
-            )
+        blueprint = Blueprint(name, name, static_folder=plugin.get_asset_folder())
 
         return blueprint, url_prefix
 

@@ -33,13 +33,10 @@ INSTALL_REQUIRES = [
     # anything below this should be checked on releases for new versions
     "tornado>=6.0.4,<7",
     "markdown>=3.2.2,<4",
-    "flask>=1.1.2,<2",
-    "Jinja2>=2.11.2,<3",
+    "flask>=2,<3",
     "Flask-Login>=0.5,<0.6",  # flask-login doesn't use semver & breaks stuff on minor version increases
     "Flask-Babel>=2.0,<3",
     "Flask-Assets>=2.0,<3",
-    "werkzeug>=2.0.1,<3",
-    "itsdangerous>=2.0.1,<3",
     "cachelib>=0.2,<0.3",
     "PyYAML>=5.4.1,<6",
     "pyserial>=3.4,<4",
