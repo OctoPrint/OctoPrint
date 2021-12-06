@@ -365,6 +365,43 @@ def has_permissions(*permissions):
     return all(map(lambda p: p.can(), permissions))
 
 
+def require_login_with(permissions=None, user_id=None):
+    """
+    Requires a login with the given permissions and/or user id.
+
+    Args:
+        permissions: list of all permissions required to pass the check
+        user_id: required user to pass the check
+
+    Returns: a flask redirect response to return if a login is required, or None
+    """
+
+    from octoprint.server import current_user, userManager
+
+    login_kwargs = {"redirect": _flask.request.script_root + _flask.request.full_path}
+    if (
+        _flask.request.headers.get("X-Preemptive-Recording", "no") == "no"
+        and userManager.has_been_customized()
+    ):
+        requires_login = False
+
+        if current_user.is_anonymous:
+            requires_login = True
+
+        if permissions is not None and not has_permissions(*permissions):
+            requires_login = True
+            login_kwargs["permissions"] = ",".join([x.key for x in permissions])
+
+        if user_id is not None and current_user.get_id() != user_id:
+            requires_login = True
+            login_kwargs["user_id"] = user_id
+
+        if requires_login:
+            return _flask.redirect(_flask.url_for("login", **login_kwargs))
+
+    return None
+
+
 def require_login(*permissions):
     """
     Returns a redirect response to the login view if the permission requirements are

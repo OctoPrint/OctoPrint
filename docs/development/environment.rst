@@ -134,7 +134,7 @@ Open the Git Bash you just installed and in that:
    cd /c/Devel
    git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
-   virtualenv --python=C:\Python38\python.exe venv
+   virtualenv --python=C:/Python3/python.exe venv3
    source ./venv/Scripts/activate
    python -m pip install --upgrade pip
    python -m pip install -e '.[develop,plugins,docs]'
@@ -394,7 +394,7 @@ Visual Studio Code (vscode)
                }
            ]
          }
-  
+
   In the terminal install the python extension by running this command:
 
     .. code-block:: bash
@@ -414,7 +414,7 @@ Visual Studio Code (vscode)
   * Your terminal inside vscode uses the virtual python environment
 
   * Saving a file will run an auto formatter and import sort
-  
+
   * ``Ctrl+Shift+B`` can be used to run the ``build docs`` task to rebuild the documentation
 
-  
+

@@ -145,6 +145,7 @@ def getSettings():
             "keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
             "pollWatched": s.getBoolean(["feature", "pollWatched"]),
             "modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"]),
+            "rememberFileFolder": s.getBoolean(["feature", "rememberFileFolder"]),
             "printStartConfirmation": s.getBoolean(["feature", "printStartConfirmation"]),
             "printCancelConfirmation": s.getBoolean(
                 ["feature", "printCancelConfirmation"]
@@ -258,6 +259,7 @@ def getSettings():
             "capExtendedM20": s.getBoolean(["serial", "capabilities", "extended_m20"]),
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
+            "ignoreEmptyPorts": s.getBoolean(["serial", "ignoreEmptyPorts"]),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -449,9 +451,9 @@ def _saveSettings(data):
             for folder in FOLDER_TYPES:
                 future[folder] = s.getBaseFolder(folder)
                 if folder in folders:
-                    future[folder] = data["folder"][folder]
+                    future[folder] = folders[folder]
 
-            for folder in data["folder"]:
+            for folder in folders:
                 if folder not in FOLDER_TYPES:
                     continue
                 for other_folder in FOLDER_TYPES:
@@ -615,6 +617,11 @@ def _saveSettings(data):
         if "modelSizeDetection" in data["feature"]:
             s.setBoolean(
                 ["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"]
+            )
+        if "rememberFileFolder" in data["feature"]:
+            s.setBoolean(
+                ["feature", "rememberFileFolder"],
+                data["feature"]["rememberFileFolder"],
             )
         if "printStartConfirmation" in data["feature"]:
             s.setBoolean(
@@ -935,6 +942,10 @@ def _saveSettings(data):
             )
         if "resendRatioStart" in data["serial"]:
             s.setInt(["serial", "resendRatioStart"], data["serial"]["resendRatioStart"])
+        if "ignoreEmptyPorts" in data["serial"]:
+            s.setBoolean(
+                ["serial", "ignoreEmptyPorts"], data["serial"]["ignoreEmptyPorts"]
+            )
 
         oldLog = s.getBoolean(["serial", "log"])
         if "log" in data["serial"]:

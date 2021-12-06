@@ -38,7 +38,7 @@ from octoprint.server import (  # noqa: F401
     preemptiveCache,
     userManager,
 )
-from octoprint.server.util import has_permissions, require_login
+from octoprint.server.util import has_permissions, require_login_with
 from octoprint.settings import settings
 from octoprint.util import sv, to_bytes, to_unicode
 from octoprint.util.version import get_python_version_string
@@ -184,13 +184,18 @@ def login():
     if not permissions:
         permissions = [Permissions.STATUS, Permissions.SETTINGS_READ]
 
-    if has_permissions(*permissions):
+    user_id = request.args.get("user_id", "")
+
+    if (not user_id or current_user.get_id() == user_id) and has_permissions(
+        *permissions
+    ):
         return redirect(redirect_url)
 
     render_kwargs = {
         "theming": [],
         "redirect_url": redirect_url,
         "permission_names": map(lambda x: x.get_name(), permissions),
+        "user_id": user_id,
         "logged_in": not current_user.is_anonymous,
     }
 
@@ -211,7 +216,7 @@ def login():
 @app.route("/recovery")
 @app.route("/recovery/")
 def recovery():
-    response = require_login(Permissions.ADMIN)
+    response = require_login_with(permissions=[Permissions.ADMIN])
     if response:
         return response
 
@@ -623,7 +628,7 @@ def index():
                 plugin.implementation, octoprint.plugin.UiPlugin
             ):
                 permissions = plugin.implementation.get_ui_permissions()
-                response = require_login(*permissions)
+                response = require_login_with(permissions=permissions)
                 if not response:
                     response = plugin_view(plugin.implementation)
                     if _logger.isEnabledFor(logging.DEBUG) and isinstance(
@@ -633,7 +638,7 @@ def index():
                             "X-Ui-Plugin"
                         ] = plugin.implementation._identifier
         else:
-            response = require_login(*default_permissions)
+            response = require_login_with(permissions=default_permissions)
             if not response:
                 response = default_view()
                 if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
@@ -649,7 +654,7 @@ def index():
                 if plugin.will_handle_ui(request):
                     # plugin claims responsibility, let it render the UI
                     permissions = plugin.get_ui_permissions()
-                    response = require_login(*permissions)
+                    response = require_login_with(permissions=permissions)
                     if not response:
                         response = plugin_view(plugin)
                         if response is not None:
@@ -672,7 +677,7 @@ def index():
                     extra={"plugin": plugin._identifier},
                 )
         else:
-            response = require_login(*default_permissions)
+            response = require_login_with(permissions=default_permissions)
             if not response:
                 response = default_view()
                 if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):

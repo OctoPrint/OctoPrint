@@ -1663,6 +1663,10 @@ class MachineCom:
             # we aren't even printing, nothing to cancel...
             return
 
+        if self.isCancelling():
+            # we are already cancelling
+            return
+
         if "source:plugin" in tags:
             for tag in tags:
                 if tag.startswith("plugin:"):
@@ -4575,9 +4579,9 @@ class MachineCom:
 
         # send it through the phase specific handlers provided by plugins
         for name, hook in self._gcode_hooks[phase].items():
-            new_results = []
-            for command, command_type, gcode, subcode, tags in results:
-                try:
+            try:
+                new_results = []
+                for command, command_type, gcode, subcode, tags in results:
                     hook_results = hook(
                         self,
                         phase,
@@ -4587,17 +4591,7 @@ class MachineCom:
                         subcode=subcode,
                         tags=tags,
                     )
-                except Exception:
-                    self._logger.exception(
-                        "Error while processing hook {name} for phase "
-                        "{phase} and command {command}:".format(
-                            name=name,
-                            phase=phase,
-                            command=to_unicode(command, errors="replace"),
-                        ),
-                        extra={"plugin": name},
-                    )
-                else:
+
                     normalized = _normalize_command_handler_result(
                         command,
                         command_type,
@@ -4629,10 +4623,23 @@ class MachineCom:
                         new_results.append((command, command_type, gcode, subcode, tags))
                     else:
                         new_results += normalized
-            if not new_results:
-                # hook handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
-                return []
-            results = new_results
+
+            except Exception:
+                self._logger.exception(
+                    "Error while processing hook {name} for phase "
+                    "{phase}:".format(
+                        name=name,
+                        phase=phase,
+                    ),
+                    extra={"plugin": name},
+                )
+
+            else:
+                if not new_results:
+                    # hook handler returned None or empty list for all commands, so
+                    # we'll stop here and return a full out empty result
+                    return []
+                results = new_results
 
         # if it's a gcode command send it through the specific handler if it exists
         new_results = []
@@ -5373,6 +5380,7 @@ class MachineCom:
                     },
                 )
                 return (None,)
+
             if gcode in self._ignored_commands:
                 message = "Not sending {} to printer, it's configured as an ignored command".format(
                     gcode
@@ -5392,7 +5400,11 @@ class MachineCom:
     def _command_phase_sending(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
-        if gcode is not None and gcode in self._long_running_commands:
+        if (
+            gcode is not None
+            and gcode in self._long_running_commands
+            or cmd in self._long_running_commands
+        ):
             self._long_running_command = True
 
 

@@ -28,7 +28,7 @@ from collections.abc import Iterable, MutableMapping, Set
 from functools import wraps
 from typing import Union
 
-from immutabledict import immutabledict
+from frozendict import frozendict
 
 from octoprint import UMASK
 from octoprint.util.connectivity import ConnectivityChecker  # noqa: F401
@@ -1163,18 +1163,23 @@ glob_escape = deprecated(
 )(glob.escape)
 
 
-def thaw_immutabledict(obj):
-    if not isinstance(obj, (dict, immutabledict)):
-        raise ValueError("obj must be a dict or immutabledict instance")
+def thaw_frozendict(obj):
+    if not isinstance(obj, (dict, frozendict)):
+        raise ValueError("obj must be a dict or frozendict instance")
 
     # only true love can thaw a frozen dict
     letitgo = {}
     for key, value in obj.items():
-        if isinstance(value, (dict, immutabledict)):
-            letitgo[key] = thaw_immutabledict(value)
+        if isinstance(value, (dict, frozendict)):
+            letitgo[key] = thaw_frozendict(value)
         else:
             letitgo[key] = copy.deepcopy(value)
     return letitgo
+
+
+thaw_immutabledict = deprecated(
+    "thaw_immutabledict has been renamed back to thaw_frozendict", since="1.8.0"
+)(thaw_frozendict)
 
 
 def utmify(link, source=None, medium=None, name=None, term=None, content=None):

@@ -109,6 +109,11 @@ jobs:
               issue_number: context.issue.number,
             })
             const comment = comments.data.find(c => c.user.login === "github-actions[bot]" && c.body.includes(marker));
+            if (comment) {
+              console.log("Found comment, id=" + comment.id);
+            } else {
+              console.log("No comment found");
+            }
 
             if (!labels.includes("triage") || labels.includes("approved")) {
               console.log("Deleting comment if it exists...");
@@ -127,18 +132,18 @@ jobs:
             if (!found) {
               console.log("No bundle found, posting/updating reminder");
               const text = REMINDER + "\n" + marker;
-              if (comment && comment.body !== text) {
-                await github.rest.issues.updateComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: comment.id,
-                  body: text
-                });
-              } else {
+              if (!comment) {
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: context.issue.number,
+                  body: text
+                });
+              } else if (comment.body !== text) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: comment.id,
                   body: text
                 });
               }

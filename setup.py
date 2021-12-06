@@ -52,17 +52,16 @@ INSTALL_REQUIRES = [
     "pkginfo>=1.5.0.1,<2",
     "requests>=2.23.0,<3",
     "semantic_version>=2.8.5,<3",
-    "psutil>=5.7,<6",
-    "Click>=7.1.2,<8",
+    "psutil>=5.8,<6",
+    "Click>=8.0.3,<9",
     "feedparser>=6.0.8,<7",
     "future>=0.18.2,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
-    "websocket-client>=0.57,<1",
+    "websocket-client>=1.2.1,<2",
     "wrapt>=1.12.1,<2",
-    "emoji>=0.5.4,<1",
-    "immutabledict>=2.1,<3",
-    "sentry-sdk>=0.15.1,<1",
+    "emoji>=1.4.2,<2",
+    "sentry-sdk>=1.5.0,<2",
     "filetype>=1.0.7,<2",
-    "zeroconf>=0.33,<0.34",
+    "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
     "zipstream-ng>=1.3.1,<2.0.0",
     "pathvalidate>=2.4.1,<3",
     "colorlog>=5.0.1,<6",
@@ -80,7 +79,8 @@ INSTALL_REQUIRES_OSX = [
 EXTRA_REQUIRES = {
     "develop": [
         # Testing dependencies
-        "pytest>=5.4.3,<6",
+        "mock>=4,<5",
+        "pytest>=6.2.5,<7",
         "pytest-doctest-custom>=1.0.0,<2",
         "ddt",
         # pre-commit
@@ -230,6 +230,8 @@ def params():
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: JavaScript",
         "Topic :: Printing",

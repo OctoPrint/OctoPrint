@@ -166,6 +166,7 @@ default_settings = {
         },
         "resendRatioThreshold": 10,
         "resendRatioStart": 100,
+        "ignoreEmptyPorts": False,
         # command specific flags
         "triggerOkForM29": True,
     },
@@ -267,6 +268,7 @@ default_settings = {
         "keyboardControl": True,
         "pollWatched": False,
         "modelSizeDetection": True,
+        "rememberFileFolder": False,
         "printStartConfirmation": False,
         "printCancelConfirmation": True,
         "uploadOverwriteConfirmation": True,

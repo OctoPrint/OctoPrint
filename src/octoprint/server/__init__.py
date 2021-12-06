@@ -300,6 +300,9 @@ class Server:
         debug = self._debug
         safe_mode = self._safe_mode
 
+        if safe_mode:
+            self._log_safe_mode_start(safe_mode)
+
         if self._v6_only and not octoprint.util.net.HAS_V6:
             raise RuntimeError(
                 "IPv6 only mode configured but system doesn't support IPv6"
@@ -334,6 +337,7 @@ class Server:
         # monkey patch/fix some stuff
         util.tornado.fix_json_encode()
         util.tornado.fix_websocket_check_origin()
+        util.tornado.enable_per_message_deflate_extension()
         util.flask.fix_flask_jsonify()
 
         cli_key = self._setup_cli_key()
@@ -1269,6 +1273,16 @@ class Server:
                 "Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!"
             )
             self._logger.exception("Stacktrace follows:")
+
+    def _log_safe_mode_start(self, self_mode):
+        self_mode_file = os.path.join(
+            self._settings.getBaseFolder("data"), "last_safe_mode"
+        )
+        try:
+            with open(self_mode_file, "w+", encoding="utf-8") as f:
+                f.write(self_mode)
+        except Exception as ex:
+            self._logger.warn(f"Could not write safe mode file {self_mode_file}: {ex}")
 
     def _create_socket_connection(self, session):
         global printer, fileManager, analysisQueue, userManager, eventManager, connectivityChecker

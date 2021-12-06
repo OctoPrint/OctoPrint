@@ -1,0 +1,77 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OctoPrint App Authentication</title>
+
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
+    <link rel="mask-icon" href="{{ url_for('static', filename='img/mask.svg') }}" color="#56BE37">
+    <link rel="mask-icon-theme" href="{{ url_for('static', filename='img/mask-theme.svg') }}" color="#56BE37">
+    <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
+
+    <!-- le CSS -->
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-responsive.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/font-awesome-5.15.1/css/all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/font-awesome-5.15.1/css/v4-shims.css') }}">
+    <link rel="stylesheet" href="{{ url_for('plugin.appkeys.static', filename='css/authdialog.css') }}">
+
+    {% for url in theming %}
+        <link rel="stylesheet" href="{{ url }}">
+    {% endfor %}
+
+    <!-- le javascript -->
+
+    <script>
+        var BASE_URL = "{{ url_for('index') }}";
+        var USER_TOKEN = "{{ user_token|e }}";
+        var DECISION_URL = "{{ url_for('plugin.appkeys.handle_decision', user_token=user_token) }}";
+        var REDIRECT_URL = "{{ redirect_url|e }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/lib/jquery/jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lib/sockjs.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lib/bootstrap/bootstrap.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lib/lodash.min.js') }}"></script>
+
+    {% assets "js_client" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script src="{{ url_for('plugin.appkeys.static', filename='js/authdialog.js') }}"></script>
+</head>
+<body>
+    <div class="container">
+        <form id="auth-choice" class="form-auth">
+            <h2 class="form-auth-heading" data-test-id="login-title">{{ _('Access Request') }}</h2>
+
+            <p>{% trans %}Hello {{ user }}!{% endtrans %}</p>
+            <p>{{ request_text }}</p>
+            <p>{% trans %}
+                Do you want to allow access to this application with your user account?
+            {% endtrans %}</p>
+
+            <button class="btn btn-block btn-primary" id="auth-grant" data-test-id="auth-grant" type="submit">{{ _('Allow') }}</button>
+            <button class="btn btn-block" id="auth-reject" data-test-id="auth-reject" type="submit">{{ _('Deny') }}</button>
+        </form>
+
+        <div id="auth-done" class="hide">
+            <p>{% trans %}
+                The access request has been processed. You may now close this tab.
+            {% endtrans %}</p>
+        </div>
+
+        <div id="auth-error" class="hide">
+            <p class="text-error">{% trans %}
+                Something went wrong while processing the access request. You may now close this tab.
+            {% endtrans %}</p>
+        </div>
+
+        <div id="auth-offline" class="hide">
+            <p class="text-error">{% trans %}
+                The server has gone offline. You may now close this tab.
+            {% endtrans %}</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -82,6 +82,10 @@ $(function () {
         });
 
         self.enableUpdateAll = ko.pureComputed(function () {
+            return self.enableUpdate() && self.availableAndPossible().length > 0;
+        });
+
+        self.enableUpdateEnabled = ko.pureComputed(function () {
             return (
                 self.enableUpdate() && self.availableAndPossibleAndEnabled().length > 0
             );
@@ -368,6 +372,17 @@ $(function () {
                 OctoPrint.plugins.softwareupdate.configure(patch).done(function () {
                     self.performCheck(false, false, false, [key]);
                 });
+            };
+
+            information.notificationIconTitle = function () {
+                var update = information.updateAvailable
+                    ? gettext("Update available")
+                    : gettext("Up-to-date");
+                var notifications = information.disabled
+                    ? gettext("notifications are muted")
+                    : gettext("notifications are enabled");
+
+                return update + " (" + notifications + ")";
             };
 
             return information;

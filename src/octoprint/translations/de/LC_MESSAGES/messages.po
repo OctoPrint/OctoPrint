@@ -3367,7 +3367,7 @@ msgid ""
 "will already\n"
 "        take care of that. Otherwise please take a look at the\n"
 "        <a "
-"href=\"http://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html\""
+"href=\"https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html\""
 " target=\"_blank\">Documentation</a>.\n"
 "    </p>\n"
 msgstr ""
@@ -3379,7 +3379,7 @@ msgstr ""
 "Checkoutverzeichnis auf einen anderen Branch gewechselt hast, dann "
 "<strong>wechsle das Tracking einfach auf \"Commit\"</strong>. Ansonsten "
 "wirf einen Blick in die <a "
-"href=\"http://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html\""
+"href=\"https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html\""
 " target=\"_blank\">Dokumentation</a>.  </p>\n"
 
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:18
@@ -7881,7 +7881,7 @@ msgstr "Gedruckt"
 
 #: src/octoprint/templates/sidebar/state.jinja2:29
 msgid "Restart"
-msgstr "Restart"
+msgstr "Neustart"
 
 #: src/octoprint/templates/sidebar/state.jinja2:29
 msgid "Print"
