@@ -134,9 +134,7 @@ class BlueprintPluginTest(unittest.TestCase):
 
         self.assertEqual(result, blueprint)
 
-        MockBlueprint.assert_called_once_with(
-            "plugin.myplugin", "myplugin", **expected_kwargs
-        )
+        MockBlueprint.assert_called_once_with("myplugin", "myplugin", **expected_kwargs)
         blueprint.add_url_rule.assert_called_once_with(
             "/some/path", "route_method", view_func=plugin.route_method, methods=["GET"]
         )
