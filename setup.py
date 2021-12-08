@@ -58,6 +58,7 @@ INSTALL_REQUIRES = [
     "emoji>=1.4.2,<2",
     "sentry-sdk>=1.5.0,<2",
     "filetype>=1.0.7,<2",
+    "frozendict>=2.0,<3",
     "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
     "zipstream-ng>=1.3.1,<2.0.0",
     "pathvalidate>=2.4.1,<3",
