@@ -130,14 +130,13 @@
                 </tbody>
             </table>
             <small class="muted">
-                <i class="far fa-bell"></i> = {{ _('Update notifications enabled') }},
-                <i class="far fa-bell-slash"></i> = {{ _('Update notifications muted') }},
-                {{ _('click to toggle') }}.
-                {% trans %}
-                    "Update all" will update all items for which updates are availalbe &
-                    update notifications are enabled as well, "Update all available" will
-                    update all items for which updates are available regardless of update
-                    notifications being enabled or muted.
+                {% trans enabled_icon="<i class=\"far fa-bell\"></i>", muted_icon="<i class=\"far fa-bell-slash\"></i>" %}
+                    {{ enabled_icon }} = Update notifications enabled, {{ muted_icon }} =
+                    Update notifications muted, click to toggle. "Update all" will update
+                    all items for which updates are available & update notifications are
+                    enabled as well, "Update all available" will update all items for
+                    which updates are available regardless of update notifications being
+                    enabled or muted.
                 {% endtrans %}
             </small>
         </div>
