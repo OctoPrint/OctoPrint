@@ -92,6 +92,7 @@ INSTALL_REQUIRES_PYTHON3 = [
     "colorlog>=5.0.1,<6",
     # vendor bundled dependencies
     "unidecode",  # dependency of awesome-slugify, leave w/o range to not cause dependency hell w/ Octolapse deps
+    "op_hierarchical_chainmap @ git+https://github.com/flaviut/op-hierarchical-chainmap.git@1e61f5e941552838393525032f59de7085936485#egg=op_hierarchical_chainmap",
 ]
 
 # OSX specific requirements

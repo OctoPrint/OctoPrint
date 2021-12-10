@@ -705,7 +705,15 @@ class Settings(object):
 
         assert isinstance(default_settings, dict)
 
-        self._map = HierarchicalChainMap({}, default_settings)
+        try:
+            from op_hierarchical_chainmap import (
+                HierarchicalChainMap as CppHierarchicalChainMap,
+            )
+
+            self._map = CppHierarchicalChainMap({}, default_settings)
+        except ImportError:
+            self._map = HierarchicalChainMap({}, default_settings)
+
         self.load_overlays(overlays)
 
         self._config = None
