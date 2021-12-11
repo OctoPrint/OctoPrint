@@ -19,6 +19,7 @@ from datetime import datetime
 
 import filetype
 import pkg_resources
+import pylru
 import requests
 import sarge
 from flask import Response, abort, jsonify, request
@@ -2111,6 +2112,11 @@ class PluginManagerPlugin(
         }
 
 
+@pylru.lrudecorator(size=127)
+def parse_requirement(line):
+    return pkg_resources.Requirement.parse(line)
+
+
 def _filter_relevant_notification(notification, plugin_version, octoprint_version):
     if "pluginversions" in notification:
         pluginversions = notification["pluginversions"]
@@ -2118,7 +2124,7 @@ def _filter_relevant_notification(notification, plugin_version, octoprint_versio
         is_range = lambda x: "=" in x or ">" in x or "<" in x
         version_ranges = list(
             map(
-                lambda x: pkg_resources.Requirement.parse(notification["plugin"] + x),
+                lambda x: parse_requirement(notification["plugin"] + x),
                 filter(is_range, pluginversions),
             )
         )
