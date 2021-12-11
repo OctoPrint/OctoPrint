@@ -14,7 +14,7 @@ import time
 
 from frozendict import frozendict
 
-import octoprint.util.json
+import octoprint.util.comprehensive_json
 from octoprint import util as util
 from octoprint.events import Events, eventManager
 from octoprint.filemanager import FileDestinations, NoSuchStorage, valid_file_type

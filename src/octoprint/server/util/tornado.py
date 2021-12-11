@@ -33,7 +33,7 @@ def fix_json_encode():
 
     import json
 
-    from octoprint.util.json import JsonEncoding
+    from octoprint.util.comprehensive_json import JsonEncoding
 
     def fixed_json_encode(value):
         return json.dumps(value, default=JsonEncoding.encode, allow_nan=False).replace(

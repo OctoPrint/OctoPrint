@@ -33,7 +33,7 @@ import octoprint.vendor.flask_principal as flask_principal
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated, yaml
-from octoprint.util.json import JsonEncoding
+from octoprint.util.comprehensive_json import JsonEncoding
 from octoprint.util.net import is_lan_address
 from octoprint.util.tz import UTC_TZ, is_timezone_aware
 

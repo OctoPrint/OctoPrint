@@ -23,7 +23,7 @@ from octoprint.server.util.flask import (
     no_firstrun_access,
     with_revalidation_checking,
 )
-from octoprint.util import count, utmify
+from octoprint.util import count, deserialize, serialize, utmify
 from octoprint.util.text import sanitize
 
 
@@ -428,12 +428,22 @@ class AnnouncementPlugin(
 
             ttl *= 60
             now = time.time()
-            if os.stat(channel_path).st_mtime + ttl > now:
-                d = feedparser.parse(channel_path)
+            if now > os.stat(channel_path).st_mtime + ttl:
+                return None
+
+            try:
+                d = deserialize(channel_path)
                 self._logger.debug(f"Loaded channel {key} from cache at {channel_path}")
                 return d
-
-        return None
+            except ImportError:
+                self._logger.exception(
+                    f"Could not read channel {key} from cache {channel_path}"
+                )
+                try:
+                    os.remove(channel_path)
+                except OSError:
+                    pass
+                return None
 
     def _get_channel_data_from_network(self, key, config):
         """Fetch channel feed from network."""
@@ -456,11 +466,12 @@ class AnnouncementPlugin(
             )
             return None
 
-        response = r.text
-        channel_path = self._get_channel_cache_path(key)
-        with open(channel_path, mode="wt", encoding="utf-8") as f:
-            f.write(response)
-        return feedparser.parse(response)
+        response = feedparser.parse(r.text)
+        try:
+            serialize(self._get_channel_cache_path(key), response)
+        except Exception:
+            self._logger.exception(f"Failed to cache data for channel {key}")
+        return response
 
     def _to_internal_feed(self, feed, read_until=None):
         """Convert feed to internal data structure."""
