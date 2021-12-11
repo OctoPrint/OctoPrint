@@ -27,7 +27,7 @@ from past.builtins import basestring
 
 import octoprint.plugin
 import octoprint.plugin.core
-from octoprint.access import ADMIN_GROUP
+from octoprint.access import ADMIN_GROUP, READONLY_GROUP, USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 from octoprint.server import safe_mode
@@ -226,6 +226,13 @@ class PluginManagerPlugin(
 
     def get_additional_permissions(self):
         return [
+            {
+                "key": "LIST",
+                "name": "List plugins",
+                "description": gettext("Allows to list installed plugins."),
+                "default_groups": [READONLY_GROUP, USER_GROUP, ADMIN_GROUP],
+                "roles": ["manage"],
+            },
             {
                 "key": "MANAGE",
                 "name": "Manage plugins",
@@ -461,6 +468,13 @@ class PluginManagerPlugin(
             "online": self._connectivity_checker.online,
         }
 
+    def _plugin_versions_response(self):
+        plugins = dict()
+        for plugin in self._get_plugins():
+            if plugin["enabled"] is True:
+                plugins[plugin["key"]] = plugin["version"]
+        return plugins
+
     @octoprint.plugin.BlueprintPlugin.route("/plugins")
     @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
     def retrieve_plugins(self):
@@ -485,6 +499,38 @@ class PluginManagerPlugin(
             hash_update(repr(self._notices))
             hash_update(repr(safe_mode))
             hash_update(repr(self._connectivity_checker.online))
+            hash_update(repr(_DATA_FORMAT_VERSION))
+            return hash.hexdigest()
+
+        def condition():
+            return check_etag(etag())
+
+        return with_revalidation_checking(
+            etag_factory=lambda *args, **kwargs: etag(),
+            condition=lambda *args, **kwargs: condition(),
+            unless=lambda: refresh,
+        )(view)()
+
+    @octoprint.plugin.BlueprintPlugin.route("/plugins/versions")
+    @Permissions.PLUGIN_PLUGINMANAGER_LIST.require(403)
+    def retrieve_plugin_list(self):
+        refresh = request.values.get("refresh", "false") in valid_boolean_trues
+        if refresh or not self._is_notices_cache_valid():
+            self._notices_available = self._refresh_notices()
+
+        def view():
+            return jsonify(**self._plugin_versions_response())
+
+        def etag():
+            import hashlib
+
+            hash = hashlib.sha1()
+
+            def hash_update(value):
+                value = value.encode("utf-8")
+                hash.update(value)
+
+            hash_update(repr(self._plugin_versions_response()))
             hash_update(repr(_DATA_FORMAT_VERSION))
             return hash.hexdigest()
 
