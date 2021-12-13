@@ -175,11 +175,12 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 def fix_webassets_cache():
     from webassets import cache
 
+    import octoprint.util.safe_pickle
+
     error_logger = logging.getLogger(__name__ + ".fix_webassets_cache")
 
     def fixed_set(self, key, data):
         import os
-        import pickle
         import shutil
         import tempfile
 
@@ -194,7 +195,7 @@ def fix_webassets_cache():
         fd, temp_filename = tempfile.mkstemp(prefix="." + md5, dir=self.directory)
         try:
             with os.fdopen(fd, "wb") as f:
-                pickle.dump(data, f)
+                octoprint.util.safe_pickle.dump(data, f)
                 f.flush()
             shutil.move(temp_filename, filename)
         except Exception:
@@ -238,7 +239,13 @@ def fix_webassets_cache():
         finally:
             f.close()
 
-        unpickled = webassets.cache.safe_unpickle(result)
+        try:
+            unpickled = octoprint.util.safe_pickle.safe_loads(result)
+        except Exception:
+            error_logger.exception(
+                "Got an exception while trying to load webasset file {}".format(filename)
+            )
+            return None
         if unpickled is None:
             warnings.warn("Ignoring corrupted cache file %s" % filename)
         return unpickled
