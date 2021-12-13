@@ -2,9 +2,11 @@
 
   * Protocols
     * Firmware detection vs connection sequence, warnings trigger too late/not at all
+  * Transports
+    * "no serial ports" warning
   * Anything missing from settings migration to profile?
   * Disconnect after incomplete connect/reset states
-  * port/usbid/serial vs availability -- we need a combo box for that stuff, not just a drop down
   * Failing tests
+  * Refresh of connection not working properly
 
 TBC

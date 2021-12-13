@@ -22,7 +22,6 @@ from octoprint.settings.parameters import (
     IntegerType,
     ListType,
     SmallChoiceType,
-    SuggestionType,
     UrlType,
     Value,
 )
@@ -97,62 +96,54 @@ class SerialTransport(Transport):
                 ],
                 {
                     "port": [
-                        SuggestionType(
+                        ChoiceType(
                             "port",
                             gettext("Port"),
                             cls.get_available_serial_ports("port"),
-                            lambda value: Value(value),
                         ),
-                        SuggestionType(
+                        ChoiceType(
                             "baudrate",
                             gettext("Baudrate"),
                             cls.get_available_baudrates(),
-                            lambda value: Value(value),
                             default=0,
                         ),
                     ],
                     "usbid": [
-                        SuggestionType(
+                        ChoiceType(
                             "usbid",
                             gettext("USB ID"),
                             cls.get_available_serial_ports("usbid"),
-                            lambda value: Value(value),
                         ),
-                        SuggestionType(
+                        ChoiceType(
                             "baudrate",
                             gettext("Baudrate"),
                             cls.get_available_baudrates(),
-                            lambda value: Value(value),
                             default=0,
                         ),
                     ],
                     "usbserial": [
-                        SuggestionType(
+                        ChoiceType(
                             "usbserial",
                             gettext("USB serial number"),
                             cls.get_available_serial_ports("usbserial"),
-                            lambda value: Value(value),
                         ),
-                        SuggestionType(
+                        ChoiceType(
                             "baudrate",
                             gettext("Baudrate"),
                             cls.get_available_baudrates(),
-                            lambda value: Value(value),
                             default=0,
                         ),
                     ],
                     "usbloc": [
-                        SuggestionType(
+                        ChoiceType(
                             "usbloc",
                             gettext("USB port"),
                             cls.get_available_serial_ports("usbloc"),
-                            lambda value: Value(value),
                         ),
-                        SuggestionType(
+                        ChoiceType(
                             "baudrate",
                             gettext("Baudrate"),
                             cls.get_available_baudrates(),
-                            lambda value: Value(value),
                             default=0,
                         ),
                     ],
@@ -266,15 +257,18 @@ class SerialTransport(Transport):
             else:
                 return Value(port.device, title=f"{port.description} [{port.device}]")
 
-        port_values = [Value(None, title="Auto detect")] + sorted(
-            [
-                port_value(port)
-                for port in comports()
-                if port.device not in cls.ignored_ports and matcher(port)
-            ],
-            key=lambda x: x.title,
-        )
-        return port_values
+        available_ports = comports()
+        if available_ports:
+            return [Value(None, title="Auto detect")] + sorted(
+                [
+                    port_value(port)
+                    for port in comports()
+                    if port.device not in cls.ignored_ports and matcher(port)
+                ],
+                key=lambda x: x.title,
+            )
+        else:
+            return []
 
     @classmethod
     def get_available_baudrates(cls):
