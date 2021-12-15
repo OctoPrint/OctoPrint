@@ -7,6 +7,5 @@
   * Anything missing from settings migration to profile?
   * Disconnect after incomplete connect/reset states
   * Failing tests
-  * Refresh of connection not working properly
 
 TBC

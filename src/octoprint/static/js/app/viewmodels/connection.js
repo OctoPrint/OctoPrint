@@ -632,7 +632,7 @@ $(function () {
             if (!self.loginState.hasPermission(self.access.permissions.CONNECTION)) {
                 return;
             }
-            return OctoPrint.connection.getOptions().done(self.fromOptionsRespons);
+            return OctoPrint.connection.getOptions().done(self.fromOptionsResponse);
         };
 
         self.requestCurrentData = function () {
