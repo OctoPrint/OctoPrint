@@ -28,7 +28,7 @@ from past.builtins import basestring
 
 import octoprint.plugin
 import octoprint.plugin.core
-from octoprint.access import ADMIN_GROUP
+from octoprint.access import ADMIN_GROUP, READONLY_GROUP, USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 from octoprint.server import safe_mode
@@ -227,6 +227,13 @@ class PluginManagerPlugin(
 
     def get_additional_permissions(self):
         return [
+            {
+                "key": "LIST",
+                "name": "List plugins",
+                "description": gettext("Allows to list installed plugins."),
+                "default_groups": [READONLY_GROUP, USER_GROUP, ADMIN_GROUP],
+                "roles": ["manage"],
+            },
             {
                 "key": "MANAGE",
                 "name": "Manage plugins",
@@ -497,6 +504,13 @@ class PluginManagerPlugin(
             condition=lambda *args, **kwargs: condition(),
             unless=lambda: refresh,
         )(view)()
+
+    @octoprint.plugin.BlueprintPlugin.route("/plugins/versions")
+    @Permissions.PLUGIN_PLUGINMANAGER_LIST.require(403)
+    def retrieve_plugin_list(self):
+        return jsonify(
+            {p["key"]: p["version"] for p in self._get_plugins() if p["enabled"]}
+        )
 
     @octoprint.plugin.BlueprintPlugin.route("/plugins/<string:key>")
     @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
