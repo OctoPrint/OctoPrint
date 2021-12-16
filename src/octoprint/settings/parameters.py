@@ -237,13 +237,19 @@ class BooleanType(ParamType):
 class ChoiceType(ParamType):
     type = "choice"
 
-    def __init__(self, name, title, choices, **kwargs):
+    def __init__(self, name, title, choices, placeholder=None, **kwargs):
         self.choices = choices
+        self.placeholder = placeholder
         ParamType.__init__(self, name, title, **kwargs)
 
     def as_dict(self):
         result = ParamType.as_dict(self)
-        result.update({"choices": list(map(lambda x: x.as_dict(), self.choices))})
+        result.update(
+            {
+                "choices": list(map(lambda x: x.as_dict(), self.choices)),
+                "placeholder": self.placeholder,
+            }
+        )
         return result
 
 

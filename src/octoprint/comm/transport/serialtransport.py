@@ -83,15 +83,27 @@ class SerialTransport(Transport):
 
     @classmethod
     def get_connection_options(cls):
+        ports_by_name = cls.get_available_serial_ports("port")
+        ports_by_usbid = cls.get_available_serial_ports("usbid")
+        ports_by_usbserial = cls.get_available_serial_ports("usbserial")
+        ports_by_usbport = cls.get_available_serial_ports("usbloc")
+
+        baudrates = cls.get_available_baudrates()
+
+        no_serial_ports_found = gettext("No serial ports found")
+        # incomplete = gettext(
+        #    "No serial port found, are you sure your printer is physically connected and supports serial communication? Try refreshing and if that doesn't help please see the [FAQ](https://faq.octoprint.org/no-candidates)."
+        # )
+
         return [
             ConditionalGroup(
                 "connect_via",
                 gettext("Connect via"),
                 [
-                    Value("port", title=gettext("Port & baudrate")),
+                    Value("port", title=gettext("Port name & baudrate")),
                     Value("usbid", title=gettext("USB ID & baudrate")),
-                    Value("usbserial", title=gettext("USB serial number")),
-                    Value("usbloc", title=gettext("USB port")),
+                    Value("usbserial", title=gettext("USB serial no. & baudrate")),
+                    Value("usbloc", title=gettext("USB port & baudrate")),
                     Value("url", title=gettext("URL")),
                 ],
                 {
@@ -99,12 +111,13 @@ class SerialTransport(Transport):
                         ChoiceType(
                             "port",
                             gettext("Port"),
-                            cls.get_available_serial_ports("port"),
+                            ports_by_name,
+                            placeholder=no_serial_ports_found,
                         ),
                         ChoiceType(
                             "baudrate",
                             gettext("Baudrate"),
-                            cls.get_available_baudrates(),
+                            baudrates,
                             default=0,
                         ),
                     ],
@@ -112,12 +125,13 @@ class SerialTransport(Transport):
                         ChoiceType(
                             "usbid",
                             gettext("USB ID"),
-                            cls.get_available_serial_ports("usbid"),
+                            ports_by_usbid,
+                            placeholder=no_serial_ports_found,
                         ),
                         ChoiceType(
                             "baudrate",
                             gettext("Baudrate"),
-                            cls.get_available_baudrates(),
+                            baudrates,
                             default=0,
                         ),
                     ],
@@ -125,12 +139,13 @@ class SerialTransport(Transport):
                         ChoiceType(
                             "usbserial",
                             gettext("USB serial number"),
-                            cls.get_available_serial_ports("usbserial"),
+                            ports_by_usbserial,
+                            placeholder=no_serial_ports_found,
                         ),
                         ChoiceType(
                             "baudrate",
                             gettext("Baudrate"),
-                            cls.get_available_baudrates(),
+                            baudrates,
                             default=0,
                         ),
                     ],
@@ -138,12 +153,13 @@ class SerialTransport(Transport):
                         ChoiceType(
                             "usbloc",
                             gettext("USB port"),
-                            cls.get_available_serial_ports("usbloc"),
+                            ports_by_usbport,
+                            placeholder=no_serial_ports_found,
                         ),
                         ChoiceType(
                             "baudrate",
                             gettext("Baudrate"),
-                            cls.get_available_baudrates(),
+                            baudrates,
                             default=0,
                         ),
                     ],

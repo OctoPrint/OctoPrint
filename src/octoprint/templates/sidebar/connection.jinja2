@@ -16,7 +16,7 @@
         <select class="input-block-level" data-test-id="connection-protocols" data-bind="options: availableProtocols, optionsText: 'name', value: selectedProtocol, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
         <!-- ko foreach: protocolParameters -->
         <!-- ko if: !advanced -->
-        <!-- ko template: { name: 'parameter_template_form_' + $data.type, data: $data } --><!-- /ko -->
+        <!-- ko template: { name: 'parameter_template_form_' + $data.type, data: { data: $data, enabled: ko.pureComputed(function() { return $root.isErrorOrClosed() && $data.enabled() }) } } --><!-- /ko -->
         <!-- /ko -->
         <!-- /ko -->
         <!-- ko if: advancedProtocolParameters -->
@@ -29,7 +29,7 @@
         <select class="input-block-level" data-test-id="connection-transports" data-bind="options: availableTransports, optionsText: 'name', value: selectedTransport, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
         <!-- ko foreach: transportParameters -->
         <!-- ko if: !advanced -->
-        <!-- ko template: { name: 'parameter_template_form_' + $data.type, data: $data } --><!-- /ko -->
+        <!-- ko template: { name: 'parameter_template_form_' + $data.type, data: { data: $data, enabled: ko.pureComputed(function() { return $root.isErrorOrClosed() && $data.enabled() }) } } --><!-- /ko -->
         <!-- /ko -->
         <!-- /ko -->
         <!-- ko if: advancedTransportParameters -->

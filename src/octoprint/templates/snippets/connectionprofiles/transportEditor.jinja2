@@ -1,6 +1,6 @@
 <!-- ko foreach: profile.transportParameters -->
 <!-- ko if: !expert -->
-<!-- ko template: { name: 'parameter_template_controls_' + $data.type, data: $data } --><!-- /ko -->
+<!-- ko template: { name: 'parameter_template_controls_' + $data.type, data: { data: $data, enabled: $data.enabled } } --><!-- /ko -->
 <!-- /ko -->
 <!-- /ko -->
 
@@ -9,7 +9,7 @@
     <div class="hide">
         <!-- ko foreach: profile.transportParameters -->
         <!-- ko if: expert -->
-        <!-- ko template: { name: 'parameter_template_controls_' + $data.type, data: $data } --><!-- /ko -->
+        <!-- ko template: { name: 'parameter_template_controls_' + $data.type, data: { data: $data, enabled: $data.enabled } } --><!-- /ko -->
         <!-- /ko -->
         <!-- /ko -->
     </div>

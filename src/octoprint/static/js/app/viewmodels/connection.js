@@ -148,6 +148,126 @@ $(function () {
         return result;
     };
 
+    var extendOption = function (option, valueNode, additional) {
+        if (!valueNode) {
+            valueNode = {};
+        }
+
+        if (option.type === "group") {
+            _.each(option.params, function (param) {
+                extendOption(param, valueNode[option.name], additional);
+            });
+
+            option.modified = ko.pureComputed(function () {
+                return _.any(option.params, function (p) {
+                    return p.modified();
+                });
+            });
+
+            option.advancedParameters =
+                option.advanced ||
+                _.any(option.params, function (p) {
+                    return p.advanced;
+                });
+            option.expertParameters =
+                option.expert ||
+                _.any(option.params, function (p) {
+                    return p.expert;
+                });
+        } else {
+            if (option.type === "presetchoice") {
+                _.each(option.group.params, function (option) {
+                    extendOption(option, valueNode[option.name], additional); // TODO
+                });
+            }
+
+            if (option.type === "conditionalgroup") {
+                option.expertParameters = {};
+                _.each(option.groups, function (group, key) {
+                    _.each(group, function (option) {
+                        extendOption(option, valueNode[option.name], additional); // TODO
+                    });
+                    option.expertParameters[key] = _.any(group, function (p) {
+                        return p.expert;
+                    });
+                });
+            }
+
+            var defaultValue = convertValueFromBackend(option.default, option);
+            option.defaultValue = ko.observable(defaultValue);
+
+            if (valueNode && _.isFunction(valueNode)) {
+                option.value = ko.pureComputed({
+                    read: function () {
+                        return convertValueFromBackend(valueNode(), option);
+                    },
+                    write: function (value) {
+                        valueNode(convertValueToBackend(value, option));
+                    },
+                    owner: this
+                });
+                option.reset = function () {
+                    valueNode(defaultValue);
+                };
+            } else {
+                option.value = ko.observable(defaultValue);
+                option.reset = function () {
+                    option.value(defaultValue);
+                };
+            }
+            option.modified = ko.pureComputed(function () {
+                // noinspection EqualityComparisonWithCoercionJS
+                return option.value() != option.defaultValue();
+            });
+
+            if (option.type === "presetchoice" && option.defaults) {
+                option.group.advancedParameters =
+                    option.group.advanced ||
+                    _.any(option.group.params, function (p) {
+                        return p.advanced;
+                    });
+                option.group.expertParameters =
+                    option.group.expert ||
+                    _.any(option.group.params, function (p) {
+                        return p.expert;
+                    });
+
+                var updateDefaults = function (keepValue) {
+                    keepValue = !!keepValue;
+
+                    var choice = _.find(option.choices, function (c) {
+                        return c.value === option.value();
+                    });
+                    if (choice) {
+                        _.each(option.group.params, function (p) {
+                            if (option.defaults[choice.value]) {
+                                var d = option.defaults[choice.value][p.name];
+                                if (d !== undefined) {
+                                    p.defaultValue(convertValueFromBackend(d, p));
+                                    if (!keepValue) {
+                                        p.value(p.defaultValue());
+                                    }
+                                }
+                            }
+                        });
+                    }
+                };
+                option.value.subscribe(function () {
+                    updateDefaults();
+                });
+                updateDefaults(true);
+            }
+        }
+
+        if (option.type === "choice") {
+            option.caption = option.choices.length ? undefined : option.placeholder;
+        }
+
+        if (additional !== undefined) {
+            additional(option);
+        }
+    };
+
     function EditedConnectionProfile(connectionViewModel) {
         var self = this;
 
@@ -651,115 +771,15 @@ $(function () {
         };
 
         self.fromOptionsResponse = function (options) {
-            var extendOption = function (option, valueNode) {
-                if (!valueNode) {
-                    valueNode = {};
-                }
-
-                if (option.type === "group") {
-                    _.each(option.params, function (param) {
-                        extendOption(param, valueNode[option.name]);
+            var additionalExtensions = function (option) {
+                if (option.type === "choice") {
+                    option.enabled = ko.pureComputed(function () {
+                        return !!option.choices;
                     });
-
-                    option.modified = ko.pureComputed(function () {
-                        return _.any(option.params, function (p) {
-                            return p.modified();
-                        });
-                    });
-
-                    option.advancedParameters =
-                        option.advanced ||
-                        _.any(option.params, function (p) {
-                            return p.advanced;
-                        });
-                    option.expertParameters =
-                        option.expert ||
-                        _.any(option.params, function (p) {
-                            return p.expert;
-                        });
                 } else {
-                    if (option.type === "presetchoice") {
-                        _.each(option.group.params, function (option) {
-                            extendOption(option, valueNode[option.name]); // TODO
-                        });
-                    }
-
-                    if (option.type === "conditionalgroup") {
-                        option.expertParameters = {};
-                        _.each(option.groups, function (group, key) {
-                            _.each(group, function (option) {
-                                extendOption(option, valueNode[option.name]); // TODO
-                            });
-                            option.expertParameters[key] = _.any(group, function (p) {
-                                return p.expert;
-                            });
-                        });
-                    }
-
-                    var defaultValue = convertValueFromBackend(option.default, option);
-                    option.defaultValue = ko.observable(defaultValue);
-
-                    if (valueNode && _.isFunction(valueNode)) {
-                        option.value = ko.pureComputed({
-                            read: function () {
-                                return convertValueFromBackend(valueNode(), option);
-                            },
-                            write: function (value) {
-                                valueNode(convertValueToBackend(value, option));
-                            },
-                            owner: this
-                        });
-                        option.reset = function () {
-                            valueNode(defaultValue);
-                        };
-                    } else {
-                        option.value = ko.observable(defaultValue);
-                        option.reset = function () {
-                            option.value(defaultValue);
-                        };
-                    }
-                    option.modified = ko.pureComputed(function () {
-                        // noinspection EqualityComparisonWithCoercionJS
-                        return option.value() != option.defaultValue();
+                    option.enabled = ko.pureComputed(function () {
+                        return true;
                     });
-
-                    if (option.type === "presetchoice" && option.defaults) {
-                        option.group.advancedParameters =
-                            option.group.advanced ||
-                            _.any(option.group.params, function (p) {
-                                return p.advanced;
-                            });
-                        option.group.expertParameters =
-                            option.group.expert ||
-                            _.any(option.group.params, function (p) {
-                                return p.expert;
-                            });
-
-                        var updateDefaults = function (keepValue) {
-                            keepValue = !!keepValue;
-
-                            var choice = _.find(option.choices, function (c) {
-                                return c.value === option.value();
-                            });
-                            if (choice) {
-                                _.each(option.group.params, function (p) {
-                                    if (option.defaults[choice.value]) {
-                                        var d = option.defaults[choice.value][p.name];
-                                        if (d !== undefined) {
-                                            p.defaultValue(convertValueFromBackend(d, p));
-                                            if (!keepValue) {
-                                                p.value(p.defaultValue());
-                                            }
-                                        }
-                                    }
-                                });
-                            }
-                        };
-                        option.value.subscribe(function () {
-                            updateDefaults();
-                        });
-                        updateDefaults(true);
-                    }
                 }
             };
 
@@ -769,10 +789,14 @@ $(function () {
                     var node = settings[i.key];
 
                     _.each(i.options, function (option) {
-                        extendOption(option);
+                        extendOption(option, undefined, additionalExtensions);
                     });
                     _.each(i.settings, function (option) {
-                        extendOption(option, node ? node[option.name] : {});
+                        extendOption(
+                            option,
+                            node ? node[option.name] : {},
+                            additionalExtensions
+                        );
                     });
                 });
             };
