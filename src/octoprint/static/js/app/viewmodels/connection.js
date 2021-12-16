@@ -774,7 +774,7 @@ $(function () {
             var additionalExtensions = function (option) {
                 if (option.type === "choice") {
                     option.enabled = ko.pureComputed(function () {
-                        return !!option.choices;
+                        return option.choices && option.choices.length > 0;
                     });
                 } else {
                     option.enabled = ko.pureComputed(function () {
