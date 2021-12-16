@@ -468,13 +468,6 @@ class PluginManagerPlugin(
             "online": self._connectivity_checker.online,
         }
 
-    def _plugin_versions_response(self):
-        plugins = dict()
-        for plugin in self._get_plugins():
-            if plugin["enabled"] is True:
-                plugins[plugin["key"]] = plugin["version"]
-        return plugins
-
     @octoprint.plugin.BlueprintPlugin.route("/plugins")
     @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
     def retrieve_plugins(self):
@@ -514,34 +507,9 @@ class PluginManagerPlugin(
     @octoprint.plugin.BlueprintPlugin.route("/plugins/versions")
     @Permissions.PLUGIN_PLUGINMANAGER_LIST.require(403)
     def retrieve_plugin_list(self):
-        refresh = request.values.get("refresh", "false") in valid_boolean_trues
-        if refresh or not self._is_notices_cache_valid():
-            self._notices_available = self._refresh_notices()
-
-        def view():
-            return jsonify(**self._plugin_versions_response())
-
-        def etag():
-            import hashlib
-
-            hash = hashlib.sha1()
-
-            def hash_update(value):
-                value = value.encode("utf-8")
-                hash.update(value)
-
-            hash_update(repr(self._plugin_versions_response()))
-            hash_update(repr(_DATA_FORMAT_VERSION))
-            return hash.hexdigest()
-
-        def condition():
-            return check_etag(etag())
-
-        return with_revalidation_checking(
-            etag_factory=lambda *args, **kwargs: etag(),
-            condition=lambda *args, **kwargs: condition(),
-            unless=lambda: refresh,
-        )(view)()
+        return jsonify(
+            {p["key"]: p["version"] for p in self._get_plugins() if p["enabled"]}
+        )
 
     @octoprint.plugin.BlueprintPlugin.route("/plugins/<string:key>")
     @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
