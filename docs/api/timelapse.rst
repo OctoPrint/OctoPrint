@@ -36,7 +36,7 @@ Delete a timelapse
 
    Requires the ``TIMELAPSE_DELETE`` permission.
 
-   :param unrendered: If provided and true, also include unrendered timelapses
+   :param unrendered: If provided and true, also include unrendered timelapses in the response
 
 .. _sec-api-timelapse-render:
 
@@ -66,7 +66,7 @@ Delete an unrendered timelapse
 
    Requires the ``TIMELAPSE_DELETE`` permission.
 
-   :param unrendered: If provided and true, also include unrendered timelapses
+   :param unrendered: If provided and true, also include unrendered timelapses in the response
 
 .. _sec-api-timelapse-saveconfig:
 
@@ -85,7 +85,7 @@ Change current timelapse config
 
    Requires the ``TIMELAPSE_ADMIN`` permission.
 
-   :param unrendered: If provided and true, also include unrendered timelapses
+   :param unrendered: If provided and true, also include unrendered timelapses in the response
 
 
 .. _sec-api-timelapse-datamodel:
