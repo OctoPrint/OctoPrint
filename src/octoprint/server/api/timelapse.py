@@ -146,6 +146,13 @@ def getTimelapseData():
     for f in files:
         output = dict(f)
         output["url"] = url_for("index") + "downloads/timelapse/" + urlquote(f["name"])
+        if output["thumbnail"] is not None:
+            output["thumbnail"] = (
+                url_for("index") + "downloads/timelapse/" + urlquote(f["thumbnail"])
+            )
+        else:
+            output.pop("thumbnail", None)
+
         finished_list.append(output)
 
     result = {

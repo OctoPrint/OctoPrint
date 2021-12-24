@@ -51,6 +51,11 @@ _capture_format = "{prefix}-%d.jpg"
 _capture_glob = "{prefix}-*.jpg"
 _output_format = "{prefix}{postfix}.{extension}"
 
+# thumbnails
+_thumbnail_extension = ".thumb.jpg"
+_thumbnail_format = "{}.thumb.jpg"
+
+
 # ffmpeg progress regexes
 _ffmpeg_duration_regex = re.compile(r"Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
 _ffmpeg_current_regex = re.compile(r"time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
@@ -101,6 +106,15 @@ def valid_timelapse(path):
     return util.is_allowed_file(path, _extensions)
 
 
+def valid_timelapse_thumbnail(path):
+    global _thumbnail_extensions
+    # Thumbnail path is valid if it ends with thumbnail extension and path without extension is valid timelpase
+    if path.endswith(_thumbnail_extension):
+        return valid_timelapse(path[: -len(_thumbnail_extension)])
+    else:
+        return False
+
+
 def _extract_prefix(filename):
     """
     >>> _extract_prefix("some_long_filename_without_hyphen.jpg")
@@ -130,11 +144,19 @@ def get_finished_timelapses():
     for entry in scandir(basedir):
         if util.is_hidden_path(entry.path) or not valid_timelapse(entry.path):
             continue
+
+        thumb = _thumbnail_format.format(entry.path)
+        if os.path.isfile(thumb) is not True:
+            thumb = None
+        else:
+            thumb = os.path.basename(thumb)
+
         files.append(
             {
                 "name": entry.name,
                 "size": util.get_formatted_size(entry.stat().st_size),
                 "bytes": entry.stat().st_size,
+                "thumbnail": thumb,
                 "date": util.get_formatted_datetime(
                     datetime.datetime.fromtimestamp(entry.stat().st_mtime)
                 ),
@@ -1008,7 +1030,7 @@ class TimelapseRenderJob(object):
         )
         temporary = os.path.join(self._output_dir, ".{}".format(output_name))
         movie_output = os.path.join(self._output_dir, output_name)
-        thumb_output = "{}.thumb.jpg".format(movie_output)
+        thumb_output = _thumbnail_format.format(movie_output)
 
         for i in range(4):
             if os.path.exists(input % i):

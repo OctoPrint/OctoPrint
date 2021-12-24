@@ -754,9 +754,10 @@ class Server(object):
             )
         }
 
-        valid_timelapse = lambda path: not octoprint.util.is_hidden_path(
-            path
-        ) and octoprint.timelapse.valid_timelapse(path)
+        valid_timelapse = lambda path: not octoprint.util.is_hidden_path(path) and (
+            octoprint.timelapse.valid_timelapse(path)
+            or octoprint.timelapse.valid_timelapse_thumbnail(path)
+        )
         timelapse_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
                 valid_timelapse,
