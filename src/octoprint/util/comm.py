@@ -19,6 +19,7 @@ import threading
 import time
 from collections import deque
 
+import sarge
 import serial
 import wrapt
 
@@ -42,7 +43,7 @@ from octoprint.util import (
     sanitize_ascii,
     to_str,
 )
-from octoprint.util.platform import get_os, set_close_exec
+from octoprint.util.platform import CLOSE_FDS, get_os, set_close_exec
 
 try:
     import winreg
@@ -2321,6 +2322,16 @@ class MachineCom:
                         elif action_name == "disconnect":
                             self._log("Disconnecting on request of the printer...")
                             self._callback.on_comm_force_disconnect()
+                        elif action_name == "shutdown":
+                            sarge.run(
+                                settings().get(
+                                    ["server", "commands", "systemShutdownCommand"]
+                                ),
+                                close_fds=CLOSE_FDS,
+                                stdout=sarge.Capture(),
+                                stderr=sarge.Capture(),
+                                shell=True,
+                            )
                         elif self._sdEnabled and action_name == "sd_inserted":
                             self._log("Printer reported SD card as inserted")
                             self._sdAvailable = True
