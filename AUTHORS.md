@@ -163,6 +163,7 @@ date of first contribution):
   * [Carey Metcalfe](https://github.com/pR0Ps)
   * [Shell M. Shrader](https://github.com/synman)
   * [Johan Verrept](https://github.com/JoveToo)
+  * [Nicu Surdu](https://github.com/surdu)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
