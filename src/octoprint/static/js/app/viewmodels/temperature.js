@@ -5,6 +5,7 @@ $(function () {
         self.loginState = parameters[0];
         self.settingsViewModel = parameters[1];
         self.access = parameters[2];
+        self.printerState = parameters[3];
 
         self._createToolEntry = function () {
             var entry = {
@@ -198,6 +199,30 @@ $(function () {
             self.settingsViewModel.printerProfiles
                 .currentProfileData()
                 .heatedChamber.subscribe(self._printerProfileUpdated);
+        });
+
+        self.markings = [];
+        self.MARKING_TYPE = {
+            PRINTING: 1,
+            PAUSED: 2,
+        }
+
+        self.printerState.isPrinting.subscribe(function() {
+            if (self.printerState.isPrinting()) {
+                self.markings.push({
+                    type: self.MARKING_TYPE.PRINTING,
+                    time: (new Date()).getTime()
+                });
+            }
+        });
+
+        self.printerState.isPaused.subscribe(function() {
+            if (self.printerState.isPaused()) {
+                self.markings.push({
+                    type: self.MARKING_TYPE.PAUSED,
+                    time: (new Date()).getTime()
+                });
+            }
         });
 
         self.temperatures = [];
@@ -421,6 +446,52 @@ $(function () {
             }
         };
 
+        self._drawMarkings = function() {
+            // console.log("self.printerState:", self.printerState);
+            var graph = $("#temperature-graph");
+            if (!self.plot) {
+                return [];
+            }
+
+            var markingColors = {};
+            markingColors[self.MARKING_TYPE.PRINTING] = "#218656";
+            markingColors[self.MARKING_TYPE.PAUSED] = "#DA3749";
+
+            var markingLabels = {};
+            markingLabels[self.MARKING_TYPE.PRINTING] = "Print";
+            markingLabels[self.MARKING_TYPE.PAUSED] = "Pause";
+
+            $('.tempMarkingLabel').remove();
+
+            var marks = self.markings.map(function(mark) {
+                var o = self.plot.pointOffset({
+                    x: mark.time,
+                    y: self.plot.getAxes().yaxis.max - 25
+                });
+
+                var label = $("<div></div>");
+                label.css({
+                    position: "absolute",
+                    left: o.left + 4 + "px",
+                    top: o.top + "px",
+                    color: markingColors[mark.type],
+                    fontSize: "smaller"
+                });
+                label.addClass("tempMarkingLabel");
+                label.html(markingLabels[mark.type]);
+
+                graph.append(label);
+
+                return {
+                    color: markingColors[mark.type],
+                    lineWidth: 2,
+                    xaxis: { from: mark.time, to: mark.time }
+                }
+            });
+
+            return marks;
+        }
+
         self._initializePlot = function (force, plotInfo) {
             var graph = $("#temperature-graph");
             if (!graph.length) return; // no graph
@@ -474,7 +545,7 @@ $(function () {
 
             if (!OctoPrint.coreui.browser.mobile) {
                 options["crosshair"] = {mode: "x"};
-                options["grid"] = {hoverable: true, autoHighlight: false};
+                options["grid"] = {hoverable: true, autoHighlight: false, markings: self._drawMarkings};
             }
 
             self.plot = $.plot(graph, plotInfo.data, options);
@@ -999,7 +1070,7 @@ $(function () {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: TemperatureViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
+        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel", "printerStateViewModel"],
         elements: ["#temp", "#temp_link", "#change_offset_dialog"]
     });
 });
