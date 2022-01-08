@@ -76,7 +76,7 @@ $(function () {
                 !self.updateInProgress &&
                 self.environmentSupported() &&
                 self.storageSufficient() &&
-                !self.printerState.isPrinting() &&
+                /*!self.printerState.isPrinting() &&*/
                 !self.throttled()
             );
         });
@@ -704,7 +704,7 @@ $(function () {
 
         self.performUpdate = function (force, items) {
             if (!self.updateAccess()) return;
-            if (self.printerState.isPrinting()) return;
+            /*if (self.printerState.isPrinting()) return;*/
 
             self.updateInProgress = true;
 
@@ -778,7 +778,7 @@ $(function () {
                 items = self.availableAndPossibleAndEnabled();
             }
 
-            if (self.printerState.isPrinting()) {
+            /*if (self.printerState.isPrinting()) {
                 self._showPopup({
                     title: gettext("Can't update while printing"),
                     text: gettext(
@@ -788,7 +788,7 @@ $(function () {
                 });
                 self._updateClicked = false;
                 return;
-            }
+            }*/
 
             if (self.throttled()) {
                 self._showPopup({

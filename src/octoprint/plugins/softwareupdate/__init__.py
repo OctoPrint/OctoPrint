@@ -103,6 +103,7 @@ class SoftwareUpdatePlugin(
         self._update_log_path = None
         self._update_log_dirty = False
         self._update_log_mutex = threading.RLock()
+        self._queued_updates = None
 
         self._environment_supported = True
         self._environment_versions = {}
@@ -1299,10 +1300,6 @@ class SoftwareUpdatePlugin(
                 description=message,
             )
 
-        if self._printer.is_printing() or self._printer.is_paused():
-            # do not update while a print job is running
-            flask.abort(409, description="Printer is currently printing or paused")
-
         if not self._environment_supported:
             flask.abort(
                 409,
@@ -1330,6 +1327,20 @@ class SoftwareUpdatePlugin(
             targets = None
 
         force = json_data.get("force", "false") in octoprint.settings.valid_boolean_trues
+
+        if self._printer.is_printing() or self._printer.is_paused():
+            # do not update while a print job is running
+            # store targets to be run later on print done event
+            if self._queued_updates is not None:
+                self._queued_updates = dict_merge(
+                    self._queued_updates, {"targets": targets, "force": force}
+                )
+            else:
+                self._queued_updates = {"targets": targets, "force": force}
+            flask.abort(
+                409,
+                description="Printer is currently printing or paused, updates will be queued to run when print is finished or cancelled.",
+            )
 
         to_be_checked, checks = self.perform_updates(targets=targets, force=force)
         return flask.jsonify({"order": to_be_checked, "checks": checks})
@@ -1491,6 +1502,17 @@ class SoftwareUpdatePlugin(
 
     def on_event(self, event, payload):
         from octoprint.events import Events
+
+        if (
+            event == Events.PRINT_DONE
+            or event == Events.PRINT_FAILED
+            and self._queued_updates is not None
+        ):
+            self.perform_updates(
+                targets=self._queued_updates["targets"],
+                force=self._queued_updates["force"],
+            )
+            self._queued_updates = None
 
         if (
             event != Events.CONNECTIVITY_CHANGED
