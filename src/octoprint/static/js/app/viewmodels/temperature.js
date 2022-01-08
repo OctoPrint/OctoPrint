@@ -463,24 +463,38 @@ $(function () {
 
             $('.tempMarkingLabel').remove();
 
+            var graphWidth = self.plot.width();
+            var yAxisLabelWidth = 40;
+
             var marks = self.markings.map(function(mark) {
                 var o = self.plot.pointOffset({
                     x: mark.time,
                     y: self.plot.getAxes().yaxis.max - 25
                 });
 
-                var label = $("<div></div>");
-                label.css({
-                    position: "absolute",
-                    left: o.left + 4 + "px",
-                    top: o.top + "px",
-                    color: markingColors[mark.type],
-                    fontSize: "smaller"
-                });
-                label.addClass("tempMarkingLabel");
-                label.html(markingLabels[mark.type]);
+                if (o.left > yAxisLabelWidth) {
+                    var label = $("<div></div>");
+                    label.html(markingLabels[mark.type]);
+                    var css = {
+                        position: "absolute",
+                        top: o.top + "px",
+                        color: markingColors[mark.type],
+                        fontSize: "smaller",
+                    };
 
-                graph.append(label);
+                    label.css(css);
+                    label.addClass("tempMarkingLabel");
+
+                    graph.append(label);
+
+                    // draw markings label on the left if doesn't fit on the right
+                    if (o.left > graphWidth + yAxisLabelWidth - label.width()) {
+                        label.css("left", o.left - label.width() - 4 + "px");
+                    }
+                    else {
+                        label.css("left", o.left + 4 + "px");
+                    }
+                }
 
                 return {
                     color: markingColors[mark.type],
