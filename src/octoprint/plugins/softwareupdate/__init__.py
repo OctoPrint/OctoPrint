@@ -1337,9 +1337,9 @@ class SoftwareUpdatePlugin(
                 )
             else:
                 self._queued_updates = {"targets": targets, "force": force}
-            flask.abort(
-                409,
-                description="Printer is currently printing or paused, updates will be queued to run when print is finished or cancelled.",
+            return (
+                flask.jsonify({"queued": self._queued_updates.get("targets", False)}),
+                202,
             )
 
         to_be_checked, checks = self.perform_updates(targets=targets, force=force)

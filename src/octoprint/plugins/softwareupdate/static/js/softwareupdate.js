@@ -723,6 +723,23 @@ $(function () {
             OctoPrint.plugins.softwareupdate
                 .update(items, force)
                 .done(function (data) {
+                    if (data.hasOwnProperty("queued")) {
+                        var message =
+                            "<p>" +
+                            gettext("The following plugins have been queued for installing after current print is finished or cancelled.") +
+                            "</p><pre>"+
+                            _.escape(data.queued.join('\n')) +
+                            "</pre>";
+                        self._showPopup({
+                            title: gettext("Updates Queued"),
+                            text: message,
+                            type: "info",
+                            buttons: {
+                                sticker: false
+                            }
+                        });
+                        return;
+                    }
                     self.currentlyBeingUpdated = data.checks;
                     self._markWorking(
                         gettext("Updating..."),
