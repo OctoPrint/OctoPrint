@@ -704,7 +704,6 @@ $(function () {
 
         self.performUpdate = function (force, items) {
             if (!self.updateAccess()) return;
-            /*if (self.printerState.isPrinting()) return;*/
 
             self.updateInProgress = true;
 
@@ -794,18 +793,6 @@ $(function () {
             if (items === undefined) {
                 items = self.availableAndPossibleAndEnabled();
             }
-
-            /*if (self.printerState.isPrinting()) {
-                self._showPopup({
-                    title: gettext("Can't update while printing"),
-                    text: gettext(
-                        "A print job is currently in progress. Updating will be prevented until it is done."
-                    ),
-                    type: "error"
-                });
-                self._updateClicked = false;
-                return;
-            }*/
 
             if (self.throttled()) {
                 self._showPopup({
