@@ -725,9 +725,11 @@ $(function () {
                     if (data.hasOwnProperty("queued")) {
                         var message =
                             "<p>" +
-                            gettext("The following plugins have been queued for installing after current print is finished or cancelled.") +
-                            "</p><pre>"+
-                            _.escape(data.queued.join('\n')) +
+                            gettext(
+                                "The following plugins have been queued for installing after current print is finished or cancelled."
+                            ) +
+                            "</p><pre>" +
+                            _.escape(data.queued.join("\n")) +
                             "</pre>";
                         self._showPopup({
                             title: gettext("Updates Queued"),
