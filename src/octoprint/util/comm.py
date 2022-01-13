@@ -1752,7 +1752,7 @@ class MachineCom(object):
             if self.isSdFileSelected():
                 if not external_sd:
                     self.sendCommand(
-                        "M25",
+                        settings().get(["serial", "sdCancelCommand"]),
                         part_of_job=True,
                         tags=tags | cancel_tags,
                     )  # pause print

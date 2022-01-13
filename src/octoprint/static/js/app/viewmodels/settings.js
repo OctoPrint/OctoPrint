@@ -212,6 +212,7 @@ $(function () {
         self.serial_blockedCommands = ko.observable(undefined);
         self.serial_ignoredCommands = ko.observable(undefined);
         self.serial_pausingCommands = ko.observable(undefined);
+        self.serial_sdCancelCommand = ko.observable(undefined);
         self.serial_emergencyCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_serialErrorBehaviour = ko.observable("cancel");
