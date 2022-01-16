@@ -146,10 +146,10 @@ def get_finished_timelapses():
             continue
 
         thumb = _thumbnail_format.format(entry.path)
-        if os.path.isfile(thumb) is not True:
-            thumb = None
-        else:
+        if os.path.isfile(thumb) is True:
             thumb = os.path.basename(thumb)
+        else:
+            thumb = None
 
         files.append(
             {
