@@ -1033,8 +1033,7 @@ class TimelapseRenderJob(object):
             extension=extension,
         )
         temporary = os.path.join(self._output_dir, ".{}".format(output_name))
-        movie_output = os.path.join(self._output_dir, output_name)
-        thumb_output = create_thumbnail_path(movie_output)
+        output = os.path.join(self._output_dir, output_name)
 
         for i in range(4):
             if os.path.exists(input % i):
@@ -1042,12 +1041,7 @@ class TimelapseRenderJob(object):
         else:
             self._logger.warning("Cannot create a movie, no frames captured")
             self._notify_callback(
-                "fail",
-                movie_output,
-                returncode=0,
-                stdout="",
-                stderr="",
-                reason="no_frames",
+                "fail", output, returncode=0, stdout="", stderr="", reason="no_frames"
             )
             return
 
@@ -1066,7 +1060,7 @@ class TimelapseRenderJob(object):
                 watermark = watermark.replace("\\", "/").replace(":", "\\\\:")
 
         # prepare ffmpeg command
-        movie_command_str = self._create_ffmpeg_command_string(
+        command_str = self._create_ffmpeg_command_string(
             commandline,
             ffmpeg,
             self._fps,
@@ -1080,30 +1074,29 @@ class TimelapseRenderJob(object):
             rotate=rotate,
             watermark=watermark,
         )
-        self._logger.debug("Executing command: {}".format(movie_command_str))
+        self._logger.debug("Executing command: {}".format(command_str))
 
         with self.render_job_lock:
             try:
-                self._notify_callback("start", movie_output)
+                self._notify_callback("start", output)
 
                 self._logger.debug("Parsing ffmpeg output")
 
                 c = CommandlineCaller()
                 c.on_log_stderr = self._process_ffmpeg_output
                 returncode, stdout_text, stderr_text = c.call(
-                    movie_command_str, delimiter=b"\r", buffer_size=512
+                    command_str, delimiter=b"\r", buffer_size=512
                 )
 
                 self._logger.debug("Done with parsing")
 
                 if returncode == 0:
-                    shutil.move(temporary, movie_output)
+                    shutil.move(temporary, output)
                     self._try_generate_thumbnail(
                         ffmpeg=ffmpeg,
-                        movie_path=movie_output,
-                        thumb_path=thumb_output,
+                        movie_path=output,
                     )
-                    self._notify_callback("success", movie_output)
+                    self._notify_callback("success", output)
                 else:
                     self._logger.warning(
                         "Could not render movie, got return code %r: %s"
@@ -1111,7 +1104,7 @@ class TimelapseRenderJob(object):
                     )
                     self._notify_callback(
                         "fail",
-                        movie_output,
+                        output,
                         returncode=returncode,
                         stdout=stdout_text,
                         stderr=stderr_text,
@@ -1119,7 +1112,7 @@ class TimelapseRenderJob(object):
                     )
             except Exception:
                 self._logger.exception("Could not render movie due to unknown error")
-                self._notify_callback("fail", movie_output, reason="unknown")
+                self._notify_callback("fail", output, reason="unknown")
             finally:
                 try:
                     if os.path.exists(temporary):
@@ -1128,7 +1121,7 @@ class TimelapseRenderJob(object):
                     self._logger.warning(
                         "Could not delete temporary timelapse {}".format(temporary)
                     )
-                self._notify_callback("always", movie_output)
+                self._notify_callback("always", output)
 
     def _process_ffmpeg_output(self, *lines):
         for line in lines:
@@ -1150,8 +1143,9 @@ class TimelapseRenderJob(object):
                 if duration is not None:
                     self._parsed_duration = self._convert_time(*duration.groups())
 
-    def _try_generate_thumbnail(self, ffmpeg, movie_path, thumb_path):
+    def _try_generate_thumbnail(self, ffmpeg, movie_path):
         try:
+            thumb_path = create_thumbnail_path(movie_path)
             commandline = settings().get(["webcam", "ffmpegThumbnailCommandline"])
             thumb_command_str = self._create_ffmpeg_command_string(
                 commandline=commandline,
@@ -1172,10 +1166,10 @@ class TimelapseRenderJob(object):
                     "Failed to generate optional thumbnail %r: %s"
                     % (returncode, stderr_text)
                 )
-        except Exception:
+        except Exception as ex:
             self._logger.warning(
-                "Failed to generate thumbnail from {} to {}".format(
-                    movie_path, thumb_path
+                "Failed to generate thumbnail from {} to {} ({})".format(
+                    movie_path, thumb_path, ex
                 )
             )
 
