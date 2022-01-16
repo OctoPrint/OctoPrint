@@ -244,7 +244,7 @@ octoprint.access.permissions
                    description=gettext("Allows administrating all application keys"),
                    roles=["admin"],
                    dangerous=True,
-                   default_groups=[ADMIN_GROUP])
+                   default_groups=["admins"])
           ]
 
       __plugin_hooks__ = {
