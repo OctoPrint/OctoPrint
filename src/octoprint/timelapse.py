@@ -80,6 +80,10 @@ _job_lock = threading.RLock()
 _extensions = None
 
 
+def create_thumbnail_path(movie_path):
+    return _thumbnail_format.format(movie_path)
+
+
 def valid_timelapse(path):
     global _extensions
 
@@ -145,7 +149,7 @@ def get_finished_timelapses():
         if util.is_hidden_path(entry.path) or not valid_timelapse(entry.path):
             continue
 
-        thumb = _thumbnail_format.format(entry.path)
+        thumb = create_thumbnail_path(entry.path)
         if os.path.isfile(thumb) is True:
             thumb = os.path.basename(thumb)
         else:
@@ -1030,7 +1034,7 @@ class TimelapseRenderJob(object):
         )
         temporary = os.path.join(self._output_dir, ".{}".format(output_name))
         movie_output = os.path.join(self._output_dir, output_name)
-        thumb_output = _thumbnail_format.format(movie_output)
+        thumb_output = create_thumbnail_path(movie_output)
 
         for i in range(4):
             if os.path.exists(input % i):
