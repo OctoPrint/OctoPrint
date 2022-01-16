@@ -156,7 +156,7 @@
         </td>
         <td class="timelapse_files_details">
             <p class="name" data-bind="text: name"></p>
-            <p class="detail">{{ _('Recorded:') }} <span data-bind="text: date"/></p>
+            <p class="detail">{{ _('Recorded:') }} <span data-bind="text: formatTimeAgo(timestamp)"/></p>
             <p class="detail">{{ _('Size:') }} <span data-bind="text: size"/></p>
         </td>
         <td class="timelapse_files_action">

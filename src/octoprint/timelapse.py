@@ -161,6 +161,7 @@ def get_finished_timelapses():
                 "size": util.get_formatted_size(entry.stat().st_size),
                 "bytes": entry.stat().st_size,
                 "thumbnail": thumb,
+                "timestamp": entry.stat().st_mtime,
                 "date": util.get_formatted_datetime(
                     datetime.datetime.fromtimestamp(entry.stat().st_mtime)
                 ),
