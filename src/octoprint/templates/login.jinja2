@@ -40,7 +40,28 @@
     <script src="{{ url_for("static", filename="js/login/login.js") }}"></script>
 </head>
 <body>
-    <div class="container">
+    <noscript>
+        <style type="text/css">
+            #login,
+            #login-overlay {
+                display:none;
+            }
+        </style>
+        <div id="noscript">
+            <div class="wrapper">
+                <div class="outer">
+                    <div class="inner">
+                        <div class="content">
+                            <h1 class="text-error">{{ _('You don\'t seem to have JavaScript enabled') }}</h1>
+                            {{ _('OctoPrint\'s UI requires JavaScript to work. Please enable JavaScript and reload.') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </noscript>
+
+    <div id="login" class="container">
         <form class="form-signin">
             <h2 class="form-signin-heading" data-test-id="login-title">{{ _('Please log in') }}</h2>
 
