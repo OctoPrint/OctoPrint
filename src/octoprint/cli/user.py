@@ -26,13 +26,8 @@ click.disable_unicode_literals_warning = True
 
 
 @click.group()
-def user_commands():
-    pass
-
-
-@user_commands.group(name="user")
 @click.pass_context
-def user(ctx):
+def cli(ctx):
     """
     User management.
 
@@ -87,7 +82,7 @@ def user(ctx):
         ctx.exit(-1)
 
 
-@user.command(name="list")
+@cli.command(name="list")
 @click.pass_context
 def list_users_command(ctx):
     """Lists user information"""
@@ -95,7 +90,7 @@ def list_users_command(ctx):
     _print_list(users)
 
 
-@user.command(name="add")
+@cli.command(name="add")
 @click.argument("username", type=click.STRING, required=True)
 @click.password_option("--password", "password", help="Password for the user")
 @click.option("-g", "--group", "groups", multiple=True, help="Groups to set on the user")
@@ -138,7 +133,7 @@ def add_user_command(ctx, username, password, groups, permissions, is_admin):
         )
 
 
-@user.command(name="remove")
+@cli.command(name="remove")
 @click.argument("username", type=click.STRING)
 @click.pass_context
 def remove_user_command(ctx, username):
@@ -155,7 +150,7 @@ def remove_user_command(ctx, username):
         click.echo("User {} not removed.".format(username))
 
 
-@user.command(name="password")
+@cli.command(name="password")
 @click.argument("username", type=click.STRING)
 @click.password_option("--password", "password", help="New password for user")
 @click.pass_context
@@ -168,7 +163,7 @@ def change_password_command(ctx, username, password):
         click.echo("User {} does not exist!".format(username), err=True)
 
 
-@user.command(name="activate")
+@cli.command(name="activate")
 @click.argument("username", type=click.STRING)
 @click.pass_context
 def activate_command(ctx, username):
@@ -185,7 +180,7 @@ def activate_command(ctx, username):
         click.echo("User {} does not exist!".format(username), err=True)
 
 
-@user.command(name="deactivate")
+@cli.command(name="deactivate")
 @click.argument("username", type=click.STRING)
 @click.pass_context
 def deactivate_command(ctx, username):
