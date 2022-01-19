@@ -28,7 +28,12 @@ Download the systemd files to the locations shown:
 octoprint.service   => /etc/systemd/system/octoprint.service
 ```
 
-Next, enable and start the `octoprint` service:
+Next, make necessary modifications (if any) then notify systemd:
+```sh
+sudo systemctl daemon-reload
+```
+
+Finally, enable and start the `octoprint` service:
 
 ```sh
 # Enable octoprint service
