@@ -10,8 +10,6 @@ from importlib import import_module
 import click
 from werkzeug.utils import cached_property
 
-# shared by https://github.com/indico/indico in pallets/click#945
-
 
 class LazyGroup(click.Group):
     """
@@ -21,9 +19,11 @@ class LazyGroup(click.Group):
     at import time.
     """
 
+    # shared by https://github.com/indico/indico in pallets/click#945
+
     def __init__(self, import_name, **kwargs):
         self._import_name = import_name
-        super().__init__(**kwargs)
+        click.Group.__init__(self, **kwargs)
 
     @cached_property
     def _impl(self):
@@ -44,24 +44,3 @@ class LazyGroup(click.Group):
 
     def get_params(self, ctx):
         return self._impl.get_params(ctx)
-
-
-class LazyCommandCollection(click.CommandCollection):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-    def get_command(self, ctx, cmd_name):
-        pass
-
-    def list_commands(self, ctx):
-        pass
-
-    def group(self, *args, **kwargs):
-        from click.decorators import group
-
-        def decorator(f):
-            cmd = group(*args, **kwargs)(f)
-            self.add_command(cmd)
-            return cmd
-
-        return decorator
