@@ -1633,19 +1633,19 @@ table td.timelapse_files_details .detail {
 }
 table th.timelapse_files_thumb,
 table td.timelapse_files_thumb {
-  width: 170px;
+  width: 110px;
   position: relative;
 }
 table th.timelapse_files_thumb img,
 table td.timelapse_files_thumb img {
   max-width: 100%;
-  max-height: 170px;
+  max-height: 110px;
   border-radius: 3px;
 }
 table th.timelapse_files_thumb div,
 table td.timelapse_files_thumb div {
-  width: 170px;
-  height: calc(170px * 9 / 16);
+  width: 110px;
+  height: calc(110px * 9 / 16);
   border-radius: 3px;
   background-color: #eeeeee;
 }
@@ -1654,6 +1654,7 @@ table td.timelapse_files_thumb a {
   background-image: url(/static/img/play.svg);
   background-position: center;
   background-repeat: no-repeat;
+  background-size: 32px 32px;
   width: 100%;
   height: 100%;
   opacity: 0.8;
