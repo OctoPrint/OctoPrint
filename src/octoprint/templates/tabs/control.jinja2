@@ -1,10 +1,22 @@
 {% if enableWebcam %}
     <!-- ko if: loginState.hasPermissionKo(access.permissions.WEBCAM) -->
-    <div id="webcam_webrtc_container" tabindex="0" data-bind="visible: webcamWebRTCEnabled()">
-        <video id="webcam_webrtc" muted autoplay playsinline controls style="width: 100%"></video>
+    <div id="webcam_webrtc_container" tabindex="0" data-bind="visible: webcamWebRTCEnabled(), css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
+        <div data-bind="css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
+            <div class="rotation_target">
+                <div data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
+                    <video id="webcam_webrtc" muted autoplay playsinline controls style="width: 100%"></video>
+                </div>
+            </div>
+        </div>
     </div>
     <div id="webcam_hls_container" tabindex="0" data-bind="visible: webcamHlsEnabled()">
-        <video id="webcam_hls" muted autoplay style="width: 100%"></video>
+        <div data-bind="css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
+            <div class="rotation_target">
+                <div data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
+                    <video id="webcam_hls" muted autoplay style="width: 100%"></video>
+                </div>
+            </div>
+        </div>
     </div>
     <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }, visible: webcamMjpgEnabled()">
         <div class="nowebcam" data-bind="visible: !webcamLoaded()">

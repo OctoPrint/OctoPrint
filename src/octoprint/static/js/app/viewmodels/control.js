@@ -718,6 +718,9 @@ $(function () {
 
         self._switchToHlsWebcam = function () {
             var video = document.getElementById("webcam_hls");
+            video.addEventListener("resize", function () {
+                self._updateVideoTagWebcamLayout("webcam_hls_container");
+            });
 
             // Check for native playback options: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canPlayType
             if (
@@ -742,6 +745,9 @@ $(function () {
                 return;
             }
             var video = document.getElementById("webcam_webrtc");
+            video.addEventListener("resize", function () {
+                self._updateVideoTagWebcamLayout("webcam_webrtc_container");
+            });
 
             // Close any existing, disconnected connection
             if (
@@ -764,6 +770,37 @@ $(function () {
             self.webcamMjpgEnabled(false);
             self.webcamHlsEnabled(false);
             self.webcamWebRTCEnabled(true);
+        };
+
+        self._updateVideoTagWebcamLayout = function (containerId) {
+            var player = document.querySelector("#" + containerId + " video");
+            var rotationContainer = document.querySelector(
+                "#" + containerId + " .webcam_rotated"
+            );
+            var rotationTarget = document.querySelector(
+                "#" + containerId + " .webcam_rotated .rotation_target"
+            );
+            if (rotationContainer && player.videoWidth && player.videoHeight) {
+                var aspectRatio = player.videoWidth / player.videoHeight;
+                var height = aspectRatio * rotationContainer.offsetWidth;
+                rotationContainer.style.height = height + "px";
+                rotationContainer.style.paddingBottom = 0;
+                rotationTarget.style.height = rotationContainer.offsetWidth + "px";
+                rotationTarget.style.width = rotationContainer.offsetHeight + "px";
+            }
+
+            var unrotationContainer = document.querySelector(
+                "#" + containerId + " .webcam_unrotated"
+            );
+            var unrotationTarget = document.querySelector(
+                "#" + containerId + " .webcam_unrotated .rotation_target"
+            );
+            if (unrotationContainer) {
+                unrotationContainer.style.height = null;
+                unrotationContainer.style.paddingBottom = 0;
+                unrotationTarget.style.height = null;
+                unrotationTarget.style.width = null;
+            }
         };
     }
 
