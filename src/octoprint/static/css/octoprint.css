@@ -1916,7 +1916,6 @@ ul.dropdown-menu li a {
   width: 100%;
   position: relative;
   outline: none;
-  background: #000000;
 }
 #webcam_webrtc_container #webcam_hls,
 #webcam_hls_container #webcam_hls,
@@ -1931,18 +1930,16 @@ ul.dropdown-menu li a {
   width: 100%;
   padding-bottom: 56.25%;
   pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: auto;
 }
 #webcam_webrtc_container .webcam_rotated .rotation_target,
 #webcam_hls_container .webcam_rotated .rotation_target {
   position: absolute;
   transform: rotate(-90deg);
   width: 100%;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  margin: auto;
-  pointer-events: none;
 }
 #webcam_webrtc_container .webcam_rotated .rotation_target div,
 #webcam_hls_container .webcam_rotated .rotation_target div {

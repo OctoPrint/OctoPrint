@@ -4,7 +4,7 @@
         <div data-bind="css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
             <div class="rotation_target">
                 <div data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
-                    <video id="webcam_webrtc" muted autoplay playsinline controls style="width: 100%"></video>
+                    <video id="webcam_webrtc" muted autoplay playsinline style="width: 100%"></video>
                 </div>
             </div>
         </div>
@@ -13,7 +13,7 @@
         <div data-bind="css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
             <div class="rotation_target">
                 <div data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
-                    <video id="webcam_hls" muted autoplay style="width: 100%"></video>
+                    <video id="webcam_hls" muted autoplay playsinline style="width: 100%"></video>
                 </div>
             </div>
         </div>
