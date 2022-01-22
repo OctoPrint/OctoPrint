@@ -68,6 +68,16 @@ $(function () {
             }
         });
 
+        // Subscribe to roation event to ensure we update calculations.
+        // We need to wait for the CSS to be updated by KO, thus we use a timeout to ensure our
+        // calculations run after the CSS was updated
+        self.settings.webcam_rotate90.subscribe(function () {
+            window.setTimeout(function () {
+                self._updateVideoTagWebcamLayout("webcam_webrtc_container");
+                self._updateVideoTagWebcamLayout("webcam_hls_container");
+            }, 1);
+        });
+
         self.settings.printerProfiles.currentProfileData.subscribe(function () {
             self._updateExtruderCount();
             self.settings.printerProfiles
@@ -718,9 +728,9 @@ $(function () {
 
         self._switchToHlsWebcam = function () {
             var video = document.getElementById("webcam_hls");
-            video.addEventListener("resize", function () {
+            video.onresize = function () {
                 self._updateVideoTagWebcamLayout("webcam_hls_container");
-            });
+            };
 
             // Check for native playback options: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canPlayType
             if (
@@ -745,9 +755,9 @@ $(function () {
                 return;
             }
             var video = document.getElementById("webcam_webrtc");
-            video.addEventListener("resize", function () {
+            video.onresize = function () {
                 self._updateVideoTagWebcamLayout("webcam_webrtc_container");
-            });
+            };
 
             // Close any existing, disconnected connection
             if (
