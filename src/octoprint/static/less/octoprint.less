@@ -584,12 +584,18 @@ ul.dropdown-menu li a {
 }
 
 /** Webcam */
-
 #webcam_webrtc_container,
 #webcam_hls_container {
   width: 100%;
   position: relative;
   outline: none;
+
+  .video-controls {
+    position: absolute;
+    bottom: 0px;
+    right: 8px;
+    z-index: 10;
+  }
 
   #webcam_hls,
   #webcam_rtsp {
@@ -601,7 +607,6 @@ ul.dropdown-menu li a {
     position: relative;
     width: 100%;
     padding-bottom: 56.25%;
-    pointer-events: none;
     display: flex;
     justify-content: center;
     align-items: center;

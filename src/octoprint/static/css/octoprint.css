@@ -1917,6 +1917,13 @@ ul.dropdown-menu li a {
   position: relative;
   outline: none;
 }
+#webcam_webrtc_container .video-controls,
+#webcam_hls_container .video-controls {
+  position: absolute;
+  bottom: 0px;
+  right: 8px;
+  z-index: 10;
+}
 #webcam_webrtc_container #webcam_hls,
 #webcam_hls_container #webcam_hls,
 #webcam_webrtc_container #webcam_rtsp,
@@ -1929,7 +1936,6 @@ ul.dropdown-menu li a {
   position: relative;
   width: 100%;
   padding-bottom: 56.25%;
-  pointer-events: none;
   display: flex;
   justify-content: center;
   align-items: center;

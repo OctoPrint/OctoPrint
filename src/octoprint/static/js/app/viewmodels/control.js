@@ -43,6 +43,7 @@ $(function () {
         self.webcamHlsEnabled = ko.observable(false);
         self.webcamWebRTCEnabled = ko.observable(false);
         self.webcamError = ko.observable(false);
+        self.webcamMuted = ko.observable(true);
         self.webRTCPeerConnection = null;
 
         self.keycontrolActive = ko.observable(false);
