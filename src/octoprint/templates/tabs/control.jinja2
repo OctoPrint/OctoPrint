@@ -4,7 +4,7 @@
         <div class="video-controls btn-group action-buttons">
             <div class="btn btn-mini" data-bind="visible: document.pictureInPictureEnabled, click: function(data, event) { document.getElementById('webcam_webrtc').requestFullscreen() }"><i class="fas fa-expand"></i></div>
             <div class="btn btn-mini" data-bind="visible: document.pictureInPictureEnabled, click: function(data, event) { document.getElementById('webcam_webrtc').requestPictureInPicture() }"><i class="fas fa-images"></i></div>
-            <div class="btn btn-mini" data-bind="click: function(data, event) { webcamMuted(!webcamMuted()) }">
+            <div class="btn btn-mini" data-bind="click: function(data, event) { webcamMuted(!webcamMuted()); document.getElementById('webcam_webrtc').muted = webcamMuted() }">
                 <!-- ko if: webcamMuted() -->
                 <i class="fas fa-volume-mute"></i>
                 <!-- /ko -->
