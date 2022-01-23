@@ -1923,6 +1923,11 @@ ul.dropdown-menu li a {
   bottom: 0px;
   right: 8px;
   z-index: 10;
+  opacity: 0.5;
+}
+#webcam_webrtc_container:hover .video-controls,
+#webcam_hls_container:hover .video-controls {
+  opacity: 1;
 }
 #webcam_webrtc_container #webcam_hls,
 #webcam_hls_container #webcam_hls,
