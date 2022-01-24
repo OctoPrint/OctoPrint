@@ -730,6 +730,12 @@ $(function () {
             var video = document.getElementById("webcam_hls");
             video.onresize = self._updateVideoTagWebcamLayout;
 
+            // Ensure WebRTC is unloaded
+            if (self.webRTCPeerConnection != null) {
+                self.webRTCPeerConnection.close();
+                self.webRTCPeerConnection = null;
+            }
+
             // Check for native playback options: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canPlayType
             if (
                 video != null &&
@@ -738,9 +744,9 @@ $(function () {
             ) {
                 video.src = self.settings.webcam_streamUrl();
             } else if (Hls.isSupported()) {
-                var hls = new Hls();
-                hls.loadSource(self.settings.webcam_streamUrl());
-                hls.attachMedia(video);
+                self.hls = new Hls();
+                self.hls.loadSource(self.settings.webcam_streamUrl());
+                self.hls.attachMedia(video);
             }
 
             self.webcamMjpgEnabled(false);
@@ -754,6 +760,13 @@ $(function () {
             }
             var video = document.getElementById("webcam_webrtc");
             video.onresize = self._updateVideoTagWebcamLayout;
+
+            // Ensure HLS is unloaded
+            if (self.hls != null) {
+                document.getElementById("webcam_hls").src = null;
+                self.hls.destroy();
+                self.hls = null;
+            }
 
             // Close any existing, disconnected connection
             if (
