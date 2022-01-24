@@ -719,10 +719,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         return self._comm.getFilePosition()
 
     def addMarking(self, type):
-        self._markings.append({
-            "type": type,
-            "time": int(time.time() * 1000),
-        })
+        self._markings.append(
+            {
+                "type": type,
+                "time": int(time.time() * 1000),
+            }
+        )
 
     def get_markings(self):
         return self._markings

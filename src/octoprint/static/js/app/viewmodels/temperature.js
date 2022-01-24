@@ -206,7 +206,7 @@ $(function () {
             PAUSE: "Pause",
             RESUME: "Resume",
             CANCEL: "Cancel"
-        }
+        };
 
         var markingColors = {};
         markingColors[self.MARKING_TYPE.PRINT] = "#218656";
@@ -437,20 +437,20 @@ $(function () {
             }
         };
 
-        self._drawMarkings = function() {
+        self._drawMarkings = function () {
             // console.log("self.printerState:", self.printerState);
             var graph = $("#temperature-graph");
             if (!self.plot) {
                 return [];
             }
 
-            $('.tempMarkingLabel').remove();
+            $(".tempMarkingLabel").remove();
 
             var graphWidth = self.plot.width();
             var yAxisLabelWidth = 40;
             var markingsLabelMargin = 4;
 
-            var marks = self.markings.map(function(mark) {
+            var marks = self.markings.map(function (mark) {
                 var o = self.plot.pointOffset({
                     x: mark.time,
                     y: self.plot.getAxes().yaxis.max - 25
@@ -463,7 +463,7 @@ $(function () {
                         position: "absolute",
                         top: o.top + "px",
                         color: markingColors[mark.type],
-                        fontSize: "smaller",
+                        fontSize: "smaller"
                     };
 
                     label.css(css);
@@ -472,10 +472,15 @@ $(function () {
                     graph.append(label);
 
                     // draw markings label on the left if doesn't fit on the right
-                    if (o.left > graphWidth + yAxisLabelWidth - label.width() - markingsLabelMargin) {
-                        label.css("left", o.left - label.width() - markingsLabelMargin + "px");
-                    }
-                    else {
+                    if (
+                        o.left >
+                        graphWidth + yAxisLabelWidth - label.width() - markingsLabelMargin
+                    ) {
+                        label.css(
+                            "left",
+                            o.left - label.width() - markingsLabelMargin + "px"
+                        );
+                    } else {
                         label.css("left", o.left + markingsLabelMargin + "px");
                     }
                 }
@@ -483,12 +488,12 @@ $(function () {
                 return {
                     color: markingColors[mark.type],
                     lineWidth: 2,
-                    xaxis: { from: mark.time, to: mark.time }
-                }
+                    xaxis: {from: mark.time, to: mark.time}
+                };
             });
 
             return marks;
-        }
+        };
 
         self._initializePlot = function (force, plotInfo) {
             var graph = $("#temperature-graph");
@@ -543,7 +548,11 @@ $(function () {
 
             if (!OctoPrint.coreui.browser.mobile) {
                 options["crosshair"] = {mode: "x"};
-                options["grid"] = {hoverable: true, autoHighlight: false, markings: self._drawMarkings};
+                options["grid"] = {
+                    hoverable: true,
+                    autoHighlight: false,
+                    markings: self._drawMarkings
+                };
             }
 
             self.plot = $.plot(graph, plotInfo.data, options);
