@@ -1689,15 +1689,41 @@ $(function () {
                 return extension.toLowerCase();
             }).sort();
             extensions = extensions.join(", ");
-            var error =
-                "<p>" +
-                _.sprintf(
-                    gettext(
-                        "Could not upload the file. Make sure that it is a readable, valid file with one of these extensions: %(extensions)s"
-                    ),
-                    {extensions: _.escape(extensions)}
-                ) +
-                "</p>";
+
+            var error = "<p>";
+            switch (data.jqXHR.status) {
+                case 409:
+                    // already printing or otherwise busy
+                    if (e.target.id === "gcode_upload_sd") {
+                        error += gettext(
+                            "Could not upload the file to the printer's SD. Make sure the SD is initialized and the printer is not busy with a print already."
+                        );
+                    } else {
+                        error += gettext(
+                            "Could not upload the file, overwrite not possible. Make sure it is not already printing and that you have allowed overwriting."
+                        );
+                    }
+                    break;
+
+                case 415:
+                    // unknown file type
+                    error += _.sprintf(
+                        gettext(
+                            "Could not upload the file. Make sure that it is a readable, valid file with one of these extensions: %(extensions)s"
+                        ),
+                        {extensions: _.escape(extensions)}
+                    );
+                    break;
+
+                default:
+                    // any other kind of error
+                    error += gettext(
+                        "Could not upload the file. Please check octoprint.log for possible reasons."
+                    );
+                    break;
+            }
+            error += "</p>";
+
             if (data.jqXHR.responseText) {
                 error += pnotifyAdditionalInfo(
                     "<pre>" + _.escape(data.jqXHR.responseText) + "</pre>"
