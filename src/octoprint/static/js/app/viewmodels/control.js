@@ -792,6 +792,7 @@ $(function () {
         };
 
         self._updateVideoTagWebcamLayout = function () {
+            // Get all elements we need
             var player = document.querySelector(
                 "#webcam_video_container video:not([style*='display: none'])"
             );
@@ -807,17 +808,27 @@ $(function () {
             var unrotationTarget = document.querySelector(
                 "#webcam_video_container .webcam_unrotated .rotation_target"
             );
-            console.log("player", player);
 
+            // If we found the rotation container, the view is rotated 90 degrees. This means we
+            // need to manually calculate the player dimensions and apply them to the rotation target
+            // where height = width and width = height (to accomodate the rotation). The target is centered
+            // in the container and rotated around it's center so after we manually resized the container everything will layout nicely.
             if (rotationContainer && player.videoWidth && player.videoHeight) {
+                // Calcualte the height the video will have in the UI. Based on the video width and the aspect ratio.
                 var aspectRatio = player.videoWidth / player.videoHeight;
                 var height = aspectRatio * rotationContainer.offsetWidth;
+
+                // Enforce the height on the rotation container and the rotation target. Width of the container will be 100%, height a calculated
+                // The size of the rotation target (the element that has the 90 deg transform) is the inverse size of the container (so height -> width and width -> height)
                 rotationContainer.style.height = height + "px";
-                rotationContainer.style.paddingBottom = 0;
                 rotationTarget.style.height = rotationContainer.offsetWidth + "px";
                 rotationTarget.style.width = rotationContainer.offsetHeight + "px";
+
+                // Remove the padding we used to give the element an initial height.
+                rotationContainer.style.paddingBottom = 0;
             }
 
+            // We are not rotated, clean up all changes we might have done before
             if (unrotationContainer) {
                 unrotationContainer.style.height = null;
                 unrotationContainer.style.paddingBottom = 0;
