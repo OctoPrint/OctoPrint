@@ -51,6 +51,11 @@ _capture_format = "{prefix}-%d.jpg"
 _capture_glob = "{prefix}-*.jpg"
 _output_format = "{prefix}{postfix}.{extension}"
 
+# thumbnails
+_thumbnail_extension = ".thumb.jpg"
+_thumbnail_format = "{}.thumb.jpg"
+
+
 # ffmpeg progress regexes
 _ffmpeg_duration_regex = re.compile(r"Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
 _ffmpeg_current_regex = re.compile(r"time=(\d{2}):(\d{2}):(\d{2})\.\d{2}")
@@ -73,6 +78,10 @@ _job_lock = threading.RLock()
 
 # cached valid timelapse extensions
 _extensions = None
+
+
+def create_thumbnail_path(movie_path):
+    return _thumbnail_format.format(movie_path)
 
 
 def valid_timelapse(path):
@@ -99,6 +108,15 @@ def valid_timelapse(path):
         _extensions = list(set(extensions))
 
     return util.is_allowed_file(path, _extensions)
+
+
+def valid_timelapse_thumbnail(path):
+    global _thumbnail_extensions
+    # Thumbnail path is valid if it ends with thumbnail extension and path without extension is valid timelpase
+    if path.endswith(_thumbnail_extension):
+        return valid_timelapse(path[: -len(_thumbnail_extension)])
+    else:
+        return False
 
 
 def _extract_prefix(filename):
@@ -130,11 +148,20 @@ def get_finished_timelapses():
     for entry in scandir(basedir):
         if util.is_hidden_path(entry.path) or not valid_timelapse(entry.path):
             continue
+
+        thumb = create_thumbnail_path(entry.path)
+        if os.path.isfile(thumb) is True:
+            thumb = os.path.basename(thumb)
+        else:
+            thumb = None
+
         files.append(
             {
                 "name": entry.name,
                 "size": util.get_formatted_size(entry.stat().st_size),
                 "bytes": entry.stat().st_size,
+                "thumbnail": thumb,
+                "timestamp": entry.stat().st_mtime,
                 "date": util.get_formatted_datetime(
                     datetime.datetime.fromtimestamp(entry.stat().st_mtime)
                 ),
@@ -1066,6 +1093,10 @@ class TimelapseRenderJob(object):
 
                 if returncode == 0:
                     shutil.move(temporary, output)
+                    self._try_generate_thumbnail(
+                        ffmpeg=ffmpeg,
+                        movie_path=output,
+                    )
                     self._notify_callback("success", output)
                 else:
                     self._logger.warning(
@@ -1112,6 +1143,36 @@ class TimelapseRenderJob(object):
                 duration = _ffmpeg_duration_regex.search(line)
                 if duration is not None:
                     self._parsed_duration = self._convert_time(*duration.groups())
+
+    def _try_generate_thumbnail(self, ffmpeg, movie_path):
+        try:
+            thumb_path = create_thumbnail_path(movie_path)
+            commandline = settings().get(["webcam", "ffmpegThumbnailCommandline"])
+            thumb_command_str = self._create_ffmpeg_command_string(
+                commandline=commandline,
+                ffmpeg=ffmpeg,
+                input=movie_path,
+                output=thumb_path,
+                fps=None,
+                videocodec=None,
+                threads=None,
+                bitrate=None,
+            )
+            c = CommandlineCaller()
+            returncode, stdout_text, stderr_text = c.call(
+                thumb_command_str, delimiter=b"\r", buffer_size=512
+            )
+            if returncode != 0:
+                self._logger.warning(
+                    "Failed to generate optional thumbnail %r: %s"
+                    % (returncode, stderr_text)
+                )
+        except Exception as ex:
+            self._logger.warning(
+                "Failed to generate thumbnail from {} to {} ({})".format(
+                    movie_path, thumb_path, ex
+                )
+            )
 
     @staticmethod
     def _convert_time(hours, minutes, seconds):

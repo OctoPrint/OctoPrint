@@ -263,6 +263,7 @@ default_settings = {
         "flipV": False,
         "rotate90": False,
         "ffmpegCommandline": '{ffmpeg} -framerate {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b:v {bitrate} -f {containerformat} -y {filters} "{output}"',
+        "ffmpegThumbnailCommandline": '{ffmpeg} -sseof -1 -i "{input}" -update 1 -q:v 0.7 "{output}"',
         "timelapse": {
             "type": "off",
             "options": {},

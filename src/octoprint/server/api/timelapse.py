@@ -146,6 +146,13 @@ def getTimelapseData():
     for f in files:
         output = dict(f)
         output["url"] = url_for("index") + "downloads/timelapse/" + urlquote(f["name"])
+        if output["thumbnail"] is not None:
+            output["thumbnail"] = (
+                url_for("index") + "downloads/timelapse/" + urlquote(f["thumbnail"])
+            )
+        else:
+            output.pop("thumbnail", None)
+
         finished_list.append(output)
 
     result = {
@@ -175,6 +182,7 @@ def downloadTimelapse(filename):
 def deleteTimelapse(filename):
     timelapse_folder = settings().getBaseFolder("timelapse")
     full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
+    thumb_path = octoprint.timelapse.create_thumbnail_path(full_path)
     if (
         octoprint.timelapse.valid_timelapse(full_path)
         and full_path.startswith(timelapse_folder)
@@ -188,6 +196,20 @@ def deleteTimelapse(filename):
                 "Error deleting timelapse file {}".format(full_path)
             )
             abort(500, description="Unexpected error: {}".format(ex))
+
+    if (
+        octoprint.timelapse.valid_timelapse_thumbnail(thumb_path)
+        and thumb_path.startswith(timelapse_folder)
+        and os.path.exists(thumb_path)
+        and not util.is_hidden_path(thumb_path)
+    ):
+        try:
+            os.remove(thumb_path)
+        except Exception as ex:
+            # Do not treat this as an error, log and ignore
+            logging.getLogger(__file__).warning(
+                "Unable to delete thumbnail {} ({})".format(thumb_path, ex)
+            )
 
     return getTimelapseData()
 
