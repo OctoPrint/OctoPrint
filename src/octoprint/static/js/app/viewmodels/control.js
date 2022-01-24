@@ -69,7 +69,7 @@ $(function () {
             }
         });
 
-        // Subscribe to roation event to ensure we update calculations.
+        // Subscribe to rotation event to ensure we update calculations.
         // We need to wait for the CSS to be updated by KO, thus we use a timeout to ensure our
         // calculations run after the CSS was updated
         self.settings.webcam_rotate90.subscribe(function () {
