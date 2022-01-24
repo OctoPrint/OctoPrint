@@ -152,6 +152,10 @@ Rendered timelapse
      - 1
      - string
      - URL for downloading the timelapse
+   * - ``thumbnail``
+     - 1
+     - string
+     - URL for downloading a thumbnail of the timelapse (optional)
 
 .. _sec-api-timelapse-datamodel-unrendered:
 
