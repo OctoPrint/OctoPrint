@@ -74,8 +74,7 @@ $(function () {
         // calculations run after the CSS was updated
         self.settings.webcam_rotate90.subscribe(function () {
             window.setTimeout(function () {
-                self._updateVideoTagWebcamLayout("webcam_webrtc_container");
-                self._updateVideoTagWebcamLayout("webcam_hls_container");
+                self._updateVideoTagWebcamLayout();
             }, 1);
         });
 
@@ -729,9 +728,7 @@ $(function () {
 
         self._switchToHlsWebcam = function () {
             var video = document.getElementById("webcam_hls");
-            video.onresize = function () {
-                self._updateVideoTagWebcamLayout("webcam_hls_container");
-            };
+            video.onresize = self._updateVideoTagWebcamLayout;
 
             // Check for native playback options: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canPlayType
             if (
@@ -756,9 +753,7 @@ $(function () {
                 return;
             }
             var video = document.getElementById("webcam_webrtc");
-            video.onresize = function () {
-                self._updateVideoTagWebcamLayout("webcam_webrtc_container");
-            };
+            video.onresize = self._updateVideoTagWebcamLayout;
 
             // Close any existing, disconnected connection
             if (
@@ -783,14 +778,24 @@ $(function () {
             self.webcamWebRTCEnabled(true);
         };
 
-        self._updateVideoTagWebcamLayout = function (containerId) {
-            var player = document.querySelector("#" + containerId + " video");
+        self._updateVideoTagWebcamLayout = function () {
+            var player = document.querySelector(
+                "#webcam_video_container video:not([style*='display: none'])"
+            );
             var rotationContainer = document.querySelector(
-                "#" + containerId + " .webcam_rotated"
+                "#webcam_video_container .webcam_rotated"
             );
             var rotationTarget = document.querySelector(
-                "#" + containerId + " .webcam_rotated .rotation_target"
+                "#webcam_video_container .webcam_rotated .rotation_target"
             );
+            var unrotationContainer = document.querySelector(
+                "#webcam_video_container .webcam_unrotated"
+            );
+            var unrotationTarget = document.querySelector(
+                "#webcam_video_container .webcam_unrotated .rotation_target"
+            );
+            console.log("player", player);
+
             if (rotationContainer && player.videoWidth && player.videoHeight) {
                 var aspectRatio = player.videoWidth / player.videoHeight;
                 var height = aspectRatio * rotationContainer.offsetWidth;
@@ -800,12 +805,6 @@ $(function () {
                 rotationTarget.style.width = rotationContainer.offsetHeight + "px";
             }
 
-            var unrotationContainer = document.querySelector(
-                "#" + containerId + " .webcam_unrotated"
-            );
-            var unrotationTarget = document.querySelector(
-                "#" + containerId + " .webcam_unrotated .rotation_target"
-            );
             if (unrotationContainer) {
                 unrotationContainer.style.height = null;
                 unrotationContainer.style.paddingBottom = 0;

@@ -1911,33 +1911,27 @@ ul.dropdown-menu li a {
   margin: auto;
 }
 /** Webcam */
-#webcam_webrtc_container,
-#webcam_hls_container {
+#webcam_video_container {
   width: 100%;
   position: relative;
   outline: none;
 }
-#webcam_webrtc_container .video-controls,
-#webcam_hls_container .video-controls {
+#webcam_video_container .video-controls {
   position: absolute;
   bottom: 0px;
   right: 8px;
   z-index: 10;
-  opacity: 0.5;
+  opacity: 0.4;
 }
-#webcam_webrtc_container:hover .video-controls,
-#webcam_hls_container:hover .video-controls {
+#webcam_video_container:hover .video-controls {
   opacity: 1;
 }
-#webcam_webrtc_container #webcam_hls,
-#webcam_hls_container #webcam_hls,
-#webcam_webrtc_container #webcam_rtsp,
-#webcam_hls_container #webcam_rtsp {
+#webcam_video_container #webcam_hls,
+#webcam_video_container #webcam_rtsp {
   width: 100%;
   height: 100%;
 }
-#webcam_webrtc_container .webcam_rotated,
-#webcam_hls_container .webcam_rotated {
+#webcam_video_container .webcam_rotated {
   position: relative;
   width: 100%;
   padding-bottom: 56.25%;
@@ -1946,19 +1940,16 @@ ul.dropdown-menu li a {
   align-items: center;
   margin: auto;
 }
-#webcam_webrtc_container .webcam_rotated .rotation_target,
-#webcam_hls_container .webcam_rotated .rotation_target {
+#webcam_video_container .webcam_rotated .rotation_target {
   position: absolute;
   transform: rotate(-90deg);
   width: 100%;
 }
-#webcam_webrtc_container .webcam_rotated .rotation_target div,
-#webcam_hls_container .webcam_rotated .rotation_target div {
+#webcam_video_container .webcam_rotated .rotation_target div {
   width: 100%;
   height: 100%;
 }
-#webcam_webrtc_container .webcam_unrotated,
-#webcam_hls_container .webcam_unrotated {
+#webcam_video_container .webcam_unrotated {
   position: relative;
   width: 100%;
 }
