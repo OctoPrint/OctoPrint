@@ -251,11 +251,11 @@ daemon_options = bulk_options(
 
 
 @click.group()
-def server_commands():
+def cli():
     pass
 
 
-@server_commands.command(name="safemode")
+@cli.command(name="safemode")
 @standard_options()
 @click.pass_context
 def enable_safemode(ctx, **kwargs):
@@ -286,7 +286,7 @@ def enable_safemode(ctx, **kwargs):
         )
 
 
-@server_commands.command(name="serve")
+@cli.command(name="serve")
 @standard_options()
 @server_options
 @click.pass_context
@@ -333,7 +333,7 @@ def serve_command(ctx, **kwargs):
 if sys.platform != "win32" and sys.platform != "darwin":
     # we do not support daemon mode under windows or macosx
 
-    @server_commands.command(name="daemon")
+    @cli.command(name="daemon")
     @standard_options()
     @server_options
     @daemon_options

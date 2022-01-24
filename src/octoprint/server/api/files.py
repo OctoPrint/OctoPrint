@@ -575,7 +575,7 @@ def uploadGcodeFile(target):
             futureFilename = None
 
         if futureFilename is None:
-            abort(415, description="Can not upload file, wrong format?")
+            abort(400, description="Can not upload file, invalid file name")
 
         # prohibit overwriting currently selected file while it's being printed
         futureFullPath = fileManager.join_path(
@@ -652,11 +652,10 @@ def uploadGcodeFile(target):
             )
         except octoprint.filemanager.storage.StorageError as e:
             if e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
-                abort(400, description="Could not upload file, invalid type")
+                abort(415, description="Could not upload file, invalid type")
             else:
                 abort(500, description="Could not upload file")
 
-        if octoprint.filemanager.valid_file_type(added_file, "stl"):
             filename = added_file
             done = True
         else:

@@ -921,7 +921,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
     def is_ready(self, *args, **kwargs):
         return (
             self.is_operational()
-            and not self.is_printing()
+            and not self._comm.isBusy()
+            # isBusy is true when paused
             and not self._comm.isStreaming()
         )
 

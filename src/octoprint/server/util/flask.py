@@ -8,7 +8,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import functools
-import io
 import logging
 import os
 import threading
@@ -170,81 +169,6 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
     flask_babel.Babel.list_translations = fixed_list_translations
     flask_babel.get_translations = fixed_get_translations
-
-
-def fix_webassets_cache():
-    from webassets import cache
-
-    error_logger = logging.getLogger(__name__ + ".fix_webassets_cache")
-
-    def fixed_set(self, key, data):
-        import os
-        import pickle
-        import shutil
-        import tempfile
-
-        if not os.path.exists(self.directory):
-            error_logger.warning(
-                "Cache directory {} doesn't exist, not going "
-                "to attempt to write cache file".format(self.directory)
-            )
-
-        md5 = "%s" % cache.make_md5(self.V, key)
-        filename = os.path.join(self.directory, md5)
-        fd, temp_filename = tempfile.mkstemp(prefix="." + md5, dir=self.directory)
-        try:
-            with os.fdopen(fd, "wb") as f:
-                pickle.dump(data, f)
-                f.flush()
-            shutil.move(temp_filename, filename)
-        except Exception:
-            os.remove(temp_filename)
-            raise
-
-    def fixed_get(self, key):
-        import errno
-        import os
-        import warnings
-
-        from webassets.cache import make_md5
-
-        if not os.path.exists(self.directory):
-            error_logger.warning(
-                "Cache directory {} doesn't exist, not going "
-                "to attempt to read cache file".format(self.directory)
-            )
-            return None
-
-        try:
-            hash = make_md5(self.V, key)
-        except IOError as e:
-            if e.errno != errno.ENOENT:
-                raise
-            return None
-
-        filename = os.path.join(self.directory, "%s" % hash)
-        try:
-            f = io.open(filename, "rb")
-        except IOError as e:
-            if e.errno != errno.ENOENT:
-                error_logger.exception(
-                    "Got an exception while trying to open webasset file {}".format(
-                        filename
-                    )
-                )
-            return None
-        try:
-            result = f.read()
-        finally:
-            f.close()
-
-        unpickled = webassets.cache.safe_unpickle(result)
-        if unpickled is None:
-            warnings.warn("Ignoring corrupted cache file %s" % filename)
-        return unpickled
-
-    cache.FilesystemCache.set = fixed_set
-    cache.FilesystemCache.get = fixed_get
 
 
 def fix_webassets_filtertool():

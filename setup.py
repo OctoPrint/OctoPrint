@@ -33,7 +33,6 @@ INSTALL_REQUIRES = [
     # other observed problems
     "markupsafe>=1.1,<2.0",  # Jinja dependency, newer versions require Python 3
     "markdown>=3.1,<3.2",  # newer versions require Python 3
-    "regex!=2018.11.6",  # avoid broken 2018.11.6. See #2874
     "wrapt>=1.12.1,<1.13",  # newer versions fail to build on OctoPi 0.15
     # anything below this should be checked on releases for new versions
     "flask>=1.1.4,<2",  # newer versions require Python 3
@@ -80,6 +79,7 @@ INSTALL_REQUIRES_PYTHON2 = [
     "colorlog<5",  # newer versions require Python 3
     # vendor bundled dependencies
     "unidecode<1.3",  # dependency of awesome-slugify, newer versions require Python 3
+    "regex<2022.1.18",  # dependency of awesome-slugify, newer versions require Python 3
 ]
 
 # Python 3 specific requirements
@@ -92,6 +92,7 @@ INSTALL_REQUIRES_PYTHON3 = [
     "colorlog>=5.0.1,<6",
     # vendor bundled dependencies
     "unidecode",  # dependency of awesome-slugify, leave w/o range to not cause dependency hell w/ Octolapse deps
+    "regex",  # dependency of awesome-slugify
 ]
 
 # OSX specific requirements

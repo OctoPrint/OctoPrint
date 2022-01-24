@@ -225,17 +225,24 @@ def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
     if proto not in ("tcp", "udp"):
         raise ValueError("proto must be either 'tcp' or 'udp'")
 
-    try:
-        sock = socket.socket(
-            socket.AF_INET, socket.SOCK_DGRAM if proto == "udp" else socket.SOCK_STREAM
-        )
-        sock.settimeout(timeout)
-        if source is not None:
-            sock.bind((source, 0))
-        sock.connect((host, port))
-        return True
-    except Exception:
-        return False
+    if HAS_V6:
+        families = [socket.AF_INET6, socket.AF_INET]
+    else:
+        families = [socket.AF_INET]
+
+    for family in families:
+        try:
+            sock = socket.socket(
+                family, socket.SOCK_DGRAM if proto == "udp" else socket.SOCK_STREAM
+            )
+            sock.settimeout(timeout)
+            if source is not None:
+                sock.bind((source, 0))
+            sock.connect((host, port))
+            return True
+        except Exception:
+            pass
+    return False
 
 
 def resolve_host(host):

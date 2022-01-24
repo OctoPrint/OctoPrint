@@ -14,6 +14,7 @@ import collections
 import contextlib
 import copy
 import io
+import json
 import logging
 import os
 import re
@@ -24,6 +25,7 @@ import threading
 import time
 import traceback
 import warnings
+import zlib
 from functools import wraps
 from typing import Union
 
@@ -1798,3 +1800,54 @@ def generate_api_key():
 
 def map_boolean(value, true_text, false_text):
     return true_text if value else false_text
+
+
+def serialize(filename, data, encoding="utf-8", compressed=True):
+    """
+    Serializes data to a file
+
+    In the current implementation this uses json.dumps and - if compressed is True (the
+    default) - zlib.compress. Only data that can be serialized by json.dumps in the stock
+    configuration is supported.
+
+    This is not thread-safe, if concurrent access is required, the caller needs to ensure
+    that only one thread is writing to the file at any given time.
+
+    Arguments:
+        filename (str): The file to write to
+        data (object): The data to serialize
+        encoding (str): The encoding to use for the file
+        compressed (bool): Whether to compress the data before writing it to the file
+    """
+    serialized = json.dumps(data).encode(encoding)
+
+    if compressed:
+        serialized = zlib.compress(serialized)
+
+    with io.open(filename, "wb") as f:
+        f.write(serialized)
+
+
+def deserialize(filename, encoding="utf-8"):
+    """
+    Deserializes data from a file
+
+    In the current implementation this uses json.loads and - if the file is found to be
+    compressed - zlib.decompress.
+
+    Arguments:
+        filename (str): The file to deserialize from
+        encoding (str): The encoding to use for the file, defaults to utf-8
+
+    Returns:
+        The deserialized data structure
+    """
+    with io.open(filename, "rb") as f:
+        serialized = f.read()
+
+    try:
+        serialized = zlib.decompress(serialized)
+    except zlib.error:
+        pass
+
+    return json.loads(serialized.decode(encoding))

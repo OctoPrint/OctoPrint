@@ -10,6 +10,7 @@ import sys
 import click
 
 import octoprint
+from octoprint.cli.common import LazyGroup
 
 click.disable_unicode_literals_warning = True
 
@@ -277,16 +278,56 @@ legacy_options = bulk_options(
    Kept available for reasons of backwards compatibility, but hidden from the
    generated help pages."""
 
+# ~~ command groups from sub modules
+
+
+@click.group()
+def subcommands():
+    pass
+
+
+@subcommands.group(
+    name="analysis", cls=LazyGroup, import_name="octoprint.cli.analysis:cli"
+)
+def analysis():
+    """Analysis tools."""
+    pass
+
+
+@subcommands.group(name="client", cls=LazyGroup, import_name="octoprint.cli.client:cli")
+def client():
+    """Basic API client."""
+    pass
+
+
+@subcommands.group(name="config", cls=LazyGroup, import_name="octoprint.cli.config:cli")
+def config():
+    """Basic config manipulation."""
+    pass
+
+
+@subcommands.group(name="dev", cls=LazyGroup, import_name="octoprint.cli.dev:cli")
+def dev():
+    """Additional commands for development tasks."""
+    pass
+
+
+@subcommands.group(name="plugins", cls=LazyGroup, import_name="octoprint.cli.plugins:cli")
+def plugins():
+    """Additional commands provided by plugins."""
+    pass
+
+
+@subcommands.group(name="user", cls=LazyGroup, import_name="octoprint.cli.user:cli")
+def user():
+    """User management."""
+    pass
+
+
 # ~~ "octoprint" command, merges server_commands and plugin_commands groups
 
-from .analysis import analysis_commands  # noqa: E402
-from .client import client_commands  # noqa: E402
-from .config import config_commands  # noqa: E402
-from .dev import dev_commands  # noqa: E402
-from .plugins import plugin_commands  # noqa: E402
-from .server import server_commands  # noqa: E402
-from .systeminfo import systeminfo_commands  # noqa: E402
-from .user import user_commands  # noqa: E402
+from .server import cli as server_commands  # noqa: E402
+from .systeminfo import cli as systeminfo_commands  # noqa: E402
 
 
 @click.group(
@@ -294,13 +335,8 @@ from .user import user_commands  # noqa: E402
     invoke_without_command=True,
     cls=click.CommandCollection,
     sources=[
+        subcommands,
         server_commands,
-        plugin_commands,
-        dev_commands,
-        client_commands,
-        config_commands,
-        analysis_commands,
-        user_commands,
         systeminfo_commands,
     ],
 )

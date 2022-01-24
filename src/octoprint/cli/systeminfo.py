@@ -152,11 +152,11 @@ def get_systeminfo_bundle_name():
 
 
 @click.group()
-def systeminfo_commands():
+def cli():
     pass
 
 
-@systeminfo_commands.command(name="systeminfo")
+@cli.command(name="systeminfo")
 @standard_options()
 @click.argument(
     "path",
