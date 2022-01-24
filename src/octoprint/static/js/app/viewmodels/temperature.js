@@ -5,7 +5,6 @@ $(function () {
         self.loginState = parameters[0];
         self.settingsViewModel = parameters[1];
         self.access = parameters[2];
-        self.printerState = parameters[3];
 
         self._createToolEntry = function () {
             var entry = {
@@ -203,27 +202,17 @@ $(function () {
 
         self.markings = [];
         self.MARKING_TYPE = {
-            PRINTING: 1,
-            PAUSED: 2,
+            PRINT: "Print",
+            PAUSE: "Pause",
+            RESUME: "Resume",
+            CANCEL: "Cancel"
         }
 
-        self.printerState.isPrinting.subscribe(function() {
-            if (self.printerState.isPrinting()) {
-                self.markings.push({
-                    type: self.MARKING_TYPE.PRINTING,
-                    time: (new Date()).getTime()
-                });
-            }
-        });
-
-        self.printerState.isPaused.subscribe(function() {
-            if (self.printerState.isPaused()) {
-                self.markings.push({
-                    type: self.MARKING_TYPE.PAUSED,
-                    time: (new Date()).getTime()
-                });
-            }
-        });
+        var markingColors = {};
+        markingColors[self.MARKING_TYPE.PRINT] = "#218656";
+        markingColors[self.MARKING_TYPE.PAUSE] = "#FDC02F";
+        markingColors[self.MARKING_TYPE.RESUME] = "#27CAEE";
+        markingColors[self.MARKING_TYPE.CANCEL] = "#DA3749";
 
         self.temperatures = [];
 
@@ -232,6 +221,7 @@ $(function () {
         self.plotLegendTimeout = undefined;
 
         self.fromCurrentData = function (data) {
+            self.markings = data.markings;
             self._processStateData(data.state);
             if (!self._printerProfileInitialized) {
                 self._currentTemperatureDataBacklog.push(data);
@@ -242,6 +232,7 @@ $(function () {
         };
 
         self.fromHistoryData = function (data) {
+            self.markings = data.markings;
             self._processStateData(data.state);
             if (!self._printerProfileInitialized) {
                 self._historyTemperatureDataBacklog.push(data);
@@ -453,18 +444,11 @@ $(function () {
                 return [];
             }
 
-            var markingColors = {};
-            markingColors[self.MARKING_TYPE.PRINTING] = "#218656";
-            markingColors[self.MARKING_TYPE.PAUSED] = "#DA3749";
-
-            var markingLabels = {};
-            markingLabels[self.MARKING_TYPE.PRINTING] = "Print";
-            markingLabels[self.MARKING_TYPE.PAUSED] = "Pause";
-
             $('.tempMarkingLabel').remove();
 
             var graphWidth = self.plot.width();
             var yAxisLabelWidth = 40;
+            var markingsLabelMargin = 4;
 
             var marks = self.markings.map(function(mark) {
                 var o = self.plot.pointOffset({
@@ -474,7 +458,7 @@ $(function () {
 
                 if (o.left > yAxisLabelWidth) {
                     var label = $("<div></div>");
-                    label.html(markingLabels[mark.type]);
+                    label.html(mark.type);
                     var css = {
                         position: "absolute",
                         top: o.top + "px",
@@ -488,11 +472,11 @@ $(function () {
                     graph.append(label);
 
                     // draw markings label on the left if doesn't fit on the right
-                    if (o.left > graphWidth + yAxisLabelWidth - label.width()) {
-                        label.css("left", o.left - label.width() - 4 + "px");
+                    if (o.left > graphWidth + yAxisLabelWidth - label.width() - markingsLabelMargin) {
+                        label.css("left", o.left - label.width() - markingsLabelMargin + "px");
                     }
                     else {
-                        label.css("left", o.left + 4 + "px");
+                        label.css("left", o.left + markingsLabelMargin + "px");
                     }
                 }
 
@@ -1084,7 +1068,7 @@ $(function () {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: TemperatureViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel", "printerStateViewModel"],
+        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
         elements: ["#temp", "#temp_link", "#change_offset_dialog"]
     });
 });

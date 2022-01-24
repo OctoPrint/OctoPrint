@@ -445,6 +445,7 @@ class PrinterStateConnection(
                 "logs": self._filter_logs(logs),
                 "messages": messages,
                 "busyFiles": busy_files,
+                "markings": self._printer.get_markings()
             }
         )
         self._emit("current", payload=data)

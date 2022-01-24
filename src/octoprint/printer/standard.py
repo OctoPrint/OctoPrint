@@ -718,6 +718,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         return self._comm.getFilePosition()
 
+    def addMarking(self, type):
+        self._markings.append({
+            "type": type,
+            "time": int(time.time() * 1000),
+        })
+
+    def get_markings(self):
+        return self._markings
+
     def start_print(self, pos=None, user=None, *args, **kwargs):
         """
         Starts the currently loaded print job.
@@ -739,6 +748,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._lastProgressReport = None
         self._updateProgressData()
         self._setCurrentZ(None)
+        self.addMarking("Print")
         self._comm.startPrint(
             pos=pos,
             user=user,
@@ -754,6 +764,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         if self._comm.isPaused():
             return
+
+        self.addMarking("Pause")
 
         self._comm.setPause(
             True,
@@ -771,6 +783,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         if not self._comm.isPaused():
             return
 
+        self.addMarking("Resume")
+
         self._comm.setPause(
             False,
             user=user,
@@ -783,6 +797,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         """
         if self._comm is None:
             return
+
+        self.addMarking("Cancel")
 
         # tell comm layer to cancel - will also trigger our cancelled handler
         # for further processing
@@ -1390,6 +1406,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 temps=list(self._temps),
                 logs=list(self._log),
                 messages=list(self._messages),
+                markings=list(self._markings),
             )
 
             plugin_data = self._get_additional_plugin_data(initial=False)
