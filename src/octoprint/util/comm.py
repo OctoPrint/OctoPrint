@@ -432,6 +432,21 @@ class TemperatureRecord(object):
         else:
             return actual, target
 
+class FanspeedRecord(object):
+    def __init__(self):
+        self._fanspeed = None
+
+    def copy_from(self, other):
+        self._fanspeed = other.fanspeed
+
+    def set_speed(self, speed):
+        self._fanspeed = speed
+    
+    @property
+    def fanspeed(self):
+        return self._fanspeed
+
+
 
 class MachineCom(object):
     STATE_NONE = 0
@@ -762,6 +777,10 @@ class MachineCom(object):
         self.last_position = PositionRecord()
         self.pause_position = PositionRecord()
         self.cancel_position = PositionRecord()
+
+        self.last_fanspeed = FanspeedRecord()
+        self.pause_fanspeed = FanspeedRecord()
+        self.cancel_fanspeed = FanspeedRecord()
 
         self._record_pause_data = False
         self._record_cancel_data = False
@@ -1294,6 +1313,7 @@ class MachineCom(object):
                 "printer_profile": self._printerProfileManager.get_current_or_default(),
                 "last_position": self.last_position,
                 "last_temperature": self.last_temperature.as_script_dict(),
+                "last_fanspeed": self.last_fanspeed,
             }
         )
 
@@ -1302,6 +1322,7 @@ class MachineCom(object):
                 {
                     "pause_position": self.pause_position,
                     "pause_temperature": self.pause_temperature.as_script_dict(),
+                    "pause_fanspeed": self.pause_fanspeed,
                 }
             )
         elif scriptName == "afterPrintCancelled":
@@ -1309,6 +1330,7 @@ class MachineCom(object):
                 {
                     "cancel_position": self.cancel_position,
                     "cancel_temperature": self.cancel_temperature.as_script_dict(),
+                    "cancel_fanspeed": self.cancel_fanspeed,
                 }
             )
 
@@ -2573,6 +2595,7 @@ class MachineCom(object):
                             self._record_pause_data = False
                             self.pause_position.copy_from(self.last_position)
                             self.pause_temperature.copy_from(self.last_temperature)
+                            self.pause_fanspeed.copy_from(self.last_fanspeed)
                             self._pause_preparation_done()
 
                         if self._record_cancel_data:
@@ -2580,6 +2603,7 @@ class MachineCom(object):
                             self._record_cancel_data = False
                             self.cancel_position.copy_from(self.last_position)
                             self.cancel_temperature.copy_from(self.last_temperature)
+                            self.cancel_fanspeed.copy_from(self.last_fanspeed)
                             self._cancel_preparation_done()
 
                         self._callback.on_comm_position_update(
