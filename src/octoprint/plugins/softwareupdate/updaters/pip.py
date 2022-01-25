@@ -71,6 +71,8 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
     if not online and not check.get("offline", False):
         raise exceptions.CannotUpdateOffline()
 
+    force = force or check.get("force_reinstall", False)
+
     pip_caller = _get_pip_caller(command=pip_command)
     if pip_caller is None:
         raise exceptions.UpdateError("Can't run pip", None)

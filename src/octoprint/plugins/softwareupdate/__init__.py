@@ -2074,7 +2074,12 @@ class SoftwareUpdatePlugin(
                 raise exceptions.UnknownUpdateType()
 
             update_result = updater.perform_update(
-                target, populated_check, target_version, log_cb=self._log, online=online
+                target,
+                populated_check,
+                target_version,
+                log_cb=self._log,
+                online=online,
+                force=force,
             )
             target_result = ("success", update_result)
             self._logger.info(

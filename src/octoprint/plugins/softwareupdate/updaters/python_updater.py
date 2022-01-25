@@ -15,24 +15,26 @@ def can_perform_update(target, check, online=True):
     )
 
 
-def perform_update(target, check, target_version, log_cb=None, online=True):
+def perform_update(target, check, target_version, log_cb=None, online=True, force=False):
     from ..exceptions import CannotUpdateOffline
 
     if not online and not check("offline", False):
         raise CannotUpdateOffline()
 
+    kwargs = {"log_cb": log_cb, "online": online, "force": force}
     try:
         return check["python_updater"].perform_update(
-            target, check, target_version, log_cb=log_cb, online=online
+            target, check, target_version, **kwargs
         )
     except Exception:
         import inspect
 
         args, _, _, _ = inspect.getargspec(check["python_updater"].perform_update)
-        if "online" not in args:
-            # old python_updater footprint, simply leave out the online parameter
+        if not all(k in args for k in kwargs):
+            # old python_updater footprint, leave out what it doesn't understand
+            old_kwargs = {k: v for k, v in kwargs.items() if k in args}
             return check["python_updater"].perform_update(
-                target, check, target_version, log_cb=log_cb
+                target, check, target_version, **old_kwargs
             )
 
         # some other error, raise again
