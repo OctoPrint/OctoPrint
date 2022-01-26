@@ -163,7 +163,7 @@ class PipUtilTest(unittest.TestCase):
     def _get_lines(self, file):
         with io.open(os.path.join(self._test_data, file), "r", encoding="utf-8") as f:
             lines = list(
-                map(lambda x: x.rstrip, f.readlines())
+                map(lambda x: x.rstrip(), f.readlines())
             )  # not str.rstrip because in py2 it'll be unicode...
         return lines
 
