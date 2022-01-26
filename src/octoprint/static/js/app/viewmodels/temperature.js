@@ -200,19 +200,31 @@ $(function () {
                 .heatedChamber.subscribe(self._printerProfileUpdated);
         });
 
-        self.markings = [];
         self.MARKING_TYPE = {
-            PRINT: "Print",
-            PAUSE: "Pause",
-            RESUME: "Resume",
-            CANCEL: "Cancel"
+            PRINT: "print",
+            PAUSE: "pause",
+            RESUME: "resume",
+            CANCEL: "cancel",
+            DONE: "done",
         };
 
-        var markingColors = {};
-        markingColors[self.MARKING_TYPE.PRINT] = "#218656";
-        markingColors[self.MARKING_TYPE.PAUSE] = "#FDC02F";
-        markingColors[self.MARKING_TYPE.RESUME] = "#27CAEE";
-        markingColors[self.MARKING_TYPE.CANCEL] = "#DA3749";
+        self.markings = [];
+
+        self.marking_props = {};
+        self.marking_props[self.MARKING_TYPE.PRINT] = gettext("Start");
+        self.marking_props[self.MARKING_TYPE.PAUSE] = gettext("Pause");
+        self.marking_props[self.MARKING_TYPE.RESUME] = gettext("Resume");
+        self.marking_props[self.MARKING_TYPE.CANCEL] = gettext("Cancel");
+        self.marking_props[self.MARKING_TYPE.CANCEL] = gettext("Cancel");
+        self.marking_props[self.MARKING_TYPE.DONE] = gettext("Done");
+
+
+        self.markingColors = {};
+        self.markingColors[self.MARKING_TYPE.PRINT] = "#218656";
+        self.markingColors[self.MARKING_TYPE.PAUSE] = "#FDC02F";
+        self.markingColors[self.MARKING_TYPE.RESUME] = "#27CAEE";
+        self.markingColors[self.MARKING_TYPE.CANCEL] = "#DA3749";
+        self.markingColors[self.MARKING_TYPE.DONE] = "#1B72F9";
 
         self.temperatures = [];
 
@@ -458,16 +470,16 @@ $(function () {
 
                 if (o.left > yAxisLabelWidth) {
                     var label = $("<div></div>");
-                    label.html(mark.type);
+                    label.html(self.marking_props[mark.type]);
                     var css = {
                         position: "absolute",
                         top: o.top + "px",
-                        color: markingColors[mark.type],
+                        color: self.markingColors[mark.type],
                         fontSize: "smaller"
                     };
 
                     label.css(css);
-                    label.addClass("tempMarkingLabel");
+                    label.addClass(["tempMarkingLabel", `tempMarkingLabel-${mark.type}`]);
 
                     graph.append(label);
 
@@ -486,7 +498,7 @@ $(function () {
                 }
 
                 return {
-                    color: markingColors[mark.type],
+                    color: self.markingColors[mark.type],
                     lineWidth: 2,
                     xaxis: {from: mark.time, to: mark.time}
                 };

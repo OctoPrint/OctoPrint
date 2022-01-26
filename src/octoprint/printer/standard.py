@@ -750,7 +750,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._lastProgressReport = None
         self._updateProgressData()
         self._setCurrentZ(None)
-        self.addMarking("Print")
         self._comm.startPrint(
             pos=pos,
             user=user,
@@ -766,8 +765,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         if self._comm.isPaused():
             return
-
-        self.addMarking("Pause")
 
         self._comm.setPause(
             True,
@@ -785,8 +782,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         if not self._comm.isPaused():
             return
 
-        self.addMarking("Resume")
-
         self._comm.setPause(
             False,
             user=user,
@@ -799,8 +794,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         """
         if self._comm is None:
             return
-
-        self.addMarking("Cancel")
 
         # tell comm layer to cancel - will also trigger our cancelled handler
         # for further processing
@@ -1621,6 +1614,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event(print_job_user=user, action_user=user)
         if payload:
             eventManager().fire(Events.PRINT_STARTED, payload)
+            self.addMarking("print")
             self._logger_job.info(
                 "Print job started - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -1644,6 +1638,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event()
         if payload:
             payload["time"] = self._comm.getPrintTime()
+            self.addMarking("done")
             self._updateProgressData(
                 completion=1.0,
                 filepos=payload["size"],
@@ -1720,6 +1715,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             payload["time"] = self._comm.getPrintTime()
 
             eventManager().fire(Events.PRINT_CANCELLED, payload)
+            self.addMarking("cancel")
             self._logger_job.info(
                 "Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -1771,6 +1767,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     payload.get("user"),
                 )
             )
+            self.addMarking("pause")
             if not suppress_script:
                 self.script(
                     "afterPrintPaused",
@@ -1783,6 +1780,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event(action_user=user)
         if payload:
             eventManager().fire(Events.PRINT_RESUMED, payload)
+            self.addMarking("resume")
             self._logger_job.info(
                 "Print job resumed - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
