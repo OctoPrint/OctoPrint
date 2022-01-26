@@ -160,6 +160,13 @@ class PipUtilTest(unittest.TestCase):
             os.path.dirname(__file__), "_files", "pip_test_data"
         )
 
+    def _get_lines(self, file):
+        with io.open(os.path.join(self._test_data, file), "r", encoding="utf-8") as f:
+            lines = list(
+                map(lambda x: x.rstrip, f.readlines())
+            )  # not str.rstrip because in py2 it'll be unicode...
+        return lines
+
     @ddt.data(
         ("already_installed_1.txt", True),
         ("already_installed_2.txt", True),
@@ -167,9 +174,7 @@ class PipUtilTest(unittest.TestCase):
     )
     @ddt.unpack
     def test_is_already_installed(self, file, expected):
-        with io.open(os.path.join(self._test_data, file), "r", encoding="utf-8") as f:
-            lines = list(map(str.rstrip, f.readlines()))
-
+        lines = self._get_lines(file)
         actual = octoprint.util.pip.is_already_installed(lines)
         self.assertEqual(expected, actual)
 
@@ -181,9 +186,7 @@ class PipUtilTest(unittest.TestCase):
     )
     @ddt.unpack
     def test_is_egg_problem(self, file, expected):
-        with io.open(os.path.join(self._test_data, file), "r", encoding="utf-8") as f:
-            lines = list(map(str.rstrip, f.readlines()))
-
+        lines = self._get_lines(file)
         actual = octoprint.util.pip.is_egg_problem(lines)
         self.assertEqual(expected, actual)
 
@@ -195,9 +198,7 @@ class PipUtilTest(unittest.TestCase):
     )
     @ddt.unpack
     def test_is_python_mismatch(self, file, expected):
-        with io.open(os.path.join(self._test_data, file), "r", encoding="utf-8") as f:
-            lines = list(map(str.rstrip, f.readlines()))
-
+        lines = self._get_lines(file)
         actual = octoprint.util.pip.is_python_mismatch(lines)
         self.assertEqual(expected, actual)
 
@@ -210,8 +211,6 @@ class PipUtilTest(unittest.TestCase):
     )
     @ddt.unpack
     def test_get_result_line(self, file, expected):
-        with io.open(os.path.join(self._test_data, file), "r", encoding="utf-8") as f:
-            lines = list(map(str.rstrip, f.readlines()))
-
+        lines = self._get_lines(file)
         actual = octoprint.util.pip.get_result_line(lines)
         self.assertEqual(expected, actual)
