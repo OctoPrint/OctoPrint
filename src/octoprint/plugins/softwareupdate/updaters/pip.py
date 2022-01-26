@@ -10,9 +10,12 @@ import collections
 import logging
 import threading
 
-import pkg_resources
-
-from octoprint.util.pip import UnknownPip, create_pip_caller
+from octoprint.util.pip import (
+    UnknownPip,
+    create_pip_caller,
+    is_already_installed,
+    is_egg_problem,
+)
 from octoprint.util.version import get_comparable_version
 
 from .. import exceptions
@@ -22,13 +25,8 @@ console_logger = logging.getLogger(
     "octoprint.plugins.softwareupdate.updaters.pip.console"
 )
 
-_ALREADY_INSTALLED = "Requirement already satisfied (use --upgrade to upgrade)"
-_POTENTIAL_EGG_PROBLEM_POSIX = "No such file or directory"
-_POTENTIAL_EGG_PROBLEM_WINDOWS = "The system cannot find the file specified"
-
 _pip_callers = {}
 _pip_caller_mutex = collections.defaultdict(threading.RLock)
-_pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
 
 def can_perform_update(target, check, online=True):
@@ -116,21 +114,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
 
     returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)
     if returncode != 0:
-        # This could be caused by an issue with pip/setuptools: If something (target or dependency of target) was
-        # installed as an egg at an earlier date (e.g. thanks to just running python setup.py install), pip install
-        # will throw an error after updating that something to a newer (non-egg) version since it will still have
-        # the egg on its sys.path and expect to read data from it. Running the exact same command a second time
-        # solved this during hunt for a workaround, so this is what we'll now do if it indeed looks like this
-        # specific problem
-        def is_egg_problem(line):
-            return (
-                _POTENTIAL_EGG_PROBLEM_POSIX in line
-                or _POTENTIAL_EGG_PROBLEM_WINDOWS in line
-            ) and ".egg" in line
-
-        if any(map(lambda x: is_egg_problem(x), stderr)) or any(
-            map(lambda x: is_egg_problem(x), stdout)
-        ):
+        if is_egg_problem(stdout) or is_egg_problem(stderr):
             _log_message(
                 'This looks like an error caused by a specific issue in upgrading Python "eggs"',
                 "via current versions of pip.",
@@ -146,13 +130,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
                 "Error while executing pip install", (stdout, stderr)
             )
 
-    if not force and any(
-        map(
-            lambda x: x.strip().startswith(_ALREADY_INSTALLED)
-            and (install_arg in x or install_arg in x.lower()),
-            stdout,
-        )
-    ):
+    if not force and is_already_installed(stdout):
         _log_message(
             "Looks like we were already installed in this version. Forcing a reinstall."
         )

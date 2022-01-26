@@ -40,7 +40,13 @@ from octoprint.server.util.flask import (
 from octoprint.settings import valid_boolean_trues
 from octoprint.util import TemporaryDirectory, deprecated, to_bytes, to_native_str
 from octoprint.util.net import download_file
-from octoprint.util.pip import create_pip_caller
+from octoprint.util.pip import (
+    OUTPUT_SUCCESS,
+    create_pip_caller,
+    get_result_line,
+    is_already_installed,
+    is_python_mismatch,
+)
 from octoprint.util.platform import get_os, is_os_compatible
 from octoprint.util.version import (
     get_octoprint_version,
@@ -894,10 +900,6 @@ class PluginManagerPlugin(
             path_url = "file://" + url_quote(path)
             shell_quote = sarge.shell_quote
 
-        already_installed_check = (
-            lambda line: path_url in line.lower()
-        )  # lower case in case of windows
-
         self._logger.info("Installing plugin from {}".format(source))
         pip_args = [
             "--disable-pip-version-check",
@@ -912,28 +914,9 @@ class PluginManagerPlugin(
         all_plugins_before = self._plugin_manager.find_plugins(existing={})
 
         try:
-            returncode, stdout, stderr = self._call_pip(pip_args)
+            _, stdout, stderr = self._call_pip(pip_args)
 
-            # pip's output for a package that is already installed looks something like any of these:
-            #
-            #   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin==1.0 from \
-            #     https://example.com/foobar.zip in <lib>
-            #   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin in <lib>
-            #   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin==1.0 from \
-            #     file:///tmp/foobar.zip in <lib>
-            #   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin==1.0 from \
-            #     file:///C:/Temp/foobar.zip in <lib>
-            #
-            # If we detect any of these matching what we just tried to install, we'll need to trigger a second
-            # install with reinstall flags.
-
-            if not force and any(
-                map(
-                    lambda x: x.strip().startswith(already_installed_string)
-                    and already_installed_check(x),
-                    stdout,
-                )
-            ):
+            if not force and is_already_installed(stdout):
                 self._logger.info(
                     "Plugin to be installed from {} was already installed, forcing a reinstall".format(
                         source
@@ -957,54 +940,34 @@ class PluginManagerPlugin(
             self._send_result_notification("install", result)
             return result
 
-        else:
-            if force:
-                # We don't use --upgrade here because that will also happily update all our dependencies - we'd rather
-                # do that in a controlled manner
-                pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
-                try:
-                    returncode, stdout, stderr = self._call_pip(pip_args)
-                except Exception as e:
-                    self._logger.exception(
-                        "Could not install plugin from {}".format(source)
-                    )
-                    self._logger.exception("Reason: {}".format(repr(e)))
-                    result = {
-                        "result": False,
-                        "source": source,
-                        "source_type": source_type,
-                        "reason": "Could not install plugin from source {}, see the log for more details".format(
-                            source
-                        ),
-                    }
-                    self._send_result_notification("install", result)
-                    return result
+        if is_python_mismatch(stderr):
+            return self.handle_python_mismatch(source, source_type)
 
-        if any(map(lambda x: python_mismatch_string in x, stderr)):
-            self._logger.error(
-                "Installing the plugin from {} failed, pip reported a Python version mismatch".format(
-                    source
-                )
-            )
-            result = {
-                "result": False,
-                "source": source,
-                "source_type": source_type,
-                "reason": "Pip reported a Python version mismatch",
-                "faq": "https://faq.octoprint.org/plugin-python-mismatch",
-            }
-            self._send_result_notification("install", result)
-            return result
+        if force:
+            # We don't use --upgrade here because that will also happily update all our dependencies - we'd rather
+            # do that in a controlled manner
+            pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
+            try:
+                _, stdout, stderr = self._call_pip(pip_args)
+            except Exception as e:
+                self._logger.exception("Could not install plugin from {}".format(source))
+                self._logger.exception("Reason: {}".format(repr(e)))
+                result = {
+                    "result": False,
+                    "source": source,
+                    "source_type": source_type,
+                    "reason": "Could not install plugin from source {}, see the log for more details".format(
+                        source
+                    ),
+                }
+                self._send_result_notification("install", result)
+                return result
 
-        try:
-            result_line = list(
-                filter(
-                    lambda x: x.startswith(success_string)
-                    or x.startswith(failure_string),
-                    stdout,
-                )
-            )[-1]
-        except IndexError:
+            if is_python_mismatch(stderr):
+                return self.handle_python_mismatch(source, source_type)
+
+        result_line = get_result_line(stdout)
+        if not result_line:
             self._logger.error(
                 "Installing the plugin from {} failed, could not parse output from pip. "
                 "See plugin_pluginmanager_console.log for generated output".format(source)
@@ -1019,16 +982,7 @@ class PluginManagerPlugin(
             self._send_result_notification("install", result)
             return result
 
-        # The final output of a pip install command looks something like this:
-        #
-        #   Successfully installed OctoPrint-Plugin-1.0 Dependency-One-0.1 Dependency-Two-9.3
-        #
-        # or this:
-        #
-        #   Successfully installed OctoPrint-Plugin Dependency-One Dependency-Two
-        #   Cleaning up...
-        #
-        # So we'll need to fetch the "Successfully installed" line, strip the "Successfully" part, then split
+        # We'll need to fetch the "Successfully installed" line, strip the "Successfully" part, then split
         # by whitespace and strip to get all installed packages.
         #
         # We then need to iterate over all known plugins and see if either the package name or the package name plus
@@ -1040,7 +994,7 @@ class PluginManagerPlugin(
         # so that it can report on more than one installed plugin.
 
         result_line = result_line.strip()
-        if not result_line.startswith(success_string):
+        if not result_line.startswith(OUTPUT_SUCCESS):
             self._logger.error(
                 "Installing the plugin from {} failed, pip did not report successful installation".format(
                     source
@@ -1056,7 +1010,7 @@ class PluginManagerPlugin(
             return result
 
         installed = list(
-            map(lambda x: x.strip(), result_line[len(success_string) :].split(" "))
+            map(lambda x: x.strip(), result_line[len(OUTPUT_SUCCESS) :].split(" "))
         )
         all_plugins_after = self._plugin_manager.find_plugins(
             existing={}, ignore_uninstalled=False
@@ -1134,6 +1088,22 @@ class PluginManagerPlugin(
             "was_reinstalled": new_plugin.key in all_plugins_before
             or reinstall is not None,
             "plugin": self._to_external_plugin(new_plugin),
+        }
+        self._send_result_notification("install", result)
+        return result
+
+    def _handle_python_mismatch(self, source, source_type):
+        self._logger.error(
+            "Installing the plugin from {} failed, pip reported a Python version mismatch".format(
+                source
+            )
+        )
+        result = {
+            "result": False,
+            "source": source,
+            "source_type": source_type,
+            "reason": "Pip reported a Python version mismatch",
+            "faq": "https://faq.octoprint.org/plugin-python-mismatch",
         }
         self._send_result_notification("install", result)
         return result
