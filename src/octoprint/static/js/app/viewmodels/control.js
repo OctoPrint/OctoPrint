@@ -328,6 +328,22 @@ $(function () {
             }
         };
 
+        self._getActiveWebcamVideoElement = function () {
+            if (self.webcamWebRTCEnabled()) {
+                return document.getElementById("webcam_webrtc");
+            } else {
+                return document.getElementById("webcam_hls");
+            }
+        };
+
+        self.launchWebcamPictureInPicture = function () {
+            self._getActiveWebcamVideoElement().requestPictureInPicture();
+        };
+
+        self.launchWebcamFullscreen = function () {
+            self._getActiveWebcamVideoElement().requestFullscreen();
+        };
+
         self.sendJogCommand = function (axis, multiplier, distance) {
             if (typeof distance === "undefined") distance = self.distance();
             if (
@@ -793,9 +809,7 @@ $(function () {
 
         self._updateVideoTagWebcamLayout = function () {
             // Get all elements we need
-            var player = document.querySelector(
-                "#webcam_video_container video:not([style*='display: none'])"
-            );
+            var player = self._getActiveWebcamVideoElement();
             var rotationContainer = document.querySelector(
                 "#webcam_video_container .webcam_rotated"
             );

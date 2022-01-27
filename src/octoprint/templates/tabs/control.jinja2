@@ -2,8 +2,8 @@
     <!-- ko if: loginState.hasPermissionKo(access.permissions.WEBCAM) -->
     <div id="webcam_video_container" tabindex="0" data-bind="visible: webcamWebRTCEnabled() || webcamHlsEnabled(), css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
         <div class="video-controls btn-group action-buttons">
-            <div class="btn btn-mini" data-bind="click: function(data, event) { if (webcamWebRTCEnabled()) { document.getElementById('webcam_webrtc').requestFullscreen() } else { document.getElementById('webcam_hls').requestFullscreen() } }"><i class="fas fa-expand"></i></div>
-            <div class="btn btn-mini" data-bind="visible: document.pictureInPictureEnabled, click: function(data, event) {  if (webcamWebRTCEnabled()) { document.getElementById('webcam_webrtc').requestPictureInPicture() } else { document.getElementById('webcam_hls').requestPictureInPicture() } }"><i class="fas fa-images"></i></div>
+            <div class="btn btn-mini" data-bind="click: function(data, event) {  $root.launchWebcamFullscreen() }"><i class="fas fa-expand"></i></div>
+            <div class="btn btn-mini" data-bind="visible: document.pictureInPictureEnabled, click: function(data, event) {  $root.launchWebcamPictureInPicture() }"><i class="fas fa-images"></i></div>
             <div class="btn btn-mini" data-bind="click: function(data, event) { webcamMuted(!webcamMuted()); document.getElementById('webcam_webrtc').muted = webcamMuted(); document.getElementById('webcam_hls').muted = webcamMuted() }">
                 <!-- ko if: webcamMuted() -->
                 <i class="fas fa-volume-mute"></i>
