@@ -2755,7 +2755,7 @@ msgstr "Nur kompatible Plugins anzeigen"
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:239
 msgid "Only show unabandoned plugins"
-msgstr "Nur ungepflegte Plugins anzeigen"
+msgstr "Nur gepflegte Plugins anzeigen"
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:241
 msgid "Refresh list from repository"
