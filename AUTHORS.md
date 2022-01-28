@@ -161,7 +161,7 @@ date of first contribution):
   * [Didi Kohen](https://github.com/kohend)
   * [Taylor Talkington](https://github.com/The-EG)
   * [Shell M. Shrader](https://github.com/synman)
-  * [Surdu Nicu](https://github.com/surdu)
+  * [Nicu Surdu](https://github.com/surdu)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

@@ -722,7 +722,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._markings.append(
             {
                 "type": type,
-                "time": int(time.time() * 1000),
+                "time": time.time(),
             }
         )
 

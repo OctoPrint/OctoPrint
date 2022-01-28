@@ -200,31 +200,30 @@ $(function () {
                 .heatedChamber.subscribe(self._printerProfileUpdated);
         });
 
-        self.MARKING_TYPE = {
-            PRINT: "print",
-            PAUSE: "pause",
-            RESUME: "resume",
-            CANCEL: "cancel",
-            DONE: "done",
-        };
-
         self.markings = [];
 
-        self.marking_props = {};
-        self.marking_props[self.MARKING_TYPE.PRINT] = gettext("Start");
-        self.marking_props[self.MARKING_TYPE.PAUSE] = gettext("Pause");
-        self.marking_props[self.MARKING_TYPE.RESUME] = gettext("Resume");
-        self.marking_props[self.MARKING_TYPE.CANCEL] = gettext("Cancel");
-        self.marking_props[self.MARKING_TYPE.CANCEL] = gettext("Cancel");
-        self.marking_props[self.MARKING_TYPE.DONE] = gettext("Done");
-
-
-        self.markingColors = {};
-        self.markingColors[self.MARKING_TYPE.PRINT] = "#218656";
-        self.markingColors[self.MARKING_TYPE.PAUSE] = "#FDC02F";
-        self.markingColors[self.MARKING_TYPE.RESUME] = "#27CAEE";
-        self.markingColors[self.MARKING_TYPE.CANCEL] = "#DA3749";
-        self.markingColors[self.MARKING_TYPE.DONE] = "#1B72F9";
+        self.marking_props = {
+            "print": {
+                "label": gettext("Start"),
+                "color": "#218656"
+            },
+            "pause": {
+                "label": gettext("Pause"),
+                "color": "#FDC02F"
+            },
+            "resume": {
+                "label": gettext("Resume"),
+                "color": "#27CAEE"
+            },
+            "cancel": {
+                "label": gettext("Cancel"),
+                "color": "#DA3749"
+            },
+            "done": {
+                "label": gettext("Done"),
+                "color": "#1B72F9"
+            },
+        };
 
         self.temperatures = [];
 
@@ -463,23 +462,24 @@ $(function () {
             var markingsLabelMargin = 4;
 
             var marks = self.markings.map(function (mark) {
+                var time = parseInt(mark.time * 1000);
                 var o = self.plot.pointOffset({
-                    x: mark.time,
+                    x: time,
                     y: self.plot.getAxes().yaxis.max - 25
                 });
 
                 if (o.left > yAxisLabelWidth) {
                     var label = $("<div></div>");
-                    label.html(self.marking_props[mark.type]);
+                    label.html(self.marking_props[mark.type].label);
                     var css = {
                         position: "absolute",
                         top: o.top + "px",
-                        color: self.markingColors[mark.type],
+                        color: self.marking_props[mark.type].color,
                         fontSize: "smaller"
                     };
 
                     label.css(css);
-                    label.addClass(["tempMarkingLabel", `tempMarkingLabel-${mark.type}`]);
+                    label.addClass("tempMarkingLabel");
 
                     graph.append(label);
 
@@ -498,9 +498,9 @@ $(function () {
                 }
 
                 return {
-                    color: self.markingColors[mark.type],
+                    color: self.marking_props[mark.type].color,
                     lineWidth: 2,
-                    xaxis: {from: mark.time, to: mark.time}
+                    xaxis: {from: time, to: time}
                 };
             });
 
