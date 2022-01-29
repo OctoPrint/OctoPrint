@@ -1,0 +1,49 @@
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Collecting wrapt
+  Downloading wrapt-1.13.3.tar.gz (48 kB)
+     |████████████████████████████████| 48 kB 646 kB/s
+Building wheels for collected packages: wrapt
+  Building wheel for wrapt (setup.py) ... done
+  Created wheel for wrapt: filename=wrapt-1.13.3-cp27-cp27mu-linux_armv7l.whl size=63929 sha256=8a079ded48fa946e6d9ee2cf5578c6b9b2119a63f84118430a57c25ae568da5c
+  Stored in directory: /home/pi/.cache/pip/wheels/0c/a8/fa/491717ccbf08c230294d45e44ebb1c5f01aa61deed0131ab8b
+Successfully built wrapt
+Installing collected packages: wrapt
+  Attempting uninstall: wrapt
+    Found existing installation: wrapt 1.12.1
+    Uninstalling wrapt-1.12.1:
+      Successfully uninstalled wrapt-1.12.1
+Successfully installed wrapt-1.13.3
+Traceback (most recent call last):
+  File "../venv/bin/pip", line 11, in <module>
+    sys.exit(main())
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_internal/cli/main.py", line 75, in main
+    return command.main(cmd_args)
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_internal/cli/base_command.py", line 116, in main
+    return self._main(args)
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_internal/cli/base_command.py", line 260, in _main
+    self.handle_pip_version_check(options)
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_internal/cli/req_command.py", line 150, in handle_pip_version_check
+    timeout=min(5, options.timeout)
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_internal/cli/req_command.py", line 95, in _build_session
+    index_urls=self._get_index_urls(options),
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_internal/network/session.py", line 248, in __init__
+    self.headers["User-Agent"] = user_agent()
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_internal/network/session.py", line 158, in user_agent
+    setuptools_version = get_installed_version("setuptools")
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_internal/utils/misc.py", line 668, in get_installed_version
+    working_set = pkg_resources.WorkingSet()
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_vendor/pkg_resources/__init__.py", line 567, in __init__
+    self.add_entry(entry)
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_vendor/pkg_resources/__init__.py", line 623, in add_entry
+    for dist in find_distributions(entry, True):
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_vendor/pkg_resources/__init__.py", line 1983, in find_eggs_in_zip
+    if metadata.has_metadata('PKG-INFO'):
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_vendor/pkg_resources/__init__.py", line 1414, in has_metadata
+    return self._has(path)
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_vendor/pkg_resources/__init__.py", line 1854, in _has
+    return zip_path in self.zipinfo or zip_path in self._index()
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_vendor/pkg_resources/__init__.py", line 1731, in zipinfo
+    return self._zip_manifests.load(self.loader.archive)
+  File "/home/pi/venv/local/lib/python2.7/site-packages/pip/_vendor/pkg_resources/__init__.py", line 1688, in load
+    mtime = os.stat(path).st_mtime
+OSError: [Errno 2] No such file or directory: '/home/pi/venv/local/lib/python2.7/site-packages/wrapt-1.12.1-py2.7-linux-armv7l.egg'

@@ -14,7 +14,7 @@ def can_perform_update(target, check, online=True):
     return True
 
 
-def perform_update(target, check, target_version, log_cb=None, online=True):
+def perform_update(target, check, target_version, log_cb=None, online=True, force=False):
     duration = check.get("duration", 30)
 
     now = monotonic_time()

@@ -1602,6 +1602,7 @@ table td.timelapse_files_checkbox,
 table th.timelapse_unrendered_checkbox,
 table td.timelapse_unrendered_checkbox {
   text-align: center;
+  vertical-align: middle;
   width: 10px;
 }
 table th.timelapse_files_checkbox input[type="checkbox"],
@@ -1610,12 +1611,61 @@ table th.timelapse_unrendered_checkbox input[type="checkbox"],
 table td.timelapse_unrendered_checkbox input[type="checkbox"] {
   margin-top: 0;
 }
-table th.timelapse_files_name,
-table td.timelapse_files_name,
 table th.timelapse_unrendered_name,
 table td.timelapse_unrendered_name {
   text-overflow: ellipsis;
   text-align: left;
+}
+table th.timelapse_files_details .name,
+table td.timelapse_files_details .name {
+  text-overflow: ellipsis;
+  text-align: left;
+  font-weight: 800;
+  margin: 0 0 0 0;
+}
+table th.timelapse_files_details .detail,
+table td.timelapse_files_details .detail {
+  text-overflow: ellipsis;
+  text-align: left;
+  margin: 0 0 0 0;
+  font-size: 85%;
+  color: #999;
+}
+table th.timelapse_files_thumb,
+table td.timelapse_files_thumb {
+  width: 110px;
+  position: relative;
+}
+table th.timelapse_files_thumb img,
+table td.timelapse_files_thumb img {
+  max-width: 100%;
+  max-height: 110px;
+  border-radius: 3px;
+}
+table th.timelapse_files_thumb div,
+table td.timelapse_files_thumb div {
+  width: 110px;
+  height: calc(110px * 9 / 16);
+  border-radius: 3px;
+  background-color: #eeeeee;
+}
+table th.timelapse_files_thumb a,
+table td.timelapse_files_thumb a {
+  background-image: url(/static/img/play.svg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 32px 32px;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+  position: absolute;
+  top: 0;
+  left: 0;
+  content: "";
+}
+table th.timelapse_files_thumb a:hover,
+table td.timelapse_files_thumb a:hover {
+  opacity: 1;
 }
 table th.timelapse_files_size,
 table td.timelapse_files_size {
@@ -1637,6 +1687,7 @@ table td.timelapse_files_action,
 table th.timelapse_unrendered_action,
 table td.timelapse_unrendered_action {
   width: 60px;
+  position: relative;
   text-align: center;
   white-space: nowrap;
 }
@@ -1653,6 +1704,14 @@ table th.timelapse_unrendered_action a.disabled,
 table td.timelapse_unrendered_action a.disabled {
   color: #ccc;
   cursor: default;
+}
+table th.timelapse_files_action .btn-group,
+table td.timelapse_files_action .btn-group,
+table th.timelapse_unrendered_action .btn-group,
+table td.timelapse_unrendered_action .btn-group {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
 }
 table th.settings_users_name,
 table td.settings_users_name {
