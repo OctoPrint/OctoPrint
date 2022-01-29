@@ -3745,7 +3745,7 @@ class MachineCom(object):
                 serial_obj.open()
 
             except serial.SerialException:
-                self._logger.info("Failed to connect: Port {} does not exist".format(p))
+                self._logger.info("Failed to connect: Port {} is busy or does not exist".format(p))
                 return None
 
             # Set close_exec flag on serial handle, see #3212
