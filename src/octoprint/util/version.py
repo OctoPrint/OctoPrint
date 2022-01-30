@@ -209,7 +209,7 @@ def is_prerelease(version_string):
 
 def normalize_version(version):
     if "-" in version:
-        version = version[: version.find("-")]
+        version = version.replace('-', '')
 
     # Debian has the python version set to 2.7.15+ which is not PEP440 compliant (bug 914072)
     if version.endswith("+"):
