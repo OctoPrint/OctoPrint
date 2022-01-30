@@ -128,7 +128,7 @@ Groups will be as follows:
 """
 
 regex_temp = re.compile(
-    r"(?P<tool>B|C|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?"
+    r"(?P<tool>B|C|T(?P<toolnum>\d*)|([\w]+)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?"
     % (regex_float_pattern, regex_float_pattern)
 )
 """Regex matching temperature entries in line.
@@ -6232,10 +6232,10 @@ def parse_temperature_line(line, current):
             maxToolNum = toolNumber
 
         try:
-            actual = float(match.group(3))
+            actual = float(match.group(4))
             target = None
-            if match.group(4) and match.group(5):
-                target = float(match.group(5))
+            if match.group(4) and match.group(6):
+                target = float(match.group(6))
 
             result[tool] = (actual, target)
         except ValueError:

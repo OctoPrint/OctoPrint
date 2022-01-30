@@ -877,6 +877,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 if "chamber" in offsets and offsets["chamber"] is not None
                 else 0,
             }
+        if self._custom is not None:
+            for custom_key in self._custom.keys():
+                result[custom_key] = {
+                    "actual": self._custom[custom_key][0],
+                    "target": self._custom[custom_key][1],
+                }
 
         return result
 
