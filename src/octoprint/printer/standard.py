@@ -68,16 +68,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._targetTemp = None
         self._targetBedTemp = None
         self._targetChamberTemp = None
+
         self._temps = TemperatureHistory(
             cutoff=settings().getInt(["temperature", "cutoff"]) * 60
         )
-        self._tempBacklog = []
-
         self._messages = deque([], 300)
-        self._messageBacklog = []
-
         self._log = deque([], 300)
-        self._logBacklog = []
 
         self._state = None
 
