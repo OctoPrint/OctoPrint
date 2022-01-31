@@ -167,8 +167,8 @@ def get_comparable_version(version_string, cut=None, **kwargs):
     if cut is not None and (cut < 0 or not isinstance(cut, int)):
         raise ValueError("level must be a positive integer")
 
-    version = pkg_resources.parse_version(version_string)
     version_string = normalize_version(version_string)
+    version = pkg_resources.parse_version(version_string)
 
     if cut is not None:
         if isinstance(version, tuple):
