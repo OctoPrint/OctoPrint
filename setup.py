@@ -16,8 +16,7 @@ import octoprint_setuptools  # noqa: F401,E402
 # ----------------------------------------------------------------------------------------
 
 # Supported python versions
-# we test against 2.7, 3.6 and 3.7, so that's what we'll mark as supported
-PYTHON_REQUIRES = ">=2.7.9, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
+PYTHON_REQUIRES = ">=3.7, <4"
 
 # Requirements for setup.py
 SETUP_REQUIRES = ["markdown>=3.1,<3.2"]  # newer versions require Python 3
