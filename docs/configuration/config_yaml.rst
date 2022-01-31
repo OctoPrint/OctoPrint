@@ -709,7 +709,7 @@ Use the following settings to configure the serial connection to the printer:
      - M1
 
      # Commands which should not be sent to the printer and just silently ignored.
-     # An example of when you may wish to use this could be useful if you wish to manually change a filament on M600, 
+     # An example of when you may wish to use this could be useful if you wish to manually change a filament on M600,
      # by using that as a Pausing command (below)
      ignoredCommands:
 
@@ -807,6 +807,11 @@ Use the following settings to configure the serial connection to the printer:
 
      # Whether to support resends without follow-up ok or not
      supportResendsWithoutOk: false
+
+     # encoding scheme to use when talking to a machine
+     # (ascii limits access to characters 0-127)
+     # (latin_1 enables access to the "extended" ascii characters 0-255)
+     encodingScheme: ascii
 
      # Whether to "manually" trigger an ok for M29 (a lot of versions of this command are buggy and
      # the response skips on the ok)

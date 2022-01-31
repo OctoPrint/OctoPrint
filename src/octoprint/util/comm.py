@@ -782,6 +782,11 @@ class MachineCom(object):
             ["serial", "abortHeatupOnCancel"]
         )
 
+        # serial encoding
+        self._serial_encoding = settings().get(
+            ["serial", "encodingScheme"]
+        )
+
         # print job
         self._currentFile = None
         self._job_on_hold = CountedEvent()
@@ -4227,7 +4232,7 @@ class MachineCom(object):
                 # handled it.
                 return False
 
-            cmd = self._lastLines[-self._resendDelta].decode("ascii")
+            cmd = self._lastLines[-self._resendDelta].decode(self._serial_encoding)
             result = self._enqueue_for_sending(cmd, linenumber=lineNumber, resend=True)
 
             self._resendDelta -= 1
@@ -4464,7 +4469,7 @@ class MachineCom(object):
                         # line number predetermined - this only happens for resends, so we'll use the number and
                         # send directly without any processing (since that already took place on the first sending!)
                         self._use_up_clear(gcode)
-                        self._do_send_with_checksum(command.encode("ascii"), linenumber)
+                        self._do_send_with_checksum(command.encode(self._serial_encoding), linenumber)
 
                     else:
                         if not processed:
@@ -4768,7 +4773,7 @@ class MachineCom(object):
         )
 
     def _do_send(self, command, gcode=None):
-        command_to_send = command.encode("ascii", errors="replace")
+        command_to_send = command.encode(self._serial_encoding, errors="replace")
         if self._needs_checksum(gcode):
             self._do_increment_and_send_with_checksum(command_to_send)
         else:
@@ -4782,11 +4787,11 @@ class MachineCom(object):
             self._do_send_with_checksum(cmd, linenumber)
 
     def _do_send_with_checksum(self, command, linenumber):
-        command_to_send = b"N" + str(linenumber).encode("ascii") + b" " + command
+        command_to_send = b"N" + str(linenumber).encode(self._serial_encoding) + b" " + command
         checksum = 0
         for c in bytearray(command_to_send):
             checksum ^= c
-        command_to_send = command_to_send + b"*" + str(checksum).encode("ascii")
+        command_to_send = command_to_send + b"*" + str(checksum).encode(self._serial_encoding)
         self._do_send_without_checksum(command_to_send)
 
     def _do_send_without_checksum(self, cmd, log=True):
@@ -4794,7 +4799,7 @@ class MachineCom(object):
             return
 
         if log:
-            self._log("Send: " + cmd.decode("ascii"))
+            self._log("Send: " + cmd.decode(self._serial_encoding))
 
         cmd += b"\n"
         written = 0
@@ -5263,7 +5268,7 @@ class MachineCom(object):
             self._printerProfileManager.get_current_or_default()["extruder"]["count"]
         ):
             self._do_increment_and_send_with_checksum(
-                "M104 T{tool} S0".format(tool=tool).encode("ascii")
+                "M104 T{tool} S0".format(tool=tool).encode(self._serial_encoding)
             )
         if self._printerProfileManager.get_current_or_default()["heatedBed"]:
             self._do_increment_and_send_with_checksum(b"M140 S0")

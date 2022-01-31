@@ -262,6 +262,7 @@ def getSettings():
             "capExtendedM20": s.getBoolean(["serial", "capabilities", "extended_m20"]),
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
+            "encodingScheme": s.get(["serial", "encodingScheme"]),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -948,6 +949,11 @@ def _saveSettings(data):
             )
         if "resendRatioStart" in data["serial"]:
             s.setInt(["serial", "resendRatioStart"], data["serial"]["resendRatioStart"])
+
+        if "encodingScheme" in data["serial"]:
+            value = data["serial"]["encodingScheme"]
+            if value in ("ascii", "latin_1"):
+                s.set(["serial", "encodingScheme"], value)
 
         oldLog = s.getBoolean(["serial", "log"])
         if "log" in data["serial"]:
