@@ -164,7 +164,7 @@ def unmap_v4_as_v6(address):
     return address
 
 
-def interface_addresses(family=None, interfaces=None):
+def interface_addresses(family=None, interfaces=None, ignored=None):
     """
     Retrieves all of the host's network interface addresses.
     """
@@ -176,6 +176,9 @@ def interface_addresses(family=None, interfaces=None):
 
     if interfaces is None:
         interfaces = netifaces.interfaces()
+
+    if ignored is not None:
+        interfaces = [i for i in interfaces if i not in ignored]
 
     for interface in interfaces:
         try:
@@ -189,13 +192,15 @@ def interface_addresses(family=None, interfaces=None):
                     yield ifaddress["addr"]
 
 
-def address_for_client(host, port, timeout=3.05, addresses=None, interfaces=None):
+def address_for_client(
+    host, port, timeout=3.05, addresses=None, interfaces=None, ignored=None
+):
     """
     Determines the address of the network interface on this host needed to connect to the indicated client host and port.
     """
 
     if addresses is None:
-        addresses = interface_addresses(interfaces=interfaces)
+        addresses = interface_addresses(interfaces=interfaces, ignored=ignored)
 
     for address in addresses:
         try:

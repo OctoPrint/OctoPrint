@@ -70,7 +70,7 @@ class DiscoveryPlugin(
         self.port = None
 
         # zeroconf
-        self._zeroconf = zeroconf.Zeroconf()
+        self._zeroconf = None
         self._zeroconf_registrations = collections.defaultdict(list)
 
         # upnp/ssdp
@@ -78,6 +78,9 @@ class DiscoveryPlugin(
         self._ssdp_monitor_thread = None
         self._ssdp_notify_timeout = 30
         self._ssdp_last_notify = 0
+
+    def initialize(self):
+        self._zeroconf = zeroconf.Zeroconf(interfaces=self.get_interface_addresses())
 
     ##~~ SettingsPlugin API
 
@@ -100,7 +103,9 @@ class DiscoveryPlugin(
                 "vendorUrl": None,
             },
             "addresses": None,
+            "ignoredAddresses": None,
             "interfaces": None,
+            "ignoredInterfaces": None,
         }
 
     ##~~ BlueprintPlugin API -- used for providing the SSDP device descriptor XML
@@ -813,7 +818,8 @@ class DiscoveryPlugin(
             return addresses
         else:
             return octoprint.util.interface_addresses(
-                interfaces=self._settings.get(["interfaces"])
+                interfaces=self._settings.get(["interfaces"]),
+                ignored=self._settings.get(["ignoredInterfaces"]),
             )
 
 
