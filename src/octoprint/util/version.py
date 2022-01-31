@@ -210,7 +210,7 @@ def is_prerelease(version_string):
 def normalize_version(version):
     if "-rc" in version:
         version = version.replace("-rc", "rc")
-    
+
     if "-" in version:
         version = version[: version.find("-")]
 
