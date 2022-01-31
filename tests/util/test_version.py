@@ -46,7 +46,7 @@ class VersionUtilTest(unittest.TestCase):
         ("V1.6.0", "1.6.0"),
         ("1.6.0+", "1.6.0"),
         ("\t1.6.0  \r\n", "1.6.0"),
-        ("1.6.0-dev123", "1.6.0"),
+        ("1.6.0-dev123", "1.6.0.dev123"),
     )
     @ddt.unpack
     def test_normalize_version(self, version, expected):
