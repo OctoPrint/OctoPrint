@@ -167,8 +167,8 @@ def get_comparable_version(version_string, cut=None, **kwargs):
     if cut is not None and (cut < 0 or not isinstance(cut, int)):
         raise ValueError("level must be a positive integer")
 
-    version_string = normalize_version(version_string)
     version = pkg_resources.parse_version(version_string)
+    version_string = normalize_version(version_string)
 
     if cut is not None:
         if isinstance(version, tuple):
@@ -208,11 +208,6 @@ def is_prerelease(version_string):
 
 
 def normalize_version(version):
-    if "-rc" in version:
-        version = version.replace("-rc", "rc")
-
-    if "-" in version:
-        version = version[: version.find("-")]
 
     # Debian has the python version set to 2.7.15+ which is not PEP440 compliant (bug 914072)
     if version.endswith("+"):
