@@ -28,62 +28,65 @@ PYTHON_REQUIRES = ">=3.7, <4"
 SETUP_REQUIRES = ["markdown>=3.2.2,<4"]
 
 # Requirements for our application
-INSTALL_REQUIRES = [
-    # additional OctoPrint plugins that are maintained on a different release cycle
+bundled_plugins = [
     "OctoPrint-FileCheck>=2021.2.23",
     "OctoPrint-FirmwareCheck>=2021.10.11",
     "OctoPrint-PiSupport>=2021.10.28",
-    # anything below this should be checked on releases for new versions
-    "wrapt>=1.13.3,<1.14",
-    "tornado>=6.0.4,<7",
-    "markdown>=3.2.2,<4",
-    "flask>=2,<3",
-    "Flask-Login>=0.5,<0.6",  # flask-login doesn't use semver & breaks stuff on minor version increases
-    "Flask-Babel>=2.0,<3",
-    "Flask-Assets>=2.0,<3",
+]
+core_deps = [
     "cachelib>=0.2,<0.3",
-    "PyYAML>=5.4.1,<6",
-    "pyserial>=3.4,<4",
-    "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
-    "watchdog==1.0.0",
-    "sarge==0.1.6",
-    "netifaces>=0.11,<1",
-    "pylru>=1.2,<2",
-    "pkginfo>=1.7.1,<2",
-    "requests>=2.26.0,<3",
-    "semantic_version>=2.8.5,<3",
-    "psutil>=5.8,<6",
     "Click>=8.0.3,<9",
-    "future>=0.18.2,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
-    "websocket-client>=1.2.1,<2",
-    "emoji>=1.4.2,<2",
-    "sentry-sdk>=1.3.1,<2",
-    "filetype>=1.0.7,<2",
-    "zipstream-new>=1.1.8,<1.2",
-    "feedparser>=6.0.8,<7",
-    "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
-    "frozendict>=2.0,<3",
-    "pathvalidate>=2.4.1,<3",
     "colorlog>=5.0.1,<6",
-    # vendor bundled dependencies
+    "emoji>=1.4.2,<2",
+    "feedparser>=6.0.8,<7",
+    "filetype>=1.0.7,<2",
+    "Flask-Assets>=2.0,<3",
+    "Flask-Babel>=2.0,<3",
+    "Flask-Login>=0.5,<0.6",  # flask-login doesn't use semver & breaks stuff on minor version increases
+    "flask>=2,<3",
+    "frozendict>=2.0,<3",
+    "future>=0.18.2,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
+    "markdown>=3.2.2,<4",
+    "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
+    "netifaces>=0.11,<1",
+    "pathvalidate>=2.4.1,<3",
+    "pkginfo>=1.7.1,<2",
+    "psutil>=5.8,<6",
+    "pylru>=1.2,<2",
+    "pyserial>=3.4,<4",
+    "PyYAML>=5.4.1,<6",
+    "requests>=2.26.0,<3",
+    "sarge==0.1.6",
+    "semantic_version>=2.8.5,<3",
+    "sentry-sdk>=1.3.1,<2",
+    "tornado>=6.0.4,<7",
+    "watchdog==1.0.0",
+    "websocket-client>=1.2.1,<2",
+    "wrapt>=1.13.3,<1.14",
+    "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
+    "zipstream-new>=1.1.8,<1.2",
+]
+vendored_deps = [
     "blinker>=1.4,<2",  # dependency of flask_principal
-    "unidecode",  # dependency of awesome-slugify
     "regex",  # dependency of awesome-slugify
+    "unidecode",  # dependency of awesome-slugify
 ]
 
-# OSX specific requirements
-INSTALL_REQUIRES_OSX = [
-    "appdirs>=1.4.4,<2",
-]
+INSTALL_REQUIRES = bundled_plugins + core_deps + vendored_deps
 
-# Additional requirements for optional install options
+# Additional requirements for optional install options and/or OS-specific dependencies
 EXTRA_REQUIRES = {
+    # Dependencies for OSX
+    ":sys_platform == 'darwin'": [
+        "appdirs>=1.4.4,<2",
+    ],
+    # Dependencies for core development
     "develop": [
         # Testing dependencies
-        "mock>=4,<5",
-        "pytest>=6.2.5,<7",
-        "pytest-doctest-custom>=1.0.0,<2",
         "ddt",
+        "mock>=4,<5",
+        "pytest-doctest-custom>=1.0.0,<2",
+        "pytest>=6.2.5,<7",
         # pre-commit
         "pre-commit",
         # profiler
@@ -91,22 +94,17 @@ EXTRA_REQUIRES = {
     ],
     # Dependencies for developing OctoPrint plugins
     "plugins": ["cookiecutter>=1.7.2,<1.8"],
-    # Dependencies for building the documentation - Python 3 required!
+    # Dependencies for building the documentation
     "docs": [
+        "readthedocs-sphinx-ext",
+        "sphinx_rtd_theme",
         "sphinx>=3,<4",
         "sphinxcontrib-httpdomain",
         "sphinxcontrib-mermaid",
-        "sphinx_rtd_theme",
-        "readthedocs-sphinx-ext",
     ],
 }
 
-# Dependency links for any of the aforementioned dependencies
-DEPENDENCY_LINKS = []
-
-EXTRA_REQUIRES[":sys_platform == 'darwin'"] = INSTALL_REQUIRES_OSX
-
-# -----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
 # Anything below here is just command setup and general setup configuration
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -196,7 +194,7 @@ def get_cmdclass():
 
 def params():
     # make sure these are always available, even when run by dependabot
-    global versioneer, get_cmdclass, read_file_contents, here, PYTHON_REQUIRES, SETUP_REQUIRES, INSTALL_REQUIRES, EXTRA_REQUIRES, DEPENDENCY_LINKS
+    global versioneer, get_cmdclass, read_file_contents, here, PYTHON_REQUIRES, SETUP_REQUIRES, INSTALL_REQUIRES, EXTRA_REQUIRES
 
     name = "OctoPrint"
     version = versioneer.get_version()
@@ -210,7 +208,6 @@ def params():
     setup_requires = SETUP_REQUIRES
     install_requires = INSTALL_REQUIRES
     extras_require = EXTRA_REQUIRES
-    dependency_links = DEPENDENCY_LINKS
 
     classifiers = [
         "Development Status :: 5 - Production/Stable",
