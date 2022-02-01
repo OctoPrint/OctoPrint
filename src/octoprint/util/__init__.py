@@ -1034,7 +1034,7 @@ def temppath(prefix=None, suffix=""):
 TemporaryDirectory = tempfile.TemporaryDirectory
 
 
-@deprecated("Please use io.open with '-sig' encoding instead", since="1.8.0")
+@deprecated("Please use open with '-sig' encoding instead", since="1.8.0")
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
     # TODO Remove in 2.0.0
     import codecs
