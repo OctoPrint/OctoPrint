@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import os
 import os.path
 import unittest
+from unittest import mock
 
-import mock
 import pytest
 from ddt import data, ddt, unpack
 
@@ -31,7 +27,7 @@ pathvalidate_available_only = pytest.mark.skipif(
 )
 
 
-class FileWrapper(object):
+class FileWrapper:
     def __init__(self, filename):
         self.path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "_files", filename
@@ -41,7 +37,7 @@ class FileWrapper(object):
 
         blocksize = 65536
         hash = hashlib.sha1()
-        with io.open(self.path, "rb") as f:
+        with open(self.path, "rb") as f:
             buffer = f.read(blocksize)
             while len(buffer) > 0:
                 hash.update(buffer)
@@ -853,7 +849,7 @@ class LocalStorageTest(unittest.TestCase):
         # prepare
         import yaml
 
-        with io.open(yaml_path, "wt") as f:
+        with open(yaml_path, "wt") as f:
             yaml.safe_dump(metadata, f)
 
         # migrate
@@ -865,7 +861,7 @@ class LocalStorageTest(unittest.TestCase):
 
         import json
 
-        with io.open(json_path, "rt", encoding="utf-8") as f:
+        with open(json_path, encoding="utf-8") as f:
             json_metadata = json.load(f)
         self.assertDictEqual(metadata, json_metadata)
 

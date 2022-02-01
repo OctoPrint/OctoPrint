@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -9,14 +6,6 @@ import logging
 import os
 import tarfile
 import zipfile
-
-from octoprint.util import yaml
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
-
 from collections import defaultdict
 
 from flask import abort, jsonify, request
@@ -27,6 +16,7 @@ from octoprint.plugin import plugin_manager
 from octoprint.server.api import api
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import settings
+from octoprint.util import yaml
 
 
 @api.route("/languages", methods=["GET"])
@@ -41,7 +31,7 @@ def getInstalledLanguagePacks():
     plugin_packs = defaultdict(
         lambda: {"identifier": None, "display": None, "languages": []}
     )
-    for entry in scandir(translation_folder):
+    for entry in os.scandir(translation_folder):
         if not entry.is_dir():
             continue
 
@@ -72,7 +62,7 @@ def getInstalledLanguagePacks():
             return meta
 
         if entry.name == "_plugins":
-            for plugin_entry in scandir(entry.path):
+            for plugin_entry in os.scandir(entry.path):
                 if not plugin_entry.is_dir():
                     continue
 
@@ -84,7 +74,7 @@ def getInstalledLanguagePacks():
                 plugin_packs[plugin_entry.name]["identifier"] = plugin_entry.name
                 plugin_packs[plugin_entry.name]["display"] = plugin_info.name
 
-                for language_entry in scandir(plugin_entry.path):
+                for language_entry in os.scandir(plugin_entry.path):
                     try:
                         plugin_packs[plugin_entry.name]["languages"].append(
                             load_meta(language_entry.path, language_entry.name)

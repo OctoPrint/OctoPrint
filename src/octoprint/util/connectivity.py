@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -12,7 +9,7 @@ import time
 from octoprint.util.net import resolve_host, server_reachable
 
 
-class ConnectivityChecker(object):
+class ConnectivityChecker:
     """
     Regularly checks for online connectivity.
 
@@ -171,7 +168,7 @@ class ConnectivityChecker(object):
             "online": self.online,
             "enabled": self.enabled,
             "connection_ok": self._connection_working,
-            "connection_check": "{}:{}".format(self._host, self._port),
+            "connection_check": f"{self._host}:{self._port}",
         }
         if self._name:
             result.update(
@@ -211,9 +208,7 @@ class ConnectivityChecker(object):
 
                 if self._name:
                     if connection_working:
-                        self._logger.debug(
-                            "Checking if we can resolve {}...".format(self._name)
-                        )
+                        self._logger.debug(f"Checking if we can resolve {self._name}...")
                         resolution_working = len(resolve_host(self._name)) > 0
                     else:
                         resolution_working = False

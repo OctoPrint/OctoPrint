@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -128,9 +125,7 @@ def add_user_command(ctx, username, password, groups, permissions, is_admin):
             click.echo("User created:")
             click.echo("\t{}".format(_user_to_line(user.as_dict())))
     except UserAlreadyExists:
-        click.echo(
-            "A user with the name {} does already exist!".format(username), err=True
-        )
+        click.echo(f"A user with the name {username} does already exist!", err=True)
 
 
 @cli.command(name="remove")
@@ -145,9 +140,9 @@ def remove_user_command(ctx, username):
 
     if confirm.lower() == "yes":
         ctx.obj.user_manager.remove_user(username)
-        click.echo("User {} removed.".format(username))
+        click.echo(f"User {username} removed.")
     else:
-        click.echo("User {} not removed.".format(username))
+        click.echo(f"User {username} not removed.")
 
 
 @cli.command(name="password")
@@ -158,9 +153,9 @@ def change_password_command(ctx, username, password):
     """Change an existing user's password."""
     try:
         ctx.obj.user_manager.change_user_password(username, password)
-        click.echo("Password changed for user {}.".format(username))
+        click.echo(f"Password changed for user {username}.")
     except UnknownUser:
-        click.echo("User {} does not exist!".format(username), err=True)
+        click.echo(f"User {username} does not exist!", err=True)
 
 
 @cli.command(name="activate")
@@ -170,14 +165,14 @@ def activate_command(ctx, username):
     """Activate a user account."""
     try:
         ctx.obj.user_manager.change_user_activation(username, True)
-        click.echo("User {} activated.".format(username))
+        click.echo(f"User {username} activated.")
 
         user = ctx.obj.user_manager.find_user(username)
         if user:
             click.echo("User created:")
             click.echo("\t{}".format(_user_to_line(user.asDict())))
     except UnknownUser:
-        click.echo("User {} does not exist!".format(username), err=True)
+        click.echo(f"User {username} does not exist!", err=True)
 
 
 @cli.command(name="deactivate")
@@ -187,14 +182,14 @@ def deactivate_command(ctx, username):
     """Activate a user account."""
     try:
         ctx.obj.user_manager.change_user_activation(username, False)
-        click.echo("User {} activated.".format(username))
+        click.echo(f"User {username} activated.")
 
         user = ctx.obj.user_manager.find_user(username)
         if user:
             click.echo("User created:")
             click.echo("\t{}".format(_user_to_line(user.asDict())))
     except UnknownUser:
-        click.echo("User {} does not exist!".format(username), err=True)
+        click.echo(f"User {username} does not exist!", err=True)
 
 
 def _print_list(users):

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -47,7 +44,7 @@ def run_server(
         PluginTimingsLogHandler.arm_rollover()
 
         logger.info(get_divider_line("*"))
-        logger.info("Starting OctoPrint {}".format(__display_version__))
+        logger.info(f"Starting OctoPrint {__display_version__}")
         if safe_mode:
             logger.info("Starting in SAFE MODE. Third party plugins will be disabled!")
             if safe_mode == "flag":
@@ -58,7 +55,7 @@ def run_server(
                 reason = "problem during last startup"
             else:
                 reason = "unknown"
-            logger.info("Reason for safe mode: {}".format(reason))
+            logger.info(f"Reason for safe mode: {reason}")
 
         if recorder and len(recorder):
             logger.info(get_divider_line("-", "Logged during platform initialization:"))
@@ -101,7 +98,7 @@ def run_server(
                 log_to_handler(logger, handler, level, message)
 
             _log(get_divider_line("-", "Log roll over detected"))
-            _log("OctoPrint {}".format(__display_version__))
+            _log(f"OctoPrint {__display_version__}")
             if safe_mode:
                 _log("SAFE MODE is active. Third party plugins are disabled!")
             plugin_manager.log_all_plugins(only_to_handler=handler)

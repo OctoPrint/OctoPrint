@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -101,7 +98,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
         target_version=target_version, target=target_version
     )
 
-    logger.debug("Target: {}, executing pip install {}".format(target, install_arg))
+    logger.debug(f"Target: {target}, executing pip install {install_arg}")
     pip_args = ["--disable-pip-version-check", "install", install_arg, "--no-cache-dir"]
     pip_kwargs = {
         "env": {"PYTHONWARNINGS": b"ignore:DEPRECATION::pip._internal.cli.base_command"}

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module represents OctoPrint's settings management. Within this module the default settings for the core
 application are defined and the instance of the :class:`Settings` is held, which offers getter and setter
@@ -16,38 +15,22 @@ of various types and the configuration file itself.
    :members:
    :undoc-members:
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import fnmatch
-import io
 import logging
 import os
 import re
 import sys
 import time
+from collections import ChainMap
+from collections.abc import KeysView
 
 # noinspection PyCompatibilitys
-from past.builtins import basestring
 from yaml import YAMLError
-
-try:
-    from collections import ChainMap
-except ImportError:
-    from chainmap import ChainMap
-
-try:
-    from collections.abc import KeysView
-except ImportError:
-    from collections import KeysView
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
 
 from octoprint.util import (
     CaseInsensitiveSet,
@@ -642,7 +625,7 @@ class HierarchicalChainMap(ChainMap):
             return cls._hierarchy_for_key(key, node)
 
 
-class Settings(object):
+class Settings:
     """
     The :class:`Settings` class allows managing all of OctoPrint's settings. It takes care of initializing the settings
     directory, loading the configuration from ``config.yaml``, persisting changes to disk etc and provides access
@@ -827,7 +810,7 @@ class Settings(object):
                                 lambda x: key + "/" + x, self._get_templates(scripts[key])
                             )
                         )
-                    elif isinstance(scripts[key], basestring):
+                    elif isinstance(scripts[key], str):
                         templates.append(key)
                 return templates
 
@@ -1024,7 +1007,7 @@ class Settings(object):
 
     def load(self, migrate=False):
         if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
-            with io.open(self._configfile, "rt", encoding="utf-8", errors="replace") as f:
+            with open(self._configfile, encoding="utf-8", errors="replace") as f:
                 try:
                     self._config = yaml.load_from_file(file=f)
                     self._mtime = self.last_modified
@@ -1064,17 +1047,15 @@ class Settings(object):
                 try:
                     overlay_config = self.load_overlay(path, migrate=migrate)
                     self.add_overlay(overlay_config)
-                    self._logger.info("Added config overlay from {}".format(path))
+                    self._logger.info(f"Added config overlay from {path}")
                 except Exception:
-                    self._logger.exception(
-                        "Could not add config overlay from {}".format(path)
-                    )
+                    self._logger.exception(f"Could not add config overlay from {path}")
 
             if os.path.isfile(overlay):
                 process(overlay)
 
             elif os.path.isdir(overlay):
-                for entry in scandir(overlay):
+                for entry in os.scandir(overlay):
                     name = entry.name
                     path = entry.path
 
@@ -1093,7 +1074,7 @@ class Settings(object):
                 self._logger.exception("Error loading overlay from callable")
                 return
 
-        if isinstance(overlay, basestring):
+        if isinstance(overlay, str):
             if os.path.exists(overlay) and os.path.isfile(overlay):
                 config = yaml.load_from_file(path=overlay)
         elif isinstance(overlay, dict):
@@ -1105,7 +1086,7 @@ class Settings(object):
 
         if not isinstance(config, dict):
             raise ValueError(
-                "Configuration data must be a dict but is a {}".format(config.__class__)
+                f"Configuration data must be a dict but is a {config.__class__}"
             )
 
         if migrate:
@@ -1888,7 +1869,7 @@ class Settings(object):
             return value
         if isinstance(value, (int, float)):
             return value != 0
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             return value.lower() in valid_boolean_trues
         return value is not None
 
@@ -2021,7 +2002,7 @@ class Settings(object):
         preprocessors=None,
         error_on_path=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         if not path:
             if error_on_path:
@@ -2139,7 +2120,7 @@ class Settings(object):
     def setBoolean(self, path, value, **kwargs):
         if value is None or isinstance(value, bool):
             self.set(path, value, **kwargs)
-        elif isinstance(value, basestring) and value.lower() in valid_boolean_trues:
+        elif isinstance(value, str) and value.lower() in valid_boolean_trues:
             self.set(path, True, **kwargs)
         else:
             self.set(path, False, **kwargs)
@@ -2214,15 +2195,15 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
     if not os.path.exists(folder):
         if os.path.islink(folder):
             # broken symlink, see #2644
-            raise IOError("Folder at {} appears to be a broken symlink".format(folder))
+            raise OSError(f"Folder at {folder} appears to be a broken symlink")
 
         elif create:
             # non existing, but we are allowed to create it
             try:
                 os.makedirs(folder)
             except Exception:
-                logger.exception("Could not create {}".format(folder))
-                raise IOError(
+                logger.exception(f"Could not create {folder}")
+                raise OSError(
                     "Folder for type {} at {} does not exist and creation failed".format(
                         type, folder
                     )
@@ -2230,11 +2211,11 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
 
         else:
             # not extisting, not allowed to create it
-            raise IOError("No such folder: {}".format(folder))
+            raise OSError(f"No such folder: {folder}")
 
     elif os.path.isfile(folder):
         # hardening against misconfiguration, see #1953
-        raise IOError("Expected a folder at {} but found a file instead".format(folder))
+        raise OSError(f"Expected a folder at {folder} but found a file instead")
 
     elif check_writable:
         # make sure we can also write into the folder
@@ -2242,16 +2223,16 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
             folder
         )
         if not os.access(folder, os.W_OK):
-            raise IOError(error)
+            raise OSError(error)
 
         elif deep_check_writable:
             # try to write a file to the folder - on network shares that might be the only reliable way
             # to determine whether things are *actually* writable
             testfile = os.path.join(folder, ".testballoon.txt")
             try:
-                with io.open(testfile, "wt", encoding="utf-8") as f:
+                with open(testfile, "wt", encoding="utf-8") as f:
                     f.write("test")
                 os.remove(testfile)
             except Exception:
-                logger.exception("Could not write test file to {}".format(testfile))
-                raise IOError(error)
+                logger.exception(f"Could not write test file to {testfile}")
+                raise OSError(error)

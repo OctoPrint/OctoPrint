@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
-
-# MO unicode_literals because fixing all the doctests is too annoying :-P
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -203,7 +198,7 @@ def _get_comparable_version_semantic(version_string, force_base=True):
     version = semantic_version.Version.coerce(version_string, partial=False)
 
     if force_base:
-        version_string = "{}.{}.{}".format(version.major, version.minor, version.patch)
+        version_string = f"{version.major}.{version.minor}.{version.patch}"
         version = semantic_version.Version.coerce(version_string, partial=False)
 
     return version
@@ -360,7 +355,7 @@ def get_latest(
         "release_notes": release_notes,
     }
 
-    logger.debug("Target: {}, local: {}, remote: {}".format(target, current, remote_tag))
+    logger.debug(f"Target: {target}, local: {current}, remote: {remote_tag}")
 
     return information, _is_current(
         information, compare_type, custom=custom_compare, force_base=force_base

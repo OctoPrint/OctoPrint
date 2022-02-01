@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -8,6 +5,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import os
 import threading
+from urllib.parse import quote as urlquote
 
 from flask import abort, jsonify, request, url_for
 
@@ -23,11 +21,6 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.settings import settings, valid_boolean_trues
-
-try:
-    from urllib.parse import quote as urlquote
-except ImportError:
-    from urllib import quote as urlquote  # noqa: F401
 
 _DATA_FORMAT_VERSION = "v2"
 
@@ -193,9 +186,9 @@ def deleteTimelapse(filename):
             os.remove(full_path)
         except Exception as ex:
             logging.getLogger(__file__).exception(
-                "Error deleting timelapse file {}".format(full_path)
+                f"Error deleting timelapse file {full_path}"
             )
-            abort(500, description="Unexpected error: {}".format(ex))
+            abort(500, description=f"Unexpected error: {ex}")
 
     if (
         octoprint.timelapse.valid_timelapse_thumbnail(thumb_path)
@@ -208,7 +201,7 @@ def deleteTimelapse(filename):
         except Exception as ex:
             # Do not treat this as an error, log and ignore
             logging.getLogger(__file__).warning(
-                "Unable to delete thumbnail {} ({})".format(thumb_path, ex)
+                f"Unable to delete thumbnail {thumb_path} ({ex})"
             )
 
     return getTimelapseData()

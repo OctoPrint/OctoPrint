@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -11,7 +8,6 @@ import threading
 import time
 
 import wrapt
-from past.builtins import basestring
 
 import octoprint.access.users
 import octoprint.events
@@ -186,9 +182,9 @@ class PrinterStateConnection(
 
     def __str__(self):
         if self._remoteAddress:
-            return "{!r} connected to {}".format(self, self._remoteAddress)
+            return f"{self!r} connected to {self._remoteAddress}"
         else:
-            return "Unconnected {!r}".format(self)
+            return f"Unconnected {self!r}"
 
     def on_open(self, info):
         self._pluginManager.register_message_receiver(self.on_plugin_message)
@@ -294,7 +290,7 @@ class PrinterStateConnection(
                     self._on_login(user)
                 else:
                     self._logger.warning(
-                        "Unknown user/session combo: {}:{}".format(user_id, user_session)
+                        f"Unknown user/session combo: {user_id}:{user_session}"
                     )
                     self._on_logout()
 
@@ -333,7 +329,7 @@ class PrinterStateConnection(
                     raise ValueError("value must be a list or boolean")
 
             def regex_or_boolean(value):
-                if isinstance(value, basestring):
+                if isinstance(value, str):
                     try:
                         return re.compile(value)
                     except Exception:
@@ -548,9 +544,7 @@ class PrinterStateConnection(
             and hasattr(self._user, "session")
             and user.session == self._user.session
         ):
-            self._logger.info(
-                "User {} logged out, logging out on socket".format(user.get_id())
-            )
+            self._logger.info(f"User {user.get_id()} logged out, logging out on socket")
             self._on_logout()
 
             if stale:
@@ -564,7 +558,7 @@ class PrinterStateConnection(
 
     def on_user_removed(self, userid):
         if self._user.get_id() == userid:
-            self._logger.info("User {} deleted, logging out on socket".format(userid))
+            self._logger.info(f"User {userid} deleted, logging out on socket")
             self._on_logout()
             self._sendReauthRequired("removed")
 
@@ -595,7 +589,7 @@ class PrinterStateConnection(
                 proceed = proceed and hook(self, self._user)
             except Exception:
                 self._logger.exception(
-                    "Error processing register hook handler for plugin {}".format(name),
+                    f"Error processing register hook handler for plugin {name}",
                     extra={"plugin": name},
                 )
 
@@ -660,7 +654,7 @@ class PrinterStateConnection(
                 proceed = proceed and hook(self, self._user, type, payload)
             except Exception:
                 self._logger.exception(
-                    "Error processing emit hook handler from plugin {}".format(name),
+                    f"Error processing emit hook handler from plugin {name}",
                     extra={"plugin": name},
                 )
 
@@ -703,7 +697,7 @@ class PrinterStateConnection(
         except Exception as e:
             if self._logger.isEnabledFor(logging.DEBUG):
                 self._logger.exception(
-                    "Could not send message to client {}".format(self._remoteAddress)
+                    f"Could not send message to client {self._remoteAddress}"
                 )
             else:
                 self._logger.warning(
@@ -726,7 +720,7 @@ class PrinterStateConnection(
                 hook(self, self._user)
             except Exception:
                 self._logger.exception(
-                    "Error processing authed hook handler for plugin {}".format(name),
+                    f"Error processing authed hook handler for plugin {name}",
                     extra={"plugin": name},
                 )
 
@@ -759,6 +753,6 @@ class PrinterStateConnection(
                 hook(self, self._user)
             except Exception:
                 self._logger.exception(
-                    "Error processing authed hook handler for plugin {}".format(name),
+                    f"Error processing authed hook handler for plugin {name}",
                     extra={"plugin": name},
                 )

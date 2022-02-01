@@ -1,14 +1,9 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import json
 
 import click
-from past.builtins import unicode
 
 import octoprint_client
 from octoprint import FatalStartupError, init_settings
@@ -109,10 +104,10 @@ def cli(ctx, apikey, host, port, httpuser, httppass, https, prefix):
 
 def log_response(response, status_code=True, body=True, headers=False):
     if status_code:
-        click.echo("Status Code: {}".format(response.status_code))
+        click.echo(f"Status Code: {response.status_code}")
     if headers:
         for header, value in response.headers.items():
-            click.echo("{}: {}".format(header, value))
+            click.echo(f"{header}: {value}")
         click.echo()
     if body:
         click.echo(response.text)
@@ -163,14 +158,14 @@ def post_from_file(ctx, path, file_path, json_flag, yaml_flag, timeout):
     """POSTs JSON data to the specified server path, taking the data from the specified file."""
     if json_flag or yaml_flag:
         if json_flag:
-            with io.open(file_path, "rt") as fp:
+            with open(file_path) as fp:
                 data = json.load(fp)
         else:
             data = yaml.load_from_file(path=file_path)
 
         r = ctx.obj.client.post_json(path, data, timeout=timeout)
     else:
-        with io.open(file_path, "rb") as fp:
+        with open(file_path, "rb") as fp:
             data = fp.read()
 
         r = ctx.obj.client.post(path, data, timeout=timeout)
@@ -187,10 +182,10 @@ def post_from_file(ctx, path, file_path, json_flag, yaml_flag, timeout):
     "str_params",
     multiple=True,
     nargs=2,
-    type=click.Tuple([unicode, unicode]),
+    type=click.Tuple([str, str]),
 )
 @click.option(
-    "--int", "-i", "int_params", multiple=True, nargs=2, type=click.Tuple([unicode, int])
+    "--int", "-i", "int_params", multiple=True, nargs=2, type=click.Tuple([str, int])
 )
 @click.option(
     "--float",
@@ -198,7 +193,7 @@ def post_from_file(ctx, path, file_path, json_flag, yaml_flag, timeout):
     "float_params",
     multiple=True,
     nargs=2,
-    type=click.Tuple([unicode, float]),
+    type=click.Tuple([str, float]),
 )
 @click.option(
     "--bool",
@@ -206,7 +201,7 @@ def post_from_file(ctx, path, file_path, json_flag, yaml_flag, timeout):
     "bool_params",
     multiple=True,
     nargs=2,
-    type=click.Tuple([unicode, bool]),
+    type=click.Tuple([str, bool]),
 )
 @click.option("--timeout", type=float, default=None, help="Request timeout in seconds")
 @click.pass_context
@@ -233,7 +228,7 @@ def command(
     "params",
     multiple=True,
     nargs=2,
-    type=click.Tuple([unicode, unicode]),
+    type=click.Tuple([str, str]),
 )
 @click.option("--file-name", type=click.STRING)
 @click.option("--content-type", type=click.STRING)
@@ -276,7 +271,7 @@ def listen(ctx):
         click.echo("--- Connection closed!")
 
     def on_error(ws, error):
-        click.echo("!!! Error: {}".format(error))
+        click.echo(f"!!! Error: {error}")
 
     def on_sent(ws, data):
         click.echo(">>> {}".format(json.dumps(data)))

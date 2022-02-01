@@ -1,16 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
 import os
-
-try:
-    from os import scandir, walk
-except ImportError:
-    from scandir import scandir, walk  # noqa: F401
 
 from jinja2 import nodes
 from jinja2.ext import Extension
@@ -156,7 +148,7 @@ class WarningLoader(BaseLoader):
 def get_all_template_paths(loader):
     def walk_folder(folder):
         files = []
-        walk_dir = walk(folder, followlinks=True)
+        walk_dir = os.walk(folder, followlinks=True)
         for dirpath, _, filenames in walk_dir:
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
@@ -228,7 +220,7 @@ class ExceptionHandlerExtension(Extension):
     tags = {"try"}
 
     def __init__(self, environment):
-        super(ExceptionHandlerExtension, self).__init__(environment)
+        super().__init__(environment)
         self._logger = logging.getLogger(__name__)
 
     def parse(self, parser):
@@ -291,7 +283,7 @@ class ExceptionHandlerExtension(Extension):
 trycatch = ExceptionHandlerExtension
 
 
-class MarkdownFilter(object):
+class MarkdownFilter:
     def __init__(self, app, **markdown_options):
         self._markdown_options = markdown_options
         app.jinja_env.filters.setdefault("markdown", self)

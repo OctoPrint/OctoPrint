@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import os
 import threading
+import time
 from collections import defaultdict
 
 import flask
@@ -19,13 +17,7 @@ from octoprint.server.util.flask import (
     restricted_access,
 )
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import (
-    ResettableTimer,
-    atomic_write,
-    generate_api_key,
-    monotonic_time,
-    yaml,
-)
+from octoprint.util import ResettableTimer, atomic_write, generate_api_key, yaml
 
 CUTOFF_TIME = 10 * 60  # 10min
 POLL_TIMEOUT = 5  # 5 seconds
@@ -35,13 +27,13 @@ class AppAlreadyExists(Exception):
     pass
 
 
-class PendingDecision(object):
+class PendingDecision:
     def __init__(self, app_id, app_token, user_id, user_token, timeout_callback=None):
         self.app_id = app_id
         self.app_token = app_token
         self.user_id = user_id
         self.user_token = user_token
-        self.created = monotonic_time()
+        self.created = time.monotonic()
 
         if callable(timeout_callback):
             self.poll_timeout = ResettableTimer(
@@ -62,7 +54,7 @@ class PendingDecision(object):
         )
 
 
-class ReadyDecision(object):
+class ReadyDecision:
     def __init__(self, app_id, app_token, user_id):
         self.app_id = app_id
         self.app_token = app_token
@@ -78,7 +70,7 @@ class ReadyDecision(object):
         )
 
 
-class ActiveKey(object):
+class ActiveKey:
     def __init__(self, app_id, api_key, user_id):
         self.app_id = app_id
         self.api_key = api_key
@@ -186,7 +178,7 @@ class AppKeysPlugin(
         app_token, user_token = self._add_pending_decision(app_name, user_id=user_id)
         auth_dialog = flask.url_for(
             "plugin.appkeys.handle_auth_dialog", app_token=app_token, _external=True
-        ) + ("?user={}".format(user_id) if user_id else "")
+        ) + (f"?user={user_id}" if user_id else "")
 
         self._plugin_manager.send_plugin_message(
             self._identifier,
@@ -407,7 +399,7 @@ class AppKeysPlugin(
 
     def _remove_stale_pending(self):
         with self._pending_lock:
-            cutoff = monotonic_time() - CUTOFF_TIME
+            cutoff = time.monotonic() - CUTOFF_TIME
             len_before = len(self._pending_decisions)
             self._pending_decisions = list(
                 filter(lambda x: x.created >= cutoff, self._pending_decisions)
@@ -510,7 +502,7 @@ class AppKeysPlugin(
                 persisted = yaml.load_from_file(path=self._key_path)
             except Exception:
                 self._logger.exception(
-                    "Could not load application keys from {}".format(self._key_path)
+                    f"Could not load application keys from {self._key_path}"
                 )
                 return
 
@@ -535,7 +527,7 @@ class AppKeysPlugin(
                     yaml.save_to_file(to_persist, file=f)
             except Exception:
                 self._logger.exception(
-                    "Could not write application keys to {}".format(self._key_path)
+                    f"Could not write application keys to {self._key_path}"
                 )
 
 
@@ -549,7 +541,7 @@ __plugin_disabling_discouraged__ = gettext(
     "obtain an API key without you manually copy-pasting it."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = AppKeysPlugin()
 __plugin_hooks__ = {
     "octoprint.accesscontrol.keyvalidator": __plugin_implementation__.validate_api_key,

@@ -1,10 +1,6 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import logging
 import os
 import socket
@@ -45,7 +41,7 @@ if hasattr(socket, "IPPROTO_IPV6") and hasattr(socket, "IPV6_V6ONLY"):
     IPV6_V6ONLY = socket.IPV6_V6ONLY
 else:
     if sys.platform == "win32":
-        # Python 2.7 on Windows lacks IPPROTO_IPV6, but supports the socket options just fine, let's redefine it
+        # Python on Windows lacks IPPROTO_IPV6, but supports the socket options just fine, let's redefine it
         IPPROTO_IPV6 = 41
         IPV6_V6ONLY = 27
     else:
@@ -66,7 +62,7 @@ def get_lan_ranges(additional_private=None):
             _, prefix = prefix.split("/")
 
         addr = strip_interface_tag(address["addr"])
-        return netaddr.IPNetwork("{}/{}".format(addr, prefix))
+        return netaddr.IPNetwork(f"{addr}/{prefix}")
 
     subnets = []
 
@@ -253,10 +249,10 @@ def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
 def resolve_host(host):
     import socket
 
-    from octoprint.util import to_unicode
+    from octoprint.util import to_str
 
     try:
-        return [to_unicode(x[4][0]) for x in socket.getaddrinfo(host, 80)]
+        return [to_str(x[4][0]) for x in socket.getaddrinfo(host, 80)]
     except Exception:
         return []
 
@@ -281,7 +277,7 @@ def download_file(url, folder, max_length=None):
         path = os.path.abspath(os.path.join(folder, filename))
         assert path.startswith(folder)
 
-        with io.open(path, "wb") as f:
+        with open(path, "wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
     return path

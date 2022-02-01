@@ -1,8 +1,14 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 
+### NOTE #################################################################################
+# This file has to stay format compatible to Python 2, or pip under Python 2 will
+# not be able to detect that OctoPrint requires Python 3 but instead fail with a
+# syntax error.
+#
+# So, no f-strings, no walrus operators, no pyupgrade or codemods.
+##########################################################################################
+
 import os
-import re
 import sys
 from distutils.command.build_py import build_py as _build_py
 
@@ -19,7 +25,7 @@ import octoprint_setuptools  # noqa: F401,E402
 PYTHON_REQUIRES = ">=3.7, <4"
 
 # Requirements for setup.py
-SETUP_REQUIRES = ["markdown>=3.1,<3.2"]  # newer versions require Python 3
+SETUP_REQUIRES = ["markdown>=3.2.2,<4"]
 
 # Requirements for our application
 INSTALL_REQUIRES = [
@@ -27,25 +33,19 @@ INSTALL_REQUIRES = [
     "OctoPrint-FileCheck>=2021.2.23",
     "OctoPrint-FirmwareCheck>=2021.10.11",
     "OctoPrint-PiSupport>=2021.10.28",
-    # the following dependencies are non trivial to update since later versions
-    # introduce backwards incompatible changes that might affect plugins, or due to
-    # other observed problems
-    "markupsafe>=1.1,<2.0",  # Jinja dependency, newer versions require Python 3
-    "markdown>=3.1,<3.2",  # newer versions require Python 3
-    "wrapt>=1.12.1,<1.13",  # newer versions fail to build on OctoPi 0.15
     # anything below this should be checked on releases for new versions
-    "flask>=1.1.4,<2",  # newer versions require Python 3
-    "Jinja2>=2.11.3,<3",  # newer versions require Python 3
+    "wrapt>=1.13.3,<1.14",
+    "tornado>=6.0.4,<7",
+    "markdown>=3.2.2,<4",
+    "flask>=2,<3",
     "Flask-Login>=0.5,<0.6",  # flask-login doesn't use semver & breaks stuff on minor version increases
-    "Flask-Babel>=1.0,<2",  # newer versions require Python 3
+    "Flask-Babel>=2.0,<3",
     "Flask-Assets>=2.0,<3",
-    "werkzeug>=1.0.1,<2",  # newer versions require Python 3
-    "itsdangerous>=1.1.0,<2",  # newer versions require Python 3
-    "cachelib>=0.1,<0.2",  # newer versions require Python 3
+    "cachelib>=0.2,<0.3",
     "PyYAML>=5.4.1,<6",
     "pyserial>=3.4,<4",
     "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
-    "watchdog==0.10.4",  # newer versions require Python 3
+    "watchdog==1.0.0",
     "sarge==0.1.6",
     "netifaces>=0.11,<1",
     "pylru>=1.2,<2",
@@ -53,44 +53,21 @@ INSTALL_REQUIRES = [
     "requests>=2.26.0,<3",
     "semantic_version>=2.8.5,<3",
     "psutil>=5.8,<6",
-    "Click>=7.1.2,<8",  # newer versions require Python 3
-    "future>=0.18.2,<1",
-    "websocket-client>=0.59,<1",  # newer versions require Python 3
+    "Click>=8.0.3,<9",
+    "future>=0.18.2,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
+    "websocket-client>=1.2.1,<2",
     "emoji>=1.4.2,<2",
     "sentry-sdk>=1.3.1,<2",
     "filetype>=1.0.7,<2",
     "zipstream-new>=1.1.8,<1.2",
-    # vendor bundled dependencies
-    "blinker>=1.4,<2",  # dependency of flask_principal
-]
-
-# Python 2 specific requirements
-INSTALL_REQUIRES_PYTHON2 = [
-    "feedparser>=5.2.1,<6",  # newer versions require Python 3
-    "tornado==5.1.1",  # newer versions require Python 3
-    "futures>=3.3,<4",
-    "monotonic>=1.6,<2",
-    "scandir>=1.10,<2",
-    "chainmap>=1.0.3,<2",
-    "typing>=3.10.0.0,<4",
-    "enum34>=1.1.10,<1.2",
-    "frozendict==1.2",  # newer versions require Python 3
-    "colorlog<5",  # newer versions require Python 3
-    # vendor bundled dependencies
-    "unidecode<1.3",  # dependency of awesome-slugify, newer versions require Python 3
-    "regex<2022.1.18",  # dependency of awesome-slugify, newer versions require Python 3
-]
-
-# Python 3 specific requirements
-INSTALL_REQUIRES_PYTHON3 = [
     "feedparser>=6.0.8,<7",
-    "tornado>=6,<7",  # tornado < 6 is incompatible with Python 3.10
     "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
     "frozendict>=2.0,<3",
     "pathvalidate>=2.4.1,<3",
     "colorlog>=5.0.1,<6",
     # vendor bundled dependencies
-    "unidecode",  # dependency of awesome-slugify, leave w/o range to not cause dependency hell w/ Octolapse deps
+    "blinker>=1.4,<2",  # dependency of flask_principal
+    "unidecode",  # dependency of awesome-slugify
     "regex",  # dependency of awesome-slugify
 ]
 
@@ -103,10 +80,8 @@ INSTALL_REQUIRES_OSX = [
 EXTRA_REQUIRES = {
     "develop": [
         # Testing dependencies
-        "mock>=3.0.5,<4 ; python_version < '3'",
-        "pytest==4.6.10 ; python_version < '3'",
-        "mock>=4,<5 ; python_version >= '3'",
-        "pytest>=6.2.5,<7 ; python_version >= '3'",
+        "mock>=4,<5",
+        "pytest>=6.2.5,<7",
         "pytest-doctest-custom>=1.0.0,<2",
         "ddt",
         # pre-commit
@@ -129,41 +104,7 @@ EXTRA_REQUIRES = {
 # Dependency links for any of the aforementioned dependencies
 DEPENDENCY_LINKS = []
 
-# adapted from https://hynek.me/articles/conditional-python-dependencies/
-if int(setuptools.__version__.split(".", 1)[0]) < 18:
-    # no bdist_wheel support for setuptools < 18 since we build universal wheels and our optional dependencies
-    # would get lost there
-    assert "bdist_wheel" not in sys.argv
-
-    # add optional dependencies for setuptools versions < 18 that don't yet support environment markers
-    def _filter_by_python_version_marker(requirements):
-        for requirement in requirements:
-            req_match = re.match(
-                r"^(?P<req>.+);\s*(?P<marker>python_version.+)$", requirement
-            )
-            if not req_match:
-                yield requirement
-            else:
-                if eval(req_match.group("marker"), {}, {"python_version": sys.version}):
-                    yield req_match.group("req")
-
-    EXTRA_REQUIRES = {
-        extra: list(_filter_by_python_version_marker(extra_requirements))
-        for extra, extra_requirements in EXTRA_REQUIRES.items()
-    }
-
-    if sys.version_info[0] < 3:
-        INSTALL_REQUIRES += INSTALL_REQUIRES_PYTHON2
-    else:
-        INSTALL_REQUIRES += INSTALL_REQUIRES_PYTHON3
-
-    if sys.platform == "darwin":
-        INSTALL_REQUIRES += INSTALL_REQUIRES_OSX
-else:
-    # environment markers supported
-    EXTRA_REQUIRES[":python_version < '3'"] = INSTALL_REQUIRES_PYTHON2
-    EXTRA_REQUIRES[":python_version >= '3'"] = INSTALL_REQUIRES_PYTHON3
-    EXTRA_REQUIRES[":sys_platform == 'darwin'"] = INSTALL_REQUIRES_OSX
+EXTRA_REQUIRES[":sys_platform == 'darwin'"] = INSTALL_REQUIRES_OSX
 
 # -----------------------------------------------------------------------------------------------------------------------
 # Anything below here is just command setup and general setup configuration
@@ -172,9 +113,9 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 def read_file_contents(path):
-    import codecs
+    import io
 
-    with codecs.open(path, encoding="utf-8") as f:
+    with io.open(path, encoding="utf-8") as f:
         return f.read()
 
 
@@ -286,10 +227,7 @@ def params():
         "Natural Language :: German",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -328,8 +266,7 @@ def params():
 
     if os.environ.get("READTHEDOCS", None) == "True":
         # we can't tell read the docs to please perform a pip install -e .[docs], so we help
-        # it a bit here by explicitly adding the development dependencies, which include our
-        # documentation dependencies
+        # it a bit here by explicitly adding the docs dependencies
         install_requires = install_requires + extras_require["docs"]
 
     entry_points = {"console_scripts": ["octoprint = octoprint:main"]}
