@@ -817,9 +817,11 @@ class DiscoveryPlugin(
         if addresses:
             return addresses
         else:
-            return octoprint.util.interface_addresses(
-                interfaces=self._settings.get(["interfaces"]),
-                ignored=self._settings.get(["ignoredInterfaces"]),
+            return list(
+                octoprint.util.interface_addresses(
+                    interfaces=self._settings.get(["interfaces"]),
+                    ignored=self._settings.get(["ignoredInterfaces"]),
+                )
             )
 
 
