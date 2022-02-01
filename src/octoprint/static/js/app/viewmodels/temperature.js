@@ -203,26 +203,26 @@ $(function () {
         self.markings = [];
 
         self.marking_props = {
-            "print": {
-                "label": gettext("Start"),
-                "color": "#218656"
+            print: {
+                label: gettext("Start"),
+                color: "#218656"
             },
-            "pause": {
-                "label": gettext("Pause"),
-                "color": "#FDC02F"
+            pause: {
+                label: gettext("Pause"),
+                color: "#FDC02F"
             },
-            "resume": {
-                "label": gettext("Resume"),
-                "color": "#27CAEE"
+            resume: {
+                label: gettext("Resume"),
+                color: "#27CAEE"
             },
-            "cancel": {
-                "label": gettext("Cancel"),
-                "color": "#DA3749"
+            cancel: {
+                label: gettext("Cancel"),
+                color: "#DA3749"
             },
-            "done": {
-                "label": gettext("Done"),
-                "color": "#1B72F9"
-            },
+            done: {
+                label: gettext("Done"),
+                color: "#1B72F9"
+            }
         };
 
         self.temperatures = [];

@@ -64,10 +64,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._targetTemp = None
         self._targetBedTemp = None
         self._targetChamberTemp = None
-
-        self._temps = TemperatureHistory(
+        
+        self._temps = DataHistory(
             cutoff=settings().getInt(["temperature", "cutoff"]) * 60
         )
+        self._markings = DataHistory(
+            cutoff=settings().getInt(["temperature", "cutoff"]) * 60
+        )
+
         self._messages = deque([], 300)
         self._log = deque([], 300)
 
@@ -2084,11 +2088,11 @@ class StateMonitor:
         }
 
 
-class TemperatureHistory(InvariantContainer):
+class DataHistory(InvariantContainer):
     def __init__(self, cutoff=30 * 60):
-        def temperature_invariant(data):
+        def data_invariant(data):
             data.sort(key=lambda x: x["time"])
             now = int(time.time())
             return [item for item in data if item["time"] >= now - cutoff]
 
-        InvariantContainer.__init__(self, guarantee_invariant=temperature_invariant)
+        InvariantContainer.__init__(self, guarantee_invariant=data_invariant)
