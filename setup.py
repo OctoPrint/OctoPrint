@@ -25,7 +25,7 @@ import octoprint_setuptools  # noqa: F401,E402
 PYTHON_REQUIRES = ">=3.7, <4"
 
 # Requirements for setup.py
-SETUP_REQUIRES = ["markdown>=3.2.2,<4"]
+SETUP_REQUIRES = []
 
 # Requirements for our application
 bundled_plugins = [
@@ -117,13 +117,15 @@ def read_file_contents(path):
         return f.read()
 
 
-def md_to_html_build_py_factory(files, baseclass):
-    class md_to_html_build_py(baseclass):
+def copy_files_build_py_factory(files, baseclass):
+    class copy_files_build_py(baseclass):
         files = {}
 
         def run(self):
-            print("RUNNING md_to_html_build_py")
+            print("RUNNING copy_files_build_py")
             if not self.dry_run:
+                import shutil
+
                 for directory, files in self.files.items():
                     target_dir = os.path.join(self.build_lib, directory)
                     self.mkpath(target_dir)
@@ -135,17 +137,15 @@ def md_to_html_build_py_factory(files, baseclass):
                             source, dest = entry[0], os.path.join(target_dir, entry[1])
                         else:
                             source = entry
-                            dest = os.path.join(target_dir, source + ".html")
+                            dest = os.path.join(target_dir, source)
 
-                        print("Rendering markdown from {} to {}".format(source, dest))
+                        print("Copying {} to {}".format(source, dest))
+                        shutil.copy2(source, dest)
 
-                        from markdown import markdownFromFile
-
-                        markdownFromFile(input=source, output=dest, encoding="utf-8")
             baseclass.run(self)
 
-    return type(md_to_html_build_py)(
-        md_to_html_build_py.__name__, (md_to_html_build_py,), {"files": files}
+    return type(copy_files_build_py)(
+        copy_files_build_py.__name__, (copy_files_build_py,), {"files": files}
     )
 
 
@@ -178,7 +178,7 @@ def get_cmdclass():
         )
     )
 
-    cmdclass["build_py"] = md_to_html_build_py_factory(
+    cmdclass["build_py"] = copy_files_build_py_factory(
         {
             "octoprint/templates/_data": [
                 "AUTHORS.md",

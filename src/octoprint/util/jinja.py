@@ -289,8 +289,8 @@ class MarkdownFilter:
         app.jinja_env.filters.setdefault("markdown", self)
 
     def __call__(self, stream):
-        from jinja2 import Markup
         from markdown import Markdown
+        from markupsafe import Markup
 
         # Markdown is not thread safe
         markdown = Markdown(**self._markdown_options)
