@@ -1,4 +1,14 @@
+# -*- coding: utf-8 -*-
 # flake8: noqa
+from __future__ import absolute_import, division, print_function, unicode_literals
+
+### NOTE #################################################################################
+# This file has to stay format compatible to Python 2, or pip under Python 2 will
+# not be able to detect that OctoPrint requires Python 3 but instead fail with a
+# syntax error.
+#
+# So, no f-strings, no walrus operators, no pyupgrade or codemods.
+##########################################################################################
 
 # Version: 0.15+dev
 
@@ -370,7 +380,11 @@ https://creativecommons.org/publicdomain/zero/1.0/ .
 
 """
 
-import configparser
+try:
+    import configparser  # py 3
+except ImportError:
+    import ConfigParser as configparser  # py 2
+
 import errno
 import io
 import json
@@ -431,7 +445,7 @@ def get_config_from_root(root):
 
     # TODO: find a py2 compatible solution for the configparser deprecation issues
     parser = configparser.SafeConfigParser()
-    with open(setup_cfg, encoding="utf-8") as f:
+    with io.open(setup_cfg, "rt", encoding="utf-8") as f:
         parser.readfp(f)
 
     VCS = parser.get("versioneer", "VCS")  # mandatory
@@ -489,7 +503,7 @@ def run_command(commands, args, cwd=None, verbose=False, hide_stderr=False):
                 stderr=(subprocess.PIPE if hide_stderr else None),
             )
             break
-        except OSError:
+        except EnvironmentError:
             e = sys.exc_info()[1]
             if e.errno == errno.ENOENT:
                 continue
@@ -499,7 +513,7 @@ def run_command(commands, args, cwd=None, verbose=False, hide_stderr=False):
             return None
     else:
         if verbose:
-            print(f"unable to find command, tried {commands}")
+            print("unable to find command, tried {}".format(commands))
         return None
     stdout = p.communicate()[0].strip()
     if sys.version_info[0] >= 3:
@@ -1221,7 +1235,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = open(versionfile_abs, encoding="utf-8")
+        f = io.open(versionfile_abs, "rt", encoding="utf-8")
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -1232,7 +1246,7 @@ def git_get_keywords(versionfile_abs):
                 if mo:
                     keywords["full"] = mo.group(1)
         f.close()
-    except OSError:
+    except EnvironmentError:
         pass
     return keywords
 
@@ -1415,7 +1429,7 @@ def git_parse_lookup_file(path):
     import re
 
     lookup = []
-    with open(path) as f:
+    with io.open(path, "r") as f:
         for line in f:
             if "#" in line:
                 line = line[: line.index("#")]
@@ -1533,16 +1547,16 @@ def do_vcs_install(manifest_in, versionfile_source, ipy):
     files.append(versioneer_file)
     present = False
     try:
-        f = open(".gitattributes", encoding="utf-8")
+        f = io.open(".gitattributes", "rt", encoding="utf-8")
         for line in f.readlines():
             if line.strip().startswith(versionfile_source):
                 if "export-subst" in line.strip().split()[1:]:
                     present = True
         f.close()
-    except OSError:
+    except EnvironmentError:
         pass
     if not present:
-        f = open(".gitattributes", "a+t", encoding="utf-8")
+        f = io.open(".gitattributes", "a+t", encoding="utf-8")
         f.write("%s export-subst\n" % versionfile_source)
         f.close()
         files.append(".gitattributes")
@@ -1592,9 +1606,9 @@ def get_versions():
 
 def versions_from_file(filename):
     try:
-        with open(filename, encoding="utf-8") as f:
+        with io.open(filename, "rt", encoding="utf-8") as f:
             contents = f.read()
-    except OSError:
+    except EnvironmentError:
         raise NotThisMethod("unable to read _version.py")
     mo = re.search(
         r"version_json = '''\s+(.*)'''  # END VERSION_JSON", contents, re.M | re.S
@@ -1607,7 +1621,7 @@ def versions_from_file(filename):
 def write_to_version_file(filename, versions):
     os.unlink(filename)
     contents = json.dumps(versions, sort_keys=True, indent=1, separators=(",", ": "))
-    with open(filename, "wt", encoding="utf-8") as f:
+    with io.open(filename, "wt", encoding="utf-8") as f:
         f.write(SHORT_VERSION_PY % contents)
 
     print("set {} to '{}'".format(filename, versions["version"]))
@@ -1885,7 +1899,7 @@ def get_versions(verbose=False):
     try:
         ver = versions_from_file(versionfile_abs)
         if verbose:
-            print(f"got version from file {versionfile_abs} {ver}")
+            print("got version from file {} {}".format(versionfile_abs, ver))
         return ver
     except NotThisMethod:
         pass
@@ -2028,7 +2042,7 @@ def get_cmdclass():
 
                 _build_exe.run(self)
                 os.unlink(target_versionfile)
-                with open(cfg.versionfile_source, "wt", encoding="utf-8") as f:
+                with io.open(cfg.versionfile_source, "wt", encoding="utf-8") as f:
                     LONG = LONG_VERSION_PY[cfg.VCS]
                     f.write(
                         LONG
@@ -2124,16 +2138,20 @@ def do_setup():
     root = get_root()
     try:
         cfg = get_config_from_root(root)
-    except (OSError, configparser.NoSectionError, configparser.NoOptionError) as e:
+    except (
+        EnvironmentError,
+        configparser.NoSectionError,
+        configparser.NoOptionError,
+    ) as e:
         if isinstance(e, (EnvironmentError, configparser.NoSectionError)):
             print("Adding sample versioneer config to setup.cfg", file=sys.stderr)
-            with open(os.path.join(root, "setup.cfg"), "at", encoding="utf-8") as f:
+            with io.open(os.path.join(root, "setup.cfg"), "at", encoding="utf-8") as f:
                 f.write(SAMPLE_CONFIG)
         print(CONFIG_ERROR, file=sys.stderr)
         return 1
 
     print(" creating %s" % cfg.versionfile_source)
-    with open(cfg.versionfile_source, "wt", encoding="utf-8") as f:
+    with io.open(cfg.versionfile_source, "wt", encoding="utf-8") as f:
         LONG = LONG_VERSION_PY[cfg.VCS]
         f.write(
             LONG
@@ -2150,13 +2168,13 @@ def do_setup():
     ipy = os.path.join(os.path.dirname(cfg.versionfile_source), "__init__.py")
     if os.path.exists(ipy):
         try:
-            with open(ipy, encoding="utf-8") as f:
+            with io.open(ipy, "rt", encoding="utf-8") as f:
                 old = f.read()
-        except OSError:
+        except EnvironmentError:
             old = ""
         if "from ._version import get_versions" not in old:
             print(" appending to %s" % ipy)
-            with open(ipy, "at", encoding="utf-8") as f:
+            with io.open(ipy, "at", encoding="utf-8") as f:
                 f.write(INIT_PY_SNIPPET)
         else:
             print(" %s unmodified" % ipy)
@@ -2171,12 +2189,12 @@ def do_setup():
     manifest_in = os.path.join(root, "MANIFEST.in")
     simple_includes = set()
     try:
-        with open(manifest_in) as f:
+        with io.open(manifest_in, "r") as f:
             for line in f:
                 if line.startswith("include "):
                     for include in line.split()[1:]:
                         simple_includes.add(include)
-    except OSError:
+    except EnvironmentError:
         pass
     # That doesn't cover everything MANIFEST.in can do
     # (http://docs.python.org/2/distutils/sourcedist.html#commands), so
@@ -2184,7 +2202,7 @@ def do_setup():
     # lines is safe, though.
     if "versioneer.py" not in simple_includes:
         print(" appending 'versioneer.py' to MANIFEST.in")
-        with open(manifest_in, "at", encoding="utf-8") as f:
+        with io.open(manifest_in, "at", encoding="utf-8") as f:
             f.write("include versioneer.py\n")
     else:
         print(" 'versioneer.py' already in MANIFEST.in")
@@ -2192,7 +2210,7 @@ def do_setup():
         print(
             " appending versionfile_source ('%s') to MANIFEST.in" % cfg.versionfile_source
         )
-        with open(manifest_in, "at", encoding="utf-8") as f:
+        with io.open(manifest_in, "at", encoding="utf-8") as f:
             f.write("include %s\n" % cfg.versionfile_source)
     else:
         print(" versionfile_source already in MANIFEST.in")
@@ -2208,7 +2226,7 @@ def scan_setup_py():
     found = set()
     setters = False
     errors = 0
-    with open("setup.py", encoding="utf-8") as f:
+    with io.open("setup.py", "rt", encoding="utf-8") as f:
         for line in f.readlines():
             if "import versioneer" in line:
                 found.add("import")
