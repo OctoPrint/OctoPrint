@@ -184,6 +184,11 @@ def init_platform(
     if callable(after_environment_detector):
         after_environment_detector(**kwargs)
 
+    try:
+        init_systemcommands()
+    except Exception as ex:
+        raise FatalStartupError("Could not initialize system commands", cause=ex)
+    
     return (
         settings,
         logger,
@@ -892,6 +897,10 @@ def init_environment_detector(plugin_manager):
 
     return EnvironmentDetector(plugin_manager)
 
+def init_systemcommands():
+    from octoprint.systemcommands import systemcommands
+
+    return systemcommands(init=True)
 
 # ~~ server main method
 

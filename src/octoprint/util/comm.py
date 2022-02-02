@@ -19,7 +19,6 @@ import threading
 import time
 from collections import deque
 
-import sarge
 import serial
 import wrapt
 
@@ -28,6 +27,7 @@ from octoprint.events import Events, eventManager
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings
+from octoprint.systemcommands import systemcommands
 from octoprint.util import (
     CountedEvent,
     PrependableQueue,
@@ -43,7 +43,7 @@ from octoprint.util import (
     sanitize_ascii,
     to_str,
 )
-from octoprint.util.platform import CLOSE_FDS, get_os, set_close_exec
+from octoprint.util.platform import get_os, set_close_exec
 
 try:
     import winreg
@@ -2323,23 +2323,7 @@ class MachineCom:
                             self._log("Disconnecting on request of the printer...")
                             self._callback.on_comm_force_disconnect()
                         elif action_name == "shutdown":
-                            try:
-                                shutdowncmd = settings().get(
-                                    ["server", "commands", "systemShutdownCommand"]
-                                )
-
-                                if shutdowncmd:
-                                    sarge.run(
-                                        shutdowncmd,
-                                        close_fds=CLOSE_FDS,
-                                        stdout=sarge.Capture(),
-                                        stderr=sarge.Capture(),
-                                        shell=True,
-                                    )
-                            except Exception:
-                                self._logger.exception(
-                                    "Error while executing shutdown command."
-                                )
+                            systemcommands().system_shutdown()
                         elif self._sdEnabled and action_name == "sd_inserted":
                             self._log("Printer reported SD card as inserted")
                             self._sdAvailable = True
