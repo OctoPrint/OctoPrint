@@ -2323,6 +2323,7 @@ class MachineCom:
                             self._log("Disconnecting on request of the printer...")
                             self._callback.on_comm_force_disconnect()
                         elif action_name == "shutdown":
+                            self._log("Shutting down system on request of printer...")
                             systemcommands().system_shutdown()
                         elif self._sdEnabled and action_name == "sd_inserted":
                             self._log("Printer reported SD card as inserted")
