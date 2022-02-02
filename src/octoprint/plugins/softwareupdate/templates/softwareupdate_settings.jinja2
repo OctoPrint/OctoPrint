@@ -63,15 +63,6 @@
         Read more on this in <a href="https://faq.octoprint.org/pi-issues" target="_blank" rel="noopener noreferrer">the FAQ</a>.
     </p>
 {% endtrans %}</div>
-<div class="alert" data-bind="visible: printerState.isPrinting()">{% trans %}
-    <p>
-        <strong>OctoPrint is currently printing, updates are disabled.</strong>
-    </p>
-    <p>
-        Running updates is not supported while printing in order to not risk any kind of disruption to the print job.
-        Please let the print finish before trying to update.
-    </p>
-{% endtrans %}</div>
 
 <ul class="nav nav-pills">
     <li class="active">
@@ -113,7 +104,8 @@
                         <span data-bind="visible: !compatible" class="muted"><i class="fas fa-power-off" title="{{ _('Not compatible') }}|edq"></i></span>
                     </td>
                     <td class="settings_plugin_softwareupdate_column_information">
-                        <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible" class="btn btn-primary pull-right">{{ _('Update') }}</a>
+                        <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible && $root.queuedUpdates().indexOf(key) < 0" class="btn btn-primary pull-right">{{ _('Update') }}</a>
+                        <a href="javascript:void(0)" data-bind="visible: $root.queuedUpdates().indexOf(key) > -1" class="btn btn-primary pull-right">{{ _('Queued') }}</a>
                         <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fas fa-exclamation-triangle" data-bind="css: {'fa-unlink': !online && information && information.needs_online, 'fa-exclamation-triangle': !(!online && information && information.needs_online)}, attr: {title: $root.iconTitleForEntry($data)}"></i></span><br>
                         <small data-bind="visible: compatible" class="muted">
                             <span data-bind="visible: releaseChannels && releaseChannels.available" class="line">{{ _('Release Channel:') }} <select class="settings_plugin_softwareupdate_release_channel" data-bind="visible: releaseChannels && releaseChannels.available, value: releaseChannels.current, options: releaseChannels.available, optionsText: 'name', optionsValue: 'channel'"></select> <a href="https://faq.octoprint.org/using-release-channels" target="_blank"><i class="fas fa-question-circle"></i></a></span>

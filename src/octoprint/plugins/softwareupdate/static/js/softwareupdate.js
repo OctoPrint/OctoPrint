@@ -18,6 +18,7 @@ $(function () {
         self.restartTimeout = undefined;
 
         self.currentlyBeingUpdated = [];
+        self.queuedUpdates = ko.observableArray([]);
 
         self.working = ko.observable(false);
         self.workingTitle = ko.observable();
@@ -726,7 +727,7 @@ $(function () {
                         var message =
                             "<p>" +
                             gettext(
-                                "The following plugins have been queued for installing after current print is finished or cancelled."
+                                "The install of the following plugin update(s) has been queued for after current print is finished or cancelled."
                             ) +
                             "</p><pre>" +
                             _.escape(data.queued.join("\n")) +
@@ -739,6 +740,8 @@ $(function () {
                                 sticker: false
                             }
                         });
+                        self.updateInProgress = false;
+                        self.queuedUpdates(data.queued);
                         return;
                     }
                     self.currentlyBeingUpdated = data.checks;
@@ -840,13 +843,8 @@ $(function () {
                     "Be sure to read through any linked release notes, especially those for OctoPrint since they might contain important information you need to know <strong>before</strong> upgrading."
                 ) +
                 "</p>" +
-                "<p><strong>" +
-                gettext("This action may disrupt any ongoing print jobs.") +
-                "</strong></p>" +
                 "<p>" +
-                gettext(
-                    "Depending on your printer's controller and general setup, restarting OctoPrint may cause your printer to be reset."
-                ) +
+                gettext("Updates will be queued if currently printing.") +
                 "</p>" +
                 "<p>" +
                 gettext("Are you sure you want to proceed?") +

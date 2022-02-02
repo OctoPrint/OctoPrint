@@ -1332,8 +1332,8 @@ class SoftwareUpdatePlugin(
             # do not update while a print job is running
             # store targets to be run later on print done event
             if self._queued_updates is not None:
-                self._queued_updates = dict_merge(
-                    self._queued_updates, {"targets": targets, "force": force}
+                self._queued_updates["targets"] = list(
+                    set(self._queued_updates["targets"] + targets)
                 )
             else:
                 self._queued_updates = {"targets": targets, "force": force}
