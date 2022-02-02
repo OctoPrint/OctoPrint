@@ -72,8 +72,8 @@ $(function () {
         });
 
         // Subscribe to rotation event to ensure we update calculations.
-        // We need to wait for the CSS to be updated by KO, thus we use a timeout to ensure our
-        // calculations run after the CSS was updated
+        // We need to wait for the CSS to be updated by KO, thus we use a timeout to
+        // ensure our calculations run after the CSS was updated
         self.settings.webcam_rotate90.subscribe(function () {
             window.setTimeout(function () {
                 self._updateVideoTagWebcamLayout();
@@ -128,7 +128,8 @@ $(function () {
         };
 
         self.onEventSettingsUpdated = function (payload) {
-            // the webcam url might have changed, make sure we replace it now if the tab is focused
+            // the webcam url might have changed, make sure we replace it now if the
+            // tab is focused
             self._enableWebcam();
             self.requestData();
         };
@@ -242,7 +243,7 @@ $(function () {
                             element.slider.min
                         );
 
-                        // if default value is not within range of min and max, correct that
+                        // if default value is not w/i range of min and max, correct that
                         if (
                             !_.inRange(
                                 defaultValue,
@@ -272,7 +273,8 @@ $(function () {
             if (control.hasOwnProperty("javascript")) {
                 var js = control.javascript;
 
-                // if js is a function everything's fine already, but if it's a string we need to eval that first
+                // if js is a function everything's fine already, but if it's a string
+                // we need to eval that first
                 if (!_.isFunction(js)) {
                     control.javascript = function (data) {
                         eval(js);
@@ -283,7 +285,8 @@ $(function () {
             if (control.hasOwnProperty("enabled")) {
                 var enabled = control.enabled;
 
-                // if js is a function everything's fine already, but if it's a string we need to eval that first
+                // if js is a function everything's fine already, but if it's a string
+                // we need to eval that first
                 if (!_.isFunction(enabled)) {
                     control.enabled = function (data) {
                         return eval(enabled);
@@ -521,10 +524,12 @@ $(function () {
         };
 
         self._disableWebcam = function () {
-            // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
-            // more load by the constant connection creation than by the actual webcam stream
+            // only disable webcam stream if tab is out of focus for more than 5s,
+            // otherwise we might cause more load by the constant connection creation
+            // than by the actual webcam stream
 
-            // safari bug doesn't release the mjpeg stream, so we just disable this for safari.
+            // safari bug doesn't release the mjpeg stream, so we just disable this for
+            // safari.
             if (OctoPrint.coreui.browser.safari) {
                 return;
             }
@@ -836,17 +841,24 @@ $(function () {
                 "#webcam_video_container .webcam_unrotated .rotation_target"
             );
 
-            // If we found the rotation container, the view is rotated 90 degrees. This means we
-            // need to manually calculate the player dimensions and apply them to the rotation target
-            // where height = width and width = height (to accomodate the rotation). The target is centered
-            // in the container and rotated around it's center so after we manually resized the container everything will layout nicely.
+            // If we found the rotation container, the view is rotated 90 degrees. This
+            // means we need to manually calculate the player dimensions and apply them
+            // to the rotation target where height = width and width = height (to
+            // accomodate the rotation). The target is centered in the container and
+            // rotated around its center, so after we manually resized the container
+            // everything will layout nicely.
             if (rotationContainer && player.videoWidth && player.videoHeight) {
-                // Calcualte the height the video will have in the UI. Based on the video width and the aspect ratio.
+                // Calculate the height the video will have in the UI, based on the
+                // video width and the aspect ratio.
                 var aspectRatio = player.videoWidth / player.videoHeight;
                 var height = aspectRatio * rotationContainer.offsetWidth;
 
-                // Enforce the height on the rotation container and the rotation target. Width of the container will be 100%, height a calculated
-                // The size of the rotation target (the element that has the 90 deg transform) is the inverse size of the container (so height -> width and width -> height)
+                // Enforce the height on the rotation container and the rotation target.
+                // Width of the container will be 100%, height will be calculated
+                //
+                // The size of the rotation target (the element that has the 90 deg
+                // transform) is the inverse size of the container (so height -> width
+                // and width -> height)
                 rotationContainer.style.height = height + "px";
                 rotationTarget.style.height = rotationContainer.offsetWidth + "px";
                 rotationTarget.style.width = rotationContainer.offsetHeight + "px";
