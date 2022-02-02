@@ -2323,15 +2323,23 @@ class MachineCom:
                             self._log("Disconnecting on request of the printer...")
                             self._callback.on_comm_force_disconnect()
                         elif action_name == "shutdown":
-                            sarge.run(
-                                settings().get(
+                            try:
+                                shutdowncmd = settings().get(
                                     ["server", "commands", "systemShutdownCommand"]
-                                ),
-                                close_fds=CLOSE_FDS,
-                                stdout=sarge.Capture(),
-                                stderr=sarge.Capture(),
-                                shell=True,
-                            )
+                                )
+
+                                if shutdowncmd:
+                                    sarge.run(
+                                        shutdowncmd,
+                                        close_fds=CLOSE_FDS,
+                                        stdout=sarge.Capture(),
+                                        stderr=sarge.Capture(),
+                                        shell=True,
+                                    )
+                            except Exception:
+                                self._logger.exception(
+                                    "Error while executing shutdown command."
+                                )
                         elif self._sdEnabled and action_name == "sd_inserted":
                             self._log("Printer reported SD card as inserted")
                             self._sdAvailable = True
