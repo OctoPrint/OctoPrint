@@ -43,6 +43,7 @@ $(function () {
         self.webcamHlsEnabled = ko.observable(false);
         self.webcamWebRTCEnabled = ko.observable(false);
         self.webcamError = ko.observable(false);
+        self.webcamMuted = ko.observable(true);
         self.webRTCPeerConnection = null;
 
         self.keycontrolActive = ko.observable(false);
@@ -66,6 +67,15 @@ $(function () {
             } else {
                 return "ratio169";
             }
+        });
+
+        // Subscribe to rotation event to ensure we update calculations.
+        // We need to wait for the CSS to be updated by KO, thus we use a timeout to ensure our
+        // calculations run after the CSS was updated
+        self.settings.webcam_rotate90.subscribe(function () {
+            window.setTimeout(function () {
+                self._updateVideoTagWebcamLayout();
+            }, 1);
         });
 
         self.settings.printerProfiles.currentProfileData.subscribe(function () {
@@ -316,6 +326,22 @@ $(function () {
             } else {
                 callback(data);
             }
+        };
+
+        self._getActiveWebcamVideoElement = function () {
+            if (self.webcamWebRTCEnabled()) {
+                return document.getElementById("webcam_webrtc");
+            } else {
+                return document.getElementById("webcam_hls");
+            }
+        };
+
+        self.launchWebcamPictureInPicture = function () {
+            self._getActiveWebcamVideoElement().requestPictureInPicture();
+        };
+
+        self.launchWebcamFullscreen = function () {
+            self._getActiveWebcamVideoElement().requestFullscreen();
         };
 
         self.sendJogCommand = function (axis, multiplier, distance) {
@@ -718,6 +744,13 @@ $(function () {
 
         self._switchToHlsWebcam = function () {
             var video = document.getElementById("webcam_hls");
+            video.onresize = self._updateVideoTagWebcamLayout;
+
+            // Ensure WebRTC is unloaded
+            if (self.webRTCPeerConnection != null) {
+                self.webRTCPeerConnection.close();
+                self.webRTCPeerConnection = null;
+            }
 
             // Check for native playback options: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/canPlayType
             if (
@@ -727,9 +760,9 @@ $(function () {
             ) {
                 video.src = self.settings.webcam_streamUrl();
             } else if (Hls.isSupported()) {
-                var hls = new Hls();
-                hls.loadSource(self.settings.webcam_streamUrl());
-                hls.attachMedia(video);
+                self.hls = new Hls();
+                self.hls.loadSource(self.settings.webcam_streamUrl());
+                self.hls.attachMedia(video);
             }
 
             self.webcamMjpgEnabled(false);
@@ -742,6 +775,14 @@ $(function () {
                 return;
             }
             var video = document.getElementById("webcam_webrtc");
+            video.onresize = self._updateVideoTagWebcamLayout;
+
+            // Ensure HLS is unloaded
+            if (self.hls != null) {
+                document.getElementById("webcam_hls").src = null;
+                self.hls.destroy();
+                self.hls = null;
+            }
 
             // Close any existing, disconnected connection
             if (
@@ -764,6 +805,50 @@ $(function () {
             self.webcamMjpgEnabled(false);
             self.webcamHlsEnabled(false);
             self.webcamWebRTCEnabled(true);
+        };
+
+        self._updateVideoTagWebcamLayout = function () {
+            // Get all elements we need
+            var player = self._getActiveWebcamVideoElement();
+            var rotationContainer = document.querySelector(
+                "#webcam_video_container .webcam_rotated"
+            );
+            var rotationTarget = document.querySelector(
+                "#webcam_video_container .webcam_rotated .rotation_target"
+            );
+            var unrotationContainer = document.querySelector(
+                "#webcam_video_container .webcam_unrotated"
+            );
+            var unrotationTarget = document.querySelector(
+                "#webcam_video_container .webcam_unrotated .rotation_target"
+            );
+
+            // If we found the rotation container, the view is rotated 90 degrees. This means we
+            // need to manually calculate the player dimensions and apply them to the rotation target
+            // where height = width and width = height (to accomodate the rotation). The target is centered
+            // in the container and rotated around it's center so after we manually resized the container everything will layout nicely.
+            if (rotationContainer && player.videoWidth && player.videoHeight) {
+                // Calcualte the height the video will have in the UI. Based on the video width and the aspect ratio.
+                var aspectRatio = player.videoWidth / player.videoHeight;
+                var height = aspectRatio * rotationContainer.offsetWidth;
+
+                // Enforce the height on the rotation container and the rotation target. Width of the container will be 100%, height a calculated
+                // The size of the rotation target (the element that has the 90 deg transform) is the inverse size of the container (so height -> width and width -> height)
+                rotationContainer.style.height = height + "px";
+                rotationTarget.style.height = rotationContainer.offsetWidth + "px";
+                rotationTarget.style.width = rotationContainer.offsetHeight + "px";
+
+                // Remove the padding we used to give the element an initial height.
+                rotationContainer.style.paddingBottom = 0;
+            }
+
+            // We are not rotated, clean up all changes we might have done before
+            if (unrotationContainer) {
+                unrotationContainer.style.height = null;
+                unrotationContainer.style.paddingBottom = 0;
+                unrotationTarget.style.height = null;
+                unrotationTarget.style.width = null;
+            }
         };
     }
 
