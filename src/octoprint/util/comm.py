@@ -112,15 +112,16 @@ Groups will be as follows:
 """
 
 regex_temp = re.compile(
-    r"(?P<tool>B|C|T(?P<toolnum>\d*)|([\w]+)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?"
+    r"(?P<sensor>B|C|T(?P<toolnum>\d*)|([\w]+)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?"
     % (regex_float_pattern, regex_float_pattern)
 )
 """Regex matching temperature entries in line.
 
 Groups will be as follows:
 
-  * ``tool``: whole tool designator, incl. optional ``toolnum`` (str)
-  * ``toolnum``: tool number, if provided (int)
+  * ``sensor``: whole sensor designator, incl. optional ``toolnum``, e.g. "T1", "B",
+    "C" or anything custom (str)
+  * ``toolnum``: tool number, if provided, only for T0, T1, etc (int)
   * ``actual``: actual temperature (float)
   * ``target``: target temperature, if provided (float)
 """
@@ -3731,7 +3732,7 @@ class MachineCom:
 
             except serial.SerialException:
                 self._logger.info(
-                    "Failed to connect: Port {} is busy or does not exist".format(p)
+                    f"Failed to connect: Port {p} is busy or does not exist"
                 )
                 return None
 
@@ -6197,27 +6198,27 @@ def parse_temperature_line(line, current):
     """
 
     result = {}
-    maxToolNum = 0
+    max_tool_num = 0
     for match in re.finditer(regex_temp, line):
         values = match.groupdict()
-        tool = values["tool"]
+        sensor = values["sensor"]
         toolnum = values.get("toolnum", None)
-        toolNumber = int(toolnum) if toolnum is not None and len(toolnum) else None
-        if toolNumber and toolNumber > maxToolNum:
-            maxToolNum = toolNumber
+        tool_number = int(toolnum) if toolnum is not None and len(toolnum) else None
+        if tool_number and tool_number > max_tool_num:
+            max_tool_num = tool_number
 
         try:
-            actual = float(match.group(4))
+            actual = float(values["actual"])
             target = None
-            if match.group(4) and match.group(6):
-                target = float(match.group(6))
+            if values["target"]:
+                target = float(values["target"])
 
-            result[tool] = (actual, target)
+            result[sensor] = (actual, target)
         except ValueError:
             # catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
             pass
 
-    return max(maxToolNum, current), canonicalize_temperatures(result, current)
+    return max(max_tool_num, current), canonicalize_temperatures(result, current)
 
 
 def parse_firmware_line(line):
