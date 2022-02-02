@@ -771,9 +771,7 @@ class MachineCom:
         )
 
         # serial encoding
-        self._serial_encoding = settings().get(
-            ["serial", "encodingScheme"]
-        )
+        self._serial_encoding = settings().get(["serial", "encodingScheme"])
 
         # print job
         self._currentFile = None
@@ -4462,7 +4460,9 @@ class MachineCom:
                         # line number predetermined - this only happens for resends, so we'll use the number and
                         # send directly without any processing (since that already took place on the first sending!)
                         self._use_up_clear(gcode)
-                        self._do_send_with_checksum(command.encode(self._serial_encoding), linenumber)
+                        self._do_send_with_checksum(
+                            command.encode(self._serial_encoding), linenumber
+                        )
 
                     else:
                         if not processed:
@@ -4783,11 +4783,15 @@ class MachineCom:
             self._do_send_with_checksum(cmd, linenumber)
 
     def _do_send_with_checksum(self, command, linenumber):
-        command_to_send = b"N" + str(linenumber).encode(self._serial_encoding) + b" " + command
+        command_to_send = (
+            b"N" + str(linenumber).encode(self._serial_encoding) + b" " + command
+        )
         checksum = 0
         for c in bytearray(command_to_send):
             checksum ^= c
-        command_to_send = command_to_send + b"*" + str(checksum).encode(self._serial_encoding)
+        command_to_send = (
+            command_to_send + b"*" + str(checksum).encode(self._serial_encoding)
+        )
         self._do_send_without_checksum(command_to_send)
 
     def _do_send_without_checksum(self, cmd, log=True):
