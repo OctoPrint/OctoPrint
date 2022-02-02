@@ -808,10 +808,11 @@ Use the following settings to configure the serial connection to the printer:
      # Whether to support resends without follow-up ok or not
      supportResendsWithoutOk: false
 
-     # encoding scheme to use when talking to a machine
+     # encoding to use when talking to a machine
      # (ascii limits access to characters 0-127)
      # (latin_1 enables access to the "extended" ascii characters 0-255)
-     encodingScheme: ascii
+     # other values can be used:  https://docs.python.org/3/library/codecs.html#standard-encodings
+     encoding: ascii
 
      # Whether to "manually" trigger an ok for M29 (a lot of versions of this command are buggy and
      # the response skips on the ok)

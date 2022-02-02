@@ -771,7 +771,7 @@ class MachineCom:
         )
 
         # serial encoding
-        self._serial_encoding = settings().get(["serial", "encodingScheme"])
+        self._serial_encoding = settings().get(["serial", "encoding"])
 
         # print job
         self._currentFile = None
