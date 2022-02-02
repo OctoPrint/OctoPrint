@@ -45,6 +45,8 @@ $(function () {
         self.webcamError = ko.observable(false);
         self.webcamMuted = ko.observable(true);
         self.webRTCPeerConnection = null;
+        self.webcamElementHls = null;
+        self.webcamElementWebrtc = null;
 
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
@@ -330,9 +332,9 @@ $(function () {
 
         self._getActiveWebcamVideoElement = function () {
             if (self.webcamWebRTCEnabled()) {
-                return document.getElementById("webcam_webrtc");
+                return self.webcamElementWebrtc;
             } else {
-                return document.getElementById("webcam_hls");
+                return self.webcamElementHls;
             }
         };
 
@@ -342,6 +344,12 @@ $(function () {
 
         self.launchWebcamFullscreen = function () {
             self._getActiveWebcamVideoElement().requestFullscreen();
+        };
+
+        self.toggleWebcamMute = function () {
+            self.webcamMuted(!self.webcamMuted());
+            self.webcamElementWebrtc.muted = self.webcamMuted();
+            self.webcamElementHls.muted = self.webcamMuted();
         };
 
         self.sendJogCommand = function (axis, multiplier, distance) {
@@ -603,6 +611,11 @@ $(function () {
             self.extrusionAmount(self.settings.printer_defaultExtrusionLength());
         };
 
+        self.onStartup = function () {
+            self.webcamElementHls = document.getElementById("webcam_hls");
+            self.webcamElementWebrtc = document.getElementById("webcam_webrtc");
+        };
+
         self.onFocus = function (data, event) {
             if (!self.settings.feature_keyboardControl()) return;
             self.keycontrolActive(true);
@@ -743,7 +756,7 @@ $(function () {
         };
 
         self._switchToHlsWebcam = function () {
-            var video = document.getElementById("webcam_hls");
+            var video = self.webcamElementHls;
             video.onresize = self._updateVideoTagWebcamLayout;
 
             // Ensure WebRTC is unloaded
@@ -774,12 +787,12 @@ $(function () {
             if (!isWebRTCAvailable()) {
                 return;
             }
-            var video = document.getElementById("webcam_webrtc");
+            var video = self.webcamElementWebrtc;
             video.onresize = self._updateVideoTagWebcamLayout;
 
             // Ensure HLS is unloaded
             if (self.hls != null) {
-                document.getElementById("webcam_hls").src = null;
+                self.webcamElementHls.src = null;
                 self.hls.destroy();
                 self.hls = null;
             }
