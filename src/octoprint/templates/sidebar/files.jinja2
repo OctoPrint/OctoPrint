@@ -1,6 +1,6 @@
 <form class="form-search" data-bind="submit: performSearch, visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_LIST)">
     <div class="search-query-with-clear" data-bind="css: {'active-clear': searchQuery}">
-        <input type="search" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}">
+        <input type="search" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}" spellcheck="false">
         <span class="search-clear" data-bind="click: clearSearchQuery"><i class="fas fa-times"></i></span>
     </div>
 </form>
