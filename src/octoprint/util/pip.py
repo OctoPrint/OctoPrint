@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -15,7 +12,7 @@ import threading
 import pkg_resources
 import sarge
 
-from octoprint.util import to_unicode
+from octoprint.util import to_str
 from octoprint.util.platform import CLOSE_FDS
 
 from .commandline import CommandlineCaller, clean_ansi
@@ -190,9 +187,7 @@ class PipCaller(CommandlineCaller):
 
         # add --no-use-wheel for versions that otherwise break
         if pip_version in cls.no_use_wheel and "--no-use-wheel" not in args:
-            logger.debug(
-                "Version {} needs --no-use-wheel to properly work.".format(pip_version)
-            )
+            logger.debug(f"Version {pip_version} needs --no-use-wheel to properly work.")
             args.append("--no-use-wheel")
 
         # remove --user if it's present and a virtual env is detected
@@ -451,7 +446,7 @@ class PipCaller(CommandlineCaller):
         with _cache_mutex:
             if not self.ignore_cache and pip_command_str in _cache["version"]:
                 self._logger.debug(
-                    "Using cached pip version information for {}".format(pip_command_str)
+                    f"Using cached pip version information for {pip_command_str}"
                 )
                 return _cache["version"][pip_command_str]
 
@@ -465,7 +460,7 @@ class PipCaller(CommandlineCaller):
 
             if p.returncode != 0:
                 self._logger.warning(
-                    "Error while trying to run pip --version: {}".format(p.stderr.text)
+                    f"Error while trying to run pip --version: {p.stderr.text}"
                 )
                 return None, None
 
@@ -501,7 +496,7 @@ class PipCaller(CommandlineCaller):
                 )
                 return None, None
 
-            self._logger.info("Version of pip is {}".format(version_segment))
+            self._logger.info(f"Version of pip is {version_segment}")
 
             result = pip_version, version_segment
             _cache["version"][pip_command_str] = result
@@ -515,7 +510,7 @@ class PipCaller(CommandlineCaller):
         with _cache_mutex:
             if not self.ignore_cache and pip_command_str in _cache["setup"]:
                 self._logger.debug(
-                    "Using cached pip setup information for {}".format(pip_command_str)
+                    f"Using cached pip setup information for {pip_command_str}"
                 )
                 return _cache["setup"][pip_command_str]
 
@@ -626,10 +621,10 @@ class PipCaller(CommandlineCaller):
         Example::
 
             >>> text = b'some text with some\x1b[?25h ANSI codes for \x1b[31mred words\x1b[39m and\x1b[?25l also some cursor control codes'
-            >>> PipCaller._preprocess(text) # doctest: +ALLOW_UNICODE
+            >>> PipCaller._preprocess(text)
             'some text with some ANSI codes for red words and also some cursor control codes'
         """
-        return to_unicode(clean_ansi(text))
+        return to_str(clean_ansi(text))
 
 
 class LocalPipCaller(PipCaller):

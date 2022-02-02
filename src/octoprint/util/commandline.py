@@ -1,27 +1,17 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
 import logging
+import queue
 import re
 import time
 
 import sarge
-from past.builtins import unicode
 
+from octoprint.util import to_str
 from octoprint.util.platform import CLOSE_FDS
-
-from . import to_native_str, to_unicode
-from .platform import get_os
-
-try:
-    import queue
-except ImportError:  # pragma: no cover
-    import Queue as queue
 
 # These regexes are based on the colorama package
 # Author: Jonathan Hartley
@@ -39,10 +29,10 @@ def clean_ansi(line):
     Removes ANSI control codes from ``line``.
 
     Parameters:
-        line (bytes or unicode): the line to process
+        line (bytes or str): the line to process
 
     Returns:
-        (bytes or unicode) The line without any ANSI control codes
+        (bytes or str) The line without any ANSI control codes
 
     Example::
 
@@ -53,7 +43,7 @@ def clean_ansi(line):
         >>> clean_ansi(text) # doctest: +ALLOW_BYTES
         'We hide the cursor here and then show it again here'
     """
-    if isinstance(line, unicode):
+    if isinstance(line, str):
         return _ANSI_REGEX.sub(b"", line.encode("latin1")).decode("latin1")
     return _ANSI_REGEX.sub(b"", line)
 
@@ -74,7 +64,7 @@ class CommandlineError(Exception):
         self.stderr = stderr
 
 
-class CommandlineCaller(object):
+class CommandlineCaller:
     """
     The CommandlineCaller is a utility class that allows running command line commands while logging their stdout
     and stderr via configurable callback functions.
@@ -171,14 +161,8 @@ class CommandlineCaller(object):
             joined_command = " ".join(command)
         else:
             joined_command = command
-        self._logger.debug("Calling: {}".format(joined_command))
+        self._logger.debug(f"Calling: {joined_command}")
         self.on_log_call(joined_command)
-
-        # if we are running under windows, make sure there are no unicode strings in the env
-        if get_os() == "windows" and "env" in kwargs:
-            kwargs["env"] = {
-                to_native_str(k): to_native_str(v) for k, v in kwargs["env"].items()
-            }
 
         delimiter = kwargs.get("delimiter", b"\n")
         try:
@@ -215,9 +199,7 @@ class CommandlineCaller(object):
 
         if not p.commands[0].process:
             # the process might have been set to None in case of any exception
-            self._logger.error(
-                "Error while trying to run command {}".format(joined_command)
-            )
+            self._logger.error(f"Error while trying to run command {joined_command}")
             return None, [], []
 
         all_stdout = []
@@ -227,7 +209,7 @@ class CommandlineCaller(object):
             if not lines:
                 return []
             processed = self._preprocess_lines(
-                *map(lambda x: to_unicode(x, errors="replace"), lines)
+                *map(lambda x: to_str(x, errors="replace"), lines)
             )
             logger(*processed)
             return list(processed)

@@ -241,7 +241,7 @@ def load_module(name, file, filename, details):
     elif type_ == PY_FROZEN:
         return init_frozen(name)
     else:
-        msg =  "Don't know how to import {} (type code {})".format(name, type_)
+        msg = "Don't know how to import {} (type code {})".format(name, type_)
         raise ImportError(msg, name=name)
 
 

@@ -57,13 +57,10 @@ We'll start at the most basic form a plugin can take - just a few simple lines o
 .. code-block:: python
    :linenos:
 
-   # -*- coding: utf-8 -*-
-   from __future__ import absolute_import, unicode_literals
-
    __plugin_name__ = "Hello World"
    __plugin_version__ = "1.0.0"
    __plugin_description__ = "A quick \"Hello World\" example plugin for OctoPrint"
-   __plugin_pythoncompat__ = ">=2.7,<4"
+   __plugin_pythoncompat__ = ">=3.7,<4"
 
 Saving this as ``helloworld.py`` in ``~/.octoprint/plugins`` yields you something resembling these log entries upon server startup::
 
@@ -81,8 +78,9 @@ OctoPrint found that plugin in the folder and took a look into it. The name and 
 entry it got from the ``__plugin_name__`` and ``__plugin_version__`` lines. It also read the description from
 ``__plugin_description__`` and stored it in an internal data structure, but we'll just ignore this for now. Additionally
 there is ``__plugin_pythoncompat__`` which tells OctoPrint here that your plugin can be run under any Python versions
-between 2.7 and 4. That is necessary so that your plugin will be loadable in OctoPrint instances running under either
-Python 2 or Python 3, and compatibility to both should be your goal.
+between 3.7 and 4. That is necessary so that your plugin will be loadable in OctoPrint instances running under Python 3
+but not Python 2 (so you can use modern language features), and going forward you really should no longer have to care about
+the end-of-life Python 2.
 
 .. _sec-plugins-gettingstarted-sayinghello:
 
@@ -96,9 +94,6 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
    :emphasize-lines: 4-8,14
    :linenos:
 
-   # -*- coding: utf-8 -*-
-   from __future__ import absolute_import, unicode_literals
-
    import octoprint.plugin
 
    class HelloWorldPlugin(octoprint.plugin.StartupPlugin):
@@ -108,7 +103,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
    __plugin_name__ = "Hello World"
    __plugin_version__ = "1.0.0"
    __plugin_description__ = "A quick \"Hello World\" example plugin for OctoPrint"
-   __plugin_pythoncompat__ = ">=2.7,<4"
+   __plugin_pythoncompat__ = ">=3.7,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 and restart OctoPrint. You now get this output in the log::
@@ -297,16 +292,13 @@ and ``__plugin_description__`` from ``__init__.py``, but leave ``__plugin_implem
 .. code-block:: python
    :linenos:
 
-   # -*- coding: utf-8 -*-
-   from __future__ import absolute_import, unicode_literals
-
    import octoprint.plugin
 
    class HelloWorldPlugin(octoprint.plugin.StartupPlugin):
        def on_after_startup(self):
            self._logger.info("Hello World!")
 
-   __plugin_pythoncompat__ = ">=2.7,<4"
+   __plugin_pythoncompat__ = ">=3.7,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 and restart OctoPrint::
@@ -320,11 +312,8 @@ Our "Hello World" Plugin still gets detected fine, but it's now listed under the
 "OctoPrint-HelloWorld". That's a bit redundant and squashed, so we'll override that bit via ``__plugin_name__`` again:
 
 .. code-block:: python
-   :emphasize-lines: 10
+   :emphasize-lines: 7
    :linenos:
-
-   # -*- coding: utf-8 -*-
-   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -333,7 +322,7 @@ Our "Hello World" Plugin still gets detected fine, but it's now listed under the
            self._logger.info("Hello World!")
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=2.7,<4"
+   __plugin_pythoncompat__ = ">=3.7,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 
@@ -369,11 +358,8 @@ navigation bar right at the top that links to the Wikipedia node about "Hello Wo
 add the :class:`TemplatePlugin` to our ``HelloWorldPlugin`` class:
 
 .. code-block:: python
-   :emphasize-lines: 7
+   :emphasize-lines: 4
    :linenos:
-
-   # -*- coding: utf-8 -*-
-   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -383,7 +369,7 @@ add the :class:`TemplatePlugin` to our ``HelloWorldPlugin`` class:
            self._logger.info("Hello World!")
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=2.7,<4"
+   __plugin_pythoncompat__ = ">=3.7,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 Next, we'll create a sub folder ``templates`` underneath our ``octoprint_helloworld`` folder, and within that a file
@@ -436,11 +422,8 @@ mixin.
 Let's take a look at how all that would look in our plugin's ``__init__.py``:
 
 .. code-block:: python
-   :emphasize-lines: 8, 10, 12-13
+   :emphasize-lines: 5, 7, 9-10
    :linenos:
-
-   # -*- coding: utf-8 -*-
-   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -454,7 +437,7 @@ Let's take a look at how all that would look in our plugin's ``__init__.py``:
            return dict(url="https://en.wikipedia.org/wiki/Hello_world")
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=2.7,<4"
+   __plugin_pythoncompat__ = ">=3.7,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 Restart OctoPrint. You should see something like this::
@@ -471,11 +454,8 @@ to add our URL as a template variable.
 Adjust your plugin's ``__init__.py`` like this:
 
 .. code-block:: python
-   :emphasize-lines: 15-16
+   :emphasize-lines: 12-13
    :linenos:
-
-   # -*- coding: utf-8 -*-
-   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -492,7 +472,7 @@ Adjust your plugin's ``__init__.py`` like this:
            return dict(url=self._settings.get(["url"]))
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=2.7,<4"
+   __plugin_pythoncompat__ = ">=3.7,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 Also adjust your plugin's ``templates/helloworld_navbar.jinja2`` like this:
@@ -579,11 +559,8 @@ for both our ``navbar`` and our ``settings`` plugin. We'll also remove the overr
 again since we don't use that anymore:
 
 .. code-block:: python
-   :emphasize-lines: 15-19
+   :emphasize-lines: 12-16
    :linenos:
-
-   # -*- coding: utf-8 -*-
-   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -603,7 +580,7 @@ again since we don't use that anymore:
        ]
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=2.7,<4"
+   __plugin_pythoncompat__ = ">=3.7,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 Restart OctoPrint and shift-reload your browser. Your link in the navigation bar should still point to the URL we
@@ -677,11 +654,8 @@ just need to subclass :class:`~octoprint.plugin.AssetPlugin` and override its me
 like so:
 
 .. code-block:: python
-   :emphasize-lines: 9,22-25
+   :emphasize-lines: 6,19-22
    :linenos:
-
-   # -*- coding: utf-8 -*-
-   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -707,7 +681,7 @@ like so:
         )
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=2.7,<4"
+   __plugin_pythoncompat__ = ">=3.7,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 Note how we did not add another entry to the return value of :func:`~octoprint.plugin.TemplatePlugin.get_template_configs`.
@@ -858,11 +832,8 @@ Then adjust our plugin's ``__init__.py`` so that the :func:`~octoprint.plugin.As
 a reference to our CSS file:
 
 .. code-block:: python
-   :emphasize-lines: 26
+   :emphasize-lines: 23
    :linenos:
-
-   # -*- coding: utf-8 -*-
-   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -890,7 +861,7 @@ a reference to our CSS file:
         )
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=2.7,<4"
+   __plugin_pythoncompat__ = ">=3.7,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 OctoPrint by default bundles all CSS, JavaScript and LESS files to reduce the amount of requests necessary to fully
@@ -944,11 +915,8 @@ in the process. The folder structure of our plugin should now look like this::
 Then adjust our returned assets to include our LESS file as well:
 
 .. code-block:: python
-   :emphasize-lines: 27
+   :emphasize-lines: 24
    :linenos:
-
-   # -*- coding: utf-8 -*-
-   from __future__ import absolute_import, unicode_literals
 
    import octoprint.plugin
 
@@ -977,7 +945,7 @@ Then adjust our returned assets to include our LESS file as well:
        )
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=2.7,<4"
+   __plugin_pythoncompat__ = ">=3.7,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 

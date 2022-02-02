@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -18,7 +15,7 @@ click.disable_unicode_literals_warning = True
 # ~~ click context
 
 
-class OctoPrintContext(object):
+class OctoPrintContext:
     """Custom context wrapping the standard options."""
 
     def __init__(self, configfile=None, basedir=None, verbosity=0, safe_mode=False):

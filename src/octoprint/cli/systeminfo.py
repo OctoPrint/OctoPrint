@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
 import datetime
-import io
 import logging
 import os
 
@@ -33,7 +29,7 @@ def get_systeminfo(
     last_safe_mode = {"date": "unknown", "reason": "unknown"}
     try:
         if os.path.exists(safe_mode_file):
-            with io.open(safe_mode_file, "r") as f:
+            with open(safe_mode_file) as f:
                 last_safe_mode["reason"] = f.readline().strip()
             last_safe_mode["date"] = (
                 datetime.datetime.utcfromtimestamp(
@@ -190,7 +186,7 @@ def systeminfo_command(ctx, path, **kwargs):
         if path:
             # create zip at path
             zipfilename = os.path.join(path, get_systeminfo_bundle_name())
-            click.echo("Writing systeminfo bundle to {}...".format(zipfilename))
+            click.echo(f"Writing systeminfo bundle to {zipfilename}...")
 
             z = get_systeminfo_bundle(
                 systeminfo, settings.getBaseFolder("logs"), plugin_manager=plugin_manager
@@ -201,9 +197,7 @@ def systeminfo_command(ctx, path, **kwargs):
                         f.write(data)
             except Exception as e:
                 click.echo(str(e), err=True)
-                click.echo(
-                    "There was an error writing to {}.".format(zipfilename), err=True
-                )
+                click.echo(f"There was an error writing to {zipfilename}.", err=True)
                 ctx.exit(-1)
 
             click.echo("Done!")

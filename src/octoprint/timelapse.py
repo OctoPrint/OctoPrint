@@ -1,26 +1,18 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
+import collections
 import datetime
 import fnmatch
-import io
+import glob
 import logging
 import os
+import queue
+import re
 import shutil
 import sys
 import threading
 import time
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
-
-import collections
-import re
 
 import requests
 import sarge
@@ -31,14 +23,8 @@ from octoprint.events import Events, eventManager
 from octoprint.plugin import plugin_manager
 from octoprint.settings import settings
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import monotonic_time, sv
+from octoprint.util import sv
 from octoprint.util.commandline import CommandlineCaller
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
-
 
 # currently configured timelapse
 current = None
@@ -123,7 +109,7 @@ def _extract_prefix(filename):
     """
     >>> _extract_prefix("some_long_filename_without_hyphen.jpg")
     >>> _extract_prefix("-first_char_is_hyphen.jpg")
-    >>> _extract_prefix("some_long_filename_with-stuff.jpg") # doctest: +ALLOW_UNICODE
+    >>> _extract_prefix("some_long_filename_with-stuff.jpg")
     'some_long_filename_with'
     """
     pos = filename.rfind("-")
@@ -145,7 +131,7 @@ def last_modified_unrendered():
 def get_finished_timelapses():
     files = []
     basedir = settings().getBaseFolder("timelapse", check_writable=False)
-    for entry in scandir(basedir):
+    for entry in os.scandir(basedir):
         if util.is_hidden_path(entry.path) or not valid_timelapse(entry.path):
             continue
 
@@ -181,7 +167,7 @@ def get_unrendered_timelapses():
         lambda: {"count": 0, "size": None, "bytes": 0, "date": None, "timestamp": None}
     )
 
-    for entry in scandir(basedir):
+    for entry in os.scandir(basedir):
         if not fnmatch.fnmatch(entry.name, "*.jpg"):
             continue
 
@@ -229,18 +215,18 @@ def get_unrendered_timelapses():
 def delete_unrendered_timelapse(name):
     global _cleanup_lock
 
-    pattern = "{}*.jpg".format(util.glob_escape(name))
+    pattern = "{}*.jpg".format(glob.escape(name))
 
     basedir = settings().getBaseFolder("timelapse_tmp")
     with _cleanup_lock:
-        for entry in scandir(basedir):
+        for entry in os.scandir(basedir):
             try:
                 if fnmatch.fnmatch(entry.name, pattern):
                     os.remove(entry.path)
             except Exception:
                 if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
                     logging.getLogger(__name__).exception(
-                        "Error while processing file {} during cleanup".format(entry.name)
+                        f"Error while processing file {entry.name} during cleanup"
                     )
 
 
@@ -279,7 +265,7 @@ def delete_old_unrendered_timelapses():
     prefixes_to_clean = []
 
     with _cleanup_lock:
-        for entry in scandir(basedir):
+        for entry in os.scandir(basedir):
             try:
                 prefix = _extract_prefix(entry.name)
                 if prefix is None:
@@ -298,14 +284,12 @@ def delete_old_unrendered_timelapses():
             except Exception:
                 if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
                     logging.getLogger(__name__).exception(
-                        "Error while processing file {} during cleanup".format(entry.name)
+                        f"Error while processing file {entry.name} during cleanup"
                     )
 
         for prefix in prefixes_to_clean:
             delete_unrendered_timelapse(prefix)
-            logging.getLogger(__name__).info(
-                "Deleted old unrendered timelapse {}".format(prefix)
-            )
+            logging.getLogger(__name__).info(f"Deleted old unrendered timelapse {prefix}")
 
 
 def _create_render_start_handler(name, gcode=None):
@@ -495,7 +479,7 @@ def configure_timelapse(config=None, persist=False):
         settings().save()
 
 
-class Timelapse(object):
+class Timelapse:
     QUEUE_ENTRY_TYPE_CAPTURE = "capture"
     QUEUE_ENTRY_TYPE_CALLBACK = "callback"
 
@@ -721,7 +705,7 @@ class Timelapse(object):
             )
             self._image_number += 1
 
-        self._logger.debug("Capturing image to {}".format(filename))
+        self._logger.debug(f"Capturing image to {filename}")
         entry = {
             "type": self.__class__.QUEUE_ENTRY_TYPE_CAPTURE,
             "filename": filename,
@@ -767,9 +751,7 @@ class Timelapse(object):
 
         eventManager().fire(Events.CAPTURE_START, {"file": filename})
         try:
-            self._logger.debug(
-                "Going to capture {} from {}".format(filename, self._snapshot_url)
-            )
+            self._logger.debug(f"Going to capture {filename} from {self._snapshot_url}")
             r = requests.get(
                 self._snapshot_url,
                 stream=True,
@@ -778,18 +760,16 @@ class Timelapse(object):
             )
             r.raise_for_status()
 
-            with io.open(filename, "wb") as f:
+            with open(filename, "wb") as f:
                 for chunk in r.iter_content(chunk_size=1024):
                     if chunk:
                         f.write(chunk)
                         f.flush()
 
-            self._logger.debug(
-                "Image {} captured from {}".format(filename, self._snapshot_url)
-            )
+            self._logger.debug(f"Image {filename} captured from {self._snapshot_url}")
         except Exception as e:
             self._logger.exception(
-                "Could not capture image {} from {}".format(filename, self._snapshot_url)
+                f"Could not capture image {filename} from {self._snapshot_url}"
             )
             self._capture_errors += 1
             err = e
@@ -888,7 +868,7 @@ class ZTimelapse(Timelapse):
                 return
 
         # check if last picture has been less than min_delay ago, if so don't take a picture (anti vase mode...)
-        now = monotonic_time()
+        now = time.monotonic()
         if (
             self._min_delay
             and self._last_snapshot
@@ -950,7 +930,7 @@ class TimedTimelapse(Timelapse):
         self._timer = None
 
 
-class TimelapseRenderJob(object):
+class TimelapseRenderJob:
 
     render_job_lock = threading.RLock()
 
@@ -1033,7 +1013,7 @@ class TimelapseRenderJob(object):
             postfix=self._postfix if self._postfix is not None else "",
             extension=extension,
         )
-        temporary = os.path.join(self._output_dir, ".{}".format(output_name))
+        temporary = os.path.join(self._output_dir, f".{output_name}")
         output = os.path.join(self._output_dir, output_name)
 
         for i in range(4):
@@ -1075,7 +1055,7 @@ class TimelapseRenderJob(object):
             rotate=rotate,
             watermark=watermark,
         )
-        self._logger.debug("Executing command: {}".format(command_str))
+        self._logger.debug(f"Executing command: {command_str}")
 
         with self.render_job_lock:
             try:
@@ -1120,7 +1100,7 @@ class TimelapseRenderJob(object):
                         os.remove(temporary)
                 except Exception:
                     self._logger.warning(
-                        "Could not delete temporary timelapse {}".format(temporary)
+                        f"Could not delete temporary timelapse {temporary}"
                     )
                 self._notify_callback("always", output)
 
@@ -1247,7 +1227,7 @@ class TimelapseRenderJob(object):
             else "",
         }
 
-        logger.debug("Rendering movie to {}".format(output))
+        logger.debug(f"Rendering movie to {output}")
         return commandline.format(**placeholders)
 
     @classmethod
@@ -1271,7 +1251,7 @@ class TimelapseRenderJob(object):
         ### See unit tests in test/timelapse/test_timelapse_renderjob.py
 
         # apply pixel format
-        filters = ["format={}".format(pixfmt)]
+        filters = [f"format={pixfmt}"]
 
         # flip video if configured
         if hflip:
@@ -1303,7 +1283,7 @@ class TimelapseRenderJob(object):
 
     def _notify_callback(self, callback, *args, **kwargs):
         """Notifies registered callbacks of type `callback`."""
-        name = "_on_{}".format(callback)
+        name = f"_on_{callback}"
         method = getattr(self, name, None)
         if method is not None and callable(method):
             method(*args, **kwargs)

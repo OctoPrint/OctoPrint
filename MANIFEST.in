@@ -7,4 +7,6 @@ include versioneer.py
 include src/octoprint/_version.py
 include requirements.txt
 include *.md
+exclude CODE_OF_CONDUCT.md
+exclude SECURITY.md
 exclude CONTRIBUTING.md

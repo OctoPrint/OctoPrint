@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -10,7 +7,7 @@ import json
 
 from frozendict import frozendict
 
-from octoprint.util import to_unicode
+from octoprint.util import to_str
 
 
 def dump(obj):
@@ -22,7 +19,7 @@ def dump(obj):
     )
 
 
-class JsonEncoding(object):
+class JsonEncoding:
 
     encoders = collections.OrderedDict()
 
@@ -46,4 +43,4 @@ class JsonEncoding(object):
 
 
 JsonEncoding.add_encoder(frozendict, lambda obj: dict(obj))
-JsonEncoding.add_encoder(bytes, lambda obj: to_unicode(obj))
+JsonEncoding.add_encoder(bytes, lambda obj: to_str(obj))

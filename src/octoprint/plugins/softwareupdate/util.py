@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -30,9 +27,7 @@ def execute(command, cwd=None, evaluate_returncode=True, **kwargs):
             async_=do_async,
         )
     except Exception:
-        logging.getLogger(__name__).exception(
-            "Error while executing command: {}".format(command)
-        )
+        logging.getLogger(__name__).exception(f"Error while executing command: {command}")
         returncode = p.returncode if p is not None else None
         stdout = p.stdout.text if p is not None and p.stdout is not None else ""
         stderr = p.stderr.text if p is not None and p.stderr is not None else ""

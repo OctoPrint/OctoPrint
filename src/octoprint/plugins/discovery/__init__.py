@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -12,26 +9,18 @@ For a spec see http://www.upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.0.
 """
 
 # noinspection PyCompatibility
-from builtins import range
-
-import flask
-from flask_babel import gettext
-
-import octoprint.plugin
-import octoprint.util
-
-try:
-    # python 3
-    import zeroconf
-
-except ImportError:
-    # python 2: vendored version with some backported fixes
-    import octoprint.vendor.zeroconf as zeroconf
 
 import collections
 import platform
 import socket
 import time
+
+import flask
+import zeroconf
+from flask_babel import gettext
+
+import octoprint.plugin
+import octoprint.util
 
 
 def __plugin_load__():
@@ -70,7 +59,7 @@ class DiscoveryPlugin(
         self.port = None
 
         # zeroconf
-        self._zeroconf = zeroconf.Zeroconf()
+        self._zeroconf = None
         self._zeroconf_registrations = collections.defaultdict(list)
 
         # upnp/ssdp
@@ -78,6 +67,9 @@ class DiscoveryPlugin(
         self._ssdp_monitor_thread = None
         self._ssdp_notify_timeout = 30
         self._ssdp_last_notify = 0
+
+    def initialize(self):
+        self._zeroconf = zeroconf.Zeroconf(interfaces=self.get_interface_addresses())
 
     ##~~ SettingsPlugin API
 
@@ -100,7 +92,9 @@ class DiscoveryPlugin(
                 "vendorUrl": None,
             },
             "addresses": None,
+            "ignoredAddresses": None,
             "interfaces": None,
+            "ignoredInterfaces": None,
         }
 
     ##~~ BlueprintPlugin API -- used for providing the SSDP device descriptor XML
@@ -192,20 +186,15 @@ class DiscoveryPlugin(
     # ZeroConf
 
     def _format_zeroconf_service_type(self, service_type):
-        service_type = octoprint.util.to_native_str(service_type)
-        if not service_type.endswith(octoprint.util.to_native_str(".")):
-            service_type += octoprint.util.to_native_str(".")
-        if not service_type.endswith(octoprint.util.to_native_str("local.")):
-            service_type += octoprint.util.to_native_str("local.")
+        if not service_type.endswith("."):
+            service_type += "."
+        if not service_type.endswith("local."):
+            service_type += "local."
         return service_type
 
     def _format_zeroconf_name(self, name, service_type):
         service_type = self._format_zeroconf_service_type(service_type)
-        return (
-            octoprint.util.to_native_str(name)
-            + octoprint.util.to_native_str(".")
-            + service_type
-        )
+        return f"{name}.{service_type}"
 
     def _format_zeroconf_txt(self, record):
         result = {}
@@ -246,15 +235,15 @@ class DiscoveryPlugin(
                 name,
                 addresses=addresses,
                 port=port,
-                server="{}.local.".format(socket.gethostname()),
+                server=f"{socket.gethostname()}.local.",
                 properties=txt_record,
             )
             self._zeroconf.register_service(info, allow_name_change=True)
             self._zeroconf_registrations[key].append(info)
-            self._logger.info("Registered '{}' for {}".format(name, reg_type))
+            self._logger.info(f"Registered '{name}' for {reg_type}")
         except Exception:
             self._logger.exception(
-                "Could not register {} for {} on port {}".format(name, reg_type, port)
+                f"Could not register {name} for {reg_type} on port {port}"
             )
 
     def zeroconf_unregister(self, reg_type, port=None):
@@ -278,10 +267,10 @@ class DiscoveryPlugin(
         try:
             for info in infos:
                 self._zeroconf.unregister_service(info)
-            self._logger.debug("Unregistered {} on port {}".format(reg_type, port))
+            self._logger.debug(f"Unregistered {reg_type} on port {port}")
         except Exception:
             self._logger.exception(
-                "Could not (fully) unregister {} on port {}".format(reg_type, port)
+                f"Could not (fully) unregister {reg_type} on port {port}"
             )
 
     def zeroconf_browse(
@@ -332,7 +321,7 @@ class DiscoveryPlugin(
         result_available = threading.Event()
         result_available.clear()
 
-        class ZeroconfListener(object):
+        class ZeroconfListener:
             def __init__(self, logger):
                 self._logger = logger
 
@@ -367,9 +356,7 @@ class DiscoveryPlugin(
                     for address in map(lambda x: socket.inet_ntoa(x), info.addresses):
                         result.append(to_result(info, address))
 
-        self._logger.debug(
-            "Browsing Zeroconf for {service_type}".format(service_type=service_type)
-        )
+        self._logger.debug(f"Browsing Zeroconf for {service_type}")
 
         def browse():
             listener = ZeroconfListener(self._logger)
@@ -424,13 +411,7 @@ class DiscoveryPlugin(
 
         import io
         import threading
-
-        try:
-            # noinspection PyCompatibility
-            from http.client import HTTPResponse  # py3
-        except ImportError:
-            # noinspection PyCompatibility
-            from httplib import HTTPResponse  # py2
+        from http.client import HTTPResponse
 
         class Response(HTTPResponse):
             def __init__(self, response_text):
@@ -613,8 +594,7 @@ class DiscoveryPlugin(
 
         if (
             alive
-            and self._ssdp_last_notify + self._ssdp_notify_timeout
-            > octoprint.util.monotonic_time()
+            and self._ssdp_last_notify + self._ssdp_notify_timeout > time.monotonic()
         ):
             # we just sent an alive, no need to send another one now
             return
@@ -681,7 +661,7 @@ class DiscoveryPlugin(
             except Exception:
                 pass
 
-        self._ssdp_last_notify = octoprint.util.monotonic_time()
+        self._ssdp_last_notify = time.monotonic()
 
     def _ssdp_monitor(self, timeout=5):
         """
@@ -691,13 +671,7 @@ class DiscoveryPlugin(
                         alive message
         """
 
-        try:
-            # noinspection PyCompatibility
-            from http.server import BaseHTTPRequestHandler
-        except ImportError:
-            # noinspection PyCompatibility
-            from BaseHTTPServer import BaseHTTPRequestHandler
-
+        from http.server import BaseHTTPRequestHandler
         from io import BytesIO
 
         socket.setdefaulttimeout(timeout)
@@ -737,7 +711,7 @@ class DiscoveryPlugin(
             + socket.inet_aton("0.0.0.0"),
         )
 
-        self._logger.info("Registered {} for SSDP".format(self.get_instance_name()))
+        self._logger.info(f"Registered {self.get_instance_name()} for SSDP")
 
         self._ssdp_notify(alive=True)
 
@@ -759,7 +733,7 @@ class DiscoveryPlugin(
                         interface_address = octoprint.util.address_for_client(
                             *address,
                             addresses=self._settings.get(["addresses"]),
-                            interfaces=self._settings.get(["interfaces"])
+                            interfaces=self._settings.get(["interfaces"]),
                         )
                         if not interface_address:
                             continue
@@ -803,17 +777,20 @@ class DiscoveryPlugin(
     def get_instance_name(self):
         name = self._settings.global_get(["appearance", "name"])
         if name:
-            return 'OctoPrint instance "{}"'.format(name)
+            return f'OctoPrint instance "{name}"'
         else:
-            return "OctoPrint instance on {}".format(socket.gethostname())
+            return f"OctoPrint instance on {socket.gethostname()}"
 
     def get_interface_addresses(self):
         addresses = self._settings.get(["addresses"])
         if addresses:
             return addresses
         else:
-            return octoprint.util.interface_addresses(
-                interfaces=self._settings.get(["interfaces"])
+            return list(
+                octoprint.util.interface_addresses(
+                    interfaces=self._settings.get(["interfaces"]),
+                    ignored=self._settings.get(["ignoredInterfaces"]),
+                )
             )
 
 
@@ -828,4 +805,4 @@ __plugin_disabling_discouraged__ = gettext(
     "discoverable on the network via Bonjour and uPnP."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"

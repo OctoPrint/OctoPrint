@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -10,7 +7,6 @@ import re
 
 from flask import abort, jsonify, request
 from flask_login import current_user
-from past.builtins import basestring
 
 import octoprint.plugin
 import octoprint.util
@@ -1025,7 +1021,7 @@ def _saveSettings(data):
             for name, script in data["scripts"]["gcode"].items():
                 if name == "snippets":
                     continue
-                if not isinstance(script, basestring):
+                if not isinstance(script, str):
                     continue
                 s.saveScript(
                     "gcode", name, script.replace("\r\n", "\n").replace("\r", "\n")

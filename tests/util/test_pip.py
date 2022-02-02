@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import os
 import site
 import unittest
+from unittest import mock
 
 import ddt
-import mock
 import pkg_resources
 
 import octoprint.util.pip
@@ -161,10 +157,8 @@ class PipUtilTest(unittest.TestCase):
         )
 
     def _get_lines(self, file):
-        with io.open(os.path.join(self._test_data, file), "r", encoding="utf-8") as f:
-            lines = list(
-                map(lambda x: x.rstrip(), f.readlines())
-            )  # not str.rstrip because in py2 it'll be unicode...
+        with open(os.path.join(self._test_data, file), encoding="utf-8") as f:
+            lines = list(map(str.rstrip, f.readlines()))
         return lines
 
     @ddt.data(

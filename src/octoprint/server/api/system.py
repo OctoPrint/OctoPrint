@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -151,14 +148,14 @@ def executeSystemCommand(source, command):
             )
         )
     else:
-        logger.info("Performing command for {}:{}".format(source, command))
+        logger.info(f"Performing command for {source}:{command}")
 
     try:
         if "before" in command_spec and callable(command_spec["before"]):
             command_spec["before"]()
     except Exception as e:
         if not do_ignore:
-            error = 'Command "before" for {}:{} failed: {}'.format(source, command, e)
+            error = f'Command "before" for {source}:{command} failed: {e}'
             logger.warning(error)
             abort(500, description=error)
 
@@ -201,7 +198,7 @@ def executeSystemCommand(source, command):
 
     except Exception as e:
         if not do_ignore:
-            error = "Command for {}:{} failed: {}".format(source, command, e)
+            error = f"Command for {source}:{command} failed: {e}"
             logger.warning(error)
             abort(500, error)
 
@@ -328,7 +325,7 @@ def _get_plugin_command_specs(plugin=None):
                 specs[action] = copied
         except Exception:
             logging.getLogger(__name__).exception(
-                "Error while fetching additional actions from plugin {}".format(name),
+                f"Error while fetching additional actions from plugin {name}",
                 extra={"plugin": name},
             )
     return specs
@@ -352,7 +349,7 @@ def _get_custom_command_specs():
         action = spec["action"]
         if action == "divider":
             dividers += 1
-            action = "divider_{}".format(dividers)
+            action = f"divider_{dividers}"
         specs[action] = copied
     return specs
 

@@ -14,7 +14,7 @@ below.
 
   * Prerequisites:
 
-    * `Python 3.7 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv``
+    * `Latest stable Python 3 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv``
     * `Git <https://git-scm.com>`_
 
   * Checkout the OctoPrint sources from their Git repository:
@@ -24,15 +24,15 @@ below.
   * Enter the checked out source folder: ``cd OctoPrint``
   * Create a virtual environment in the checked out source folder to use for
     installing and running OctoPrint and its dependencies. Creating virtual environments avoids potential versioning
-    issues for the dependencies with system wide installed instances: ``virtualenv --python=python3 venv3``
+    issues for the dependencies with system wide installed instances: ``virtualenv --python=python3 venv``
 
     .. note::
 
        This assumes that the ``python3`` binary is available directly on your ``PATH``. If
        it cannot be found on your ``PATH`` like this you'll need to specify the full path here,
-       e.g. ``virtualenv --python=/path/to/python3/bin/python venv3``
+       e.g. ``virtualenv --python=/path/to/python3/bin/python venv``
 
-  * Activate the virtual environment: ``source venv3/bin/activate`` (Linux, macOS) or ``source venv3/Scripts/activate`` (Git Bash under Windows, see below)
+  * Activate the virtual environment: ``source venv/bin/activate`` (Linux, macOS) or ``source venv/Scripts/activate`` (Git Bash under Windows, see below)
 
   * Update ``pip`` in the virtual environment:
 
@@ -61,31 +61,6 @@ When the virtual environment is activated you can then:
     folder -- the documentation will be available in the newly created ``_build``
     directory. You can simply browse it locally by opening ``index.html``
 
-If a Python 2 environment is also desired (e.g. for maintenance reasons), also do the following extra steps:
-
-  * Prerequisites:
-
-    * `Python 2.7 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv``
-
-  * Create a virtual environment in the checked out source folder for Python 2: ``virtualenv --python=python2 venv2``
-
-    .. note::
-
-       This assumes that the ``python2`` binary is available directly on your ``PATH``. If
-       it cannot be found on your ``PATH`` like this you'll need to specify the full path here,
-       e.g. ``virtualenv --python=/path/to/python2/bin/python venv2``
-
-  * Activate the virtual environment: ``source venv2/bin/activate`` (Linux, macOS) or ``source venv2/Scripts/activate`` (Git Bash under Windows, see below)
-
-  * Update ``pip`` in the virtual environment:
-
-      * ``pip install --upgrade pip``
-
-  * Install OctoPrint in `"editable" mode <https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs>`_,
-    including its regular *and* development and plugin development dependencies:
-
-      * ``pip install -e '.[develop,plugins]'``
-
 .. _sec-development-environment-source-linux:
 
 Linux
@@ -94,14 +69,14 @@ Linux
 This assumes you'll host your OctoPrint development checkout at ``~/devel/OctoPrint``. If you want to use a different
 location, please substitute accordingly.
 
-First make sure you have python 2 and 3 including their header files, pip, setuptools, virtualenv, git and some build requirements
+First make sure you have python 3 including its header files, pip, setuptools, virtualenv, git and some build requirements
 installed:
 
   * On apt based distributions (e.g. Debian, Ubuntu, ...):
 
     .. code-block:: none
 
-       sudo apt-get install python python-pip python-dev python-setuptools python-virtualenv python3 python3-virtualenv python3-dev git libyaml-dev build-essential
+       sudo apt-get install python3 python3-pip python3-dev python3-setuptools python3-virtualenv git libyaml-dev build-essential
 
 Then:
 
@@ -110,36 +85,13 @@ Then:
    cd ~/devel
    git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
-   virtualenv --python=python3 venv3
-   source ./venv3/bin/activate
+   virtualenv --python=python3 venv
+   source ./venv/bin/activate
    pip install --upgrade pip
    pip install -e '.[develop,plugins,docs]'
    pre-commit install
    git config blame.ignoreRevsFile .git-blame-ignore-revs
 
-.. _sec-development-environment-linux-python2:
-
-Optional Python 2 environment
-.............................
-
-If a Python 2 environment is also desired:
-
-  * On apt based distributions (e.g. Debian, Ubuntu, ...):
-
-    .. code-block:: none
-
-       sudo apt-get install python2 python2-dev python-pip python-setuptools python-virtualenv
-
-Then:
-
-.. code-block:: none
-
-   virtualenv --python=python2 venv2
-   source ./venv2/bin/activate
-   pip install --upgrade pip
-   pip install -e '.[develop,plugins]'
-
-You can then start OctoPrint via ``octoprint`` after activating one of the two virtual environments.
 
 .. todo::
 
@@ -180,37 +132,12 @@ Open the Git Bash you just installed and in that:
    cd /c/Devel
    git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
-   virtualenv --python=C:/Python3/python.exe venv3
-   source ./venv3/Scripts/activate
+   virtualenv --python=C:/Python3/python.exe venv
+   source ./venv/Scripts/activate
    pip install --upgrade pip
    python -m pip install -e '.[develop,plugins,docs]'
    pre-commit install
    git config blame.ignoreRevsFile .git-blame-ignore-revs
-
-.. _sec-development-environment-windows-python2:
-
-Optional Python 2 environment
-.............................
-
-If a Python 2 environment is also desired, then also download and install
-
-  * `Python 2.7.18 MSI installer <https://octoprint.org/files/python-2.7.18.msi>`_ (mirrored on octoprint.org)
-
-    * it's recommended to install Python 2.7 into ``C:\Python27`` - if you select
-      different install locations please substitute accordingly
-    * it's also recommended to install for all users
-
-  * `Microsoft Visual C++ Compiler for Python 2.7 <https://octoprint.org/files/VCForPython27.msi>`_ (mirrored on octoprint.org)
-
-Then:
-
-.. code-block:: none
-
-   cd /c/Devel/OctoPrint
-   virtualenv --python=C:/Python27/python.exe venv2
-   source ./venv2/Scripts/activate
-   python -m pip install --upgrade pip
-   pip install -e '.[develop,plugins]'
 
 .. _sec-development-environment-windows-optional:
 
@@ -248,12 +175,6 @@ Mac OS X
    This guide is based on the `Setup Guide for Mac OS X on OctoPrint's Community Forum <https://community.octoprint.org/t/setting-up-octoprint-on-macos/13425>`_.
    Please report back if it works for you, due to lack of access to a Mac I cannot test it myself. Thanks.
 
-.. todo::
-
-   This guide is not yet adapted to the concurrent use of Python 2 and 3 environments during development. Please send a
-   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
-   steps into this guide!
-
 This assumes you'll host your OctoPrint development checkout at ``~/devel/OctoPrint``. If you want to use a different
 location, please substitute accordingly.
 
@@ -266,7 +187,7 @@ You'll need a user account with administrator privileges.
     * ``sudo xcodebuild`` (ensure the license was accepted)
     * If you have more than one Xcode installed: ``sudo xcode-select -s /Applications/Xcode.app/Contents/Developer``
 
-  * Install Homebrew and use that to install Python:
+  * Install Homebrew and use that to install Python 3:
 
     * ``ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"``
     * ``brew install python``
@@ -313,11 +234,11 @@ PyCharm
   - Register virtual environments:
 
     - **(Linux, Windows)** "File" > "Settings ..." > "Project: OctoPrint" > "Project Interpreter" > "Add local ...",
-      select OctoPrint ``venv3`` folder (e.g. ``~/devel/OctoPrint/venv3`` or ``C:\Devel\OctoPrint\venv3``).
+      select OctoPrint ``venv`` folder (e.g. ``~/devel/OctoPrint/venv`` or ``C:\Devel\OctoPrint\venv``).
     - **(macOS)** "PyCharm" > "Preferences ..." > "Project: OctoPrint" > "Project Interpreter" > "Add ..." >
-      "Virtualenv Environment > "Existing Environment", select OctoPrint ``venv3`` folder (e.g. ``~/devel/OctoPrint/venv3``).
+      "Virtualenv Environment > "Existing Environment", select OctoPrint ``venv`` folder (e.g. ``~/devel/OctoPrint/venv``).
 
-    If desired, repeat for the ``venv2`` folder, or any other additional Python venvs.
+    If desired, repeat for any other additional Python venvs (e.g. for separate Python 3 versions).
 
   - Right click "src" in project tree, mark as source folder
   - Add Run/Debug Configuration, select "Python":
@@ -362,7 +283,7 @@ PyCharm
     * Module name: ``sphinx.cmd.build``
     * Parameters: ``-v -T -E ./docs ./docs/_build -b html``
     * Project: ``OctoPrint``
-    * Python interpreter: ``venv3`` environment (the docs build requires Python 3)
+    * Python interpreter: ``venv`` environment
     * Working directory: the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
     * Just like with the run configuration for the server you can also have the dependencies auto-update when building
       the documentation, see above on how to set this up.
@@ -375,14 +296,14 @@ PyCharm
     * Name: pre-commit
     * File type: Python
     * Scope: Module 'OctoPrint'
-    * Program: ``<OctoPrint venv3 folder>/bin/pre-commit`` (Linux) or ``<OctoPrint venv3 folder>/Scripts/pre-commit`` (Windows)
+    * Program: ``<OctoPrint venv folder>/bin/pre-commit`` (Linux) or ``<OctoPrint venv folder>/Scripts/pre-commit`` (Windows)
     * Arguments: ``run --hook-stage manual --files $FilePath$``
     * Output paths to refresh: ``$FilePath$``
     * Working directory: ``$ProjectFileDir$``
     * disable "Auto-save edited files to trigger the watched"
     * enable "Trigger the watched on external changes"
 
-To switch between virtual environments (e.g. Python 3 and 2), all you need to do now is change the Project Default Interpreter and restart
+To switch between virtual environments (e.g. Python 3.7 and 3.8), all you need to do now is change the Project Default Interpreter and restart
 OctoPrint. On current PyCharm versions you can do that right from a small selection field in the footer of the IDE.
 Otherwise go through Settings.
 
@@ -406,7 +327,7 @@ Visual Studio Code (vscode)
       .. code-block:: json
 
          {
-             "python.defaultInterpreterPath": "venv3/bin/python",
+             "python.defaultInterpreterPath": "venv/bin/python",
              "python.formatting.provider": "black",
              "python.formatting.blackArgs": [
                  "--config",
@@ -466,7 +387,7 @@ Visual Studio Code (vscode)
                }
            ]
          }
-  
+
   In the terminal install the python extension by running this command:
 
     .. code-block:: bash
@@ -486,7 +407,7 @@ Visual Studio Code (vscode)
   * Your terminal inside vscode uses the virtual python environment
 
   * Saving a file will run an auto formatter and import sort
-  
+
   * ``Ctrl+Shift+B`` can be used to run the ``build docs`` task to rebuild the documentation
 
-  
+
