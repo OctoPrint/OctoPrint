@@ -153,6 +153,7 @@ $(function () {
         self.webcam_streamUrl = ko.observable(undefined);
         self.webcam_streamRatio = ko.observable(undefined);
         self.webcam_streamTimeout = ko.observable(undefined);
+        self.webcam_streamWebrtcIceServers = ko.observable(undefined);
         self.webcam_snapshotUrl = ko.observable(undefined);
         self.webcam_snapshotTimeout = ko.observable(undefined);
         self.webcam_snapshotSslValidation = ko.observable(undefined);
@@ -172,6 +173,7 @@ $(function () {
         self.feature_keyboardControl = ko.observable(undefined);
         self.feature_pollWatched = ko.observable(undefined);
         self.feature_modelSizeDetection = ko.observable(undefined);
+        self.feature_rememberFileFolder = ko.observable(undefined);
         self.feature_printStartConfirmation = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
         self.feature_uploadOverwriteConfirmation = ko.observable(undefined);
@@ -439,6 +441,7 @@ $(function () {
             );
             var streamType = determineWebcamStreamType(self.webcam_streamUrl());
             var webcam_element;
+            var webrtc_peer_connection;
             if (streamType == "mjpg") {
                 webcam_element = $('<img src="' + self.webcam_streamUrl() + '">');
             } else if (streamType == "hls") {
@@ -453,6 +456,17 @@ $(function () {
                     hls.loadSource(self.webcam_streamUrl());
                     hls.attachMedia(video_element);
                 }
+            } else if (isWebRTCAvailable() && streamType == "webrtc") {
+                webcam_element = $(
+                    '<video id="webcam_webrtc" muted autoplay playsinline controls style="width: 100%"/>'
+                );
+                video_element = webcam_element[0];
+
+                webrtc_peer_connection = startWebRTC(
+                    video_element,
+                    self.webcam_streamUrl(),
+                    self.webcam_streamWebrtcIceServers()
+                );
             } else {
                 throw "Unknown stream type " + streamType;
             }
@@ -468,6 +482,10 @@ $(function () {
                 message: message,
                 onclose: function () {
                     self.testWebcamStreamUrlBusy(false);
+                    if (webrtc_peer_connection != null) {
+                        webrtc_peer_connection.close();
+                        webrtc_peer_connection = null;
+                    }
                 }
             });
         };
@@ -1147,6 +1165,15 @@ $(function () {
                         });
                         return result;
                     }
+                },
+                webcam: {
+                    streamWebrtcIceServers: function () {
+                        return splitTextToArray(
+                            self.webcam_streamWebrtcIceServers(),
+                            ",",
+                            true
+                        );
+                    }
                 }
             };
 
@@ -1306,6 +1333,11 @@ $(function () {
                 temperature: {
                     profiles: function (value) {
                         self.temperature_profiles($.extend(true, [], value));
+                    }
+                },
+                webcam: {
+                    streamWebrtcIceServers: function (value) {
+                        self.webcam_streamWebrtcIceServers(value.join(", "));
                     }
                 }
             };

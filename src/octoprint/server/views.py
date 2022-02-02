@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import base64
 import datetime
-import io
 import logging
 import os
 import re
@@ -24,7 +20,6 @@ from flask import (
     send_from_directory,
     url_for,
 )
-from past.builtins import basestring
 
 import octoprint.plugin
 from octoprint.access.permissions import OctoPrintPermission, Permissions
@@ -43,9 +38,9 @@ from octoprint.server import (  # noqa: F401
     preemptiveCache,
     userManager,
 )
-from octoprint.server.util import has_permissions, require_login
+from octoprint.server.util import has_permissions, require_login_with
 from octoprint.settings import settings
-from octoprint.util import sv, to_bytes, to_unicode
+from octoprint.util import sv, to_bytes, to_str
 from octoprint.util.version import get_python_version_string
 
 from . import util
@@ -108,7 +103,7 @@ def _preemptive_data(
                 d.update(data)
         except Exception:
             _logger.exception(
-                "Error collecting data for preemptive cache from plugin {}".format(key)
+                f"Error collecting data for preemptive cache from plugin {key}"
             )
 
     # add additional request data if we have any
@@ -133,7 +128,7 @@ def _cache_key(ui, url=None, locale=None, additional_key_data=None):
     if locale is None:
         locale = g.locale.language if g.locale else "en"
 
-    k = "ui:{}:{}:{}".format(ui, url, locale)
+    k = f"ui:{ui}:{url}:{locale}"
     if callable(additional_key_data):
         try:
             ak = additional_key_data()
@@ -164,7 +159,7 @@ def _add_additional_assets(hook):
                 result += assets
         except Exception:
             _logger.exception(
-                "Error fetching theming CSS to include from plugin {}".format(name),
+                f"Error fetching theming CSS to include from plugin {name}",
                 extra={"plugin": name},
             )
     return result
@@ -189,13 +184,18 @@ def login():
     if not permissions:
         permissions = [Permissions.STATUS, Permissions.SETTINGS_READ]
 
-    if has_permissions(*permissions):
+    user_id = request.args.get("user_id", "")
+
+    if (not user_id or current_user.get_id() == user_id) and has_permissions(
+        *permissions
+    ):
         return redirect(redirect_url)
 
     render_kwargs = {
         "theming": [],
         "redirect_url": redirect_url,
         "permission_names": map(lambda x: x.get_name(), permissions),
+        "user_id": user_id,
         "logged_in": not current_user.is_anonymous,
     }
 
@@ -216,7 +216,7 @@ def login():
 @app.route("/recovery")
 @app.route("/recovery/")
 def recovery():
-    response = require_login(Permissions.ADMIN)
+    response = require_login_with(permissions=[Permissions.ADMIN])
     if response:
         return response
 
@@ -277,7 +277,7 @@ def in_cache():
                 break
         except Exception:
             _logger.exception(
-                "Error while calling plugin {}, skipping it".format(plugin._identifier),
+                f"Error while calling plugin {plugin._identifier}, skipping it",
                 extra={"plugin": plugin._identifier},
             )
     else:
@@ -301,9 +301,7 @@ def in_cache():
         )
         return response
     elif util.flask.is_in_cache(key):
-        _logger.info(
-            "Found path {} in cache (key: {}), signaling as cached".format(path, key)
-        )
+        _logger.info(f"Found path {path} in cache (key: {key}), signaling as cached")
         return response
     elif util.flask.is_cache_bypassed(key):
         _logger.info(
@@ -313,9 +311,7 @@ def in_cache():
         )
         return response
     else:
-        _logger.debug(
-            "Path {} not yet cached (key: {}), signaling as missing".format(path, key)
-        )
+        _logger.debug(f"Path {path} not yet cached (key: {key}), signaling as missing")
         return abort(404)
 
 
@@ -379,9 +375,7 @@ def index():
         wizard_active(_templates.get(locale)),
     ] + sorted(
         [
-            "{}:{}".format(
-                to_unicode(k, errors="replace"), to_unicode(v, errors="replace")
-            )
+            "{}:{}".format(to_str(k, errors="replace"), to_str(v, errors="replace"))
             for k, v in _plugin_vars.items()
         ]
     )
@@ -483,7 +477,7 @@ def index():
                         )
                     )
 
-            if lastmodified and not isinstance(lastmodified, basestring):
+            if lastmodified and not isinstance(lastmodified, str):
                 from werkzeug.http import http_date
 
                 lastmodified = http_date(lastmodified)
@@ -625,14 +619,14 @@ def index():
 
     if forced_view:
         # we have view forced by the preemptive cache
-        _logger.debug("Forcing rendering of view {}".format(forced_view))
+        _logger.debug(f"Forcing rendering of view {forced_view}")
         if forced_view != "_default":
             plugin = pluginManager.get_plugin_info(forced_view, require_enabled=True)
             if plugin is not None and isinstance(
                 plugin.implementation, octoprint.plugin.UiPlugin
             ):
                 permissions = plugin.implementation.get_ui_permissions()
-                response = require_login(*permissions)
+                response = require_login_with(permissions=permissions)
                 if not response:
                     response = plugin_view(plugin.implementation)
                     if _logger.isEnabledFor(logging.DEBUG) and isinstance(
@@ -642,7 +636,7 @@ def index():
                             "X-Ui-Plugin"
                         ] = plugin.implementation._identifier
         else:
-            response = require_login(*default_permissions)
+            response = require_login_with(permissions=default_permissions)
             if not response:
                 response = default_view()
                 if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
@@ -658,7 +652,7 @@ def index():
                 if plugin.will_handle_ui(request):
                     # plugin claims responsibility, let it render the UI
                     permissions = plugin.get_ui_permissions()
-                    response = require_login(*permissions)
+                    response = require_login_with(permissions=permissions)
                     if not response:
                         response = plugin_view(plugin)
                         if response is not None:
@@ -681,7 +675,7 @@ def index():
                     extra={"plugin": plugin._identifier},
                 )
         else:
-            response = require_login(*default_permissions)
+            response = require_login_with(permissions=default_permissions)
             if not response:
                 response = default_view()
                 if _logger.isEnabledFor(logging.DEBUG) and isinstance(response, Response):
@@ -712,7 +706,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 
     permissions = [permission.as_dict() for permission in Permissions.all()]
     filetypes = list(sorted(full_extension_tree().keys()))
-    extensions = list(map(lambda ext: ".{}".format(ext), get_all_extensions()))
+    extensions = list(map(lambda ext: f".{ext}", get_all_extensions()))
 
     # ~~ prepare full set of template vars for rendering
 
@@ -798,13 +792,13 @@ def fetch_template_data(refresh=False):
             # Ultra special case - we MUST always have the ACL wizard first since otherwise any steps that follow and
             # that require to access APIs to function will run into errors since those APIs won't work before ACL
             # has been configured. See also #2140
-            return "0:{}".format(to_unicode(d[0]))
+            return "0:{}".format(to_str(d[0]))
         elif d[1].get("mandatory", False):
             # Other mandatory steps come before the optional ones
-            return "1:{}".format(to_unicode(d[0]))
+            return "1:{}".format(to_str(d[0]))
         else:
             # Finally everything else
-            return "2:{}".format(to_unicode(d[0]))
+            return "2:{}".format(to_str(d[0]))
 
     template_sorting = {
         "navbar": {"add": "prepend", "key": None},
@@ -1493,6 +1487,12 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 
     if "template" not in data:
         data["template"] = rule["template"](name)
+    data["template"] = implementation.template_folder_key + "/" + data["template"]
+
+    if "template_header" in data:
+        data["template_header"] = (
+            implementation.template_folder_key + "/" + data["template_header"]
+        )
 
     if "name" not in data:
         data["name"] = implementation._plugin_name
@@ -1578,7 +1578,7 @@ def _compute_etag_for_i18n(locale, domain, files=None, lastmodified=None):
         files = _get_all_translationfiles(locale, domain)
     if lastmodified is None:
         lastmodified = _compute_date(files)
-    if lastmodified and not isinstance(lastmodified, basestring):
+    if lastmodified and not isinstance(lastmodified, str):
         from werkzeug.http import http_date
 
         lastmodified = http_date(lastmodified)
@@ -1695,7 +1695,7 @@ def _get_translations(locale, domain):
 
     def messages_from_po(path, locale, domain):
         messages = {}
-        with io.open(path, mode="rt", encoding="utf-8") as f:
+        with open(path, mode="rt", encoding="utf-8") as f:
             catalog = read_po(f, locale=locale, domain=domain)
 
             for message in catalog:

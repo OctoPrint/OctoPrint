@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -12,7 +9,7 @@ from octoprint import UMASK
 from octoprint.util import atomic_write
 
 
-class AbstractFileWrapper(object):
+class AbstractFileWrapper:
     """
     Wrapper for file representations to save to storages.
 
@@ -75,7 +72,7 @@ class DiskFileWrapper(AbstractFileWrapper):
         os.chmod(path, permissions)
 
     def stream(self):
-        return io.open(self.path, "rb")
+        return open(self.path, "rb")
 
 
 class StreamWrapper(AbstractFileWrapper):
@@ -128,7 +125,7 @@ class MultiStream(io.RawIOBase):
     """
 
     def __init__(self, *streams):
-        io.RawIOBase.__init__(self)
+        super().__init__()
         self.streams = streams
         self.current_stream = 0
 
@@ -187,7 +184,7 @@ class LineProcessorStream(io.RawIOBase):
     """
 
     def __init__(self, input_stream):
-        io.RawIOBase.__init__(self)
+        super().__init__()
         self.input_stream = io.BufferedReader(input_stream)
         self.leftover = bytearray()
 
@@ -242,8 +239,7 @@ class LineProcessorStream(io.RawIOBase):
         wrapper `input_stream`.
 
         Arguments:
-            line (bytes): The line as read from `self.input_stream` in byte representation (str under Python 2 and
-              bytes under Python 3)
+            line (bytes): The line as read from `self.input_stream` in byte representation
 
         Returns:
             bytes or None: The processed version of the line (might also be multiple lines), or None if the line is to be

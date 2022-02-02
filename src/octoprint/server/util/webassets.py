@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <gina@octoprint.org>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -9,11 +6,7 @@ import gzip
 import logging
 import os
 import re
-
-try:
-    from urllib import parse as urlparse
-except ImportError:
-    import urlparse
+from urllib import parse as urlparse
 
 import webassets.filter.cssrewrite.urlpath as urlpath
 from webassets.bundle import Bundle
@@ -57,7 +50,7 @@ class UrlRewriter(PatternRewriter):
         )
         self.output_url = self.ctx.resolver.resolve_output_to_url(self.ctx, output)
 
-        return super(UrlRewriter, self).input(_in, out, **kw)
+        return super().input(_in, out, **kw)
 
     def replace_url(self, url):
         return replace_url(self.source_url, self.output_url, url)

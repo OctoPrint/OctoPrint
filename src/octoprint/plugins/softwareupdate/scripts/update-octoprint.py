@@ -1,6 +1,4 @@
 #!/bin/env python
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Haeussge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -11,8 +9,6 @@ import errno
 import sys
 import time
 import traceback
-
-from past.builtins import unicode
 
 # default close_fds settings
 if sys.platform == "win32" and sys.version_info < (3, 7):
@@ -56,7 +52,7 @@ def _to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 
 def _to_bytes(s_or_u, encoding="utf-8", errors="strict"):
     """Make sure ``s_or_u`` is a str."""
-    if isinstance(s_or_u, unicode):
+    if isinstance(s_or_u, str):
         return s_or_u.encode(encoding, errors=errors)
     else:
         return s_or_u
@@ -96,14 +92,12 @@ def _execute(command, **kwargs):
         if not p.commands[0].process:
             # the process might have been set to None in case of any exception
             print(
-                "Error while trying to run command {}".format(joined_command),
+                f"Error while trying to run command {joined_command}",
                 file=sys.stderr,
             )
             return None, [], []
     except Exception:
-        print(
-            "Error while trying to run command {}".format(joined_command), file=sys.stderr
-        )
+        print(f"Error while trying to run command {joined_command}", file=sys.stderr)
         traceback.print_exc(file=sys.stderr)
         return None, [], []
 
@@ -158,7 +152,7 @@ def _git(args, cwd, git_executable=None):
         command = [c] + args
         try:
             return _execute(command, cwd=cwd)
-        except EnvironmentError:
+        except OSError:
             e = sys.exc_info()[1]
             if e.errno == errno.ENOENT:
                 continue
@@ -205,7 +199,7 @@ def _to_error(*lines):
     if len(lines) == 1:
         if isinstance(lines[0], (list, tuple)):
             lines = lines[0]
-        elif not isinstance(lines[0], (str, unicode)):
+        elif not isinstance(lines[0], (str, bytes)):
             lines = [
                 repr(lines[0]),
             ]
@@ -219,7 +213,7 @@ def _rescue_changes(git_executable, folder):
     )
     if returncode is None or returncode != 0:
         raise RuntimeError(
-            'Could not update, "git diff" failed with returncode {}'.format(returncode)
+            f'Could not update, "git diff" failed with returncode {returncode}'
         )
     if stdout and "".join(stdout).strip():
         # we got changes in the working tree, maybe from the user, so we'll now rescue those into a patch
@@ -227,9 +221,9 @@ def _rescue_changes(git_executable, folder):
         import time
 
         timestamp = time.strftime("%Y%m%d%H%M")
-        patch = os.path.join(folder, "{}-preupdate.patch".format(timestamp))
+        patch = os.path.join(folder, f"{timestamp}-preupdate.patch")
 
-        print(">>> Running: git diff and saving output to {}".format(patch))
+        print(f">>> Running: git diff and saving output to {patch}")
         returncode, stdout, stderr = _git(["diff"], folder, git_executable=git_executable)
         if returncode is None or returncode != 0:
             raise RuntimeError(
@@ -238,9 +232,7 @@ def _rescue_changes(git_executable, folder):
                 )
             )
 
-        import io
-
-        with io.open(patch, "wt", encoding="utf-8", errors="replace") as f:
+        with open(patch, "wt", encoding="utf-8", errors="replace") as f:
             for line in stdout:
                 f.write(line)
 
@@ -279,11 +271,11 @@ def update_source(git_executable, folder, target, force=False, branch=None):
     returncode, stdout, stderr = _git(["fetch"], folder, git_executable=git_executable)
     if returncode is None or returncode != 0:
         raise RuntimeError(
-            'Could not update, "git fetch" failed with returncode {}'.format(returncode)
+            f'Could not update, "git fetch" failed with returncode {returncode}'
         )
 
     if branch is not None and branch.strip() != "":
-        print(">>> Running: git checkout {}".format(branch))
+        print(f">>> Running: git checkout {branch}")
         returncode, stdout, stderr = _git(
             ["checkout", branch], folder, git_executable=git_executable
         )
@@ -298,7 +290,7 @@ def update_source(git_executable, folder, target, force=False, branch=None):
     returncode, stdout, stderr = _git(["pull"], folder, git_executable=git_executable)
     if returncode is None or returncode != 0:
         raise RuntimeError(
-            'Could not update, "git pull" failed with returncode {}'.format(returncode)
+            f'Could not update, "git pull" failed with returncode {returncode}'
         )
 
     if force:
@@ -321,7 +313,7 @@ def install_source(python_executable, folder, user=False, sudo=False):
     print(">>> Running: python setup.py clean")
     returncode, stdout, stderr = _python(["setup.py", "clean"], folder, python_executable)
     if returncode is None or returncode != 0:
-        print('"python setup.py clean" failed with returncode {}'.format(returncode))
+        print(f'"python setup.py clean" failed with returncode {returncode}')
         print("Continuing anyways")
 
     print(">>> Running: python setup.py install")
@@ -412,7 +404,7 @@ def main():
         if python_executable.endswith('"'):
             python_executable = python_executable[:-1]
 
-    print("Python executable: {!r}".format(python_executable))
+    print(f"Python executable: {python_executable!r}")
 
     folder = args.folder
 

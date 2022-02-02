@@ -18,16 +18,16 @@ prerelease
 HEAD
 \(detached.*
 
-# maintenance is currently the branch for preparation of maintenance release 1.7.0
+# maintenance is currently the branch for preparation of maintenance release 1.8.0
 # so are any fix/... and improve/... branches
-maintenance 1.7.0 07c4630d126617c2ae98a9c23ad49facf7bf0bbd pep440-dev
-fix/.* 1.7.0 07c4630d126617c2ae98a9c23ad49facf7bf0bbd pep440-dev
-improve/.* 1.7.0 07c4630d126617c2ae98a9c23ad49facf7bf0bbd pep440-dev
+maintenance 1.8.0 3fe45661cd79c5137d9d4f5f4adb4d9519bc2084 pep440-dev
+fix/.* 1.8.0 3fe45661cd79c5137d9d4f5f4adb4d9519bc2084 pep440-dev
+improve/.* 1.8.0 3fe45661cd79c5137d9d4f5f4adb4d9519bc2084 pep440-dev
 
-# staging/bugfix is the branch for preparation of the 1.7.3 bugfix release
+# staging/bugfix is the branch for preparation of the 1.7.4 bugfix release
 # so are any bug/... branches
-staging/bugfix 1.7.3 d60c5a631aedf2328e4492125d9b86f595e43d00 pep440-dev
-bug/.* 1.7.3 d60c5a631aedf2328e4492125d9b86f595e43d00 pep440-dev
+staging/bugfix 1.7.4 59cbfadf8922d85b9df40f8d0173e8c21724c3b8 pep440-dev
+bug/.* 1.7.4 59cbfadf8922d85b9df40f8d0173e8c21724c3b8 pep440-dev
 
 # staging/maintenance is currently the branch for preparation of 1.7.0rc4
 # so is regressionfix/...

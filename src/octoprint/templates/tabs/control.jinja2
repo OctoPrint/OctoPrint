@@ -1,7 +1,26 @@
 {% if enableWebcam %}
     <!-- ko if: loginState.hasPermissionKo(access.permissions.WEBCAM) -->
-    <div id="webcam_hls_container" tabindex="0" data-bind="visible: webcamHlsEnabled()">
-        <video id="webcam_hls" muted autoplay style="width: 100%"></video>
+    <div id="webcam_video_container" tabindex="0" data-bind="visible: webcamWebRTCEnabled() || webcamHlsEnabled(), css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
+        <div class="video-controls btn-group action-buttons">
+            <div class="btn btn-mini" data-bind="click: function(data, event) { $root.launchWebcamFullscreen() }"><i class="fas fa-expand"></i></div>
+            <div class="btn btn-mini" data-bind="visible: document.pictureInPictureEnabled, click: function(data, event) {  $root.launchWebcamPictureInPicture() }"><i class="fas fa-images"></i></div>
+            <div class="btn btn-mini" data-bind="click: function(data, event) { $root.toggleWebcamMute() }">
+                <!-- ko if: webcamMuted() -->
+                <i class="fas fa-volume-mute"></i>
+                <!-- /ko -->
+                <!-- ko ifnot: webcamMuted() -->
+                <i class="fas fa-volume-up"></i>
+                <!-- /ko -->
+            </div>
+        </div>
+        <div data-bind="css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
+            <div class="rotation_target">
+                <div data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
+                    <video id="webcam_webrtc" muted autoplay playsinline style="width: 100%" data-bind="visible: webcamWebRTCEnabled()"></video>
+                    <video id="webcam_hls" muted autoplay playsinline style="width: 100%" data-bind="visible: webcamHlsEnabled()"></video>
+                </div>
+            </div>
+        </div>
     </div>
     <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }, visible: webcamMjpgEnabled()">
         <div class="nowebcam" data-bind="visible: !webcamLoaded()">

@@ -1,0 +1,3 @@
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Processing /home/pi/octo
+ERROR: Package 'OctoPrint' requires a different Python: 2.7.13 not in '>3, <4'

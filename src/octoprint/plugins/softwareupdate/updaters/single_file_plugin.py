@@ -1,17 +1,13 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import ast
-import io
 import logging
 import os
 import shutil
+import tempfile
 
 from octoprint.settings import settings
-from octoprint.util import TemporaryDirectory
 from octoprint.util.net import download_file
 
 from .. import exceptions
@@ -49,8 +45,8 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
     folder = None
     try:
         try:
-            _log_message("Download file from {}".format(url))
-            folder = TemporaryDirectory()
+            _log_message(f"Download file from {url}")
+            folder = tempfile.TemporaryDirectory()
             path = download_file(url, folder.name)
         except Exception as exc:
             raise exceptions.NetworkError(cause=exc)
@@ -58,29 +54,25 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
         filename = os.path.basename(path)
         _, ext = os.path.splitext(filename)
         if ext not in (".py",):
-            raise exceptions.UpdateError(
-                "File is not a python file: {}".format(filename), None
-            )
+            raise exceptions.UpdateError(f"File is not a python file: {filename}", None)
 
         try:
-            with io.open(path, "rb") as f:
+            with open(path, "rb") as f:
                 ast.parse(f.read(), filename=path)
         except Exception:
-            logger.exception("Could not parse {} as python file".format(path), None)
+            logger.exception(f"Could not parse {path} as python file", None)
             raise exceptions.UpdateError(
-                "Could not parse {} as python file.".format(filename), None
+                f"Could not parse {filename} as python file.", None
             )
 
         destination = os.path.join(settings().getBaseFolder("plugins"), filename)
 
         try:
-            _log_message("Copy {} to {}".format(path, destination))
+            _log_message(f"Copy {path} to {destination}")
             shutil.copy(path, destination)
         except Exception:
-            logger.exception("Could not copy {} to {}".format(path, destination))
-            raise exceptions.UpdateError(
-                "Could not copy {} to {}".format(path, destination), None
-            )
+            logger.exception(f"Could not copy {path} to {destination}")
+            raise exceptions.UpdateError(f"Could not copy {path} to {destination}", None)
 
         return "ok"
     finally:

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -74,6 +71,8 @@ class VirtualPrinterPlugin(
             "enable_eeprom": True,
             "support_M503": True,
             "resend_ratio": 0,
+            "locked": False,
+            "passcode": "1234",
         }
 
     def get_settings_version(self):
@@ -135,7 +134,7 @@ __plugin_homepage__ = (
 )
 __plugin_license__ = "AGPLv3"
 __plugin_description__ = "Provides a virtual printer via a virtual serial port for development and testing purposes"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 
 
 def __plugin_load__():

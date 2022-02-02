@@ -56,9 +56,10 @@ function ItemListHelper(
         for (var i = 0; i < itemList.length; i++) {
             if (matcher(itemList[i])) {
                 self.selectedItem(itemList[i]);
-                break;
+                return true;
             }
         }
+        return false;
     };
 
     self.selectNone = function () {
@@ -1543,6 +1544,10 @@ var copyToClipboard = function (text) {
 
 var determineWebcamStreamType = function (streamUrl) {
     if (streamUrl) {
+        if (streamUrl.startsWith("webrtc")) {
+            return "webrtc";
+        }
+
         var lastDotPosition = streamUrl.lastIndexOf(".");
         var firstQuotationSignPosition = streamUrl.indexOf("?");
         if (
@@ -1618,4 +1623,83 @@ var deepMerge = function (target, source) {
     });
 
     return target;
+};
+
+var isWebRTCAvailable = function () {
+    return (
+        typeof RTCPeerConnection == "function" &&
+        typeof RTCPeerConnection.prototype.addEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.addTransceiver == "function" &&
+        typeof RTCPeerConnection.prototype.createOffer == "function" &&
+        typeof RTCPeerConnection.prototype.setLocalDescription == "function" &&
+        typeof RTCPeerConnection.prototype.removeEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.addEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.setRemoteDescription == "function"
+    );
+};
+
+var negotiateWebRTC = function (streamUrl) {
+    pc.addTransceiver("video", {direction: "recvonly"});
+    pc.addTransceiver("audio", {direction: "recvonly"});
+    return pc
+        .createOffer()
+        .then(function (offer) {
+            return pc.setLocalDescription(offer);
+        })
+        .then(function () {
+            // Wait for ICE gathering to complete
+            return new Promise(function (resolve) {
+                if (pc.iceGatheringState === "complete") {
+                    resolve();
+                } else {
+                    function checkState() {
+                        if (pc.iceGatheringState === "complete") {
+                            pc.removeEventListener("icegatheringstatechange", checkState);
+                            resolve();
+                        }
+                    }
+                    pc.addEventListener("icegatheringstatechange", checkState);
+                }
+            });
+        })
+        .then(function () {
+            var offer = pc.localDescription;
+            // webrtc://host.com becomes http://host.com
+            // webrtcs://host.com becomes https://host.com
+            streamUrl = "http" + streamUrl.slice("webrtc".length);
+            return $.ajax({
+                url: streamUrl,
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    sdp: offer.sdp,
+                    type: offer.type
+                }),
+                contentType: "application/json; charset=UTF-8"
+            });
+        })
+        .then(function (response) {
+            return pc.setRemoteDescription(response);
+        })
+        .catch(function (e) {
+            console.error(e);
+        });
+};
+
+var startWebRTC = function (videoElement, streamUrl, iceServers) {
+    var config = {
+        sdpSemantics: "unified-plan"
+    };
+    if (iceServers) {
+        config.iceServers = [{urls: iceServers}];
+    }
+    pc = new RTCPeerConnection(config);
+    pc.addEventListener("track", function (evt) {
+        if (evt.track.kind == "video") {
+            videoElement.srcObject = evt.streams[0];
+        }
+    });
+
+    negotiateWebRTC(streamUrl);
+    return pc;
 };

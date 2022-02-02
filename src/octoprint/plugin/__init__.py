@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module represents OctoPrint's plugin subsystem. This includes management and helper methods as well as the
 registered plugin types.
@@ -12,7 +11,6 @@ registered plugin types.
 .. autoclass:: PluginSettings
    :members:
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -25,7 +23,7 @@ from octoprint.plugin.core import Plugin, PluginInfo, PluginManager  # noqa: F40
 from octoprint.plugin.types import *  # noqa: F401,F403 ## used by multiple other modules
 from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin
 from octoprint.settings import settings as s
-from octoprint.util import deprecated, to_native_str
+from octoprint.util import deprecated, to_str
 
 # singleton
 _instance = None
@@ -189,7 +187,7 @@ def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
         get_preprocessors, set_preprocessors = instance.get_settings_preprocessors()
     except Exception:
         logging.getLogger(__name__).exception(
-            "Error while retrieving preprocessors for plugin {}".format(plugin_key)
+            f"Error while retrieving preprocessors for plugin {plugin_key}"
         )
         return None
 
@@ -266,7 +264,7 @@ def call_plugin(
             continue
 
         if hasattr(plugin, method):
-            logger.debug("Calling {} on {}".format(method, plugin._identifier))
+            logger.debug(f"Calling {method} on {plugin._identifier}")
             try:
                 result = getattr(plugin, method)(*args, **kwargs)
                 if callback:
@@ -280,7 +278,7 @@ def call_plugin(
                     error_callback(plugin._identifier, plugin, exc)
 
 
-class PluginSettings(object):
+class PluginSettings:
     """
     The :class:`PluginSettings` class is the interface for plugins to their own or globally defined settings.
 
@@ -604,7 +602,7 @@ class PluginSettings(object):
             if item in self.deprecated_access_methods:
                 new = self.deprecated_access_methods[item]
                 decorator = deprecated(
-                    "{old} has been renamed to {new}".format(old=item, new=new),
+                    f"{item} has been renamed to {new}",
                     stacklevel=2,
                 )
                 item = new
@@ -620,7 +618,7 @@ class PluginSettings(object):
                 def _func(*args, **kwargs):
                     return orig_func(*args_mapper(args), **kwargs_mapper(kwargs))
 
-                _func.__name__ = to_native_str(item)
+                _func.__name__ = to_str(item)
                 _func.__doc__ = orig_func.__doc__ if "__doc__" in dir(orig_func) else None
 
                 return _func

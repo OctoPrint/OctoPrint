@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -9,7 +6,7 @@ import base64
 import logging
 import sys
 
-PY3 = sys.version_info[0] == 3
+PY3 = sys.version_info[0] == 3  # should now always be true, kept for plugins
 
 import flask as _flask
 import flask_login
@@ -19,7 +16,7 @@ import octoprint.timelapse
 import octoprint.vendor.flask_principal as flask_principal
 from octoprint.plugin import plugin_manager
 from octoprint.settings import settings
-from octoprint.util import deprecated, to_unicode
+from octoprint.util import deprecated, to_str
 
 from . import flask, sockjs, tornado, watchdog  # noqa: F401
 
@@ -260,7 +257,7 @@ def get_user_for_authorization_header(header):
 
     header = header.replace("Basic ", "", 1)
     try:
-        header = to_unicode(base64.b64decode(header))
+        header = to_str(base64.b64decode(header))
     except TypeError:
         return None
 
@@ -314,7 +311,7 @@ def get_authorization_header(request):
 def get_plugin_hash():
     from octoprint.plugin import plugin_manager
 
-    plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
+    plugin_signature = lambda impl: f"{impl._identifier}:{impl._plugin_version}"
     template_plugins = list(
         map(
             plugin_signature,
@@ -359,6 +356,43 @@ def has_permissions(*permissions):
 
     flask.passive_login()
     return all(map(lambda p: p.can(), permissions))
+
+
+def require_login_with(permissions=None, user_id=None):
+    """
+    Requires a login with the given permissions and/or user id.
+
+    Args:
+        permissions: list of all permissions required to pass the check
+        user_id: required user to pass the check
+
+    Returns: a flask redirect response to return if a login is required, or None
+    """
+
+    from octoprint.server import current_user, userManager
+
+    login_kwargs = {"redirect": _flask.request.script_root + _flask.request.full_path}
+    if (
+        _flask.request.headers.get("X-Preemptive-Recording", "no") == "no"
+        and userManager.has_been_customized()
+    ):
+        requires_login = False
+
+        if current_user.is_anonymous:
+            requires_login = True
+
+        if permissions is not None and not has_permissions(*permissions):
+            requires_login = True
+            login_kwargs["permissions"] = ",".join([x.key for x in permissions])
+
+        if user_id is not None and current_user.get_id() != user_id:
+            requires_login = True
+            login_kwargs["user_id"] = user_id
+
+        if requires_login:
+            return _flask.redirect(_flask.url_for("login", **login_kwargs))
+
+    return None
 
 
 def require_login(*permissions):

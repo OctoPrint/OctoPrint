@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -11,11 +8,10 @@ from flask_babel import gettext
 
 import octoprint.plugin
 from octoprint.access import ADMIN_GROUP, USER_GROUP
-from octoprint.util import to_native_str
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
-class ServerCommandsSubwizard(object):
+class ServerCommandsSubwizard:
     def _is_servercommands_wizard_firstrunonly(self):
         return True
 
@@ -42,7 +38,7 @@ class ServerCommandsSubwizard(object):
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
-class WebcamSubwizard(object):
+class WebcamSubwizard:
     def _is_webcam_wizard_firstrunonly(self):
         return True
 
@@ -61,7 +57,7 @@ class WebcamSubwizard(object):
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
-class AclSubwizard(object):
+class AclSubwizard:
     def _is_acl_wizard_firstrunonly(self):
         return False
 
@@ -113,7 +109,7 @@ class AclSubwizard(object):
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
-class OnlineCheckSubwizard(object):
+class OnlineCheckSubwizard:
     def _is_onlinecheck_wizard_firstrunonly(self):
         return False
 
@@ -131,7 +127,7 @@ class OnlineCheckSubwizard(object):
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
-class PluginBlacklistSubwizard(object):
+class PluginBlacklistSubwizard:
     def _is_pluginblacklist_wizard_firstrunonly(self):
         return False
 
@@ -149,7 +145,7 @@ class PluginBlacklistSubwizard(object):
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
-class PrinterProfileSubwizard(object):
+class PrinterProfileSubwizard:
     def _is_printerprofile_wizard_firstrunonly(self):
         return True
 
@@ -167,7 +163,7 @@ class PrinterProfileSubwizard(object):
 
 
 Subwizards = type(
-    to_native_str("Subwizards"),
+    "Subwizards",
     tuple(
         cls
         for clsname, cls in inspect.getmembers(sys.modules[__name__], inspect.isclass)

@@ -2,6 +2,14 @@
 # flake8: noqa
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+### NOTE #################################################################################
+# This file has to stay format compatible to Python 2, or pip under Python 2 will
+# not be able to detect that OctoPrint requires Python 3 but instead fail with a
+# syntax error.
+#
+# So, no f-strings, no walrus operators, no pyupgrade or codemods.
+##########################################################################################
+
 # Version: 0.15+dev
 
 """
@@ -373,9 +381,10 @@ https://creativecommons.org/publicdomain/zero/1.0/ .
 """
 
 try:
-    import configparser
+    import configparser  # py 3
 except ImportError:
-    import ConfigParser as configparser
+    import ConfigParser as configparser  # py 2
+
 import errno
 import io
 import json

@@ -1,0 +1,4 @@
+# ripgrep ignore file
+
+src/octoprint/static/vendor/
+src/octoprint/vendor/

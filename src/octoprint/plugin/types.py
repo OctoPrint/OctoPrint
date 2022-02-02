@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module bundles all of OctoPrint's supported plugin implementation types as well as their common parent
 class, :class:`OctoPrintPlugin`.
@@ -15,7 +14,6 @@ Please note that the plugin implementation types are documented in the section
    :members:
 
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -124,6 +122,14 @@ class OctoPrintPlugin(Plugin):
         if not os.path.isdir(self._data_folder):
             os.makedirs(self._data_folder)
         return self._data_folder
+
+    def on_plugin_pending_uninstall(self):
+        """
+        Called by the plugin manager when the plugin is pending uninstall. Override this to react to the event.
+
+        NOT called during plugin uninstalls triggered outside of OctoPrint!
+        """
+        pass
 
 
 class ReloadNeedingPlugin(Plugin):
@@ -391,6 +397,10 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
     ``TemplatePlugin`` is a :class:`~octoprint.plugin.core.ReloadNeedingPlugin`.
     """
+
+    @property
+    def template_folder_key(self):
+        return f"plugin_{self._identifier}"
 
     def get_template_configs(self):
         """
@@ -1413,9 +1423,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         import flask
 
         kwargs = self.get_blueprint_kwargs()
-        blueprint = flask.Blueprint(
-            "plugin." + self._identifier, self._identifier, **kwargs
-        )
+        blueprint = flask.Blueprint(self._identifier, self._identifier, **kwargs)
 
         # we now iterate over all members of ourselves and look if we find an attribute
         # that has data originating from one of our decorators - we ignore anything
@@ -2043,10 +2051,7 @@ class SlicerPlugin(OctoPrintPlugin):
         .. versionadded:: 1.3.7
         """
 
-        try:
-            from os import scandir
-        except ImportError:
-            from scandir import scandir
+        from os import scandir
 
         import octoprint.util
 
@@ -2069,15 +2074,10 @@ class SlicerPlugin(OctoPrintPlugin):
         """
         import os
 
-        try:
-            from os import scandir
-        except ImportError:
-            from scandir import scandir
-
         lms = [os.stat(profile_path).st_mtime]
         lms += [
             os.stat(entry.path).st_mtime
-            for entry in scandir(profile_path)
+            for entry in os.scandir(profile_path)
             if entry.name.endswith(".profile")
         ]
         return max(lms)

@@ -35,9 +35,22 @@ any :ref:`settings overlays <sec-plugins-controlproperties-plugin_settings_overl
 
 On disabling a plugin, its hook handlers, helpers, mixin implementations and settings overlays will be de-registered again.
 
+When a plugin gets enabled, OctoPrint will also call the :func:`on_plugin_enabled` callback on its implementation
+(if it exists). Likewise, when a plugin gets disabled OctoPrint will call the :func:`on_plugin_disabled` callback on
+its implementation (again, if it exists).
+
 Some plugin types require a reload of the frontend or a restart of OctoPrint for enabling/disabling them. You
 can recognize such plugins by their implementations implementing :class:`~octoprint.plugin.ReloadNeedingPlugin` or
 :class:`~octoprint.plugin.RestartNeedingPlugin` or providing handlers for one of the hooks marked correspondingly.
+For these plugins, disabling them will *not* trigger the respective callback at runtime as they will not actually
+be disabled right away but only marked as such so that they won't even load during the required restart.
+
+Note that uninstalling a plugin through the bundled Plugin Manager will make a plugin first get disabled and
+then unloaded, but only if it doesn't require a restart. Plugins wishing to react to an uninstall through the
+Plugin Manager may implement :func:`~octoprint.plugin.types.OctoPrintPlugin.on_plugin_pending_uninstall` (added in OctoPrint 1.8.0) which will always be called by the Plugin Manager,
+regardless of whether the plugin requires a restart of OctoPrint to be fully uninstalled or not. Please be aware
+that the Plugin Manager is not the only way to uninstall a plugin from the system, a user may also uninstall it
+manually through the command line, circumventing Plugin Manager completely.
 
 .. image:: ../images/plugins_lifecycle.svg
    :align: center

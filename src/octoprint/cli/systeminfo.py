@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
-__copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import datetime
 import logging
 import os
 
@@ -16,7 +14,9 @@ from octoprint.cli import init_platform_for_cli, standard_options
 click.disable_unicode_literals_warning = True
 
 
-def get_systeminfo(environment_detector, connectivity_checker, additional_fields=None):
+def get_systeminfo(
+    environment_detector, connectivity_checker, settings, additional_fields=None
+):
     from octoprint import __version__
     from octoprint.util import dict_flatten
 
@@ -25,10 +25,30 @@ def get_systeminfo(environment_detector, connectivity_checker, additional_fields
 
     environment_detector.run_detection(notify_plugins=False)
 
+    safe_mode_file = os.path.join(settings.getBaseFolder("data"), "last_safe_mode")
+    last_safe_mode = {"date": "unknown", "reason": "unknown"}
+    try:
+        if os.path.exists(safe_mode_file):
+            with open(safe_mode_file) as f:
+                last_safe_mode["reason"] = f.readline().strip()
+            last_safe_mode["date"] = (
+                datetime.datetime.utcfromtimestamp(
+                    os.path.getmtime(safe_mode_file)
+                ).isoformat()[:19]
+                + "Z"
+            )
+    except Exception as ex:
+        logging.getLogger(__name__).error(
+            "Error while retrieving last safe mode information from {}: {}".format(
+                safe_mode_file, ex
+            )
+        )
+
     systeminfo = {
-        "octoprint": {"version": __version__},
+        "octoprint": {"version": __version__, "last_safe_mode": last_safe_mode},
         "connectivity": connectivity_checker.as_dict(),
         "env": environment_detector.environment,
+        "systeminfo": {"generated": datetime.datetime.utcnow().isoformat()[:19] + "Z"},
     }
 
     # flatten and filter
@@ -44,10 +64,6 @@ def get_systeminfo(environment_detector, connectivity_checker, additional_fields
 
 def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None):
     from octoprint.util import to_bytes
-
-    systeminfotxt = []
-    for k in sorted(systeminfo.keys()):
-        systeminfotxt.append("{}: {}".format(k, systeminfo[k]))
 
     terminaltxt = None
     if printer and printer.is_operational():
@@ -69,6 +85,10 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None
     z = zipstream.ZipFile()
 
     # add systeminfo
+    systeminfotxt = []
+    for k in sorted(systeminfo.keys()):
+        systeminfotxt.append("{}: {}".format(k, systeminfo[k]))
+
     z.writestr(
         "systeminfo.txt", to_bytes("\n".join(systeminfotxt)), compress_type=compress_type
     )
@@ -128,11 +148,11 @@ def get_systeminfo_bundle_name():
 
 
 @click.group()
-def systeminfo_commands():
+def cli():
     pass
 
 
-@systeminfo_commands.command(name="systeminfo")
+@cli.command(name="systeminfo")
 @standard_options()
 @click.argument(
     "path",
@@ -166,7 +186,7 @@ def systeminfo_command(ctx, path, **kwargs):
         if path:
             # create zip at path
             zipfilename = os.path.join(path, get_systeminfo_bundle_name())
-            click.echo("Writing systeminfo bundle to {}...".format(zipfilename))
+            click.echo(f"Writing systeminfo bundle to {zipfilename}...")
 
             z = get_systeminfo_bundle(
                 systeminfo, settings.getBaseFolder("logs"), plugin_manager=plugin_manager
@@ -177,9 +197,7 @@ def systeminfo_command(ctx, path, **kwargs):
                         f.write(data)
             except Exception as e:
                 click.echo(str(e), err=True)
-                click.echo(
-                    "There was an error writing to {}.".format(zipfilename), err=True
-                )
+                click.echo(f"There was an error writing to {zipfilename}.", err=True)
                 ctx.exit(-1)
 
             click.echo("Done!")

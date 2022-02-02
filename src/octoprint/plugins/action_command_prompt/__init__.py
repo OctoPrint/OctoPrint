@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -13,7 +10,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 
 
-class Prompt(object):
+class Prompt:
     def __init__(self, text):
         self.text = text
         self.choices = []
@@ -93,7 +90,7 @@ class ActionCommandPromptPlugin(
             and self._enable == "always"
             and self._enable_signal_support
         ):
-            self._printer.commands(["{command} P1".format(command=self._command)])
+            self._printer.commands([f"{self._command} P1"])
         elif event == Events.DISCONNECTED:
             self._close_prompt()
 
@@ -133,9 +130,7 @@ class ActionCommandPromptPlugin(
 
             choice = data["choice"]
             if not isinstance(choice, int) or not self._prompt.validate_choice(choice):
-                return flask.abort(
-                    400, "{!r} is not a valid value for choice".format(choice)
-                )
+                return flask.abort(400, f"{choice!r} is not a valid value for choice")
 
             self._answer_prompt(choice)
 
@@ -211,7 +206,7 @@ class ActionCommandPromptPlugin(
         subcode=None,
         tags=None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         if gcode != self._command:
             return
@@ -229,7 +224,7 @@ class ActionCommandPromptPlugin(
 
         # noinspection PyProtectedMember
         return comm_instance._emergency_force_send(
-            cmd, "Force-sending {} to the printer".format(self._command), gcode=gcode
+            cmd, f"Force-sending {self._command} to the printer", gcode=gcode
         )
 
     # ~ capability reporting
@@ -240,7 +235,7 @@ class ActionCommandPromptPlugin(
         if capability == self.CAP_PROMPT_SUPPORT and enabled:
             self._cap_prompt_support = True
             if self._enable == "detected" and self._enable_signal_support:
-                self._printer.commands(["{command} P1".format(command=self._command)])
+                self._printer.commands([f"{self._command} P1"])
 
     # ~ prompt handling
 
@@ -280,7 +275,7 @@ class ActionCommandPromptPlugin(
             self._printer.commands([self._command.format(choice=choice)], force=True)
         else:
             self._printer.commands(
-                ["{command} S{choice}".format(command=self._command, choice=choice)],
+                [f"{self._command} S{choice}"],
                 force=True,
             )
 
@@ -295,7 +290,7 @@ __plugin_disabling_discouraged__ = gettext(
     " confirmation or selection prompts in OctoPrint"
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = ActionCommandPromptPlugin()
 __plugin_hooks__ = {
     "octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,
