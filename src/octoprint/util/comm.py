@@ -3710,23 +3710,30 @@ class MachineCom:
             if settings().getBoolean(["serial", "exclusive"]):
                 serial_port_args["exclusive"] = True
 
-            serial_obj = serial.Serial(**serial_port_args)
-            serial_obj.port = str(p)
+            try:
+                serial_obj = serial.Serial(**serial_port_args)
+                serial_obj.port = str(p)
 
-            use_parity_workaround = settings().get(["serial", "useParityWorkaround"])
-            needs_parity_workaround = get_os() == "linux" and os.path.exists(
-                "/etc/debian_version"
-            )  # See #673
+                use_parity_workaround = settings().get(["serial", "useParityWorkaround"])
+                needs_parity_workaround = get_os() == "linux" and os.path.exists(
+                    "/etc/debian_version"
+                )  # See #673
 
-            if use_parity_workaround == "always" or (
-                needs_parity_workaround and use_parity_workaround == "detect"
-            ):
-                serial_obj.parity = serial.PARITY_ODD
+                if use_parity_workaround == "always" or (
+                    needs_parity_workaround and use_parity_workaround == "detect"
+                ):
+                    serial_obj.parity = serial.PARITY_ODD
+                    serial_obj.open()
+                    serial_obj.close()
+                    serial_obj.parity = serial.PARITY_NONE
+
                 serial_obj.open()
-                serial_obj.close()
-                serial_obj.parity = serial.PARITY_NONE
 
-            serial_obj.open()
+            except serial.SerialException:
+                self._logger.info(
+                    "Failed to connect: Port {} is busy or does not exist".format(p)
+                )
+                return None
 
             # Set close_exec flag on serial handle, see #3212
             if hasattr(serial_obj, "fd"):
