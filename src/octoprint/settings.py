@@ -532,7 +532,7 @@ class DuplicateFolderPaths(InvalidSettings):
 _CHAINMAP_SEP = "\x1f"
 
 
-class HierarchicalChainMap(object):
+class HierarchicalChainMap:
     """
     Stores a bunch of nested dictionaries in chain map, allowing queries of nested values
     work on lower directories. For example:
