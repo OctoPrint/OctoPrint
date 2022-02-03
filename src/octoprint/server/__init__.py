@@ -43,6 +43,7 @@ from werkzeug.exceptions import HTTPException
 import octoprint.util
 import octoprint.util.net
 from octoprint.server import util
+from octoprint.systemcommands import systemcommands
 from octoprint.util.json import JsonEncoding
 from octoprint.vendor.flask_principal import (  # noqa: F401
     AnonymousIdentity,
@@ -483,6 +484,7 @@ class Server:
             "json_decoder": jsonDecoder,
             "connectivity_checker": connectivityChecker,
             "environment_detector": self._environment_detector,
+            "systemcommands": systemcommands(),
         }
 
         # ~~ setup access control
