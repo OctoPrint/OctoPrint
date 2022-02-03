@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -8,6 +5,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import os
 import threading
+from urllib.parse import quote as urlquote
 
 from flask import abort, jsonify, request, url_for
 
@@ -140,7 +138,14 @@ def getTimelapseData():
     finished_list = []
     for f in files:
         output = dict(f)
-        output["url"] = url_for("index") + "downloads/timelapse/" + f["name"]
+        output["url"] = url_for("index") + "downloads/timelapse/" + urlquote(f["name"])
+        if output["thumbnail"] is not None:
+            output["thumbnail"] = (
+                url_for("index") + "downloads/timelapse/" + urlquote(f["thumbnail"])
+            )
+        else:
+            output.pop("thumbnail", None)
+
         finished_list.append(output)
 
     result = {
@@ -160,7 +165,7 @@ def getTimelapseData():
 @Permissions.TIMELAPSE_DOWNLOAD.require(403)
 def downloadTimelapse(filename):
     return redirect_to_tornado(
-        request, url_for("index") + "downloads/timelapse/" + filename
+        request, url_for("index") + "downloads/timelapse/" + urlquote(filename)
     )
 
 
@@ -170,6 +175,7 @@ def downloadTimelapse(filename):
 def deleteTimelapse(filename):
     timelapse_folder = settings().getBaseFolder("timelapse")
     full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
+    thumb_path = octoprint.timelapse.create_thumbnail_path(full_path)
     if (
         octoprint.timelapse.valid_timelapse(full_path)
         and full_path.startswith(timelapse_folder)
@@ -180,9 +186,23 @@ def deleteTimelapse(filename):
             os.remove(full_path)
         except Exception as ex:
             logging.getLogger(__file__).exception(
-                "Error deleting timelapse file {}".format(full_path)
+                f"Error deleting timelapse file {full_path}"
             )
-            abort(500, description="Unexpected error: {}".format(ex))
+            abort(500, description=f"Unexpected error: {ex}")
+
+    if (
+        octoprint.timelapse.valid_timelapse_thumbnail(thumb_path)
+        and thumb_path.startswith(timelapse_folder)
+        and os.path.exists(thumb_path)
+        and not util.is_hidden_path(thumb_path)
+    ):
+        try:
+            os.remove(thumb_path)
+        except Exception as ex:
+            # Do not treat this as an error, log and ignore
+            logging.getLogger(__file__).warning(
+                f"Unable to delete thumbnail {thumb_path} ({ex})"
+            )
 
     return getTimelapseData()
 

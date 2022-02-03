@@ -56,9 +56,10 @@ function ItemListHelper(
         for (var i = 0; i < itemList.length; i++) {
             if (matcher(itemList[i])) {
                 self.selectedItem(itemList[i]);
-                break;
+                return true;
             }
         }
+        return false;
     };
 
     self.selectNone = function () {

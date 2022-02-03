@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 from flask import make_response
 
 __author__ = "Gina Häußge <osd@foosel.net>"
@@ -8,7 +5,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import functools
-import io
 import logging
 import os
 import threading
@@ -17,6 +13,7 @@ import time
 import flask
 import flask.json
 import flask.sessions
+import flask.templating
 import flask_assets
 import flask_login
 import netaddr
@@ -24,7 +21,6 @@ import tornado.web
 import webassets.updater
 import webassets.utils
 from cachelib import BaseCache
-from past.builtins import basestring, long
 from werkzeug.local import LocalProxy
 from werkzeug.utils import cached_property
 
@@ -37,11 +33,6 @@ from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated, yaml
 from octoprint.util.json import JsonEncoding
 from octoprint.util.net import is_lan_address
-
-try:
-    from os import scandir, walk
-except ImportError:
-    from scandir import scandir, walk  # noqa: F401
 
 # ~~ monkey patching
 
@@ -68,11 +59,11 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
             if not os.path.isdir(dirname):
                 return []
             result = []
-            for entry in scandir(dirname):
+            for entry in os.scandir(dirname):
                 locale_dir = os.path.join(entry.path, "LC_MESSAGES")
                 if not os.path.isdir(locale_dir):
                     continue
-                if any(filter(lambda x: x.name.endswith(".mo"), scandir(locale_dir))):
+                if any(filter(lambda x: x.name.endswith(".mo"), os.scandir(locale_dir))):
                     result.append(Locale.parse(entry.name))
             return result
 
@@ -159,9 +150,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                         )
                         break
                 else:
-                    logger.debug(
-                        "No translations for locale {} in core folders".format(locale)
-                    )
+                    logger.debug(f"No translations for locale {locale} in core folders")
                 translations = translations.merge(core_translations)
 
             ctx.babel_translations = translations
@@ -169,81 +158,6 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
     flask_babel.Babel.list_translations = fixed_list_translations
     flask_babel.get_translations = fixed_get_translations
-
-
-def fix_webassets_cache():
-    from webassets import cache
-
-    error_logger = logging.getLogger(__name__ + ".fix_webassets_cache")
-
-    def fixed_set(self, key, data):
-        import os
-        import pickle
-        import shutil
-        import tempfile
-
-        if not os.path.exists(self.directory):
-            error_logger.warning(
-                "Cache directory {} doesn't exist, not going "
-                "to attempt to write cache file".format(self.directory)
-            )
-
-        md5 = "%s" % cache.make_md5(self.V, key)
-        filename = os.path.join(self.directory, md5)
-        fd, temp_filename = tempfile.mkstemp(prefix="." + md5, dir=self.directory)
-        try:
-            with os.fdopen(fd, "wb") as f:
-                pickle.dump(data, f)
-                f.flush()
-            shutil.move(temp_filename, filename)
-        except Exception:
-            os.remove(temp_filename)
-            raise
-
-    def fixed_get(self, key):
-        import errno
-        import os
-        import warnings
-
-        from webassets.cache import make_md5
-
-        if not os.path.exists(self.directory):
-            error_logger.warning(
-                "Cache directory {} doesn't exist, not going "
-                "to attempt to read cache file".format(self.directory)
-            )
-            return None
-
-        try:
-            hash = make_md5(self.V, key)
-        except IOError as e:
-            if e.errno != errno.ENOENT:
-                raise
-            return None
-
-        filename = os.path.join(self.directory, "%s" % hash)
-        try:
-            f = io.open(filename, "rb")
-        except IOError as e:
-            if e.errno != errno.ENOENT:
-                error_logger.exception(
-                    "Got an exception while trying to open webasset file {}".format(
-                        filename
-                    )
-                )
-            return None
-        try:
-            result = f.read()
-        finally:
-            f.close()
-
-        unpickled = webassets.cache.safe_unpickle(result)
-        if unpickled is None:
-            warnings.warn("Ignoring corrupted cache file %s" % filename)
-        return unpickled
-
-    cache.FilesystemCache.set = fixed_set
-    cache.FilesystemCache.get = fixed_get
 
 
 def fix_webassets_filtertool():
@@ -316,7 +230,7 @@ def fix_flask_jsonify():
 # ~~ WSGI environment wrapper for reverse proxying
 
 
-class ReverseProxiedEnvironment(object):
+class ReverseProxiedEnvironment:
     @staticmethod
     def to_header_candidates(values):
         if values is None:
@@ -599,7 +513,37 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
     def save_session(self, app, session, response):
         if flask.g.get("login_via_apikey", False):
             return
-        return super(OctoPrintSessionInterface, self).save_session(app, session, response)
+        return super().save_session(app, session, response)
+
+
+# ~~ jinja environment
+
+
+class PrefixAwareJinjaEnvironment(flask.templating.Environment):
+    def __init__(self, *args, **kwargs):
+        flask.templating.Environment.__init__(self, *args, **kwargs)
+        self.prefix_loader = None
+        self._cached_templates = {}
+
+    def join_path(self, template, parent):
+        if parent and "/" in parent:
+            prefix, _ = parent.split("/", 1)
+            if template in self._templates_for_prefix(prefix) and not template.startswith(
+                prefix + "/"
+            ):
+                return prefix + "/" + template
+
+        return template
+
+    def _templates_for_prefix(self, prefix):
+        if prefix in self._cached_templates:
+            return self._cached_templates[prefix]
+
+        templates = []
+        if prefix in self.prefix_loader.mapping:
+            templates = self.prefix_loader.mapping[prefix].list_templates()
+        self._cached_templates[prefix] = templates
+        return templates
 
 
 # ~~ passive login helper
@@ -625,7 +569,7 @@ def _local_networks():
                 continue
 
             local_networks.add(network)
-            logger.debug("Added network {} to localNetworks".format(network))
+            logger.debug(f"Added network {network} to localNetworks")
 
             if network.version == 4:
                 network_v6 = network.ipv6()
@@ -674,9 +618,7 @@ def passive_login():
     def determine_user(u):
         if not u.is_anonymous and u.is_active:
             # known active user
-            logger.info(
-                "Passively logging in user {} from {}".format(u.get_id(), remote_address)
-            )
+            logger.info(f"Passively logging in user {u.get_id()} from {remote_address}")
 
         elif (
             settings().getBoolean(["accessControl", "autologinLocal"])
@@ -955,7 +897,7 @@ def cache_check_status_code(response, valid):
         return response.status_code not in valid
 
 
-class PreemptiveCache(object):
+class PreemptiveCache:
     def __init__(self, cachefile):
         self.cachefile = cachefile
         self.environment = None
@@ -1008,9 +950,7 @@ class PreemptiveCache(object):
                 entries = cleanup_function(root, entries)
                 if not entries:
                     del all_data[root]
-                    self._logger.debug(
-                        "Removed root {} from preemptive cache".format(root)
-                    )
+                    self._logger.debug(f"Removed root {root} from preemptive cache")
                 elif len(entries) < old_count:
                     all_data[root] = entries
                     self._logger.debug(
@@ -1027,13 +967,13 @@ class PreemptiveCache(object):
         with self._lock:
             try:
                 cache_data = yaml.load_from_file(path=self.cachefile)
-            except IOError as e:
+            except OSError as e:
                 import errno
 
                 if e.errno != errno.ENOENT:
                     raise
             except Exception:
-                self._logger.exception("Error while reading {}".format(self.cachefile))
+                self._logger.exception(f"Error while reading {self.cachefile}")
 
         if cache_data is None:
             cache_data = {}
@@ -1056,7 +996,7 @@ class PreemptiveCache(object):
                 with atomic_write(self.cachefile, "wt", max_permissions=0o666) as handle:
                     yaml.save_to_file(data, file=handle, pretty=True)
             except Exception:
-                self._logger.exception("Error while writing {}".format(self.cachefile))
+                self._logger.exception(f"Error while writing {self.cachefile}")
 
     def set_data(self, root, data):
         with self._lock:
@@ -1105,12 +1045,12 @@ class PreemptiveCache(object):
                 to_persist = copy.deepcopy(data)
                 to_persist["_timestamp"] = time.time()
                 to_persist["_count"] = 1
-                self._logger.info("Adding entry for {} and {!r}".format(root, to_persist))
+                self._logger.info(f"Adding entry for {root} and {to_persist!r}")
             else:
                 to_persist["_timestamp"] = time.time()
                 to_persist["_count"] = to_persist.get("_count", 0) + 1
                 self._logger.debug(
-                    "Updating timestamp and counter for {} and {!r}".format(root, data)
+                    f"Updating timestamp and counter for {root} and {data!r}"
                 )
 
             self.set_data(root, [to_persist] + other)
@@ -1149,7 +1089,7 @@ def preemptively_cached(cache, data, unless=None):
                 cache.record(data, unless=unless)
             except Exception:
                 logging.getLogger(__name__).exception(
-                    "Error while recording preemptive cache entry: {!r}".format(data)
+                    f"Error while recording preemptive cache entry: {data!r}"
                 )
             return f(*args, **kwargs)
 
@@ -1194,7 +1134,7 @@ def lastmodified(date):
                     if callable(result):
                         result = result(rv)
 
-                    if not isinstance(result, basestring):
+                    if not isinstance(result, str):
                         from werkzeug.http import http_date
 
                         result = http_date(result)
@@ -1313,7 +1253,7 @@ def with_revalidation_checking(
 
             # set last modified header if not already set
             if lm and response.headers.get("Last-Modified", None) is None:
-                if not isinstance(lm, basestring):
+                if not isinstance(lm, str):
                     from werkzeug.http import http_date
 
                     lm = http_date(lm)
@@ -1344,7 +1284,7 @@ def check_lastmodified(lastmodified):
 
     from datetime import datetime
 
-    if isinstance(lastmodified, (int, long, float)):
+    if isinstance(lastmodified, (int, float)):
         # max(86400, lastmodified) is workaround for https://bugs.python.org/issue29097,
         # present in CPython 3.6.x up to 3.7.1.
         #

@@ -149,6 +149,18 @@ date of first contribution):
   * [Ian Wilt](https://github.com/ianwiltdotcom)
   * [Ben Sycha](https://github.com/Sycha)
   * [John Boiles](https://github.com/johnboiles)
+  * [Adam DeMuri](https://github.com/ademuri)
+  * [Daniel Shenkle](https://github.com/DShenkle)
+  * [Bryan Kenote](https://github.com/bryankenote)
+  * [Quinn Damerell](https://github.com/QuinnDamerell)
+  * [Sven Samoray](https://github.com/thelastWallE)
+  * [Carey Metcalfe](https://github.com/pR0Ps)
+  * [Christian Würthner](https://github.com/crysxd)
+  * [Maciej Urbański](https://github.com/rooterkyberian)
+  * [Adam Wolf](https://github.com/adamwolf)
+  * [Didi Kohen](https://github.com/kohend)
+  * [Taylor Talkington](https://github.com/The-EG)
+  * [Shell M. Shrader](https://github.com/synman)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

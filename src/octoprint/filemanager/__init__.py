@@ -1,15 +1,11 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
 import os
+import time
 from collections import namedtuple
-
-from past.builtins import basestring
 
 import octoprint.plugin
 import octoprint.util
@@ -223,7 +219,7 @@ class NoSuchStorage(Exception):
     pass
 
 
-class FileManager(object):
+class FileManager:
     def __init__(
         self,
         analysis_queue,
@@ -477,7 +473,7 @@ class FileManager(object):
                         analysis=_analysis,
                     )
 
-                    end_time = octoprint.util.monotonic_time()
+                    end_time = time.monotonic()
                     eventManager().fire(
                         Events.SLICING_DONE,
                         {
@@ -508,7 +504,7 @@ class FileManager(object):
 
         slicer = self._slicing_manager.get_slicer(slicer_name)
 
-        start_time = octoprint.util.monotonic_time()
+        start_time = time.monotonic()
         eventManager().fire(
             Events.SLICING_STARTED,
             {
@@ -680,7 +676,7 @@ class FileManager(object):
     ):
         if not destinations:
             destinations = list(self._storage_managers.keys())
-        if isinstance(destinations, basestring):
+        if isinstance(destinations, str):
             destinations = [destinations]
 
         result = {}
@@ -954,7 +950,7 @@ class FileManager(object):
                 yaml.save_to_file(data, file=f, pretty=True)
         except Exception:
             self._logger.exception(
-                "Could not write recovery data to file {}".format(self._recovery_file)
+                f"Could not write recovery data to file {self._recovery_file}"
             )
 
     def delete_recovery_data(self):
@@ -965,7 +961,7 @@ class FileManager(object):
             os.remove(self._recovery_file)
         except Exception:
             self._logger.exception(
-                "Error deleting recovery data file {}".format(self._recovery_file)
+                f"Error deleting recovery data file {self._recovery_file}"
             )
 
     def get_recovery_data(self):
@@ -982,7 +978,7 @@ class FileManager(object):
             return data
         except Exception:
             self._logger.exception(
-                "Could not read recovery data from file {}".format(self._recovery_file)
+                f"Could not read recovery data from file {self._recovery_file}"
             )
             self.delete_recovery_data()
 

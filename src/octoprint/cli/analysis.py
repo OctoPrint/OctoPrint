@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -58,17 +55,12 @@ def validate_result(result):
 
 
 @click.group()
-def analysis_commands():
-    pass
-
-
-@analysis_commands.group(name="analysis")
-def util():
+def cli():
     """Analysis tools."""
     pass
 
 
-@util.command(name="gcode")
+@cli.command(name="gcode")
 @click.option("--throttle", "throttle", type=float, default=None)
 @click.option("--throttle-lines", "throttle_lines", type=int, default=None)
 @click.option("--speed-x", "speedx", type=float, default=6000)
@@ -99,7 +91,6 @@ def gcode_command(
 
     import time
 
-    from octoprint.util import monotonic_time
     from octoprint.util.gcodeInterpreter import gcode
 
     throttle_callback = None
@@ -119,13 +110,13 @@ def gcode_command(
     if len(offsets) < maxt:
         offsets += [(0, 0)] * (maxt - len(offsets))
 
-    start_time = monotonic_time()
+    start_time = time.monotonic()
 
     progress_callback = None
     if progress:
 
         def progress_callback(percentage):
-            click.echo("PROGRESS:{}".format(percentage))
+            click.echo(f"PROGRESS:{percentage}")
 
     interpreter = gcode(progress_callback=progress_callback, incl_layers=layers)
 
@@ -140,7 +131,7 @@ def gcode_command(
         bed_z=bedz,
     )
 
-    click.echo("DONE:{}s".format(monotonic_time() - start_time))
+    click.echo("DONE:{}s".format(time.monotonic() - start_time))
 
     result = interpreter.get_result()
     if empty_result(result):

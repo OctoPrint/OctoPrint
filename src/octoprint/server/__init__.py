@@ -1,13 +1,10 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import atexit
 import base64
-import io
+import functools
 import logging
 import logging.config
 import mimetypes
@@ -15,8 +12,8 @@ import os
 import re
 import signal
 import sys
+import time
 import uuid  # noqa: F401
-from builtins import bytes, range
 from collections import OrderedDict, defaultdict
 
 from babel import Locale
@@ -39,7 +36,6 @@ from flask_login import (  # noqa: F401
     session_protected,
     user_logged_out,
 )
-from past.builtins import basestring, unicode
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from werkzeug.exceptions import HTTPException
@@ -224,7 +220,7 @@ def unauthorized_user():
 # ~~ startup code
 
 
-class Server(object):
+class Server:
     def __init__(
         self,
         settings=None,
@@ -257,8 +253,6 @@ class Server(object):
         self._logger = None
 
         self._lifecycle_callbacks = defaultdict(list)
-
-        self._template_searchpaths = []
 
         self._intermediary_server = None
 
@@ -305,6 +299,9 @@ class Server(object):
         debug = self._debug
         safe_mode = self._safe_mode
 
+        if safe_mode:
+            self._log_safe_mode_start(safe_mode)
+
         if self._v6_only and not octoprint.util.net.HAS_V6:
             raise RuntimeError(
                 "IPv6 only mode configured but system doesn't support IPv6"
@@ -339,8 +336,8 @@ class Server(object):
         # monkey patch/fix some stuff
         util.tornado.fix_json_encode()
         util.tornado.fix_websocket_check_origin()
+        util.tornado.enable_per_message_deflate_extension()
         util.flask.fix_flask_jsonify()
-        util.watchdog.fix_scandir()
 
         self._setup_mimetypes()
 
@@ -395,7 +392,7 @@ class Server(object):
                 analysis_queue_factories.update(**additional_factories)
             except Exception:
                 self._logger.exception(
-                    "Error while processing analysis queues from {}".format(name),
+                    f"Error while processing analysis queues from {name}",
                     extra={"plugin": name},
                 )
         analysisQueue = octoprint.filemanager.analysis.AnalysisQueue(
@@ -502,7 +499,7 @@ class Server(object):
                 groupManager = factory(components, self._settings)
                 if groupManager is not None:
                     self._logger.debug(
-                        "Created group manager instance from factory {}".format(name)
+                        f"Created group manager instance from factory {name}"
                     )
                     break
             except Exception:
@@ -536,7 +533,7 @@ class Server(object):
                 userManager = factory(components, self._settings)
                 if userManager is not None:
                     self._logger.debug(
-                        "Created user manager instance from factory {}".format(name)
+                        f"Created user manager instance from factory {name}"
                     )
                     break
             except Exception:
@@ -567,13 +564,11 @@ class Server(object):
             try:
                 printer = factory(components)
                 if printer is not None:
-                    self._logger.debug(
-                        "Created printer instance from factory {}".format(name)
-                    )
+                    self._logger.debug(f"Created printer instance from factory {name}")
                     break
             except Exception:
                 self._logger.exception(
-                    "Error while creating printer instance from factory {}".format(name),
+                    f"Error while creating printer instance from factory {name}",
                     extra={"plugin": name},
                 )
         else:
@@ -752,9 +747,10 @@ class Server(object):
             )
         }
 
-        valid_timelapse = lambda path: not octoprint.util.is_hidden_path(
-            path
-        ) and octoprint.timelapse.valid_timelapse(path)
+        valid_timelapse = lambda path: not octoprint.util.is_hidden_path(path) and (
+            octoprint.timelapse.valid_timelapse(path)
+            or octoprint.timelapse.valid_timelapse_thumbnail(path)
+        )
         timelapse_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
                 valid_timelapse,
@@ -951,7 +947,7 @@ class Server(object):
                     for entry in result:
                         if not isinstance(entry, tuple) or not len(entry) == 3:
                             continue
-                        if not isinstance(entry[0], basestring):
+                        if not isinstance(entry[0], str):
                             continue
                         if not isinstance(entry[2], dict):
                             continue
@@ -1101,7 +1097,7 @@ class Server(object):
                 connectionOptions = printer.__class__.get_connection_options()
                 if port in connectionOptions["ports"] or port == "AUTO" or port is None:
                     self._logger.info(
-                        "Trying to connect to configured serial port {}".format(port)
+                        f"Trying to connect to configured serial port {port}"
                     )
                     printer.connect(
                         port=port,
@@ -1158,9 +1154,7 @@ class Server(object):
             if self._host == "::":
                 if self._v6_only:
                     # only v6
-                    self._logger.info(
-                        "Listening on http://[::]:{port}".format(port=self._port)
-                    )
+                    self._logger.info(f"Listening on http://[::]:{self._port}")
                 else:
                     # all v4 and v6
                     self._logger.info(
@@ -1279,6 +1273,16 @@ class Server(object):
             )
             self._logger.exception("Stacktrace follows:")
 
+    def _log_safe_mode_start(self, self_mode):
+        self_mode_file = os.path.join(
+            self._settings.getBaseFolder("data"), "last_safe_mode"
+        )
+        try:
+            with open(self_mode_file, "w+", encoding="utf-8") as f:
+                f.write(self_mode)
+        except Exception as ex:
+            self._logger.warn(f"Could not write safe mode file {self_mode_file}: {ex}")
+
     def _create_socket_connection(self, session):
         global printer, fileManager, analysisQueue, userManager, eventManager, connectivityChecker
         return util.sockjs.PrinterStateConnection(
@@ -1334,7 +1338,7 @@ class Server(object):
             logger.info("Server heartbeat <3")
 
         interval = settings().getFloat(["server", "heartbeat"])
-        logger.info("Starting server heartbeat, {}s interval".format(interval))
+        logger.info(f"Starting server heartbeat, {interval}s interval")
 
         timer = octoprint.util.RepeatedTimer(interval, log_heartbeat)
         timer.start()
@@ -1345,8 +1349,12 @@ class Server(object):
             OctoPrintFlaskResponse,
             OctoPrintJsonEncoder,
             OctoPrintSessionInterface,
+            PrefixAwareJinjaEnvironment,
             ReverseProxiedEnvironment,
         )
+
+        # we must set this here because setting app.debug will access app.jinja_env
+        app.jinja_environment = PrefixAwareJinjaEnvironment
 
         app.config["TEMPLATES_AUTO_RELOAD"] = True
         app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
@@ -1394,7 +1402,7 @@ class Server(object):
             g.locale = self._get_locale()
 
             # used for performance measurement
-            g.start_time = octoprint.util.monotonic_time()
+            g.start_time = time.monotonic()
 
             if self._debug and "perfprofile" in request.args:
                 try:
@@ -1420,9 +1428,9 @@ class Server(object):
                 return make_response(output_html)
 
             if hasattr(g, "start_time"):
-                end_time = octoprint.util.monotonic_time()
+                end_time = time.monotonic()
                 duration_ms = int((end_time - g.start_time) * 1000)
-                response.headers.add("Server-Timing", "app;dur={}".format(duration_ms))
+                response.headers.add("Server-Timing", f"app;dur={duration_ms}")
 
             return response
 
@@ -1445,7 +1453,7 @@ class Server(object):
                 result.add(locale.language)
                 if locale.territory:
                     # if a territory is specified, add that too
-                    result.add("{}_{}".format(locale.language, locale.territory))
+                    result.add(f"{locale.language}_{locale.territory}")
 
             return result
 
@@ -1513,7 +1521,7 @@ class Server(object):
                     tag += ' target="_blank" rel="noreferrer noopener"'
 
                 content = match.group("content")
-                return "<{tag}>{content}</a>".format(tag=tag, content=content)
+                return f"<{tag}>{content}</a>"
 
             return html_link_regex.sub(repl, text)
 
@@ -1543,28 +1551,25 @@ class Server(object):
 
         import octoprint.util.jinja
 
-        filesystem_loader = octoprint.util.jinja.FilteredFileSystemLoader(
-            [], path_filter=lambda x: not octoprint.util.is_hidden_path(x)
-        )
-        filesystem_loader.searchpath = self._template_searchpaths
+        app.jinja_env.prefix_loader = jinja2.PrefixLoader({})
 
-        loaders = [app.jinja_loader, filesystem_loader]
+        loaders = [app.jinja_loader, app.jinja_env.prefix_loader]
         if octoprint.util.is_running_from_source():
-            from markdown import markdown
-
             root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
             allowed = ["AUTHORS.md", "SUPPORTERS.md", "THIRDPARTYLICENSES.md"]
-            files = {
-                "_data/" + name + ".html": os.path.join(root, name) for name in allowed
-            }
-            loaders.append(
-                octoprint.util.jinja.SelectedFilesWithConversionLoader(
-                    files, conversion=markdown
-                )
-            )
+            files = {"_data/" + name: os.path.join(root, name) for name in allowed}
+            loaders.append(octoprint.util.jinja.SelectedFilesWithConversionLoader(files))
 
-        jinja_loader = jinja2.ChoiceLoader(loaders)
-        app.jinja_loader = jinja_loader
+        # TODO: Remove this in 2.0.0
+        warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will soon no longer be supported."
+        loaders.append(
+            octoprint.util.jinja.WarningLoader(
+                octoprint.util.jinja.PrefixChoiceLoader(app.jinja_env.prefix_loader),
+                warning_message,
+            )
+        )
+
+        app.jinja_loader = jinja2.ChoiceLoader(loaders)
 
         self._register_template_plugins()
 
@@ -1679,7 +1684,7 @@ class Server(object):
                     kwargs.update(additional_request_data)
 
                     try:
-                        start = octoprint.util.monotonic_time()
+                        start = time.monotonic()
                         if plugin:
                             logger.info(
                                 "Preemptively caching {} (ui {}) for {!r}".format(
@@ -1702,9 +1707,7 @@ class Server(object):
                         app(builder.get_environ(), lambda *a, **kw: None)
 
                         logger.info(
-                            "... done in {:.2f}s".format(
-                                octoprint.util.monotonic_time() - start
-                            )
+                            "... done in {:.2f}s".format(time.monotonic() - start)
                         )
                     except Exception:
                         logger.exception(
@@ -1737,14 +1740,27 @@ class Server(object):
                 )
 
     def _register_additional_template_plugin(self, plugin):
+        import octoprint.util.jinja
+
         folder = plugin.get_template_folder()
-        if folder is not None and folder not in self._template_searchpaths:
-            self._template_searchpaths.append(folder)
+        if (
+            folder is not None
+            and plugin.template_folder_key not in app.jinja_env.prefix_loader.mapping
+        ):
+            loader = octoprint.util.jinja.FilteredFileSystemLoader(
+                [plugin.get_template_folder()],
+                path_filter=lambda x: not octoprint.util.is_hidden_path(x),
+            )
+
+            app.jinja_env.prefix_loader.mapping[plugin.template_folder_key] = loader
 
     def _unregister_additional_template_plugin(self, plugin):
         folder = plugin.get_template_folder()
-        if folder is not None and folder in self._template_searchpaths:
-            self._template_searchpaths.remove(folder)
+        if (
+            folder is not None
+            and plugin.template_folder_key in app.jinja_env.prefix_loader.mapping
+        ):
+            del app.jinja_env.prefix_loader.mapping[plugin.template_folder_key]
 
     def _setup_blueprints(self):
         # do not remove or the index view won't be found
@@ -1752,61 +1768,93 @@ class Server(object):
         from octoprint.server.api import api
         from octoprint.server.util.flask import make_api_error
 
-        blueprints = OrderedDict()
-        blueprints["/api"] = api
-        json_errors = ["/api"]
+        blueprints = [api]
+        api_endpoints = ["/api"]
+        registrators = [functools.partial(app.register_blueprint, api, url_prefix="/api")]
 
         # also register any blueprints defined in BlueprintPlugins
         (
-            blueprint_from_plugins,
-            api_prefixes_from_plugins,
+            blueprints_from_plugins,
+            api_endpoints_from_plugins,
+            registrators_from_plugins,
         ) = self._prepare_blueprint_plugins()
-        blueprints.update(blueprint_from_plugins)
-        json_errors += api_prefixes_from_plugins
+        blueprints += blueprints_from_plugins
+        api_endpoints += api_endpoints_from_plugins
+        registrators += registrators_from_plugins
 
         # and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
-        blueprints.update(self._prepare_asset_plugins())
+        (blueprints_from_assets, registrators_from_assets) = self._prepare_asset_plugins()
+        blueprints += blueprints_from_assets
+        registrators += registrators_from_assets
 
         # make sure all before/after_request hook results are attached as well
-        self._add_plugin_request_handlers_to_blueprints(*blueprints.values())
+        self._add_plugin_request_handlers_to_blueprints(*blueprints)
 
         # register everything with the system
-        for url_prefix, blueprint in blueprints.items():
-            app.register_blueprint(blueprint, url_prefix=url_prefix)
+        for registrator in registrators:
+            registrator()
 
         @app.errorhandler(HTTPException)
         def _handle_api_error(ex):
-            if any(map(lambda x: request.path.startswith(x), json_errors)):
+            if any(map(lambda x: request.path.startswith(x), api_endpoints)):
                 return make_api_error(ex.description, ex.code)
             else:
                 return ex
 
     def _prepare_blueprint_plugins(self):
-        blueprints = OrderedDict()
-        api_prefixes = []
+        def register_plugin_blueprint(plugin, blueprint, url_prefix):
+            try:
+                app.register_blueprint(
+                    blueprint, url_prefix=url_prefix, name_prefix="plugin"
+                )
+                self._logger.debug(
+                    f"Registered API of plugin {plugin} under URL prefix {url_prefix}"
+                )
+            except Exception:
+                self._logger.exception(
+                    f"Error while registering blueprint of plugin {plugin}, ignoring it",
+                    extra={"plugin": plugin},
+                )
+
+        blueprints = []
+        api_endpoints = []
+        registrators = []
 
         blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(
             octoprint.plugin.BlueprintPlugin
         )
         for plugin in blueprint_plugins:
-            try:
-                blueprint, prefix = self._prepare_blueprint_plugin(plugin)
-                api_prefixes += map(
-                    lambda x: prefix + x, plugin.get_blueprint_api_prefixes()
-                )
-                blueprints[prefix] = blueprint
-            except Exception:
-                self._logger.exception(
-                    "Error while registering blueprint of "
-                    "plugin {}, ignoring it".format(plugin._identifier),
-                    extra={"plugin": plugin._identifier},
-                )
-                continue
+            blueprint, prefix = self._prepare_blueprint_plugin(plugin)
 
-        return blueprints, api_prefixes
+            blueprints.append(blueprint)
+            api_endpoints += map(
+                lambda x: prefix + x, plugin.get_blueprint_api_prefixes()
+            )
+            registrators.append(
+                functools.partial(
+                    register_plugin_blueprint, plugin._identifier, blueprint, prefix
+                )
+            )
+
+        return blueprints, api_endpoints, registrators
 
     def _prepare_asset_plugins(self):
-        blueprints = OrderedDict()
+        def register_asset_blueprint(plugin, blueprint, url_prefix):
+            try:
+                app.register_blueprint(
+                    blueprint, url_prefix=url_prefix, name_prefix="plugin"
+                )
+                self._logger.debug(
+                    f"Registered assets of plugin {plugin} under URL prefix {url_prefix}"
+                )
+            except Exception:
+                self._logger.exception(
+                    f"Error while registering blueprint of plugin {plugin}, ignoring it",
+                    extra={"plugin": plugin},
+                )
+
+        blueprints = []
+        registrators = []
 
         asset_plugins = octoprint.plugin.plugin_manager().get_implementations(
             octoprint.plugin.AssetPlugin
@@ -1814,18 +1862,16 @@ class Server(object):
         for plugin in asset_plugins:
             if isinstance(plugin, octoprint.plugin.BlueprintPlugin):
                 continue
-            try:
-                blueprint, prefix = self._prepare_asset_plugin(plugin)
-                blueprints[prefix] = blueprint
-            except Exception:
-                self._logger.exception(
-                    "Error while registering assets of plugin "
-                    "{}, ignoring it".format(plugin._identifier),
-                    extra={"plugin": plugin._identifier},
-                )
-                continue
+            blueprint, prefix = self._prepare_asset_plugin(plugin)
 
-        return blueprints
+            blueprints.append(blueprint)
+            registrators.append(
+                functools.partial(
+                    register_asset_blueprint, plugin._identifier, blueprint, prefix
+                )
+            )
+
+        return blueprints, registrators
 
     def _prepare_blueprint_plugin(self, plugin):
         name = plugin._identifier
@@ -1840,34 +1886,14 @@ class Server(object):
         if plugin.is_blueprint_protected():
             blueprint.before_request(requireLoginRequestHandler)
 
-        url_prefix = "/plugin/{name}".format(name=name)
-        app.register_blueprint(blueprint, url_prefix=url_prefix)
-
-        if self._logger:
-            self._logger.debug(
-                "Registered API of plugin {name} under URL prefix {url_prefix}".format(
-                    name=name, url_prefix=url_prefix
-                )
-            )
-
+        url_prefix = f"/plugin/{name}"
         return blueprint, url_prefix
 
     def _prepare_asset_plugin(self, plugin):
         name = plugin._identifier
 
-        url_prefix = "/plugin/{name}".format(name=name)
-        blueprint = Blueprint(
-            "plugin." + name, name, static_folder=plugin.get_asset_folder()
-        )
-        app.register_blueprint(blueprint, url_prefix=url_prefix)
-
-        if self._logger:
-            self._logger.debug(
-                "Registered assets of plugin {name} under URL prefix {url_prefix}".format(
-                    name=name, url_prefix=url_prefix
-                )
-            )
-
+        url_prefix = f"/plugin/{name}"
+        blueprint = Blueprint(name, name, static_folder=plugin.get_asset_folder())
         return blueprint, url_prefix
 
     def _add_plugin_request_handlers_to_blueprints(self, *blueprints):
@@ -1926,7 +1952,6 @@ class Server(object):
         global assets
         global pluginManager
 
-        util.flask.fix_webassets_cache()
         util.flask.fix_webassets_filtertool()
 
         base_folder = self._settings.getBaseFolder("generated")
@@ -1936,14 +1961,21 @@ class Server(object):
             import errno
             import shutil
 
-            for entry in ("webassets", ".webassets-cache"):
+            for entry, recreate in (
+                ("webassets", True),
+                (".webassets-cache", False),  # no longer used, but clean up just in case
+                (".webassets-manifest.json", False),
+            ):
                 path = os.path.join(base_folder, entry)
 
                 # delete path if it exists
-                if os.path.isdir(path):
+                if os.path.exists(path):
                     try:
                         self._logger.debug("Deleting {path}...".format(**locals()))
-                        shutil.rmtree(path)
+                        if os.path.isdir(path):
+                            shutil.rmtree(path)
+                        else:
+                            os.remove(path)
                     except Exception:
                         self._logger.exception(
                             "Error while trying to delete {path}, "
@@ -1951,52 +1983,53 @@ class Server(object):
                         )
                         continue
 
-                # re-create path
-                self._logger.debug("Creating {path}...".format(**locals()))
-                error_text = (
-                    "Error while trying to re-create {path}, that might cause "
-                    "errors with the webassets cache".format(**locals())
-                )
-                try:
-                    os.makedirs(path)
-                except OSError as e:
-                    if e.errno == errno.EACCES:
-                        # that might be caused by the user still having the folder open somewhere, let's try again after
-                        # waiting a bit
-                        import time
+                # re-create path if necessary
+                if recreate:
+                    self._logger.debug("Creating {path}...".format(**locals()))
+                    error_text = (
+                        "Error while trying to re-create {path}, that might cause "
+                        "errors with the webassets cache".format(**locals())
+                    )
+                    try:
+                        os.makedirs(path)
+                    except OSError as e:
+                        if e.errno == errno.EACCES:
+                            # that might be caused by the user still having the folder open somewhere, let's try again after
+                            # waiting a bit
+                            import time
 
-                        for n in range(3):
-                            time.sleep(0.5)
-                            self._logger.debug(
-                                "Creating {path}: Retry #{retry} after {time}s".format(
-                                    path=path, retry=n + 1, time=(n + 1) * 0.5
-                                )
-                            )
-                            try:
-                                os.makedirs(path)
-                                break
-                            except Exception:
-                                if self._logger.isEnabledFor(logging.DEBUG):
-                                    self._logger.exception(
-                                        "Ignored error while creating "
-                                        "directory {path}".format(**locals())
+                            for n in range(3):
+                                time.sleep(0.5)
+                                self._logger.debug(
+                                    "Creating {path}: Retry #{retry} after {time}s".format(
+                                        path=path, retry=n + 1, time=(n + 1) * 0.5
                                     )
-                                pass
+                                )
+                                try:
+                                    os.makedirs(path)
+                                    break
+                                except Exception:
+                                    if self._logger.isEnabledFor(logging.DEBUG):
+                                        self._logger.exception(
+                                            "Ignored error while creating "
+                                            "directory {path}".format(**locals())
+                                        )
+                                    pass
+                            else:
+                                # this will only get executed if we never did
+                                # successfully execute makedirs above
+                                self._logger.exception(error_text)
+                                continue
                         else:
-                            # this will only get executed if we never did
-                            # successfully execute makedirs above
+                            # not an access error, so something we don't understand
+                            # went wrong -> log an error and stop
                             self._logger.exception(error_text)
                             continue
-                    else:
-                        # not an access error, so something we don't understand
+                    except Exception:
+                        # not an OSError, so something we don't understand
                         # went wrong -> log an error and stop
                         self._logger.exception(error_text)
                         continue
-                except Exception:
-                    # not an OSError, so something we don't understand
-                    # went wrong -> log an error and stop
-                    self._logger.exception(error_text)
-                    continue
 
                 self._logger.info("Reset webasset folder {path}...".format(**locals()))
 
@@ -2013,6 +2046,12 @@ class Server(object):
 
         assets = CustomDirectoryEnvironment(app)
         assets.debug = not self._settings.getBoolean(["devel", "webassets", "bundle"])
+
+        # we should rarely if ever regenerate the webassets in production and can wait a
+        # few seconds for regeneration in development, if it means we can get rid of
+        # a whole monkey patch and in internal use of pickle with non-tamperproof files
+        assets.cache = False
+        assets.manifest = "json:.webassets-manifest.json"
 
         UpdaterType = type(util.flask.SettingsCheckUpdater)(
             util.flask.SettingsCheckUpdater.__name__,
@@ -2188,7 +2227,7 @@ class Server(object):
             js_plugins_bundle = Bundle(
                 *js_plugins.values(),
                 output="webassets/packed_plugins.js",
-                filters=",".join(js_plugin_filters)
+                filters=",".join(js_plugin_filters),
             )
 
         js_app_bundle = Bundle(
@@ -2201,7 +2240,7 @@ class Server(object):
         js_client_core_bundle = Bundle(
             *clientjs_core,
             output="webassets/packed_client_core.js",
-            filters=",".join(js_filters)
+            filters=",".join(js_filters),
         )
 
         if len(clientjs_plugins) == 0:
@@ -2210,7 +2249,7 @@ class Server(object):
             js_client_plugins_bundle = Bundle(
                 *clientjs_plugins.values(),
                 output="webassets/packed_client_plugins.js",
-                filters=",".join(js_plugin_filters)
+                filters=",".join(js_plugin_filters),
             )
 
         js_client_bundle = Bundle(
@@ -2241,7 +2280,7 @@ class Server(object):
             css_core_bundle = Bundle(
                 *css_core,
                 output="webassets/packed_core.css",
-                filters=",".join(css_filters)
+                filters=",".join(css_filters),
             )
 
         if len(css_plugins) == 0:
@@ -2250,7 +2289,7 @@ class Server(object):
             css_plugins_bundle = Bundle(
                 *css_plugins,
                 output="webassets/packed_plugins.css",
-                filters=",".join(css_filters)
+                filters=",".join(css_filters),
             )
 
         css_app_bundle = Bundle(
@@ -2275,7 +2314,7 @@ class Server(object):
             less_core_bundle = Bundle(
                 *less_core,
                 output="webassets/packed_core.less",
-                filters=",".join(less_filters)
+                filters=",".join(less_filters),
             )
 
         if len(less_plugins) == 0:
@@ -2284,7 +2323,7 @@ class Server(object):
             less_plugins_bundle = Bundle(
                 *less_plugins,
                 output="webassets/packed_plugins.less",
-                filters=",".join(less_filters)
+                filters=",".join(less_filters),
             )
 
         less_app_bundle = Bundle(
@@ -2300,13 +2339,13 @@ class Server(object):
         assets.register("js_client_core", js_client_core_bundle)
         for plugin, bundle in clientjs_plugins.items():
             # register our collected clientjs plugin bundles so that they are bound to the environment
-            assets.register("js_client_plugin_{}".format(plugin), bundle)
+            assets.register(f"js_client_plugin_{plugin}", bundle)
         assets.register("js_client_plugins", js_client_plugins_bundle)
         assets.register("js_client", js_client_bundle)
         assets.register("js_core", js_core_bundle)
         for plugin, bundle in js_plugins.items():
             # register our collected plugin bundles so that they are bound to the environment
-            assets.register("js_plugin_{}".format(plugin), bundle)
+            assets.register(f"js_plugin_{plugin}", bundle)
         assets.register("js_plugins", js_plugins_bundle)
         assets.register("js_app", js_app_bundle)
         assets.register("css_libs", css_libs_bundle)
@@ -2335,15 +2374,9 @@ class Server(object):
         loginManager.init_app(app, add_context_processor=False)
 
     def _start_intermediary_server(self):
-        try:
-            # noinspection PyCompatibility
-            from http.server import BaseHTTPRequestHandler, HTTPServer
-        except ImportError:
-            # noinspection PyCompatibility
-            from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
-
         import socket
         import threading
+        from http.server import BaseHTTPRequestHandler, HTTPServer
 
         host = self._host
         port = self._port
@@ -2367,7 +2400,7 @@ class Server(object):
                         if content_type:
                             self.send_header("Content-Type", content_type)
                         self.end_headers()
-                        if isinstance(data, unicode):
+                        if isinstance(data, str):
                             data = data.encode("utf-8")
                         self.wfile.write(data)
                         break
@@ -2403,7 +2436,7 @@ class Server(object):
             if not os.path.isfile(path):
                 return ""
 
-            with io.open(path, "rb") as f:
+            with open(path, "rb") as f:
                 data = f.read()
             return data
 
@@ -2458,9 +2491,7 @@ class Server(object):
 
         if host == "::":
             if self._v6_only:
-                self._logger.debug(
-                    "Starting intermediary server on http://[::]:{port}".format(port=port)
-                )
+                self._logger.debug(f"Starting intermediary server on http://[::]:{port}")
             else:
                 self._logger.debug(
                     "Starting intermediary server on http://0.0.0.0:{port} and http://[::]:{port}".format(
@@ -2548,7 +2579,7 @@ class Server(object):
             return "{}: {}".format(plugin, definition["name"])
 
         def permission_role(plugin, role):
-            return "plugin_{}_{}".format(plugin, role)
+            return f"plugin_{plugin}_{role}"
 
         def process_regular_permission(plugin_info, definition):
             permissions = []
@@ -2578,7 +2609,7 @@ class Server(object):
                 plugin=plugin_info.key,
                 dangerous=dangerous,
                 default_groups=default_groups,
-                *roles_and_permissions
+                *roles_and_permissions,
             )
             setattr(
                 octoprint.access.permissions.Permissions,
@@ -2589,7 +2620,7 @@ class Server(object):
                     plugin=plugin_info.key,
                     dangerous=dangerous,
                     default_groups=default_groups,
-                    *roles_and_permissions
+                    *roles_and_permissions,
                 ),
             )
 
@@ -2637,7 +2668,7 @@ class Server(object):
                         postponed.append((plugin_info, p))
             except Exception:
                 self._logger.exception(
-                    "Error while creating permission instance/s from {}".format(name)
+                    f"Error while creating permission instance/s from {name}"
                 )
 
         # final resolution passes
@@ -2675,7 +2706,7 @@ class Server(object):
             pass_number += 1
 
 
-class LifecycleManager(object):
+class LifecycleManager:
     def __init__(self, plugin_manager):
         self._plugin_manager = plugin_manager
 
@@ -2707,7 +2738,7 @@ class LifecycleManager(object):
             lifecycle_callback(name, plugin)
 
     def add_callback(self, events, callback):
-        if isinstance(events, basestring):
+        if isinstance(events, str):
             events = [events]
 
         for event in events:
@@ -2719,7 +2750,7 @@ class LifecycleManager(object):
                 if callback in self._plugin_lifecycle_callbacks[event]:
                     self._plugin_lifecycle_callbacks[event].remove(callback)
         else:
-            if isinstance(events, basestring):
+            if isinstance(events, str):
                 events = [events]
 
             for event in events:

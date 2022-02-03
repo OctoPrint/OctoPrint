@@ -184,6 +184,7 @@ further down there's also a dedicated list of steps for OctoPi specifically.
           autologinAs: "<yourUsername>"
           localNetworks:
           - "127.0.0.0/8"
+          - "::1/128"
           - "<yourAddressRange>"
 
 4. Restart OctoPrint, check that everything works.

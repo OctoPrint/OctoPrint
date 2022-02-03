@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -21,10 +18,10 @@ from octoprint.util.version import (
 )
 
 SENTRY_URL_SERVER = (
-    "https://d697280f99f544d5a0705e7ae9880dd5@o118517.ingest.sentry.io/1373987"
+    "https://871751d3af18492bbfe9db952cb1929c@o118517.ingest.sentry.io/1373987"
 )
 SENTRY_URL_COREUI = (
-    "https://c82d12e144df4a848e57cd18912239f4@o118517.ingest.sentry.io/1374096"
+    "https://1c7e28064b0646c3aa109793a49eea81@o118517.ingest.sentry.io/1374096"
 )
 
 SETTINGS_DEFAULTS = {
@@ -253,5 +250,5 @@ def __plugin_enable__():
 __plugin_name__ = "Error Tracking"
 __plugin_author__ = "Gina Häußge"
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = ErrorTrackingPlugin()

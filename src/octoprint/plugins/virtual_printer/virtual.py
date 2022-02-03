@@ -1,47 +1,24 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
 
 import collections
-import io
 import json
 import math
 import os
+import queue
 import re
 import threading
 import time
 
-try:
-    import queue
-except ImportError:
-    import Queue as queue
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
-
-# noinspection PyCompatibility
-from typing import Any
-
-from past.builtins import basestring
 from serial import SerialTimeoutException
 
 from octoprint.plugin import plugin_manager
-from octoprint.util import (
-    RepeatedTimer,
-    get_dos_filename,
-    monotonic_time,
-    to_bytes,
-    to_unicode,
-)
+from octoprint.util import RepeatedTimer, get_dos_filename, to_bytes, to_str
 
 
 # noinspection PyBroadException
-class VirtualPrinter(object):
+class VirtualPrinter:
     command_regex = re.compile(r"^([GMTF])(\d+)")
     sleep_regex = re.compile(r"sleep (\d+)")
     sleep_after_regex = re.compile(r"sleep_after ([GMTF]\d+) (\d+)")
@@ -126,7 +103,7 @@ class VirtualPrinter(object):
         self.bedTargetTemp = 0.0
         self.chamberTemp = self._ambient_temperature
         self.chamberTargetTemp = 0.0
-        self.lastTempAt = monotonic_time()
+        self.lastTempAt = time.monotonic()
 
         self._relative = True
         self._lastX = 0.0
@@ -186,6 +163,8 @@ class VirtualPrinter(object):
 
         self._capabilities = self._settings.get(["capabilities"], merged=True)
 
+        self._locked = self._settings.get_boolean(["locked"])
+
         self._temperature_reporter = None
         self._sdstatus_reporter = None
         self._pos_reporter = None
@@ -206,6 +185,7 @@ class VirtualPrinter(object):
         self._calculate_resend_every_n(self._settings.get_int(["resend_ratio"]))
 
         self._dont_answer = False
+        self._broken_klipper_connection = False
 
         self._debug_drop_connection = False
 
@@ -289,6 +269,7 @@ class VirtualPrinter(object):
             self._sleepAfter.clear()
 
             self._dont_answer = False
+            self._broken_klipper_connection = False
 
             self._debug_drop_connection = False
 
@@ -315,13 +296,15 @@ class VirtualPrinter(object):
                 for item in self._settings.get(["resetLines"]):
                     self._send(item + "\n")
 
+            self._locked = self._settings.get_boolean(["locked"])
+
     @property
     def timeout(self):
         return self._read_timeout
 
     @timeout.setter
     def timeout(self, value):
-        self._logger.debug("Setting read timeout to {}s".format(value))
+        self._logger.debug(f"Setting read timeout to {value}s")
         self._read_timeout = value
 
     @property
@@ -330,7 +313,7 @@ class VirtualPrinter(object):
 
     @write_timeout.setter
     def write_timeout(self, value):
-        self._logger.debug("Setting write timeout to {}s".format(value))
+        self._logger.debug(f"Setting write timeout to {value}s")
         self._write_timeout = value
 
     @property
@@ -351,7 +334,7 @@ class VirtualPrinter(object):
             pass
 
     def _processIncoming(self):
-        next_wait_timeout = monotonic_time() + self._waitInterval
+        next_wait_timeout = time.monotonic() + self._waitInterval
         buf = b""
         while self.incoming is not None and not self._killed:
             self._simulateTemps()
@@ -365,9 +348,9 @@ class VirtualPrinter(object):
                 data = to_bytes(data, encoding="ascii", errors="replace")
                 self.incoming.task_done()
             except queue.Empty:
-                if self._sendWait and monotonic_time() > next_wait_timeout:
+                if self._sendWait and time.monotonic() > next_wait_timeout:
                     self._send("wait")
-                    next_wait_timeout = monotonic_time() + self._waitInterval
+                    next_wait_timeout = time.monotonic() + self._waitInterval
                 continue
             except Exception:
                 if self.incoming is None:
@@ -383,7 +366,7 @@ class VirtualPrinter(object):
                 else:
                     continue
 
-            next_wait_timeout = monotonic_time() + self._waitInterval
+            next_wait_timeout = time.monotonic() + self._waitInterval
 
             if data is None:
                 continue
@@ -462,7 +445,7 @@ class VirtualPrinter(object):
                     if callable(prepared):
                         prepared(linenumber, self.lastN, data)
                         continue
-                    elif isinstance(prepared, basestring):
+                    elif isinstance(prepared, str):
                         self._send(prepared)
                         continue
                 elif self._rerequest_last:
@@ -474,7 +457,7 @@ class VirtualPrinter(object):
 
             data += b"\n"
 
-            data = to_unicode(data, encoding="ascii", errors="replace").strip()
+            data = to_str(data, encoding="ascii", errors="replace").strip()
 
             if data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
                 debug_command = ""
@@ -510,12 +493,22 @@ class VirtualPrinter(object):
             # actual command handling
             command_match = VirtualPrinter.command_regex.match(data)
             if command_match is not None:
+                if self._broken_klipper_connection:
+                    self._send("!! Lost communication with MCU 'mcu'")
+                    self._sendOk()
+                    continue
+
                 command = command_match.group(0)
                 letter = command_match.group(1)
 
+                if self._locked and command != "M511":
+                    self._send("echo:Printer locked! (Unlock with M511 or LCD)")
+                    self._sendOk()
+                    continue
+
                 try:
                     # if we have a method _gcode_G, _gcode_M or _gcode_T, execute that first
-                    letter_handler = "_gcode_{}".format(letter)
+                    letter_handler = f"_gcode_{letter}"
                     if hasattr(self, letter_handler):
                         code = command_match.group(2)
                         handled = getattr(self, letter_handler)(code, data)
@@ -523,7 +516,7 @@ class VirtualPrinter(object):
                             continue
 
                     # then look for a method _gcode_<command> and execute that if it exists
-                    command_handler = "_gcode_{}".format(command)
+                    command_handler = f"_gcode_{command}"
                     if hasattr(self, command_handler):
                         handled = getattr(self, command_handler)(data)
                         if handled:
@@ -557,18 +550,16 @@ class VirtualPrinter(object):
     ##~~ command implementations
 
     # noinspection PyUnusedLocal
-    def _gcode_T(self, code, data):
-        # type: (str, str) -> None
+    def _gcode_T(self, code: str, data: str) -> None:
         t = int(code)
         if 0 <= t < self.extruderCount:
             self.currentExtruder = t
             self._send("Active Extruder: %d" % self.currentExtruder)
         else:
-            self._send("echo:T{} Invalid extruder ".format(t))
+            self._send(f"echo:T{t} Invalid extruder ")
 
     # noinspection PyUnusedLocal
-    def _gcode_F(self, code, data):
-        # type: (str, str) -> bool
+    def _gcode_F(self, code: str, data: str) -> bool:
         if self._supportF:
             self._send("echo:changed F value")
             return False
@@ -576,77 +567,64 @@ class VirtualPrinter(object):
             self._send(self._error("command_unknown", "F"))
             return True
 
-    def _gcode_M104(self, data):
-        # type: (str) -> None
+    def _gcode_M104(self, data: str) -> None:
         self._parseHotendCommand(data)
 
-    def _gcode_M109(self, data):
-        # type: (str) -> None
+    def _gcode_M109(self, data: str) -> None:
         self._parseHotendCommand(data, wait=True, support_r=True)
 
-    def _gcode_M140(self, data):
-        # type: (str) -> None
+    def _gcode_M140(self, data: str) -> None:
         self._parseBedCommand(data)
 
-    def _gcode_M190(self, data):
-        # type: (str) -> None
+    def _gcode_M190(self, data: str) -> None:
         self._parseBedCommand(data, wait=True, support_r=True)
 
-    def _gcode_M141(self, data):
+    def _gcode_M141(self, data: str) -> None:
         self._parseChamberCommand(data)
 
-    def _gcode_M191(self, data):
+    def _gcode_M191(self, data: str) -> None:
         self._parseChamberCommand(data, wait=True, support_r=True)
 
     # noinspection PyUnusedLocal
-    def _gcode_M105(self, data):
-        # type: (str) -> bool
+    def _gcode_M105(self, data: str) -> bool:
         self._processTemperatureQuery()
         return True
 
     # noinspection PyUnusedLocal
-    def _gcode_M20(self, data):
-        # type: (str) -> None
+    def _gcode_M20(self, data: str) -> None:
         if self._sdCardReady:
             self._listSd(incl_long="L" in data)
 
     # noinspection PyUnusedLocal
-    def _gcode_M21(self, data):
-        # type: (str) -> None
+    def _gcode_M21(self, data: str) -> None:
         self._sdCardReady = True
         self._send("SD card ok")
 
     # noinspection PyUnusedLocal
-    def _gcode_M22(self, data):
-        # type: (str) -> None
+    def _gcode_M22(self, data: str) -> None:
         self._sdCardReady = False
 
-    def _gcode_M23(self, data):
-        # type: (str) -> None
+    def _gcode_M23(self, data: str) -> None:
         if self._sdCardReady:
             filename = data.split(None, 1)[1].strip()
             self._selectSdFile(filename)
 
     # noinspection PyUnusedLocal
-    def _gcode_M24(self, data):
-        # type: (str) -> None
+    def _gcode_M24(self, data: str) -> None:
         if self._sdCardReady:
             self._startSdPrint()
 
     # noinspection PyUnusedLocal
-    def _gcode_M25(self, data):
-        # type: (str) -> None
+    def _gcode_M25(self, data: str) -> None:
         if self._sdCardReady:
             self._pauseSdPrint()
 
-    def _gcode_M26(self, data):
-        # type: (str) -> None
+    def _gcode_M26(self, data: str) -> None:
         if self._sdCardReady:
             pos = int(re.search(r"S([0-9]+)", data).group(1))
             self._setSdPos(pos)
 
-    def _gcode_M27(self, data):
-        # type: (str) -> None
+    def _gcode_M27(self, data: str) -> None:
         def report():
             if self._sdCardReady:
                 self._reportSdStatus()
@@ -665,26 +643,22 @@ class VirtualPrinter(object):
 
         report()
 
-    def _gcode_M28(self, data):
-        # type: (str) -> None
+    def _gcode_M28(self, data: str) -> None:
         if self._sdCardReady:
             filename = data.split(None, 1)[1].strip()
             self._writeSdFile(filename)
 
     # noinspection PyUnusedLocal
-    def _gcode_M29(self, data):
-        # type: (str) -> None
+    def _gcode_M29(self, data: str) -> None:
         if self._sdCardReady:
             self._finishSdFile()
 
-    def _gcode_M30(self, data):
-        # type: (str) -> None
+    def _gcode_M30(self, data: str) -> None:
         if self._sdCardReady:
             filename = data.split(None, 1)[1].strip()
             self._deleteSdFile(filename)
 
-    def _gcode_M33(self, data):
-        # type: (str) -> None
+    def _gcode_M33(self, data: str) -> None:
         if self._sdCardReady:
             filename = data.split(None, 1)[1].strip()
             if filename.startswith("/"):
@@ -694,8 +668,7 @@ class VirtualPrinter(object):
             if file is not None:
                 self._send(file["name"])
 
-    def _gcode_M113(self, data):
-        # type: (str) -> None
+    def _gcode_M113(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             interval = int(matchS.group(1))
@@ -703,19 +676,17 @@ class VirtualPrinter(object):
                 self._busyInterval = interval
 
     # noinspection PyUnusedLocal
-    def _gcode_M114(self, data):
-        # type: (str) -> bool
+    def _gcode_M114(self, data: str) -> bool:
         output = self._generatePositionOutput()
         if not self._okBeforeCommandOutput:
             ok = self._ok()
             if ok:
-                output = "{} {}".format(self._ok(), output)
+                output = f"{self._ok()} {output}"
         self._send(output)
         return True
 
     # noinspection PyUnusedLocal
-    def _gcode_M115(self, data):
-        # type: (str) -> None
+    def _gcode_M115(self, data: str) -> None:
         output = self._m115FormatString.format(firmware_name=self._firmwareName)
         self._send(output)
 
@@ -723,8 +694,7 @@ class VirtualPrinter(object):
             for cap, enabled in self._capabilities.items():
                 self._send("Cap:{}:{}".format(cap.upper(), "1" if enabled else "0"))
 
-    def _gcode_M117(self, data):
-        # type: (str) -> None
+    def _gcode_M117(self, data: str) -> None:
         # we'll just use this to echo a message, to allow playing around with pause triggers
         if self._echoOnM117:
             try:
@@ -732,8 +702,7 @@ class VirtualPrinter(object):
             except AttributeError:
                 self._send("echo:")
 
-    def _gcode_M154(self, data):
-        # type: (str) -> None
+    def _gcode_M154(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             interval = int(matchS.group(1))
@@ -748,8 +717,7 @@ class VirtualPrinter(object):
             else:
                 self._pos_reporter = None
 
-    def _gcode_M155(self, data):
-        # type: (str) -> None
+    def _gcode_M155(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             interval = int(matchS.group(1))
@@ -764,26 +732,22 @@ class VirtualPrinter(object):
             else:
                 self._temperature_reporter = None
 
-    def _gcode_M220(self, data):
-        # type: (str) -> None
+    def _gcode_M220(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             self._feedrate_multiplier = float(matchS.group(1))
 
-    def _gcode_M221(self, data):
-        # type: (str) -> None
+    def _gcode_M221(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             self._flowrate_multiplier = float(matchS.group(1))
 
     # noinspection PyUnusedLocal
-    def _gcode_M400(self, data):
-        # type: (str) -> None
+    def _gcode_M400(self, data: str) -> None:
         self.buffered.join()
 
     # noinspection PyUnusedLocal
-    def _gcode_M600(self, data):
-        # type: (str) -> None
+    def _gcode_M600(self, data: str) -> None:
         self._send("//action:paused")
         self._showPrompt(
             "Heater Timeout",
@@ -795,21 +759,18 @@ class VirtualPrinter(object):
         return True  # handled as we don't want to send an ok now, only when finishing the busy
 
     # noinspection PyUnusedLocal
-    def _gcode_M876(self, data):
-        # type: (str) -> None
+    def _gcode_M876(self, data: str) -> None:
         self._hidePrompt()
         if self._busy == "paused for user":
             self._busy = None
 
     # noinspection PyUnusedLocal
-    def _gcode_M999(self, data):
-        # type: (str) -> None
+    def _gcode_M999(self, data: str) -> None:
         # mirror Marlin behaviour
         self._send("Resend: 1")
 
     # noinspection PyUnusedLocal
-    def _gcode_G20(self, data):
-        # type: (str) -> None
+    def _gcode_G20(self, data: str) -> None:
         self._unitModifier = 1 / 2.54
         if self._lastX is not None:
             self._lastX *= 2.54
@@ -821,8 +782,7 @@ class VirtualPrinter(object):
             self._lastE = [e * 2.54 if e is not None else None for e in self._lastE]
 
     # noinspection PyUnusedLocal
-    def _gcode_G21(self, data):
-        # type: (str) -> None
+    def _gcode_G21(self, data: str) -> None:
         self._unitModifier = 1.0
         if self._lastX is not None:
             self._lastX /= 2.54
@@ -834,25 +794,20 @@ class VirtualPrinter(object):
             self._lastE = [e / 2.54 if e is not None else None for e in self._lastE]
 
     # noinspection PyUnusedLocal
-    def _gcode_G90(self, data):
-        # type: (str) -> None
+    def _gcode_G90(self, data: str) -> None:
         self._relative = False
 
     # noinspection PyUnusedLocal
-    def _gcode_G91(self, data):
-        # type: (str) -> None
+    def _gcode_G91(self, data: str) -> None:
         self._relative = True
 
-    def _gcode_G92(self, data):
-        # type: (str) -> None
+    def _gcode_G92(self, data: str) -> None:
         self._setPosition(data)
 
-    def _gcode_G28(self, data):
-        # type: (str) -> None
+    def _gcode_G28(self, data: str) -> None:
         self._home(data)
 
-    def _gcode_G0(self, data):
-        # type: (str) -> None
+    def _gcode_G0(self, data: str) -> None:
         # simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
         self.buffered.put(data)
 
@@ -860,8 +815,7 @@ class VirtualPrinter(object):
     _gcode_G2 = _gcode_G0
     _gcode_G3 = _gcode_G0
 
-    def _gcode_G4(self, data):
-        # type: (str) -> None
+    def _gcode_G4(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         matchP = re.search(r"P([0-9]+)", data)
 
@@ -872,38 +826,53 @@ class VirtualPrinter(object):
             _timeout = float(matchS.group(1))
 
         if self._sendBusy and self._busyInterval > 0:
-            until = monotonic_time() + _timeout
-            while monotonic_time() < until:
+            until = time.monotonic() + _timeout
+            while time.monotonic() < until:
                 time.sleep(self._busyInterval)
                 self._send("busy:processing")
         else:
             time.sleep(_timeout)
 
     # noinspection PyUnusedLocal
-    def _gcode_G33(self, data):
-        # type: (str) -> None
+    def _gcode_G33(self, data: str) -> None:
         self._send("G33 Auto Calibrate")
         self._send("Will take ~60s")
         timeout = 60
 
         if self._sendBusy and self._busyInterval > 0:
-            until = monotonic_time() + timeout
-            while monotonic_time() < until:
+            until = time.monotonic() + timeout
+            while time.monotonic() < until:
                 time.sleep(self._busyInterval)
                 self._send("busy:processing")
         else:
             time.sleep(timeout)
 
+    # Passcode Feature - lock with M510, unlock with M511 P<passcode>.
+    # https://marlinfw.org/docs/gcode/M510.html / https://marlinfw.org/docs/gcode/M511.html
+
+    def _gcode_M510(self, data: str) -> None:
+        self._locked = True
+
+    def _gcode_M511(self, data: str) -> None:
+        if self._locked:
+            matchP = re.search(r"P([0-9]+)", data)
+            if matchP:
+                passcode = matchP.group(1)
+                if passcode == self._settings.get(["passcode"]):
+                    self._locked = False
+                else:
+                    self._send("Incorrect passcode")
+
     # EEPROM management commands
 
-    def _gcode_M500(self, data):
+    def _gcode_M500(self, data: str) -> None:
         # Stores settings to disk
         if self._virtual_eeprom:
             self._virtual_eeprom.save_settings()
         else:
             self._send(self._error("command_unknown", "M500"))
 
-    def _gcode_M501(self, data):
+    def _gcode_M501(self, data: str) -> None:
         # Read from EEPROM
         if self._virtual_eeprom:
             self._virtual_eeprom.read_settings()
@@ -912,7 +881,7 @@ class VirtualPrinter(object):
         else:
             self._send(self._error("command_unknown", "M501"))
 
-    def _gcode_M502(self, data):
+    def _gcode_M502(self, data: str) -> None:
         # reset to default values
         if self._virtual_eeprom:
             self._virtual_eeprom.load_defaults()
@@ -921,7 +890,7 @@ class VirtualPrinter(object):
         else:
             self._send(self._error("command_unknown", "M502"))
 
-    def _gcode_M503(self, data):
+    def _gcode_M503(self, data: str) -> None:
         # echo all eeprom data
         if self._virtual_eeprom and self._support_M503:
             for line in self._construct_eeprom_values():
@@ -929,7 +898,7 @@ class VirtualPrinter(object):
         else:
             self._send(self._error("command_unknown", "M503"))
 
-    def _gcode_M504(self, data):
+    def _gcode_M504(self, data: str) -> None:
         if self._virtual_eeprom:
             self._send("echo:EEPROM OK")
         else:
@@ -937,7 +906,7 @@ class VirtualPrinter(object):
 
     # EEPROM settings commands
 
-    def _gcode_M92(self, data):
+    def _gcode_M92(self, data: str) -> None:
         # Steps per unit
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M92"))
@@ -949,7 +918,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("XYZE", data).items():
                 self._virtual_eeprom.eeprom["steps"]["params"][key] = float(value)
 
-    def _gcode_M203(self, data):
+    def _gcode_M203(self, data: str) -> None:
         # Maximum feedrates (units/s)
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M203"))
@@ -961,7 +930,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("XYZE", data).items():
                 self._virtual_eeprom.eeprom["feedrate"]["params"][key] = float(value)
 
-    def _gcode_M201(self, data):
+    def _gcode_M201(self, data: str) -> None:
         # Maximum Acceleration (units/s2)
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M201"))
@@ -973,7 +942,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("EXYZ", data).items():
                 self._virtual_eeprom.eeprom["max_accel"]["params"][key] = float(value)
 
-    def _gcode_M204(self, data):
+    def _gcode_M204(self, data: str) -> None:
         # Starting Acceleration (units/s2)
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M204"))
@@ -985,7 +954,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("PRTS", data).items():
                 self._virtual_eeprom.eeprom["start_accel"]["params"][key] = float(value)
 
-    def _gcode_M206(self, data):
+    def _gcode_M206(self, data: str) -> None:
         # Home offset
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M206"))
@@ -997,7 +966,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("XYZ", data).items():
                 self._virtual_eeprom.eeprom["home_offset"]["params"][key] = float(value)
 
-    def _gcode_M851(self, data):
+    def _gcode_M851(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M851"))
             return
@@ -1007,7 +976,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("XYZ", data).items():
                 self._virtual_eeprom.eeprom["probe_offset"]["params"][key] = float(value)
 
-    def _gcode_M200(self, data):
+    def _gcode_M200(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M200"))
             return
@@ -1017,7 +986,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("DS", data).items():
                 self._virtual_eeprom.eeprom["filament"]["params"][key] = float(value)
 
-    def _gcode_M666(self, data):
+    def _gcode_M666(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M666"))
             return
@@ -1027,7 +996,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("XYZ", data).items():
                 self._virtual_eeprom.eeprom["endstop"]["params"][key] = float(value)
 
-    def _gcode_M665(self, data):
+    def _gcode_M665(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M665"))
             return
@@ -1037,7 +1006,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("BHLRSXYZ", data).items():
                 self._virtual_eeprom.eeprom["delta"]["params"][key] = float(value)
 
-    def _gcode_M420(self, data):
+    def _gcode_M420(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M420"))
             return
@@ -1047,7 +1016,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("SZ", data).items():
                 self._virtual_eeprom.eeprom["auto_level"]["params"][key] = float(value)
 
-    def _gcode_M900(self, data):
+    def _gcode_M900(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M900"))
             return
@@ -1059,7 +1028,7 @@ class VirtualPrinter(object):
                     value
                 )
 
-    def _gcode_M205(self, data):
+    def _gcode_M205(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M205"))
             return
@@ -1069,7 +1038,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("BSTXYZEJ", data).items():
                 self._virtual_eeprom.eeprom["advanced"]["params"][key] = float(value)
 
-    def _gcode_M145(self, data):
+    def _gcode_M145(self, data: str) -> None:
         # M145 is a bit special, since it refers to 2 sets of values under the same params
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M145"))
@@ -1096,7 +1065,7 @@ class VirtualPrinter(object):
                         key
                     ] = float(value)
 
-    def _gcode_M301(self, data):
+    def _gcode_M301(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M301"))
             return
@@ -1106,7 +1075,7 @@ class VirtualPrinter(object):
             for key, value in self._parse_eeprom_params("PID", data).items():
                 self._virtual_eeprom.eeprom["pid"]["params"][key] = float(value)
 
-    def _gcode_M304(self, data):
+    def _gcode_M304(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M304"))
             return
@@ -1145,7 +1114,7 @@ class VirtualPrinter(object):
         return lines
 
     @staticmethod
-    def _parse_eeprom_params(letters, line):
+    def _parse_eeprom_params(letters: str, line: str) -> dict:
         # letters provided in a string (eg "XYZ") and line (eg. M92 X20 Y20 Z20)
         # are parsed into a dict
         params = list(letters)
@@ -1175,8 +1144,7 @@ class VirtualPrinter(object):
     ##~~ further helpers
 
     # noinspection PyMethodMayBeStatic
-    def _calculate_checksum(self, line):
-        # type: (bytes) -> int
+    def _calculate_checksum(self, line: bytes) -> int:
         checksum = 0
         for c in bytearray(line):
             checksum ^= c
@@ -1188,8 +1156,9 @@ class VirtualPrinter(object):
         self._killed = True
         self._send("echo:EMERGENCY SHUTDOWN DETECTED. KILLED.")
 
-    def _triggerResend(self, expected=None, actual=None, checksum=None):
-        # type: (int, int, int) -> None
+    def _triggerResend(
+        self, expected: int = None, actual: int = None, checksum: int = None
+    ) -> None:
         with self._incoming_lock:
             if expected is None:
                 expected = self.lastN + 1
@@ -1211,8 +1180,7 @@ class VirtualPrinter(object):
 
             request_resend()
 
-    def _debugTrigger(self, data):
-        # type: (str) -> None
+    def _debugTrigger(self, data: str) -> None:
         if data == "" or data == "help" or data == "?":
             usage = """
             OctoPrint Virtual Printer debug commands
@@ -1262,6 +1230,9 @@ class VirtualPrinter(object):
             resend_ratio <int:percentage>
             | Sets the resend ratio to the given percentage, simulating noisy lines.
             | Set to 0 to disable noise simulation.
+            toggle_klipper_connection
+            | Toggles the Klipper connection state. If disabled, the printer will
+            | respond to all commands with "!! Lost communication with MCU 'mcu'"
 
             # Reply Timing / Sleeping
 
@@ -1292,7 +1263,7 @@ class VirtualPrinter(object):
             | Unsets the busy loop.
             """
             for line in usage.split("\n"):
-                self._send("echo: {}".format(line.strip()))
+                self._send(f"echo: {line.strip()}")
         elif data == "action_pause":
             self._send("// action:pause")
         elif data == "action_resume":
@@ -1301,6 +1272,8 @@ class VirtualPrinter(object):
             self._send("// action:disconnect")
         elif data == "dont_answer":
             self._dont_answer = True
+        elif data == "toggle_klipper_connection":
+            self._broken_klipper_connection = not self._broken_klipper_connection
         elif data == "trigger_resend_lineno":
             self._prepared_errors.append(
                 lambda cur, last, ln: self._triggerResend(expected=last, actual=last + 1)
@@ -1362,9 +1335,7 @@ class VirtualPrinter(object):
 
                 if sleep_match is not None:
                     interval = int(sleep_match.group(1))
-                    self._send(
-                        "// sleeping for {interval} seconds".format(interval=interval)
-                    )
+                    self._send(f"// sleeping for {interval} seconds")
                     self._debug_sleep = interval
                 elif sleep_after_match is not None:
                     command = sleep_after_match.group(1)
@@ -1433,15 +1404,16 @@ class VirtualPrinter(object):
             self._send(item)
         self._send("End file list")
 
-    def _mappedSdList(self):
-        # type: () -> collections.OrderedDict
+    def _mappedSdList(self) -> collections.OrderedDict:
         result = collections.OrderedDict()
-        for entry in scandir(self._virtualSd):
+        for entry in os.scandir(self._virtualSd):
             if not entry.is_file():
                 continue
             dosname = get_dos_filename(
                 entry.name, existing_filenames=list(result.keys())
             ).lower()
+            if entry.name.startswith("."):
+                dosname = "." + dosname
             result[dosname] = {
                 "name": entry.name,
                 "path": entry.path,
@@ -1450,8 +1422,7 @@ class VirtualPrinter(object):
             }
         return result
 
-    def _selectSdFile(self, filename, check_already_open=False):
-        # type: (str, bool) -> None
+    def _selectSdFile(self, filename: str, check_already_open: bool = False) -> None:
         if filename.startswith("/"):
             filename = filename[1:]
 
@@ -1499,8 +1470,7 @@ class VirtualPrinter(object):
         else:
             self._send("Not SD printing")
 
-    def _generatePositionOutput(self):
-        # type: () -> str
+    def _generatePositionOutput(self) -> str:
         m114FormatString = self._settings.get(["m114FormatString"])
         e = {index: value for index, value in enumerate(self._lastE)}
         e["current"] = self._lastE[self.currentExtruder]
@@ -1522,8 +1492,7 @@ class VirtualPrinter(object):
         )
         return output
 
-    def _generateTemperatureOutput(self):
-        # type: () -> str
+    def _generateTemperatureOutput(self) -> str:
         if self._settings.get_boolean(["repetierStyleTargetTemperature"]):
             template = self._settings.get(["m105NoTargetFormatString"])
         else:
@@ -1546,7 +1515,7 @@ class VirtualPrinter(object):
                     ["smoothieTemperatureReporting"]
                 ):
                     continue
-                temps["T{}".format(i)] = (self.temp[i], self.targetTemp[i])
+                temps[f"T{i}"] = (self.temp[i], self.targetTemp[i])
 
             if self._settings.get_boolean(["hasBed"]):
                 temps["B"] = (self.bedTemp, self.bedTargetTemp)
@@ -1583,11 +1552,12 @@ class VirtualPrinter(object):
         if includeOk:
             ok = self._ok()
             if ok:
-                output = "{} {}".format(ok, output)
+                output = f"{ok} {output}"
         self._send(output)
 
-    def _parseHotendCommand(self, line, wait=False, support_r=False):
-        # type: (str, bool, bool) -> None
+    def _parseHotendCommand(
+        self, line: str, wait: bool = False, support_r: bool = False
+    ) -> None:
         only_wait_if_higher = True
         tool = 0
         toolMatch = re.search(r"T([0-9]+)", line)
@@ -1612,8 +1582,7 @@ class VirtualPrinter(object):
         if self._settings.get_boolean(["repetierStyleTargetTemperature"]):
             self._send("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
 
-    def _parseBedCommand(self, line, wait=False, support_r=False):
-        # type: (str, bool, bool) -> None
+    def _parseBedCommand(self, line: str, wait: bool = False, support_r: bool = False):
         if not self._settings.get_boolean(["hasBed"]):
             return
 
@@ -1651,8 +1620,7 @@ class VirtualPrinter(object):
         if wait:
             self._waitForHeatup("chamber", only_wait_if_higher)
 
-    def _performMove(self, line):
-        # type: (str) -> None
+    def _performMove(self, line: str) -> None:
         matchX = re.search(r"X(-?[0-9.]+)", line)
         matchY = re.search(r"Y(-?[0-9.]+)", line)
         matchZ = re.search(r"Z(-?[0-9.]+)", line)
@@ -1753,8 +1721,7 @@ class VirtualPrinter(object):
             else:
                 time.sleep(duration)
 
-    def _setPosition(self, line):
-        # type: (str) -> None
+    def _setPosition(self, line: str) -> None:
         matchX = re.search(r"X(-?[0-9.]+)", line)
         matchY = re.search(r"Y(-?[0-9.]+)", line)
         matchZ = re.search(r"Z(-?[0-9.]+)", line)
@@ -1812,8 +1779,7 @@ class VirtualPrinter(object):
             if e:
                 self._lastE = 0
 
-    def _writeSdFile(self, filename):
-        # type: (str) -> None
+    def _writeSdFile(self, filename: str) -> None:
         filename = filename
         if filename.startswith("/"):
             filename = filename[1:]
@@ -1826,7 +1792,7 @@ class VirtualPrinter(object):
 
         handle = None
         try:
-            handle = io.open(file, "wt", encoding="utf-8")
+            handle = open(file, "wt", encoding="utf-8")
         except Exception:
             self._send("error writing to file")
         self._writingToSdHandle = handle
@@ -1848,7 +1814,7 @@ class VirtualPrinter(object):
     def _sdPrintingWorker(self):
         self._selectedSdFilePos = 0
         try:
-            with io.open(self._selectedSdFile, "rt", encoding="utf-8") as f:
+            with open(self._selectedSdFile, encoding="utf-8") as f:
                 for line in iter(f.readline, ""):
                     if self._killed or not self._sdPrinting:
                         break
@@ -1894,11 +1860,10 @@ class VirtualPrinter(object):
             self._sdPrinting = False
             self._sdPrinter = None
 
-    def _waitForHeatup(self, heater, only_wait_if_higher):
-        # type: (str, bool) -> None
+    def _waitForHeatup(self, heater: str, only_wait_if_higher: bool) -> None:
         delta = 1
         delay = 1
-        last_busy = monotonic_time()
+        last_busy = time.monotonic()
 
         self._heatingUp = True
         try:
@@ -1926,9 +1891,9 @@ class VirtualPrinter(object):
             while not self._killed and self._heatingUp and test():
                 self._simulateTemps(delta=delta)
                 self._send(output())
-                if self._sendBusy and monotonic_time() - last_busy >= self._busyInterval:
+                if self._sendBusy and time.monotonic() - last_busy >= self._busyInterval:
                     self._send("echo:busy: processing")
-                    last_busy = monotonic_time()
+                    last_busy = time.monotonic()
                 time.sleep(delay)
         except AttributeError:
             if self.outgoing is not None:
@@ -1936,8 +1901,7 @@ class VirtualPrinter(object):
         finally:
             self._heatingUp = False
 
-    def _deleteSdFile(self, filename):
-        # type: (str) -> None
+    def _deleteSdFile(self, filename: str) -> None:
         if filename.startswith("/"):
             filename = filename[1:]
         files = self._mappedSdList()
@@ -1950,8 +1914,8 @@ class VirtualPrinter(object):
             os.remove(file["path"])
 
     def _simulateTemps(self, delta=0.5):
-        timeDiff = self.lastTempAt - monotonic_time()
-        self.lastTempAt = monotonic_time()
+        timeDiff = self.lastTempAt - time.monotonic()
+        self.lastTempAt = time.monotonic()
 
         def simulate(actual, target, ambient):
             if target > 0:
@@ -2010,7 +1974,7 @@ class VirtualPrinter(object):
 
         def loop():
             while self._busy:
-                self._send("echo:busy {}".format(self._busy))
+                self._send(f"echo:busy {self._busy}")
                 time.sleep(self._busyInterval)
             self._sendOk()
 
@@ -2024,18 +1988,17 @@ class VirtualPrinter(object):
 
     def _showPrompt(self, text, choices):
         self._hidePrompt()
-        self._send("//action:prompt_begin {}".format(text))
+        self._send(f"//action:prompt_begin {text}")
         for choice in choices:
-            self._send("//action:prompt_button {}".format(choice))
+            self._send(f"//action:prompt_button {choice}")
         self._send("//action:prompt_show")
 
     def _hidePrompt(self):
         self._send("//action:prompt_end")
 
-    def write(self, data):
-        # type: (bytes) -> int
+    def write(self, data: bytes) -> int:
         data = to_bytes(data, errors="replace")
-        u_data = to_unicode(data, errors="replace")
+        u_data = to_str(data, errors="replace")
 
         if self._debug_awol:
             return len(data)
@@ -2051,7 +2014,7 @@ class VirtualPrinter(object):
                 return 0
 
             if b"M112" in data and self._supportM112:
-                self._seriallog.info("<<< {}".format(u_data))
+                self._seriallog.info(f"<<< {u_data}")
                 self._kill()
                 return len(data)
 
@@ -2059,7 +2022,7 @@ class VirtualPrinter(object):
                 written = self.incoming.put(
                     data, timeout=self._write_timeout, partial=True
                 )
-                self._seriallog.info("<<< {}".format(u_data))
+                self._seriallog.info(f"<<< {u_data}")
                 return written
             except queue.Full:
                 self._logger.info(
@@ -2067,8 +2030,7 @@ class VirtualPrinter(object):
                 )
                 raise SerialTimeoutException()
 
-    def readline(self):
-        # type: () -> bytes
+    def readline(self) -> bytes:
         if self._debug_awol:
             time.sleep(self._read_timeout)
             return b""
@@ -2097,8 +2059,8 @@ class VirtualPrinter(object):
 
         try:
             # fetch a line from the queue, wait no longer than timeout
-            line = to_unicode(self.outgoing.get(timeout=timeout), errors="replace")
-            self._seriallog.info(">>> {}".format(line.strip()))
+            line = to_str(self.outgoing.get(timeout=timeout), errors="replace")
+            self._seriallog.info(f">>> {line.strip()}")
             self.outgoing.task_done()
             return to_bytes(line)
         except queue.Empty:
@@ -2123,8 +2085,7 @@ class VirtualPrinter(object):
         if self.outgoing is not None:
             self._send("wait")
 
-    def _send(self, line):
-        # type: (str) -> None
+    def _send(self, line: str) -> None:
         if self.outgoing is not None:
             self.outgoing.put(line)
 
@@ -2139,8 +2100,7 @@ class VirtualPrinter(object):
             ok, lastN=self.lastN, buffer=self.buffered.maxsize - self.buffered.qsize()
         )
 
-    def _error(self, error, *args, **kwargs):
-        # type: (str, Any, Any) -> str
+    def _error(self, error: str, *args, **kwargs) -> str:
         return "Error: {}".format(self._errors.get(error).format(*args, **kwargs))
 
 
@@ -2153,14 +2113,14 @@ class VirtualEEPROM:
     def _initialise_eeprom(self):
         if os.path.exists(self._eeprom_file_path):
             # file exists, read it
-            with io.open(self._eeprom_file_path, "rt", encoding="utf-8") as eeprom_file:
+            with open(self._eeprom_file_path, encoding="utf-8") as eeprom_file:
                 data = json.load(eeprom_file)
             return data
         else:
             # no eeprom file, make new one with defaults
             data = self.get_default_settings()
-            with io.open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
-                eeprom_file.write(to_unicode(json.dumps(data)))
+            with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+                eeprom_file.write(to_str(json.dumps(data)))
             return data
 
     @staticmethod
@@ -2270,15 +2230,15 @@ class VirtualEEPROM:
 
     def save_settings(self):
         # M500 behind-the-scenes
-        with io.open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
-            eeprom_file.write(to_unicode(json.dumps(self._eeprom)))
+        with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+            eeprom_file.write(to_str(json.dumps(self._eeprom)))
 
     def read_settings(self):
         # M501 - if the file has disappeared, then recreate it
         if not os.path.exists(self._eeprom_file_path):
             self.load_defaults()
             self.save_settings()
-        with io.open(self._eeprom_file_path, "rt") as eeprom_file:
+        with open(self._eeprom_file_path) as eeprom_file:
             self._eeprom = json.load(eeprom_file)
 
     def load_defaults(self):
@@ -2319,9 +2279,9 @@ class CharCountingQueue(queue.Queue):
             elif timeout < 0:
                 raise ValueError("'timeout' must be a positive number")
             else:
-                endtime = monotonic_time() + timeout
+                endtime = time.monotonic() + timeout
                 while not self._will_it_fit(item):
-                    remaining = endtime - monotonic_time()
+                    remaining = endtime - time.monotonic()
                     if remaining <= 0:
                         raise queue.Full
                     self.not_full.wait(remaining)

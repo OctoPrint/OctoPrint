@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -10,7 +7,6 @@ import re
 
 from flask import abort, jsonify, request
 from flask_login import current_user
-from past.builtins import basestring
 
 import octoprint.plugin
 import octoprint.util
@@ -150,6 +146,7 @@ def getSettings():
             "keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
             "pollWatched": s.getBoolean(["feature", "pollWatched"]),
             "modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"]),
+            "rememberFileFolder": s.getBoolean(["feature", "rememberFileFolder"]),
             "printStartConfirmation": s.getBoolean(["feature", "printStartConfirmation"]),
             "printCancelConfirmation": s.getBoolean(
                 ["feature", "printCancelConfirmation"]
@@ -263,6 +260,8 @@ def getSettings():
             "capExtendedM20": s.getBoolean(["serial", "capabilities", "extended_m20"]),
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
+            "ignoreEmptyPorts": s.getBoolean(["serial", "ignoreEmptyPorts"]),
+            "encoding": s.get(["serial", "encoding"]),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -470,9 +469,9 @@ def _saveSettings(data):
             for folder in FOLDER_TYPES:
                 future[folder] = s.getBaseFolder(folder)
                 if folder in folders:
-                    future[folder] = data["folder"][folder]
+                    future[folder] = folders[folder]
 
-            for folder in data["folder"]:
+            for folder in folders:
                 if folder not in FOLDER_TYPES:
                     continue
                 for other_folder in FOLDER_TYPES:
@@ -636,6 +635,11 @@ def _saveSettings(data):
         if "modelSizeDetection" in data["feature"]:
             s.setBoolean(
                 ["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"]
+            )
+        if "rememberFileFolder" in data["feature"]:
+            s.setBoolean(
+                ["feature", "rememberFileFolder"],
+                data["feature"]["rememberFileFolder"],
             )
         if "printStartConfirmation" in data["feature"]:
             s.setBoolean(
@@ -956,6 +960,13 @@ def _saveSettings(data):
             )
         if "resendRatioStart" in data["serial"]:
             s.setInt(["serial", "resendRatioStart"], data["serial"]["resendRatioStart"])
+        if "ignoreEmptyPorts" in data["serial"]:
+            s.setBoolean(
+                ["serial", "ignoreEmptyPorts"], data["serial"]["ignoreEmptyPorts"]
+            )
+
+        if "encoding" in data["serial"]:
+            s.set(["serial", "encoding"], data["serial"]["encoding"])
 
         oldLog = s.getBoolean(["serial", "log"])
         if "log" in data["serial"]:
@@ -1014,7 +1025,7 @@ def _saveSettings(data):
             for name, script in data["scripts"]["gcode"].items():
                 if name == "snippets":
                     continue
-                if not isinstance(script, basestring):
+                if not isinstance(script, str):
                     continue
                 s.saveScript(
                     "gcode", name, script.replace("\r\n", "\n").replace("\r", "\n")
@@ -1122,7 +1133,7 @@ def _saveSettings(data):
                     plugin.on_settings_save(data["plugins"][plugin_id])
                 except TypeError:
                     logger.warning(
-                        "Could not save settings for plugin {name} ({version}) since it called super(...)".format(
+                        "Could not save settings for plugin {name} ({version}). It may have called super(...)".format(
                             name=plugin._plugin_name, version=plugin._plugin_version
                         )
                     )
@@ -1133,7 +1144,8 @@ def _saveSettings(data):
                         "Please contact the plugin's author and ask to update the plugin to use a direct call like"
                     )
                     logger.warning(
-                        "octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead."
+                        "octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead.",
+                        exc_info=True,
                     )
                 except Exception:
                     logger.exception(

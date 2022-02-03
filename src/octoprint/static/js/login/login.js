@@ -37,8 +37,14 @@ $(function () {
                 window.location.href = REDIRECT_URL;
             })
             .fail(function () {
-                usernameElement.val("");
+                usernameElement.val(USER_ID);
                 passwordElement.val("");
+
+                if (USER_ID) {
+                    passwordElement.focus();
+                } else {
+                    usernameElement.focus();
+                }
 
                 overlayElement.removeClass("in");
                 errorElement.addClass("in");

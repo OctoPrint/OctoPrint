@@ -108,7 +108,7 @@
     <p>{{ _('Restore settings & files from an uploaded backup archive.') }}</p>
 
     {% set plugin_backup_upload_form_id='settings-backup-upload' %}
-    {% include "snippets/plugin/backup/backup_plugin_upload_form.jinja2" %}
+    {% include "snippets/backup_plugin_upload_form.jinja2" %}
 </div>
 
 <div data-bind="visible: !restoreSupported()">

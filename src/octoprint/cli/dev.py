@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -9,8 +6,6 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import click
 
 click.disable_unicode_literals_warning = True
-
-from past.builtins import basestring
 
 
 class OctoPrintDevelCommands(click.MultiCommand):
@@ -38,9 +33,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
             return log
 
         self.command_caller = CommandlineCaller()
-        self.command_caller.on_log_call = log_util(
-            lambda x: click.echo(">> {}".format(x))
-        )
+        self.command_caller.on_log_call = log_util(lambda x: click.echo(f">> {x}"))
         self.command_caller.on_log_stdout = log_util(click.echo)
         self.command_caller.on_log_stderr = log_util(partial(click.echo, err=True))
 
@@ -58,7 +51,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
     def _get_commands(self):
         result = {}
         for group in self.groups:
-            for command in self._get_commands_from_prefix_methods("{}_".format(group)):
+            for command in self._get_commands_from_prefix_methods(f"{group}_"):
                 result[group + self.sep + command.name] = command
         return result
 
@@ -125,7 +118,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
                     if key in options:
                         val = options[key]
                     else:
-                        if not isinstance(raw, basestring):
+                        if not isinstance(raw, str):
                             raw = str(raw)
                         val = env.from_string(raw).render(cookiecutter=cookiecutter_dict)
 
@@ -257,12 +250,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
         return command
 
 
-@click.group()
-def dev_commands():
-    pass
-
-
-@dev_commands.group(name="dev", cls=OctoPrintDevelCommands)
-def dev():
+@click.group(cls=OctoPrintDevelCommands)
+def cli():
     """Additional commands for development tasks."""
     pass

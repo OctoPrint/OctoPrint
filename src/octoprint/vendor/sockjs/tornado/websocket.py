@@ -4,10 +4,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import tornado
 from tornado import escape, gen, websocket
 
-try:
-    from urllib.parse import urlparse # py3
-except ImportError:
-    from urlparse import urlparse # py2
+from urllib.parse import urlparse
 
 
 class SockJSWebSocketHandler(websocket.WebSocketHandler):

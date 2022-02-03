@@ -11,15 +11,15 @@
     var bulkDownloadUrl = "downloads/timelapses";
 
     var timelapseUrl = function (filename) {
-        return url + "/" + filename;
+        return url + "/" + OctoPrintClient.escapePath(filename);
     };
 
     var timelapseDownloadUrl = function (filename) {
-        return downloadUrl + "/" + filename;
+        return downloadUrl + "/" + OctoPrintClient.escapePath(filename);
     };
 
     var unrenderedTimelapseUrl = function (name) {
-        return url + "/unrendered/" + name;
+        return url + "/unrendered/" + OctoPrintClient.escapePath(name);
     };
 
     var OctoPrintTimelapseClient = function (base) {
