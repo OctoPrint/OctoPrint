@@ -20,7 +20,7 @@ _instance = None
 def systemcommands():
     global _instance
     if _instance is None:
-            _instance = SystemCommands()
+        _instance = SystemCommands()
     return _instance
 
 
@@ -30,29 +30,31 @@ class SystemCommands:
     SYSTEM_RESTART_COMMAND = "systemRestartCommand"
     SYSTEM_SHUTDOWN_COMMAND = "systemShutdownCommand"
 
-    def __call(self, command):
+    def _execute(self, cmd):
+        command = settings().get(["server", "commands", cmd])
+
         if not command:
-            return
+            return False
 
         try:
             sarge.run(
                 command,
                 close_fds=CLOSE_FDS,
-                stdout=sarge.Capture(),
-                stderr=sarge.Capture(),
                 shell=True,
+                async_=True,
             )
+
+            return True
         except Exception:
             logging.getLogger(__name__).exception("Error while executing system command")
 
-    def __getcmd(self, cmd):
-        return settings().get(["server", "commands", cmd])
+        return False
 
     def server_restart(self):
-        self.__call(self.__getcmd(self.SERVER_RESTART_COMMAND))
+        return self._execute(self.SERVER_RESTART_COMMAND)
 
     def system_restart(self):
-        self.__call(self.__getcmd(self.SYSTEM_RESTART_COMMAND))
+        return self._execute(self.SYSTEM_RESTART_COMMAND)
 
     def system_shutdown(self):
-        self.__call(self.__getcmd(self.SYSTEM_SHUTDOWN_COMMAND))
+        return self._execute(self.SYSTEM_SHUTDOWN_COMMAND)
