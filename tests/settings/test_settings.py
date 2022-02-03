@@ -469,7 +469,7 @@ class TestSettings(unittest.TestCase):
 
             settings.set(["server", "port"], 5000)
 
-            self.assertNotIn("port", settings._config["server"])
+            self.assertNotIn("server", settings._config)
             self.assertEqual(5000, settings.get(["server", "port"]))
 
     def test_set_none(self):
