@@ -168,6 +168,7 @@ default_settings = {
         "resendRatioThreshold": 10,
         "resendRatioStart": 100,
         "ignoreEmptyPorts": False,
+        "encoding": "ascii",
         # command specific flags
         "triggerOkForM29": True,
     },

@@ -113,15 +113,16 @@ Groups will be as follows:
 """
 
 regex_temp = re.compile(
-    r"(?P<tool>B|C|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?"
+    r"(?P<sensor>B|C|T(?P<toolnum>\d*)|([\w]+)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?"
     % (regex_float_pattern, regex_float_pattern)
 )
 """Regex matching temperature entries in line.
 
 Groups will be as follows:
 
-  * ``tool``: whole tool designator, incl. optional ``toolnum`` (str)
-  * ``toolnum``: tool number, if provided (int)
+  * ``sensor``: whole sensor designator, incl. optional ``toolnum``, e.g. "T1", "B",
+    "C" or anything custom (str)
+  * ``toolnum``: tool number, if provided, only for T0, T1, etc (int)
   * ``actual``: actual temperature (float)
   * ``target``: target temperature, if provided (float)
 """
@@ -769,6 +770,9 @@ class MachineCom:
         self._abort_heatup_on_cancel = settings().getBoolean(
             ["serial", "abortHeatupOnCancel"]
         )
+
+        # serial encoding
+        self._serial_encoding = settings().get(["serial", "encoding"])
 
         # print job
         self._currentFile = None
@@ -3714,23 +3718,30 @@ class MachineCom:
             if settings().getBoolean(["serial", "exclusive"]):
                 serial_port_args["exclusive"] = True
 
-            serial_obj = serial.Serial(**serial_port_args)
-            serial_obj.port = str(p)
+            try:
+                serial_obj = serial.Serial(**serial_port_args)
+                serial_obj.port = str(p)
 
-            use_parity_workaround = settings().get(["serial", "useParityWorkaround"])
-            needs_parity_workaround = get_os() == "linux" and os.path.exists(
-                "/etc/debian_version"
-            )  # See #673
+                use_parity_workaround = settings().get(["serial", "useParityWorkaround"])
+                needs_parity_workaround = get_os() == "linux" and os.path.exists(
+                    "/etc/debian_version"
+                )  # See #673
 
-            if use_parity_workaround == "always" or (
-                needs_parity_workaround and use_parity_workaround == "detect"
-            ):
-                serial_obj.parity = serial.PARITY_ODD
+                if use_parity_workaround == "always" or (
+                    needs_parity_workaround and use_parity_workaround == "detect"
+                ):
+                    serial_obj.parity = serial.PARITY_ODD
+                    serial_obj.open()
+                    serial_obj.close()
+                    serial_obj.parity = serial.PARITY_NONE
+
                 serial_obj.open()
-                serial_obj.close()
-                serial_obj.parity = serial.PARITY_NONE
 
-            serial_obj.open()
+            except serial.SerialException:
+                self._logger.info(
+                    f"Failed to connect: Port {p} is busy or does not exist"
+                )
+                return None
 
             # Set close_exec flag on serial handle, see #3212
             if hasattr(serial_obj, "fd"):
@@ -4216,7 +4227,7 @@ class MachineCom:
                 # handled it.
                 return False
 
-            cmd = self._lastLines[-self._resendDelta].decode("ascii")
+            cmd = self._lastLines[-self._resendDelta].decode(self._serial_encoding)
             result = self._enqueue_for_sending(cmd, linenumber=lineNumber, resend=True)
 
             self._resendDelta -= 1
@@ -4453,7 +4464,9 @@ class MachineCom:
                         # line number predetermined - this only happens for resends, so we'll use the number and
                         # send directly without any processing (since that already took place on the first sending!)
                         self._use_up_clear(gcode)
-                        self._do_send_with_checksum(command.encode("ascii"), linenumber)
+                        self._do_send_with_checksum(
+                            command.encode(self._serial_encoding), linenumber
+                        )
 
                     else:
                         if not processed:
@@ -4760,7 +4773,7 @@ class MachineCom:
         )
 
     def _do_send(self, command, gcode=None):
-        command_to_send = command.encode("ascii", errors="replace")
+        command_to_send = command.encode(self._serial_encoding, errors="replace")
         if self._needs_checksum(gcode):
             self._do_increment_and_send_with_checksum(command_to_send)
         else:
@@ -4774,11 +4787,15 @@ class MachineCom:
             self._do_send_with_checksum(cmd, linenumber)
 
     def _do_send_with_checksum(self, command, linenumber):
-        command_to_send = b"N" + str(linenumber).encode("ascii") + b" " + command
+        command_to_send = (
+            b"N" + str(linenumber).encode(self._serial_encoding) + b" " + command
+        )
         checksum = 0
         for c in bytearray(command_to_send):
             checksum ^= c
-        command_to_send = command_to_send + b"*" + str(checksum).encode("ascii")
+        command_to_send = (
+            command_to_send + b"*" + str(checksum).encode(self._serial_encoding)
+        )
         self._do_send_without_checksum(command_to_send)
 
     def _do_send_without_checksum(self, cmd, log=True):
@@ -4786,7 +4803,7 @@ class MachineCom:
             return
 
         if log:
-            self._log("Send: " + cmd.decode("ascii"))
+            self._log("Send: " + cmd.decode(self._serial_encoding))
 
         cmd += b"\n"
         written = 0
@@ -5254,7 +5271,9 @@ class MachineCom:
         for tool in range(
             self._printerProfileManager.get_current_or_default()["extruder"]["count"]
         ):
-            self._do_increment_and_send_with_checksum(f"M104 T{tool} S0".encode("ascii"))
+            self._do_increment_and_send_with_checksum(
+                f"M104 T{tool} S0".encode(self._serial_encoding)
+            )
         if self._printerProfileManager.get_current_or_default()["heatedBed"]:
             self._do_increment_and_send_with_checksum(b"M140 S0")
 
@@ -6194,27 +6213,27 @@ def parse_temperature_line(line, current):
     """
 
     result = {}
-    maxToolNum = 0
+    max_tool_num = 0
     for match in re.finditer(regex_temp, line):
         values = match.groupdict()
-        tool = values["tool"]
+        sensor = values["sensor"]
         toolnum = values.get("toolnum", None)
-        toolNumber = int(toolnum) if toolnum is not None and len(toolnum) else None
-        if toolNumber and toolNumber > maxToolNum:
-            maxToolNum = toolNumber
+        tool_number = int(toolnum) if toolnum is not None and len(toolnum) else None
+        if tool_number and tool_number > max_tool_num:
+            max_tool_num = tool_number
 
         try:
-            actual = float(match.group(3))
+            actual = float(values["actual"])
             target = None
-            if match.group(4) and match.group(5):
-                target = float(match.group(5))
+            if values["target"]:
+                target = float(values["target"])
 
-            result[tool] = (actual, target)
+            result[sensor] = (actual, target)
         except ValueError:
             # catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
             pass
 
-    return max(maxToolNum, current), canonicalize_temperatures(result, current)
+    return max(max_tool_num, current), canonicalize_temperatures(result, current)
 
 
 def parse_firmware_line(line):
