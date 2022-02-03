@@ -64,7 +64,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._targetTemp = None
         self._targetBedTemp = None
         self._targetChamberTemp = None
-        
+
         self._temps = DataHistory(
             cutoff=settings().getInt(["temperature", "cutoff"]) * 60
         )
@@ -722,7 +722,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         return self._comm.getFilePosition()
 
-    def addMarking(self, type):
+    def add_marking(self, type):
         self._markings.append(
             {
                 "type": type,
@@ -1618,7 +1618,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event(print_job_user=user, action_user=user)
         if payload:
             eventManager().fire(Events.PRINT_STARTED, payload)
-            self.addMarking("print")
+            self.add_marking("print")
             self._logger_job.info(
                 "Print job started - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -1642,7 +1642,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event()
         if payload:
             payload["time"] = self._comm.getPrintTime()
-            self.addMarking("done")
+            self.add_marking("done")
             self._updateProgressData(
                 completion=1.0,
                 filepos=payload["size"],
@@ -1719,7 +1719,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             payload["time"] = self._comm.getPrintTime()
 
             eventManager().fire(Events.PRINT_CANCELLED, payload)
-            self.addMarking("cancel")
+            self.add_marking("cancel")
             self._logger_job.info(
                 "Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -1771,7 +1771,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     payload.get("user"),
                 )
             )
-            self.addMarking("pause")
+            self.add_marking("pause")
             if not suppress_script:
                 self.script(
                     "afterPrintPaused",
@@ -1784,7 +1784,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event(action_user=user)
         if payload:
             eventManager().fire(Events.PRINT_RESUMED, payload)
-            self.addMarking("resume")
+            self.add_marking("resume")
             self._logger_job.info(
                 "Print job resumed - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
