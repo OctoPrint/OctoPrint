@@ -484,7 +484,7 @@ class Server:
             "json_decoder": jsonDecoder,
             "connectivity_checker": connectivityChecker,
             "environment_detector": self._environment_detector,
-            "systemcommands": systemcommands(),
+            "system_commands": systemcommands(),
         }
 
         # ~~ setup access control
