@@ -7,7 +7,7 @@ import logging
 import os
 
 import click
-import zipstream
+from zipstream.ng import ZIP_DEFLATED, ZipStream
 
 from octoprint.cli import init_platform_for_cli, standard_options
 
@@ -65,39 +65,28 @@ def get_systeminfo(
 def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None):
     from octoprint.util import to_bytes
 
-    terminaltxt = None
+    try:
+        z = ZipStream(compress_type=ZIP_DEFLATED)
+    except RuntimeError:
+        # no zlib support
+        z = ZipStream(sized=True)
+
     if printer and printer.is_operational():
         firmware_info = printer.firmware_info
         if firmware_info:
+            # add firmware to systeminfo so it's included in systeminfo.txt
             systeminfo["printer.firmware"] = firmware_info["name"]
 
+        # Add printer log, if available
         if hasattr(printer, "_log"):
-            terminaltxt = list(printer._log)
-
-    try:
-        import zlib  # noqa: F401
-
-        compress_type = zipstream.ZIP_DEFLATED
-    except ImportError:
-        # no zlib, no compression
-        compress_type = zipstream.ZIP_STORED
-
-    z = zipstream.ZipFile()
+            z.add(to_bytes("\n".join(printer._log)), arcname="terminal.txt")
 
     # add systeminfo
     systeminfotxt = []
     for k in sorted(systeminfo.keys()):
         systeminfotxt.append("{}: {}".format(k, systeminfo[k]))
 
-    z.writestr(
-        "systeminfo.txt", to_bytes("\n".join(systeminfotxt)), compress_type=compress_type
-    )
-
-    # add terminal.txt, if available
-    if terminaltxt:
-        z.writestr(
-            "terminal.txt", to_bytes("\n".join(terminaltxt)), compress_type=compress_type
-        )
+    z.add(to_bytes("\n".join(systeminfotxt)), arcname="systeminfo.txt")
 
     # add logs
     for log in (
@@ -106,7 +95,7 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None
     ):
         logpath = os.path.join(logbase, log)
         if os.path.exists(logpath):
-            z.write(logpath, arcname=log, compress_type=compress_type)
+            z.add_path(logpath, arcname=log)
 
     # add additional bundle contents from bundled plugins
     if plugin_manager:
@@ -126,10 +115,10 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None
                     if isinstance(content, str):
                         # log path
                         if os.path.exists(content) and os.access(content, os.R_OK):
-                            z.write(content, arcname=log, compress_type=compress_type)
+                            z.add_path(content, arcname=log)
                     elif callable(content):
                         # content generating callable
-                        z.writestr(log, to_bytes(content()), compress_type=compress_type)
+                        z.add(to_bytes(content()), arcname=log)
             except Exception:
                 logging.getLogger(__name__).exception(
                     "Error while retrieving additional bundle contents for plugin {}".format(
@@ -193,8 +182,7 @@ def systeminfo_command(ctx, path, **kwargs):
             )
             try:
                 with open(zipfilename, "wb") as f:
-                    for data in z:
-                        f.write(data)
+                    f.writelines(z)
             except Exception as e:
                 click.echo(str(e), err=True)
                 click.echo(f"There was an error writing to {zipfilename}.", err=True)

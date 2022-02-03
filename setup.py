@@ -64,7 +64,7 @@ core_deps = [
     "websocket-client>=1.2.1,<2",
     "wrapt>=1.13.3,<1.14",
     "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
-    "zipstream-new>=1.1.8,<1.2",
+    "zipstream-ng>=1.3.4,<2.0.0",
 ]
 vendored_deps = [
     "blinker>=1.4,<2",  # dependency of flask_principal

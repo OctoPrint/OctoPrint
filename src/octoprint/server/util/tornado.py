@@ -20,6 +20,7 @@ import tornado.iostream
 import tornado.tcpserver
 import tornado.util
 import tornado.web
+from zipstream.ng import ZIP_DEFLATED, ZipStream
 
 import octoprint.util
 
@@ -1446,32 +1447,28 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
                 f'attachment; filename="{self.get_attachment_name()}"',
             )
 
-        import zipstream
-
-        compress_type = zipstream.ZIP_STORED
+        z = ZipStream(sized=True)
         if self._compress:
             try:
-                import zlib  # noqa: F401
-
-                compress_type = zipstream.ZIP_DEFLATED
-            except ImportError:
-                # no zlib, no compression
+                z = ZipStream(compress_type=ZIP_DEFLATED)
+            except RuntimeError:
+                # no zlib support
                 pass
 
-        z = zipstream.ZipFile()
         for f in self.normalize_files(files):
             # noinspection PyCompatibility
             name = f.get("name")
             path = f.get("path")
-            iter = f.get("iter")
-            content = f.get("content")
+            data = f.get("iter") or f.get("content")
 
             if path:
-                z.write(path, arcname=name, compress_type=compress_type)
-            elif iter and name:
-                z.write_iter(name, iter, compress_type=compress_type)
-            elif content and name:
-                z.writestr(name, content, compress_type=compress_type)
+                z.add_path(path, arcname=name)
+            elif data and name:
+                z.add(data, arcname=name)
+
+        if z.sized:
+            self.set_header("Content-Length", len(z))
+        self.set_header("Last-Modified", z.last_modified)
 
         for chunk in z:
             try:
@@ -1595,6 +1592,9 @@ class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
             "Content-Disposition",
             f'attachment; filename="{get_systeminfo_bundle_name()}"',
         )
+        if z.sized:
+            self.set_header("Content-Length", len(z))
+        self.set_header("Last-Modified", z.last_modified)
 
         for chunk in z:
             try:
