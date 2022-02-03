@@ -17,15 +17,10 @@ from octoprint.util.platform import CLOSE_FDS
 _instance = None
 
 
-def systemcommands(init=False):
+def systemcommands():
     global _instance
-    if _instance is not None:
-        if init:
-            raise ValueError("SystemCommands is already initialized")
-    else:
-        if init:
+    if _instance is None:
             _instance = SystemCommands()
-
     return _instance
 
 
