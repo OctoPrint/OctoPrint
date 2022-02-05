@@ -14,6 +14,7 @@ $(function () {
         self.popup = undefined;
 
         self.updateInProgress = false;
+        self.cancelInProgress = false;
         self.waitingForRestart = false;
         self.restartTimeout = undefined;
 
@@ -77,7 +78,6 @@ $(function () {
                 !self.updateInProgress &&
                 self.environmentSupported() &&
                 self.storageSufficient() &&
-                /*!self.printerState.isPrinting() &&*/
                 !self.throttled()
             );
         });
@@ -92,6 +92,14 @@ $(function () {
             );
         });
 
+        self.enableCancelQueued = ko.pureComputed(function () {
+            return self.queuedUpdates().length > 0;
+        });
+
+        self.updateQueued = function (item) {
+            return self.queuedUpdates().indexOf(item.key) > -1;
+        };
+
         self.enable_configSave = ko.pureComputed(function () {
             return (
                 self.config_checkType() === "github_release" ||
@@ -99,6 +107,10 @@ $(function () {
                 (self.config_checkType() === "git_commit" && !self.error_checkoutFolder())
             );
         });
+
+        // Hack to remove automatically added Cancel button
+        // See https://github.com/sciactive/pnotify/issues/141
+        PNotify.prototype.options.confirm.buttons = [];
 
         self.configurationDialog = undefined;
         self._updateClicked = false;
@@ -153,6 +165,16 @@ $(function () {
         self.availableAndPossibleAndEnabled = ko.pureComputed(function () {
             return _.filter(self.versions.items(), function (info) {
                 return info.updateAvailable && info.updatePossible && !info.disabled;
+            });
+        });
+
+        self.availableAndQueued = ko.pureComputed(function () {
+            return _.filter(self.versions.items(), function (info) {
+                return (
+                    info.updateAvailable &&
+                    info.updatePossible &&
+                    self.queuedUpdates.indexOf(info.key) > -1
+                );
             });
         });
 
@@ -248,6 +270,12 @@ $(function () {
                 },
                 sending: true
             });
+        };
+
+        self.onBeforeBinding = function () {
+            self.queuedUpdates(
+                self.settings.settings.plugins.softwareupdate.queued_updates
+            );
         };
 
         self._copyConfig = function () {
@@ -724,14 +752,17 @@ $(function () {
                 .update(items, force)
                 .done(function (data) {
                     if (data.hasOwnProperty("queued")) {
+                        self.queuedUpdates(data.queued);
                         var message =
                             "<p>" +
                             gettext(
                                 "The install of the following plugin update(s) has been queued for after current print is finished or cancelled."
                             ) +
-                            "</p><pre>" +
-                            _.escape(data.queued.join("\n")) +
-                            "</pre>";
+                            '</p><p><div class="row-fluid"><ul class="fa-ul"><li>' +
+                            _.map(self.availableAndQueued(), function (info) {
+                                return info.displayName;
+                            }).join("</li><li>") +
+                            "</li></ul></div></p>";
                         self._showPopup({
                             title: gettext("Updates Queued"),
                             text: message,
@@ -741,7 +772,6 @@ $(function () {
                             }
                         });
                         self.updateInProgress = false;
-                        self.queuedUpdates(data.queued);
                         return;
                     }
                     self.currentlyBeingUpdated = data.checks;
@@ -844,7 +874,12 @@ $(function () {
                 ) +
                 "</p>" +
                 "<p>" +
-                gettext("Updates will be queued if currently printing.") +
+                gettext("Updates will be queued if currently printing,") +
+                " <strong>" +
+                gettext(
+                    "however this action may disrupt any ongoing print if OctoPrint is not currently controlling it."
+                ) +
+                "</strong>" +
                 "</p>" +
                 "<p>" +
                 gettext("Are you sure you want to proceed?") +
@@ -972,6 +1007,24 @@ $(function () {
                     self.reloadOverlay.show();
                 }
             }
+        };
+
+        self.cancelQueued = function (items) {
+            self.cancelInProgress = true;
+            OctoPrint.plugins.softwareupdate
+                .cancelQueued({
+                    targets: _.map(items, function (info) {
+                        return info.key;
+                    })
+                })
+                .done(function (data) {
+                    self.queuedUpdates(data["queued"]);
+                    self.cancelInProgress = false;
+                })
+                .fail(function (response) {
+                    console.log(response);
+                    self.cancelInProgress = false;
+                });
         };
 
         self.onDataUpdaterPluginMessage = function (plugin, data) {
@@ -1172,24 +1225,179 @@ $(function () {
                     self.performCheck();
                     break;
                 }
-            }
+                case "queued_updates":
+                    {
+                        if (messageData.hasOwnProperty("targets")) {
+                            self.queuedUpdates(messageData.targets);
+                            var queuedUpdatesPopupOptions = {
+                                title: title,
+                                text: text,
+                                type: "notice",
+                                icon: false,
+                                hide: false,
+                                buttons: {
+                                    closer: false,
+                                    sticker: false
+                                },
+                                history: {
+                                    history: false
+                                }
+                            };
 
-            if (options !== undefined) {
-                self._showPopup(options);
-            }
-        };
+                            if (messageData.print_failed) {
+                                queuedUpdatesPopupOptions.title = gettext(
+                                    "Queued Updates Paused"
+                                );
+                                queuedUpdatesPopupOptions.text =
+                                    '<div class="row-fluid"><ul><li>' +
+                                    _.map(self.availableAndQueued(), function (info) {
+                                        return info.displayName;
+                                    }).join("</li><li>") +
+                                    "</li></ul></div>";
+                                queuedUpdatesPopupOptions.confirm = {
+                                    confirm: true,
+                                    buttons: [
+                                        {
+                                            text: gettext("Continue Updates"),
+                                            addClass: "btn-block btn-primary",
+                                            promptTrigger: true,
+                                            click: function (notice, value) {
+                                                notice.remove();
+                                                notice
+                                                    .get()
+                                                    .trigger("pnotify.continue", [
+                                                        notice,
+                                                        value
+                                                    ]);
+                                            }
+                                        },
+                                        {
+                                            text: gettext("Cancel Updates"),
+                                            addClass: "btn-block btn-danger",
+                                            promptTrigger: true,
+                                            click: function (notice, value) {
+                                                notice.remove();
+                                                notice
+                                                    .get()
+                                                    .trigger("pnotify.cancel", [
+                                                        notice,
+                                                        value
+                                                    ]);
+                                            }
+                                        }
+                                    ]
+                                };
+                            } else if (
+                                messageData.hasOwnProperty("timeout_value") &&
+                                messageData.timeout_value > 0
+                            ) {
+                                var progress_percent = Math.floor(
+                                    (messageData.timeout_value / 60) * 100
+                                );
+                                var progress_class =
+                                    progress_percent < 25
+                                        ? "progress-danger"
+                                        : progress_percent > 75
+                                        ? "progress-success"
+                                        : "progress-warning";
+                                queuedUpdatesPopupOptions.title = gettext(
+                                    "Starting Queued Updates"
+                                );
+                                queuedUpdatesPopupOptions.text =
+                                    '<div class="row-fluid"><ul><li>' +
+                                    _.map(self.availableAndQueued(), function (info) {
+                                        return info.displayName;
+                                    }).join("</li><li>") +
+                                    '</li></ul></div><div class="progress progress-softwareupdate ' +
+                                    progress_class +
+                                    '"><div class="bar">' +
+                                    gettext("Updating in ") +
+                                    " " +
+                                    messageData.timeout_value +
+                                    " " +
+                                    gettext("secs") +
+                                    '</div><div class="progress-text" style="clip-path: inset(0 0 0 ' +
+                                    progress_percent +
+                                    "%);-webkit-clip-path: inset(0 0 0 " +
+                                    progress_percent +
+                                    '%);">' +
+                                    gettext("Updating in ") +
+                                    " " +
+                                    messageData.timeout_value +
+                                    " " +
+                                    gettext("secs") +
+                                    "</div></div>";
+                                queuedUpdatesPopupOptions.confirm = {
+                                    confirm: true,
+                                    buttons: [
+                                        {
+                                            text: "Cancel Updates",
+                                            addClass: "btn-block btn-danger",
+                                            promptTrigger: true,
+                                            click: function (notice, value) {
+                                                notice.remove();
+                                                notice
+                                                    .get()
+                                                    .trigger("pnotify.cancel", [
+                                                        notice,
+                                                        value
+                                                    ]);
+                                            }
+                                        }
+                                    ]
+                                };
+                            } else {
+                                if (typeof self.queuedUpdatesPopup !== "undefined") {
+                                    self.queuedUpdatesPopup.remove();
+                                    self.queuedUpdatesPopup = undefined;
+                                }
+                                return;
+                            }
 
-        self._forcedStdoutPatterns = [
-            "You are using pip version .*?, however version .*? is available.",
-            "You should consider upgrading via the '.*?' command.",
-            "'.*?' does not exist -- can't clean it"
-        ];
-        self._forcedStdoutLine = new RegExp(self._forcedStdoutPatterns.join("|"));
-        self._preprocessLine = function (line) {
-            if (line.stream === "stderr" && line.line.match(self._forcedStdoutLine)) {
-                line.stream = "stdout";
+                            if (typeof self.queuedUpdatesPopup !== "undefined") {
+                                self.queuedUpdatesPopup.update(queuedUpdatesPopupOptions);
+                            } else {
+                                self.queuedUpdatesPopup = new PNotify(
+                                    queuedUpdatesPopupOptions
+                                );
+                                self.queuedUpdatesPopup
+                                    .get()
+                                    .on("pnotify.cancel", function () {
+                                        self.queuedUpdatesPopup = undefined;
+                                        self.cancelQueued();
+                                    });
+                                self.queuedUpdatesPopup
+                                    .get()
+                                    .on("pnotify.continue", function () {
+                                        self.queuedUpdatesPopup = undefined;
+                                        self.performUpdate(true, self.queuedUpdates());
+                                        self._updateClicked = false;
+                                    });
+                            }
+                        } else {
+                            if (typeof self.queuedUpdatesPopup !== "undefined") {
+                                self.queuedUpdatesPopup.remove();
+                                self.queuedUpdatesPopup = undefined;
+                            }
+                        }
+                    }
+
+                    if (options !== undefined) {
+                        self._showPopup(options);
+                    }
             }
-            return line;
+            self._forcedStdoutPatterns = [
+                "You are using pip version .*?, however version .*? is available.",
+                "You should consider upgrading via the '.*?' command.",
+                "'.*?' does not exist -- can't clean it"
+            ];
+            self._forcedStdoutLine = new RegExp(self._forcedStdoutPatterns.join("|"));
+            self._preprocessLine = function (line) {
+                if (line.stream === "stderr" && line.line.match(self._forcedStdoutLine)) {
+                    line.stream = "stdout";
+                }
+                return line;
+            };
         };
     }
 

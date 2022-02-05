@@ -77,6 +77,7 @@
     <div class="tab-pane active" id="settings_plugin_softwareupdate_updates">
         <div class="pull-right">
             <div class="btn-group">
+                <button class="btn btn-primary" data-bind="click: function() { $root.cancelQueued(); }, enable: enableCancelQueued, css: {disabled: !enableCancelQueued}" title="{{ _('Cancel all queued updates') | edq }}"><i class="fas fa-spinner fa-spin" data-bind="visible: cancelInProgress"></i> {{ _('Cancel Queued') }}</button>
                 <button class="btn btn-primary" data-bind="click: function() { $root.updateEnabled(); }, enable: enableUpdateEnabled, css: {disabled: !enableUpdateEnabled}" title="{{ _('Update all enabled') | edq }}"><i class="fas fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
                 <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
                 <ul class="dropdown-menu">
@@ -104,8 +105,8 @@
                         <span data-bind="visible: !compatible" class="muted"><i class="fas fa-power-off" title="{{ _('Not compatible') }}|edq"></i></span>
                     </td>
                     <td class="settings_plugin_softwareupdate_column_information">
-                        <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible && $root.queuedUpdates().indexOf(key) < 0" class="btn btn-primary pull-right">{{ _('Update') }}</a>
-                        <a href="javascript:void(0)" data-bind="visible: $root.queuedUpdates().indexOf(key) > -1" class="btn btn-primary pull-right">{{ _('Queued') }}</a>
+                        <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible && !$root.updateQueued($data)" class="btn btn-primary pull-right">{{ _('Update') }}</a>
+                        <a href="javascript:void(0)" data-bind="click: function() { $root.cancelQueued([$data]) }, visible: $root.updateQueued($data)" class="btn btn-primary pull-right">{{ _('Cancel Queued') }}</a>
                         <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fas fa-exclamation-triangle" data-bind="css: {'fa-unlink': !online && information && information.needs_online, 'fa-exclamation-triangle': !(!online && information && information.needs_online)}, attr: {title: $root.iconTitleForEntry($data)}"></i></span><br>
                         <small data-bind="visible: compatible" class="muted">
                             <span data-bind="visible: releaseChannels && releaseChannels.available" class="line">{{ _('Release Channel:') }} <select class="settings_plugin_softwareupdate_release_channel" data-bind="visible: releaseChannels && releaseChannels.available, value: releaseChannels.current, options: releaseChannels.available, optionsText: 'name', optionsValue: 'channel'"></select> <a href="https://faq.octoprint.org/using-release-channels" target="_blank"><i class="fas fa-question-circle"></i></a></span>

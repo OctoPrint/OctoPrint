@@ -33,7 +33,7 @@ from octoprint.server.util.flask import (
     no_firstrun_access,
     with_revalidation_checking,
 )
-from octoprint.util import dict_merge, get_formatted_size, to_unicode, yaml
+from octoprint.util import RepeatedTimer, dict_merge, get_formatted_size, to_unicode, yaml
 from octoprint.util.pip import create_pip_caller
 from octoprint.util.version import (
     get_comparable_version,
@@ -103,7 +103,8 @@ class SoftwareUpdatePlugin(
         self._update_log_path = None
         self._update_log_dirty = False
         self._update_log_mutex = threading.RLock()
-        self._queued_updates = None
+        self._queued_updates = {"targets": [], "force": True}
+        self._queued_updates_abort_timer = None
 
         self._environment_supported = True
         self._environment_versions = {}
@@ -778,6 +779,8 @@ class SoftwareUpdatePlugin(
 
         data["pip_enable_check"] = "pip" in checks
 
+        data["queued_updates"] = self._queued_updates.get("targets", [])
+
         return data
 
     def get_settings_restricted_paths(self):
@@ -1331,12 +1334,14 @@ class SoftwareUpdatePlugin(
         if self._printer.is_printing() or self._printer.is_paused():
             # do not update while a print job is running
             # store targets to be run later on print done event
-            if self._queued_updates is not None:
-                self._queued_updates["targets"] = list(
-                    set(self._queued_updates["targets"] + targets)
-                )
-            else:
-                self._queued_updates = {"targets": targets, "force": force}
+            self._queued_updates["targets"] = list(
+                set(self._queued_updates["targets"] + targets)
+            )
+            self._send_client_message(
+                "queued_updates",
+                {"targets": self._queued_updates["targets"]},
+            )
+
             return (
                 flask.jsonify({"queued": self._queued_updates.get("targets", False)}),
                 202,
@@ -1344,6 +1349,52 @@ class SoftwareUpdatePlugin(
 
         to_be_checked, checks = self.perform_updates(targets=targets, force=force)
         return flask.jsonify({"order": to_be_checked, "checks": checks})
+
+    @octoprint.plugin.BlueprintPlugin.route("/cancel_queued", methods=["POST"])
+    @no_firstrun_access
+    @Permissions.PLUGIN_SOFTWAREUPDATE_UPDATE.require(403)
+    def cancel_queued(self):
+        if "application/json" not in flask.request.headers["Content-Type"]:
+            flask.abort(400, description="Expected content-type JSON")
+
+        json_data = flask.request.get_json(silent=True)
+        if json_data is None:
+            flask.abort(400, description="Invalid JSON")
+
+        if "targets" in json_data:
+            targets = list(
+                map(
+                    lambda x: x.strip(),
+                    json_data.get("targets", []),
+                )
+            )
+        else:
+            targets = []
+
+        if len(targets) > 0:
+            if self._queued_updates:
+                for target in targets:
+                    if target in self._queued_updates.get("targets", []):
+                        self._queued_updates["targets"].remove(target)
+        else:
+            self._queued_updates["targets"] = []
+
+        if (
+            len(self._queued_updates.get("targets", [])) == 0
+            and self._queued_updates_abort_timer is not None
+        ):
+            self._queued_updates_abort_timer.cancel()
+            self._queued_updates_abort_timer = None
+
+        self._send_client_message(
+            "queued_updates",
+            {"targets": self._queued_updates["targets"]},
+        )
+
+        return (
+            flask.jsonify({"queued": self._queued_updates.get("targets", False)}),
+            202,
+        )
 
     @octoprint.plugin.BlueprintPlugin.route("/configure", methods=["POST"])
     @no_firstrun_access
@@ -1503,16 +1554,14 @@ class SoftwareUpdatePlugin(
     def on_event(self, event, payload):
         from octoprint.events import Events
 
-        if (
-            event == Events.PRINT_DONE
-            or event == Events.PRINT_FAILED
-            and self._queued_updates is not None
-        ):
-            self.perform_updates(
-                targets=self._queued_updates["targets"],
-                force=self._queued_updates["force"],
+        if event == Events.PRINT_DONE and self._queued_updates is not None:
+            self._queued_updates_timer_start()
+
+        if event == Events.PRINT_FAILED and self._queued_updates is not None:
+            self._send_client_message(
+                "queued_updates",
+                {"print_failed": True, "targets": self._queued_updates["targets"]},
             )
-            self._queued_updates = None
 
         if (
             event != Events.CONNECTIVITY_CHANGED
@@ -1864,6 +1913,40 @@ class SoftwareUpdatePlugin(
         }
         self._version_cache_dirty = True
         return information, update_available, update_possible, online, error
+
+    def _queued_updates_timer_start(self):
+        if self._queued_updates_abort_timer is not None:
+            return
+
+        self._logger.debug("Starting queued updates timer.")
+
+        self._timeout_value = 60
+        self._queued_updates_abort_timer = RepeatedTimer(
+            1, self._queued_updates_timer_task
+        )
+        self._queued_updates_abort_timer.start()
+
+    def _queued_updates_timer_task(self):
+        if self._timeout_value is None:
+            return
+
+        self._timeout_value -= 1
+        if self._timeout_value <= 0:
+            if self._queued_updates_abort_timer is not None:
+                self._queued_updates_abort_timer.cancel()
+                self._queued_updates_abort_timer = None
+                self.perform_updates(
+                    targets=self._queued_updates["targets"],
+                    force=self._queued_updates["force"],
+                )
+                self._queued_updates = {"targets": [], "force": True}
+        self._send_client_message(
+            "queued_updates",
+            {
+                "targets": self._queued_updates["targets"],
+                "timeout_value": self._timeout_value,
+            },
+        )
 
     def perform_updates(self, force=False, **kwargs):
         """
