@@ -270,6 +270,14 @@ class OctoPrintDevelCommands(click.MultiCommand):
                     "source": "static/less/octoprint.less",
                     "output": "static/css/octoprint.css",
                 },
+                "login": {
+                    "source": "static/less/login.less",
+                    "output": "static/css/login.css",
+                },
+                "recovery": {
+                    "source": "static/less/recovery.less",
+                    "output": "static/css/recovery.css",
+                },
                 "plugin_announcements": {
                     "source": "plugins/announcements/static/less/announcments.less",
                     "output": "plugins/announcements/static/css/announcements.css",
