@@ -255,11 +255,11 @@ class OctoPrintDevelCommands(click.MultiCommand):
             "-f",
             "files",
             multiple=True,
-            help="Specify files to build, for a list use --list",
+            help="Specify files to build, for a list of options use --list",
         )
         @click.option("--all", "all_files", is_flag=True, help="Build all less files")
         @click.option(
-            "--list", "list_files", is_flag=True, help="List all available files"
+            "--list", "list_files", is_flag=True, help="List all available files and exit"
         )
         def command(files, all_files, list_files):
             import os.path
@@ -323,9 +323,9 @@ class OctoPrintDevelCommands(click.MultiCommand):
 
             if not files:
                 click.echo(
-                    "No files specified, building all. Use `--file <file>` to specify individual files."
+                    "No files specified. Use `--file <file>` to specify individual files, or `--all` to build all."
                 )
-                files = available_files.keys()
+                sys.exit(1)
 
             # Check that lessc is installed
             less = shutil.which("lessc")
