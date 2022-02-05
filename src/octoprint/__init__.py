@@ -68,6 +68,7 @@ def init_platform(
     verbosity=0,
     uncaught_logger=None,
     uncaught_handler=None,
+    disable_color=True,
     safe_mode=False,
     ignore_blacklist=False,
     after_preinit_logging=None,
@@ -109,6 +110,7 @@ def init_platform(
             verbosity=verbosity,
             uncaught_logger=uncaught_logger,
             uncaught_handler=uncaught_handler,
+            disable_color=disable_color,
         )
     except Exception as ex:
         raise FatalStartupError("Could not initialize logging", cause=ex)
@@ -252,6 +254,7 @@ def init_logging(
     verbosity=0,
     uncaught_logger=None,
     uncaught_handler=None,
+    disable_color=True,
 ):
     """Sets up logging."""
 
@@ -272,7 +275,6 @@ def init_logging(
                     "reset": True,
                     "log_colors": {
                         "DEBUG": "cyan",
-                        "INFO": "white",
                         "WARNING": "yellow",
                         "ERROR": "red",
                         "CRITICAL": "bold_red",
@@ -286,7 +288,7 @@ def init_logging(
                 "console": {
                     "class": "octoprint.logging.handlers.OctoPrintStreamHandler",
                     "level": "DEBUG",
-                    "formatter": "colored",
+                    "formatter": "simple" if disable_color else "colored",
                     "stream": "ext://sys.stdout",
                 },
                 "file": {

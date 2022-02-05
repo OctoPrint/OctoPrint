@@ -62,6 +62,7 @@ def init_platform_for_cli(ctx):
         get_ctx_obj_option(ctx, "configfile", None),
         overlays=get_ctx_obj_option(ctx, "overlays", None),
         safe_mode=True,
+        disable_color=get_ctx_obj_option(ctx, "no_color", False),
     )
 
     (
@@ -235,6 +236,15 @@ def standard_options(hidden=False):
             is_eager=True,
             expose_value=False,
             help="Enable safe mode; disables all third party plugins.",
+        ),
+        factory(
+            "--no-color",
+            "no_color",
+            is_flag=True,
+            callback=set_ctx_obj_option,
+            is_eager=True,
+            expose_value=False,
+            help="Disable colored console output",
         ),
     ]
 

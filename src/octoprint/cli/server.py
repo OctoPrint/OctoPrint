@@ -31,6 +31,7 @@ def run_server(
     ignore_blacklist,
     octoprint_daemon=None,
     overlays=None,
+    disable_color=False,
 ):
     """Initializes the environment and starts up the server."""
 
@@ -120,6 +121,7 @@ def run_server(
             ignore_blacklist=ignore_blacklist,
             after_safe_mode=log_startup,
             after_environment_detector=log_register_rollover,
+            disable_color=disable_color,
         )
         (
             settings,
@@ -307,6 +309,7 @@ def serve_command(ctx, **kwargs):
     safe_mode = "flag" if get_value("safe_mode") else None
     ignore_blacklist = get_value("ignore_blacklist")
     overlays = get_value("overlays")
+    no_color = bool(get_value("no_color"))
 
     if v4 and not host:
         host = "0.0.0.0"
@@ -324,6 +327,7 @@ def serve_command(ctx, **kwargs):
         safe_mode,
         ignore_blacklist,
         overlays=overlays,
+        disable_color=no_color,
     )
 
 
