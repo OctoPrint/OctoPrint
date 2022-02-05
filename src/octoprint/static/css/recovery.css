@@ -1,1 +1,1 @@
-#workdialog .pre-output span{display:block}#workdialog .pre-output .message{font-weight:700}#workdialog .pre-output .error{font-weight:700;color:#900}#workdialog .pre-output .stdout{color:#333}#workdialog .pre-output .stderr{color:#900}#workdialog .pre-output .call{color:#009}
+#workdialog .pre-output span{display:block}#workdialog .pre-output .message{font-weight:bold}#workdialog .pre-output .error{font-weight:bold;color:#990000}#workdialog .pre-output .stdout{color:#333333}#workdialog .pre-output .stderr{color:#990000}#workdialog .pre-output .call{color:#000099}
