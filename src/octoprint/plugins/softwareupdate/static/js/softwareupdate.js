@@ -1227,6 +1227,9 @@ $(function () {
                 }
                 case "queued_updates":
                     {
+                        if (!self.updateAccess()) {
+                            return;
+                        }
                         if (messageData.hasOwnProperty("targets")) {
                             self.queuedUpdates(messageData.targets);
                             var queuedUpdatesPopupOptions = {
@@ -1292,7 +1295,8 @@ $(function () {
                                 };
                             } else if (
                                 messageData.hasOwnProperty("timeout_value") &&
-                                messageData.timeout_value > 0
+                                messageData.timeout_value > 0 &&
+                                messageData.targets.length > 0
                             ) {
                                 var progress_percent = Math.floor(
                                     (messageData.timeout_value / 60) * 100
