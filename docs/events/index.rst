@@ -265,6 +265,26 @@ FileRemoved
 
   .. versionadded:: 1.3.3
 
+FileMoved
+   A file has been moved from one location to an other location.
+
+   Payload:
+     * ``storage``: the storage's identifier
+     * ``source_path``: the source file's path within its storage location
+     * ``source_name``: the source file's name
+     * ``source_type``: the source file's type, a list of the path within the type hierarchy, e.g. ``["machinecode", "gcode"]`` or
+       ``["model", "stl"]``
+     * ``destination_path``: the source file's path within its storage location
+     * ``destination_name``: the source file's name
+     * ``destination_type``: the source file's type, a list of the path within the type hierarchy, e.g. ``["machinecode", "gcode"]`` or
+       ``["model", "stl"]``
+
+   .. note::
+
+      A moved file still triggers first a ``FileRemoved`` for its original path and then ``FileAdded`` event for the new one. After that a ```UpdatedFiles``` event is also fired.
+
+  .. versionadded:: X.X.X TODO enter release version number
+
 FolderAdded
    A folder has been added to a storage.
 
@@ -293,6 +313,22 @@ FolderRemoved
       A moved folder first triggers ``FolderRemoved`` for its original path and then ``FolderAdded`` for the new one.
 
   .. versionadded:: 1.3.3
+
+FolderMoved
+   A folder has been moved from one location to an other location.
+
+   Payload:
+     * ``storage``: the storage's identifier
+     * ``source_path``: the source folder's path within its storage location
+     * ``source_name``: the source folder's name
+     * ``destination_path``: the source folder's path within its storage location
+     * ``destination_name``: the source folder's name
+
+   .. note::
+
+      A moved folder still triggers first a ``FolderRemoved`` for its original path and then ``FolderAdded`` event for the new one. After that a ```UpdatedFiles``` event is also fired.
+
+  .. versionadded:: X.X.X TODO enter release version number
 
 UpdatedFiles
    A file list was modified.

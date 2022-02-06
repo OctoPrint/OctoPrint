@@ -829,6 +829,19 @@ class FileManager:
                 "type": get_file_type(dst_name),
             },
         )
+        eventManager().fire(
+            Events.FILE_MOVED,
+            {
+                "storage": destination,
+                "source_path": source_path_in_storage,
+                "source_name": source_name,
+                "source_type": get_file_type(source_name),
+                "destination_path": dst_path_in_storage,
+                "destination_name": dst_name,
+                "destination_type": get_file_type(dst_name),
+            },
+        )
+
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
     def add_folder(self, destination, path, ignore_existing=True, display=None):
@@ -884,12 +897,25 @@ class FileManager:
 
         eventManager().fire(
             Events.FOLDER_REMOVED,
-            {"storage": destination, "path": source_path_in_storage, "name": source_name},
+            {"storage": destination,
+             "path": source_path_in_storage,
+             "name": source_name},
         )
         eventManager().fire(
             Events.FOLDER_ADDED,
-            {"storage": destination, "path": dst_path_in_storage, "name": dst_name},
+            {"storage": destination,
+             "path": dst_path_in_storage,
+             "name": dst_name},
         )
+        eventManager().fire(
+            Events.FOLDER_MOVED,
+            {"storage": destination,
+             "source_path": source_path_in_storage,
+             "source_name": source_name,
+             "destination_path": dst_path_in_storage,
+             "destination_name": dst_name},
+        )
+
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
     def has_analysis(self, destination, path):
