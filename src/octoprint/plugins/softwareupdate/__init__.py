@@ -1554,10 +1554,16 @@ class SoftwareUpdatePlugin(
     def on_event(self, event, payload):
         from octoprint.events import Events
 
-        if event == Events.PRINT_DONE and self._queued_updates is not None:
+        if (
+            event == Events.PRINT_DONE
+            and len(self._queued_updates.get("targets", [])) > 0
+        ):
             self._queued_updates_timer_start()
 
-        if event == Events.PRINT_FAILED and self._queued_updates is not None:
+        if (
+            event == Events.PRINT_FAILED
+            and len(self._queued_updates.get("targets", [])) > 0
+        ):
             self._send_client_message(
                 "queued_updates",
                 {"print_failed": True, "targets": self._queued_updates["targets"]},
