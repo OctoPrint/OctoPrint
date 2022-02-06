@@ -274,7 +274,7 @@ $(function () {
 
         self.onBeforeBinding = function () {
             self.queuedUpdates(
-                self.settings.settings.plugins.softwareupdate.queued_updates
+                self.settings.settings.plugins.softwareupdate.queued_updates()
             );
         };
 
@@ -758,7 +758,7 @@ $(function () {
                             gettext(
                                 "The install of the following plugin update(s) has been queued for after current print is finished or cancelled."
                             ) +
-                            '</p><p><div class="row-fluid"><ul class="fa-ul"><li>' +
+                            '</p><p><div class="row-fluid"><ul><li>' +
                             _.map(self.availableAndQueued(), function (info) {
                                 return info.displayName;
                             }).join("</li><li>") +
@@ -1018,7 +1018,7 @@ $(function () {
                     })
                 })
                 .done(function (data) {
-                    self.queuedUpdates(data["queued"]);
+                    self.queuedUpdates(data.queued);
                     self.cancelInProgress = false;
                 })
                 .fail(function (response) {
@@ -1244,7 +1244,10 @@ $(function () {
                                 }
                             };
 
-                            if (messageData.print_failed) {
+                            if (
+                                messageData.print_failed &&
+                                messageData.targets.length > 0
+                            ) {
                                 queuedUpdatesPopupOptions.title = gettext(
                                     "Queued Updates Paused"
                                 );
