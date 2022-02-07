@@ -60,6 +60,9 @@ def clean_ansi(line):
         >>> text = "We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here in unicode"
         >>> clean_ansi(text) # doctest: +ALLOW_BYTES
         'We hide the cursor here and then show it again here in unicode'
+        >>> test = "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.5/6.5 MB 1.1 MB/s eta 0:00:00"
+        >>> clean_ansi(text) # doctest: +ALLOW_BYTES
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.5/6.5 MB 1.1 MB/s eta 0:00:00'
     """
     if isinstance(line, unicode):
         return _ANSI_REGEX["unicode"].sub("", line)
