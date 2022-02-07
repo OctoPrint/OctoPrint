@@ -1,8 +1,6 @@
 import unittest
 from unittest import mock
 
-import _fixups
-
 import octoprint.daemon
 
 
@@ -104,7 +102,7 @@ class DaemonTest(unittest.TestCase):
     @mock.patch("sys.stdout")
     @mock.patch("sys.stderr")
     @mock.patch("os.devnull")
-    @mock.patch(_fixups.OPEN_SIGNATURE)
+    @mock.patch("builtins.open")
     @mock.patch("os.dup2")
     def test_redirect_io(
         self, mock_dup2, mock_open, mock_devnull, mock_stderr, mock_stdout, mock_stdin
@@ -402,7 +400,7 @@ class DaemonTest(unittest.TestCase):
 
         # test
         with mock.patch(
-            _fixups.OPEN_SIGNATURE,
+            "builtins.open",
             mock.mock_open(read_data=f"{pid}\n"),
             create=True,
         ) as m:
@@ -418,7 +416,7 @@ class DaemonTest(unittest.TestCase):
         handle.__enter__.side_effect = IOError()
 
         # test
-        with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
+        with mock.patch("builtins.open", mock.mock_open(), create=True) as m:
             result = self.daemon.get_pid()
 
         # assert
@@ -431,7 +429,7 @@ class DaemonTest(unittest.TestCase):
 
         # test
         with mock.patch(
-            _fixups.OPEN_SIGNATURE,
+            "builtins.open",
             mock.mock_open(read_data=f"{pid}\n"),
             create=True,
         ) as m:
@@ -446,7 +444,7 @@ class DaemonTest(unittest.TestCase):
         pid = "1234"
 
         # test
-        with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
+        with mock.patch("builtins.open", mock.mock_open(), create=True) as m:
             self.daemon.set_pid(pid)
 
         # assert
@@ -459,7 +457,7 @@ class DaemonTest(unittest.TestCase):
         pid = 1234
 
         # test
-        with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True) as m:
+        with mock.patch("builtins.open", mock.mock_open(), create=True) as m:
             self.daemon.set_pid(pid)
 
         # assert

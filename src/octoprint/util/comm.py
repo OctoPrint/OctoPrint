@@ -1378,7 +1378,6 @@ class MachineCom:
             f"script:{scriptName}",
         }
         for line in scriptLines:
-            # noinspection PyCompatibility
             if (
                 isinstance(line, tuple)
                 and len(line) == 2
@@ -4920,7 +4919,6 @@ class MachineCom:
             def convert(data):
                 result = []
                 for d in data:
-                    # noinspection PyCompatibility
                     if isinstance(d, tuple) and len(d) == 2:
                         result.append((d[0], None, d[1]))
                     elif isinstance(d, str):

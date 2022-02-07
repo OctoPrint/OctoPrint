@@ -441,7 +441,6 @@ class VirtualPrinter:
                     continue
                 elif len(self._prepared_errors):
                     prepared = self._prepared_errors.pop(0)
-                    # noinspection PyCompatibility
                     if callable(prepared):
                         prepared(linenumber, self.lastN, data)
                         continue

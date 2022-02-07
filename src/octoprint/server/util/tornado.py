@@ -1428,7 +1428,6 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
     def get_attachment_name(self):
         return self._attachment_name
 
-    # noinspection PyCompatibility
     def normalize_files(self, files):
         result = []
         for f in files:
@@ -1456,7 +1455,6 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
                 pass
 
         for f in self.normalize_files(files):
-            # noinspection PyCompatibility
             name = f.get("name")
             path = f.get("path")
             data = f.get("iter") or f.get("content")

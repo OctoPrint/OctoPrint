@@ -468,7 +468,7 @@ def get_exception_string(fmt="{type}: '{message}' @ {file}:{function}:{line}"):
 
 
 def sanitize_ascii(line):
-    if not isinstance(line, str):
+    if not isinstance(line, (str, bytes)):
         raise ValueError(
             "Expected str but got {} instead".format(
                 line.__class__.__name__ if line is not None else None
@@ -940,7 +940,7 @@ def guess_mime_type(data):
 def parse_mime_type(mime):
     import cgi
 
-    if not mime or not isinstance(mime, str):
+    if not mime or not isinstance(mime, (str, bytes)):
         raise ValueError("mime must be a non empty str")
 
     mime, params = cgi.parse_header(mime)
@@ -1699,9 +1699,7 @@ def time_this(
 
 
 def generate_api_key():
-    # noinspection PyCompatibility
     import uuid
-    from builtins import bytes
 
     return "".join("%02X" % z for z in bytes(uuid.uuid4().bytes))
 

@@ -18,8 +18,6 @@ from octoprint.util import atomic_write, deprecated, generate_api_key
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import to_bytes, yaml
 
-# noinspection PyCompatibility
-
 
 class UserManager(GroupChangeListener):
     def __init__(self, group_manager, settings=None):

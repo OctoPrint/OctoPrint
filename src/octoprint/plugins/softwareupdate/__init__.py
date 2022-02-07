@@ -12,8 +12,6 @@ import logging.handlers
 import os
 import threading
 import time
-
-# noinspection PyCompatibility
 from concurrent import futures
 
 import flask
