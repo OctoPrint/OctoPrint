@@ -20,6 +20,10 @@ class CommandlineTest(unittest.TestCase):
             "We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here",
             "We hide the cursor here and then show it again here",
         ),
+        (
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.5/6.5 MB 1.1 MB/s eta 0:00:00",
+            "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.5/6.5 MB 1.1 MB/s eta 0:00:00",
+        ),
     )
     @ddt.unpack
     def test_clean_ansi(self, input, expected):
