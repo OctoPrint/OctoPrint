@@ -2073,12 +2073,11 @@ class SlicerPlugin(OctoPrintPlugin):
         .. versionadded:: 1.3.0
         """
         import os
-        from os import scandir
 
         lms = [os.stat(profile_path).st_mtime]
         lms += [
             os.stat(entry.path).st_mtime
-            for entry in scandir(profile_path)
+            for entry in os.scandir(profile_path)
             if entry.name.endswith(".profile")
         ]
         return max(lms)

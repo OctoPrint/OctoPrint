@@ -60,14 +60,8 @@ CLOSE_FDS = True
 Default setting for close_fds parameter to Popen/sarge.run.
 
 Set ``close_fds`` on every sub process to this to ensure file handlers will be closed
-on child processes on platforms that support this (anything Python 3.7+ or anything
-but win32 in earlier Python versions).
+on child processes on platforms.
 """
-
-if sys.platform == "win32" and sys.version_info < (3, 7):
-    # close_fds=True is only supported on win32 with enabled stdout/stderr
-    # capturing starting with Python 3.7
-    CLOSE_FDS = False
 
 # current os
 

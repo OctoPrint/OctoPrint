@@ -751,9 +751,10 @@ class Server:
             )
         }
 
-        valid_timelapse = lambda path: not octoprint.util.is_hidden_path(
-            path
-        ) and octoprint.timelapse.valid_timelapse(path)
+        valid_timelapse = lambda path: not octoprint.util.is_hidden_path(path) and (
+            octoprint.timelapse.valid_timelapse(path)
+            or octoprint.timelapse.valid_timelapse_thumbnail(path)
+        )
         timelapse_path_validator = {
             "path_validation": util.tornado.path_validation_factory(
                 valid_timelapse,
@@ -1558,18 +1559,10 @@ class Server:
 
         loaders = [app.jinja_loader, app.jinja_env.prefix_loader]
         if octoprint.util.is_running_from_source():
-            from markdown import markdown
-
             root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
             allowed = ["AUTHORS.md", "SUPPORTERS.md", "THIRDPARTYLICENSES.md"]
-            files = {
-                "_data/" + name + ".html": os.path.join(root, name) for name in allowed
-            }
-            loaders.append(
-                octoprint.util.jinja.SelectedFilesWithConversionLoader(
-                    files, conversion=markdown
-                )
-            )
+            files = {"_data/" + name: os.path.join(root, name) for name in allowed}
+            loaders.append(octoprint.util.jinja.SelectedFilesWithConversionLoader(files))
 
         # TODO: Remove this in 2.0.0
         warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will soon no longer be supported."
@@ -1781,9 +1774,7 @@ class Server:
 
         blueprints = [api]
         api_endpoints = ["/api"]
-        registrators = [
-            functools.partial(app.register_blueprint, api, url_prefix="/api"),
-        ]
+        registrators = [functools.partial(app.register_blueprint, api, url_prefix="/api")]
 
         # also register any blueprints defined in BlueprintPlugins
         (
@@ -1796,10 +1787,7 @@ class Server:
         registrators += registrators_from_plugins
 
         # and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
-        (
-            blueprints_from_assets,
-            registrators_from_assets,
-        ) = self._prepare_asset_plugins()
+        (blueprints_from_assets, registrators_from_assets) = self._prepare_asset_plugins()
         blueprints += blueprints_from_assets
         registrators += registrators_from_assets
 
@@ -1979,7 +1967,6 @@ class Server:
         global assets
         global pluginManager
 
-        util.flask.fix_webassets_cache()
         util.flask.fix_webassets_filtertool()
 
         base_folder = self._settings.getBaseFolder("generated")
@@ -1989,14 +1976,21 @@ class Server:
             import errno
             import shutil
 
-            for entry in ("webassets", ".webassets-cache"):
+            for entry, recreate in (
+                ("webassets", True),
+                (".webassets-cache", False),  # no longer used, but clean up just in case
+                (".webassets-manifest.json", False),
+            ):
                 path = os.path.join(base_folder, entry)
 
                 # delete path if it exists
-                if os.path.isdir(path):
+                if os.path.exists(path):
                     try:
                         self._logger.debug("Deleting {path}...".format(**locals()))
-                        shutil.rmtree(path)
+                        if os.path.isdir(path):
+                            shutil.rmtree(path)
+                        else:
+                            os.remove(path)
                     except Exception:
                         self._logger.exception(
                             "Error while trying to delete {path}, "
@@ -2004,52 +1998,53 @@ class Server:
                         )
                         continue
 
-                # re-create path
-                self._logger.debug("Creating {path}...".format(**locals()))
-                error_text = (
-                    "Error while trying to re-create {path}, that might cause "
-                    "errors with the webassets cache".format(**locals())
-                )
-                try:
-                    os.makedirs(path)
-                except OSError as e:
-                    if e.errno == errno.EACCES:
-                        # that might be caused by the user still having the folder open somewhere, let's try again after
-                        # waiting a bit
-                        import time
+                # re-create path if necessary
+                if recreate:
+                    self._logger.debug("Creating {path}...".format(**locals()))
+                    error_text = (
+                        "Error while trying to re-create {path}, that might cause "
+                        "errors with the webassets cache".format(**locals())
+                    )
+                    try:
+                        os.makedirs(path)
+                    except OSError as e:
+                        if e.errno == errno.EACCES:
+                            # that might be caused by the user still having the folder open somewhere, let's try again after
+                            # waiting a bit
+                            import time
 
-                        for n in range(3):
-                            time.sleep(0.5)
-                            self._logger.debug(
-                                "Creating {path}: Retry #{retry} after {time}s".format(
-                                    path=path, retry=n + 1, time=(n + 1) * 0.5
-                                )
-                            )
-                            try:
-                                os.makedirs(path)
-                                break
-                            except Exception:
-                                if self._logger.isEnabledFor(logging.DEBUG):
-                                    self._logger.exception(
-                                        "Ignored error while creating "
-                                        "directory {path}".format(**locals())
+                            for n in range(3):
+                                time.sleep(0.5)
+                                self._logger.debug(
+                                    "Creating {path}: Retry #{retry} after {time}s".format(
+                                        path=path, retry=n + 1, time=(n + 1) * 0.5
                                     )
-                                pass
+                                )
+                                try:
+                                    os.makedirs(path)
+                                    break
+                                except Exception:
+                                    if self._logger.isEnabledFor(logging.DEBUG):
+                                        self._logger.exception(
+                                            "Ignored error while creating "
+                                            "directory {path}".format(**locals())
+                                        )
+                                    pass
+                            else:
+                                # this will only get executed if we never did
+                                # successfully execute makedirs above
+                                self._logger.exception(error_text)
+                                continue
                         else:
-                            # this will only get executed if we never did
-                            # successfully execute makedirs above
+                            # not an access error, so something we don't understand
+                            # went wrong -> log an error and stop
                             self._logger.exception(error_text)
                             continue
-                    else:
-                        # not an access error, so something we don't understand
+                    except Exception:
+                        # not an OSError, so something we don't understand
                         # went wrong -> log an error and stop
                         self._logger.exception(error_text)
                         continue
-                except Exception:
-                    # not an OSError, so something we don't understand
-                    # went wrong -> log an error and stop
-                    self._logger.exception(error_text)
-                    continue
 
                 self._logger.info("Reset webasset folder {path}...".format(**locals()))
 
@@ -2066,6 +2061,12 @@ class Server:
 
         assets = CustomDirectoryEnvironment(app)
         assets.debug = not self._settings.getBoolean(["devel", "webassets", "bundle"])
+
+        # we should rarely if ever regenerate the webassets in production and can wait a
+        # few seconds for regeneration in development, if it means we can get rid of
+        # a whole monkey patch and in internal use of pickle with non-tamperproof files
+        assets.cache = False
+        assets.manifest = "json:.webassets-manifest.json"
 
         UpdaterType = type(util.flask.SettingsCheckUpdater)(
             util.flask.SettingsCheckUpdater.__name__,

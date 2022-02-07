@@ -24,15 +24,15 @@ def sanitize(text, safe_chars="-_.", demoji=True):
 
     Examples:
 
-    >>> sanitize("Hello World!") # doctest: +ALLOW_UNICODE
+    >>> sanitize("Hello World!")
     'Hello-World'
-    >>> sanitize("Hello World!", safe_chars="-_. ") # doctest: +ALLOW_UNICODE
+    >>> sanitize("Hello World!", safe_chars="-_. ")
     'Hello World'
-    >>> sanitize("\u2764") # doctest: +ALLOW_UNICODE
+    >>> sanitize("\u2764")
     'red_heart'
-    >>> sanitize("\u2764\ufe00") # doctest: +ALLOW_UNICODE
+    >>> sanitize("\u2764\ufe00")
     'red_heart'
-    >>> sanitize("\u2764", demoji=False) # doctest: +ALLOW_UNICODE
+    >>> sanitize("\u2764", demoji=False)
     ''
 
     Args:

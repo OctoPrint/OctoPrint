@@ -11,10 +11,10 @@ import codecs
 import collections
 import contextlib
 import copy
-import glob
+import json
 import logging
 import os
-import pickle  # Python 3
+import pickle
 import queue
 import re
 import shutil
@@ -24,8 +24,11 @@ import threading
 import time
 import traceback
 import warnings
+import zlib
 from collections.abc import Iterable, MutableMapping, Set
 from functools import wraps
+from glob import escape as glob_escape  # noqa: F401
+from time import monotonic as monotonic_time  # noqa: F401
 from typing import Union
 
 from frozendict import frozendict
@@ -48,14 +51,14 @@ logger = logging.getLogger(__name__)
 
 def to_bytes(
     s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
-) -> Union[bytes, None]:
+) -> bytes:
     """
     Make sure ``s_or_u`` is a byte string.
 
     Arguments:
-        s_or_u (string or unicode): The value to convert
-        encoding (string): encoding to use if necessary, see :meth:`python:str.encode`
-        errors (string): error handling to use if necessary, see :meth:`python:str.encode`
+        s_or_u (str or bytes): The value to convert
+        encoding (str): encoding to use if necessary, see :meth:`python:str.encode`
+        errors (str): error handling to use if necessary, see :meth:`python:str.encode`
     Returns:
         bytes: converted bytes.
     """
@@ -73,16 +76,16 @@ def to_bytes(
 
 def to_unicode(
     s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
-) -> Union[str, None]:
+) -> str:
     """
-    Make sure ``s_or_u`` is a unicode string.
+    Make sure ``s_or_u`` is a unicode string (str).
 
     Arguments:
-        s_or_u (string or unicode): The value to convert
-        encoding (string): encoding to use if necessary, see :meth:`python:bytes.decode`
-        errors (string): error handling to use if necessary, see :meth:`python:bytes.decode`
+        s_or_u (str or bytes): The value to convert
+        encoding (str): encoding to use if necessary, see :meth:`python:bytes.decode`
+        errors (str): error handling to use if necessary, see :meth:`python:bytes.decode`
     Returns:
-        string: converted string.
+        str: converted string.
     """
     if s_or_u is None:
         return s_or_u
@@ -107,21 +110,21 @@ sv = sortable_value
 
 def pp(value):
     """
-    >>> pp(dict()) # doctest: +ALLOW_UNICODE
+    >>> pp(dict())
     'dict()'
-    >>> pp(dict(a=1, b=2, c=3)) # doctest: +ALLOW_UNICODE
+    >>> pp(dict(a=1, b=2, c=3))
     'dict(a=1, b=2, c=3)'
-    >>> pp(set()) # doctest: +ALLOW_UNICODE
+    >>> pp(set())
     'set()'
-    >>> pp({"a", "b"}) # doctest: +ALLOW_UNICODE
+    >>> pp({"a", "b"})
     "{'a', 'b'}"
-    >>> pp(["a", "b", "d", "c"]) # doctest: +ALLOW_UNICODE
+    >>> pp(["a", "b", "d", "c"])
     "['a', 'b', 'd', 'c']"
-    >>> pp(("a", "b", "d", "c")) # doctest: +ALLOW_UNICODE
+    >>> pp(("a", "b", "d", "c"))
     "('a', 'b', 'd', 'c')"
-    >>> pp("foo") # doctest: +ALLOW_UNICODE
+    >>> pp("foo")
     "'foo'"
-    >>> pp([dict(a=1, b=2), {"a", "c", "b"}, (1, 2), None, 1, True, "foo"]) # doctest: +ALLOW_UNICODE
+    >>> pp([dict(a=1, b=2), {"a", "c", "b"}, (1, 2), None, 1, True, "foo"])
     "[dict(a=1, b=2), {'a', 'b', 'c'}, (1, 2), None, 1, True, 'foo']"
     """
 
@@ -312,10 +315,10 @@ Returns:
     value: The value of the variable with the deprecation warnings in place.
 """
 
-
+# TODO rename to_unicode to to_str and deprecate to_unicode in 2.0.0
 to_str = deprecated(
-    "to_str has been renamed to to_bytes",
-    includedoc="to_str has been renamed to to_bytes",
+    "to_str has been renamed to to_bytes and in a future version will become the new to_unicode",
+    includedoc="to_str has been renamed to to_bytes and in a future version will become the new to_unicode",
     since="1.3.11",
 )(to_bytes)
 
@@ -323,6 +326,13 @@ to_native_str = deprecated(
     "to_native_str is no longer needed",
     includedoc="to_native_str is no longer needed, use to_unicode",
     since="2.0.0",
+)(to_unicode)
+
+
+to_native_str = deprecated(
+    "to_native_str is no longer needed, use to_unicode instead",
+    includedoc="to_native_str is no longer needed, use to_unicode instead",
+    since="1.8.0",
 )(to_unicode)
 
 
@@ -398,13 +408,6 @@ def get_formatted_datetime(d):
         return None
 
     return d.strftime("%Y-%m-%d %H:%M")
-
-
-monotonic_time = deprecated(
-    "monotonic_time is natively available as time.monotonic in Python 3",
-    includedoc="Replaced by :func:`time.monotonic`",
-    since="2.0.0",
-)(time.monotonic)
 
 
 def get_class(name):
@@ -994,26 +997,27 @@ def atomic_write(
 
     # Ensure we create the file in the target dir so our move is atomic. See #3719
     dir = os.path.dirname(filename)
+    kwargs = {
+        "mode": mode,
+        "prefix": prefix,
+        "suffix": suffix,
+        "dir": dir,
+        "delete": False,
+    }
+    if "b" not in mode:
+        kwargs["encoding"] = encoding
 
-    temp_config = tempfile.NamedTemporaryFile(
-        mode=mode,
-        prefix=prefix,
-        suffix=suffix,
-        delete=False,
-        dir=dir,
-        encoding=encoding if "b" not in mode else None,
-    )
+    fd = tempfile.NamedTemporaryFile(**kwargs)
     try:
         try:
-            yield temp_config
+            yield fd
         finally:
-            temp_config.close()
+            fd.close()
 
-        os.chmod(temp_config.name, permissions)
-        shutil.move(temp_config.name, filename)
+        os.chmod(fd.name, permissions)
+        shutil.move(fd.name, filename)
     finally:
-        # just in case something went wrong and the temporary file is still there, nuke it now
-        silent_remove(temp_config.name)
+        silent_remove(fd.name)
 
 
 @contextlib.contextmanager
@@ -1044,35 +1048,10 @@ def temppath(prefix=None, suffix=""):
         os.remove(temp.name)
 
 
-if hasattr(tempfile, "TemporaryDirectory"):
-    # Python 3
-    TemporaryDirectory = tempfile.TemporaryDirectory
-else:
-    # Python 2
-    class TemporaryDirectory:
-        def __init__(self, suffix="", prefix="tmp", dir=None):
-            self._path = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
-
-        @property
-        def name(self):
-            return self._path
-
-        def cleanup(self):
-            try:
-                os.remove(self._path)
-            except Exception as exc:
-                logging.getLogger(__name__).warning(
-                    f"Could not delete temporary directory {self.name}: {exc}"
-                )
-
-        def __enter__(self):
-            return self.name
-
-        def __exit__(self):
-            self.cleanup()
+TemporaryDirectory = tempfile.TemporaryDirectory
 
 
-@deprecated("Please use io.open with '-sig' encoding instead", since="1.8.0")
+@deprecated("Please use open with '-sig' encoding instead", since="1.8.0")
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
     # TODO Remove in 2.0.0
     import codecs
@@ -1154,13 +1133,6 @@ def is_hidden_path(path):
 
     # if we reach that point, the path is not hidden
     return False
-
-
-glob_escape = deprecated(
-    "glob_escape is available natively under Python 3 as glob.escape",
-    includedoc="Replaced by :func:`glob.escape`",
-    since="2.0.0",
-)(glob.escape)
 
 
 def thaw_frozendict(obj):
@@ -1741,3 +1713,54 @@ def generate_api_key():
 
 def map_boolean(value, true_text, false_text):
     return true_text if value else false_text
+
+
+def serialize(filename, data, encoding="utf-8", compressed=True):
+    """
+    Serializes data to a file
+
+    In the current implementation this uses json.dumps and - if compressed is True (the
+    default) - zlib.compress. Only data that can be serialized by json.dumps in the stock
+    configuration is supported.
+
+    This is not thread-safe, if concurrent access is required, the caller needs to ensure
+    that only one thread is writing to the file at any given time.
+
+    Arguments:
+        filename (str): The file to write to
+        data (object): The data to serialize
+        encoding (str): The encoding to use for the file
+        compressed (bool): Whether to compress the data before writing it to the file
+    """
+    serialized = json.dumps(data).encode(encoding)
+
+    if compressed:
+        serialized = zlib.compress(serialized)
+
+    with open(filename, "wb") as f:
+        f.write(serialized)
+
+
+def deserialize(filename, encoding="utf-8"):
+    """
+    Deserializes data from a file
+
+    In the current implementation this uses json.loads and - if the file is found to be
+    compressed - zlib.decompress.
+
+    Arguments:
+        filename (str): The file to deserialize from
+        encoding (str): The encoding to use for the file, defaults to utf-8
+
+    Returns:
+        The deserialized data structure
+    """
+    with open(filename, "rb") as f:
+        serialized = f.read()
+
+    try:
+        serialized = zlib.decompress(serialized)
+    except zlib.error:
+        pass
+
+    return json.loads(serialized.decode(encoding))

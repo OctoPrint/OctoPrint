@@ -51,7 +51,7 @@ def _to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 
 def _to_bytes(s_or_u, encoding="utf-8", errors="strict"):
     """Make sure ``s_or_u`` is a str."""
-    if isinstance(s_or_u, (str, bytes)):
+    if isinstance(s_or_u, str):
         return s_or_u.encode(encoding, errors=errors)
     else:
         return s_or_u

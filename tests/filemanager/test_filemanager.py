@@ -5,7 +5,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import io
 import unittest
-import unittest.mock as mock
+from unittest import mock
 
 import octoprint.filemanager
 import octoprint.filemanager.util
@@ -680,8 +680,7 @@ class FileManagerTest(unittest.TestCase):
 
         # assert that shutil was asked to copy the concatenated multistream
         self.assertEqual(2, len(mocked_shutil.call_args_list))
-        args, kwargs = mocked_shutil.call_args_list[0]
-        self.assertTrue(isinstance(args[0], io.BytesIO))
+        self.assertTrue(isinstance(mocked_shutil.call_args_list[0][0][0], io.BytesIO))
 
         # assert that the temporary file was deleted
         mocked_os.assert_called_once_with("tmp.file")

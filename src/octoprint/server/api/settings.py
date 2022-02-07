@@ -260,6 +260,7 @@ def getSettings():
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
             "ignoreEmptyPorts": s.getBoolean(["serial", "ignoreEmptyPorts"]),
+            "encoding": s.get(["serial", "encoding"]),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -946,6 +947,9 @@ def _saveSettings(data):
             s.setBoolean(
                 ["serial", "ignoreEmptyPorts"], data["serial"]["ignoreEmptyPorts"]
             )
+
+        if "encoding" in data["serial"]:
+            s.set(["serial", "encoding"], data["serial"]["encoding"])
 
         oldLog = s.getBoolean(["serial", "log"])
         if "log" in data["serial"]:

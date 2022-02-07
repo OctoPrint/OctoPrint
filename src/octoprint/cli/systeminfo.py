@@ -79,7 +79,7 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None
 
         # Add printer log, if available
         if hasattr(printer, "_log"):
-            z.add(to_bytes("\n".join(printer._log)), "terminal.txt")
+            z.add(to_bytes("\n".join(printer._log)), arcname="terminal.txt")
 
     # add systeminfo
     systeminfotxt = []
@@ -137,11 +137,11 @@ def get_systeminfo_bundle_name():
 
 
 @click.group()
-def systeminfo_commands():
+def cli():
     pass
 
 
-@systeminfo_commands.command(name="systeminfo")
+@cli.command(name="systeminfo")
 @standard_options()
 @click.argument(
     "path",

@@ -1,8 +1,6 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from os import scandir
-
 import octoprint.plugin
 from octoprint.access import ADMIN_GROUP
 from octoprint.access.permissions import Permissions
@@ -729,7 +727,7 @@ class BackupPlugin(
 
     def _get_backups(self):
         backups = []
-        for entry in scandir(self.get_plugin_data_folder()):
+        for entry in os.scandir(self.get_plugin_data_folder()):
             if is_hidden_path(entry.path):
                 continue
             if not entry.is_file():
@@ -828,7 +826,7 @@ class BackupPlugin(
             return 0
 
         total = 0
-        for entry in scandir(path):
+        for entry in os.scandir(path):
             if entry.is_dir():
                 total += cls._get_disk_size(entry.path, ignored=ignored)
             elif entry.is_file():
@@ -1015,7 +1013,7 @@ class BackupPlugin(
                         return
 
                     if os.path.isdir(source):
-                        for entry in scandir(source):
+                        for entry in os.scandir(source):
                             add_to_zip(
                                 entry.path,
                                 os.path.join(target, entry.name),
@@ -1402,7 +1400,7 @@ __plugin_disabling_discouraged__ = gettext(
     "& restore your OctoPrint settings and data."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = BackupPlugin()
 __plugin_hooks__ = {
     "octoprint.server.http.routes": __plugin_implementation__.route_hook,

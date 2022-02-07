@@ -11,17 +11,19 @@ from octoprint.util.files import sanitize_filename
 @ddt
 class FilesUtilTest(unittest.TestCase):
     @data(
-        ("some_file.gcode", "some_file.gcode"),
-        ("NUL.gcode", "NUL_.gcode"),
-        ("LPT1", "LPT1_"),
-        (".test.gcode", "test.gcode"),
-        ("..test.gcode", "test.gcode"),
-        ("file with space.gcode", "file with space.gcode"),
-        ("Wölfe 🐺.gcode", "Wölfe 🐺.gcode"),
+        ("some_file.gcode", "some_file.gcode", False),
+        ("NUL.gcode", "NUL_.gcode", False),
+        ("LPT1", "LPT1_", False),
+        (".test.gcode", "test.gcode", False),
+        ("..test.gcode", "test.gcode", False),
+        ("file with space.gcode", "file with space.gcode", False),
+        ("Wölfe 🐺.gcode", "Wölfe 🐺.gcode", False),
+        ("file with space.gcode", "file_with_space.gcode", True),
+        ("Wölfe 🐺.gcode", "Wolfe_wolf.gcode", True),
     )
     @unpack
-    def test_sanitize_filename(self, filename, expected):
-        actual = sanitize_filename(filename)
+    def test_sanitize_filename(self, filename, expected, really_universal):
+        actual = sanitize_filename(filename, really_universal=really_universal)
         self.assertEqual(actual, expected)
 
     @data("file/with/slash.gcode", "file\\with\\backslash.gcode")

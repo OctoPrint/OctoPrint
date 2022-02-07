@@ -125,7 +125,7 @@ class MultiStream(io.RawIOBase):
     """
 
     def __init__(self, *streams):
-        io.RawIOBase.__init__(self)
+        super().__init__()
         self.streams = streams
         self.current_stream = 0
 
@@ -184,7 +184,7 @@ class LineProcessorStream(io.RawIOBase):
     """
 
     def __init__(self, input_stream):
-        io.RawIOBase.__init__(self)
+        super().__init__()
         self.input_stream = io.BufferedReader(input_stream)
         self.leftover = bytearray()
 

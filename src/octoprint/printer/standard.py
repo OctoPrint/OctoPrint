@@ -64,16 +64,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._targetTemp = None
         self._targetBedTemp = None
         self._targetChamberTemp = None
+
         self._temps = TemperatureHistory(
             cutoff=settings().getInt(["temperature", "cutoff"]) * 60
         )
-        self._tempBacklog = []
-
         self._messages = deque([], 300)
-        self._messageBacklog = []
-
         self._log = deque([], 300)
-        self._logBacklog = []
 
         self._state = None
 
@@ -857,6 +853,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 if "chamber" in offsets and offsets["chamber"] is not None
                 else 0,
             }
+        if self._custom is not None:
+            for custom_key in self._custom.keys():
+                result[custom_key] = {
+                    "actual": self._custom[custom_key][0],
+                    "target": self._custom[custom_key][1],
+                }
 
         return result
 
@@ -901,7 +903,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
     def is_ready(self, *args, **kwargs):
         return (
             self.is_operational()
-            and not self.is_printing()
+            and not self._comm.isBusy()
+            # isBusy is true when paused
             and not self._comm.isStreaming()
         )
 

@@ -147,7 +147,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import copy
 import logging
 import os
-from os import scandir
 
 from octoprint.settings import settings
 from octoprint.util import (
@@ -429,7 +428,7 @@ class PrinterProfileManager:
         dates = [os.stat(self._folder).st_mtime]
         dates += [
             entry.stat().st_mtime
-            for entry in scandir(self._folder)
+            for entry in os.scandir(self._folder)
             if entry.name.endswith(".profile")
         ]
         return max(dates)
@@ -491,7 +490,7 @@ class PrinterProfileManager:
 
     def _load_all_identifiers(self):
         results = {}
-        for entry in scandir(self._folder):
+        for entry in os.scandir(self._folder):
             if is_hidden_path(entry.name) or not entry.name.endswith(".profile"):
                 continue
 

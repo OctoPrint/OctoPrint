@@ -2054,7 +2054,12 @@ class SoftwareUpdatePlugin(
                 raise exceptions.UnknownUpdateType()
 
             update_result = updater.perform_update(
-                target, populated_check, target_version, log_cb=self._log, online=online
+                target,
+                populated_check,
+                target_version,
+                log_cb=self._log,
+                online=online,
+                force=force,
             )
             target_result = ("success", update_result)
             self._logger.info(f"Update of {target} to {target_version} successful!")
@@ -2413,7 +2418,7 @@ __plugin_disabling_discouraged__ = gettext(
     "your system at risk."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 
 
 def __plugin_load__():

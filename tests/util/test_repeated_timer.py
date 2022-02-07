@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import time
 import unittest
-import unittest.mock as mock
+from unittest import mock
 
 from octoprint.util import RepeatedTimer
 

@@ -78,15 +78,10 @@ client_options = bulk_options(
 """Common options to configure an API client."""
 
 
-@click.group()
-def client_commands():
-    pass
-
-
-@client_commands.group("client", context_settings={"ignore_unknown_options": True})
+@click.group(context_settings={"ignore_unknown_options": True})
 @client_options
 @click.pass_context
-def client(ctx, apikey, host, port, httpuser, httppass, https, prefix):
+def cli(ctx, apikey, host, port, httpuser, httppass, https, prefix):
     """Basic API client."""
     try:
         settings = None
@@ -124,7 +119,7 @@ def log_response(response, status_code=True, body=True, headers=False):
         click.echo(response.text)
 
 
-@client.command("get")
+@cli.command("get")
 @click.argument("path")
 @click.option("--timeout", type=float, default=None)
 @click.pass_context
@@ -134,7 +129,7 @@ def get(ctx, path, timeout):
     log_response(r)
 
 
-@client.command("post_json")
+@cli.command("post_json")
 @click.argument("path")
 @click.argument("data", type=JsonStringParamType())
 @click.option("--timeout", type=float, default=None)
@@ -145,7 +140,7 @@ def post_json(ctx, path, data, timeout):
     log_response(r)
 
 
-@client.command("patch_json")
+@cli.command("patch_json")
 @click.argument("path")
 @click.argument("data", type=JsonStringParamType())
 @click.option("--timeout", type=float, default=None, help="Request timeout in seconds")
@@ -156,7 +151,7 @@ def patch_json(ctx, path, data, timeout):
     log_response(r)
 
 
-@client.command("post_from_file")
+@cli.command("post_from_file")
 @click.argument("path")
 @click.argument(
     "file_path", type=click.Path(exists=True, dir_okay=False, resolve_path=True)
@@ -184,7 +179,7 @@ def post_from_file(ctx, path, file_path, json_flag, yaml_flag, timeout):
     log_response(r)
 
 
-@client.command("command")
+@cli.command("command")
 @click.argument("path")
 @click.argument("command")
 @click.option(
@@ -228,7 +223,7 @@ def command(
     log_response(r, body=False)
 
 
-@client.command("upload")
+@cli.command("upload")
 @click.argument("path")
 @click.argument(
     "file_path", type=click.Path(exists=True, dir_okay=False, resolve_path=True)
@@ -262,7 +257,7 @@ def upload(ctx, path, file_path, params, file_name, content_type, timeout):
     log_response(r)
 
 
-@client.command("delete")
+@cli.command("delete")
 @click.argument("path")
 @click.option("--timeout", type=float, default=None, help="Request timeout in seconds")
 @click.pass_context
@@ -272,7 +267,7 @@ def delete(ctx, path, timeout):
     log_response(r)
 
 
-@client.command("listen")
+@cli.command("listen")
 @click.pass_context
 def listen(ctx):
     def on_connect(ws):

@@ -84,17 +84,17 @@ def get_divider_line(c, message=None, length=78, indent=3):
 
     Examples:
 
-        >>> get_divider_line("-") # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("-")
         '------------------------------------------------------------------------------'
-        >>> get_divider_line("=", length=10) # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("=", length=10)
         '=========='
-        >>> get_divider_line("-", message="Hi", length=10) # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("-", message="Hi", length=10)
         '--- Hi ---'
-        >>> get_divider_line("-", message="A slightly longer text") # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("-", message="A slightly longer text")
         '--- A slightly longer text ---------------------------------------------------'
-        >>> get_divider_line("-", message="A slightly longer text", indent=5) # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("-", message="A slightly longer text", indent=5)
         '----- A slightly longer text -------------------------------------------------'
-        >>> get_divider_line("-", message="Hello World!", length=10) # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("-", message="Hello World!", length=10)
         '--- Hello World!'
         >>> get_divider_line(None)
         Traceback (most recent call last):

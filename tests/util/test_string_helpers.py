@@ -3,6 +3,8 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 
 import unittest
 
+import pytest
+
 import octoprint.util
 
 
@@ -44,29 +46,36 @@ class StringHelperTest(unittest.TestCase):
         self.assertEqual(result, b"test")
         self.assertIsInstance(result, bytes)
 
-    def test_to_bytes_unicode(self):
+    def test_to_bytes_str(self):
         result = octoprint.util.to_bytes("test")
         self.assertEqual(result, b"test")
         self.assertIsInstance(result, bytes)
 
-    def test_to_bytes_unicode_utf8(self):
+    def test_to_bytes_str_utf8(self):
         data = "äöüß"
         result = octoprint.util.to_bytes(data, encoding="utf-8")
         self.assertEqual(result, data.encode("utf-8"))
         self.assertIsInstance(result, bytes)
 
-    def test_to_bytes_unicode_utf8_vs_ascii(self):
+    def test_to_bytes_str_utf8_vs_ascii(self):
         self.assertRaises(
             UnicodeEncodeError, octoprint.util.to_bytes, "äöüß", encoding="ascii"
         )
 
-    def test_to_bytes_unicode_utf8_vs_ascii_replace(self):
+    def test_to_bytes_str_utf8_vs_ascii_replace(self):
         data = "äöüß"
         result = octoprint.util.to_bytes(data, encoding="ascii", errors="replace")
         self.assertEqual(result, data.encode("ascii", errors="replace"))
         self.assertIsInstance(result, bytes)
 
-    def test_to_str_still_works(self):
-        result = octoprint.util.to_str("test")
-        self.assertEqual(result, b"test")
-        self.assertIsInstance(result, bytes)
+    def test_to_str(self):
+        with pytest.deprecated_call():
+            result = octoprint.util.to_str("test")
+            self.assertEqual(result, b"test")
+            self.assertIsInstance(result, bytes)
+
+    def test_to_native_str(self):
+        with pytest.deprecated_call():
+            result = octoprint.util.to_native_str(b"test")
+            self.assertEqual(result, "test")
+            self.assertIsInstance(result, str)

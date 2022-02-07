@@ -220,8 +220,10 @@ Upload
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``target``: the target storage location to which the file was uploaded, either ``local`` or ``sdcard``
-     * ``select``: whether the file will immediately be selected, as requested on the API by the corresponding parameter
-     * ``print``: whether the file will immediately start printing, as requested on the API by the corresponding parameter
+     * ``select``: whether an immediate selection of the file was requested on the API by the corresponding parameter
+     * ``print``: whether an immediate print start of the file was requested on the API by the corresponding parameter
+     * ``effective_select``: whether the file will actually be selected (``select`` request got granted)
+     * ``effective_print``: whether the file will actually start printing (``print`` request got granted)
      * ``userdata``: optional ``userdata`` if provided on the API, will only be present if supplied in the upload request
 
    .. deprecated:: 1.3.0

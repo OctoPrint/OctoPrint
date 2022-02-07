@@ -69,7 +69,7 @@ def parse_plugin_metadata(path):
         # we only support parsing plain text source files
         return result
 
-    logger.debug(f"Parsing plugin metadata from AST of {path}".format(path))
+    logger.debug(f"Parsing plugin metadata from AST of {path}")
 
     try:
         import ast
@@ -781,9 +781,7 @@ class PluginInfo:
         try:
             return parse_plugin_metadata(self.location)
         except SyntaxError:
-            self._logger.exception(
-                f"Invalid syntax in plugin file of plugin {self.key}".format(self.key)
-            )
+            self._logger.exception(f"Invalid syntax in plugin file of plugin {self.key}")
             self.invalid_syntax = True
             return {}
 
@@ -891,13 +889,9 @@ class PluginManager:
 
     def _detect_python_environment(self):
         import sys
-        from distutils.command.install import install as cmd_install
-        from distutils.dist import Distribution
+        import sysconfig
 
-        cmd = cmd_install(Distribution())
-        cmd.finalize_options()
-
-        self._python_install_dir = cmd.install_lib
+        self._python_install_dir = sysconfig.get_path("purelib")
         self._python_prefix = os.path.realpath(sys.prefix)
         self._python_virtual_env = hasattr(sys, "real_prefix") or (
             hasattr(sys, "base_prefix")
@@ -2333,8 +2327,6 @@ class EntryPointMetadata(pkginfo.Distribution):
                     return self.entry_point.dist.get_metadata(metadata_file)
                 except OSError:  # noqa: B014
                     # file not found, metadata file might be missing, ignore
-                    # IOError: file not found in Py2
-                    # OSError (specifically FileNotFoundError): file not found in Py3
                     pass
 
         warnings.warn(

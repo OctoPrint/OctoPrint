@@ -52,7 +52,7 @@ def can_perform_update(target, check, online=True):
     )
 
 
-def perform_update(target, check, target_version, log_cb=None, online=True):
+def perform_update(target, check, target_version, log_cb=None, online=True, force=False):
     logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.update_script")
 
     if not online and not check("offline", False):

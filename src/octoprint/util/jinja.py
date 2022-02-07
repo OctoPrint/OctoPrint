@@ -3,7 +3,6 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import logging
 import os
-from os import walk
 
 from jinja2 import nodes
 from jinja2.ext import Extension
@@ -149,7 +148,7 @@ class WarningLoader(BaseLoader):
 def get_all_template_paths(loader):
     def walk_folder(folder):
         files = []
-        walk_dir = walk(folder, followlinks=True)
+        walk_dir = os.walk(folder, followlinks=True)
         for dirpath, _, filenames in walk_dir:
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
@@ -290,8 +289,8 @@ class MarkdownFilter:
         app.jinja_env.filters.setdefault("markdown", self)
 
     def __call__(self, stream):
-        from jinja2 import Markup
         from markdown import Markdown
+        from markupsafe import Markup
 
         # Markdown is not thread safe
         markdown = Markdown(**self._markdown_options)

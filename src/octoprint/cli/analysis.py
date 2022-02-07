@@ -55,17 +55,12 @@ def validate_result(result):
 
 
 @click.group()
-def analysis_commands():
-    pass
-
-
-@analysis_commands.group(name="analysis")
-def util():
+def cli():
     """Analysis tools."""
     pass
 
 
-@util.command(name="gcode")
+@cli.command(name="gcode")
 @click.option("--throttle", "throttle", type=float, default=None)
 @click.option("--throttle-lines", "throttle_lines", type=int, default=None)
 @click.option("--speed-x", "speedx", type=float, default=6000)

@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 
 import unittest
-import unittest.mock as mock
+from unittest import mock
 
 
 class GetFolderUsageTest(unittest.TestCase):

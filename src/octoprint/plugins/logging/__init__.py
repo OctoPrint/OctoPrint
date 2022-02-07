@@ -2,7 +2,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import os
-from os import scandir
 
 from flask import abort, jsonify, request, url_for
 from flask_babel import gettext
@@ -137,7 +136,7 @@ class LoggingPlugin(
     def _getLogFiles(self):
         files = []
         basedir = settings().getBaseFolder("logs", check_writable=False)
-        for entry in scandir(basedir):
+        for entry in os.scandir(basedir):
             if is_hidden_path(entry.path) or not entry.name.endswith(".log"):
                 continue
 
@@ -274,7 +273,7 @@ __plugin_disabling_discouraged__ = gettext(
     "the web interface."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = LoggingPlugin()
 __plugin_hooks__ = {
     "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions

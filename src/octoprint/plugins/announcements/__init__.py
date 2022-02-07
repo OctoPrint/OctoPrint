@@ -6,7 +6,6 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 import calendar
 import os
 import re
-import sys
 import threading
 import time
 from collections import OrderedDict
@@ -26,8 +25,6 @@ from octoprint.server.util.flask import (
 )
 from octoprint.util import count, utmify
 from octoprint.util.text import sanitize
-
-PY2 = sys.version_info[0] < 3
 
 
 class AnnouncementPlugin(
@@ -523,11 +520,11 @@ _image_tag_re = re.compile(r"<img.*?/?>")
 
 def _strip_images(text):
     """
-    >>> _strip_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>") # doctest: +ALLOW_UNICODE
+    >>> _strip_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
     "<a href='test.html'>I'm a link</a> and this is an image: "
-    >>> _strip_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">") # doctest: +ALLOW_UNICODE
+    >>> _strip_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">")
     'One  and two  and three  and four '
-    >>> _strip_images("No images here") # doctest: +ALLOW_UNICODE
+    >>> _strip_images("No images here")
     'No images here'
     """
     return _image_tag_re.sub("", text)
@@ -536,9 +533,9 @@ def _strip_images(text):
 def _replace_images(text, callback):
     """
     >>> callback = lambda img: "foobar"
-    >>> _replace_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", callback) # doctest: +ALLOW_UNICODE
+    >>> _replace_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", callback)
     "<a href='test.html'>I'm a link</a> and this is an image: foobar"
-    >>> _replace_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", callback) # doctest: +ALLOW_UNICODE
+    >>> _replace_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", callback)
     'One foobar and two foobar and three foobar and four foobar'
     """
     result = text
@@ -554,13 +551,13 @@ _image_src_re = re.compile(r'src=(?P<quote>[\'"]*)(?P<src>.*?)(?P=quote)(?=\s+|>
 
 def _lazy_images(text, placeholder=None):
     """
-    >>> _lazy_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>") # doctest: +ALLOW_UNICODE
+    >>> _lazy_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
     '<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
-    >>> _lazy_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", placeholder="ph.png") # doctest: +ALLOW_UNICODE
+    >>> _lazy_images("<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", placeholder="ph.png")
     '<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="ph.png" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
-    >>> _lazy_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", placeholder="ph.png") # doctest: +ALLOW_UNICODE
+    >>> _lazy_images("One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", placeholder="ph.png")
     'One <img src="ph.png" data-src="one.jpg"> and two <img src="ph.png" data-src=\\'two.jpg\\' > and three <img src="ph.png" data-src=three.jpg> and four <img src="ph.png" data-src="four.png" alt="four">'
-    >>> _lazy_images("No images here") # doctest: +ALLOW_UNICODE
+    >>> _lazy_images("No images here")
     'No images here'
     """
     if placeholder is None:
@@ -583,9 +580,9 @@ def _lazy_images(text, placeholder=None):
 
 def _strip_tags(text):
     """
-    >>> _strip_tags("<a href='test.html'>Hello world</a>&lt;img src='foo.jpg'&gt;") # doctest: +ALLOW_UNICODE
+    >>> _strip_tags("<a href='test.html'>Hello world</a>&lt;img src='foo.jpg'&gt;")
     "Hello world&lt;img src='foo.jpg'&gt;"
-    >>> _strip_tags("&#62; &#x3E; Foo") # doctest: +ALLOW_UNICODE
+    >>> _strip_tags("&#62; &#x3E; Foo")
     '&#62; &#x3E; Foo'
     """
     from html.parser import HTMLParser
@@ -607,7 +604,7 @@ def _strip_tags(text):
         def get_data(self):
             return "".join(self._fed)
 
-    tag_stripper = TagStripper() if PY2 else TagStripper(convert_charrefs=False)
+    tag_stripper = TagStripper(convert_charrefs=False)
     tag_stripper.feed(text)
     return tag_stripper.get_data()
 
@@ -620,7 +617,7 @@ __plugin_disabling_discouraged__ = gettext(
     "regarding security or other critical issues concerning OctoPrint."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = AnnouncementPlugin()
 
 __plugin_hooks__ = {

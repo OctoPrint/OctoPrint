@@ -1,0 +1,22 @@
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Collecting https://github.com/synman/Octoprint-Bettergrblsupport/archive/2d4438163da8627d86f80b3236189df32d45fd89.zip
+  Downloading https://github.com/synman/Octoprint-Bettergrblsupport/archive/2d4438163da8627d86f80b3236189df32d45fd89.zip
+     / 43 kB 1.5 MB/s
+Requirement already satisfied: OctoPrint in ./oprint/lib/python3.7/site-packages (from Better-Grbl-Support===2.1.0-rc1.3) (1.7.3)
+Requirement already satisfied: pyserial<4,>=3.4 in ./oprint/lib/python3.7/site-packages (from OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (3.5)
+Requirement already satisfied: requests<3,>=2.26.0 in ./oprint/lib/python3.7/site-packages (from OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (2.27.1)
+Requirement already satisfied: colorlog<6,>=5.0.1 in ./oprint/lib/python3.7/site-packages (from OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (5.0.1)
+Requirement already satisfied: OctoPrint-PiSupport>=2021.10.28 in ./oprint/lib/python3.7/site-packages (from OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (2021.10.28)
+Requirement already satisfied: pylru<2,>=1.2 in ./oprint/lib/python3.7/site-packages (from OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (1.2.0)
+Requirement already satisfied: regex in ./oprint/lib/python3.7/site-packages (from OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (2020.11.13)
+Requirement already satisfied: unidecode in ./oprint/lib/python3.7/site-packages (from OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (0.4.21)
+Requirement already satisfied: OctoPrint-FirmwareCheck>=2021.10.11 in ./oprint/lib/python3.7/site-packages (from OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (2021.10.11)
+Requirement already satisfied: sentry-sdk<2,>=1.3.1 in ./oprint/lib/python3.7/site-packages (from OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (1.5.2)
+Requirement already satisfied: Babel>=2.3 in ./oprint/lib/python3.7/site-packages (from Flask-Babel<2,>=1.0->OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (2.9.0)
+Requirement already satisfied: setuptools>=36 in ./oprint/lib/python3.7/site-packages (from markdown<3.2,>=3.1->OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (51.1.2)
+Requirement already satisfied: certifi>=2017.4.17 in ./oprint/lib/python3.7/site-packages (from requests<3,>=2.26.0->OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (2020.12.5)
+Requirement already satisfied: charset-normalizer~=2.0.0 in ./oprint/lib/python3.7/site-packages (from requests<3,>=2.26.0->OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (2.0.10)
+Requirement already satisfied: urllib3<1.27,>=1.21.1 in ./oprint/lib/python3.7/site-packages (from requests<3,>=2.26.0->OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (1.26.2)
+Requirement already satisfied: idna<4,>=2.5 in ./oprint/lib/python3.7/site-packages (from requests<3,>=2.26.0->OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (2.10)
+Requirement already satisfied: six in ./oprint/lib/python3.7/site-packages (from websocket-client<1,>=0.59->OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (1.15.0)
+Requirement already satisfied: ifaddr>=0.1.7 in ./oprint/lib/python3.7/site-packages (from zeroconf<0.34,>=0.33->OctoPrint->Better-Grbl-Support===2.1.0-rc1.3) (0.1.7)

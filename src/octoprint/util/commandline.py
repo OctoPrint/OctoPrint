@@ -7,46 +7,55 @@ import logging
 import queue
 import re
 import time
+import warnings
+from typing import Dict, List, Tuple, Union
 
 import sarge
 
+from octoprint.util import to_bytes, to_unicode
 from octoprint.util.platform import CLOSE_FDS
-
-from . import to_unicode
 
 # These regexes are based on the colorama package
 # Author: Jonathan Hartley
 # License: BSD-3 (https://github.com/tartley/colorama/blob/master/LICENSE.txt)
 # Website: https://github.com/tartley/colorama/
 _ANSI_CSI_PATTERN = (
-    b"\001?\033\\[(\\??(?:\\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
+    "\001?\033\\[(\\??(?:\\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
 )
-_ANSI_OSC_PATTERN = b"\001?\033\\]((?:.|;)*?)(\x07)\002?"  # Operating System Command
-_ANSI_REGEX = re.compile(b"|".join([_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN]))
+_ANSI_OSC_PATTERN = "\001?\033\\]((?:.|;)*?)(\x07)\002?"  # Operating System Command
+_ANSI_PATTERN = "|".join([_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN])
+
+_ANSI_REGEX = re.compile(_ANSI_PATTERN)
 
 
-def clean_ansi(line):
+def clean_ansi(line: Union[str, bytes]) -> Union[str, bytes]:
     """
     Removes ANSI control codes from ``line``.
 
+    Note: This function also still supports an input of ``bytes``, leading to an
+    ``output`` of ``bytes``. This if for reasons of backwards compatibility only,
+    should no longer be used and considered to be deprecated and to be removed in
+    a future version of OctoPrint. A warning will be logged.
+
     Parameters:
-        line (bytes or str): the line to process
+        line (str or bytes): the line to process
 
     Returns:
-        (bytes or str) The line without any ANSI control codes
+        (str or bytes) The line without any ANSI control codes
 
-    Example::
+    .. changed:: 1.8.0
 
-        >>> text = b"Some text with some \x1b[31mred words\x1b[39m in it"
-        >>> clean_ansi(text) # doctest: +ALLOW_BYTES
-        'Some text with some red words in it'
-        >>> text = b"We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here"
-        >>> clean_ansi(text) # doctest: +ALLOW_BYTES
-        'We hide the cursor here and then show it again here'
+       Usage as ``clean_ansi(line: bytes) -> bytes`` is now deprecated and will be removed
+       in a future version of OctoPrint.
     """
-    if isinstance(line, str):
-        return _ANSI_REGEX.sub(b"", line.encode("latin1")).decode("latin1")
-    return _ANSI_REGEX.sub(b"", line)
+    # TODO: bytes support is deprecated, remove in 2.0.0
+    if isinstance(line, bytes):
+        warnings.warn(
+            "Calling clean_ansi with bytes is deprecated, call with str instead",
+            DeprecationWarning,
+        )
+        return to_bytes(_ANSI_REGEX.sub("", to_unicode(line)))
+    return _ANSI_REGEX.sub("", line)
 
 
 class CommandlineError(Exception):
@@ -123,7 +132,9 @@ class CommandlineCaller:
         self.on_log_stderr = lambda *args, **kwargs: None
         """Callback for stderr output"""
 
-    def checked_call(self, command, **kwargs):
+    def checked_call(
+        self, command: Union[str, List[str], Tuple[str]], **kwargs
+    ) -> Tuple[int, List[str], List[str]]:
         """
         Calls a command and raises an error if it doesn't return with return code 0
 
@@ -145,7 +156,9 @@ class CommandlineCaller:
 
         return returncode, stdout, stderr
 
-    def call(self, command, **kwargs):
+    def call(
+        self, command: Union[str, List[str], Tuple[str]], **kwargs: Dict[str, str]
+    ) -> Tuple[int, List[str], List[str]]:
         """
         Calls a command
 

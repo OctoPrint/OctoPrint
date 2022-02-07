@@ -9,7 +9,6 @@ import logging
 import os
 import threading
 import time
-from os import scandir
 
 import flask
 import flask.json
@@ -60,11 +59,11 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
             if not os.path.isdir(dirname):
                 return []
             result = []
-            for entry in scandir(dirname):
+            for entry in os.scandir(dirname):
                 locale_dir = os.path.join(entry.path, "LC_MESSAGES")
                 if not os.path.isdir(locale_dir):
                     continue
-                if any(filter(lambda x: x.name.endswith(".mo"), scandir(locale_dir))):
+                if any(filter(lambda x: x.name.endswith(".mo"), os.scandir(locale_dir))):
                     result.append(Locale.parse(entry.name))
             return result
 
@@ -159,81 +158,6 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
     flask_babel.Babel.list_translations = fixed_list_translations
     flask_babel.get_translations = fixed_get_translations
-
-
-def fix_webassets_cache():
-    from webassets import cache
-
-    error_logger = logging.getLogger(__name__ + ".fix_webassets_cache")
-
-    def fixed_set(self, key, data):
-        import os
-        import pickle
-        import shutil
-        import tempfile
-
-        if not os.path.exists(self.directory):
-            error_logger.warning(
-                "Cache directory {} doesn't exist, not going "
-                "to attempt to write cache file".format(self.directory)
-            )
-
-        md5 = "%s" % cache.make_md5(self.V, key)
-        filename = os.path.join(self.directory, md5)
-        fd, temp_filename = tempfile.mkstemp(prefix="." + md5, dir=self.directory)
-        try:
-            with os.fdopen(fd, "wb") as f:
-                pickle.dump(data, f)
-                f.flush()
-            shutil.move(temp_filename, filename)
-        except Exception:
-            os.remove(temp_filename)
-            raise
-
-    def fixed_get(self, key):
-        import errno
-        import os
-        import warnings
-
-        from webassets.cache import make_md5
-
-        if not os.path.exists(self.directory):
-            error_logger.warning(
-                "Cache directory {} doesn't exist, not going "
-                "to attempt to read cache file".format(self.directory)
-            )
-            return None
-
-        try:
-            hash = make_md5(self.V, key)
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                raise
-            return None
-
-        filename = os.path.join(self.directory, "%s" % hash)
-        try:
-            f = open(filename, "rb")
-        except OSError as e:
-            if e.errno != errno.ENOENT:
-                error_logger.exception(
-                    "Got an exception while trying to open webasset file {}".format(
-                        filename
-                    )
-                )
-            return None
-        try:
-            result = f.read()
-        finally:
-            f.close()
-
-        unpickled = webassets.cache.safe_unpickle(result)
-        if unpickled is None:
-            warnings.warn("Ignoring corrupted cache file %s" % filename)
-        return unpickled
-
-    cache.FilesystemCache.set = fixed_set
-    cache.FilesystemCache.get = fixed_get
 
 
 def fix_webassets_filtertool():

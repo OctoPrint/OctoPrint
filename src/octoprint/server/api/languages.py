@@ -7,7 +7,6 @@ import os
 import tarfile
 import zipfile
 from collections import defaultdict
-from os import scandir
 
 from flask import abort, jsonify, request
 from flask_babel import Locale
@@ -32,7 +31,7 @@ def getInstalledLanguagePacks():
     plugin_packs = defaultdict(
         lambda: {"identifier": None, "display": None, "languages": []}
     )
-    for entry in scandir(translation_folder):
+    for entry in os.scandir(translation_folder):
         if not entry.is_dir():
             continue
 
@@ -63,7 +62,7 @@ def getInstalledLanguagePacks():
             return meta
 
         if entry.name == "_plugins":
-            for plugin_entry in scandir(entry.path):
+            for plugin_entry in os.scandir(entry.path):
                 if not plugin_entry.is_dir():
                     continue
 
@@ -75,7 +74,7 @@ def getInstalledLanguagePacks():
                 plugin_packs[plugin_entry.name]["identifier"] = plugin_entry.name
                 plugin_packs[plugin_entry.name]["display"] = plugin_info.name
 
-                for language_entry in scandir(plugin_entry.path):
+                for language_entry in os.scandir(plugin_entry.path):
                     try:
                         plugin_packs[plugin_entry.name]["languages"].append(
                             load_meta(language_entry.path, language_entry.name)

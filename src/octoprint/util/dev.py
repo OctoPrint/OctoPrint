@@ -5,6 +5,7 @@ This module provides a bunch of utility methods and helpers FOR DEVELOPMENT ONLY
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
 import contextlib
+import time
 
 
 @contextlib.contextmanager
@@ -25,8 +26,6 @@ def duration_log(context=None, log=None):
         import logging
 
         log = logging.getLogger(__name__).debug
-
-    import time
 
     start = time.monotonic()
     try:

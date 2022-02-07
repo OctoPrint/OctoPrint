@@ -1,11 +1,12 @@
-def load_from_file(file=None, path=None):
+from typing import Any, Dict, Hashable, TextIO, Union
+
+
+def load_from_file(
+    file: TextIO = None, path: str = None
+) -> Union[Dict[Hashable, Any], list, None]:
     """
     Safely and performantly loads yaml data from the given source. Either a
     path or a file must be passed in.
-
-    :rtype: Union[dict[Hashable, Any], list, None]
-    :type path: str | None
-    :type file: typing.TextIO | None
     """
     if path is not None:
         assert file is None

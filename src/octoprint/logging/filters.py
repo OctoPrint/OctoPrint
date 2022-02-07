@@ -1,5 +1,5 @@
 import logging
-from urllib import parse as urlparse
+import urllib.parse
 
 
 class TornadoAccessFilter(logging.Filter):
@@ -9,8 +9,8 @@ class TornadoAccessFilter(logging.Filter):
 
             if status == 409:
 
-                method, url, client = request_line.split()
-                u = urlparse.urlparse(url)
+                _, url, _ = request_line.split()
+                u = urllib.parse.urlparse(url)
                 if u.path in ("/api/printer",):
                     record.levelno = logging.INFO
                     record.levelname = logging.getLevelName(record.levelno)

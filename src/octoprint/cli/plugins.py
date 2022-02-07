@@ -138,13 +138,8 @@ class OctoPrintPluginCommands(click.MultiCommand):
         return result
 
 
-@click.group()
+@click.group(cls=OctoPrintPluginCommands)
 @pass_octoprint_ctx
-def plugin_commands(obj):
-    pass
-
-
-@plugin_commands.group(name="plugins", cls=OctoPrintPluginCommands)
-def plugins():
+def cli(obj):
     """Additional commands provided by plugins."""
     pass

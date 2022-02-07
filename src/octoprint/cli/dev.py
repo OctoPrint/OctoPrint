@@ -250,12 +250,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
         return command
 
 
-@click.group()
-def dev_commands():
-    pass
-
-
-@dev_commands.group(name="dev", cls=OctoPrintDevelCommands)
-def dev():
+@click.group(cls=OctoPrintDevelCommands)
+def cli():
     """Additional commands for development tasks."""
     pass

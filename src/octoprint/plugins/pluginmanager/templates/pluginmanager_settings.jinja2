@@ -104,7 +104,7 @@
             <h3>{{ _('Installed Plugins') }}</h3>
 
             <div style="margin-bottom: 1em" class="clearfix">
-                <input type="text" class="input-block search-query pull-left" data-bind="value: listingSearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}">
+                <input type="text" class="input-block search-query pull-left" data-bind="value: listingSearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}" spellcheck="false">
 
                 <div class="pull-right">
                     <div class="btn-group">
@@ -235,7 +235,7 @@
 
             <div style="margin-bottom: 1em" class="clearfix">
                 <form class="form-search" data-bind="submit: performRepositorySearch">
-                    <input type="text" class="input-block search-query pull-left" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}">
+                    <input type="text" class="input-block search-query pull-left" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}" spellcheck="false">
                 </form>
                 <div class="dropdown pull-right">
                     <div class="btn-group">

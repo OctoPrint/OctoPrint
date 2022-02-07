@@ -14,7 +14,7 @@ below.
 
   * Prerequisites:
 
-    * `Python 3.8 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv``
+    * `Latest stable Python 3 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv``
     * `Git <https://git-scm.com>`_
 
   * Checkout the OctoPrint sources from their Git repository:
@@ -24,14 +24,12 @@ below.
   * Enter the checked out source folder: ``cd OctoPrint``
   * Create a virtual environment in the checked out source folder to use for
     installing and running OctoPrint and its dependencies. Creating virtual environments avoids potential versioning
-    issues for the dependencies with system wide installed instances:
-
-    * ``virtualenv --python=python3 venv``
+    issues for the dependencies with system wide installed instances: ``virtualenv --python=python3 venv``
 
     .. note::
 
-       This assumes that `python3` is a binary available directly on your ``PATH``. If your Python 3
-       binary cannot be found on your ``PATH`` like this you'll need to specify the full path to it here,
+       This assumes that the ``python3`` binary is available directly on your ``PATH``. If
+       it cannot be found on your ``PATH`` like this you'll need to specify the full path here,
        e.g. ``virtualenv --python=/path/to/python3/bin/python venv``
 
   * Activate the virtual environment: ``source venv/bin/activate`` (Linux, macOS) or ``source venv/Scripts/activate`` (Git Bash under Windows, see below)
@@ -71,7 +69,7 @@ Linux
 This assumes you'll host your OctoPrint development checkout at ``~/devel/OctoPrint``. If you want to use a different
 location, please substitute accordingly.
 
-First make sure you have python 2 and 3 including their header files, pip, setuptools, virtualenv, git and some build requirements
+First make sure you have python 3 including its header files, pip, setuptools, virtualenv, git and some build requirements
 installed:
 
   * On apt based distributions (e.g. Debian, Ubuntu, ...):
@@ -100,7 +98,6 @@ Then:
    pre-commit install
    git config blame.ignoreRevsFile .git-blame-ignore-revs
 
-You can then start OctoPrint via ``octoprint`` after activating one of the two virtual environments.
 
 .. _sec-development-environment-windows:
 
@@ -134,9 +131,9 @@ Open the Git Bash you just installed and in that:
    cd /c/Devel
    git clone https://github.com/OctoPrint/OctoPrint.git
    cd OctoPrint
-   virtualenv --python=C:/Python3/python.exe venv3
+   virtualenv --python=C:/Python3/python.exe venv
    source ./venv/Scripts/activate
-   python -m pip install --upgrade pip
+   pip install --upgrade pip
    python -m pip install -e '.[develop,plugins,docs]'
    pre-commit install
    git config blame.ignoreRevsFile .git-blame-ignore-revs
@@ -176,12 +173,6 @@ Mac OS X
    This guide is based on the `Setup Guide for Mac OS X on OctoPrint's Community Forum <https://community.octoprint.org/t/setting-up-octoprint-on-macos/13425>`_.
    Please report back if it works for you, due to lack of access to a Mac I cannot test it myself. Thanks.
 
-.. todo::
-
-   This guide is not yet adapted to the concurrent use of Python 2 and 3 environments during development. Please send a
-   `Pull Request <https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
-   steps into this guide!
-
 This assumes you'll host your OctoPrint development checkout at ``~/devel/OctoPrint``. If you want to use a different
 location, please substitute accordingly.
 
@@ -194,7 +185,7 @@ You'll need a user account with administrator privileges.
     * ``sudo xcodebuild`` (ensure the license was accepted)
     * If you have more than one Xcode installed: ``sudo xcode-select -s /Applications/Xcode.app/Contents/Developer``
 
-  * Install Homebrew and use that to install Python:
+  * Install Homebrew and use that to install Python 3:
 
     * ``ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"``
     * ``brew install python``
@@ -245,7 +236,7 @@ PyCharm
     - **(macOS)** "PyCharm" > "Preferences ..." > "Project: OctoPrint" > "Project Interpreter" > "Add ..." >
       "Virtualenv Environment > "Existing Environment", select OctoPrint ``venv`` folder (e.g. ``~/devel/OctoPrint/venv``).
 
-    If desired, repeat for any other additional Python venvs (e.g. different versions).
+    If desired, repeat for any other additional Python venvs (e.g. for separate Python 3 versions).
 
   - Right click "src" in project tree, mark as source folder
   - Add Run/Debug Configuration, select "Python":
@@ -303,7 +294,7 @@ PyCharm
     * Name: pre-commit
     * File type: Python
     * Scope: Module 'OctoPrint'
-    * Program: ``$PyInterpreterDirectory$/bin/pre-commit`` (Linux) or ``$PyInterpreterDirectory$/Scripts/pre-commit`` (Windows)
+    * Program: ``<OctoPrint venv folder>/bin/pre-commit`` (Linux) or ``<OctoPrint venv folder>/Scripts/pre-commit`` (Windows)
     * Arguments: ``run --hook-stage manual --files $FilePath$``
     * Output paths to refresh: ``$FilePath$``
     * Working directory: ``$ProjectFileDir$``
@@ -334,7 +325,7 @@ Visual Studio Code (vscode)
       .. code-block:: json
 
          {
-             "python.defaultInterpreterPath": "venv3/bin/python",
+             "python.defaultInterpreterPath": "venv/bin/python",
              "python.formatting.provider": "black",
              "python.formatting.blackArgs": [
                  "--config",

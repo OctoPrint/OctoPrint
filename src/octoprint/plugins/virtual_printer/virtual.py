@@ -10,7 +10,6 @@ import queue
 import re
 import threading
 import time
-from os import scandir
 from typing import Any
 
 from serial import SerialTimeoutException
@@ -560,7 +559,7 @@ class VirtualPrinter:
             self._send(f"echo:T{t} Invalid extruder ")
 
     # noinspection PyUnusedLocal
-    def _gcode_F(self, code, data):
+    def _gcode_F(self, code: str, data: str) -> bool:
         if self._supportF:
             self._send("echo:changed F value")
             return False
@@ -677,8 +676,7 @@ class VirtualPrinter:
                 self._busyInterval = interval
 
     # noinspection PyUnusedLocal
-    def _gcode_M114(self, data):
-        # type: (str) -> bool
+    def _gcode_M114(self, data: str) -> bool:
         output = self._generatePositionOutput()
         if not self._okBeforeCommandOutput:
             ok = self._ok()
@@ -704,8 +702,7 @@ class VirtualPrinter:
             except AttributeError:
                 self._send("echo:")
 
-    def _gcode_M154(self, data):
-        # type: (str) -> None
+    def _gcode_M154(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             interval = int(matchS.group(1))
@@ -720,8 +717,7 @@ class VirtualPrinter:
             else:
                 self._pos_reporter = None
 
-    def _gcode_M155(self, data):
-        # type: (str) -> None
+    def _gcode_M155(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
         if matchS is not None:
             interval = int(matchS.group(1))
@@ -751,7 +747,7 @@ class VirtualPrinter:
         self.buffered.join()
 
     # noinspection PyUnusedLocal
-    def _gcode_M600(self, data: str) -> bool:
+    def _gcode_M600(self, data: str) -> None:
         self._send("//action:paused")
         self._showPrompt(
             "Heater Timeout",
@@ -854,10 +850,10 @@ class VirtualPrinter:
     # Passcode Feature - lock with M510, unlock with M511 P<passcode>.
     # https://marlinfw.org/docs/gcode/M510.html / https://marlinfw.org/docs/gcode/M511.html
 
-    def _gcode_M510(self, data):
+    def _gcode_M510(self, data: str) -> None:
         self._locked = True
 
-    def _gcode_M511(self, data):
+    def _gcode_M511(self, data: str) -> None:
         if self._locked:
             matchP = re.search(r"P([0-9]+)", data)
             if matchP:
@@ -869,14 +865,14 @@ class VirtualPrinter:
 
     # EEPROM management commands
 
-    def _gcode_M500(self, data):
+    def _gcode_M500(self, data: str) -> None:
         # Stores settings to disk
         if self._virtual_eeprom:
             self._virtual_eeprom.save_settings()
         else:
             self._send(self._error("command_unknown", "M500"))
 
-    def _gcode_M501(self, data):
+    def _gcode_M501(self, data: str) -> None:
         # Read from EEPROM
         if self._virtual_eeprom:
             self._virtual_eeprom.read_settings()
@@ -885,7 +881,7 @@ class VirtualPrinter:
         else:
             self._send(self._error("command_unknown", "M501"))
 
-    def _gcode_M502(self, data):
+    def _gcode_M502(self, data: str) -> None:
         # reset to default values
         if self._virtual_eeprom:
             self._virtual_eeprom.load_defaults()
@@ -894,7 +890,7 @@ class VirtualPrinter:
         else:
             self._send(self._error("command_unknown", "M502"))
 
-    def _gcode_M503(self, data):
+    def _gcode_M503(self, data: str) -> None:
         # echo all eeprom data
         if self._virtual_eeprom and self._support_M503:
             for line in self._construct_eeprom_values():
@@ -902,7 +898,7 @@ class VirtualPrinter:
         else:
             self._send(self._error("command_unknown", "M503"))
 
-    def _gcode_M504(self, data):
+    def _gcode_M504(self, data: str) -> None:
         if self._virtual_eeprom:
             self._send("echo:EEPROM OK")
         else:
@@ -910,7 +906,7 @@ class VirtualPrinter:
 
     # EEPROM settings commands
 
-    def _gcode_M92(self, data):
+    def _gcode_M92(self, data: str) -> None:
         # Steps per unit
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M92"))
@@ -922,7 +918,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("XYZE", data).items():
                 self._virtual_eeprom.eeprom["steps"]["params"][key] = float(value)
 
-    def _gcode_M203(self, data):
+    def _gcode_M203(self, data: str) -> None:
         # Maximum feedrates (units/s)
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M203"))
@@ -934,7 +930,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("XYZE", data).items():
                 self._virtual_eeprom.eeprom["feedrate"]["params"][key] = float(value)
 
-    def _gcode_M201(self, data):
+    def _gcode_M201(self, data: str) -> None:
         # Maximum Acceleration (units/s2)
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M201"))
@@ -946,7 +942,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("EXYZ", data).items():
                 self._virtual_eeprom.eeprom["max_accel"]["params"][key] = float(value)
 
-    def _gcode_M204(self, data):
+    def _gcode_M204(self, data: str) -> None:
         # Starting Acceleration (units/s2)
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M204"))
@@ -958,7 +954,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("PRTS", data).items():
                 self._virtual_eeprom.eeprom["start_accel"]["params"][key] = float(value)
 
-    def _gcode_M206(self, data):
+    def _gcode_M206(self, data: str) -> None:
         # Home offset
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M206"))
@@ -970,7 +966,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("XYZ", data).items():
                 self._virtual_eeprom.eeprom["home_offset"]["params"][key] = float(value)
 
-    def _gcode_M851(self, data):
+    def _gcode_M851(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M851"))
             return
@@ -980,7 +976,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("XYZ", data).items():
                 self._virtual_eeprom.eeprom["probe_offset"]["params"][key] = float(value)
 
-    def _gcode_M200(self, data):
+    def _gcode_M200(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M200"))
             return
@@ -990,7 +986,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("DS", data).items():
                 self._virtual_eeprom.eeprom["filament"]["params"][key] = float(value)
 
-    def _gcode_M666(self, data):
+    def _gcode_M666(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M666"))
             return
@@ -1000,7 +996,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("XYZ", data).items():
                 self._virtual_eeprom.eeprom["endstop"]["params"][key] = float(value)
 
-    def _gcode_M665(self, data):
+    def _gcode_M665(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M665"))
             return
@@ -1010,7 +1006,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("BHLRSXYZ", data).items():
                 self._virtual_eeprom.eeprom["delta"]["params"][key] = float(value)
 
-    def _gcode_M420(self, data):
+    def _gcode_M420(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M420"))
             return
@@ -1020,7 +1016,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("SZ", data).items():
                 self._virtual_eeprom.eeprom["auto_level"]["params"][key] = float(value)
 
-    def _gcode_M900(self, data):
+    def _gcode_M900(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M900"))
             return
@@ -1032,7 +1028,7 @@ class VirtualPrinter:
                     value
                 )
 
-    def _gcode_M205(self, data):
+    def _gcode_M205(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M205"))
             return
@@ -1042,7 +1038,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("BSTXYZEJ", data).items():
                 self._virtual_eeprom.eeprom["advanced"]["params"][key] = float(value)
 
-    def _gcode_M145(self, data):
+    def _gcode_M145(self, data: str) -> None:
         # M145 is a bit special, since it refers to 2 sets of values under the same params
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M145"))
@@ -1069,7 +1065,7 @@ class VirtualPrinter:
                         key
                     ] = float(value)
 
-    def _gcode_M301(self, data):
+    def _gcode_M301(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M301"))
             return
@@ -1079,7 +1075,7 @@ class VirtualPrinter:
             for key, value in self._parse_eeprom_params("PID", data).items():
                 self._virtual_eeprom.eeprom["pid"]["params"][key] = float(value)
 
-    def _gcode_M304(self, data):
+    def _gcode_M304(self, data: str) -> None:
         if not self._virtual_eeprom:
             self._send(self._error("command_unknown", "M304"))
             return
@@ -1118,7 +1114,7 @@ class VirtualPrinter:
         return lines
 
     @staticmethod
-    def _parse_eeprom_params(letters, line):
+    def _parse_eeprom_params(letters: str, line: str) -> dict:
         # letters provided in a string (eg "XYZ") and line (eg. M92 X20 Y20 Z20)
         # are parsed into a dict
         params = list(letters)
@@ -1408,10 +1404,9 @@ class VirtualPrinter:
             self._send(item)
         self._send("End file list")
 
-    def _mappedSdList(self):
-        # type: () -> collections.OrderedDict
+    def _mappedSdList(self) -> collections.OrderedDict:
         result = collections.OrderedDict()
-        for entry in scandir(self._virtualSd):
+        for entry in os.scandir(self._virtualSd):
             if not entry.is_file():
                 continue
             dosname = get_dos_filename(
@@ -1475,8 +1470,7 @@ class VirtualPrinter:
         else:
             self._send("Not SD printing")
 
-    def _generatePositionOutput(self):
-        # type: () -> str
+    def _generatePositionOutput(self) -> str:
         m114FormatString = self._settings.get(["m114FormatString"])
         e = {index: value for index, value in enumerate(self._lastE)}
         e["current"] = self._lastE[self.currentExtruder]
@@ -1498,8 +1492,7 @@ class VirtualPrinter:
         )
         return output
 
-    def _generateTemperatureOutput(self):
-        # type: () -> str
+    def _generateTemperatureOutput(self) -> str:
         if self._settings.get_boolean(["repetierStyleTargetTemperature"]):
             template = self._settings.get(["m105NoTargetFormatString"])
         else:
@@ -1589,8 +1582,7 @@ class VirtualPrinter:
         if self._settings.get_boolean(["repetierStyleTargetTemperature"]):
             self._send("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
 
-    def _parseBedCommand(self, line, wait=False, support_r=False):
-        # type: (str, bool, bool) -> None
+    def _parseBedCommand(self, line: str, wait: bool = False, support_r: bool = False):
         if not self._settings.get_boolean(["hasBed"]):
             return
 
@@ -1729,8 +1721,7 @@ class VirtualPrinter:
             else:
                 time.sleep(duration)
 
-    def _setPosition(self, line):
-        # type: (str) -> None
+    def _setPosition(self, line: str) -> None:
         matchX = re.search(r"X(-?[0-9.]+)", line)
         matchY = re.search(r"Y(-?[0-9.]+)", line)
         matchZ = re.search(r"Z(-?[0-9.]+)", line)
@@ -1869,8 +1860,7 @@ class VirtualPrinter:
             self._sdPrinting = False
             self._sdPrinter = None
 
-    def _waitForHeatup(self, heater, only_wait_if_higher):
-        # type: (str, bool) -> None
+    def _waitForHeatup(self, heater: str, only_wait_if_higher: bool) -> None:
         delta = 1
         delay = 1
         last_busy = time.monotonic()
@@ -2006,7 +1996,7 @@ class VirtualPrinter:
     def _hidePrompt(self):
         self._send("//action:prompt_end")
 
-    def write(self, data: str) -> int:
+    def write(self, data: bytes) -> int:
         data = to_bytes(data, errors="replace")
         u_data = to_unicode(data, errors="replace")
 
@@ -2095,8 +2085,7 @@ class VirtualPrinter:
         if self.outgoing is not None:
             self._send("wait")
 
-    def _send(self, line):
-        # type: (str) -> None
+    def _send(self, line: str) -> None:
         if self.outgoing is not None:
             self.outgoing.put(line)
 

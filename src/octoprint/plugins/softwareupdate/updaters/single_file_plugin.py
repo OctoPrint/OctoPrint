@@ -5,9 +5,9 @@ import ast
 import logging
 import os
 import shutil
+import tempfile
 
 from octoprint.settings import settings
-from octoprint.util import TemporaryDirectory
 from octoprint.util.net import download_file
 
 from .. import exceptions
@@ -46,7 +46,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
     try:
         try:
             _log_message(f"Download file from {url}")
-            folder = TemporaryDirectory()
+            folder = tempfile.TemporaryDirectory()
             path = download_file(url, folder.name)
         except Exception as exc:
             raise exceptions.NetworkError(cause=exc)

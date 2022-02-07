@@ -4,8 +4,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import unittest
-import unittest.mock as mock
 import warnings
+from unittest import mock
 
 from ddt import data, ddt, unpack
 

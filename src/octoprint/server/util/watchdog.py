@@ -37,11 +37,9 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
         self._watched_folder = None
 
     def initial_scan(self, folder):
-        from os import scandir
-
         def _recursive_scandir(path):
             """Recursively yield DirEntry objects for given directory."""
-            for entry in scandir(path):
+            for entry in os.scandir(path):
                 if entry.is_dir(follow_symlinks=False):
                     yield from _recursive_scandir(entry.path)
                 else:

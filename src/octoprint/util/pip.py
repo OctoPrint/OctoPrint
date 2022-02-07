@@ -8,17 +8,132 @@ import os
 import site
 import sys
 import threading
+from typing import List
 
 import pkg_resources
 import sarge
 
-from octoprint.util import to_unicode
 from octoprint.util.platform import CLOSE_FDS
 
 from .commandline import CommandlineCaller, clean_ansi
 
 _cache = {"version": {}, "setup": {}}
 _cache_mutex = threading.RLock()
+
+
+OUTPUT_SUCCESS = "Successfully installed"
+"""Start of successful result line"""
+
+OUTPUT_FAILURE = "Could not install"
+"""Start of failure result line"""
+
+OUTPUT_ALREADY_INSTALLED = "Requirement already satisfied"
+"""Start of a line indicating some package was already installed in this version"""
+
+OUTPUT_PYTHON_MISMATCH = "requires a different Python:"
+"""Line segment indicating a mismatch of python_requires version"""
+
+OUTPUT_PYTHON_SYNTAX = "SyntaxError: invalid syntax"
+"""Line segment indicating a syntax error, could be a python mismatch, e.g. f-strings"""
+
+OUTPUT_POTENTIAL_EGG_PROBLEM_POSIX = "No such file or directory"
+"""Line indicating a potential egg problem on Posix"""
+
+OUTPUT_POTENTIAL_EGG_PROBLEM_WINDOWS = "The system cannot find the file specified"
+"""Line indicating a potential egg problem on Windows"""
+
+
+def is_already_installed(lines):
+    """
+    Returns whether the given output lines indicates the packages was already installed
+    or not.
+
+    This is currently determined by an empty result line and any line starting with
+    "Requirement already satisfied".
+
+    Args:
+        lines (list of str): the output to parse, stdout or stderr
+
+    Returns:
+        bool: True if detected, False otherwise
+    """
+    result_line = get_result_line(lines)  # neither success nor failure reported
+    return not result_line and any(
+        line.strip().startswith(OUTPUT_ALREADY_INSTALLED) for line in lines
+    )
+
+
+def is_python_mismatch(lines):
+    """
+    Returns whether the given output lines indicates a Python version mismatch.
+
+    This is currently determined by either a syntax error or an explicit "requires a
+    different Python" line.
+
+    Args:
+        lines (list of str): the output to parse, stdout or stderr
+
+    Returns:
+        bool: True if detected, False otherwise
+    """
+    return any(
+        OUTPUT_PYTHON_MISMATCH in line or OUTPUT_PYTHON_SYNTAX in line for line in lines
+    )
+
+
+def is_egg_problem(lines):
+    """
+    Returns whether the given output lines indicates an occurence of the "egg-problem".
+
+    If something (target or dependency of target) was installed as an egg at an earlier
+    date (e.g. thanks to just running python setup.py install), pip install will throw an
+    error after updating that something to a newer (non-egg) version since it will still
+    have the egg on its sys.path and expect to read data from it.
+
+    See commit 8ad0aadb52b9ef354cad1b33bd4882ae2fbdb8d6 for more details.
+
+    Args:
+        lines (list of str): the output to parse, stdout or stderr
+
+    Returns:
+        bool: True if detected, False otherwise
+    """
+    return any(
+        ".egg" in line
+        and (
+            OUTPUT_POTENTIAL_EGG_PROBLEM_POSIX in line
+            or OUTPUT_POTENTIAL_EGG_PROBLEM_WINDOWS in line
+        )
+        for line in lines
+    )
+
+
+def get_result_line(lines):
+    """
+    Returns the success or failure line contained in the output.
+
+    pip might generate more lines after the actual result line, which is why
+    we can't just take the final line. So instead we look for the last line
+    starting with either "Successfully installed" or "Could not installed".
+    If neither can be found, an empty string will be returned, which should also
+    be considered a failure to install.
+
+    Args:
+        lines (list of str): the output to parse, stdout or stderr
+
+    Returns:
+        str: the last result line, or an empty string if none was found, in which case
+             failure should be resumed
+    """
+    possible_results = list(
+        filter(
+            lambda x: x.startswith(OUTPUT_SUCCESS) or x.startswith(OUTPUT_FAILURE),
+            lines,
+        )
+    )
+    if not possible_results:
+        return ""
+    return possible_results[-1]
 
 
 class UnknownPip(Exception):
@@ -489,27 +604,27 @@ class PipCaller(CommandlineCaller):
                 )
                 return False, False, False, None
 
-    def _preprocess_lines(self, *lines):
+    def _preprocess_lines(self, *lines: List[str]) -> List[str]:
         return list(map(self._preprocess, lines))
 
     @staticmethod
-    def _preprocess(text):
+    def _preprocess(text: str) -> str:
         """
-        Strips ANSI and VT100 cursor control characters from line and makes sure it's a unicode.
+        Strips ANSI and VT100 cursor control characters from line.
 
         Parameters:
-            text (str or unicode): The text to process
+            text (str): The text to process
 
         Returns:
-            (unicode) The processed text as a unicode, stripped of ANSI and VT100 cursor show/hide codes
+            (str) The processed text, stripped of ANSI and VT100 cursor show/hide codes
 
         Example::
 
-            >>> text = b'some text with some\x1b[?25h ANSI codes for \x1b[31mred words\x1b[39m and\x1b[?25l also some cursor control codes'
-            >>> PipCaller._preprocess(text) # doctest: +ALLOW_UNICODE
+            >>> text = 'some text with some\x1b[?25h ANSI codes for \x1b[31mred words\x1b[39m and\x1b[?25l also some cursor control codes'
+            >>> PipCaller._preprocess(text)
             'some text with some ANSI codes for red words and also some cursor control codes'
         """
-        return to_unicode(clean_ansi(text))
+        return clean_ansi(text)
 
 
 class LocalPipCaller(PipCaller):
