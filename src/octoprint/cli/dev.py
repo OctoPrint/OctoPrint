@@ -279,7 +279,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
                     "output": "static/css/recovery.css",
                 },
                 "plugin_announcements": {
-                    "source": "plugins/announcements/static/less/announcments.less",
+                    "source": "plugins/announcements/static/less/announcements.less",
                     "output": "plugins/announcements/static/css/announcements.css",
                 },
                 "plugin_appkeys_core": {
