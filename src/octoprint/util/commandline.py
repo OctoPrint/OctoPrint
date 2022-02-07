@@ -21,7 +21,12 @@ _ANSI_CSI_PATTERN = (
     b"\001?\033\\[(\\??(?:\\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
 )
 _ANSI_OSC_PATTERN = b"\001?\033\\]((?:.|;)*?)(\x07)\002?"  # Operating System Command
-_ANSI_REGEX = re.compile(b"|".join([_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN]))
+_ANSI_PATTERN = b"|".join([_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN])
+
+_ANSI_REGEX = {
+    "bytes": re.compile(_ANSI_PATTERN),
+    "str": re.compile(_ANSI_PATTERN.decode("utf-8")),
+}
 
 
 def clean_ansi(line):
@@ -42,10 +47,13 @@ def clean_ansi(line):
         >>> text = b"We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here"
         >>> clean_ansi(text) # doctest: +ALLOW_BYTES
         'We hide the cursor here and then show it again here'
+        >>> text = "We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here in unicode"
+        >>> clean_ansi(text) # doctest: +ALLOW_BYTES
+        'We hide the cursor here and then show it again here in unicode'
     """
     if isinstance(line, str):
-        return _ANSI_REGEX.sub(b"", line.encode("latin1")).decode("latin1")
-    return _ANSI_REGEX.sub(b"", line)
+        return _ANSI_REGEX["str"].sub("", line)
+    return _ANSI_REGEX["bytes"].sub(b"", line)
 
 
 class CommandlineError(Exception):
