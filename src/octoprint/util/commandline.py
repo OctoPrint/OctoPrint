@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple, Union
 
 import sarge
 
-from octoprint.util import to_bytes, to_str
+from octoprint.util import to_bytes, to_unicode
 from octoprint.util.platform import CLOSE_FDS
 
 # These regexes are based on the colorama package
@@ -54,7 +54,7 @@ def clean_ansi(line: Union[str, bytes]) -> Union[str, bytes]:
             "Calling clean_ansi with bytes is deprecated, call with str instead",
             DeprecationWarning,
         )
-        return to_bytes(_ANSI_REGEX.sub("", to_str(line)))
+        return to_bytes(_ANSI_REGEX.sub("", to_unicode(line)))
     return _ANSI_REGEX.sub("", line)
 
 
@@ -223,7 +223,7 @@ class CommandlineCaller:
             if not lines:
                 return []
             processed = self._preprocess_lines(
-                *map(lambda x: to_str(x, errors="replace"), lines)
+                *map(lambda x: to_unicode(x, errors="replace"), lines)
             )
             logger(*processed)
             return list(processed)

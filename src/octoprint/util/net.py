@@ -249,10 +249,10 @@ def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
 def resolve_host(host):
     import socket
 
-    from octoprint.util import to_str
+    from octoprint.util import to_unicode
 
     try:
-        return [to_str(x[4][0]) for x in socket.getaddrinfo(host, 80)]
+        return [to_unicode(x[4][0]) for x in socket.getaddrinfo(host, 80)]
     except Exception:
         return []
 

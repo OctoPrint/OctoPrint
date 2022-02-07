@@ -23,7 +23,7 @@ from octoprint.plugin.core import Plugin, PluginInfo, PluginManager  # noqa: F40
 from octoprint.plugin.types import *  # noqa: F401,F403 ## used by multiple other modules
 from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin
 from octoprint.settings import settings as s
-from octoprint.util import deprecated, to_str
+from octoprint.util import deprecated, to_unicode
 
 # singleton
 _instance = None
@@ -618,7 +618,7 @@ class PluginSettings:
                 def _func(*args, **kwargs):
                     return orig_func(*args_mapper(args), **kwargs_mapper(kwargs))
 
-                _func.__name__ = to_str(item)
+                _func.__name__ = to_unicode(item)
                 _func.__doc__ = orig_func.__doc__ if "__doc__" in dir(orig_func) else None
 
                 return _func

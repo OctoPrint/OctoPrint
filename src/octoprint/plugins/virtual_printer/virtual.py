@@ -14,7 +14,7 @@ import time
 from serial import SerialTimeoutException
 
 from octoprint.plugin import plugin_manager
-from octoprint.util import RepeatedTimer, get_dos_filename, to_bytes, to_str
+from octoprint.util import RepeatedTimer, get_dos_filename, to_bytes, to_unicode
 
 
 # noinspection PyBroadException
@@ -457,7 +457,7 @@ class VirtualPrinter:
 
             data += b"\n"
 
-            data = to_str(data, encoding="ascii", errors="replace").strip()
+            data = to_unicode(data, encoding="ascii", errors="replace").strip()
 
             if data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
                 debug_command = ""
@@ -1998,7 +1998,7 @@ class VirtualPrinter:
 
     def write(self, data: bytes) -> int:
         data = to_bytes(data, errors="replace")
-        u_data = to_str(data, errors="replace")
+        u_data = to_unicode(data, errors="replace")
 
         if self._debug_awol:
             return len(data)
@@ -2059,7 +2059,7 @@ class VirtualPrinter:
 
         try:
             # fetch a line from the queue, wait no longer than timeout
-            line = to_str(self.outgoing.get(timeout=timeout), errors="replace")
+            line = to_unicode(self.outgoing.get(timeout=timeout), errors="replace")
             self._seriallog.info(f">>> {line.strip()}")
             self.outgoing.task_done()
             return to_bytes(line)
@@ -2120,7 +2120,7 @@ class VirtualEEPROM:
             # no eeprom file, make new one with defaults
             data = self.get_default_settings()
             with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
-                eeprom_file.write(to_str(json.dumps(data)))
+                eeprom_file.write(to_unicode(json.dumps(data)))
             return data
 
     @staticmethod
@@ -2231,7 +2231,7 @@ class VirtualEEPROM:
     def save_settings(self):
         # M500 behind-the-scenes
         with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
-            eeprom_file.write(to_str(json.dumps(self._eeprom)))
+            eeprom_file.write(to_unicode(json.dumps(self._eeprom)))
 
     def read_settings(self):
         # M501 - if the file has disappeared, then recreate it

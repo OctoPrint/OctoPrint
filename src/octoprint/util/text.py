@@ -5,7 +5,7 @@ import re
 
 from emoji import demojize
 
-from octoprint.util import to_str
+from octoprint.util import to_unicode
 from octoprint.vendor.awesome_slugify import Slugify
 
 _UNICODE_VARIATIONS = re.compile("[\uFE00-\uFE0F]", re.U)
@@ -13,7 +13,7 @@ _SLUGIFIES = {}
 
 
 def demojify(text):
-    text = to_str(text)
+    text = to_unicode(text)
     text = remove_unicode_variations(text)
     return demojize(text, delimiters=("", ""))
 
@@ -48,7 +48,7 @@ def sanitize(text, safe_chars="-_.", demoji=True):
         slugify.safe_chars = safe_chars
         _SLUGIFIES[safe_chars] = slugify
 
-    text = to_str(text)
+    text = to_unicode(text)
     if demoji:
         text = demojify(text)
     return slugify(text)

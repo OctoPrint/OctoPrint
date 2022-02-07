@@ -40,7 +40,7 @@ from octoprint.util import (
     get_bom,
     get_exception_string,
     sanitize_ascii,
-    to_str,
+    to_unicode,
 )
 from octoprint.util.platform import get_os, set_close_exec
 
@@ -880,7 +880,7 @@ class MachineCom:
         self._log(prefix + message)
 
     def _log(self, message):
-        message = to_str(message)
+        message = to_unicode(message)
 
         self._terminal_log.append(message)
         self._callback.on_comm_log(message)
@@ -1238,7 +1238,7 @@ class MachineCom:
         tags=None,
     ):
         if not isinstance(cmd, QueueMarker):
-            cmd = to_str(cmd, errors="replace")
+            cmd = to_unicode(cmd, errors="replace")
             if not processed:
                 cmd = process_gcode_line(cmd)
                 if not cmd:
@@ -4554,7 +4554,7 @@ class MachineCom:
         if self._phaseLogger.isEnabledFor(logging.DEBUG):
             output_parts = [
                 f"phase: {phase}",
-                "command: {}".format(to_str(command, errors="replace")),
+                "command: {}".format(to_unicode(command, errors="replace")),
             ]
 
             if kwargs.get("command_type"):
@@ -4633,7 +4633,7 @@ class MachineCom:
                             "command as-is.".format(
                                 name=name,
                                 phase=phase,
-                                command=to_str(command, errors="replace"),
+                                command=to_unicode(command, errors="replace"),
                             ),
                             extra={"plugin": name},
                         )
@@ -4729,7 +4729,7 @@ class MachineCom:
                 self._logger.exception(
                     "Error while processing hook {} for "
                     "phase {} and command {}:".format(
-                        name, phase, to_str(atcommand, errors="replace")
+                        name, phase, to_unicode(atcommand, errors="replace")
                     ),
                     extra={"plugin": name},
                 )
@@ -4742,7 +4742,7 @@ class MachineCom:
             except Exception:
                 self._logger.exception(
                     "Error in handler for phase {} and command {}".format(
-                        phase, to_str(atcommand, errors="replace")
+                        phase, to_unicode(atcommand, errors="replace")
                     )
                 )
 

@@ -33,7 +33,7 @@ import pkg_resources
 import pkginfo
 
 import octoprint.vendor.imp as imp
-from octoprint.util import sv, time_this, to_str
+from octoprint.util import sv, time_this, to_unicode
 from octoprint.util.version import get_python_version_string, is_python_compatible
 
 
@@ -418,7 +418,7 @@ class PluginInfo:
         if self.version:
             return f"{self.name} ({self.version})"
         else:
-            return to_str(self.name)
+            return to_unicode(self.name)
 
     def long_str(
         self,
@@ -459,23 +459,27 @@ class PluginInfo:
         """
         if show_enabled:
             if self.incompatible:
-                ret = to_str(enabled_strs[3])
+                ret = to_unicode(enabled_strs[3])
             elif self.blacklisted:
-                ret = to_str(enabled_strs[2])
+                ret = to_unicode(enabled_strs[2])
             elif not self.enabled:
-                ret = to_str(enabled_strs[1])
+                ret = to_unicode(enabled_strs[1])
             else:
-                ret = to_str(enabled_strs[0])
+                ret = to_unicode(enabled_strs[0])
         else:
             ret = ""
 
         ret += str(self)
 
         if show_bundled:
-            ret += to_str(bundled_strs[0]) if self.bundled else to_str(bundled_strs[1])
+            ret += (
+                to_unicode(bundled_strs[0])
+                if self.bundled
+                else to_unicode(bundled_strs[1])
+            )
 
         if show_location and self.location:
-            ret += to_str(location_str).format(location=self.location)
+            ret += to_unicode(location_str).format(location=self.location)
 
         return ret
 

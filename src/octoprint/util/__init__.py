@@ -74,11 +74,11 @@ def to_bytes(
         return s_or_u
 
 
-def to_str(
+def to_unicode(
     s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
 ) -> str:
     """
-    Make sure ``s_or_u`` is a str.
+    Make sure ``s_or_u`` is a unicode string (str).
 
     Arguments:
         s_or_u (str or bytes): The value to convert
@@ -97,10 +97,6 @@ def to_str(
         return s_or_u.decode(encoding, errors=errors)
     else:
         return s_or_u
-
-
-to_unicode = to_str  # left for backwards compatibility
-to_native_str = to_str  # left for backwards compatibility
 
 
 def sortable_value(value, default_value=""):
@@ -319,6 +315,20 @@ Returns:
     value: The value of the variable with the deprecation warnings in place.
 """
 
+# TODO rename to_unicode to to_str and deprecate to_unicode in 2.0.0
+to_str = deprecated(
+    "to_str has been renamed to to_bytes and in a future version will become the new to_unicode",
+    includedoc="to_str has been renamed to to_bytes and in a future version will become the new to_unicode",
+    since="1.3.11",
+)(to_bytes)
+
+
+to_native_str = deprecated(
+    "to_native_str is no longer needed, use to_unicode instead",
+    includedoc="to_native_str is no longer needed, use to_unicode instead",
+    since="1.8.0",
+)(to_unicode)
+
 
 def get_formatted_size(num):
     """
@@ -464,7 +474,7 @@ def sanitize_ascii(line):
                 line.__class__.__name__ if line is not None else None
             )
         )
-    return to_str(line, encoding="ascii", errors="replace").rstrip()
+    return to_unicode(line, encoding="ascii", errors="replace").rstrip()
 
 
 def filter_non_ascii(line):
@@ -479,7 +489,7 @@ def filter_non_ascii(line):
     """
 
     try:
-        to_bytes(to_str(line, encoding="ascii"), encoding="ascii")
+        to_bytes(to_unicode(line, encoding="ascii"), encoding="ascii")
         return False
     except ValueError:
         return True
@@ -487,7 +497,7 @@ def filter_non_ascii(line):
 
 def filter_non_utf8(line):
     try:
-        to_bytes(to_str(line, encoding="utf-8"), encoding="utf-8")
+        to_bytes(to_unicode(line, encoding="utf-8"), encoding="utf-8")
         return False
     except ValueError:
         return True
@@ -1095,7 +1105,7 @@ def is_hidden_path(path):
         # we define a None path as not hidden here
         return False
 
-    path = to_str(path)
+    path = to_unicode(path)
 
     filename = os.path.basename(path)
     if filename.startswith("."):
