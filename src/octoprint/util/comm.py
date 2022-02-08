@@ -27,7 +27,7 @@ from octoprint.events import Events, eventManager
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings
-from octoprint.systemcommands import systemcommands
+from octoprint.systemcommands import system_command_manager
 from octoprint.util import (
     CountedEvent,
     PrependableQueue,
@@ -2328,7 +2328,7 @@ class MachineCom:
                             self._callback.on_comm_force_disconnect()
                         elif action_name == "shutdown":
                             self._log("Shutting down system on request of printer...")
-                            systemcommands().system_shutdown()
+                            system_command_manager().system_shutdown()
                         elif self._sdEnabled and action_name == "sd_inserted":
                             self._log("Printer reported SD card as inserted")
                             self._sdAvailable = True

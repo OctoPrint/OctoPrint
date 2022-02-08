@@ -43,7 +43,7 @@ from werkzeug.exceptions import HTTPException
 import octoprint.util
 import octoprint.util.net
 from octoprint.server import util
-from octoprint.systemcommands import systemcommands
+from octoprint.systemcommands import system_command_manager
 from octoprint.util.json import JsonEncoding
 from octoprint.vendor.flask_principal import (  # noqa: F401
     AnonymousIdentity,
@@ -378,6 +378,7 @@ class Server:
         ###
         ### See also issues #2035 and #2090
 
+        systemCommandManager = system_command_manager()
         printerProfileManager = PrinterProfileManager()
         eventManager = self._event_manager
 
@@ -484,7 +485,7 @@ class Server:
             "json_decoder": jsonDecoder,
             "connectivity_checker": connectivityChecker,
             "environment_detector": self._environment_detector,
-            "system_commands": systemcommands(),
+            "system_commands": systemCommandManager,
         }
 
         # ~~ setup access control

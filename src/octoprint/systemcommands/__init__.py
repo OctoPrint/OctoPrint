@@ -17,14 +17,14 @@ from octoprint.util.platform import CLOSE_FDS
 _instance = None
 
 
-def systemcommands():
+def system_command_manager():
     global _instance
     if _instance is None:
-        _instance = SystemCommands()
+        _instance = SystemCommandManager()
     return _instance
 
 
-class SystemCommands:
+class SystemCommandManager:
 
     SERVER_RESTART_COMMAND = "serverRestartCommand"
     SYSTEM_RESTART_COMMAND = "systemRestartCommand"
