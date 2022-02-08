@@ -7,6 +7,7 @@ import logging
 import queue
 import re
 import time
+from typing import List, Optional, Tuple, Union
 
 import sarge
 
@@ -144,7 +145,13 @@ class CommandlineCaller:
 
         return returncode, stdout, stderr
 
-    def call(self, command, **kwargs):
+    def call(
+        self,
+        command: Union[str, List[str], Tuple[str]],
+        delimiter: bytes = b"\n",
+        buffer_size: int = -1,
+        **kwargs,
+    ) -> Tuple[Optional[int], List[str], List[str]]:
         """
         Calls a command
 
@@ -157,49 +164,10 @@ class CommandlineCaller:
             (tuple) a 3-tuple of return code, full stdout and full stderr output
         """
 
-        if isinstance(command, (list, tuple)):
-            joined_command = " ".join(command)
-        else:
-            joined_command = command
-        self._logger.debug(f"Calling: {joined_command}")
-        self.on_log_call(joined_command)
-
-        delimiter = kwargs.get("delimiter", b"\n")
-        try:
-            kwargs.pop("delimiter")
-        except KeyError:
-            pass
-
-        buffer_size = kwargs.get("buffer_size", -1)
-        try:
-            kwargs.pop("buffer_size")
-        except KeyError:
-            pass
-
-        kwargs.update(
-            {
-                "close_fds": CLOSE_FDS,
-                "async_": True,
-                "stdout": DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
-                "stderr": DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
-            }
+        p = self.non_blocking_call(
+            command, delimiter=delimiter, buffer_size=buffer_size, **kwargs
         )
-
-        p = sarge.run(command, **kwargs)
-        while len(p.commands) == 0:
-            # somewhat ugly... we can't use wait_events because
-            # the events might not be all set if an exception
-            # by sarge is triggered within the async process
-            # thread
-            time.sleep(0.01)
-
-        # by now we should have a command, let's wait for its
-        # process to have been prepared
-        p.commands[0].process_ready.wait()
-
-        if not p.commands[0].process:
-            # the process might have been set to None in case of any exception
-            self._logger.error(f"Error while trying to run command {joined_command}")
+        if p is None:
             return None, [], []
 
         all_stdout = []
@@ -233,6 +201,48 @@ class CommandlineCaller:
         all_stdout += process_stdout(p.stdout.readlines())
 
         return p.returncode, all_stdout, all_stderr
+
+    def non_blocking_call(
+        self,
+        command: Union[str, List, Tuple],
+        delimiter: bytes = b"\n",
+        buffer_size: int = -1,
+        **kwargs,
+    ) -> Optional[sarge.Pipeline]:
+        if isinstance(command, (list, tuple)):
+            joined_command = " ".join(command)
+        else:
+            joined_command = command
+        self._logger.debug(f"Calling: {joined_command}")
+        self.on_log_call(joined_command)
+
+        kwargs.update(
+            {
+                "close_fds": CLOSE_FDS,
+                "async_": True,
+                "stdout": DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
+                "stderr": DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
+            }
+        )
+
+        p = sarge.run(command, **kwargs)
+        while len(p.commands) == 0:
+            # somewhat ugly... we can't use wait_events because
+            # the events might not be all set if an exception
+            # by sarge is triggered within the async process
+            # thread
+            time.sleep(0.01)
+
+        # by now we should have a command, let's wait for its
+        # process to have been prepared
+        p.commands[0].process_ready.wait()
+
+        if not p.commands[0].process:
+            # the process might have been set to None in case of any exception
+            self._logger.error(f"Error while trying to run command {joined_command}")
+            return None
+
+        return p
 
     def _log_stdout(self, *lines):
         self.on_log_stdout(*lines)

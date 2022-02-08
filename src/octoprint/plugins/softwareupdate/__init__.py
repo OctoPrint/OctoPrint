@@ -31,6 +31,7 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.util import dict_merge, get_formatted_size, to_str, yaml
+from octoprint.util.commandline import CommandlineError
 from octoprint.util.pip import create_pip_caller
 from octoprint.util.version import (
     get_comparable_version,
@@ -630,8 +631,7 @@ class SoftwareUpdatePlugin(
             return False
 
         restart_type = self._get_restart_type(check)
-        restart_command = self._get_restart_command(restart_type)
-        return restart_command is not None
+        return self._has_restart_command(restart_type)
 
     def _get_restart_type(self, check):
         if check.get("restart") in self.VALID_RESTART_TYPES:
@@ -643,17 +643,13 @@ class SoftwareUpdatePlugin(
 
         return target_restart_type
 
-    def _get_restart_command(self, restart_type):
+    def _has_restart_command(self, restart_type):
         if restart_type == "octoprint":
-            return self._settings.global_get(
-                ["server", "commands", "serverRestartCommand"]
-            )
+            return self._system_commands.has_server_restart_command()
         elif restart_type == "environment":
-            return self._settings.global_get(
-                ["server", "commands", "systemRestartCommand"]
-            )
+            return self._system_commands.has_system_restart_command()
         else:
-            return None
+            return False
 
     # ~~ SettingsPlugin API
 
@@ -1949,14 +1945,13 @@ class SoftwareUpdatePlugin(
                 # one of our updates requires a restart of either type "octoprint" or "environment". Let's see if
                 # we can actually perform that
 
-                restart_command = self._get_restart_command(restart_type)
-                if restart_command:
+                if self._has_restart_command(restart_type):
                     self._send_client_message(
                         "restarting",
                         {"restart_type": restart_type, "results": target_results},
                     )
                     try:
-                        self._perform_restart(restart_command)
+                        self._perform_restart(restart_type)
                     except exceptions.RestartFailed:
                         self._send_client_message(
                             "restart_failed",
@@ -2166,18 +2161,19 @@ class SoftwareUpdatePlugin(
 
         check["current"] = current
 
-    def _perform_restart(self, restart_command):
+    def _perform_restart(self, restart_type):
         """
-        Performs a restart using the supplied restart_command.
+        Performs a restart using the supplied restart_type.
         """
 
         self._logger.info("Restarting...")
         try:
-            util.execute(restart_command, evaluate_returncode=False, do_async=True)
-        except exceptions.ScriptError as e:
-            self._logger.exception(
-                f"Error while restarting via command {restart_command}"
-            )
+            if restart_type == "octoprint":
+                return self._system_commands.perform_server_restart()
+            elif restart_type == "environment":
+                return self._system_commands.perform_system_restart()
+        except CommandlineError as e:
+            self._logger.exception(f"Error while restarting of type {restart_type}")
             self._logger.warning(f"Restart stdout:\n{e.stdout}")
             self._logger.warning(f"Restart stderr:\n{e.stderr}")
             raise exceptions.RestartFailed()

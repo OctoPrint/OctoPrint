@@ -8,10 +8,8 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 
 import logging
 
-import sarge
-
 from octoprint.settings import settings
-from octoprint.util.platform import CLOSE_FDS
+from octoprint.util.commandline import CommandlineCaller, CommandlineError
 
 # singleton
 _instance = None
@@ -30,31 +28,64 @@ class SystemCommandManager:
     SYSTEM_RESTART_COMMAND = "systemRestartCommand"
     SYSTEM_SHUTDOWN_COMMAND = "systemShutdownCommand"
 
-    def _execute(self, cmd):
-        command = settings().get(["server", "commands", cmd])
+    def __init__(self):
+        self._logger = logging.getLogger(__name__)
+        self._caller = CommandlineCaller()
 
+    def execute(self, command):
         if not command:
             return False
 
         try:
-            sarge.run(
-                command,
-                close_fds=CLOSE_FDS,
-                shell=True,
-                async_=True,
-            )
+            # we run this with shell=True since we have to trust whatever
+            # our admin configured as command and since we want to allow
+            # shell-alike handling here...
+            p = self._caller.non_blocking_call(command, shell=True)
 
-            return True
+            if p is None:
+                raise CommandlineError(None, "", "")
+
+            if p.returncode is not None:
+                stdout = p.stdout.text if p is not None and p.stdout is not None else ""
+                stderr = p.stderr.text if p is not None and p.stderr is not None else ""
+                raise CommandlineError(p.returncode, stdout, stderr)
+        except CommandlineError:
+            raise
         except Exception:
-            logging.getLogger(__name__).exception("Error while executing system command")
+            self._logger.exception(f"Error while executing command: {command}")
+            raise CommandlineError(None, "", "")
 
-        return False
+        return True
 
-    def server_restart(self):
-        return self._execute(self.SERVER_RESTART_COMMAND)
+    def get_command(self, cmd):
+        return settings().get(["server", "commands", cmd])
 
-    def system_restart(self):
-        return self._execute(self.SYSTEM_RESTART_COMMAND)
+    def has_command(self, cmd):
+        return self.get_command(cmd) is not None
 
-    def system_shutdown(self):
-        return self._execute(self.SYSTEM_SHUTDOWN_COMMAND)
+    def get_server_restart_command(self):
+        return self.get_command(self.SERVER_RESTART_COMMAND)
+
+    def get_system_restart_command(self):
+        return self.get_command(self.SYSTEM_RESTART_COMMAND)
+
+    def get_system_shutdown_command(self):
+        return self.get_command(self.SYSTEM_SHUTDOWN_COMMAND)
+
+    def has_server_restart_command(self):
+        return self.get_server_restart_command() is not None
+
+    def has_system_restart_command(self):
+        return self.get_system_restart_command() is not None
+
+    def has_system_shutdown_command(self):
+        return self.get_system_shutdown_command() is not None
+
+    def perform_server_restart(self):
+        return self.execute(self.get_server_restart_command())
+
+    def perform_system_restart(self):
+        return self.execute(self.get_system_restart_command())
+
+    def perform_system_shutdown(self):
+        return self.execute(self.get_system_shutdown_command())
