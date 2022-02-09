@@ -575,6 +575,7 @@ class MachineCom(object):
         self._sdAlwaysAvailable = settings().getBoolean(["serial", "sdAlwaysAvailable"])
         self._sdRelativePath = settings().getBoolean(["serial", "sdRelativePath"])
         self._sdLowerCase = settings().getBoolean(["serial", "sdLowerCase"])
+        self._sdCancelCommand = settings().get(["serial", "sdCancelCommand"])
         self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
         self._send_m112_on_error = settings().getBoolean(["serial", "sendM112OnError"])
         self._disable_sd_printing_detection = settings().getBoolean(
@@ -1752,7 +1753,7 @@ class MachineCom(object):
             if self.isSdFileSelected():
                 if not external_sd:
                     self.sendCommand(
-                        settings().get(["serial", "sdCancelCommand"]),
+                        self._sdCancelCommand,
                         part_of_job=True,
                         tags=tags | cancel_tags,
                     )  # pause print
