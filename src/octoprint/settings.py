@@ -169,6 +169,7 @@ default_settings = {
         "resendRatioStart": 100,
         "ignoreEmptyPorts": False,
         "encoding": "ascii",
+        "enableShutdownActionCommand": False,
         # command specific flags
         "triggerOkForM29": True,
     },

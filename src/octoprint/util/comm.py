@@ -49,7 +49,7 @@ try:
     import winreg
 except ImportError:
     try:
-        import _winreg as winreg
+        import _winreg as winreg  # type: ignore
     except ImportError:
         pass
 
@@ -773,6 +773,11 @@ class MachineCom:
 
         # serial encoding
         self._serial_encoding = settings().get(["serial", "encoding"])
+
+        # action commands
+        self._enable_shutdown_action_command = settings().getBoolean(
+            ["serial", "enableShutdownActionCommand"]
+        )
 
         # print job
         self._currentFile = None
@@ -2284,25 +2289,32 @@ class MachineCom:
 
                         if action_name == "start":
                             if self._currentFile is not None:
-                                self._log(
-                                    "(Re)Starting current job on request of the printer..."
+                                self._dual_log(
+                                    "(Re)Starting current job on request of the printer...",
+                                    level=logging.INFO,
                                 )
                                 self.startPrint(
                                     tags={"trigger:serial.action_command.start"}
                                 )
                         elif action_name == "cancel":
-                            self._log("Cancelling on request of the printer...")
+                            self._dual_log(
+                                "Cancelling on request of the printer...",
+                                level=logging.INFO,
+                            )
                             self.cancelPrint(
                                 tags={"trigger:serial.action_command.cancel"}
                             )
                         elif action_name == "pause":
-                            self._log("Pausing on request of the printer...")
+                            self._dual_log(
+                                "Pausing on request of the printer...", level=logging.INFO
+                            )
                             self.setPause(
                                 True, tags={"trigger:serial.action_command.pause"}
                             )
                         elif action_name == "paused":
-                            self._log(
-                                "Printer signalled that it paused, switching state..."
+                            self._dual_log(
+                                "Printer signalled that it paused, switching state...",
+                                level=logging.INFO,
                             )
                             self.setPause(
                                 True,
@@ -2310,13 +2322,17 @@ class MachineCom:
                                 tags={"trigger:serial.action_command.paused"},
                             )
                         elif action_name == "resume":
-                            self._log("Resuming on request of the printer...")
+                            self._dual_log(
+                                "Resuming on request of the printer...",
+                                level=logging.INFO,
+                            )
                             self.setPause(
                                 False, tags={"trigger:serial.action_command.resume"}
                             )
                         elif action_name == "resumed":
-                            self._log(
-                                "Printer signalled that it resumed, switching state..."
+                            self._dual_log(
+                                "Printer signalled that it resumed, switching state...",
+                                level=logging.INFO,
                             )
                             self.setPause(
                                 False,
@@ -2324,26 +2340,45 @@ class MachineCom:
                                 tags={"trigger:serial.action_command.resumed"},
                             )
                         elif action_name == "disconnect":
-                            self._log("Disconnecting on request of the printer...")
+                            self._dual_log(
+                                "Disconnecting on request of the printer...",
+                                level=logging.INFO,
+                            )
                             self._callback.on_comm_force_disconnect()
                         elif action_name == "shutdown":
-                            self._log("Shutting down system on request of printer...")
-                            try:
-                                system_command_manager().perform_system_shutdown()
-                            except Exception as ex:
-                                self._log(f"Error executing system shutdown: {ex}")
+                            if self._enable_shutdown_action_command:
+                                self._dual_log(
+                                    "Shutting down system on request of printer...",
+                                    level=logging.WARNING,
+                                )
+                                try:
+                                    system_command_manager().perform_system_shutdown()
+                                except Exception as ex:
+                                    self._log(f"Error executing system shutdown: {ex}")
+                            else:
+                                self._dual_log(
+                                    "Received a shutdown command from the printer, but processing of this command is disabled",
+                                    level=logging.WARNING,
+                                )
                         elif self._sdEnabled and action_name == "sd_inserted":
-                            self._log("Printer reported SD card as inserted")
+                            self._dual_log(
+                                "Printer reported SD card as inserted", level=logging.INFO
+                            )
                             self._sdAvailable = True
                             self.refreshSdFiles()
                             self._callback.on_comm_sd_state_change(self._sdAvailable)
                         elif self._sdEnabled and action_name == "sd_ejected":
-                            self._log("Printer reported SD card as ejected")
+                            self._dual_log(
+                                "Printer reported SD card as ejected", level=logging.INFO
+                            )
                             self._sdAvailable = False
                             self._sdFiles = []
                             self._callback.on_comm_sd_state_change(self._sdAvailable)
                         elif self._sdEnabled and action_name == "sd_updated":
-                            self._log("Printer reported a change on the SD card")
+                            self._dual_log(
+                                "Printer reported a change on the SD card",
+                                level=logging.INFO,
+                            )
                             self.refreshSdFiles()
                         else:
                             for name, hook in self._printer_action_hooks.items():
