@@ -202,7 +202,7 @@ def get_unrendered_timelapses():
 def delete_unrendered_timelapse(name):
     global _cleanup_lock
 
-    pattern = "%s{}*.jpg".format(util.glob_escape(name)) % ""
+    pattern = "{}*.jpg".format(util.glob_escape(name))
 
     basedir = settings().getBaseFolder("timelapse_tmp")
     with _cleanup_lock:
