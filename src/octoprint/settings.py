@@ -139,6 +139,7 @@ default_settings = {
         "sdRelativePath": False,
         "sdAlwaysAvailable": False,
         "sdLowerCase": False,
+        "sdCancelCommand": "M25",
         "maxNotSdPrinting": 2,
         "swallowOkAfterResend": True,
         "repetierTargetTemp": False,

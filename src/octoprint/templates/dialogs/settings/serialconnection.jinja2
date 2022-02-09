@@ -447,6 +447,13 @@
                     </div>
                 </div>
                 <div class="control-group">
+                    <label class="control-label" for="settings-serialSdCancelCommand">{{ _('SD Cancel Command') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" id="settings-serialSdCancelCommand" data-bind="value: serial_sdCancelCommand">
+                        <span class="help-inline">{{ _('The command to send to printer when cancelling a SD card print. Defaults to <code>M25</code>.') }}</span>
+                    </div>
+                </div>
+                <div class="control-group">
                     <label class="control-label" for="settings-serialEmergencyCommands">{{ _('Emergency commands') }}</label>
                     <div class="controls">
                         <input type="text" class="input-block-level" id="settings-serialEmergencyCommands" data-bind="value: serial_emergencyCommands">
