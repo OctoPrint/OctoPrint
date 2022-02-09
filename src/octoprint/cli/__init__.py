@@ -244,7 +244,7 @@ def standard_options(hidden=False):
             callback=set_ctx_obj_option,
             is_eager=True,
             expose_value=False,
-            help="Disable colored console output",
+            help="Disable colored console output. Alternatively set the NO_COLOR environment variable to a value of 1.",
         ),
     ]
 
