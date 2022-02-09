@@ -309,7 +309,7 @@ def serve_command(ctx, **kwargs):
     safe_mode = "flag" if get_value("safe_mode") else None
     ignore_blacklist = get_value("ignore_blacklist")
     overlays = get_value("overlays")
-    no_color = bool(get_value("no_color"))
+    no_color = get_value("no_color")
 
     if v4 and not host:
         host = "0.0.0.0"
