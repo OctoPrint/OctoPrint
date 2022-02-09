@@ -12,8 +12,6 @@ import logging.handlers
 import os
 import threading
 import time
-
-# noinspection PyCompatibility
 from concurrent import futures
 
 import flask
@@ -30,7 +28,7 @@ from octoprint.server.util.flask import (
     no_firstrun_access,
     with_revalidation_checking,
 )
-from octoprint.util import dict_merge, get_formatted_size, to_str, yaml
+from octoprint.util import dict_merge, get_formatted_size, to_unicode, yaml
 from octoprint.util.commandline import CommandlineError
 from octoprint.util.pip import create_pip_caller
 from octoprint.util.version import (
@@ -2191,13 +2189,13 @@ class SoftwareUpdatePlugin(
             if displayName is None:
                 # displayName missing or set to None
                 displayName = gettext("OctoPrint")
-            result["displayName"] = to_str(displayName, errors="replace")
+            result["displayName"] = to_unicode(displayName, errors="replace")
 
             displayVersion = check.get("displayVersion")
             if displayVersion is None:
                 # displayVersion missing or set to None
                 displayVersion = "{octoprint_version}"
-            result["displayVersion"] = to_str(displayVersion, errors="replace")
+            result["displayVersion"] = to_unicode(displayVersion, errors="replace")
 
             result["released_version"] = is_released_octoprint_version()
 
@@ -2213,7 +2211,7 @@ class SoftwareUpdatePlugin(
             if displayName is None:
                 # displayName missing or set to None
                 displayName = gettext("pip")
-            result["displayName"] = to_str(displayName, errors="replace")
+            result["displayName"] = to_unicode(displayName, errors="replace")
 
             displayVersion = check.get("displayVersion")
             if displayVersion is None:
@@ -2221,7 +2219,7 @@ class SoftwareUpdatePlugin(
                 distribution = pkg_resources.get_distribution("pip")
                 if distribution:
                     displayVersion = distribution.version
-            result["displayVersion"] = to_str(displayVersion, errors="replace")
+            result["displayVersion"] = to_unicode(displayVersion, errors="replace")
 
             result["pip_command"] = check.get(
                 "pip_command",
@@ -2229,12 +2227,12 @@ class SoftwareUpdatePlugin(
             )
 
         else:
-            result["displayName"] = to_str(check.get("displayName"), errors="replace")
+            result["displayName"] = to_unicode(check.get("displayName"), errors="replace")
             if result["displayName"] is None:
                 # displayName missing or None
-                result["displayName"] = to_str(target, errors="replace")
+                result["displayName"] = to_unicode(target, errors="replace")
 
-            result["displayVersion"] = to_str(
+            result["displayVersion"] = to_unicode(
                 check.get("displayVersion", check.get("current")), errors="replace"
             )
             if result["displayVersion"] is None:

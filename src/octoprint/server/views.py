@@ -40,7 +40,7 @@ from octoprint.server import (  # noqa: F401
 )
 from octoprint.server.util import has_permissions, require_login_with
 from octoprint.settings import settings
-from octoprint.util import sv, to_bytes, to_str
+from octoprint.util import sv, to_bytes, to_unicode
 from octoprint.util.version import get_python_version_string
 
 from . import util
@@ -375,7 +375,9 @@ def index():
         wizard_active(_templates.get(locale)),
     ] + sorted(
         [
-            "{}:{}".format(to_str(k, errors="replace"), to_str(v, errors="replace"))
+            "{}:{}".format(
+                to_unicode(k, errors="replace"), to_unicode(v, errors="replace")
+            )
             for k, v in _plugin_vars.items()
         ]
     )
@@ -792,13 +794,13 @@ def fetch_template_data(refresh=False):
             # Ultra special case - we MUST always have the ACL wizard first since otherwise any steps that follow and
             # that require to access APIs to function will run into errors since those APIs won't work before ACL
             # has been configured. See also #2140
-            return "0:{}".format(to_str(d[0]))
+            return "0:{}".format(to_unicode(d[0]))
         elif d[1].get("mandatory", False):
             # Other mandatory steps come before the optional ones
-            return "1:{}".format(to_str(d[0]))
+            return "1:{}".format(to_unicode(d[0]))
         else:
             # Finally everything else
-            return "2:{}".format(to_str(d[0]))
+            return "2:{}".format(to_unicode(d[0]))
 
     template_sorting = {
         "navbar": {"add": "prepend", "key": None},

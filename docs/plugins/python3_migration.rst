@@ -211,7 +211,7 @@ NOT need to convert to bytes when implementing API endpoints that return JSON, a
 anyhow.
 
 OctoPrint includes two utility methods you should use to ensure your strings enter/exit your code in the right format,
-under both Python versions: :py:func:`octoprint.util.to_bytes` and :py:func:`octoprint.util.to_str`. Use them to ensure the correct data
+under both Python versions: :py:func:`octoprint.util.to_bytes` and :py:func:`octoprint.util.to_unicode`. Use them to ensure the correct data
 types and to avoid weird conversion and encoding issues during runtime.
 
 You can read more about this specific issue in the corresponding section of the

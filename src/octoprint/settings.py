@@ -29,7 +29,6 @@ import time
 from collections import ChainMap
 from collections.abc import KeysView
 
-# noinspection PyCompatibilitys
 from yaml import YAMLError
 
 from octoprint.util import (

@@ -12,7 +12,14 @@ from os import scandir, walk
 import pylru
 
 import octoprint.filemanager
-from octoprint.util import atomic_write, is_hidden_path, time_this, to_bytes, to_str, yaml
+from octoprint.util import (
+    atomic_write,
+    is_hidden_path,
+    time_this,
+    to_bytes,
+    to_unicode,
+    yaml,
+)
 from octoprint.util.files import sanitize_filename
 
 
@@ -468,7 +475,7 @@ class LocalFileStorage(StorageInterface):
         """
         self._logger = logging.getLogger(__name__)
 
-        self.basefolder = os.path.realpath(os.path.abspath(to_str(basefolder)))
+        self.basefolder = os.path.realpath(os.path.abspath(to_unicode(basefolder)))
         if not os.path.exists(self.basefolder) and create:
             os.makedirs(self.basefolder)
         if not os.path.exists(self.basefolder) or not os.path.isdir(self.basefolder):
@@ -604,7 +611,7 @@ class LocalFileStorage(StorageInterface):
         self, path=None, filter=None, recursive=True, level=0, force_refresh=False
     ):
         if path:
-            path = self.sanitize_path(to_str(path))
+            path = self.sanitize_path(to_unicode(path))
             base = self.path_in_storage(path)
             if base:
                 base += "/"
@@ -1097,7 +1104,7 @@ class LocalFileStorage(StorageInterface):
         self._save_metadata(path, metadata)
 
     def split_path(self, path):
-        path = to_str(path)
+        path = to_unicode(path)
         split = path.split("/")
         if len(split) == 1:
             return "", split[0]
@@ -1105,7 +1112,7 @@ class LocalFileStorage(StorageInterface):
             return self.join_path(*split[:-1]), split[-1]
 
     def join_path(self, *path):
-        return "/".join(map(to_str, path))
+        return "/".join(map(to_unicode, path))
 
     def sanitize(self, path):
         """
@@ -1131,18 +1138,18 @@ class LocalFileStorage(StorageInterface):
     def canonicalize(self, path):
         name = None
         if isinstance(path, str):
-            path = to_str(path)
+            path = to_unicode(path)
             if path.startswith(self.basefolder):
                 path = path[len(self.basefolder) :]
             path = path.replace(os.path.sep, "/")
             path = path.split("/")
         if isinstance(path, (list, tuple)):
             if len(path) == 1:
-                name = to_str(path[0])
+                name = to_unicode(path[0])
                 path = ""
             else:
-                name = to_str(path[-1])
-                path = self.join_path(*map(to_str, path[:-1]))
+                name = to_unicode(path[-1])
+                path = self.join_path(*map(to_unicode, path[:-1]))
         if not path:
             path = ""
 
@@ -1162,7 +1169,7 @@ class LocalFileStorage(StorageInterface):
         relative path elements (e.g. ``..``) and sanitizes folder names using :func:`sanitize_name`. Final path is the
         absolute path including leading ``basefolder`` path.
         """
-        path = to_str(path)
+        path = to_unicode(path)
 
         if len(path):
             if path[0] == "/":
@@ -1185,7 +1192,7 @@ class LocalFileStorage(StorageInterface):
         return path
 
     def _sanitize_entry(self, entry, path, entry_path):
-        entry = to_str(entry)
+        entry = to_unicode(entry)
         sanitized = self.sanitize_name(entry)
         if sanitized != entry:
             # entry is not sanitized yet, let's take care of that
@@ -1219,7 +1226,7 @@ class LocalFileStorage(StorageInterface):
         if isinstance(path, (tuple, list)):
             path = self.join_path(*path)
         if isinstance(path, str):
-            path = to_str(path)
+            path = to_unicode(path)
             if path.startswith(self.basefolder):
                 path = path[len(self.basefolder) :]
             path = path.replace(os.path.sep, "/")
@@ -1542,7 +1549,7 @@ class LocalFileStorage(StorageInterface):
                             entry_name, path, entry_path
                         )
                         if entry_name != new_entry_name or entry_path != new_entry_path:
-                            entry_display = to_str(entry_name)
+                            entry_display = to_unicode(entry_name)
                             entry_name = new_entry_name
                             entry_path = new_entry_path
                             entry_stat = os.stat(entry_path)
