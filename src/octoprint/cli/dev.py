@@ -2,6 +2,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import sys
 
 import click
 
@@ -16,7 +17,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
     """
 
     sep = ":"
-    groups = ("plugin",)
+    groups = ("plugin", "css")
 
     def __init__(self, *args, **kwargs):
         click.MultiCommand.__init__(self, *args, **kwargs)
@@ -214,7 +215,6 @@ class OctoPrintDevelCommands(click.MultiCommand):
             """
 
             import os
-            import sys
 
             if not path:
                 path = os.getcwd()
@@ -235,7 +235,6 @@ class OctoPrintDevelCommands(click.MultiCommand):
         @click.argument("name")
         def command(name):
             """Uninstalls the plugin with the given name."""
-            import sys
 
             lower_name = name.lower()
             if not lower_name.startswith("octoprint_") and not lower_name.startswith(
@@ -246,6 +245,122 @@ class OctoPrintDevelCommands(click.MultiCommand):
 
             call = [sys.executable, "-m", "pip", "uninstall", "--yes", name]
             self.command_caller.call(call)
+
+        return command
+
+    def css_build(self):
+        @click.command("build")
+        @click.option(
+            "--file",
+            "-f",
+            "files",
+            multiple=True,
+            help="Specify files to build, for a list of options use --list",
+        )
+        @click.option("--all", "all_files", is_flag=True, help="Build all less files")
+        @click.option(
+            "--list", "list_files", is_flag=True, help="List all available files and exit"
+        )
+        def command(files, all_files, list_files):
+            import os.path
+            import shutil
+
+            available_files = {
+                "core": {
+                    "source": "static/less/octoprint.less",
+                    "output": "static/css/octoprint.css",
+                },
+                "login": {
+                    "source": "static/less/login.less",
+                    "output": "static/css/login.css",
+                },
+                "recovery": {
+                    "source": "static/less/recovery.less",
+                    "output": "static/css/recovery.css",
+                },
+                "plugin_announcements": {
+                    "source": "plugins/announcements/static/less/announcements.less",
+                    "output": "plugins/announcements/static/css/announcements.css",
+                },
+                "plugin_appkeys_core": {
+                    "source": "plugins/appkeys/static/less/appkeys.less",
+                    "output": "plugins/appkeys/static/css/appkeys.css",
+                },
+                "plugin_appkeys_authdialog": {
+                    "source": "plugins/appkeys/static/less/authdialog.less",
+                    "output": "plugins/appkeys/static/css/authdialog.css",
+                },
+                "plugin_backup": {
+                    "source": "plugins/backup/static/less/backup.less",
+                    "output": "plugins/backup/static/css/backup.css",
+                },
+                "plugin_gcodeviewer": {
+                    "source": "plugins/gcodeviewer/static/less/gcodeviewer.less",
+                    "output": "plugins/gcodeviewer/static/css/gcodeviewer.css",
+                },
+                "plugin_logging": {
+                    "source": "plugins/logging/static/less/logging.less",
+                    "output": "plugins/logging/static/css/logging.css",
+                },
+                "plugin_pluginmanager": {
+                    "source": "plugins/pluginmanager/static/less/pluginmanager.less",
+                    "output": "plugins/pluginmanager/static/css/pluginmanager.css",
+                },
+                "plugin_softwareupdate": {
+                    "source": "plugins/softwareupdate/static/less/softwareupdate.less",
+                    "output": "plugins/softwareupdate/static/css/softwareupdate.css",
+                },
+            }
+
+            if list_files:
+                click.echo("Available files to build:")
+                for name in available_files.keys():
+                    click.echo(f"- {name}")
+                sys.exit(0)
+
+            if all_files:
+                files = available_files.keys()
+
+            if not files:
+                click.echo(
+                    "No files specified. Use `--file <file>` to specify individual files, or `--all` to build all."
+                )
+                sys.exit(1)
+
+            # Check that lessc is installed
+            less = shutil.which("lessc")
+
+            if not less:
+                click.echo(
+                    "lessc is not installed/not available, please install it first"
+                )
+                click.echo(
+                    "Try `npm i -g less` to install it (NOT lessc in this command!)"
+                )
+                sys.exit(1)
+
+            # Find the folder of the `octoprint` package
+            # Two folders up from this file
+            octoprint = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+            for file in files:
+                if file not in available_files.keys():
+                    click.echo(f"Unknown file {file}")
+                    sys.exit(1)
+
+                source_path = os.path.join(octoprint, available_files[file]["source"])
+                output_path = os.path.join(octoprint, available_files[file]["output"])
+
+                # Check the target file exists
+                if not os.path.exists(source_path):
+                    click.echo(f"Target file {source_path} does not exist")
+                    continue
+
+                # Build command line, with necessary options
+                # TODO -x is deprecated, find replacement?
+                less_command = [less, "-x", source_path, output_path]
+
+                self.command_caller.call(less_command)
 
         return command
 
