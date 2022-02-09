@@ -7,7 +7,7 @@ import json
 
 from frozendict import frozendict
 
-from octoprint.util import to_str
+from octoprint.util import to_unicode
 
 
 def dump(obj):
@@ -43,4 +43,4 @@ class JsonEncoding:
 
 
 JsonEncoding.add_encoder(frozendict, lambda obj: dict(obj))
-JsonEncoding.add_encoder(bytes, lambda obj: to_str(obj))
+JsonEncoding.add_encoder(bytes, lambda obj: to_unicode(obj))

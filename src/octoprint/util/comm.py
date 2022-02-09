@@ -27,6 +27,7 @@ from octoprint.events import Events, eventManager
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings
+from octoprint.systemcommands import system_command_manager
 from octoprint.util import (
     CountedEvent,
     PrependableQueue,
@@ -40,7 +41,7 @@ from octoprint.util import (
     get_bom,
     get_exception_string,
     sanitize_ascii,
-    to_str,
+    to_unicode,
 )
 from octoprint.util.platform import get_os, set_close_exec
 
@@ -48,7 +49,7 @@ try:
     import winreg
 except ImportError:
     try:
-        import _winreg as winreg
+        import _winreg as winreg  # type: ignore
     except ImportError:
         pass
 
@@ -162,7 +163,7 @@ Groups will be as follows:
   * ``es``: multiple E coordinates if present, to be parsed further with regex_e_positions
 """
 
-regex_e_positions = re.compile(fr"E(?P<id>\d+):\s*(?P<value>{regex_float_pattern})")
+regex_e_positions = re.compile(rf"E(?P<id>\d+):\s*(?P<value>{regex_float_pattern})")
 """Regex for matching multiple E coordinates in a position report.
 
 Groups will be as follows:
@@ -773,6 +774,11 @@ class MachineCom:
         # serial encoding
         self._serial_encoding = settings().get(["serial", "encoding"])
 
+        # action commands
+        self._enable_shutdown_action_command = settings().getBoolean(
+            ["serial", "enableShutdownActionCommand"]
+        )
+
         # print job
         self._currentFile = None
         self._job_on_hold = CountedEvent()
@@ -880,7 +886,7 @@ class MachineCom:
         self._log(prefix + message)
 
     def _log(self, message):
-        message = to_str(message)
+        message = to_unicode(message)
 
         self._terminal_log.append(message)
         self._callback.on_comm_log(message)
@@ -1238,7 +1244,7 @@ class MachineCom:
         tags=None,
     ):
         if not isinstance(cmd, QueueMarker):
-            cmd = to_str(cmd, errors="replace")
+            cmd = to_unicode(cmd, errors="replace")
             if not processed:
                 cmd = process_gcode_line(cmd)
                 if not cmd:
@@ -1306,7 +1312,7 @@ class MachineCom:
                 retval = hook(self, "gcode", scriptName)
             except Exception:
                 self._logger.exception(
-                    "Error while processing hook {name}.".format(**locals()),
+                    f"Error while processing hook {name}.",
                     extra={"plugin": name},
                 )
             else:
@@ -1378,7 +1384,6 @@ class MachineCom:
             f"script:{scriptName}",
         }
         for line in scriptLines:
-            # noinspection PyCompatibility
             if (
                 isinstance(line, tuple)
                 and len(line) == 2
@@ -1417,9 +1422,7 @@ class MachineCom:
         if "source:plugin" in tags:
             for tag in tags:
                 if tag.startswith("plugin:"):
-                    self._logger.info(
-                        "Starting job on behalf of plugin {}".format(tag[7:])
-                    )
+                    self._logger.info(f"Starting job on behalf of plugin {tag[7:]}")
         elif "source:api" in tags:
             self._logger.info(f"Starting job on behalf of user {user}")
 
@@ -1678,9 +1681,7 @@ class MachineCom:
         if "source:plugin" in tags:
             for tag in tags:
                 if tag.startswith("plugin:"):
-                    self._logger.info(
-                        "Cancelling job on behalf of plugin {}".format(tag[7:])
-                    )
+                    self._logger.info(f"Cancelling job on behalf of plugin {tag[7:]}")
         elif "source:api" in tags:
             self._logger.info(f"Cancelling job on behalf of user {user}")
 
@@ -1829,7 +1830,7 @@ class MachineCom:
             for tag in tags:
                 if tag.startswith("plugin:"):
                     self._logger.info(
-                        "Pausing/resuming job on behalf of plugin {}".format(tag[7:])
+                        f"Pausing/resuming job on behalf of plugin {tag[7:]}"
                     )
         elif user:
             self._logger.info(f"Pausing/resuming job on behalf of user {user}")
@@ -2283,25 +2284,32 @@ class MachineCom:
 
                         if action_name == "start":
                             if self._currentFile is not None:
-                                self._log(
-                                    "(Re)Starting current job on request of the printer..."
+                                self._dual_log(
+                                    "(Re)Starting current job on request of the printer...",
+                                    level=logging.INFO,
                                 )
                                 self.startPrint(
                                     tags={"trigger:serial.action_command.start"}
                                 )
                         elif action_name == "cancel":
-                            self._log("Cancelling on request of the printer...")
+                            self._dual_log(
+                                "Cancelling on request of the printer...",
+                                level=logging.INFO,
+                            )
                             self.cancelPrint(
                                 tags={"trigger:serial.action_command.cancel"}
                             )
                         elif action_name == "pause":
-                            self._log("Pausing on request of the printer...")
+                            self._dual_log(
+                                "Pausing on request of the printer...", level=logging.INFO
+                            )
                             self.setPause(
                                 True, tags={"trigger:serial.action_command.pause"}
                             )
                         elif action_name == "paused":
-                            self._log(
-                                "Printer signalled that it paused, switching state..."
+                            self._dual_log(
+                                "Printer signalled that it paused, switching state...",
+                                level=logging.INFO,
                             )
                             self.setPause(
                                 True,
@@ -2309,13 +2317,17 @@ class MachineCom:
                                 tags={"trigger:serial.action_command.paused"},
                             )
                         elif action_name == "resume":
-                            self._log("Resuming on request of the printer...")
+                            self._dual_log(
+                                "Resuming on request of the printer...",
+                                level=logging.INFO,
+                            )
                             self.setPause(
                                 False, tags={"trigger:serial.action_command.resume"}
                             )
                         elif action_name == "resumed":
-                            self._log(
-                                "Printer signalled that it resumed, switching state..."
+                            self._dual_log(
+                                "Printer signalled that it resumed, switching state...",
+                                level=logging.INFO,
                             )
                             self.setPause(
                                 False,
@@ -2323,20 +2335,45 @@ class MachineCom:
                                 tags={"trigger:serial.action_command.resumed"},
                             )
                         elif action_name == "disconnect":
-                            self._log("Disconnecting on request of the printer...")
+                            self._dual_log(
+                                "Disconnecting on request of the printer...",
+                                level=logging.INFO,
+                            )
                             self._callback.on_comm_force_disconnect()
+                        elif action_name == "shutdown":
+                            if self._enable_shutdown_action_command:
+                                self._dual_log(
+                                    "Shutting down system on request of printer...",
+                                    level=logging.WARNING,
+                                )
+                                try:
+                                    system_command_manager().perform_system_shutdown()
+                                except Exception as ex:
+                                    self._log(f"Error executing system shutdown: {ex}")
+                            else:
+                                self._dual_log(
+                                    "Received a shutdown command from the printer, but processing of this command is disabled",
+                                    level=logging.WARNING,
+                                )
                         elif self._sdEnabled and action_name == "sd_inserted":
-                            self._log("Printer reported SD card as inserted")
+                            self._dual_log(
+                                "Printer reported SD card as inserted", level=logging.INFO
+                            )
                             self._sdAvailable = True
                             self.refreshSdFiles()
                             self._callback.on_comm_sd_state_change(self._sdAvailable)
                         elif self._sdEnabled and action_name == "sd_ejected":
-                            self._log("Printer reported SD card as ejected")
+                            self._dual_log(
+                                "Printer reported SD card as ejected", level=logging.INFO
+                            )
                             self._sdAvailable = False
                             self._sdFiles = []
                             self._callback.on_comm_sd_state_change(self._sdAvailable)
                         elif self._sdEnabled and action_name == "sd_updated":
-                            self._log("Printer reported a change on the SD card")
+                            self._dual_log(
+                                "Printer reported a change on the SD card",
+                                level=logging.INFO,
+                            )
                             self.refreshSdFiles()
                         else:
                             for name, hook in self._printer_action_hooks.items():
@@ -3250,7 +3287,7 @@ class MachineCom:
                     len(self._detection_candidates),
                     ", ".join(
                         map(
-                            lambda x: "{}@{}".format(x[0], x[1]),
+                            lambda x: f"{x[0]}@{x[1]}",
                             self._detection_candidates,
                         )
                     ),
@@ -3878,7 +3915,7 @@ class MachineCom:
                         ret = hook(self, stripped_error)
                     except Exception:
                         self._logger.exception(
-                            "Error while processing hook {name}:".format(**locals()),
+                            f"Error while processing hook {name}:",
                             extra={"plugin": name},
                         )
                     else:
@@ -3959,7 +3996,7 @@ class MachineCom:
 
         if ret != "":
             try:
-                self._log("Recv: {}".format(sanitize_ascii(ret)))
+                self._log(f"Recv: {sanitize_ascii(ret)}")
             except ValueError as e:
                 self._log(f"WARN: While reading last line: {e}")
                 self._log(f"Recv: {ret!r}")
@@ -3979,7 +4016,7 @@ class MachineCom:
                 ret = hook(self, ret)
             except Exception:
                 self._logger.exception(
-                    "Error while processing hook {name}:".format(**locals()),
+                    f"Error while processing hook {name}:",
                     extra={"plugin": name},
                 )
             else:
@@ -4554,7 +4591,7 @@ class MachineCom:
         if self._phaseLogger.isEnabledFor(logging.DEBUG):
             output_parts = [
                 f"phase: {phase}",
-                "command: {}".format(to_str(command, errors="replace")),
+                "command: {}".format(to_unicode(command, errors="replace")),
             ]
 
             if kwargs.get("command_type"):
@@ -4633,7 +4670,7 @@ class MachineCom:
                             "command as-is.".format(
                                 name=name,
                                 phase=phase,
-                                command=to_str(command, errors="replace"),
+                                command=to_unicode(command, errors="replace"),
                             ),
                             extra={"plugin": name},
                         )
@@ -4729,7 +4766,7 @@ class MachineCom:
                 self._logger.exception(
                     "Error while processing hook {} for "
                     "phase {} and command {}:".format(
-                        name, phase, to_str(atcommand, errors="replace")
+                        name, phase, to_unicode(atcommand, errors="replace")
                     ),
                     extra={"plugin": name},
                 )
@@ -4742,7 +4779,7 @@ class MachineCom:
             except Exception:
                 self._logger.exception(
                     "Error in handler for phase {} and command {}".format(
-                        phase, to_str(atcommand, errors="replace")
+                        phase, to_unicode(atcommand, errors="replace")
                     )
                 )
 
@@ -4920,7 +4957,6 @@ class MachineCom:
             def convert(data):
                 result = []
                 for d in data:
-                    # noinspection PyCompatibility
                     if isinstance(d, tuple) and len(d) == 2:
                         result.append((d[0], None, d[1]))
                     elif isinstance(d, str):

@@ -7,7 +7,6 @@ from functools import wraps
 
 from flask import abort, g
 from flask_babel import gettext
-from future.utils import with_metaclass
 
 from octoprint.access import ADMIN_GROUP, READONLY_GROUP, USER_GROUP
 from octoprint.vendor.flask_principal import Need, Permission, PermissionDenied, RoleNeed
@@ -26,7 +25,6 @@ class OctoPrintPermission(Permission):
     def convert_to_needs(cls, needs):
         result = []
         for need in needs:
-            # noinspection PyCompatibility
             if isinstance(need, Need):
                 result.append(need)
             elif isinstance(need, Permission):
@@ -269,7 +267,7 @@ class PermissionsMetaClass(type):
         return None
 
 
-class Permissions(with_metaclass(PermissionsMetaClass)):
+class Permissions(metaclass=PermissionsMetaClass):
 
     # Special permission
     ADMIN = OctoPrintPermission(

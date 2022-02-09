@@ -262,6 +262,9 @@ def getSettings():
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
             "ignoreEmptyPorts": s.getBoolean(["serial", "ignoreEmptyPorts"]),
             "encoding": s.get(["serial", "encoding"]),
+            "enableShutdownActionCommand": s.get(
+                ["serial", "enableShutdownActionCommand"]
+            ),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -967,6 +970,12 @@ def _saveSettings(data):
 
         if "encoding" in data["serial"]:
             s.set(["serial", "encoding"], data["serial"]["encoding"])
+
+        if "enableShutdownActionCommand" in data["serial"]:
+            s.setBoolean(
+                ["serial", "enableShutdownActionCommand"],
+                data["serial"]["enableShutdownActionCommand"],
+            )
 
         oldLog = s.getBoolean(["serial", "log"])
         if "log" in data["serial"]:

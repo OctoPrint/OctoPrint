@@ -255,9 +255,7 @@ class ExceptionHandlerExtension(Extension):
             return caller()
         except Exception as e:
             self._logger.exception(
-                "Caught exception while compiling template {filename} at line {lineno}".format(
-                    **locals()
-                )
+                f"Caught exception while compiling template {filename} at line {lineno}"
             )
             error_string = self._format_error(error, e, filename, lineno)
             return error_string if error_string else ""
@@ -273,9 +271,7 @@ class ExceptionHandlerExtension(Extension):
             return error.format(exception=exception, filename=filename, lineno=lineno)
         except Exception:
             self._logger.exception(
-                "Error while compiling exception output for template {filename} at line {lineno}".format(
-                    **locals()
-                )
+                f"Error while compiling exception output for template {filename} at line {lineno}"
             )
             return "Unknown error"
 

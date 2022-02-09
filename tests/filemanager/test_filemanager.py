@@ -7,8 +7,6 @@ import io
 import unittest
 from unittest import mock
 
-import _fixups
-
 import octoprint.filemanager
 import octoprint.filemanager.util
 import octoprint.settings
@@ -395,7 +393,7 @@ class FileManagerTest(unittest.TestCase):
         mock_time.return_value = now
         self.local_storage.path_in_storage.return_value = path
 
-        with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True):
+        with mock.patch("builtins.open", mock.mock_open(), create=True):
             self.file_manager.save_recovery_data(
                 octoprint.filemanager.FileDestinations.LOCAL, path, pos
             )
@@ -429,7 +427,7 @@ class FileManagerTest(unittest.TestCase):
 
         mock_yaml_safe_dump.side_effect = RuntimeError
 
-        with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True):
+        with mock.patch("builtins.open", mock.mock_open(), create=True):
             self.file_manager.save_recovery_data(
                 octoprint.filemanager.FileDestinations.LOCAL, path, pos
             )

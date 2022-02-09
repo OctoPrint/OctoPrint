@@ -441,11 +441,13 @@ $(function () {
                         OctoPrint.job.start();
                     };
 
-                    callViewModels(self.allViewModels, "onBeforePrintStart", function (
-                        method
-                    ) {
-                        prevented = prevented || method(callback) === false;
-                    });
+                    callViewModels(
+                        self.allViewModels,
+                        "onBeforePrintStart",
+                        function (method) {
+                            prevented = prevented || method(callback) === false;
+                        }
+                    );
 
                     if (!prevented) {
                         callback();

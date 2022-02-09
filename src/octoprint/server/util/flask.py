@@ -101,15 +101,12 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                 # plugin translations
                 plugins = octoprint.plugin.plugin_manager().enabled_plugins
                 for name, plugin in plugins.items():
-                    dirs = (
-                        list(
-                            map(
-                                lambda x: os.path.join(x, "_plugins", name),
-                                additional_folders,
-                            )
+                    dirs = list(
+                        map(
+                            lambda x: os.path.join(x, "_plugins", name),
+                            additional_folders,
                         )
-                        + [os.path.join(plugin.location, "translations")]
-                    )
+                    ) + [os.path.join(plugin.location, "translations")]
                     for dirname in dirs:
                         if not os.path.isdir(dirname):
                             continue
@@ -120,21 +117,20 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                             )
                         except Exception:
                             logger.exception(
-                                "Error while trying to load translations "
-                                "for plugin {name}".format(**locals())
+                                f"Error while trying to load translations "
+                                f"for plugin {name}"
                             )
                         else:
                             if isinstance(plugin_translations, support.Translations):
                                 translations = translations.merge(plugin_translations)
                                 logger.debug(
-                                    "Using translation plugin folder {dirname} from "
-                                    "plugin {name} for locale {locale}".format(**locals())
+                                    f"Using translation plugin folder {dirname} from "
+                                    f"plugin {name} for locale {locale}"
                                 )
                                 break
                     else:
                         logger.debug(
-                            "No translations for locale {locale} "
-                            "from plugin {name}".format(**locals())
+                            f"No translations for locale {locale} " f"from plugin {name}"
                         )
 
                 # core translations
@@ -145,8 +141,8 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                     core_translations = support.Translations.load(dirname, [locale])
                     if isinstance(core_translations, support.Translations):
                         logger.debug(
-                            "Using translation core folder {dirname} "
-                            "for locale {locale}".format(**locals())
+                            f"Using translation core folder {dirname} "
+                            f"for locale {locale}"
                         )
                         break
                 else:
@@ -1749,24 +1745,20 @@ def collect_plugin_assets(preferred_stylesheet="css"):
             for asset in all_assets["js"]:
                 if not asset_exists("js", asset):
                     continue
-                assets[asset_key]["js"][name].append(
-                    "plugin/{name}/{asset}".format(**locals())
-                )
+                assets[asset_key]["js"][name].append(f"plugin/{name}/{asset}")
 
         if "clientjs" in all_assets:
             for asset in all_assets["clientjs"]:
                 if not asset_exists("clientjs", asset):
                     continue
-                assets[asset_key]["clientjs"][name].append(
-                    "plugin/{name}/{asset}".format(**locals())
-                )
+                assets[asset_key]["clientjs"][name].append(f"plugin/{name}/{asset}")
 
         if preferred_stylesheet in all_assets:
             for asset in all_assets[preferred_stylesheet]:
                 if not asset_exists(preferred_stylesheet, asset):
                     continue
                 assets[asset_key][preferred_stylesheet][name].append(
-                    "plugin/{name}/{asset}".format(**locals())
+                    f"plugin/{name}/{asset}"
                 )
         else:
             for stylesheet in supported_stylesheets:
@@ -1776,9 +1768,7 @@ def collect_plugin_assets(preferred_stylesheet="css"):
                 for asset in all_assets[stylesheet]:
                     if not asset_exists(stylesheet, asset):
                         continue
-                    assets[asset_key][stylesheet][name].append(
-                        "plugin/{name}/{asset}".format(**locals())
-                    )
+                    assets[asset_key][stylesheet][name].append(f"plugin/{name}/{asset}")
                 break
 
     return assets

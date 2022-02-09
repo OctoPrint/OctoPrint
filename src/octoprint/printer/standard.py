@@ -31,7 +31,7 @@ from octoprint.settings import settings
 from octoprint.util import InvariantContainer
 from octoprint.util import comm as comm
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import to_str
+from octoprint.util import to_unicode
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -503,7 +503,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         if speed is None:
             printer_profile = self._printerProfileManager.get_current_or_default()
-            speed = min([printer_profile["axes"][axis]["speed"] for axis in axes])
+            speed = min(printer_profile["axes"][axis]["speed"] for axis in axes)
 
         if speed and not isinstance(speed, bool):
             command += f" F{speed}"
@@ -1426,7 +1426,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         """
         Callback method for the comm object, called upon log output.
         """
-        self._addLog(to_str(message, "utf-8", errors="replace"))
+        self._addLog(to_unicode(message, "utf-8", errors="replace"))
 
     def on_comm_temperature_update(self, tools, bed, chamber, custom=None):
         if custom is None:
@@ -1521,7 +1521,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         Callback method for the comm object, called upon message exchanges via serial.
         Stores the message in the message buffer, truncates buffer to the last 300 lines.
         """
-        self._addMessage(to_str(message, "utf-8", errors="replace"))
+        self._addMessage(to_unicode(message, "utf-8", errors="replace"))
 
     def on_comm_progress(self):
         """

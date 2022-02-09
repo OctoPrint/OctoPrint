@@ -123,7 +123,8 @@ $(function () {
             var color;
 
             // tools
-            var currentProfileData = self.settingsViewModel.printerProfiles.currentProfileData();
+            var currentProfileData =
+                self.settingsViewModel.printerProfiles.currentProfileData();
             var numExtruders = currentProfileData
                 ? currentProfileData.extruder.count()
                 : 0;
@@ -992,9 +993,12 @@ $(function () {
             self._printerProfileUpdated();
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.initOrUpdate();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    self.initOrUpdate();
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push({

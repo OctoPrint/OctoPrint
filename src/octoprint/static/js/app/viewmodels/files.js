@@ -687,11 +687,13 @@ $(function () {
                 };
 
                 if (p) {
-                    callViewModels(self.allViewModels, "onBeforePrintStart", function (
-                        method
-                    ) {
-                        prevented = prevented || method(callback) === false;
-                    });
+                    callViewModels(
+                        self.allViewModels,
+                        "onBeforePrintStart",
+                        function (method) {
+                            prevented = prevented || method(callback) === false;
+                        }
+                    );
                 }
 
                 if (!prevented) {
@@ -1296,11 +1298,14 @@ $(function () {
             }
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.updateButtons();
-            self.requestData();
-            self._fromLocalStorage();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    self.updateButtons();
+                    self.requestData();
+                    self._fromLocalStorage();
+                };
 
         self.onStartup = function () {
             $(".accordion-toggle[data-target='#files']").click(function () {

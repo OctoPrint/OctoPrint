@@ -247,6 +247,7 @@ $(function () {
         self.serial_ackMax = ko.observable(undefined);
         self.serial_resendRatioThreshold = ko.observable(100);
         self.serial_resendRatioStart = ko.observable(100);
+        self.serial_enableShutdownActionCommand = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -417,8 +418,7 @@ $(function () {
         self.addTerminalFilter = function () {
             self.terminalFilters.push({
                 name: "New",
-                regex:
-                    "(Send:\\s+(N\\d+\\s+)?M105)|(Recv:\\s+(ok\\s+([PBN]\\d+\\s+)*)?.*([BCLPR]|T\\d*):-?\\d+)"
+                regex: "(Send:\\s+(N\\d+\\s+)?M105)|(Recv:\\s+(ok\\s+([PBN]\\d+\\s+)*)?.*([BCLPR]|T\\d*):-?\\d+)"
             });
         };
 
@@ -1542,11 +1542,14 @@ $(function () {
             self.requestData();
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            // we might have other user rights now, refresh (but only if startup has fully completed)
-            if (!self._startupComplete) return;
-            self.requestData();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    // we might have other user rights now, refresh (but only if startup has fully completed)
+                    if (!self._startupComplete) return;
+                    self.requestData();
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push({

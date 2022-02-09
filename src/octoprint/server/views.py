@@ -40,7 +40,7 @@ from octoprint.server import (  # noqa: F401
 )
 from octoprint.server.util import has_permissions, require_login_with
 from octoprint.settings import settings
-from octoprint.util import sv, to_bytes, to_str
+from octoprint.util import sv, to_bytes, to_unicode
 from octoprint.util.version import get_python_version_string
 
 from . import util
@@ -374,10 +374,8 @@ def index():
         connectivityChecker.online,
         wizard_active(_templates.get(locale)),
     ] + sorted(
-        [
-            "{}:{}".format(to_str(k, errors="replace"), to_str(v, errors="replace"))
-            for k, v in _plugin_vars.items()
-        ]
+        "{}:{}".format(to_unicode(k, errors="replace"), to_unicode(v, errors="replace"))
+        for k, v in _plugin_vars.items()
     )
 
     def get_preemptively_cached_view(
@@ -792,13 +790,13 @@ def fetch_template_data(refresh=False):
             # Ultra special case - we MUST always have the ACL wizard first since otherwise any steps that follow and
             # that require to access APIs to function will run into errors since those APIs won't work before ACL
             # has been configured. See also #2140
-            return "0:{}".format(to_str(d[0]))
+            return f"0:{to_unicode(d[0])}"
         elif d[1].get("mandatory", False):
             # Other mandatory steps come before the optional ones
-            return "1:{}".format(to_str(d[0]))
+            return f"1:{to_unicode(d[0])}"
         else:
             # Finally everything else
-            return "2:{}".format(to_str(d[0]))
+            return f"2:{to_unicode(d[0])}"
 
     template_sorting = {
         "navbar": {"add": "prepend", "key": None},
@@ -824,8 +822,8 @@ def fetch_template_data(refresh=False):
             result = hook(dict(template_sorting), dict(template_rules))
         except Exception:
             _logger.exception(
-                "Error while retrieving custom template type "
-                "definitions from plugin {name}".format(**locals()),
+                f"Error while retrieving custom template type "
+                f"definitions from plugin {name}",
                 extra={"plugin": name},
             )
         else:
@@ -847,11 +845,11 @@ def fetch_template_data(refresh=False):
                 # rule defaults
                 if "div" not in rule:
                     # default div name: <hook plugin>_<template_key>_plugin_<plugin>
-                    div = "{name}_{key}_plugin_".format(**locals())
+                    div = f"{name}_{key}_plugin_"
                     rule["div"] = lambda x: div + x
                 if "template" not in rule:
                     # default template name: <plugin>_plugin_<hook plugin>_<template key>.jinja2
-                    template = "_plugin_{name}_{key}.jinja2".format(**locals())
+                    template = f"_plugin_{name}_{key}.jinja2"
                     rule["template"] = lambda x: x + template
                 if "to_entry" not in rule:
                     # default to_entry assumes existing "name" property to be used as label for 2-tuple entry data structure (<name>, <properties>)
@@ -1653,9 +1651,7 @@ def _get_all_translationfiles(locale, domain):
     from flask import _request_ctx_stack
 
     def get_po_path(basedir, locale, domain):
-        return os.path.join(
-            basedir, locale, "LC_MESSAGES", "{domain}.po".format(**locals())
-        )
+        return os.path.join(basedir, locale, "LC_MESSAGES", f"{domain}.po")
 
     po_files = []
 
@@ -1695,7 +1691,7 @@ def _get_translations(locale, domain):
 
     def messages_from_po(path, locale, domain):
         messages = {}
-        with open(path, mode="rt", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             catalog = read_po(f, locale=locale, domain=domain)
 
             for message in catalog:
