@@ -20,37 +20,15 @@ repos:
         args: ["--py37-plus"]
         exclude: "setup.py|versioneer.py|src/octoprint_setuptools/__init__.py"
   - repo: https://github.com/OctoPrint/codemods
-    rev: devel
+    rev: "0.6.2"
     hooks:
-      - id: codemod_not_in
-        args: ["--ignore", "src/octoprint/vendor"]
-      - id: codemod_detect_past_builtins_imports
+      - id: codemod_batch
         args:
           [
-            "--ignore",
-            "src/octoprint/vendor",
-            "--ignore",
-            "setup.py",
-            "--ignore",
-            "versioneer.py",
-            "--ignore",
-            "src/octoprint_setuptools/__init__.py",
-          ]
-      - id: codemod_remove_float_conversion
-        args:
-          [
-            "--ignore",
-            "src/octoprint/vendor",
-            "--ignore",
-            "setup.py",
-            "--ignore",
-            "versioneer.py",
-            "--ignore",
-            "src/octoprint_setuptools/__init__.py",
-          ]
-      - id: codemod_remove_future_imports
-        args:
-          [
+            "--check",
+            "not_in",
+            "--check",
+            "detect_past_builtins_imports",
             "--ignore",
             "src/octoprint/vendor",
             "--ignore",
