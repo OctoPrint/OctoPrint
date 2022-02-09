@@ -160,7 +160,9 @@ date of first contribution):
   * [Adam Wolf](https://github.com/adamwolf)
   * [Didi Kohen](https://github.com/kohend)
   * [Taylor Talkington](https://github.com/The-EG)
+  * [Carey Metcalfe](https://github.com/pR0Ps)
   * [Shell M. Shrader](https://github.com/synman)
+  * [Johan Verrept](https://github.com/JoveToo)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
