@@ -294,16 +294,20 @@ $(function () {
             return OctoPrint.plugins.logging.bulkDownloadUrl(files);
         };
 
-        self.onServerReconnect = self.onUserLoggedIn = self.onEventSettingsUpdated = self.onSettingsShown = function () {
-            if (
-                !self.loginState.hasPermission(
-                    self.access.permissions.PLUGIN_LOGGING_MANAGE
-                )
-            ) {
-                return;
-            }
-            self.requestData();
-        };
+        self.onServerReconnect =
+            self.onUserLoggedIn =
+            self.onEventSettingsUpdated =
+            self.onSettingsShown =
+                function () {
+                    if (
+                        !self.loginState.hasPermission(
+                            self.access.permissions.PLUGIN_LOGGING_MANAGE
+                        )
+                    ) {
+                        return;
+                    }
+                    self.requestData();
+                };
 
         self.onSettingsBeforeSave = function () {
             if (

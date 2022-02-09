@@ -204,10 +204,10 @@ def get_unrendered_timelapses():
             return job
 
         return sorted(
-            [
+            (
                 util.dict_merge({"name": key}, finalize_fields(key, value))
                 for key, value in jobs.items()
-            ],
+            ),
             key=lambda x: sv(x["name"]),
         )
 
@@ -215,7 +215,7 @@ def get_unrendered_timelapses():
 def delete_unrendered_timelapse(name):
     global _cleanup_lock
 
-    pattern = "{}*.jpg".format(glob.escape(name))
+    pattern = f"{glob.escape(name)}*.jpg"
 
     basedir = settings().getBaseFolder("timelapse_tmp")
     with _cleanup_lock:
@@ -741,13 +741,11 @@ class Timelapse:
 
     def _perform_capture(self, filename, onerror=None):
         # pre-capture hook
-        for hook in self._pre_capture_hooks.values():
+        for name, hook in self._pre_capture_hooks.items():
             try:
                 hook(filename)
             except Exception:
-                self._logger.exception(
-                    "Error while processing hook {name}.".format(**locals())
-                )
+                self._logger.exception(f"Error while processing hook {name}.")
 
         eventManager().fire(Events.CAPTURE_START, {"file": filename})
         try:
@@ -778,13 +776,11 @@ class Timelapse:
             err = None
 
         # post-capture hook
-        for hook in self._post_capture_hooks.values():
+        for name, hook in self._post_capture_hooks.items():
             try:
                 hook(filename, err is None)
             except Exception:
-                self._logger.exception(
-                    "Error while processing hook {name}.".format(**locals())
-                )
+                self._logger.exception(f"Error while processing hook {name}.")
 
         # handle events and onerror call
         if err is None:

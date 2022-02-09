@@ -503,7 +503,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         if speed is None:
             printer_profile = self._printerProfileManager.get_current_or_default()
-            speed = min([printer_profile["axes"][axis]["speed"] for axis in axes])
+            speed = min(printer_profile["axes"][axis]["speed"] for axis in axes)
 
         if speed and not isinstance(speed, bool):
             command += f" F{speed}"

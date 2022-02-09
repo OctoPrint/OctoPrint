@@ -17,25 +17,29 @@
         this.base = base;
     };
 
-    OctoPrintUserClient.prototype.list = deprecatedUserClient("list", "list", function (
-        opts
-    ) {
-        return this.base.access.users.list(opts);
-    });
+    OctoPrintUserClient.prototype.list = deprecatedUserClient(
+        "list",
+        "list",
+        function (opts) {
+            return this.base.access.users.list(opts);
+        }
+    );
 
-    OctoPrintUserClient.prototype.add = deprecatedUserClient("add", "add", function (
-        user,
-        opts
-    ) {
-        return this.base.access.users.add(user, opts);
-    });
+    OctoPrintUserClient.prototype.add = deprecatedUserClient(
+        "add",
+        "add",
+        function (user, opts) {
+            return this.base.access.users.add(user, opts);
+        }
+    );
 
-    OctoPrintUserClient.prototype.get = deprecatedUserClient("get", "get", function (
-        name,
-        opts
-    ) {
-        return this.base.access.users.get(name, opts);
-    });
+    OctoPrintUserClient.prototype.get = deprecatedUserClient(
+        "get",
+        "get",
+        function (name, opts) {
+            return this.base.access.users.get(name, opts);
+        }
+    );
 
     OctoPrintUserClient.prototype.update = deprecatedUserClient(
         "update",

@@ -248,8 +248,8 @@ class SoftwareUpdatePlugin(
                         hook_checks = hook()
                     except Exception:
                         self._logger.exception(
-                            "Error while retrieving update information "
-                            "from plugin {name}".format(**locals()),
+                            f"Error while retrieving update information "
+                            f"from plugin {name}",
                             extra={"plugin": name},
                         )
                     else:
@@ -1699,7 +1699,7 @@ class SoftwareUpdatePlugin(
             for key in sorted(d.keys()):
                 value = d[key]
                 if isinstance(value, dict):
-                    lines.append("{!r}: {}".format(key, dict_to_sorted_repr(value)))
+                    lines.append(f"{key!r}: {dict_to_sorted_repr(value)}")
                 else:
                     lines.append(f"{key!r}: {value!r}")
 

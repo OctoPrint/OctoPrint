@@ -368,9 +368,8 @@
         return constructor;
     };
 
-    OctoPrintClient.InvalidArgumentError = OctoPrintClient.createCustomException(
-        "InvalidArgumentError"
-    );
+    OctoPrintClient.InvalidArgumentError =
+        OctoPrintClient.createCustomException("InvalidArgumentError");
 
     OctoPrintClient.deprecated = function (deprecatedFct, newFct, fn) {
         return function () {

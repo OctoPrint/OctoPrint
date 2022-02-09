@@ -230,9 +230,12 @@ $(function () {
             self.openOrCloseOnStateChange(true);
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.requestData();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    self.requestData();
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push({

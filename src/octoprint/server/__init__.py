@@ -690,11 +690,6 @@ class Server:
                     ),
                     extra={"plugin": plugin},
                 )
-        access_validator = {
-            "access_validation": util.tornado.validation_chain(
-                *access_validators_from_plugins
-            )
-        }
 
         timelapse_validators = [
             util.tornado.access_validation_factory(
@@ -941,8 +936,8 @@ class Server:
                 result = hook(list(server_routes))
             except Exception:
                 self._logger.exception(
-                    "There was an error while retrieving additional "
-                    "server routes from plugin hook {name}".format(**locals()),
+                    f"There was an error while retrieving additional "
+                    f"server routes from plugin hook {name}",
                     extra={"plugin": name},
                 )
             else:
@@ -962,9 +957,7 @@ class Server:
                         )
 
                         self._logger.debug(
-                            "Adding additional route {route} handled by handler {handler} and with additional arguments {kwargs!r}".format(
-                                **locals()
-                            )
+                            f"Adding additional route {route} handled by handler {handler} and with additional arguments {kwargs!r}"
                         )
                         server_routes.append((route, handler, kwargs))
 
@@ -1018,8 +1011,8 @@ class Server:
                 result = hook(list(max_body_sizes))
             except Exception:
                 self._logger.exception(
-                    "There was an error while retrieving additional "
-                    "upload sizes from plugin hook {name}".format(**locals()),
+                    f"There was an error while retrieving additional "
+                    f"upload sizes from plugin hook {name}",
                     extra={"plugin": name},
                 )
             else:
@@ -1042,9 +1035,7 @@ class Server:
                         )
 
                         self._logger.debug(
-                            "Adding maximum body size of {size}B for {method} requests to {route})".format(
-                                **locals()
-                            )
+                            f"Adding maximum body size of {size}B for {method} requests to {route})"
                         )
                         max_body_sizes.append((method, route, size))
 
@@ -1058,7 +1049,7 @@ class Server:
             self._logger.warning(
                 "server.reverseProxy.trustedDownstream is not a list, skipping"
             )
-            trusted_downstreams = []
+            trusted_downstream = []
 
         server_kwargs = {
             "max_body_sizes": max_body_sizes,
@@ -1709,9 +1700,7 @@ class Server:
                         builder = EnvironBuilder(**kwargs)
                         app(builder.get_environ(), lambda *a, **kw: None)
 
-                        logger.info(
-                            "... done in {:.2f}s".format(time.monotonic() - start)
-                        )
+                        logger.info(f"... done in {time.monotonic() - start:.2f}s")
                     except Exception:
                         logger.exception(
                             "Error while trying to preemptively cache {} for {!r}".format(
@@ -1974,24 +1963,23 @@ class Server:
                 # delete path if it exists
                 if os.path.exists(path):
                     try:
-                        self._logger.debug("Deleting {path}...".format(**locals()))
+                        self._logger.debug(f"Deleting {path}...")
                         if os.path.isdir(path):
                             shutil.rmtree(path)
                         else:
                             os.remove(path)
                     except Exception:
                         self._logger.exception(
-                            "Error while trying to delete {path}, "
-                            "leaving it alone".format(**locals())
+                            f"Error while trying to delete {path}, " f"leaving it alone"
                         )
                         continue
 
                 # re-create path if necessary
                 if recreate:
-                    self._logger.debug("Creating {path}...".format(**locals()))
+                    self._logger.debug(f"Creating {path}...")
                     error_text = (
-                        "Error while trying to re-create {path}, that might cause "
-                        "errors with the webassets cache".format(**locals())
+                        f"Error while trying to re-create {path}, that might cause "
+                        f"errors with the webassets cache"
                     )
                     try:
                         os.makedirs(path)
@@ -2014,8 +2002,8 @@ class Server:
                                 except Exception:
                                     if self._logger.isEnabledFor(logging.DEBUG):
                                         self._logger.exception(
-                                            "Ignored error while creating "
-                                            "directory {path}".format(**locals())
+                                            f"Ignored error while creating "
+                                            f"directory {path}"
                                         )
                                     pass
                             else:
@@ -2034,7 +2022,7 @@ class Server:
                         self._logger.exception(error_text)
                         continue
 
-                self._logger.info("Reset webasset folder {path}...".format(**locals()))
+                self._logger.info(f"Reset webasset folder {path}...")
 
         AdjustedEnvironment = type(Environment)(
             Environment.__name__,
@@ -2116,26 +2104,6 @@ class Server:
             "js/lib/sockjs.min.js",
             "js/lib/hls.js",
             "js/lib/less.js",
-        ]
-        js_client = [
-            "js/app/client/base.js",
-            "js/app/client/socket.js",
-            "js/app/client/browser.js",
-            "js/app/client/connection.js",
-            "js/app/client/control.js",
-            "js/app/client/files.js",
-            "js/app/client/job.js",
-            "js/app/client/languages.js",
-            "js/app/client/printer.js",
-            "js/app/client/printerprofiles.js",
-            "js/app/client/settings.js",
-            "js/app/client/slicing.js",
-            "js/app/client/system.js",
-            "js/app/client/timelapse.js",
-            "js/app/client/users.js",
-            "js/app/client/util.js",
-            "js/app/client/wizard.js",
-            "js/app/client/access.js",
         ]
 
         css_libs = [

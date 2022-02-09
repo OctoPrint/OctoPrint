@@ -191,9 +191,7 @@ def _unpack_uploaded_tarball(path, target):
 
 def _validate_archive_name(name):
     if name.startswith("/") or ".." in name:
-        raise InvalidLanguagePack(
-            "Provided language pack contains invalid name {name}".format(**locals())
-        )
+        raise InvalidLanguagePack(f"Provided language pack contains invalid name {name}")
 
 
 class InvalidLanguagePack(Exception):

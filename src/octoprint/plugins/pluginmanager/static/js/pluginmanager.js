@@ -1914,17 +1914,20 @@ $(function () {
             self.settings = self.settingsViewModel.settings;
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            if (
-                self.loginState.hasPermission(
-                    self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE
-                )
-            ) {
-                self.requestPluginData({eval_notices: true});
-            } else {
-                self._resetNotifications();
-            }
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    if (
+                        self.loginState.hasPermission(
+                            self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE
+                        )
+                    ) {
+                        self.requestPluginData({eval_notices: true});
+                    } else {
+                        self._resetNotifications();
+                    }
+                };
 
         self.onSettingsShown = function () {
             if (
@@ -1943,7 +1946,10 @@ $(function () {
 
         self._resetNotifications = function () {
             self._closeAllNotifications();
-            self.logContents.action.restart = self.logContents.action.reload = self.logContents.action.reconnect = false;
+            self.logContents.action.restart =
+                self.logContents.action.reload =
+                self.logContents.action.reconnect =
+                    false;
             self.logContents.steps = [];
         };
 
@@ -2006,7 +2012,8 @@ $(function () {
             }
         };
 
-        self._forcedStdoutLine = /You are using pip version .*?, however version .*? is available\.|You should consider upgrading via the '.*?' command\./;
+        self._forcedStdoutLine =
+            /You are using pip version .*?, however version .*? is available\.|You should consider upgrading via the '.*?' command\./;
         self._preprocessLine = function (line) {
             if (line.stream === "stderr" && line.line.match(self._forcedStdoutLine)) {
                 line.stream = "stdout";

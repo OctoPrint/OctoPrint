@@ -519,10 +519,13 @@ $(function () {
             return span + " " + offset;
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.syncWebcamElements();
-            self.requestData();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    self.syncWebcamElements();
+                    self.requestData();
+                };
 
         self._disableWebcam = function () {
             // only disable webcam stream if tab is out of focus for more than 5s,

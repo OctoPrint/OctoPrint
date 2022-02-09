@@ -163,7 +163,7 @@ Groups will be as follows:
   * ``es``: multiple E coordinates if present, to be parsed further with regex_e_positions
 """
 
-regex_e_positions = re.compile(fr"E(?P<id>\d+):\s*(?P<value>{regex_float_pattern})")
+regex_e_positions = re.compile(rf"E(?P<id>\d+):\s*(?P<value>{regex_float_pattern})")
 """Regex for matching multiple E coordinates in a position report.
 
 Groups will be as follows:
@@ -1312,7 +1312,7 @@ class MachineCom:
                 retval = hook(self, "gcode", scriptName)
             except Exception:
                 self._logger.exception(
-                    "Error while processing hook {name}.".format(**locals()),
+                    f"Error while processing hook {name}.",
                     extra={"plugin": name},
                 )
             else:
@@ -1422,9 +1422,7 @@ class MachineCom:
         if "source:plugin" in tags:
             for tag in tags:
                 if tag.startswith("plugin:"):
-                    self._logger.info(
-                        "Starting job on behalf of plugin {}".format(tag[7:])
-                    )
+                    self._logger.info(f"Starting job on behalf of plugin {tag[7:]}")
         elif "source:api" in tags:
             self._logger.info(f"Starting job on behalf of user {user}")
 
@@ -1683,9 +1681,7 @@ class MachineCom:
         if "source:plugin" in tags:
             for tag in tags:
                 if tag.startswith("plugin:"):
-                    self._logger.info(
-                        "Cancelling job on behalf of plugin {}".format(tag[7:])
-                    )
+                    self._logger.info(f"Cancelling job on behalf of plugin {tag[7:]}")
         elif "source:api" in tags:
             self._logger.info(f"Cancelling job on behalf of user {user}")
 
@@ -1834,7 +1830,7 @@ class MachineCom:
             for tag in tags:
                 if tag.startswith("plugin:"):
                     self._logger.info(
-                        "Pausing/resuming job on behalf of plugin {}".format(tag[7:])
+                        f"Pausing/resuming job on behalf of plugin {tag[7:]}"
                     )
         elif user:
             self._logger.info(f"Pausing/resuming job on behalf of user {user}")
@@ -3291,7 +3287,7 @@ class MachineCom:
                     len(self._detection_candidates),
                     ", ".join(
                         map(
-                            lambda x: "{}@{}".format(x[0], x[1]),
+                            lambda x: f"{x[0]}@{x[1]}",
                             self._detection_candidates,
                         )
                     ),
@@ -3919,7 +3915,7 @@ class MachineCom:
                         ret = hook(self, stripped_error)
                     except Exception:
                         self._logger.exception(
-                            "Error while processing hook {name}:".format(**locals()),
+                            f"Error while processing hook {name}:",
                             extra={"plugin": name},
                         )
                     else:
@@ -4000,7 +3996,7 @@ class MachineCom:
 
         if ret != "":
             try:
-                self._log("Recv: {}".format(sanitize_ascii(ret)))
+                self._log(f"Recv: {sanitize_ascii(ret)}")
             except ValueError as e:
                 self._log(f"WARN: While reading last line: {e}")
                 self._log(f"Recv: {ret!r}")
@@ -4020,7 +4016,7 @@ class MachineCom:
                 ret = hook(self, ret)
             except Exception:
                 self._logger.exception(
-                    "Error while processing hook {name}:".format(**locals()),
+                    f"Error while processing hook {name}:",
                     extra={"plugin": name},
                 )
             else:

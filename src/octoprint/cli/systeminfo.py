@@ -84,7 +84,7 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None
     # add systeminfo
     systeminfotxt = []
     for k in sorted(systeminfo.keys()):
-        systeminfotxt.append("{}: {}".format(k, systeminfo[k]))
+        systeminfotxt.append(f"{k}: {systeminfo[k]}")
 
     z.add(to_bytes("\n".join(systeminfotxt)), arcname="systeminfo.txt")
 
@@ -194,5 +194,5 @@ def systeminfo_command(ctx, path, **kwargs):
         else:
             # output systeminfo to console
             for k in sorted(systeminfo.keys()):
-                click.echo("{}: {}".format(k, systeminfo[k]))
+                click.echo(f"{k}: {systeminfo[k]}")
     ctx.exit(0)

@@ -512,7 +512,7 @@ class BackupPlugin(
                 datafolder=datafolder,
             )
             click.echo("Done.")
-            click.echo("Backup located at {}".format(os.path.join(datafolder, filename)))
+            click.echo(f"Backup located at {os.path.join(datafolder, filename)}")
 
         @click.command("restore")
         @click.argument("path")
@@ -685,7 +685,7 @@ class BackupPlugin(
                     pass
 
             self._send_client_message(
-                "backup_error", payload={"name": name, "error": "{}".format(exc_info[1])}
+                "backup_error", payload={"name": name, "error": f"{exc_info[1]}"}
             )
             self._logger.error("Error while creating backup zip", exc_info=exc_info)
 
@@ -751,7 +751,7 @@ class BackupPlugin(
         data_file = os.path.join(self.get_plugin_data_folder(), UNKNOWN_PLUGINS_FILE)
         if os.path.exists(data_file):
             try:
-                with open(data_file, mode="rt", encoding="utf-8") as f:
+                with open(data_file, encoding="utf-8") as f:
                     unknown_plugins = json.load(f)
 
                 assert isinstance(unknown_plugins, list)
@@ -956,8 +956,8 @@ class BackupPlugin(
                             )
                 except Exception:
                     logger.exception(
-                        "Error while retrieving additional excludes "
-                        "from plugin {name}".format(**locals()),
+                        f"Error while retrieving additional excludes "
+                        f"from plugin {name}",
                         extra={"plugin": plugin},
                     )
 
