@@ -9,6 +9,8 @@ import logging
 import os
 import threading
 import time
+from datetime import datetime
+from typing import Union
 
 import flask
 import flask.json
@@ -33,6 +35,7 @@ from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated, yaml
 from octoprint.util.json import JsonEncoding
 from octoprint.util.net import is_lan_address
+from octoprint.util.tz import UTC_TZ, is_timezone_aware
 
 # ~~ monkey patching
 
@@ -1274,11 +1277,27 @@ def check_etag(etag):
     )
 
 
-def check_lastmodified(lastmodified):
+def check_lastmodified(lastmodified: Union[int, float, datetime]) -> bool:
+    """Compares the provided lastmodified value with the value of the If-Modified-Since header.
+
+    If ``lastmodified`` is an int or float, it's assumed to be a Unix timestamp and converted
+    to a timezone aware datetime instance in UTC.
+
+    If ``lastmodified`` is a datetime instance, it needs to be timezone aware or the
+    result will always be ``False``.
+
+    Args:
+        lastmodified (Union[int, float, datetime]): The last modified value to compare against
+
+    Raises:
+        ValueError: If anything but an int, float or datetime instance is passed
+
+    Returns:
+        bool: true if the values indicate that the document is still up to date
+    """
+
     if lastmodified is None:
         return False
-
-    from datetime import datetime
 
     if isinstance(lastmodified, (int, float)):
         # max(86400, lastmodified) is workaround for https://bugs.python.org/issue29097,
@@ -1286,9 +1305,12 @@ def check_lastmodified(lastmodified):
         #
         # I think it's fair to say that we'll never encounter lastmodified values older than
         # 1970-01-02 so this is a safe workaround.
-        lastmodified = datetime.fromtimestamp(max(86400, lastmodified)).replace(
-            microsecond=0
-        )
+        #
+        # Timestamps are defined as seconds since epoch aka 1970/01/01 00:00:00Z, so we
+        # use UTC as timezone here.
+        lastmodified = datetime.fromtimestamp(
+            max(86400, lastmodified), tz=UTC_TZ
+        ).replace(microsecond=0)
 
     if not isinstance(lastmodified, datetime):
         raise ValueError(
@@ -1296,6 +1318,15 @@ def check_lastmodified(lastmodified):
                 lastmodified.__class__
             )
         )
+
+    if not is_timezone_aware(lastmodified):
+        # datetime object is not timezone aware, we can't check lastmodified with that
+        logger = logging.getLogger(__name__)
+        logger.warning(
+            "lastmodified is not timezone aware, cannot check against If-Modified-Since. In the future this will become an error!",
+            stack_info=logger.isEnabledFor(logging.DEBUG),
+        )
+        return False
 
     return (
         flask.request.method in ("GET", "HEAD")

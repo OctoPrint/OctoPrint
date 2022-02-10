@@ -1603,6 +1603,8 @@ def _compute_date(files):
     import stat
     from datetime import datetime
 
+    from octoprint.util.tz import UTC_TZ
+
     max_timestamp = 0
     for path in files:
         try:
@@ -1617,7 +1619,11 @@ def _compute_date(files):
 
     if max_timestamp:
         # we set the micros to 0 since microseconds are not speced for HTTP
-        max_timestamp = datetime.fromtimestamp(max_timestamp).replace(microsecond=0)
+        max_timestamp = (
+            datetime.fromtimestamp(max_timestamp)
+            .replace(microsecond=0)
+            .replace(tzinfo=UTC_TZ)
+        )
     return max_timestamp
 
 
