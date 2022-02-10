@@ -8,11 +8,11 @@ import os
 import site
 import sys
 import threading
+from typing import List
 
 import pkg_resources
 import sarge
 
-from octoprint.util import to_str
 from octoprint.util.platform import CLOSE_FDS
 
 from .commandline import CommandlineCaller, clean_ansi
@@ -604,27 +604,27 @@ class PipCaller(CommandlineCaller):
                 )
                 return False, False, False, None
 
-    def _preprocess_lines(self, *lines):
+    def _preprocess_lines(self, *lines: List[str]) -> List[str]:
         return list(map(self._preprocess, lines))
 
     @staticmethod
-    def _preprocess(text):
+    def _preprocess(text: str) -> str:
         """
-        Strips ANSI and VT100 cursor control characters from line and makes sure it's a unicode.
+        Strips ANSI and VT100 cursor control characters from line.
 
         Parameters:
-            text (str or unicode): The text to process
+            text (str): The text to process
 
         Returns:
-            (unicode) The processed text as a unicode, stripped of ANSI and VT100 cursor show/hide codes
+            (str) The processed text, stripped of ANSI and VT100 cursor show/hide codes
 
         Example::
 
-            >>> text = b'some text with some\x1b[?25h ANSI codes for \x1b[31mred words\x1b[39m and\x1b[?25l also some cursor control codes'
+            >>> text = 'some text with some\x1b[?25h ANSI codes for \x1b[31mred words\x1b[39m and\x1b[?25l also some cursor control codes'
             >>> PipCaller._preprocess(text)
             'some text with some ANSI codes for red words and also some cursor control codes'
         """
-        return to_str(clean_ansi(text))
+        return clean_ansi(text)
 
 
 class LocalPipCaller(PipCaller):

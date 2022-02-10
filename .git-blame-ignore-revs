@@ -1,5 +1,8 @@
 # refs to ignore during git blame, use with --ignore-revs-file
 
+# pre-commit version updates
+b4f265d9f67508677e1697e74e248b895da7f43c
+
 # Switch to black formatting
 1f93b2355a2816918e11a55e61b42010d15a6720
 5f2a95d154650366078b0d387e5b01427c4340c0

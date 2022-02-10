@@ -814,6 +814,10 @@ Use the following settings to configure the serial connection to the printer:
      # other values can be used:  https://docs.python.org/3/library/codecs.html#standard-encodings
      encoding: ascii
 
+     # Whether to enable support for the shutdown action command, allowing the printer to
+     # shut down OctoPrint and the system it's running on
+     enableShutdownActionCommand: false
+
      # Whether to "manually" trigger an ok for M29 (a lot of versions of this command are buggy and
      # the response skips on the ok)
      triggerOkForM29: true

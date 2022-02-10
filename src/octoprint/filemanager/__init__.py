@@ -269,9 +269,7 @@ class FileManager:
 
         def worker():
             self._logger.info(
-                "Adding backlog items from all storage types to analysis queue...".format(
-                    **locals()
-                )
+                "Adding backlog items from all storage types to analysis queue..."
             )
             for storage_type, storage_manager in self._storage_managers.items():
                 self._determine_analysis_backlog(storage_type, storage_manager)
@@ -328,15 +326,11 @@ class FileManager:
 
         if root:
             self._logger.info(
-                'Added {counter} items from storage type "{storage_type}" and root "{root}" to analysis queue'.format(
-                    **locals()
-                )
+                f'Added {counter} items from storage type "{storage_type}" and root "{root}" to analysis queue'
             )
         else:
             self._logger.info(
-                'Added {counter} items from storage type "{storage_type}" to analysis queue'.format(
-                    **locals()
-                )
+                f'Added {counter} items from storage type "{storage_type}" to analysis queue'
             )
 
     def add_storage(self, storage_type, storage_manager):
@@ -452,9 +446,9 @@ class FileManager:
                     file_obj = StreamWrapper(
                         os.path.basename(dest_path),
                         io.BytesIO(
-                            ";Generated from {stl_name} (hash: {hash})\n".format(
-                                **locals()
-                            ).encode("ascii", "replace")
+                            f";Generated from {stl_name} (hash: {hash})\n".encode(
+                                "ascii", "replace"
+                            )
                         ),
                         io.FileIO(tmp_path, "rb"),
                     )
@@ -1048,9 +1042,7 @@ class FileManager:
 
     def _storage(self, destination):
         if destination not in self._storage_managers:
-            raise NoSuchStorage(
-                "No storage configured for destination {destination}".format(**locals())
-            )
+            raise NoSuchStorage(f"No storage configured for destination {destination}")
         return self._storage_managers[destination]
 
     def _add_analysis_result(self, destination, path, result):

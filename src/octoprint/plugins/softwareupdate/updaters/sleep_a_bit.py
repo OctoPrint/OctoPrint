@@ -15,6 +15,6 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
     now = time.monotonic()
     end = now + duration
     while now < end:
-        log_cb(["{}s left...".format(end - now)], prefix=">", stream="output")
+        log_cb([f"{end - now}s left..."], prefix=">", stream="output")
         time.sleep(5)
         now = time.monotonic()

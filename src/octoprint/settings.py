@@ -29,7 +29,6 @@ import time
 from collections import ChainMap
 from collections.abc import KeysView
 
-# noinspection PyCompatibilitys
 from yaml import YAMLError
 
 from octoprint.util import (
@@ -140,6 +139,7 @@ default_settings = {
         "sdRelativePath": False,
         "sdAlwaysAvailable": False,
         "sdLowerCase": False,
+        "sdCancelCommand": "M25",
         "maxNotSdPrinting": 2,
         "swallowOkAfterResend": True,
         "repetierTargetTemp": False,
@@ -169,6 +169,7 @@ default_settings = {
         "resendRatioStart": 100,
         "ignoreEmptyPorts": False,
         "encoding": "ascii",
+        "enableShutdownActionCommand": False,
         # command specific flags
         "triggerOkForM29": True,
     },
@@ -886,9 +887,7 @@ class Settings:
             return None
         except Exception:
             self._logger.exception(
-                "Exception while trying to resolve template {template_name}".format(
-                    **locals()
-                )
+                f"Exception while trying to resolve template {template_name}"
             )
             return None
 
@@ -1609,7 +1608,7 @@ class Settings:
                 config["serial"]["blockedCommands"] = sorted(blockedCommands)
             else:
                 config["serial"]["blockedCommands"] = sorted(
-                    [v for v in blockedCommands if v not in ("M0", "M1")]
+                    v for v in blockedCommands if v not in ("M0", "M1")
                 )
             del config["serial"]["blockM0M1"]
             return True
@@ -1956,9 +1955,7 @@ class Settings:
                 script = template.render(**context)
             except Exception:
                 self._logger.exception(
-                    "Exception while trying to render script {script_type}:{name}".format(
-                        **locals()
-                    )
+                    f"Exception while trying to render script {script_type}:{name}"
                 )
                 return None
 
@@ -2156,9 +2153,7 @@ class Settings:
         if not filename.startswith(os.path.realpath(script_folder)):
             # oops, jail break, that shouldn't happen
             raise ValueError(
-                "Invalid script path to save to: {filename} (from {script_type}:{name})".format(
-                    **locals()
-                )
+                f"Invalid script path to save to: {filename} (from {script_type}:{name})"
             )
 
         path, _ = os.path.split(filename)

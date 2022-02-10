@@ -437,8 +437,10 @@ GCODE.renderer = (function () {
         canvas.addEventListener(
             "mousedown",
             function (event) {
-                document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect =
-                    "none";
+                document.body.style.mozUserSelect =
+                    document.body.style.webkitUserSelect =
+                    document.body.style.userSelect =
+                        "none";
 
                 // remember starting point of dragging gesture
                 lastX = (event.offsetX || event.pageX - canvas.offsetLeft) * pixelRatio;

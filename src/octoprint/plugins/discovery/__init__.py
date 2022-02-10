@@ -8,8 +8,6 @@ The SSDP/UPNP implementations has been largely inspired by https://gist.github.c
 For a spec see http://www.upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.0.pdf
 """
 
-# noinspection PyCompatibility
-
 import collections
 import platform
 import socket

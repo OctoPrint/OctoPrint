@@ -696,9 +696,12 @@ $(function () {
 
         self.onSettingsShown = self.requestData;
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.requestData();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    self.requestData();
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push({

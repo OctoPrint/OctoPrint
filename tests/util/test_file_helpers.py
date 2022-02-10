@@ -227,7 +227,7 @@ class TestAtomicWrite(unittest.TestCase):
     def test_atomic_write_rel_path_aware(
         self, mock_exists, mock_chmod, mock_ntf, mock_move
     ):
-        """Tests whether the tempoary file is to created in the same directory as the target file. This time submitting a relative path. """
+        """Tests whether the tempoary file is to created in the same directory as the target file. This time submitting a relative path."""
 
         # setup
         tmpdirpath = "../test"

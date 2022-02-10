@@ -519,9 +519,13 @@ $(function () {
             return span + " " + offset;
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.requestData();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    self.syncWebcamElements();
+                    self.requestData();
+                };
 
         self._disableWebcam = function () {
             // only disable webcam stream if tab is out of focus for more than 5s,
@@ -616,9 +620,13 @@ $(function () {
             self.extrusionAmount(self.settings.printer_defaultExtrusionLength());
         };
 
-        self.onStartup = function () {
+        self.syncWebcamElements = function () {
             self.webcamElementHls = document.getElementById("webcam_hls");
             self.webcamElementWebrtc = document.getElementById("webcam_webrtc");
+        };
+
+        self.onStartup = function () {
+            self.syncWebcamElements();
         };
 
         self.onFocus = function (data, event) {

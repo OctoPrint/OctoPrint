@@ -70,7 +70,7 @@ class EnvironmentDetector:
         return {
             "id": get_os(),
             "platform": sys.platform,
-            "bits": 64 if sys.maxsize > 2 ** 32 else 32,
+            "bits": 64 if sys.maxsize > 2**32 else 32,
         }
 
     def _detect_python(self):

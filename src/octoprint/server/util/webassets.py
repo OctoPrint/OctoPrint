@@ -64,7 +64,7 @@ class LessImportRewrite(UrlRewriter):
     def import_rewrite(self, m):
         import_with_options = m.group(1)
         import_url = self.replace_url(m.group(3))
-        return '{import_with_options}"{import_url}";'.format(**locals())
+        return f'{import_with_options}"{import_url}";'
 
 
 class SourceMapRewrite(UrlRewriter):
@@ -75,7 +75,7 @@ class SourceMapRewrite(UrlRewriter):
     def url_rewrite(self, m):
         mapping = m.group(1)
         source_url = self.replace_url(m.group(2))
-        return "{mapping}{source_url}".format(**locals())
+        return f"{mapping}{source_url}"
 
 
 class SourceMapRemove(PatternRewriter):

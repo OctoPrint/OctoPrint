@@ -47,9 +47,9 @@ def sanitize_filename(name, really_universal=False):
     Returns:
         the sanitized file name
     """
-    from octoprint.util import to_str
+    from octoprint.util import to_unicode
 
-    name = to_str(name)
+    name = to_unicode(name)
 
     if name is None:
         return None
@@ -214,15 +214,15 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
         'test~100.gco'
 
     """
-    from octoprint.util import to_str
+    from octoprint.util import to_unicode
 
-    filename = to_str(filename)
-    extension = to_str(extension)
+    filename = to_unicode(filename)
+    extension = to_unicode(extension)
 
     if filename.startswith("/"):
         filename = filename[1:]
     existing_filenames = [
-        to_str(x[1:] if x.startswith("/") else x) for x in existing_filenames
+        to_unicode(x[1:] if x.startswith("/") else x) for x in existing_filenames
     ]
 
     def make_valid(text):
@@ -244,7 +244,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
     counter = 1
     power = 1
     prefix_format = "{segment}~{counter}"
-    while counter < (10 ** max_power):
+    while counter < (10**max_power):
         prefix = prefix_format.format(
             segment=filename[: (6 - power + 1)], counter=str(counter)
         )
@@ -252,7 +252,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
         if result not in existing_filenames:
             return result
         counter += 1
-        if counter >= 10 ** power:
+        if counter >= 10**power:
             power += 1
 
     raise ValueError("Can't create a collision free filename")

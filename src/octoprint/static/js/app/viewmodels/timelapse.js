@@ -800,11 +800,14 @@ $(function () {
             self.renderAnimation(false);
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.requestData();
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    self.requestData();
 
-            self.renderProgressBar = $("#render_progress");
-        };
+                    self.renderProgressBar = $("#render_progress");
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push({

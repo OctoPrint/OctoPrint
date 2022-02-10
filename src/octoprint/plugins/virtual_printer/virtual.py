@@ -14,7 +14,7 @@ import time
 from serial import SerialTimeoutException
 
 from octoprint.plugin import plugin_manager
-from octoprint.util import RepeatedTimer, get_dos_filename, to_bytes, to_str
+from octoprint.util import RepeatedTimer, get_dos_filename, to_bytes, to_unicode
 
 
 # noinspection PyBroadException
@@ -441,7 +441,6 @@ class VirtualPrinter:
                     continue
                 elif len(self._prepared_errors):
                     prepared = self._prepared_errors.pop(0)
-                    # noinspection PyCompatibility
                     if callable(prepared):
                         prepared(linenumber, self.lastN, data)
                         continue
@@ -457,7 +456,7 @@ class VirtualPrinter:
 
             data += b"\n"
 
-            data = to_str(data, encoding="ascii", errors="replace").strip()
+            data = to_unicode(data, encoding="ascii", errors="replace").strip()
 
             if data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
                 debug_command = ""
@@ -1342,24 +1341,20 @@ class VirtualPrinter:
                     interval = int(sleep_after_match.group(2))
                     self._sleepAfter[command] = interval
                     self._send(
-                        "// going to sleep {interval} seconds after each {command}".format(
-                            **locals()
-                        )
+                        f"// going to sleep {interval} seconds after each {command}"
                     )
                 elif sleep_after_next_match is not None:
                     command = sleep_after_next_match.group(1)
                     interval = int(sleep_after_next_match.group(2))
                     self._sleepAfterNext[command] = interval
                     self._send(
-                        "// going to sleep {interval} seconds after next {command}".format(
-                            **locals()
-                        )
+                        f"// going to sleep {interval} seconds after next {command}"
                     )
                 elif custom_action_match is not None:
                     action = custom_action_match.group(1)
                     params = custom_action_match.group(2)
                     params = params.strip() if params is not None else ""
-                    self._send("// action:{action} {params}".format(**locals()).strip())
+                    self._send(f"// action:{action} {params}".strip())
                 elif prepare_ok_match is not None:
                     ok = prepare_ok_match.group(1)
                     self._prepared_oks.append(ok)
@@ -1476,7 +1471,7 @@ class VirtualPrinter:
         e["current"] = self._lastE[self.currentExtruder]
         e["all"] = " ".join(
             [
-                "E{}:{}".format(num, self._lastE[self.currentExtruder])
+                f"E{num}:{self._lastE[self.currentExtruder]}"
                 for num in range(self.extruderCount)
             ]
         )
@@ -1998,7 +1993,7 @@ class VirtualPrinter:
 
     def write(self, data: bytes) -> int:
         data = to_bytes(data, errors="replace")
-        u_data = to_str(data, errors="replace")
+        u_data = to_unicode(data, errors="replace")
 
         if self._debug_awol:
             return len(data)
@@ -2059,7 +2054,7 @@ class VirtualPrinter:
 
         try:
             # fetch a line from the queue, wait no longer than timeout
-            line = to_str(self.outgoing.get(timeout=timeout), errors="replace")
+            line = to_unicode(self.outgoing.get(timeout=timeout), errors="replace")
             self._seriallog.info(f">>> {line.strip()}")
             self.outgoing.task_done()
             return to_bytes(line)
@@ -2101,7 +2096,7 @@ class VirtualPrinter:
         )
 
     def _error(self, error: str, *args, **kwargs) -> str:
-        return "Error: {}".format(self._errors.get(error).format(*args, **kwargs))
+        return f"Error: {self._errors.get(error).format(*args, **kwargs)}"
 
 
 class VirtualEEPROM:
@@ -2120,7 +2115,7 @@ class VirtualEEPROM:
             # no eeprom file, make new one with defaults
             data = self.get_default_settings()
             with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
-                eeprom_file.write(to_str(json.dumps(data)))
+                eeprom_file.write(to_unicode(json.dumps(data)))
             return data
 
     @staticmethod
@@ -2231,7 +2226,7 @@ class VirtualEEPROM:
     def save_settings(self):
         # M500 behind-the-scenes
         with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
-            eeprom_file.write(to_str(json.dumps(self._eeprom)))
+            eeprom_file.write(to_unicode(json.dumps(self._eeprom)))
 
     def read_settings(self):
         # M501 - if the file has disappeared, then recreate it
