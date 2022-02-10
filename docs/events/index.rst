@@ -283,7 +283,7 @@ FileMoved
 
       A moved file still triggers first a ``FileRemoved`` for its original path and then ``FileAdded`` event for the new one. After that a ```UpdatedFiles``` event is also fired.
 
-  .. versionadded:: X.X.X TODO enter release version number
+  .. versionadded:: 1.8.0
 
 FolderAdded
    A folder has been added to a storage.
@@ -328,7 +328,7 @@ FolderMoved
 
       A moved folder still triggers first a ``FolderRemoved`` for its original path and then ``FolderAdded`` event for the new one. After that a ```UpdatedFiles``` event is also fired.
 
-  .. versionadded:: X.X.X TODO enter release version number
+  .. versionadded:: 1.8.0
 
 UpdatedFiles
    A file list was modified.
