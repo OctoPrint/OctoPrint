@@ -604,7 +604,8 @@ class Timelapse:
         self._in_timelapse = True
         self._gcode_file = os.path.basename(gcode_file)
         self._file_prefix = "{}_{}".format(
-            os.path.splitext(self._gcode_file)[0], time.strftime("%Y%m%d%H%M%S")
+            os.path.splitext(self._gcode_file)[0].replace("%", "%%"),
+            time.strftime("%Y%m%d%H%M%S"),
         )
 
     def stop_timelapse(self, do_create_movie=True, success=True):
