@@ -4,12 +4,18 @@ body:
   - type: markdown
     attributes:
       value: >
-        > ✋ **This is bug tracker, not a support forum**
-        >
-        > If something isn't working right, you have questions or need help, [**get in touch on the forums**](https://community.octoprint.org/c/support/).
-        >
-        > Only proceed here if you are 100% sure the issue you are seeing is actually a bug in OctoPrint that *also happens in safe mode*. If in doubt, check
-        > in on the forums first, we can always file a bug from a support request later.
+      
+        ### ✋ **This is bug tracker, not a support forum**
+        
+        
+        If something isn't working right, you have questions or need help, [**get in touch on the forums**](https://community.octoprint.org/c/support/).
+       
+       
+        Only proceed here if you are 100% sure the issue you are seeing is actually a bug in OctoPrint that *also happens in safe mode*. If in doubt, check
+        in on the forums first, we can always file a bug from a support request later.
+        
+        
+        ---
         
         
         **Thank you for wanting to report a bug in OctoPrint!**
