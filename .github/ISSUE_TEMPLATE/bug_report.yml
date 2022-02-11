@@ -1,5 +1,5 @@
 name: 🐛 Report a bug
-description: Got a question or need support? See "Have questions or need support?" below!
+description: Help improve OctoPrint by reporting observed bugs. Got a question or need support? See "Have questions or need support?" instead!
 body:
   - type: markdown
     attributes:
