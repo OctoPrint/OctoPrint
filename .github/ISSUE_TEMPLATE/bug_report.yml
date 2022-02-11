@@ -1,11 +1,19 @@
 name: 🐛 Report a bug
-description: Create a bug report to help improve OctoPrint
+description: Got a question or need support? See "Have questions or need support?" below!
 body:
   - type: markdown
     attributes:
       value: >
+        > ✋ **This is bug tracker, not a support forum**
+        >
+        > If something isn't working right, you have questions or need help, [**get in touch on the forums**](https://community.octoprint.org/c/support/).
+        >
+        > Only proceed here if you are 100% sure the issue you are seeing is actually a bug in OctoPrint that *also happens in safe mode*. If in doubt, check
+        > in on the forums first, we can always file a bug from a support request later.
+        
+        
         **Thank you for wanting to report a bug in OctoPrint!**
-
+       
 
         If this is the first time you are doing this, please take a few moments to read
         through the [Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md).
@@ -19,9 +27,6 @@ body:
         OctoPi, [read this FAQ entry](https://faq.octoprint.org/octoprint-vs-octopi).
 
 
-        Do also not seek support here ("I need help with ...", "I have a
-        question ...", "Can someone walk me through ..."), that belongs into the
-        [community forum at community.octoprint.org](https://community.octoprint.org) or on the [Discord server](https://discord.octoprint.org).
 
 
         And finally, make sure any bug you want to report is still present with the **current**
