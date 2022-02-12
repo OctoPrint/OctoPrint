@@ -305,7 +305,7 @@ default_settings = {
         "sendAutomaticallyAfter": 1,
     },
     "printerProfiles": {"default": None},
-    "printerParameters": {"pauseTriggers": [], "defaultExtrusionLength": 5},
+    "printerParameters": {"pauseTriggers": []},
     "appearance": {
         "name": "",
         "color": "default",

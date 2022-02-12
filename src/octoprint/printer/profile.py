@@ -83,6 +83,9 @@ A printer profile is a ``dict`` of the following structure:
    * - ``extruder.sharedNozzle``
      - ``boolean``
      - Whether there's only one nozzle shared among all extruders (true) or one nozzle per extruder (false).
+   * - ``extruder.defaultExtrusionLength``
+     - ``int``
+     - Default extrusion length used in Control tab on initial page load in mm.
    * - ``axes``
      - ``dict``
      - Information about the printer axes
@@ -242,6 +245,7 @@ class PrinterProfileManager:
             "offsets": [(0, 0)],
             "nozzleDiameter": 0.4,
             "sharedNozzle": False,
+            "defaultExtrusionLength": 5,
         },
         "axes": {
             "x": {"speed": 6000, "inverted": False},

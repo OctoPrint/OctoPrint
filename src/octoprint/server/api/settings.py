@@ -114,11 +114,6 @@ def getSettings():
             "closeModalsWithClick": s.getBoolean(["appearance", "closeModalsWithClick"]),
             "showInternalFilename": s.getBoolean(["appearance", "showInternalFilename"]),
         },
-        "printer": {
-            "defaultExtrusionLength": s.getInt(
-                ["printerParameters", "defaultExtrusionLength"]
-            )
-        },
         "webcam": {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
             "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
