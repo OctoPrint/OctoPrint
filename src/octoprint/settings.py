@@ -530,101 +530,232 @@ class DuplicateFolderPaths(InvalidSettings):
         )
 
 
-class HierarchicalChainMap(ChainMap):
-    def deep_dict(self):
-        def deep_dict_inner(root):
-            return {
-                key: deep_dict_inner(self.__class__._get_next(key, root))
-                if isinstance(value, dict)
-                else value
-                for key, value in root.items()
-            }
+_CHAINMAP_SEP = "\x1f"
 
-        return deep_dict_inner(self)
+
+class HierarchicalChainMap:
+    """
+    Stores a bunch of nested dictionaries in chain map, allowing queries of nested values
+    work on lower directories. For example:
+
+    Example:
+        >>> example_dict = {"a": "a", "b": {"c": "c"}}
+        >>> hcm = HierarchicalChainMap({"b": {"d": "d"}}, example_dict)
+        >>> cm = ChainMap({"b": {"d": "d"}}, example_dict)
+        >>> cm["b"]["d"]
+        'd'
+        >>> cm["b"]["c"]
+        Traceback (most recent call last):
+            ...
+        KeyError: 'c'
+        >>> hcm.get_by_path(["b", "d"])
+        'd'
+        >>> hcm.get_by_path(["b", "c"])
+        'c'
+    """
+
+    @staticmethod
+    def _unflatten(kv_pairs, prefix=""):
+        """
+        :type kv_pairs: Iterable[Tuple[str, any]]
+        """
+        result = dict()
+        for key, value in kv_pairs:
+            if not key.startswith(prefix):
+                continue
+            subkeys = key[len(prefix) :].split(_CHAINMAP_SEP)
+            current = result
+            for subkey in subkeys[:-1]:
+                if subkey not in current:
+                    current[subkey] = {}
+                current = current[subkey]
+            current[subkeys[-1]] = value
+
+        return result
+
+    def __init__(self, *maps):
+        self._chainmap = ChainMap(*map(self._flatten, maps))
+
+    @staticmethod
+    def from_layers(*layers):
+        result = HierarchicalChainMap()
+        result._chainmap.maps = layers
+        return result
+
+    @staticmethod
+    def _flatten(d, parent_key=""):
+        if d is None:
+            return {}
+
+        items = []
+        for k, v in d.items():
+            new_key = parent_key + _CHAINMAP_SEP + k if parent_key else k
+            if v and isinstance(v, dict):
+                items.extend(HierarchicalChainMap._flatten(v, new_key).items())
+            else:
+                items.append((new_key, v))
+        return dict(items)
+
+    def deep_dict(self):
+        return self._unflatten(self._chainmap.items())
+
+    @staticmethod
+    def _path_to_key(path):
+        """
+        :type path: List[str]
+        """
+        return _CHAINMAP_SEP.join(path)
 
     def has_path(self, path, only_local=False, only_defaults=False):
         if only_defaults:
-            current = self.parents
+            current = self._chainmap.parents
         elif only_local:
-            current = self.__class__(self.maps[0])
+            current = self._chainmap.maps[0]
         else:
-            current = self
+            current = self._chainmap
 
-        try:
-            for key in path[:-1]:
-                value = current[key]
-                if isinstance(value, dict):
-                    current = self.__class__._get_next(
-                        key, current, only_local=only_local
-                    )
-                else:
-                    return False
-            return path[-1] in current
-        except KeyError:
-            return False
+        return self._path_to_key(path) in current
 
     def get_by_path(self, path, only_local=False, only_defaults=False, merged=False):
         if only_defaults:
-            current = self.parents
+            current = self._chainmap.parents
         elif only_local:
-            current = self.__class__(self.maps[0])
+            current = self._chainmap.maps[0]
         else:
-            current = self
+            current = self._chainmap
 
-        for key in path[:-1]:
-            value = current[key]
-            if isinstance(value, dict):
-                current = self.__class__._get_next(key, current, only_local=only_local)
-            else:
-                raise KeyError(key)
+        key = self._path_to_key(path)
 
-        if merged:
-            current = current.deep_dict()
-        return current[path[-1]]
+        # we do something a bit odd here: if merged is not true, we don't include the
+        # full contents of the key. Instead, we only include the contents of the key on
+        # the first level where we find the value.
+        if not merged and not only_local:
+            for layer in current.maps:
+                for k in layer:
+                    if k.startswith(key):
+                        current = layer
+                        break
+                else:
+                    continue
+                break
+
+        if key not in current:
+            # we might be trying to grab a dict, look for children
+            key = key + _CHAINMAP_SEP
+            result = self._unflatten(
+                ((k, v) for k, v in current.items() if k.startswith(key)), prefix=key
+            )
+            if not result:
+                raise KeyError("Could not find entry for " + str(path))
+            return result
+
+        return current[key]
 
     def set_by_path(self, path, value):
-        current = self
+        current = self._chainmap
+        key = self._path_to_key(path)
 
-        for key in path[:-1]:
-            if key not in current.maps[0]:
-                current.maps[0][key] = {}
-            if not isinstance(current[key], dict):
-                raise KeyError(key)
-            current = self.__class__._hierarchy_for_key(key, current)
+        # delete any subkeys
+        subkeys_start = key + _CHAINMAP_SEP
+        for k in current.keys():
+            if k.startswith(subkeys_start):
+                del current[key]
 
-        current[path[-1]] = value
+        if isinstance(value, dict):
+            current.update(self._flatten(value, key))
+        else:
+            # when assigning to a existing, empty dict, delete the dict
+            #
+            # a/b = {} <- delete this
+            # a/b/c = "a"
+            up_one_path = self._path_to_key(path[:-1])
+            if up_one_path in current and current[up_one_path] == {}:
+                del current[up_one_path]
+
+            current[self._path_to_key(path)] = value
 
     def del_by_path(self, path):
         if not path:
             raise ValueError("Invalid path")
 
-        current = self
+        current = self._chainmap
 
-        for key in path[:-1]:
-            if not isinstance(current[key], dict):
-                raise KeyError(key)
-            current = self.__class__._hierarchy_for_key(key, current)
+        # used to check if we've deleted anything
+        deleted_any = False
 
-        del current[path[-1]]
+        # we delete recursively: the path that we got, and any subpaths
+        delete_key = self._path_to_key(path)
+        for key in self._chainmap.keys():
+            if key.startswith(delete_key):
+                del current[key]
+                deleted_any = True
 
-    @classmethod
-    def _hierarchy_for_key(cls, key, chain):
-        wrapped_mappings = list()
-        for mapping in chain.maps:
-            if key in mapping and mapping[key] is not None:
-                wrapped_mappings.append(mapping[key])
-            else:
-                wrapped_mappings.append({})
-        return HierarchicalChainMap(*wrapped_mappings)
+        if not deleted_any:
+            raise KeyError("Could not find entry for " + str(path))
 
-    @classmethod
-    def _get_next(cls, key, node, only_local=False):
-        if isinstance(node, dict):
-            return node[key]
-        elif only_local and key not in node.maps[0]:
-            raise KeyError(key)
+        # create a placeholder object above if needed
+        #
+        # a/b = {}
+        # a/b/c = "a"  # deleted
+        up_one_path = self._path_to_key(path[:-1])
+        if sum(1 for k in current.keys() if k.startswith(up_one_path)) == 0:
+            current[up_one_path] = {}
+
+    def with_config_defaults(self, config=None, defaults=None):
+        """
+        Builds a new map with the following layers: provided config + any intermediary
+        parents + provided defaults + regular defaults
+
+        :param config:
+        :param defaults:
+        :return:
+        """
+        if config is None and defaults is None:
+            return self
+
+        if config is not None:
+            config = self._flatten(config)
         else:
-            return cls._hierarchy_for_key(key, node)
+            config = self.top_map
+
+        if defaults is not None:
+            defaults = [self._flatten(defaults)]
+        else:
+            defaults = []
+
+        layers = [config] + self._middle_layers() + defaults + [self._chainmap.maps[-1]]
+        return HierarchicalChainMap.from_layers(*layers)
+
+    @property
+    def top_map(self):
+        """This is the layer that is written to"""
+        return self._unflatten(self._chainmap.maps[0].items())
+
+    @top_map.setter
+    def top_map(self, value):
+        self._chainmap.maps[0] = self._flatten(value)
+
+    @property
+    def bottom_map(self):
+        """The very bottom layer is the default layer"""
+        return self._unflatten(self._chainmap.maps[-1])
+
+    def insert_map(self, pos, d):
+        self._chainmap.maps.insert(pos, self._flatten(d))
+
+    def delete_map(self, pos):
+        del self._chainmap.maps[pos]
+
+    @property
+    def all_layers(self):
+        """A list of all layers in this map. read-only"""
+        return self._chainmap.maps
+
+    def _middle_layers(self):
+        if len(self._chainmap.maps) > 2:
+            return self._chainmap.maps[1:-1]
+        else:
+            return []
 
 
 class Settings:
@@ -973,22 +1104,22 @@ class Settings:
 
     @property
     def _config(self):
-        return self._map.maps[0]
+        return self._map.top_map
 
     @_config.setter
     def _config(self, value):
-        self._map.maps[0] = value
+        self._map.top_map = value
 
     @property
-    def _overlay_maps(self):
-        if len(self._map.maps) > 2:
-            return self._map.maps[1:-1]
+    def _overlay_layers(self):
+        if len(self._map.all_layers) > 2:
+            return self._map.all_layers[1:-1]
         else:
             return []
 
     @property
     def _default_map(self):
-        return self._map.maps[-1]
+        return self._map.bottom_map
 
     @property
     def last_modified(self):
@@ -1106,21 +1237,20 @@ class Settings:
 
         overlay[self.OVERLAY_KEY] = key
         if at_end:
-            pos = len(self._map.maps) - 1
-            self._map.maps.insert(pos, overlay)
+            self._map.insert_map(-1, overlay)
         else:
-            self._map.maps.insert(1, overlay)
+            self._map.insert_map(1, overlay)
 
         return key
 
     def remove_overlay(self, key):
         index = -1
-        for i, overlay in enumerate(self._overlay_maps):
+        for i, overlay in enumerate(self._overlay_layers):
             if key == overlay.get(self.OVERLAY_KEY):
                 index = i
 
         if index > -1:
-            del self._map.maps[index + 1]
+            self._map.delete_map(index + 1)
             return True
         return False
 
@@ -1709,18 +1839,7 @@ class Settings:
         if not path:
             raise NoSuchSettingsPath()
 
-        if config is not None or defaults is not None:
-            if config is None:
-                config = self._config
-
-            if defaults is None:
-                defaults = dict(self._map.parents)
-
-            # mappings: provided config + any intermediary parents + provided defaults + regular defaults
-            mappings = [config] + self._overlay_maps + [defaults, self._default_map]
-            chain = HierarchicalChainMap(*mappings)
-        else:
-            chain = self._map
+        chain = self._map.with_config_defaults(config=config, defaults=defaults)
 
         if preprocessors is None:
             preprocessors = self._get_preprocessors
@@ -1969,16 +2088,7 @@ class Settings:
                 raise NoSuchSettingsPath()
             return
 
-        if config is not None or defaults is not None:
-            if config is None:
-                config = self._config
-
-            if defaults is None:
-                defaults = dict(self._map.parents)
-
-            chain = HierarchicalChainMap(config, defaults)
-        else:
-            chain = self._map
+        chain = self._map.with_config_defaults(config=config, defaults=defaults)
 
         try:
             chain.del_by_path(path)
@@ -2010,16 +2120,7 @@ class Settings:
         if self._mtime is not None and self.last_modified != self._mtime:
             self.load()
 
-        if config is not None or defaults is not None:
-            if config is None:
-                config = self._config
-
-            if defaults is None:
-                defaults = dict(self._map.parents)
-
-            chain = HierarchicalChainMap(config, defaults)
-        else:
-            chain = self._map
+        chain = self._map.with_config_defaults(config=config, defaults=defaults)
 
         if preprocessors is None:
             preprocessors = self._set_preprocessors
@@ -2061,11 +2162,14 @@ class Settings:
             or (not in_local and in_defaults and default_value != value)
             or (in_local and current != value)
         ):
-            if value is None and in_local:
-                chain.del_by_path(path)
-            else:
-                chain.set_by_path(path, value)
+            chain.set_by_path(path, value)
             self._mark_dirty()
+
+        # we've changed the interface to no longer mutate the passed in config, so we
+        # must manually do that here
+        if config is not None:
+            config.clear()
+            config.update(chain.top_map)
 
     def setInt(self, path, value, **kwargs):
         if value is None:
