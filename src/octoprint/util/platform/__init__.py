@@ -22,7 +22,6 @@ if fcntl is not None and hasattr(fcntl, "FD_CLOEXEC"):
         flags |= fcntl.FD_CLOEXEC
         fcntl.fcntl(handle, fcntl.F_SETFD, flags)
 
-
 elif sys.platform == "win32":
 
     def set_close_exec(handle):
@@ -44,7 +43,6 @@ elif sys.platform == "win32":
         result = SetHandleInformation(handle, HANDLE_FLAG_INHERIT, 0)
         if not result:
             raise ctypes.GetLastError()
-
 
 else:
 

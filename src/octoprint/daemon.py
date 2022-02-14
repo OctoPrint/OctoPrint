@@ -40,7 +40,7 @@ class Daemon:
                 # exit first parent
                 sys.exit(0)
         except OSError as err:
-            self.error("First fork failed: {}".format(str(err)))
+            self.error(f"First fork failed: {str(err)}")
             sys.exit(1)
 
         # decouple from parent environment
@@ -55,7 +55,7 @@ class Daemon:
                 # exit from second parent
                 sys.exit(0)
         except OSError as err:
-            self.error("Second fork failed: {}".format(str(err)))
+            self.error(f"Second fork failed: {str(err)}")
             sys.exit(1)
 
     def _redirect_io(self):

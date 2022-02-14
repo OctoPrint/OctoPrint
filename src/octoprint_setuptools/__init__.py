@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 ### NOTE #################################################################################
 # This file has to stay format compatible to Python 2, or pip under Python 2 will
@@ -9,9 +9,9 @@ from __future__ import absolute_import, division, print_function
 # So, no f-strings, no walrus operators, no pyupgrade or codemods.
 ##########################################################################################
 
-__author__ = u"Gina Häußge <osd@foosel.net>"
-__license__ = u"GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
-__copyright__ = u"Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__author__ = "Gina Häußge <osd@foosel.net>"
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
+__copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import glob
 import os

@@ -123,7 +123,7 @@ def add_user_command(ctx, username, password, groups, permissions, is_admin):
         user = ctx.obj.user_manager.find_user(username)
         if user:
             click.echo("User created:")
-            click.echo("\t{}".format(_user_to_line(user.as_dict())))
+            click.echo(f"\t{_user_to_line(user.as_dict())}")
     except UserAlreadyExists:
         click.echo(f"A user with the name {username} does already exist!", err=True)
 
@@ -170,7 +170,7 @@ def activate_command(ctx, username):
         user = ctx.obj.user_manager.find_user(username)
         if user:
             click.echo("User created:")
-            click.echo("\t{}".format(_user_to_line(user.asDict())))
+            click.echo(f"\t{_user_to_line(user.asDict())}")
     except UnknownUser:
         click.echo(f"User {username} does not exist!", err=True)
 
@@ -187,17 +187,17 @@ def deactivate_command(ctx, username):
         user = ctx.obj.user_manager.find_user(username)
         if user:
             click.echo("User created:")
-            click.echo("\t{}".format(_user_to_line(user.asDict())))
+            click.echo(f"\t{_user_to_line(user.asDict())}")
     except UnknownUser:
         click.echo(f"User {username} does not exist!", err=True)
 
 
 def _print_list(users):
-    click.echo("{} users registered in the system:".format(len(users)))
+    click.echo(f"{len(users)} users registered in the system:")
     for user in sorted(
         map(lambda x: x.as_dict(), users), key=lambda x: sv(x.get("name"))
     ):
-        click.echo("\t{}".format(_user_to_line(user)))
+        click.echo(f"\t{_user_to_line(user)}")
 
 
 def _user_to_line(user):

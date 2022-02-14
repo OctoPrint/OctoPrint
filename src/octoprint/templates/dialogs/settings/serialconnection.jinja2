@@ -447,6 +447,13 @@
                     </div>
                 </div>
                 <div class="control-group">
+                    <label class="control-label" for="settings-serialSdCancelCommand">{{ _('SD Cancel Command') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" id="settings-serialSdCancelCommand" data-bind="value: serial_sdCancelCommand">
+                        <span class="help-inline">{{ _('The command to send to printer when cancelling a SD card print. Defaults to <code>M25</code>.') }}</span>
+                    </div>
+                </div>
+                <div class="control-group">
                     <label class="control-label" for="settings-serialEmergencyCommands">{{ _('Emergency commands') }}</label>
                     <div class="controls">
                         <input type="text" class="input-block-level" id="settings-serialEmergencyCommands" data-bind="value: serial_emergencyCommands">
@@ -484,6 +491,15 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>{{ _('Action commands') }}</legend>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: serial_enableShutdownActionCommand" id="settings-serialEnableShutdownActionCommand"> {{ _('Enable the <code>shutdown</code> action command') }}
+                        <span class="help-block">{{ _('If enabled and the system shutdown command is configured, your printer\'s firmware will be able to shutdown your OctoPrint server via an action command on the serial connection. This could get abused, so only enable this if you trust your firmware and your GCODE files!') }}</span>
+                    </label>
                 </div>
             </fieldset>
         </div>

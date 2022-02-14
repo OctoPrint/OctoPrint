@@ -7,10 +7,12 @@ import logging
 import queue
 import re
 import time
+import warnings
+from typing import List, Optional, Tuple, Union
 
 import sarge
 
-from octoprint.util import to_str
+from octoprint.util import to_bytes, to_unicode
 from octoprint.util.platform import CLOSE_FDS
 
 # These regexes are based on the colorama package
@@ -18,34 +20,42 @@ from octoprint.util.platform import CLOSE_FDS
 # License: BSD-3 (https://github.com/tartley/colorama/blob/master/LICENSE.txt)
 # Website: https://github.com/tartley/colorama/
 _ANSI_CSI_PATTERN = (
-    b"\001?\033\\[(\\??(?:\\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
+    "\001?\033\\[(\\??(?:\\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
 )
-_ANSI_OSC_PATTERN = b"\001?\033\\]((?:.|;)*?)(\x07)\002?"  # Operating System Command
-_ANSI_REGEX = re.compile(b"|".join([_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN]))
+_ANSI_OSC_PATTERN = "\001?\033\\]((?:.|;)*?)(\x07)\002?"  # Operating System Command
+_ANSI_PATTERN = "|".join([_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN])
+
+_ANSI_REGEX = re.compile(_ANSI_PATTERN)
 
 
-def clean_ansi(line):
+def clean_ansi(line: Union[str, bytes]) -> Union[str, bytes]:
     """
     Removes ANSI control codes from ``line``.
 
+    Note: This function also still supports an input of ``bytes``, leading to an
+    ``output`` of ``bytes``. This if for reasons of backwards compatibility only,
+    should no longer be used and considered to be deprecated and to be removed in
+    a future version of OctoPrint. A warning will be logged.
+
     Parameters:
-        line (bytes or str): the line to process
+        line (str or bytes): the line to process
 
     Returns:
-        (bytes or str) The line without any ANSI control codes
+        (str or bytes) The line without any ANSI control codes
 
-    Example::
+    .. changed:: 1.8.0
 
-        >>> text = b"Some text with some \x1b[31mred words\x1b[39m in it"
-        >>> clean_ansi(text) # doctest: +ALLOW_BYTES
-        'Some text with some red words in it'
-        >>> text = b"We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here"
-        >>> clean_ansi(text) # doctest: +ALLOW_BYTES
-        'We hide the cursor here and then show it again here'
+       Usage as ``clean_ansi(line: bytes) -> bytes`` is now deprecated and will be removed
+       in a future version of OctoPrint.
     """
-    if isinstance(line, str):
-        return _ANSI_REGEX.sub(b"", line.encode("latin1")).decode("latin1")
-    return _ANSI_REGEX.sub(b"", line)
+    # TODO: bytes support is deprecated, remove in 2.0.0
+    if isinstance(line, bytes):
+        warnings.warn(
+            "Calling clean_ansi with bytes is deprecated, call with str instead",
+            DeprecationWarning,
+        )
+        return to_bytes(_ANSI_REGEX.sub("", to_unicode(line)))
+    return _ANSI_REGEX.sub("", line)
 
 
 class CommandlineError(Exception):
@@ -122,7 +132,9 @@ class CommandlineCaller:
         self.on_log_stderr = lambda *args, **kwargs: None
         """Callback for stderr output"""
 
-    def checked_call(self, command, **kwargs):
+    def checked_call(
+        self, command: Union[str, List[str], Tuple[str]], **kwargs
+    ) -> Tuple[int, List[str], List[str]]:
         """
         Calls a command and raises an error if it doesn't return with return code 0
 
@@ -144,7 +156,13 @@ class CommandlineCaller:
 
         return returncode, stdout, stderr
 
-    def call(self, command, **kwargs):
+    def call(
+        self,
+        command: Union[str, List[str], Tuple[str]],
+        delimiter: bytes = b"\n",
+        buffer_size: int = -1,
+        **kwargs,
+    ) -> Tuple[Optional[int], List[str], List[str]]:
         """
         Calls a command
 
@@ -157,24 +175,57 @@ class CommandlineCaller:
             (tuple) a 3-tuple of return code, full stdout and full stderr output
         """
 
+        p = self.non_blocking_call(
+            command, delimiter=delimiter, buffer_size=buffer_size, **kwargs
+        )
+        if p is None:
+            return None, [], []
+
+        all_stdout = []
+        all_stderr = []
+
+        def process_lines(lines, logger):
+            if not lines:
+                return []
+            processed = self._preprocess_lines(
+                *map(lambda x: to_unicode(x, errors="replace"), lines)
+            )
+            logger(*processed)
+            return list(processed)
+
+        def process_stdout(lines):
+            return process_lines(lines, self._log_stdout)
+
+        def process_stderr(lines):
+            return process_lines(lines, self._log_stderr)
+
+        try:
+            while p.returncode is None:
+                all_stderr += process_stderr(p.stderr.readlines(timeout=0.5))
+                all_stdout += process_stdout(p.stdout.readlines(timeout=0.5))
+                p.commands[0].poll()
+
+        finally:
+            p.close()
+
+        all_stderr += process_stderr(p.stderr.readlines())
+        all_stdout += process_stdout(p.stdout.readlines())
+
+        return p.returncode, all_stdout, all_stderr
+
+    def non_blocking_call(
+        self,
+        command: Union[str, List, Tuple],
+        delimiter: bytes = b"\n",
+        buffer_size: int = -1,
+        **kwargs,
+    ) -> Optional[sarge.Pipeline]:
         if isinstance(command, (list, tuple)):
             joined_command = " ".join(command)
         else:
             joined_command = command
         self._logger.debug(f"Calling: {joined_command}")
         self.on_log_call(joined_command)
-
-        delimiter = kwargs.get("delimiter", b"\n")
-        try:
-            kwargs.pop("delimiter")
-        except KeyError:
-            pass
-
-        buffer_size = kwargs.get("buffer_size", -1)
-        try:
-            kwargs.pop("buffer_size")
-        except KeyError:
-            pass
 
         kwargs.update(
             {
@@ -200,39 +251,9 @@ class CommandlineCaller:
         if not p.commands[0].process:
             # the process might have been set to None in case of any exception
             self._logger.error(f"Error while trying to run command {joined_command}")
-            return None, [], []
+            return None
 
-        all_stdout = []
-        all_stderr = []
-
-        def process_lines(lines, logger):
-            if not lines:
-                return []
-            processed = self._preprocess_lines(
-                *map(lambda x: to_str(x, errors="replace"), lines)
-            )
-            logger(*processed)
-            return list(processed)
-
-        def process_stdout(lines):
-            return process_lines(lines, self._log_stdout)
-
-        def process_stderr(lines):
-            return process_lines(lines, self._log_stderr)
-
-        try:
-            while p.returncode is None:
-                all_stderr += process_stderr(p.stderr.readlines(timeout=0.5))
-                all_stdout += process_stdout(p.stdout.readlines(timeout=0.5))
-                p.commands[0].poll()
-
-        finally:
-            p.close()
-
-        all_stderr += process_stderr(p.stderr.readlines())
-        all_stdout += process_stdout(p.stdout.readlines())
-
-        return p.returncode, all_stdout, all_stderr
+        return p
 
     def _log_stdout(self, *lines):
         self.on_log_stdout(*lines)

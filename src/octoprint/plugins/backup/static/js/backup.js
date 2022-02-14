@@ -316,7 +316,8 @@ $(function () {
             );
         };
 
-        self._forcedStdoutLine = /You are using pip version .*?, however version .*? is available\.|You should consider upgrading via the '.*?' command\./;
+        self._forcedStdoutLine =
+            /You are using pip version .*?, however version .*? is available\.|You should consider upgrading via the '.*?' command\./;
         self._preprocessLine = function (line) {
             if (line.stream === "stderr" && line.line.match(self._forcedStdoutLine)) {
                 line.stream = "stdout";

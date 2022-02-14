@@ -33,7 +33,7 @@ import pkg_resources
 import pkginfo
 
 import octoprint.vendor.imp as imp
-from octoprint.util import sv, time_this, to_str
+from octoprint.util import sv, time_this, to_unicode
 from octoprint.util.version import get_python_version_string, is_python_compatible
 
 
@@ -418,7 +418,7 @@ class PluginInfo:
         if self.version:
             return f"{self.name} ({self.version})"
         else:
-            return to_str(self.name)
+            return to_unicode(self.name)
 
     def long_str(
         self,
@@ -459,23 +459,27 @@ class PluginInfo:
         """
         if show_enabled:
             if self.incompatible:
-                ret = to_str(enabled_strs[3])
+                ret = to_unicode(enabled_strs[3])
             elif self.blacklisted:
-                ret = to_str(enabled_strs[2])
+                ret = to_unicode(enabled_strs[2])
             elif not self.enabled:
-                ret = to_str(enabled_strs[1])
+                ret = to_unicode(enabled_strs[1])
             else:
-                ret = to_str(enabled_strs[0])
+                ret = to_unicode(enabled_strs[0])
         else:
             ret = ""
 
         ret += str(self)
 
         if show_bundled:
-            ret += to_str(bundled_strs[0]) if self.bundled else to_str(bundled_strs[1])
+            ret += (
+                to_unicode(bundled_strs[0])
+                if self.bundled
+                else to_unicode(bundled_strs[1])
+            )
 
         if show_location and self.location:
-            ret += to_str(location_str).format(location=self.location)
+            ret += to_unicode(location_str).format(location=self.location)
 
         return ret
 
@@ -1443,9 +1447,7 @@ class PluginManager:
                 **flags (dict): dictionary of flag names and values
         """
         if name not in self.plugins:
-            self.logger.debug(
-                "Trying to mark an unknown plugin {name}".format(**locals())
-            )
+            self.logger.debug(f"Trying to mark an unknown plugin {name}")
 
         for key, value in flags.items():
             if value is None:
@@ -1476,9 +1478,7 @@ class PluginManager:
         self, name, plugin=None, startup=False, initialize_implementation=True
     ):
         if name not in self.plugins:
-            self.logger.warning(
-                "Trying to load an unknown plugin {name}".format(**locals())
-            )
+            self.logger.warning(f"Trying to load an unknown plugin {name}")
             return
 
         if plugin is None:
@@ -1495,7 +1495,7 @@ class PluginManager:
             self.on_plugin_loaded(name, plugin)
             plugin.loaded = True
 
-            self.logger.debug("Loaded plugin {name}: {plugin}".format(**locals()))
+            self.logger.debug(f"Loaded plugin {name}: {plugin}")
         except PluginLifecycleException as e:
             raise e
         except Exception:
@@ -1503,9 +1503,7 @@ class PluginManager:
 
     def unload_plugin(self, name):
         if name not in self.plugins:
-            self.logger.warning(
-                "Trying to unload unknown plugin {name}".format(**locals())
-            )
+            self.logger.warning(f"Trying to unload unknown plugin {name}")
             return
 
         plugin = self.plugins[name]
@@ -1525,13 +1523,11 @@ class PluginManager:
 
             plugin.loaded = False
 
-            self.logger.debug("Unloaded plugin {name}: {plugin}".format(**locals()))
+            self.logger.debug(f"Unloaded plugin {name}: {plugin}")
         except PluginLifecycleException as e:
             raise e
         except Exception:
-            self.logger.exception(
-                "There was an error unloading plugin {name}".format(**locals())
-            )
+            self.logger.exception(f"There was an error unloading plugin {name}")
 
             # make sure the plugin is NOT in the list of enabled plugins but in the list of disabled plugins
             if name in self.enabled_plugins:
@@ -1545,9 +1541,7 @@ class PluginManager:
         """Enables a plugin"""
         if name not in self.disabled_plugins:
             self.logger.warning(
-                "Tried to enable plugin {name}, however it is not disabled".format(
-                    **locals()
-                )
+                f"Tried to enable plugin {name}, however it is not disabled"
             )
             return
 
@@ -1574,9 +1568,7 @@ class PluginManager:
         except PluginLifecycleException as e:
             raise e
         except Exception:
-            self.logger.exception(
-                "There was an error while enabling plugin {name}".format(**locals())
-            )
+            self.logger.exception(f"There was an error while enabling plugin {name}")
             return False
         else:
             if name in self.disabled_plugins:
@@ -1591,7 +1583,7 @@ class PluginManager:
                 plugin.implementation.on_plugin_enabled()
             self.on_plugin_enabled(name, plugin)
 
-            self.logger.debug("Enabled plugin {name}: {plugin}".format(**locals()))
+            self.logger.debug(f"Enabled plugin {name}: {plugin}")
 
         return True
 
@@ -1599,9 +1591,7 @@ class PluginManager:
         """Disables a plugin"""
         if name not in self.enabled_plugins:
             self.logger.warning(
-                "Tried to disable plugin {name}, however it is not enabled".format(
-                    **locals()
-                )
+                f"Tried to disable plugin {name}, however it is not enabled"
             )
             return
 
@@ -1617,9 +1607,7 @@ class PluginManager:
         except PluginLifecycleException as e:
             raise e
         except Exception:
-            self.logger.exception(
-                "There was an error while disabling plugin {name}".format(**locals())
-            )
+            self.logger.exception(f"There was an error while disabling plugin {name}")
             return False
         else:
             if name in self.enabled_plugins:
@@ -1631,7 +1619,7 @@ class PluginManager:
                 plugin.implementation.on_plugin_disabled()
             self.on_plugin_disabled(name, plugin)
 
-            self.logger.debug("Disabled plugin {name}: {plugin}".format(**locals()))
+            self.logger.debug(f"Disabled plugin {name}: {plugin}")
 
         return True
 
@@ -1969,17 +1957,13 @@ class PluginManager:
                 raise e
             else:
                 self.logger.exception(
-                    "Exception while initializing plugin {name}, disabling it".format(
-                        **locals()
-                    )
+                    f"Exception while initializing plugin {name}, disabling it"
                 )
                 return False
         else:
             self.on_plugin_implementations_initialized(name, plugin)
 
-        self.logger.debug(
-            "Initialized plugin mixin implementation for plugin {name}".format(**locals())
-        )
+        self.logger.debug(f"Initialized plugin mixin implementation for plugin {name}")
         return True
 
     def log_all_plugins(
@@ -2422,11 +2406,7 @@ class PluginNeedsRestart(Exception):
     def __init__(self, name):
         Exception.__init__(self)
         self.name = name
-        self.message = (
-            "Plugin {name} cannot be enabled or disabled after system startup".format(
-                **locals()
-            )
-        )
+        self.message = f"Plugin {name} cannot be enabled or disabled after system startup"
 
 
 class PluginLifecycleException(Exception):

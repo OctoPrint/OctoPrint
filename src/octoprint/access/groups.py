@@ -170,7 +170,6 @@ class GroupManager:
         return list(filter(lambda x: x is not None, [self._to_group(g) for g in groups]))
 
     def _to_group(self, group):
-        # noinspection PyCompatibility
         if isinstance(group, Group):
             return group
         elif isinstance(group, str):

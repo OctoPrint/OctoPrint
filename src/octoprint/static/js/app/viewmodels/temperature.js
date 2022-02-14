@@ -123,7 +123,8 @@ $(function () {
             var color;
 
             // tools
-            var currentProfileData = self.settingsViewModel.printerProfiles.currentProfileData();
+            var currentProfileData =
+                self.settingsViewModel.printerProfiles.currentProfileData();
             var numExtruders = currentProfileData
                 ? currentProfileData.extruder.count()
                 : 0;
@@ -200,6 +201,43 @@ $(function () {
                 .heatedChamber.subscribe(self._printerProfileUpdated);
         });
 
+        self.markings = [];
+
+        self.marking_props = {
+            print: {
+                label: gettext("Start"),
+                color: "#218656"
+            },
+            pause: {
+                label: gettext("Pause"),
+                color: "#FDC02F"
+            },
+            resume: {
+                label: gettext("Resume"),
+                color: "#27CAEE"
+            },
+            cancel: {
+                label: gettext("Cancel"),
+                color: "#DA3749"
+            },
+            done: {
+                label: gettext("Done"),
+                color: "#1B72F9"
+            }
+        };
+
+        self.showStateMarks = ko.observable(
+            loadFromLocalStorage("temperatureGraph.showStateMarks", true)
+        );
+        self.showStateMarks.subscribe(function (newValue) {
+            saveToLocalStorage("temperatureGraph.showStateMarks", newValue);
+            self.updatePlot();
+        });
+
+        self.toggleStateMarks = function () {
+            self.showStateMarks(!self.showStateMarks());
+        };
+
         self.temperatures = [];
 
         self.plot = undefined;
@@ -207,6 +245,7 @@ $(function () {
         self.plotLegendTimeout = undefined;
 
         self.fromCurrentData = function (data) {
+            self.markings = data.markings;
             self._processStateData(data.state);
             if (!self._printerProfileInitialized) {
                 self._currentTemperatureDataBacklog.push(data);
@@ -217,6 +256,7 @@ $(function () {
         };
 
         self.fromHistoryData = function (data) {
+            self.markings = data.markings;
             self._processStateData(data.state);
             if (!self._printerProfileInitialized) {
                 self._historyTemperatureDataBacklog.push(data);
@@ -421,6 +461,74 @@ $(function () {
             }
         };
 
+        self._drawMarkings = function () {
+            var graph = $("#temperature-graph");
+            if (!self.plot) {
+                return [];
+            }
+
+            $(".temperature-mark-label").remove();
+
+            if (!self.showStateMarks()) {
+                return [];
+            }
+
+            var graphWidth = self.plot.width();
+            var yAxisLabelWidth = 40;
+            var markingsLabelMargin = 0;
+            var lineWidth = 2;
+
+            var marks = self.markings.map(function (mark) {
+                var time = parseInt(mark.time * 1000);
+                var o = self.plot.pointOffset({
+                    x: time,
+                    y: self.plot.getAxes().yaxis.max
+                });
+
+                if (o.left > yAxisLabelWidth) {
+                    var label = $("<div></div>");
+                    label.html(self.marking_props[mark.type].label);
+                    var css = {
+                        backgroundColor: self.marking_props[mark.type].color
+                    };
+
+                    label.css(css);
+                    label.addClass("temperature-mark-label");
+
+                    graph.append(label);
+
+                    // draw markings label on the left if doesn't fit on the right
+                    if (
+                        o.left >
+                        graphWidth +
+                            yAxisLabelWidth -
+                            label.outerHeight() -
+                            markingsLabelMargin
+                    ) {
+                        label.css(
+                            "left",
+                            o.left - label.outerHeight() - markingsLabelMargin + "px"
+                        );
+                        label.css("border-radius", "5px 0 0 0");
+                    } else {
+                        label.css("left", o.left + markingsLabelMargin + "px");
+                        label.css("border-radius", "0 0 0 5px");
+                    }
+
+                    // set top position
+                    label.css("top", o.top + label.outerWidth() + "px");
+                }
+
+                return {
+                    color: self.marking_props[mark.type].color,
+                    lineWidth: lineWidth,
+                    xaxis: {from: time, to: time}
+                };
+            });
+
+            return marks;
+        };
+
         self._initializePlot = function (force, plotInfo) {
             var graph = $("#temperature-graph");
             if (!graph.length) return; // no graph
@@ -474,7 +582,11 @@ $(function () {
 
             if (!OctoPrint.coreui.browser.mobile) {
                 options["crosshair"] = {mode: "x"};
-                options["grid"] = {hoverable: true, autoHighlight: false};
+                options["grid"] = {
+                    hoverable: true,
+                    autoHighlight: false,
+                    markings: self._drawMarkings
+                };
             }
 
             self.plot = $.plot(graph, plotInfo.data, options);
@@ -992,9 +1104,12 @@ $(function () {
             self._printerProfileUpdated();
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.initOrUpdate();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    self.initOrUpdate();
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push({

@@ -163,21 +163,24 @@ $(function () {
             );
         });
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            if (
-                self.loginState.hasPermission(
-                    self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK
-                )
-            ) {
-                self.performCheck();
-            } else {
-                self._closePopup();
-            }
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    if (
+                        self.loginState.hasPermission(
+                            self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK
+                        )
+                    ) {
+                        self.performCheck();
+                    } else {
+                        self._closePopup();
+                    }
 
-            if (self.loginState.hasPermission(self.access.permissions.ADMIN)) {
-                self.requestUpdatelog();
-            }
-        };
+                    if (self.loginState.hasPermission(self.access.permissions.ADMIN)) {
+                        self.requestUpdatelog();
+                    }
+                };
 
         self._showPopup = function (options, eventListeners, singleButtonNotify) {
             singleButtonNotify = singleButtonNotify || false;
@@ -665,9 +668,8 @@ $(function () {
                 current = JSON.parse(currentString);
             }
             current[self.loginState.username()] = self._informationToRemoteVersions(data);
-            localStorage["plugin.softwareupdate.seen_information"] = JSON.stringify(
-                current
-            );
+            localStorage["plugin.softwareupdate.seen_information"] =
+                JSON.stringify(current);
         };
 
         self._hasNotificationBeenSeen = function (data) {

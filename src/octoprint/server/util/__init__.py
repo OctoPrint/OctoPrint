@@ -16,7 +16,7 @@ import octoprint.timelapse
 import octoprint.vendor.flask_principal as flask_principal
 from octoprint.plugin import plugin_manager
 from octoprint.settings import settings
-from octoprint.util import deprecated, to_str
+from octoprint.util import deprecated, to_unicode
 
 from . import flask, sockjs, tornado, watchdog  # noqa: F401
 
@@ -257,7 +257,7 @@ def get_user_for_authorization_header(header):
 
     header = header.replace("Basic ", "", 1)
     try:
-        header = to_str(base64.b64decode(header))
+        header = to_unicode(base64.b64decode(header))
     except TypeError:
         return None
 

@@ -643,7 +643,7 @@ def _extended_header_value(value):
         return unquote(value, encoding=encoding)
     else:
         # no encoding provided, strip potentially present quotes and call it a day
-        return octoprint.util.to_str(_strip_value_quotes(value), encoding="utf-8")
+        return octoprint.util.to_unicode(_strip_value_quotes(value), encoding="utf-8")
 
 
 class WsgiInputContainer:
@@ -1428,7 +1428,6 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
     def get_attachment_name(self):
         return self._attachment_name
 
-    # noinspection PyCompatibility
     def normalize_files(self, files):
         result = []
         for f in files:
@@ -1456,7 +1455,6 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
                 pass
 
         for f in self.normalize_files(files):
-            # noinspection PyCompatibility
             name = f.get("name")
             path = f.get("path")
             data = f.get("iter") or f.get("content")
@@ -1504,7 +1502,7 @@ class DynamicZipBundleHandler(StaticZipBundleHandler):
             self._access_validator(self.request)
 
         files = list(
-            map(octoprint.util.to_str, self.request.query_arguments.get("files", []))
+            map(octoprint.util.to_unicode, self.request.query_arguments.get("files", []))
         )
         return self._get_files_zip(files)
 
@@ -1524,7 +1522,7 @@ class DynamicZipBundleHandler(StaticZipBundleHandler):
             raise tornado.web.HTTPError(400)
 
         return self._get_files_zip(
-            list(map(octoprint.util.to_str, data.get("files", [])))
+            list(map(octoprint.util.to_unicode, data.get("files", [])))
         )
 
     def _get_files_zip(self, files):
