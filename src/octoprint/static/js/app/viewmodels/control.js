@@ -22,6 +22,7 @@ $(function () {
         self.isLoading = ko.observable(undefined);
 
         self.extrusionAmount = ko.observable(undefined);
+
         self.controls = ko.observableArray([]);
 
         self.distances = ko.observableArray([0.1, 1, 10, 100]);
@@ -82,10 +83,18 @@ $(function () {
 
         self.settings.printerProfiles.currentProfileData.subscribe(function () {
             self._updateExtruderCount();
+            self._updateExtrusionAmount();
             self.settings.printerProfiles
                 .currentProfileData()
                 .extruder.count.subscribe(self._updateExtruderCount);
         });
+        self._updateExtrusionAmount = function () {
+            self.extrusionAmount(
+                self.settings.printerProfiles
+                    .currentProfileData()
+                    .extruder.defaultExtrusionLength()
+            );
+        };
         self._updateExtruderCount = function () {
             var tools = [];
 
@@ -617,7 +626,11 @@ $(function () {
             }
             self._enableWebcam();
 
-            self.extrusionAmount(self.settings.printer_defaultExtrusionLength());
+            self.extrusionAmount(
+                self.settings.printerProfiles
+                    .currentProfileData()
+                    .extruder.defaultExtrusionLength()
+            );
         };
 
         self.syncWebcamElements = function () {

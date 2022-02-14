@@ -372,8 +372,6 @@ mapped, with the following exceptions:
      - Maps to ``folder.timelapse_tmp`` in ``config.yaml``
    * - ``plugins``
      - Plugin settings as available from ``config.yaml`` and :class:`~octoprint.plugin.SettingsPlugin` implementations
-   * - ``printer.defaultExtrusionLength``
-     - Maps to ``printerParameters.defaultExtrusionLength`` in ``config.yaml``
    * - ``scripts.gcode``
      - Whole subtree of configured :ref:`GCODE scripts <sec-features-gcode_scripts>`
    * - ``serial.port``
