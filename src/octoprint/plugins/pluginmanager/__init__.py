@@ -911,7 +911,7 @@ class PluginManagerPlugin(
                 force = True
         except Exception as e:
             self._logger.exception(f"Could not install plugin from {source}")
-            self._logger.exception("Reason: {}".format(repr(e)))
+            self._logger.exception(f"Reason: {repr(e)}")
             result = {
                 "result": False,
                 "source": source,
@@ -934,7 +934,7 @@ class PluginManagerPlugin(
                 _, stdout, stderr = self._call_pip(pip_args)
             except Exception as e:
                 self._logger.exception(f"Could not install plugin from {source}")
-                self._logger.exception("Reason: {}".format(repr(e)))
+                self._logger.exception(f"Reason: {repr(e)}")
                 result = {
                     "result": False,
                     "source": source,
@@ -1231,9 +1231,7 @@ class PluginManagerPlugin(
 
         if plugin.origin is None:
             self._logger.warning(
-                "Trying to uninstall plugin {plugin} but origin is unknown".format(
-                    **locals()
-                )
+                f"Trying to uninstall plugin {plugin} but origin is unknown"
             )
             abort(500, description="Could not uninstall plugin, its origin is unknown")
 
@@ -1276,16 +1274,14 @@ class PluginManagerPlugin(
                 os.remove(full_path)
 
                 if full_path.endswith(".py"):
-                    pyc_file = "{full_path}c".format(**locals())
+                    pyc_file = f"{full_path}c"
                     if os.path.isfile(pyc_file):
                         self._log_stdout(f"Deleting plugin from {pyc_file}")
                         os.remove(pyc_file)
 
         else:
             self._logger.warning(
-                "Trying to uninstall plugin {plugin} but origin is unknown ({plugin.origin.type})".format(
-                    **locals()
-                )
+                f"Trying to uninstall plugin {plugin} but origin is unknown ({plugin.origin.type})"
             )
             abort(500, description="Could not uninstall plugin, its origin is unknown")
 
@@ -1427,9 +1423,7 @@ class PluginManagerPlugin(
             "cleaned_up": sorted(list(cleaned_up)),
         }
         self._send_result_notification("cleanup_all", result)
-        self._logger.info(
-            "Cleaned up all data, {} left overs removed".format(len(cleaned_up))
-        )
+        self._logger.info(f"Cleaned up all data, {len(cleaned_up)} left overs removed")
 
         # cleaning orphan cache
         self._orphans = None
@@ -1537,7 +1531,7 @@ class PluginManagerPlugin(
 
             package_name = plugin.origin.package_name
             package_version = plugin.origin.package_version
-            versioned_package = "{package_name}-{package_version}".format(**locals())
+            versioned_package = f"{package_name}-{package_version}"
 
             if package_name in packages or versioned_package in packages:
                 # exact match, we are done here
@@ -1564,7 +1558,7 @@ class PluginManagerPlugin(
 
     def _call_pip(self, args):
         if self._pip_caller is None or not self._pip_caller.available:
-            raise RuntimeError("No pip available, can't operate".format(**locals()))
+            raise RuntimeError("No pip available, can't operate")
 
         if "--process-dependency-links" in args:
             self._log_message(
@@ -1620,7 +1614,7 @@ class PluginManagerPlugin(
             },
         )
         for line in lines:  # noqa: B007
-            self._console_logger.debug("{prefix} {line}".format(**locals()))
+            self._console_logger.debug(f"{prefix} {line}")
 
     def _mark_plugin_enabled(self, plugin, needs_restart=False):
         disabled_list = list(
@@ -1945,8 +1939,8 @@ class PluginManagerPlugin(
                     reconnect_hooks.extend(filter(lambda x: isinstance(x, str), result))
             except Exception:
                 self._logger.exception(
-                    "Error while retrieving additional hooks for which a "
-                    "reconnect is required from plugin {name}".format(**locals()),
+                    f"Error while retrieving additional hooks for which a "
+                    f"reconnect is required from plugin {name}",
                     extra={"plugin": name},
                 )
 

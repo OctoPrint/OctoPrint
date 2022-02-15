@@ -128,16 +128,17 @@ $(function () {
             return deferred.promise();
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function (
-            user
-        ) {
-            if (self.loginState.hasPermission(self.access.permissions.SYSTEM)) {
-                self.requestData();
-            } else {
-                self.lastCommandResponse = undefined;
-                self.systemActions([]);
-            }
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function (user) {
+                    if (self.loginState.hasPermission(self.access.permissions.SYSTEM)) {
+                        self.requestData();
+                    } else {
+                        self.lastCommandResponse = undefined;
+                        self.systemActions([]);
+                    }
+                };
 
         self.onEventSettingsUpdated = function () {
             if (self.loginState.hasPermission(self.access.permissions.SYSTEM)) {

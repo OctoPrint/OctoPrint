@@ -10,7 +10,7 @@ def load_from_file(
     """
     if path is not None:
         assert file is None
-        with open(path, mode="rt", encoding="utf-8-sig") as f:
+        with open(path, encoding="utf-8-sig") as f:
             return load_from_file(file=f)
 
     if file is not None:

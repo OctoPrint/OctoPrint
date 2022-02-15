@@ -22,6 +22,7 @@ $(function () {
         self.isLoading = ko.observable(undefined);
 
         self.extrusionAmount = ko.observable(undefined);
+
         self.controls = ko.observableArray([]);
 
         self.distances = ko.observableArray([0.1, 1, 10, 100]);
@@ -82,10 +83,18 @@ $(function () {
 
         self.settings.printerProfiles.currentProfileData.subscribe(function () {
             self._updateExtruderCount();
+            self._updateExtrusionAmount();
             self.settings.printerProfiles
                 .currentProfileData()
                 .extruder.count.subscribe(self._updateExtruderCount);
         });
+        self._updateExtrusionAmount = function () {
+            self.extrusionAmount(
+                self.settings.printerProfiles
+                    .currentProfileData()
+                    .extruder.defaultExtrusionLength()
+            );
+        };
         self._updateExtruderCount = function () {
             var tools = [];
 
@@ -519,9 +528,13 @@ $(function () {
             return span + " " + offset;
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.requestData();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    self.syncWebcamElements();
+                    self.requestData();
+                };
 
         self._disableWebcam = function () {
             // only disable webcam stream if tab is out of focus for more than 5s,
@@ -613,12 +626,20 @@ $(function () {
             }
             self._enableWebcam();
 
-            self.extrusionAmount(self.settings.printer_defaultExtrusionLength());
+            self.extrusionAmount(
+                self.settings.printerProfiles
+                    .currentProfileData()
+                    .extruder.defaultExtrusionLength()
+            );
+        };
+
+        self.syncWebcamElements = function () {
+            self.webcamElementHls = document.getElementById("webcam_hls");
+            self.webcamElementWebrtc = document.getElementById("webcam_webrtc");
         };
 
         self.onStartup = function () {
-            self.webcamElementHls = document.getElementById("webcam_hls");
-            self.webcamElementWebrtc = document.getElementById("webcam_webrtc");
+            self.syncWebcamElements();
         };
 
         self.onFocus = function (data, event) {

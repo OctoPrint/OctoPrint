@@ -270,9 +270,7 @@ class FileManager:
 
         def worker():
             self._logger.info(
-                "Adding backlog items from all storage types to analysis queue...".format(
-                    **locals()
-                )
+                "Adding backlog items from all storage types to analysis queue..."
             )
             for storage_type, storage_manager in self._storage_managers.items():
                 self._determine_analysis_backlog(storage_type, storage_manager)
@@ -329,15 +327,11 @@ class FileManager:
 
         if root:
             self._logger.info(
-                'Added {counter} items from storage type "{storage_type}" and root "{root}" to analysis queue'.format(
-                    **locals()
-                )
+                f'Added {counter} items from storage type "{storage_type}" and root "{root}" to analysis queue'
             )
         else:
             self._logger.info(
-                'Added {counter} items from storage type "{storage_type}" to analysis queue'.format(
-                    **locals()
-                )
+                f'Added {counter} items from storage type "{storage_type}" to analysis queue'
             )
 
     def add_storage(self, storage_type, storage_manager):
@@ -451,9 +445,9 @@ class FileManager:
                     file_obj = StreamWrapper(
                         os.path.basename(dest_path),
                         io.BytesIO(
-                            ";Generated from {stl_name} (hash: {hash})\n".format(
-                                **locals()
-                            ).encode("ascii", "replace")
+                            f";Generated from {stl_name} (hash: {hash})\n".encode(
+                                "ascii", "replace"
+                            )
                         ),
                         io.FileIO(tmp_path, "rb"),
                     )
@@ -828,6 +822,19 @@ class FileManager:
                 "type": get_file_type(dst_name),
             },
         )
+        eventManager().fire(
+            Events.FILE_MOVED,
+            {
+                "storage": destination,
+                "source_path": source_path_in_storage,
+                "source_name": source_name,
+                "source_type": get_file_type(source_name),
+                "destination_path": dst_path_in_storage,
+                "destination_name": dst_name,
+                "destination_type": get_file_type(dst_name),
+            },
+        )
+
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
     def add_folder(self, destination, path, ignore_existing=True, display=None):
@@ -889,6 +896,17 @@ class FileManager:
             Events.FOLDER_ADDED,
             {"storage": destination, "path": dst_path_in_storage, "name": dst_name},
         )
+        eventManager().fire(
+            Events.FOLDER_MOVED,
+            {
+                "storage": destination,
+                "source_path": source_path_in_storage,
+                "source_name": source_name,
+                "destination_path": dst_path_in_storage,
+                "destination_name": dst_name,
+            },
+        )
+
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
     def has_analysis(self, destination, path):
@@ -1023,9 +1041,7 @@ class FileManager:
 
     def _storage(self, destination):
         if destination not in self._storage_managers:
-            raise NoSuchStorage(
-                "No storage configured for destination {destination}".format(**locals())
-            )
+            raise NoSuchStorage(f"No storage configured for destination {destination}")
         return self._storage_managers[destination]
 
     def _add_analysis_result(self, destination, path, result):

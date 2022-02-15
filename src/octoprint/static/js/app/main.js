@@ -404,9 +404,8 @@ $(function () {
         if (!additionalBindings.hasOwnProperty(viewModelId)) {
             additionalBindings[viewModelId] = viewModelBindTargets;
         } else {
-            additionalBindings[viewModelId] = additionalBindings[viewModelId].concat(
-                viewModelBindTargets
-            );
+            additionalBindings[viewModelId] =
+                additionalBindings[viewModelId].concat(viewModelBindTargets);
         }
     });
 
@@ -461,17 +460,18 @@ $(function () {
             viewModel.additionalNames = viewModel.additionalNames || [];
 
             // make sure all value's are set and in an array
-            _.each(["dependencies", "elements", "optional", "additionalNames"], function (
-                key
-            ) {
-                if (viewModel[key] === undefined) {
-                    viewModel[key] = [];
-                } else {
-                    viewModel[key] = _.isArray(viewModel[key])
-                        ? viewModel[key]
-                        : [viewModel[key]];
+            _.each(
+                ["dependencies", "elements", "optional", "additionalNames"],
+                function (key) {
+                    if (viewModel[key] === undefined) {
+                        viewModel[key] = [];
+                    } else {
+                        viewModel[key] = _.isArray(viewModel[key])
+                            ? viewModel[key]
+                            : [viewModel[key]];
+                    }
                 }
-            });
+            );
 
             // make sure that we don't have two view models going by the same name
             if (_.has(viewModelMap, viewModel.name)) {

@@ -131,7 +131,7 @@ def gcode_command(
         bed_z=bedz,
     )
 
-    click.echo("DONE:{}s".format(time.monotonic() - start_time))
+    click.echo(f"DONE:{time.monotonic() - start_time}s")
 
     result = interpreter.get_result()
     if empty_result(result):

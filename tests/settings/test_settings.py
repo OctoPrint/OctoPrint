@@ -300,8 +300,8 @@ class TestSettings(unittest.TestCase):
 
             data = settings.get(["devel", "virtualPrinter"])
 
-            self.assertEqual(len(data), 1)
             self.assertDictEqual({"enabled": True}, data)
+            self.assertEqual(len(data), 1)
 
     def test_get_map_merged(self):
         with self.mocked_config():
@@ -469,7 +469,7 @@ class TestSettings(unittest.TestCase):
 
             settings.set(["server", "port"], 5000)
 
-            self.assertNotIn("port", settings._config["server"])
+            self.assertNotIn("server", settings._config)
             self.assertEqual(5000, settings.get(["server", "port"]))
 
     def test_set_none(self):
@@ -480,7 +480,7 @@ class TestSettings(unittest.TestCase):
 
             settings.set(["server", "port"], None)
 
-            self.assertFalse("port" in settings._config["server"])
+            self.assertIs(settings.get(["server", "port"]), None)
 
     @ddt.data(
         [], ["api", "lock"], ["api", "lock", "door"], ["serial", "additionalPorts", "key"]
@@ -505,7 +505,9 @@ class TestSettings(unittest.TestCase):
 
             settings.remove(["server", "port"])
 
-            self.assertFalse("port" in settings._config["server"])
+            self.assertFalse(
+                "server" in settings._config and "port" in settings._config["server"]
+            )
             self.assertEqual(5000, settings.get(["server", "port"]))
 
     @ddt.data([], ["server", "lock"], ["serial", "additionalPorts", "key"])

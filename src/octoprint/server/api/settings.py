@@ -113,11 +113,6 @@ def getSettings():
             "closeModalsWithClick": s.getBoolean(["appearance", "closeModalsWithClick"]),
             "showInternalFilename": s.getBoolean(["appearance", "showInternalFilename"]),
         },
-        "printer": {
-            "defaultExtrusionLength": s.getInt(
-                ["printerParameters", "defaultExtrusionLength"]
-            )
-        },
         "webcam": {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
             "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
@@ -205,6 +200,7 @@ def getSettings():
             "blockedCommands": s.get(["serial", "blockedCommands"]),
             "ignoredCommands": s.get(["serial", "ignoredCommands"]),
             "pausingCommands": s.get(["serial", "pausingCommands"]),
+            "sdCancelCommand": s.get(["serial", "sdCancelCommand"]),
             "emergencyCommands": s.get(["serial", "emergencyCommands"]),
             "helloCommand": s.get(["serial", "helloCommand"]),
             "ignoreErrorsFromFirmware": s.getBoolean(
@@ -261,6 +257,9 @@ def getSettings():
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
             "ignoreEmptyPorts": s.getBoolean(["serial", "ignoreEmptyPorts"]),
             "encoding": s.get(["serial", "encoding"]),
+            "enableShutdownActionCommand": s.get(
+                ["serial", "enableShutdownActionCommand"]
+            ),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -792,6 +791,8 @@ def _saveSettings(data):
             data["serial"]["pausingCommands"], (list, tuple)
         ):
             s.set(["serial", "pausingCommands"], data["serial"]["pausingCommands"])
+        if "sdCancelCommand" in data["serial"]:
+            s.set(["serial", "sdCancelCommand"], data["serial"]["sdCancelCommand"])
         if "emergencyCommands" in data["serial"] and isinstance(
             data["serial"]["emergencyCommands"], (list, tuple)
         ):
@@ -950,6 +951,12 @@ def _saveSettings(data):
 
         if "encoding" in data["serial"]:
             s.set(["serial", "encoding"], data["serial"]["encoding"])
+
+        if "enableShutdownActionCommand" in data["serial"]:
+            s.setBoolean(
+                ["serial", "enableShutdownActionCommand"],
+                data["serial"]["enableShutdownActionCommand"],
+            )
 
         oldLog = s.getBoolean(["serial", "log"])
         if "log" in data["serial"]:

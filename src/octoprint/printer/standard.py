@@ -65,9 +65,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._targetBedTemp = None
         self._targetChamberTemp = None
 
-        self._temps = TemperatureHistory(
+        self._temps = DataHistory(
             cutoff=settings().getInt(["temperature", "cutoff"]) * 60
         )
+        self._markings = DataHistory(
+            cutoff=settings().getInt(["temperature", "cutoff"]) * 60
+        )
+
         self._messages = deque([], 300)
         self._log = deque([], 300)
 
@@ -503,7 +507,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         if speed is None:
             printer_profile = self._printerProfileManager.get_current_or_default()
-            speed = min([printer_profile["axes"][axis]["speed"] for axis in axes])
+            speed = min(printer_profile["axes"][axis]["speed"] for axis in axes)
 
         if speed and not isinstance(speed, bool):
             command += f" F{speed}"
@@ -717,6 +721,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 return None
 
         return self._comm.getFilePosition()
+
+    def add_marking(self, type):
+        self._markings.append(
+            {
+                "type": type,
+                "time": time.time(),
+            }
+        )
+
+    def get_markings(self):
+        return self._markings
 
     def start_print(self, pos=None, user=None, *args, **kwargs):
         """
@@ -1390,6 +1405,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 temps=list(self._temps),
                 logs=list(self._log),
                 messages=list(self._messages),
+                markings=list(self._markings),
             )
 
             plugin_data = self._get_additional_plugin_data(initial=False)
@@ -1602,6 +1618,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event(print_job_user=user, action_user=user)
         if payload:
             eventManager().fire(Events.PRINT_STARTED, payload)
+            self.add_marking("print")
             self._logger_job.info(
                 "Print job started - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -1625,6 +1642,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event()
         if payload:
             payload["time"] = self._comm.getPrintTime()
+            self.add_marking("done")
             self._updateProgressData(
                 completion=1.0,
                 filepos=payload["size"],
@@ -1701,6 +1719,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             payload["time"] = self._comm.getPrintTime()
 
             eventManager().fire(Events.PRINT_CANCELLED, payload)
+            self.add_marking("cancel")
             self._logger_job.info(
                 "Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -1752,6 +1771,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     payload.get("user"),
                 )
             )
+            self.add_marking("pause")
             if not suppress_script:
                 self.script(
                     "afterPrintPaused",
@@ -1764,6 +1784,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event(action_user=user)
         if payload:
             eventManager().fire(Events.PRINT_RESUMED, payload)
+            self.add_marking("resume")
             self._logger_job.info(
                 "Print job resumed - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -2067,11 +2088,11 @@ class StateMonitor:
         }
 
 
-class TemperatureHistory(InvariantContainer):
+class DataHistory(InvariantContainer):
     def __init__(self, cutoff=30 * 60):
-        def temperature_invariant(data):
+        def data_invariant(data):
             data.sort(key=lambda x: x["time"])
             now = int(time.time())
             return [item for item in data if item["time"] >= now - cutoff]
 
-        InvariantContainer.__init__(self, guarantee_invariant=temperature_invariant)
+        InvariantContainer.__init__(self, guarantee_invariant=data_invariant)

@@ -51,7 +51,15 @@
             <!-- /ko -->
         </div>
     </div>
-
+    <div class="control-group">
+        <label class="control-label" for="settings-defaultExtrusionLength">{{ _('Default extrusion length') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" class="input-mini text-right" min="1" data-bind="value: defaultExtrusionLength" id="settings-defaultExtrusionLength">
+                <span class="add-on">mm</span>
+            </div>
+        </div>
+    </div>
     <p>
         <small>{{ _('This information is used for the graph and controls available in the "Temperature" tab, the GCODE viewer, when slicing from within OctoPrint and for deciding which toolchange commands are safe to send to the printer.') }}</small>
     </p>

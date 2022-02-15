@@ -306,10 +306,10 @@ class SlicingManager:
 
         if slicer_name not in self.configured_slicers:
             if slicer_name not in self.registered_slicers:
-                error = "No such slicer: {slicer_name}".format(**locals())
+                error = f"No such slicer: {slicer_name}"
                 exc = UnknownSlicer(slicer_name)
             else:
-                error = "Slicer not configured: {slicer_name}".format(**locals())
+                error = f"Slicer not configured: {slicer_name}"
                 exc = SlicerNotConfigured(slicer_name)
             callback_kwargs.update({"_error": error, "_exc": exc})
             callback(*callback_args, **callback_kwargs)
@@ -726,11 +726,7 @@ class SlicingManager:
 
         path = os.path.join(self.get_slicer_profile_path(slicer), f"{name}.profile")
         if not os.path.realpath(path).startswith(os.path.realpath(self._profile_path)):
-            raise OSError(
-                "Path to profile {name} tried to break out of allows sub path".format(
-                    **locals()
-                )
-            )
+            raise OSError(f"Path to profile {name} tried to break out of allows sub path")
         if must_exist and not (os.path.exists(path) and os.path.isfile(path)):
             raise UnknownProfile(slicer, name)
         return path

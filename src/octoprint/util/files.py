@@ -244,7 +244,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
     counter = 1
     power = 1
     prefix_format = "{segment}~{counter}"
-    while counter < (10 ** max_power):
+    while counter < (10**max_power):
         prefix = prefix_format.format(
             segment=filename[: (6 - power + 1)], counter=str(counter)
         )
@@ -252,7 +252,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
         if result not in existing_filenames:
             return result
         counter += 1
-        if counter >= 10 ** power:
+        if counter >= 10**power:
             power += 1
 
     raise ValueError("Can't create a collision free filename")

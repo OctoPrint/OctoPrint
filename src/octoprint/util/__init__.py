@@ -947,7 +947,7 @@ def parse_mime_type(mime):
     import cgi
 
     if not mime or not isinstance(mime, (str, bytes)):
-        raise ValueError("mime must be a non empty str or bytes")
+        raise ValueError("mime must be a non empty str")
 
     mime, params = cgi.parse_header(mime)
 
@@ -1685,7 +1685,7 @@ def time_this(
                 data.update(
                     func_args=",".join(map(repr, args)),
                     func_kwargs=",".join(
-                        map(lambda x: "{}={!r}".format(x[0], x[1]), kwargs.items())
+                        map(lambda x: f"{x[0]}={x[1]!r}", kwargs.items())
                     ),
                 )
             if log_enter:

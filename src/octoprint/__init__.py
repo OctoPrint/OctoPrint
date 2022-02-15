@@ -48,7 +48,7 @@ class FatalStartupError(Exception):
     def __str__(self):
         result = Exception.__str__(self)
         if self.cause:
-            return "{}: {}".format(result, str(self.cause))
+            return f"{result}: {str(self.cause)}"
         else:
             return result
 
@@ -67,6 +67,7 @@ def init_platform(
     verbosity=0,
     uncaught_logger=None,
     uncaught_handler=None,
+    disable_color=True,
     safe_mode=False,
     ignore_blacklist=False,
     after_preinit_logging=None,
@@ -108,6 +109,7 @@ def init_platform(
             verbosity=verbosity,
             uncaught_logger=uncaught_logger,
             uncaught_handler=uncaught_handler,
+            disable_color=disable_color,
         )
     except Exception as ex:
         raise FatalStartupError("Could not initialize logging", cause=ex)
@@ -251,6 +253,7 @@ def init_logging(
     verbosity=0,
     uncaught_logger=None,
     uncaught_handler=None,
+    disable_color=True,
 ):
     """Sets up logging."""
 
@@ -271,7 +274,6 @@ def init_logging(
                     "reset": True,
                     "log_colors": {
                         "DEBUG": "cyan",
-                        "INFO": "white",
                         "WARNING": "yellow",
                         "ERROR": "red",
                         "CRITICAL": "bold_red",
@@ -285,7 +287,7 @@ def init_logging(
                 "console": {
                     "class": "octoprint.logging.handlers.OctoPrintStreamHandler",
                     "level": "DEBUG",
-                    "formatter": "colored",
+                    "formatter": "simple" if disable_color else "colored",
                     "stream": "ext://sys.stdout",
                 },
                 "file": {
@@ -667,7 +669,7 @@ def init_pluginsystem(
         from octoprint.util import sv
 
         sorted_disabled_from_overlays = sorted(
-            [(key, value[0], value[1]) for key, value in disabled_from_overlays.items()],
+            ((key, value[0], value[1]) for key, value in disabled_from_overlays.items()),
             key=lambda x: (x[2] is None, sv(x[2]), sv(x[0])),
         )
 
@@ -723,7 +725,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
     def format_blacklist(entries):
         format_entry = (
-            lambda x: "{} ({})".format(x[0], x[1])
+            lambda x: f"{x[0]} ({x[1]})"
             if isinstance(x, (list, tuple)) and len(x) == 2
             else f"{x} (any)"
         )

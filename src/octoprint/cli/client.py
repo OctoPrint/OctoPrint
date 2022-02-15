@@ -280,15 +280,13 @@ def listen(ctx):
         click.echo(f"!!! Error: {error}")
 
     def on_sent(ws, data):
-        click.echo(">>> {}".format(json.dumps(data)))
+        click.echo(f">>> {json.dumps(data)}")
 
     def on_heartbeat(ws):
         click.echo("<3")
 
     def on_message(ws, message_type, message_payload):
-        click.echo(
-            "<<< {}, Payload: {}".format(message_type, json.dumps(message_payload))
-        )
+        click.echo(f"<<< {message_type}, Payload: {json.dumps(message_payload)}")
 
     socket = ctx.obj.client.create_socket(
         on_connect=on_connect,

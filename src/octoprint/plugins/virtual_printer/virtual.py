@@ -10,7 +10,6 @@ import queue
 import re
 import threading
 import time
-from typing import Any
 
 from serial import SerialTimeoutException
 
@@ -1342,24 +1341,20 @@ class VirtualPrinter:
                     interval = int(sleep_after_match.group(2))
                     self._sleepAfter[command] = interval
                     self._send(
-                        "// going to sleep {interval} seconds after each {command}".format(
-                            **locals()
-                        )
+                        f"// going to sleep {interval} seconds after each {command}"
                     )
                 elif sleep_after_next_match is not None:
                     command = sleep_after_next_match.group(1)
                     interval = int(sleep_after_next_match.group(2))
                     self._sleepAfterNext[command] = interval
                     self._send(
-                        "// going to sleep {interval} seconds after next {command}".format(
-                            **locals()
-                        )
+                        f"// going to sleep {interval} seconds after next {command}"
                     )
                 elif custom_action_match is not None:
                     action = custom_action_match.group(1)
                     params = custom_action_match.group(2)
                     params = params.strip() if params is not None else ""
-                    self._send("// action:{action} {params}".format(**locals()).strip())
+                    self._send(f"// action:{action} {params}".strip())
                 elif prepare_ok_match is not None:
                     ok = prepare_ok_match.group(1)
                     self._prepared_oks.append(ok)
@@ -1476,7 +1471,7 @@ class VirtualPrinter:
         e["current"] = self._lastE[self.currentExtruder]
         e["all"] = " ".join(
             [
-                "E{}:{}".format(num, self._lastE[self.currentExtruder])
+                f"E{num}:{self._lastE[self.currentExtruder]}"
                 for num in range(self.extruderCount)
             ]
         )
@@ -2100,8 +2095,8 @@ class VirtualPrinter:
             ok, lastN=self.lastN, buffer=self.buffered.maxsize - self.buffered.qsize()
         )
 
-    def _error(self, error: str, *args: Any, **kwargs: Any) -> str:
-        return "Error: {}".format(self._errors.get(error).format(*args, **kwargs))
+    def _error(self, error: str, *args, **kwargs) -> str:
+        return f"Error: {self._errors.get(error).format(*args, **kwargs)}"
 
 
 class VirtualEEPROM:

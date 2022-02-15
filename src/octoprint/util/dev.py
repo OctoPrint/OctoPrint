@@ -58,7 +58,7 @@ def log_duration(log=None, with_args=False):
                 args_str = ", ".join(map(lambda x: repr(x), args))
                 kwargs_str = ", ".join(
                     map(
-                        lambda item: "{}={}".format(item[0], repr(item[1])),
+                        lambda item: f"{item[0]}={repr(item[1])}",
                         kwargs.items(),
                     )
                 )
