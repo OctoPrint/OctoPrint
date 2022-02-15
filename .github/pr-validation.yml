@@ -13,3 +13,6 @@ labels:
     additional_allowed_targets: ["master"]
   ci/cd:
     additional_allowed_targets: ["master"]
+
+check_can_modify: true
+create_review: true
