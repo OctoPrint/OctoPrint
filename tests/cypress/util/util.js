@@ -1,13 +1,12 @@
 export const prepare_server = () => {
-    cy.server();
-    cy.route("POST", "/api/login").as("login");
-    cy.route("POST", "/api/logout").as("logout");
-    cy.route("GET", "/api/settings").as("settings");
-    cy.route("GET", "/api/files?recursive=true").as("files");
-    cy.route("GET", "/plugin/softwareupdate/check").as("softwareupdate");
-    cy.route("GET", "/plugin/pluginmanager/plugins").as("pluginmanager");
-    cy.route("POST", "/api/connection").as("connectionCommand");
-    cy.route("GET", "/api/connection").as("connectionDetails");
+    cy.intercept("POST", "/api/login").as("login");
+    cy.intercept("POST", "/api/logout").as("logout");
+    cy.intercept("GET", "/api/settings").as("settings");
+    cy.intercept("GET", "/api/files?recursive=true").as("files");
+    cy.intercept("GET", "/plugin/softwareupdate/check").as("softwareupdate");
+    cy.intercept("GET", "/plugin/pluginmanager/plugins").as("pluginmanager");
+    cy.intercept("POST", "/api/connection").as("connectionCommand");
+    cy.intercept("GET", "/api/connection").as("connectionDetails");
 };
 
 export const await_loginui = () => {
@@ -61,5 +60,13 @@ export const disconnect = () => {
         body: {
             command: "disconnect"
         }
+    });
+};
+
+export const ensure_file_unknown = (location, name) => {
+    cy.request({
+        method: "DELETE",
+        url: `/api/files/${location}/${name}`,
+        failOnStatusCode: false
     });
 };
