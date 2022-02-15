@@ -610,6 +610,12 @@ class PrinterProfileManager:
             profile["extruder"]["offsets"] = [(0.0, 0.0)]
             modified = True
 
+        if "extruder" in profile and "defaultExtrusionLength" not in profile["extruder"]:
+            profile["extruder"]["defaultExtrusionLength"] = self.default["extruder"][
+                "defaultExtrusionLength"
+            ]
+            modified = True
+
         if "heatedChamber" not in profile:
             profile["heatedChamber"] = False
             modified = True
