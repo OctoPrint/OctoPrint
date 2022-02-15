@@ -17,7 +17,7 @@ context("Login tests", () => {
             });
         });
 
-        it("logs in", () => {
+        it("logs in", {retries: 3}, () => {
             cy.get("[data-test-id=login-username]").type(username);
             cy.get("[data-test-id=login-password]").type(password);
 
