@@ -92,52 +92,52 @@ jobs:
         run: |
           pip install dist/OctoPrint-*.tar.gz
 
-#  test-e2e:
-#    name: 🧪 E2E tests
-#    needs: build
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: ⬇ Checkout code
-#        uses: actions/checkout@v2
-#
-#      - name: ⬇ Download build result
-#        uses: actions/download-artifact@v1
-#        with:
-#          name: dist
-#          path: dist
-#      - name: 🏗 Set up Python 3.7
-#        uses: actions/setup-python@v1
-#        with:
-#          python-version: 3.7
-#      - name: 🚀 Install wheel
-#        run: |
-#          pip install dist/OctoPrint-*-py2.py3-none-any.whl
-#
-#      - name: 🏗 Create base config for test server
-#        run: |
-#          mkdir e2econfig
-#          cp -r .github/fixtures/with_acl/* e2econfig
-#
-#      - name: 🚀 Run Cypress
-#        uses: cypress-io/github-action@v2
-#        with:
-#          working-directory: tests/cypress
-#          browser: chrome
-#          start: "octoprint -b ${{ github.workspace }}/e2econfig serve --host 127.0.0.1 --port 5000"
-#          wait-on: "http://127.0.0.1:5000/online.txt"
-#
-#      - name: ⬆ Upload screenshots
-#        uses: actions/upload-artifact@v1
-#        if: failure()
-#        with:
-#          name: cypress-screenshots
-#          path: tests/cypress/screenshots
-#      - name: ⬆ Upload videos
-#        uses: actions/upload-artifact@v1
-#        if: always()
-#        with:
-#          name: cypress-videos
-#          path: tests/cypress/videos
+  #  test-e2e:
+  #    name: 🧪 E2E tests
+  #    needs: build
+  #    runs-on: ubuntu-latest
+  #    steps:
+  #      - name: ⬇ Checkout code
+  #        uses: actions/checkout@v2
+  #
+  #      - name: ⬇ Download build result
+  #        uses: actions/download-artifact@v1
+  #        with:
+  #          name: dist
+  #          path: dist
+  #      - name: 🏗 Set up Python 3.7
+  #        uses: actions/setup-python@v1
+  #        with:
+  #          python-version: 3.7
+  #      - name: 🚀 Install wheel
+  #        run: |
+  #          pip install dist/OctoPrint-*-py2.py3-none-any.whl
+  #
+  #      - name: 🏗 Create base config for test server
+  #        run: |
+  #          mkdir e2econfig
+  #          cp -r .github/fixtures/with_acl/* e2econfig
+  #
+  #      - name: 🚀 Run Cypress
+  #        uses: cypress-io/github-action@v2
+  #        with:
+  #          working-directory: tests/cypress
+  #          browser: chrome
+  #          start: "octoprint -b ${{ github.workspace }}/e2econfig serve --host 127.0.0.1 --port 5000"
+  #          wait-on: "http://127.0.0.1:5000/online.txt"
+  #
+  #      - name: ⬆ Upload screenshots
+  #        uses: actions/upload-artifact@v1
+  #        if: failure()
+  #        with:
+  #          name: cypress-screenshots
+  #          path: tests/cypress/screenshots
+  #      - name: ⬆ Upload videos
+  #        uses: actions/upload-artifact@v1
+  #        if: always()
+  #        with:
+  #          name: cypress-videos
+  #          path: tests/cypress/videos
 
   publish-on-testpypi:
     name: 📦 Publish on TestPyPI
@@ -146,7 +146,7 @@ jobs:
       - pre-commit
       - test-unit
       - test-install
-#      - test-e2e
+    #      - test-e2e
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
