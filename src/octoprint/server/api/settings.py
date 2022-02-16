@@ -216,6 +216,10 @@ def getSettings():
             "waitForStart": s.getBoolean(["serial", "waitForStartOnConnect"]),
             "alwaysSendChecksum": s.getBoolean(["serial", "alwaysSendChecksum"]),
             "neverSendChecksum": s.getBoolean(["serial", "neverSendChecksum"]),
+            "sendChecksumWithUnknownCommands": s.getBoolean(
+                ["serial", "sendChecksumWithUnknownCommands"]
+            ),
+            "unknownCommandsNeedAck": s.getBoolean(["serial", "unknownCommandsNeedAck"]),
             "sdRelativePath": s.getBoolean(["serial", "sdRelativePath"]),
             "sdAlwaysAvailable": s.getBoolean(["serial", "sdAlwaysAvailable"]),
             "sdLowerCase": s.getBoolean(["serial", "sdLowerCase"]),
