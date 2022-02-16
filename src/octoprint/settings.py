@@ -416,7 +416,7 @@ default_settings = {
         "remoteUserHeader": "REMOTE_USER",
         "addRemoteUsers": False,
     },
-    "slicing": {"enabled": True, "defaultSlicer": None, "defaultProfiles": None},
+    "slicing": {"enabled": True, "defaultSlicer": None, "defaultProfiles": {}},
     "events": {"enabled": True, "subscriptions": []},
     "api": {"key": None, "allowCrossOrigin": False, "apps": {}},
     "terminalFilters": [
@@ -566,7 +566,7 @@ class HierarchicalChainMap:
             subkeys = key[len(prefix) :].split(_CHAINMAP_SEP)
             current = result
             for subkey in subkeys[:-1]:
-                if subkey not in current:
+                if subkey not in current or current[subkey] is None:
                     current[subkey] = {}
                 current = current[subkey]
             current[subkeys[-1]] = value
