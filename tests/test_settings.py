@@ -56,23 +56,19 @@ class ChainmapTest(unittest.TestCase):
 
     @ddt.data(
         (
-            [
-                (_key("a"), 1),
-            ],
+            {_key("a"): 1},
             {"a": 1},
         ),
         (
-            [
-                (_key("a", "b"), "b"),
-            ],
+            {_key("a", "b"): "b"},
             {"a": {"b": "b"}},
         ),
         (
-            [(_key("a", "b"), "b"), (_key("a", "c"), "c"), (_key("a", "d", "e"), "e")],
+            {_key("a", "b"): "b", _key("a", "c"): "c", _key("a", "d", "e"): "e"},
             {"a": {"b": "b", "c": "c", "d": {"e": "e"}}},
         ),
         (
-            [(_key("a"), None), (_key("a", "b"), "b")],
+            {_key("a"): None, _key("a", "b"): "b"},
             {"a": {"b": "b"}},
         ),
     )
