@@ -635,13 +635,9 @@ class HierarchicalChainMap:
         # the first level where we find the value.
         if not merged and not only_local:
             for layer in current.maps:
-                for k in layer:
-                    if k.startswith(key):
-                        current = layer
-                        break
-                else:
-                    continue
-                break
+                if key in layer:
+                    current = layer
+                    break
 
         if key not in current:
             # we might be trying to grab a dict, look for children
@@ -1870,7 +1866,7 @@ class Settings:
         for key in keys:
             try:
                 value = chain.get_by_path(
-                    parent_path + [key], only_local=not incl_defaults
+                    parent_path + [key], only_local=not incl_defaults, merged=merged
                 )
             except KeyError:
                 raise NoSuchSettingsPath()
