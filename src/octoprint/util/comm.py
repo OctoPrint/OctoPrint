@@ -2816,6 +2816,8 @@ class MachineCom:
                                 )
 
                                 self._sdLowerCase = True
+                                self._sendChecksumWithUnknownCommands = True
+                                self._unknownCommandsNeedAck = True
 
                         self._firmware_info_received = True
                         self._firmware_info = data
