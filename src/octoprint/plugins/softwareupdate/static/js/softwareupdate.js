@@ -159,7 +159,7 @@ $(function () {
             return (
                 self.piSupport &&
                 self.piSupport.currentIssue() &&
-                !self.settings.settings.plugins.pluginmanager.ignore_throttled()
+                !self.settings.settings.plugins.softwareupdate.ignore_throttled()
             );
         });
 
