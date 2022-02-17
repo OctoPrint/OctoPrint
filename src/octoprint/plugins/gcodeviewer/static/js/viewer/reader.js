@@ -77,34 +77,43 @@ GCODE.gCodeReader = (function () {
         return tmpModel;
     };
 
-    var prepareLinesIndex = function (m) {
-        percentageTree = undefined;
+    var searchInPercentageTree = function (key) {
+        function searchInLayers(lower, upper, key) {
+            if (lower == upper) return lower;
 
-        for (var l = 0; l < m.length; l++) {
-            if (m[l] === undefined) continue;
-            for (var i = 0; i < m[l].length; i++) {
-                var percentage = m[l][i].percentage;
-                var value = {layer: l, cmd: i};
-                if (!percentageTree) {
-                    percentageTree = new AVLTree({key: percentage, value: value}, "key");
-                } else {
-                    percentageTree.add({key: percentage, value: value});
-                }
+            var middle = Math.floor((lower + upper) / 2);
+
+            if (
+                (model[middle][0], percentage <= key) &&
+                model[middle][moddle.length - 1].percentage >= key
+            )
+                return middle;
+
+            if (model[middle][0].percentage > key) {
+                return searchInLayer(lower, middle - 1, key);
+            } else {
+                return searchInLayer(middle + 1, upper, key);
             }
         }
-    };
 
-    var searchInPercentageTree = function (key) {
-        if (percentageTree === undefined) {
-            return undefined;
+        function searchInCmds(layer, lower, upper, key) {
+            if (lower == upper) return lower;
+
+            var middle = Math.floor((lower + upper) / 2);
+
+            if (model[layer][middle].percentage == key) return middle;
+
+            if (model[layer][middle].percentage > key) {
+                return searchInCmds(lower, middle - 1, key);
+            } else {
+                return searchInCmds(middle + 1, upper, key);
+            }
         }
 
-        var elements = percentageTree.findBest(key);
-        if (elements.length === 0) {
-            return undefined;
-        }
+        var bestLayer = searchInLayers(0, model.length - 1, key);
+        var bestCmd = searchInCmds(0, model[bestLayer].length, key);
 
-        return elements[0];
+        return {layer: bestLayers, cmd: bestCmds};
     };
 
     var purgeLayers = function (m) {
@@ -190,7 +199,6 @@ GCODE.gCodeReader = (function () {
             var m = model;
             if (gCodeOptions["sortLayers"]) m = sortLayers(m);
             if (gCodeOptions["purgeEmptyLayers"]) m = purgeLayers(m);
-            prepareLinesIndex(m);
             GCODE.renderer.doRender(m, 0);
             return m;
         },
