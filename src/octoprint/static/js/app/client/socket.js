@@ -15,6 +15,7 @@
         this.options = {
             timeouts: [0, 1, 1, 2, 3, 5, 8, 13, 20, 40, 100],
             connectTimeout: 5000,
+            sockjsWebsocketConnectTimeout: 3500,
             rateSlidingWindowSize: 20
         };
 
@@ -167,6 +168,19 @@
                 self.onConnectTimeout();
             }, timeout);
         }
+
+        // We define both a connectTimeout and a sockjsWebsocketConnectTimeout because they do different things.
+        // - connectTimeout defines how long this socket class abstraction will wait for sockjs to get to a connected state, regardless of which transport connects.
+        // - sockjsWebsocketConnectTimeout defines how long sockjs will wait on the initial websocket to connect before falling back to a worse (but might work) transport.
+        // We need to define sockjsWebsocketConnectTimeout because the default in sockjs is very low, around 200ms. This limit hinders the performance of remote OctoPrint plugins
+        // and other remote OctoPrint connections and forces them to fall back to the inferior http polling based sockjs transports. This change will also help lower powered OctoPrint
+        // devices that might need more time to process the influx of requests on OctoPrint initial load.
+        var sockjsTimeout = self.options.sockjsWebsocketConnectTimeout
+        if(opts.hasOwnProperty("sockjsWebsocketConnectTimeout")) {
+            sockjsTimeout = opts.sockjsWebsocketConnectTimeout;
+            delete opts.sockjsWebsocketConnectTimeout;
+        }
+        opts.timeout = sockjsTimeout
 
         self.socket = new SockJS(url + "sockjs", undefined, opts);
         self.socket.onopen = onOpen;
