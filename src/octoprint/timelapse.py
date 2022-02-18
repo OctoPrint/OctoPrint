@@ -1121,11 +1121,14 @@ class TimelapseRenderJob:
                 if duration is not None:
                     self._parsed_duration = self._convert_time(*duration.groups())
 
-    def _try_generate_thumbnail(self, ffmpeg, movie_path):
+    @classmethod
+    def _try_generate_thumbnail(cls, ffmpeg, movie_path):
+        logger = logging.getLogger(__name__)
+
         try:
             thumb_path = create_thumbnail_path(movie_path)
             commandline = settings().get(["webcam", "ffmpegThumbnailCommandline"])
-            thumb_command_str = self._create_ffmpeg_command_string(
+            thumb_command_str = cls._create_ffmpeg_command_string(
                 commandline=commandline,
                 ffmpeg=ffmpeg,
                 input=movie_path,
@@ -1140,16 +1143,18 @@ class TimelapseRenderJob:
                 thumb_command_str, delimiter=b"\r", buffer_size=512
             )
             if returncode != 0:
-                self._logger.warning(
+                logger.warning(
                     "Failed to generate optional thumbnail %r: %s"
                     % (returncode, stderr_text)
                 )
+            return True
         except Exception as ex:
-            self._logger.warning(
+            logger.warning(
                 "Failed to generate thumbnail from {} to {} ({})".format(
                     movie_path, thumb_path, ex
                 )
             )
+            return False
 
     @staticmethod
     def _convert_time(hours, minutes, seconds):

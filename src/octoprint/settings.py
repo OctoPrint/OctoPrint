@@ -632,11 +632,21 @@ class HierarchicalChainMap:
         # we do something a bit odd here: if merged is not true, we don't include the
         # full contents of the key. Instead, we only include the contents of the key on
         # the first level where we find the value.
+        #
+        # TODO 2.0.0 remove this weird & historic behaviour and make 'merged' the default
         if not merged and not only_local:
+            # first check if we can find the exact key & if so use that layer
             for layer in current.maps:
                 if key in layer:
                     current = layer
                     break
+            else:
+                # next, check if we can find the key as a prefix for a subtree & if so
+                # use that layer
+                for layer in current.maps:
+                    if any(k.startswith(key) for k in layer):
+                        current = layer
+                        break
 
         if key not in current:
             # we might be trying to grab a dict, look for children

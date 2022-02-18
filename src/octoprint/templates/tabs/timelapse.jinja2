@@ -146,13 +146,12 @@
     <tr data-bind="attr: {title: name}">
         <td class="timelapse_files_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForFileDeletion, invisible: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()"></td>
         <td class="timelapse_files_thumb">
-            <!-- ko if: $data.thumbnail -->
-            <img data-bind="attr:{src: thumbnail}" loading="lazy" />
-            <!-- /ko -->
-            <!-- ko ifnot: $data.thumbnail -->
-            <div></div>
-            <!-- /ko -->
-            <a href="javascript:void(0)" data-bind="css: {disabled: !$root.isTimelapseViewable($data)}, click: $root.showTimelapsePreview"></a>
+            <div class="thumb" data-bind="css: { letterbox: $data.thumbnail }">
+                <!-- ko if: $data.thumbnail -->
+                <img data-bind="attr:{src: thumbnail}" loading="lazy" />
+                <!-- /ko -->
+                <a href="javascript:void(0)" data-bind="css: {disabled: !$root.isTimelapseViewable($data)}, click: $root.showTimelapsePreview"></a>
+            </div>
         </td>
         <td class="timelapse_files_details">
             <p class="name" data-bind="text: name"></p>
