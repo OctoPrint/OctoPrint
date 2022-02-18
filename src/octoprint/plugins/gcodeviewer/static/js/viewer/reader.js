@@ -79,7 +79,7 @@ GCODE.gCodeReader = (function () {
 
     var searchInPercentageTree = function (key) {
         function searchInLayers(lower, upper, key) {
-            while (lower <= upper) {
+            while (lower < upper) {
                 var middle = Math.floor((lower + upper) / 2);
 
                 if (
@@ -99,7 +99,7 @@ GCODE.gCodeReader = (function () {
         }
 
         function searchInCmds(layer, lower, upper, key) {
-            while (lower <= upper) {
+            while (lower < upper) {
                 var middle = Math.floor((lower + upper) / 2);
 
                 if (model[layer][middle].percentage == key) return middle;
