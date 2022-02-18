@@ -630,36 +630,30 @@ class HierarchicalChainMap:
 
         key = self._path_to_key(path)
 
-        # we do something a bit odd here: if merged is not true, we don't include the
-        # full contents of the key. Instead, we only include the contents of the key on
-        # the first level where we find the value.
-        #
-        # TODO 2.0.0 remove this weird & historic behaviour and make 'merged' the default
-        if not merged and not only_local:
-            # first check if we can find the exact key & if so use that layer
+        if key in current:
+            # found it, return
+            return current[key]
+
+        # if we arrived here we might be trying to grab a dict, look for children
+
+        key = key + _CHAINMAP_SEP
+
+        # TODO 2.0.0 remove this & make 'merged' the default
+        if not merged and hasattr(current, "maps"):
+            # we do something a bit odd here: if merged is not true, we don't include the
+            # full contents of the key. Instead, we only include the contents of the key
+            # on the first level where we find the value.
             for layer in current.maps:
-                if key in layer:
+                if any(k.startswith(key) for k in layer):
                     current = layer
                     break
-            else:
-                # next, check if we can find the key as a prefix for a subtree & if so
-                # use that layer
-                for layer in current.maps:
-                    if any(k.startswith(key) for k in layer):
-                        current = layer
-                        break
 
-        if key not in current:
-            # we might be trying to grab a dict, look for children
-            key = key + _CHAINMAP_SEP
-            result = self._unflatten(
-                {k: v for k, v in current.items() if k.startswith(key)}, prefix=key
-            )
-            if not result:
-                raise KeyError("Could not find entry for " + str(path))
-            return result
-
-        return current[key]
+        result = self._unflatten(
+            {k: v for k, v in current.items() if k.startswith(key)}, prefix=key
+        )
+        if not result:
+            raise KeyError("Could not find entry for " + str(path))
+        return result
 
     def set_by_path(self, path, value):
         current = self._chainmap
