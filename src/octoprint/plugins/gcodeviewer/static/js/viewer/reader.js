@@ -43,8 +43,6 @@ GCODE.gCodeReader = (function () {
         bedZ: 0
     };
 
-    var percentageTree = undefined;
-
     var prepareGCode = function (totalSize) {
         if (!lines) return;
         gcode = [];
