@@ -43,6 +43,8 @@ GCODE.gCodeReader = (function () {
         bedZ: 0
     };
 
+    var modelLoaded = false;
+
     var prepareGCode = function (totalSize) {
         if (!lines) return;
         gcode = [];
@@ -77,36 +79,38 @@ GCODE.gCodeReader = (function () {
 
     var searchInPercentageTree = function (key) {
         function searchInLayers(lower, upper, key) {
-            if (lower == upper) return lower;
+            if (lower >= upper) return lower;
 
             var middle = Math.floor((lower + upper) / 2);
 
             if (
-                (model[middle][0], percentage <= key) &&
+                model[middle][0].percentage <= key &&
                 model[middle + 1][0].percentage >= key
             )
                 return middle;
 
             if (model[middle][0].percentage > key) {
-                return searchInLayer(lower, middle - 1, key);
+                return searchInLayers(lower, middle - 1, key);
             } else {
-                return searchInLayer(middle + 1, upper, key);
+                return searchInLayers(middle + 1, upper, key);
             }
         }
 
         function searchInCmds(layer, lower, upper, key) {
-            if (lower == upper) return lower;
+            if (lower >= upper) return lower;
 
             var middle = Math.floor((lower + upper) / 2);
 
             if (model[layer][middle].percentage == key) return middle;
 
             if (model[layer][middle].percentage > key) {
-                return searchInCmds(lower, middle - 1, key);
+                return searchInCmds(layer, lower, middle - 1, key);
             } else {
-                return searchInCmds(middle + 1, upper, key);
+                return searchInCmds(layer, middle + 1, upper, key);
             }
         }
+
+        if (modelLoaded == false) return undefined;
 
         var bestLayer = searchInLayers(0, model.length - 1, key);
         var bestCmd = searchInCmds(bestLayer, 0, model[bestLayer].length - 1, key);
@@ -155,6 +159,7 @@ GCODE.gCodeReader = (function () {
                 minZ: undefined,
                 maxZ: undefined
             };
+            modelLoaded = false;
         },
 
         loadFile: function (reader) {
@@ -197,6 +202,9 @@ GCODE.gCodeReader = (function () {
             var m = model;
             if (gCodeOptions["sortLayers"]) m = sortLayers(m);
             if (gCodeOptions["purgeEmptyLayers"]) m = purgeLayers(m);
+
+            modelLoaded = true;
+
             GCODE.renderer.doRender(m, 0);
             return m;
         },
@@ -257,12 +265,7 @@ GCODE.gCodeReader = (function () {
         },
 
         getCmdIndexForPercentage: function (percentage) {
-            var command = searchInPercentageTree(percentage);
-            if (command === undefined) {
-                return undefined;
-            } else {
-                return command.value;
-            }
+            return searchInPercentageTree(percentage);
         }
     };
 })();
