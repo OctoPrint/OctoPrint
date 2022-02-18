@@ -83,7 +83,7 @@ GCODE.gCodeReader = (function () {
 
             if (
                 (model[middle][0], percentage <= key) &&
-                model[middle][moddle.length - 1].percentage >= key
+                model[middle + 1][0].percentage >= key
             )
                 return middle;
 
