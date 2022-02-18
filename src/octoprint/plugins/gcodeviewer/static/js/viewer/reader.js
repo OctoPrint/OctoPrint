@@ -111,7 +111,7 @@ GCODE.gCodeReader = (function () {
         var bestLayer = searchInLayers(0, model.length - 1, key);
         var bestCmd = searchInCmds(bestLayer, 0, model[bestLayer].length - 1, key);
 
-        return {layer: bestLayers, cmd: bestCmds};
+        return {layer: bestLayer, cmd: bestCmd};
     };
 
     var purgeLayers = function (m) {
