@@ -79,41 +79,46 @@ GCODE.gCodeReader = (function () {
 
     var searchInPercentageTree = function (key) {
         function searchInLayers(lower, upper, key) {
-            if (lower >= upper) return lower;
+            while (lower <= upper) {
+                var middle = Math.floor((lower + upper) / 2);
 
-            var middle = Math.floor((lower + upper) / 2);
+                if (
+                    model[middle][0].percentage <= key &&
+                    model[middle + 1][0].percentage >= key
+                )
+                    return middle;
 
-            if (
-                model[middle][0].percentage <= key &&
-                model[middle + 1][0].percentage >= key
-            )
-                return middle;
-
-            if (model[middle][0].percentage > key) {
-                return searchInLayers(lower, middle - 1, key);
-            } else {
-                return searchInLayers(middle + 1, upper, key);
+                if (model[middle][0].percentage > key) {
+                    upper = middle - 1;
+                } else {
+                    lower = middle + 1;
+                }
             }
+
+            return lower;
         }
 
         function searchInCmds(layer, lower, upper, key) {
-            if (lower >= upper) return lower;
+            while (lower <= upper) {
+                var middle = Math.floor((lower + upper) / 2);
 
-            var middle = Math.floor((lower + upper) / 2);
+                if (model[layer][middle].percentage == key) return middle;
 
-            if (model[layer][middle].percentage == key) return middle;
-
-            if (model[layer][middle].percentage > key) {
-                return searchInCmds(layer, lower, middle - 1, key);
-            } else {
-                return searchInCmds(layer, middle + 1, upper, key);
+                if (model[layer][middle].percentage > key) {
+                    upper = middle - 1;
+                } else {
+                    lower = middle + 1;
+                }
             }
+            return lower;
         }
 
-        if (modelLoaded == false) return undefined;
+        if (!modelLoaded) return undefined;
 
         var bestLayer = searchInLayers(0, model.length - 1, key);
         var bestCmd = searchInCmds(bestLayer, 0, model[bestLayer].length - 1, key);
+
+        //console.log ("Layer " + bestLayer + " cmd " + bestCmd);
 
         return {layer: bestLayer, cmd: bestCmd};
     };
