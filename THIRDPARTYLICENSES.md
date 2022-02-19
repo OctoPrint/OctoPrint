@@ -2,7 +2,6 @@
 
 ## Web Interface
 
-  * [AVLTree](https://gist.github.com/viking/2424106) (modified): GPL, LGPL (dual licensed)
   * [Babel JavaScript Support](https://github.com/mitsuhiko/babel/blob/master/contrib/babel.js): BSD
   * [@babel/polyfill](https://babeljs.io/docs/en/babel-polyfill/): MIT
   * [Bootstrap](http://getbootstrap.com/): Apache License 2.0

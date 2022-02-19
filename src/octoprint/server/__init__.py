@@ -2086,7 +2086,6 @@ class Server(object):
             "js/lib/knockout.js",
             "js/lib/knockout.mapping-latest.js",
             "js/lib/babel.js",
-            "js/lib/avltree.js",
             "js/lib/bootstrap/bootstrap.js",
             "js/lib/bootstrap/bootstrap-modalmanager.js",
             "js/lib/bootstrap/bootstrap-modal.js",
