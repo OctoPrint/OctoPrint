@@ -1554,6 +1554,9 @@ class SoftwareUpdatePlugin(
     def on_event(self, event, payload):
         from octoprint.events import Events
 
+        if event == Events.PRINT_STARTED:
+            self._queued_updates_timer_stop()
+
         if (
             event == Events.PRINT_DONE
             and len(self._queued_updates.get("targets", [])) > 0
@@ -1931,6 +1934,18 @@ class SoftwareUpdatePlugin(
             1, self._queued_updates_timer_task
         )
         self._queued_updates_abort_timer.start()
+
+    def _queued_updates_timer_stop(self):
+        if self._queued_updates_abort_timer is not None:
+            self._queued_updates_abort_timer.cancel()
+            self._queued_updates_abort_timer = None
+            self._send_client_message(
+                "queued_updates",
+                {
+                    "targets": self._queued_updates["targets"],
+                    "timeout_value": -1,
+                },
+            )
 
     def _queued_updates_timer_task(self):
         if self._timeout_value is None:
