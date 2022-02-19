@@ -51,6 +51,7 @@ def cli(ctx):
     "--processes",
     type=int,
     help="Number of processes to use for creating thumbnails",
+    default=1,
 )
 @click.argument("paths", nargs=-1, type=click.Path())
 @click.pass_context
