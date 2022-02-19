@@ -87,8 +87,7 @@ GCODE.gCodeReader = (function () {
 
                 if (
                     model[middle][0].percentage <= key &&
-                    model[middle + 1] &&
-                    model[middle + 1][0].percentage >= key
+                    (!model[middle + 1] || model[middle + 1][0].percentage > key)
                 )
                     return middle;
 
@@ -127,7 +126,7 @@ GCODE.gCodeReader = (function () {
             if (
                 model[cacheLastLayer][0].percentage <= key &&
                 (!model[cacheLastLayer + 1] ||
-                    model[cacheLastLayer + 1][0].percentage >= key)
+                    model[cacheLastLayer + 1][0].percentage > key)
             ) {
                 bestLayer = cacheLastLayer;
 
@@ -137,7 +136,7 @@ GCODE.gCodeReader = (function () {
             } else if (
                 model[cacheLastLayer + 1][0].percentage <= key &&
                 (!model[cacheLastLayer + 2] ||
-                    model[cacheLastLayer + 2][0].percentage >= key)
+                    model[cacheLastLayer + 2][0].percentage > key)
             ) {
                 bestLayer = cacheLastLayer + 1;
 
@@ -156,6 +155,22 @@ GCODE.gCodeReader = (function () {
 
         cacheLastLayer = bestLayer;
         cacheLastCmd = bestCmd;
+
+        /*
+        console.log(
+            "Layer " +
+                bestLayer +
+                " / " +
+                model.length +
+                "  cmd " +
+                bestCmd +
+                " / " +
+                model[bestLayer].length +
+                "  percentage " +
+                key +
+                " / " +
+                model[bestLayer][bestCmd].percentage
+        );*/
 
         return {layer: bestLayer, cmd: bestCmd};
     };
