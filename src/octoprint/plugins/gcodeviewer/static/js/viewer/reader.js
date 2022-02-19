@@ -43,7 +43,7 @@ GCODE.gCodeReader = (function () {
         bedZ: 0
     };
 
-    var modelLoaded = false;
+    var rendererModel = undefined;
     var cacheLookAhead = 64;
     var cacheLastLayer = undefined;
     var cacheLastCmd = undefined;
@@ -86,12 +86,13 @@ GCODE.gCodeReader = (function () {
                 var middle = Math.floor((lower + upper) / 2);
 
                 if (
-                    model[middle][0].percentage <= key &&
-                    (!model[middle + 1] || model[middle + 1][0].percentage > key)
+                    rendererModel[middle][0].percentage <= key &&
+                    (!rendererModel[middle + 1] ||
+                        rendererModel[middle + 1][0].percentage > key)
                 )
                     return middle;
 
-                if (model[middle][0].percentage > key) {
+                if (rendererModel[middle][0].percentage > key) {
                     upper = middle - 1;
                 } else {
                     lower = middle + 1;
@@ -105,9 +106,9 @@ GCODE.gCodeReader = (function () {
             while (lower < upper) {
                 var middle = Math.floor((lower + upper) / 2);
 
-                if (model[layer][middle].percentage == key) return middle;
+                if (rendererModel[layer][middle].percentage == key) return middle;
 
-                if (model[layer][middle].percentage > key) {
+                if (rendererModel[layer][middle].percentage > key) {
                     upper = middle - 1;
                 } else {
                     lower = middle + 1;
@@ -116,7 +117,12 @@ GCODE.gCodeReader = (function () {
             return lower;
         }
 
-        if (!modelLoaded) return undefined;
+        if (rendererModel === undefined) return undefined;
+
+        // this happens when the print is stopped.
+        // just return last position to keep the last
+        // position on screen.
+        if (key == null) return {layer: cacheLastLayer, cmd: cacheLastCmd};
 
         var bestLayer = undefined;
         var bestCmd = undefined;
@@ -124,54 +130,65 @@ GCODE.gCodeReader = (function () {
         // check if we are within cacheLookAhead distance of our last position
         if (cacheLastLayer !== undefined) {
             if (
-                model[cacheLastLayer][0].percentage <= key &&
-                (!model[cacheLastLayer + 1] ||
-                    model[cacheLastLayer + 1][0].percentage > key)
+                rendererModel[cacheLastLayer][0].percentage <= key &&
+                (!rendererModel[cacheLastLayer + 1] ||
+                    rendererModel[cacheLastLayer + 1][0].percentage > key)
             ) {
                 bestLayer = cacheLastLayer;
 
-                var upper = (cacheLastCmd + cacheLookAhead) % model[bestLayer].length;
+                var upper =
+                    (cacheLastCmd + cacheLookAhead) % rendererModel[bestLayer].length;
                 var tmpresult = searchInCmds(bestLayer, cacheLastCmd, upper, key);
                 if (tmpresult < upper) bestCmd = tmpresult;
             } else if (
-                model[cacheLastLayer + 1][0].percentage <= key &&
-                (!model[cacheLastLayer + 2] ||
-                    model[cacheLastLayer + 2][0].percentage > key)
+                rendererModel[cacheLastLayer + 1][0].percentage <= key &&
+                (!rendererModel[cacheLastLayer + 2] ||
+                    rendererModel[cacheLastLayer + 2][0].percentage > key)
             ) {
                 bestLayer = cacheLastLayer + 1;
 
                 var upper =
-                    (cacheLastCmd + cacheLookAhead - model[cacheLastLayer].length) %
-                    model[bestLayer].length;
+                    (cacheLastCmd +
+                        cacheLookAhead -
+                        rendererModel[cacheLastLayer].length) %
+                    rendererModel[bestLayer].length;
                 var tmpresult = searchInCmds(bestLayer, 0, upper, key);
                 if (tmpresult < upper) bestCmd = tmpresult;
             }
         }
 
         // do a full search if the cache missed
-        if (bestLayer === undefined) bestLayer = searchInLayers(0, model.length - 1, key);
+        if (bestLayer === undefined)
+            bestLayer = searchInLayers(1, rendererModel.length - 1, key);
         if (bestCmd === undefined)
-            bestCmd = searchInCmds(bestLayer, 0, model[bestLayer].length - 1, key);
+            bestCmd = searchInCmds(
+                bestLayer,
+                0,
+                rendererModel[bestLayer].length - 1,
+                key
+            );
 
         cacheLastLayer = bestLayer;
         cacheLastCmd = bestCmd;
 
         /*
-        console.log(
+        log.debug(
             "Layer " +
                 bestLayer +
                 " / " +
-                model.length +
+                rendererModel.length +
                 "  cmd " +
                 bestCmd +
                 " / " +
-                model[bestLayer].length +
+                rendererModel[bestLayer].length +
+                "  gcodeline " +
+                rendererModel[bestLayer][bestCmd].gcodeLine +
                 "  percentage " +
                 key +
                 " / " +
-                model[bestLayer][bestCmd].percentage
-        );*/
-
+                rendererModel[bestLayer][bestCmd].percentage
+        );
+	*/
         return {layer: bestLayer, cmd: bestCmd};
     };
 
@@ -216,7 +233,7 @@ GCODE.gCodeReader = (function () {
                 minZ: undefined,
                 maxZ: undefined
             };
-            modelLoaded = false;
+            rendererModel = undefined;
             cacheLastLayer = undefined;
             cacheLastCmd = undefined;
         },
@@ -259,10 +276,10 @@ GCODE.gCodeReader = (function () {
 
         passDataToRenderer: function () {
             var m = model;
-            if (gCodeOptions["sortLayers"]) m = sortLayers(m);
+            //if (gCodeOptions["sortLayers"]) m = sortLayers(m);
             if (gCodeOptions["purgeEmptyLayers"]) m = purgeLayers(m);
 
-            modelLoaded = true;
+            rendererModel = m;
 
             GCODE.renderer.doRender(m, 0);
             return m;
