@@ -44,6 +44,9 @@ GCODE.gCodeReader = (function () {
     };
 
     var modelLoaded = false;
+    var cacheLookAhead = 64;
+    var cacheLastLayer = undefined;
+    var cacheLastCmd = undefined;
 
     var prepareGCode = function (totalSize) {
         if (!lines) return;
@@ -84,6 +87,7 @@ GCODE.gCodeReader = (function () {
 
                 if (
                     model[middle][0].percentage <= key &&
+                    model[middle + 1] &&
                     model[middle + 1][0].percentage >= key
                 )
                     return middle;
@@ -115,10 +119,43 @@ GCODE.gCodeReader = (function () {
 
         if (!modelLoaded) return undefined;
 
-        var bestLayer = searchInLayers(0, model.length - 1, key);
-        var bestCmd = searchInCmds(bestLayer, 0, model[bestLayer].length - 1, key);
+        var bestLayer = undefined;
+        var bestCmd = undefined;
 
-        //console.log ("Layer " + bestLayer + " cmd " + bestCmd);
+        // check if we are within cacheLookAhead distance of our last position
+        if (cacheLastLayer !== undefined) {
+            if (
+                model[cacheLastLayer][0].percentage <= key &&
+                (!model[cacheLastLayer + 1] ||
+                    model[cacheLastLayer + 1][0].percentage >= key)
+            ) {
+                bestLayer = cacheLastLayer;
+
+                var upper = (cacheLastCmd + cacheLookAhead) % model[bestLayer].length;
+                var tmpresult = searchInCmds(bestLayer, cacheLastCmd, upper, key);
+                if (tmpresult < upper) bestCmd = tmpresult;
+            } else if (
+                model[cacheLastLayer + 1][0].percentage <= key &&
+                (!model[cacheLastLayer + 2] ||
+                    model[cacheLastLayer + 2][0].percentage >= key)
+            ) {
+                bestLayer = cacheLastLayer + 1;
+
+                var upper =
+                    (cacheLastCmd + cacheLookAhead - model[cacheLastLayer].length) %
+                    model[bestLayer].length;
+                var tmpresult = searchInCmds(bestLayer, 0, upper, key);
+                if (tmpresult < upper) bestCmd = tmpresult;
+            }
+        }
+
+        // do a full search if the cache missed
+        if (bestLayer === undefined) bestLayer = searchInLayers(0, model.length - 1, key);
+        if (bestCmd === undefined)
+            bestCmd = searchInCmds(bestLayer, 0, model[bestLayer].length - 1, key);
+
+        cacheLastLayer = bestLayer;
+        cacheLastCmd = bestCmd;
 
         return {layer: bestLayer, cmd: bestCmd};
     };
@@ -165,6 +202,8 @@ GCODE.gCodeReader = (function () {
                 maxZ: undefined
             };
             modelLoaded = false;
+            cacheLastLayer = undefined;
+            cacheLastCmd = undefined;
         },
 
         loadFile: function (reader) {
