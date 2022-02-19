@@ -178,16 +178,10 @@ GCODE.gCodeReader = (function () {
                 minZ: undefined,
                 maxZ: undefined
             };
-<<<<<<< HEAD
             rendererModel = undefined;
             layerPercentageLookup = undefined;
             cachedLayer = undefined;
             cachedCmd = undefined;
-=======
-            modelLoaded = false;
-            cacheLastLayer = undefined;
-            cacheLastCmd = undefined;
->>>>>>> ae36e9421 (Add last position cache)
         },
 
         loadFile: function (reader) {
