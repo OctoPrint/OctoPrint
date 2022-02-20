@@ -17,7 +17,7 @@ class GcodeviewerPlugin(
             "js/viewer/ui.js",
             "js/viewer/reader.js",
             "js/viewer/renderer.js",
-            "js/viewer/jsonc.js",
+            "js/viewer/pako.js",
         ]
 
         return {

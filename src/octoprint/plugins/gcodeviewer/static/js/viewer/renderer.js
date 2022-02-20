@@ -102,11 +102,11 @@ GCODE.renderer = (function () {
     var layerCache = [];
 
     var compress = function (data) {
-        return JSONC.pack(data, true);
+        return pako.deflate(JSON.stringify(data));
     };
 
     var decompress = function (data) {
-        return JSONC.unpack(data, true);
+        return JSON.parse(pako.inflate(data, {to: "string"}));
     };
 
     var getLayer = function (layer) {

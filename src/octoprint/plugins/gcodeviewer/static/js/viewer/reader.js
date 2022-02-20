@@ -48,11 +48,11 @@ GCODE.gCodeReader = (function () {
     var cachedCmd = undefined;
 
     var compress = function (data) {
-        return JSONC.pack(data, true);
+        return pako.deflate(JSON.stringify(data));
     };
 
     var decompress = function (data) {
-        return JSONC.unpack(data, true);
+        return JSON.parse(pako.inflate(data, {to: "string"}));
     };
 
     var prepareGCode = function (totalSize) {
@@ -236,8 +236,6 @@ GCODE.gCodeReader = (function () {
 
             rendererModel = m;
             rebuildLayerPercentageLookup(m);
-
-            buildLayerPercentageList();
 
             GCODE.renderer.doRender(m, 0);
             return m;
