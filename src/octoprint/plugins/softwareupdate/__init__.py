@@ -7,7 +7,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-
 import copy
 import hashlib
 import logging
@@ -65,7 +64,6 @@ class SoftwareUpdatePlugin(
     octoprint.plugin.WizardPlugin,
     octoprint.plugin.EventHandlerPlugin,
 ):
-
     COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
     CURRENT_TRACKING_TYPES = COMMIT_TRACKING_TYPES + ("etag", "lastmodified", "jsondata")
     RELEASE_TRACKING_TYPES = ("github_release",)
@@ -1559,12 +1557,22 @@ class SoftwareUpdatePlugin(
 
         if (
             event == Events.PRINT_DONE
+            and self._settings.global_get(["webcam", "timelapse", "type"]) == "off"
             and len(self._queued_updates.get("targets", [])) > 0
         ):
             self._queued_updates_timer_start()
 
         if (
+            event == Events.MOVIE_DONE
+            and self._settings.global_get(["webcam", "timelapse", "type"]) != "off"
+            and len(self._queued_updates.get("targets", [])) > 0
+            and not (self._printer.is_printing() or self._printer.is_paused())
+        ):
+            self._queued_updates_timer_start()
+
+        if (
             event == Events.PRINT_FAILED
+            and self._settings.global_get(["webcam", "timelapse", "type"]) == "off"
             and len(self._queued_updates.get("targets", [])) > 0
         ):
             self._send_client_message(
