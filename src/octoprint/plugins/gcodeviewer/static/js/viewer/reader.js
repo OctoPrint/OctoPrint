@@ -47,6 +47,14 @@ GCODE.gCodeReader = (function () {
     var cachedLayer = undefined;
     var cachedCmd = undefined;
 
+    var compress = function (data) {
+        return JSONC.pack(data, true);
+    };
+
+    var decompress = function (data) {
+        return JSONC.unpack(data, true);
+    };
+
     var prepareGCode = function (totalSize) {
         if (!lines) return;
         gcode = [];
@@ -81,6 +89,7 @@ GCODE.gCodeReader = (function () {
         }
 
         function searchInCmds(layer, lower, upper, key) {
+            var cmds = GCODE.renderer.getLayer(layer);
             while (lower < upper) {
                 var middle = Math.floor((lower + upper) / 2);
 
@@ -91,7 +100,7 @@ GCODE.gCodeReader = (function () {
                 )
                     return middle;
 
-                if (rendererModel[layer][middle].percentage > key) {
+                if (cmds[middle].percentage > key) {
                     upper = middle - 1;
                 } else {
                     lower = middle + 1;
@@ -228,6 +237,8 @@ GCODE.gCodeReader = (function () {
             rendererModel = m;
             rebuildLayerPercentageLookup(m);
 
+            buildLayerPercentageList();
+
             GCODE.renderer.doRender(m, 0);
             return m;
         },
@@ -275,8 +286,8 @@ GCODE.gCodeReader = (function () {
 
         getGCodeLines: function (layer, fromSegments, toSegments) {
             var result = {
-                first: model[layer][fromSegments].gcodeLine,
-                last: model[layer][toSegments].gcodeLine
+                first: GCODE.renderer.getLayer(layer)[fromSegments].gcodeLine,
+                last: GCODE.renderer.getLayer(layer)[toSegments].gcodeLine
             };
             return result;
         },

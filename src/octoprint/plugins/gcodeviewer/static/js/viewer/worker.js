@@ -37,6 +37,16 @@ var layerCnt = 0;
 var speeds = {extrude: [], retract: [], move: []};
 var speedsByLayer = {extrude: {}, retract: {}, move: {}};
 
+importScripts("jsonc.js");
+
+var compress = function (data) {
+    return JSONC.pack(data, true);
+};
+
+var decompress = function (data) {
+    return JSONC.unpack(data, true);
+};
+
 var sendLayersToParent = function (layers, progress) {
     var l = [];
     for (var i = 0; i < layers.length; i++) {
@@ -97,8 +107,10 @@ var purgeLayers = function () {
         if (!model[i]) {
             purge = true;
         } else {
-            for (var j = 0; j < model[i].length; j++) {
-                if (model[i][j].extrude) purge = false;
+            var cmds = model[i];
+            if (typeof cmds !== "object") cmds = decompress(cmds);
+            for (var j = 0; j < cmds.length; j++) {
+                if (cmds[j].extrude) purge = false;
             }
         }
         if (!purge) {
@@ -155,6 +167,7 @@ var analyzeModel = function () {
     for (var i = 0; i < model.length; i++) {
         var cmds = model[i];
         if (!cmds) continue;
+        if (typeof cmds !== "object") cmds = decompress(cmds);
 
         for (var j = 0; j < cmds.length; j++) {
             var tool = cmds[j].tool;
@@ -610,6 +623,8 @@ var doParse = function () {
 
         if (addToModel) {
             if (!model[layer]) model[layer] = [];
+            if (typeof model[layer] !== "object") model[layer] = decompress(model[layer]);
+
             var command = {
                 x: x,
                 y: y,
@@ -643,11 +658,17 @@ var doParse = function () {
                 // there's something to be checked in the Z-lift cache
                 if (prevZ < maxLiftZ) {
                     zLiftMoves.forEach(function (zLiftMove) {
+                        if (typeof model[zLiftMove.layer] !== "object")
+                            model[zLiftMove.layer] = decompress(model[zLiftMove.layer]);
                         // move command from move layer...
                         model[zLiftMove.layer].splice(
                             model[layer].indexOf(zLiftMove.command),
                             1
                         );
+                        if (typeof model[zLiftLayer] !== "object")
+                            model[zLiftLayer] = decompress(
+                                model[zLiftLayer]
+                            );
                         // ... to z-lift layer
                         model[zLiftLayer].push(zLiftMove.command);
                     });
