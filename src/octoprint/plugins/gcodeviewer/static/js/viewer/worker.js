@@ -666,13 +666,21 @@ var doParse = function () {
             } else if (zLiftMoves.length > 0) {
                 // there's something to be checked in the Z-lift cache
                 if (prevZ === zLiftZ) {
+                    var layersToSort = [];
                     zLiftMoves.forEach(function (zLiftMove) {
                         model[zLiftMove.layer].splice(
                             model[layer].indexOf(zLiftMove.command),
                             1
                         );
                         model[z_heights[zLiftZ]].push(zLiftMove.command);
+                        if (!layersToSort[z_heights[zLiftZ]])
+                            layersToSort[z_heights[zLiftZ]] = true;
                     });
+                    // sort all the commands in the changed layers
+                    for (var l in layersToSort)
+                        model[l].sort(function (a, b) {
+                            return a.percentage - b.percentage;
+                        });
                 }
                 // clear up cached Z-lift moves
                 zLiftMoves = [];
