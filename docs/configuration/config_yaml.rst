@@ -692,7 +692,7 @@ Use the following settings to configure the serial connection to the printer:
      maxWritePasses: 5
 
      # Use this to define additional patterns to consider for serial port listing. Must be a valid
-     # "glob" pattern (see http://docs.python.org/2/library/glob.html). Defaults to not set.
+     # "glob" pattern (see http://docs.python.org/3/library/glob.html). Defaults to not set.
      additionalPorts:
      - /dev/myPrinterSymlink
 
@@ -709,7 +709,7 @@ Use the following settings to configure the serial connection to the printer:
      - M1
 
      # Commands which should not be sent to the printer and just silently ignored.
-     # An example of when you may wish to use this could be useful if you wish to manually change a filament on M600, 
+     # An example of when you may wish to use this could be useful if you wish to manually change a filament on M600,
      # by using that as a Pausing command (below)
      ignoredCommands:
 
