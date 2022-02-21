@@ -1,6 +1,7 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import base64
 import datetime
 import json
 import time
@@ -13,8 +14,6 @@ except ImportError:
     OrderedDictType = Dict  # py3.7.{0,1}
 
 from frozendict import frozendict
-
-from octoprint.util import to_bytes, to_unicode
 
 from .encoding import JsonEncoding
 
@@ -126,9 +125,9 @@ SerializableJsonEncoding.add_decoder("frozendict.frozendict", lambda obj: frozen
 # bytes
 
 SerializableJsonEncoding.add_encoder(
-    bytes, lambda obj: class_encode("bytes", to_unicode(obj))
+    bytes, lambda obj: class_encode("bytes", base64.b85encode(obj).decode("ascii"))
 )
-SerializableJsonEncoding.add_decoder("bytes", lambda obj: to_bytes(obj))
+SerializableJsonEncoding.add_decoder("bytes", lambda obj: base64.b85decode(obj))
 
 # time.struct_time
 

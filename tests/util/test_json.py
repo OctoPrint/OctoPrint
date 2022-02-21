@@ -55,6 +55,12 @@ def test_encoding_dumps_typeerror():
     [
         pytest.param({"foo": "bar"}, id="dict"),
         pytest.param(b"\x00\x01\x02\x03", id="bytes"),
+        # invalid bytes from https://stackoverflow.com/a/3886015
+        pytest.param(
+            b"\xc3\x28\xa0\xa1\xe2\x28\xa1\xe2\x82\x28\xf0"
+            b"\x28\x8c\xbc\xf0\x90\x28\xbc\xf0\x28\x8c\x28",
+            id="invalid utf-8",
+        ),
         pytest.param(frozendict({"foo": "bar"}), id="frozendict"),
         pytest.param(time.struct_time((2018, 1, 1, 0, 0, 0, 0, 0, 0)), id="struct_time"),
         pytest.param(
