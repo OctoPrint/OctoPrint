@@ -275,7 +275,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             try:
                 additional = hook(initial=initial)
                 if additional and isinstance(additional, dict):
-                    octoprint.util.json.dump({name: additional})
+                    octoprint.util.json.dumps({name: additional})
                     plugin_data[name] = additional
             except ValueError:
                 self._logger.exception(
