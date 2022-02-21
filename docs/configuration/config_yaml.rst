@@ -692,7 +692,7 @@ Use the following settings to configure the serial connection to the printer:
      maxWritePasses: 5
 
      # Use this to define additional patterns to consider for serial port listing. Must be a valid
-     # "glob" pattern (see http://docs.python.org/2/library/glob.html). Defaults to not set.
+     # "glob" pattern (see http://docs.python.org/3/library/glob.html). Defaults to not set.
      additionalPorts:
      - /dev/myPrinterSymlink
 

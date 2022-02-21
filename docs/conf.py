@@ -47,7 +47,6 @@ extensions = [
 todo_include_todos = True
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "python2": ("https://docs.python.org/2", None),
     "pyserial": ("https://pythonhosted.org/pyserial", None),
 }
 
