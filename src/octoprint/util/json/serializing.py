@@ -7,6 +7,11 @@ import time
 from collections import OrderedDict
 from typing import Any, Callable, Dict, List
 
+try:
+    from typing import OrderedDict as OrderedDictType
+except ImportError:
+    OrderedDictType = Dict  # py3.7.{0,1}
+
 from frozendict import frozendict
 
 from octoprint.util import to_bytes, to_unicode
@@ -25,10 +30,8 @@ class SerializableJsonEncoding(JsonEncoding):
       * ``time.struct_time``
     """
 
-    # actually OrderedDict, but typing annotation for that is only available from
-    # Python 3.7.2 onward
-    encoders: Dict[type, Callable[[Any], Any]] = OrderedDict()
-    decoders: Dict[str, Callable[[dict], object]] = OrderedDict()
+    encoders: OrderedDictType[type, Callable[[Any], Any]] = OrderedDict()
+    decoders: OrderedDictType[str, Callable[[dict], object]] = OrderedDict()
 
     @classmethod
     def add_decoder(cls, classname, decoder):

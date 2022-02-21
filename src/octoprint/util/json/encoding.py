@@ -5,15 +5,18 @@ import json
 from collections import OrderedDict
 from typing import Any, Callable, Dict
 
+try:
+    from typing import OrderedDict as OrderedDictType
+except ImportError:
+    OrderedDictType = Dict  # py3.7.{0,1}
+
 from frozendict import frozendict
 
 from octoprint.util import to_unicode
 
 
 class JsonEncoding:
-    # actually OrderedDict, but typing annotation for that is only available from
-    # Python 3.7.2 onward
-    encoders: Dict[type, Callable[[Any], Any]] = OrderedDict()
+    encoders: OrderedDictType[type, Callable[[Any], Any]] = OrderedDict()
 
     @classmethod
     def add_encoder(cls, typ: type, encoder: Callable[[Any], Any]) -> None:
