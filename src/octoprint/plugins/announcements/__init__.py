@@ -435,7 +435,7 @@ class AnnouncementPlugin(
                 d = deserialize(channel_path)
                 self._logger.debug(f"Loaded channel {key} from cache at {channel_path}")
                 return d
-            except ImportError:
+            except Exception:
                 self._logger.exception(
                     f"Could not read channel {key} from cache {channel_path}"
                 )
