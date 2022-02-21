@@ -44,7 +44,7 @@ import octoprint.util
 import octoprint.util.net
 from octoprint.server import util
 from octoprint.systemcommands import system_command_manager
-from octoprint.util.comprehensive_json import JsonEncoding
+from octoprint.util.json import JsonEncoding
 from octoprint.vendor.flask_principal import (  # noqa: F401
     AnonymousIdentity,
     Identity,

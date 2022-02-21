@@ -1,59 +1,34 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
-__copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import datetime
 import json
 import time
-import typing
 from collections import OrderedDict
-from typing import Any, Callable
+from typing import Any, Callable, Dict, List
 
 from frozendict import frozendict
 
-from octoprint.util import to_unicode
+from octoprint.util import to_bytes, to_unicode
+
+from .encoding import JsonEncoding
 
 
-def dumps(obj: Any) -> str:
+class SerializableJsonEncoding(JsonEncoding):
     """
-    Dump an object to JSON, handles additional types that the JSON encoder can't, like
-    datetime.struct_time, bytes, and frozendicts.
+    A JSON encoding that can serialize and deserialize objects, including additional
+    objects otherwise not serializable by the standard JSON encoder:
 
-    Cannot handle circular references.
-
-    Note: at the moment, datetime.struct_time are only supported if they are in dicts
+      * ``bytes``
+      * ``frozendict.frozendict``
+      * ``datetime.datetime``
+      * ``time.struct_time``
     """
-    return json.dumps(
-        JsonEncoding.encode(obj),
-        separators=(",", ":"),
-        indent=None,
-        allow_nan=False,
-    )
 
-
-def loads(s: str) -> Any:
-    return json.loads(s, object_hook=JsonEncoding.decode)
-
-
-class JsonEncoding:
-    decoders: typing.OrderedDict[str, Callable[[dict], object]] = OrderedDict()
-    encoders: typing.OrderedDict[type, Callable[[Any], Any]] = OrderedDict()
-
-    @classmethod
-    def add_encoder(cls, typ: type, encoder: Callable[[Any], Any]) -> None:
-        """
-        Add an encoder for a type.
-
-        :param typ: the type to add an encoder for
-        :param encoder: the encoder. Must take a single argument and return a
-            tuple (name, parameters...)
-        """
-        cls.encoders[typ] = encoder
-
-    @classmethod
-    def remove_encoder(cls, typ):
-        try:
-            del cls.encoders[typ]
-        except KeyError:
-            pass
+    # actually OrderedDict, but typing annotation for that is only available from
+    # Python 3.7.2 onward
+    encoders: Dict[type, Callable[[Any], Any]] = OrderedDict()
+    decoders: Dict[str, Callable[[dict], object]] = OrderedDict()
 
     @classmethod
     def add_decoder(cls, classname, decoder):
@@ -67,6 +42,16 @@ class JsonEncoding:
             pass
 
     @classmethod
+    def dumps(cls, obj: Any) -> str:
+        return json.dumps(
+            cls.encode(obj), separators=(",", ":"), indent=None, allow_nan=False
+        )
+
+    @classmethod
+    def loads(cls, s: str) -> Any:
+        return json.loads(s, object_hook=cls.decode)
+
+    @classmethod
     def encode(cls, val):
         """
         Recursively replace all instances of encodable types with their encoded
@@ -76,6 +61,7 @@ class JsonEncoding:
 
         Cannot handle circular references.
         """
+
         if isinstance(val, tuple(cls.encoders.keys())):
             # we can't directly index into the encoders dict because
             # we need to be able to handle subclasses
@@ -116,7 +102,7 @@ class JsonEncoding:
         return dct
 
 
-def class_encode(name: str, *params: Any):
+def class_encode(name: str, *params: Any) -> Dict[str, List]:
     """
     Encode a class name and parameters into a serializable dict. You'll
     probably want to use this if you're going to set a custom decoder.
@@ -127,8 +113,21 @@ def class_encode(name: str, *params: Any):
     return {"__jsonclass__": [name] + list(params)}
 
 
-JsonEncoding.add_encoder(frozendict, lambda obj: dict(obj))
-JsonEncoding.add_encoder(bytes, lambda obj: to_unicode(obj))
+# frozendict
+
+SerializableJsonEncoding.add_encoder(
+    frozendict, lambda obj: class_encode("frozendict.frozendict", dict(obj))
+)
+SerializableJsonEncoding.add_decoder("frozendict.frozendict", lambda obj: frozendict(obj))
+
+# bytes
+
+SerializableJsonEncoding.add_encoder(
+    bytes, lambda obj: class_encode("bytes", to_unicode(obj))
+)
+SerializableJsonEncoding.add_decoder("bytes", lambda obj: to_bytes(obj))
+
+# time.struct_time
 
 
 def _struct_time_decoder(params):
@@ -137,7 +136,21 @@ def _struct_time_decoder(params):
     raise ValueError(f"Invalid time.struct_time params `{params}`")
 
 
-JsonEncoding.add_encoder(
-    time.struct_time, lambda obj: class_encode("struct_time", list(obj))
+SerializableJsonEncoding.add_encoder(
+    time.struct_time, lambda obj: class_encode("time.struct_time", list(obj))
 )
-JsonEncoding.add_decoder("struct_time", _struct_time_decoder)
+SerializableJsonEncoding.add_decoder("time.struct_time", _struct_time_decoder)
+
+# datetime.datetime
+
+SerializableJsonEncoding.add_encoder(
+    datetime.datetime, lambda obj: class_encode("datetime.datetime", obj.isoformat())
+)
+SerializableJsonEncoding.add_decoder(
+    "datetime.datetime", lambda params: datetime.datetime.fromisoformat(params)
+)
+
+# shortcut for dumps and loads
+
+dumps = SerializableJsonEncoding.dumps
+loads = SerializableJsonEncoding.loads

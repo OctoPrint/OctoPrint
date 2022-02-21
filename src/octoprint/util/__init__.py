@@ -1728,9 +1728,9 @@ def serialize(filename, data, encoding="utf-8", compressed=True):
         encoding (str): The encoding to use for the file
         compressed (bool): Whether to compress the data before writing it to the file
     """
-    from octoprint.util import comprehensive_json
+    from octoprint.util import json
 
-    serialized = comprehensive_json.dumps(data).encode(encoding)
+    serialized = json.serializing.dumps(data).encode(encoding)
 
     if compressed:
         serialized = zlib.compress(serialized)
@@ -1761,6 +1761,6 @@ def deserialize(filename, encoding="utf-8"):
     except zlib.error:
         pass
 
-    from octoprint.util import comprehensive_json
+    from octoprint.util import json
 
-    return comprehensive_json.loads(serialized.decode(encoding))
+    return json.serializing.loads(serialized.decode(encoding))

@@ -24,7 +24,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.access.users import LoginStatusListener
 from octoprint.events import Events
 from octoprint.settings import settings
-from octoprint.util.comprehensive_json import dumps as json_dumps
+from octoprint.util.json import dumps as json_dumps
 from octoprint.util.version import get_python_version_string
 
 
