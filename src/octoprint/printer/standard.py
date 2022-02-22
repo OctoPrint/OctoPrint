@@ -64,6 +64,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._targetTemp = None
         self._targetBedTemp = None
         self._targetChamberTemp = None
+        self._custom = None
 
         self._temps = DataHistory(
             cutoff=settings().getInt(["temperature", "cutoff"]) * 60
@@ -275,7 +276,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             try:
                 additional = hook(initial=initial)
                 if additional and isinstance(additional, dict):
-                    octoprint.util.json.dump({name: additional})
+                    octoprint.util.json.dumps({name: additional})
                     plugin_data[name] = additional
             except ValueError:
                 self._logger.exception(

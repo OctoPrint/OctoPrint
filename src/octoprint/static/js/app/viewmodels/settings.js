@@ -219,6 +219,8 @@ $(function () {
         self.serial_triggerOkForM29 = ko.observable(undefined);
         self.serial_waitForStart = ko.observable(undefined);
         self.serial_sendChecksum = ko.observable("print");
+        self.serial_sendChecksumWithUnknownCommands = ko.observable(undefined);
+        self.serial_unknownCommandsNeedAck = ko.observable(undefined);
         self.serial_sdRelativePath = ko.observable(undefined);
         self.serial_sdLowerCase = ko.observable(undefined);
         self.serial_sdAlwaysAvailable = ko.observable(undefined);

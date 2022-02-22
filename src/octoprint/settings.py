@@ -415,7 +415,7 @@ default_settings = {
         "remoteUserHeader": "REMOTE_USER",
         "addRemoteUsers": False,
     },
-    "slicing": {"enabled": True, "defaultSlicer": None, "defaultProfiles": None},
+    "slicing": {"enabled": True, "defaultSlicer": None, "defaultProfiles": {}},
     "events": {"enabled": True, "subscriptions": []},
     "api": {"allowCrossOrigin": False, "apps": {}},
     "terminalFilters": [
@@ -437,7 +437,7 @@ default_settings = {
             "regex": r"Recv: (echo:\s*)?busy:\s*processing",
         },
     ],
-    "plugins": {"_disabled": [], "_forcedCompatible": []},
+    "plugins": {"_disabled": [], "_forcedCompatible": [], "_sortingOrder": {}},
     "scripts": {
         "gcode": {
             "afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0",
@@ -554,35 +554,9 @@ class HierarchicalChainMap:
     """
 
     @staticmethod
-    def _unflatten(kv_pairs, prefix=""):
-        """
-        :type kv_pairs: Iterable[Tuple[str, any]]
-        """
-        result = dict()
-        for key, value in kv_pairs:
-            if not key.startswith(prefix):
-                continue
-            subkeys = key[len(prefix) :].split(_CHAINMAP_SEP)
-            current = result
-            for subkey in subkeys[:-1]:
-                if subkey not in current:
-                    current[subkey] = {}
-                current = current[subkey]
-            current[subkeys[-1]] = value
+    def _flatten(d: dict, parent_key: str = "") -> dict:
+        """Flattens a hierarchical dictionary."""
 
-        return result
-
-    def __init__(self, *maps):
-        self._chainmap = ChainMap(*map(self._flatten, maps))
-
-    @staticmethod
-    def from_layers(*layers):
-        result = HierarchicalChainMap()
-        result._chainmap.maps = layers
-        return result
-
-    @staticmethod
-    def _flatten(d, parent_key=""):
         if d is None:
             return {}
 
@@ -595,8 +569,26 @@ class HierarchicalChainMap:
                 items.append((new_key, v))
         return dict(items)
 
-    def deep_dict(self):
-        return self._unflatten(self._chainmap.items())
+    @staticmethod
+    def _unflatten(d: dict, prefix: str = "") -> dict:
+        """Unflattens a flattened dictionary."""
+
+        if d is None:
+            return {}
+
+        result = dict()
+        for key, value in d.items():
+            if not key.startswith(prefix):
+                continue
+            subkeys = key[len(prefix) :].split(_CHAINMAP_SEP)
+            current = result
+            for subkey in subkeys[:-1]:
+                if subkey not in current or current[subkey] is None:
+                    current[subkey] = {}
+                current = current[subkey]
+            current[subkeys[-1]] = value
+
+        return result
 
     @staticmethod
     def _path_to_key(path):
@@ -604,6 +596,18 @@ class HierarchicalChainMap:
         :type path: List[str]
         """
         return _CHAINMAP_SEP.join(path)
+
+    @staticmethod
+    def from_layers(*layers):
+        result = HierarchicalChainMap()
+        result._chainmap.maps = layers
+        return result
+
+    def __init__(self, *maps):
+        self._chainmap = ChainMap(*map(self._flatten, maps))
+
+    def deep_dict(self):
+        return self._unflatten(self._chainmap)
 
     def has_path(self, path, only_local=False, only_defaults=False):
         if only_defaults:
@@ -625,30 +629,30 @@ class HierarchicalChainMap:
 
         key = self._path_to_key(path)
 
-        # we do something a bit odd here: if merged is not true, we don't include the
-        # full contents of the key. Instead, we only include the contents of the key on
-        # the first level where we find the value.
-        if not merged and not only_local:
+        if key in current:
+            # found it, return
+            return current[key]
+
+        # if we arrived here we might be trying to grab a dict, look for children
+
+        key = key + _CHAINMAP_SEP
+
+        # TODO 2.0.0 remove this & make 'merged' the default
+        if not merged and hasattr(current, "maps"):
+            # we do something a bit odd here: if merged is not true, we don't include the
+            # full contents of the key. Instead, we only include the contents of the key
+            # on the first level where we find the value.
             for layer in current.maps:
-                for k in layer:
-                    if k.startswith(key):
-                        current = layer
-                        break
-                else:
-                    continue
-                break
+                if any(k.startswith(key) for k in layer):
+                    current = layer
+                    break
 
-        if key not in current:
-            # we might be trying to grab a dict, look for children
-            key = key + _CHAINMAP_SEP
-            result = self._unflatten(
-                ((k, v) for k, v in current.items() if k.startswith(key)), prefix=key
-            )
-            if not result:
-                raise KeyError("Could not find entry for " + str(path))
-            return result
-
-        return current[key]
+        result = self._unflatten(
+            {k: v for k, v in current.items() if k.startswith(key)}, prefix=key
+        )
+        if not result:
+            raise KeyError("Could not find entry for " + str(path))
+        return result
 
     def set_by_path(self, path, value):
         current = self._chainmap
@@ -728,7 +732,7 @@ class HierarchicalChainMap:
     @property
     def top_map(self):
         """This is the layer that is written to"""
-        return self._unflatten(self._chainmap.maps[0].items())
+        return self._unflatten(self._chainmap.maps[0])
 
     @top_map.setter
     def top_map(self, value):
@@ -1861,7 +1865,7 @@ class Settings:
         for key in keys:
             try:
                 value = chain.get_by_path(
-                    parent_path + [key], only_local=not incl_defaults
+                    parent_path + [key], only_local=not incl_defaults, merged=merged
                 )
             except KeyError:
                 raise NoSuchSettingsPath()

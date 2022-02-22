@@ -325,6 +325,14 @@ def plugins():
     pass
 
 
+@subcommands.group(
+    name="timelapse", cls=LazyGroup, import_name="octoprint.cli.timelapse:cli"
+)
+def timelapse():
+    """Timelapse related commands."""
+    pass
+
+
 @subcommands.group(name="user", cls=LazyGroup, import_name="octoprint.cli.user:cli")
 def user():
     """User management."""

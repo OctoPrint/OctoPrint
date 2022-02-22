@@ -120,7 +120,7 @@ up and ready to serve requests.
 
 You'll also note that we are using ``self._logger`` for logging. Where did that one come from? OctoPrint's plugin system
 injects :ref:`a some useful objects <sec-plugins-mixins-injectedproperties>` into our plugin implementation classes,
-one of those being a fully instantiated `python logger <https://docs.python.org/2/library/logging.html>`_ ready to be
+one of those being a fully instantiated :ref:`python logger <logging>` ready to be
 used by your plugin. As you can see in the log output above, that logger uses the namespace ``octoprint.plugins.helloworld``
 for our little plugin here, or more generally ``octoprint.plugins.<plugin identifier>``.
 
