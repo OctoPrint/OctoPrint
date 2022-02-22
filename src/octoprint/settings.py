@@ -618,7 +618,9 @@ class HierarchicalChainMap:
         else:
             current = self._chainmap
 
-        return self._path_to_key(path) in current
+        key = self._path_to_key(path)
+        prefix = key + _CHAINMAP_SEP
+        return key in current or any(map(lambda x: x.startswith(prefix), current.keys()))
 
     def get_by_path(self, path, only_local=False, only_defaults=False, merged=False):
         if only_defaults:
@@ -656,14 +658,17 @@ class HierarchicalChainMap:
         return result
 
     def set_by_path(self, path, value):
-        current = self._chainmap
+        current = self._chainmap.maps[0]
         key = self._path_to_key(path)
 
         # delete any subkeys
         subkeys_start = key + _CHAINMAP_SEP
+        to_delete = []
         for k in current.keys():
             if k.startswith(subkeys_start):
-                del current[key]
+                to_delete.append(k)
+        for k in to_delete:
+            del current[k]
 
         if isinstance(value, dict):
             current.update(self._flatten(value, key))
