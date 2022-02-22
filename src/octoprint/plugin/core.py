@@ -2144,6 +2144,12 @@ class PluginManager:
                 else:
                     sorting_value = self.default_order
 
+                override = self.plugin_sorting_order.get(impl[0], {}).get(
+                    sorting_context, None
+                )
+                if override:
+                    sorting_value = override
+
             plugin_info = self.get_plugin_info(impl[0], require_enabled=False)
             return (
                 sv(sorting_value),
