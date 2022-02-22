@@ -33,11 +33,8 @@ import pkg_resources
 import pkginfo
 
 import octoprint.vendor.imp as imp
-from octoprint.settings import settings
 from octoprint.util import sv, time_this, to_unicode
 from octoprint.util.version import get_python_version_string, is_python_compatible
-
-DEFAULT_HOOK_ORDER = 1000
 
 
 # noinspection PyDeprecation
@@ -799,6 +796,7 @@ class PluginManager:
 
     plugin_timings_logtarget = "PLUGIN_TIMINGS"
     plugin_timings_message = "{func} - {timing:05.2f}ms"
+    default_order = 1000
 
     def __init__(
         self,
@@ -807,6 +805,7 @@ class PluginManager:
         plugin_entry_points,
         logging_prefix=None,
         plugin_disabled_list=None,
+        plugin_sorting_order=None,
         plugin_blacklist=None,
         plugin_restart_needing_hooks=None,
         plugin_obsolete_hooks=None,
@@ -826,6 +825,8 @@ class PluginManager:
             plugin_entry_points = []
         if plugin_disabled_list is None:
             plugin_disabled_list = []
+        if plugin_sorting_order is None:
+            plugin_sorting_order = {}
         if plugin_blacklist is None:
             plugin_blacklist = []
         if compatibility_ignored_list is None:
@@ -853,6 +854,7 @@ class PluginManager:
         self.plugin_bases = plugin_bases
         self.plugin_entry_points = plugin_entry_points
         self.plugin_disabled_list = plugin_disabled_list
+        self.plugin_sorting_order = plugin_sorting_order
         self.plugin_blacklist = processed_blacklist
         self.plugin_restart_needing_hooks = plugin_restart_needing_hooks
         self.plugin_obsolete_hooks = plugin_obsolete_hooks
@@ -1642,9 +1644,9 @@ class PluginManager:
                 continue
 
             if not order:
-                order = DEFAULT_HOOK_ORDER
+                order = self.default_order
 
-            override = settings().getInt(["plugins", "_hookOrder", name, hook])
+            override = self.plugin_sorting_order.get(name, {}).get(hook, None)
             if override:
                 order = override
 
@@ -1692,7 +1694,7 @@ class PluginManager:
                 continue
 
             if not order:
-                order = DEFAULT_HOOK_ORDER
+                order = self.default_order
 
             try:
                 self._plugin_hooks[hook].remove((order, name, callback))
@@ -2138,9 +2140,9 @@ class PluginManager:
                                 impl[0], sorting_context
                             )
                         )
-                        sorting_value = DEFAULT_HOOK_ORDER
+                        sorting_value = self.default_order
                 else:
-                    sorting_value = DEFAULT_HOOK_ORDER
+                    sorting_value = self.default_order
 
             plugin_info = self.get_plugin_info(impl[0], require_enabled=False)
             return (

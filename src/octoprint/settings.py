@@ -438,7 +438,7 @@ default_settings = {
             "regex": r"Recv: (echo:\s*)?busy:\s*processing",
         },
     ],
-    "plugins": {"_disabled": [], "_forcedCompatible": []},
+    "plugins": {"_disabled": [], "_forcedCompatible": [], "_sortingOrder": {}},
     "scripts": {
         "gcode": {
             "afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0",
