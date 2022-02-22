@@ -6,5 +6,7 @@
   "pluginsFile": "plugins/index.js",
   "supportFile": "support/index.js",
   "screenshotsFolder": "screenshots",
-  "videosFolder": "videos"
+  "videosFolder": "videos",
+  "modifyObstructiveCode": false,
+  "retries": 3
 }

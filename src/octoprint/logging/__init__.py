@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-from typing import Union
-
-from past.builtins import basestring, unicode
-
 from octoprint.logging import filters  # noqa: F401
 from octoprint.logging import handlers  # noqa: F401
 
@@ -89,17 +82,17 @@ def get_divider_line(c, message=None, length=78, indent=3):
 
     Examples:
 
-        >>> get_divider_line("-") # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("-")
         '------------------------------------------------------------------------------'
-        >>> get_divider_line("=", length=10) # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("=", length=10)
         '=========='
-        >>> get_divider_line("-", message="Hi", length=10) # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("-", message="Hi", length=10)
         '--- Hi ---'
-        >>> get_divider_line("-", message="A slightly longer text") # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("-", message="A slightly longer text")
         '--- A slightly longer text ---------------------------------------------------'
-        >>> get_divider_line("-", message="A slightly longer text", indent=5) # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("-", message="A slightly longer text", indent=5)
         '----- A slightly longer text -------------------------------------------------'
-        >>> get_divider_line("-", message="Hello World!", length=10) # doctest: +ALLOW_UNICODE
+        >>> get_divider_line("-", message="Hello World!", length=10)
         '--- Hello World!'
         >>> get_divider_line(None)
         Traceback (most recent call last):
@@ -132,7 +125,7 @@ def get_divider_line(c, message=None, length=78, indent=3):
             formatted divider line
     """
 
-    assert isinstance(c, basestring), "c is not text"
+    assert isinstance(c, str), "c is not text"
     assert len(c) == 1, "c is not a single character"
     assert isinstance(length, int), "length is not an int"
     assert isinstance(indent, int), "indent is not an int"
@@ -140,7 +133,7 @@ def get_divider_line(c, message=None, length=78, indent=3):
     if message is None:
         return c * length
 
-    assert isinstance(message, basestring), "message is not text"
+    assert isinstance(message, str), "message is not text"
 
     space = length - 2 * (indent + 1)
     if space >= len(message):
@@ -149,8 +142,7 @@ def get_divider_line(c, message=None, length=78, indent=3):
         return c * indent + " " + message
 
 
-def prefix_multilines(text, prefix=": "):
-    # type: (Union[unicode, bytes], unicode) -> unicode
+def prefix_multilines(text: str, prefix: str = ": ") -> str:
     from octoprint.util import to_unicode
 
     lines = text.splitlines()

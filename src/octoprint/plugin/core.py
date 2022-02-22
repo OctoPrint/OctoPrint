@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 In this module resides the core data structures and logic of the plugin system.
 
@@ -18,7 +17,6 @@ In this module resides the core data structures and logic of the plugin system.
    :members:
 
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -26,31 +24,17 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import fnmatch
 import inspect
-import io
 import logging
 import os
-import sys
 from collections import OrderedDict, defaultdict, namedtuple
+from os import scandir
 
 import pkg_resources
 import pkginfo
-from past.builtins import unicode
 
+import octoprint.vendor.imp as imp
 from octoprint.util import sv, time_this, to_unicode
 from octoprint.util.version import get_python_version_string, is_python_compatible
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
-
-
-if sys.version_info[0] == 2:
-    # noinspection PyDeprecation
-    import imp
-else:
-    # deprecated in Python 3.4+ and hence vendored for now
-    import octoprint.vendor.imp as imp
 
 
 # noinspection PyDeprecation
@@ -85,12 +69,12 @@ def parse_plugin_metadata(path):
         # we only support parsing plain text source files
         return result
 
-    logger.debug("Parsing plugin metadata from AST of {}".format(path))
+    logger.debug(f"Parsing plugin metadata from AST of {path}")
 
     try:
         import ast
 
-        with io.open(path, "rb") as f:
+        with open(path, "rb") as f:
             root = ast.parse(f.read(), filename=path)
 
         assignments = list(
@@ -166,12 +150,12 @@ def parse_plugin_metadata(path):
     except SyntaxError:
         raise
     except Exception:
-        logger.exception("Error while parsing AST from {}".format(path))
+        logger.exception(f"Error while parsing AST from {path}")
 
     return result
 
 
-class ControlProperties(object):
+class ControlProperties:
     attr_name = "__plugin_name__"
     """ Module attribute from which to retrieve the plugin's human readable name. """
 
@@ -313,7 +297,7 @@ class ModuleOrigin(_ModuleOrigin):
     """
 
 
-class PluginInfo(object):
+class PluginInfo:
     """
     The :class:`PluginInfo` class wraps all available information about a registered plugin.
 
@@ -432,7 +416,7 @@ class PluginInfo(object):
 
     def __str__(self):
         if self.version:
-            return "{name} ({version})".format(name=self.name, version=self.version)
+            return f"{self.name} ({self.version})"
         else:
             return to_unicode(self.name)
 
@@ -485,7 +469,7 @@ class PluginInfo(object):
         else:
             ret = ""
 
-        ret += unicode(self)
+        ret += str(self)
 
         if show_bundled:
             ret += (
@@ -797,14 +781,12 @@ class PluginInfo(object):
         try:
             return parse_plugin_metadata(self.location)
         except SyntaxError:
-            self._logger.exception(
-                "Invalid syntax in plugin file of plugin {}".format(self.key)
-            )
+            self._logger.exception(f"Invalid syntax in plugin file of plugin {self.key}")
             self.invalid_syntax = True
             return {}
 
 
-class PluginManager(object):
+class PluginManager:
     """
     The :class:`PluginManager` is the central component for finding, loading and accessing plugins provided to the
     system.
@@ -1040,7 +1022,7 @@ class PluginManager(object):
 
                         module_name = None
                         if package:
-                            module_name = "{}.{}".format(package, key)
+                            module_name = f"{package}.{key}"
 
                         plugin = self._import_plugin_from_module(
                             key, module_name=module_name, folder=folder, bundled=bundled
@@ -1064,7 +1046,7 @@ class PluginManager(object):
                             )
                         )
             except Exception:
-                self.logger.exception("Error processing folder {}".format(folder))
+                self.logger.exception(f"Error processing folder {folder}")
 
         return added, found
 
@@ -1202,7 +1184,7 @@ class PluginManager(object):
             else:
                 return None
         except Exception:
-            self.logger.exception("Could not locate plugin {key}".format(key=key))
+            self.logger.exception(f"Could not locate plugin {key}")
             return None
 
         # Create a simple dummy entry first ...
@@ -1220,14 +1202,14 @@ class PluginManager(object):
         plugin.bundled = bundled
 
         if self._is_plugin_disabled(key):
-            self.logger.info("Plugin {} is disabled.".format(plugin))
+            self.logger.info(f"Plugin {plugin} is disabled.")
             plugin.forced_disabled = True
 
         if self._is_plugin_blacklisted(key) or (
             plugin.version is not None
             and self._is_plugin_version_blacklisted(key, plugin.version)
         ):
-            self.logger.warning("Plugin {} is blacklisted.".format(plugin))
+            self.logger.warning(f"Plugin {plugin} is blacklisted.")
             plugin.blacklisted = True
 
         python_version = get_python_version_string()
@@ -1303,7 +1285,7 @@ class PluginManager(object):
 
             plugin.bundled = bundled
         except Exception:
-            self.logger.exception("Error loading plugin {key}".format(key=key))
+            self.logger.exception(f"Error loading plugin {key}")
             return None
 
         if plugin.check():
@@ -1425,7 +1407,7 @@ class PluginManager(object):
                 ):
                     if plugin.blacklisted:
                         self.logger.warning(
-                            "Plugin {} is blacklisted. Not enabling it.".format(plugin)
+                            f"Plugin {plugin} is blacklisted. Not enabling it."
                         )
                         continue
                     self.enable_plugin(
@@ -1465,9 +1447,7 @@ class PluginManager(object):
                 **flags (dict): dictionary of flag names and values
         """
         if name not in self.plugins:
-            self.logger.debug(
-                "Trying to mark an unknown plugin {name}".format(**locals())
-            )
+            self.logger.debug(f"Trying to mark an unknown plugin {name}")
 
         for key, value in flags.items():
             if value is None:
@@ -1498,9 +1478,7 @@ class PluginManager(object):
         self, name, plugin=None, startup=False, initialize_implementation=True
     ):
         if name not in self.plugins:
-            self.logger.warning(
-                "Trying to load an unknown plugin {name}".format(**locals())
-            )
+            self.logger.warning(f"Trying to load an unknown plugin {name}")
             return
 
         if plugin is None:
@@ -1517,7 +1495,7 @@ class PluginManager(object):
             self.on_plugin_loaded(name, plugin)
             plugin.loaded = True
 
-            self.logger.debug("Loaded plugin {name}: {plugin}".format(**locals()))
+            self.logger.debug(f"Loaded plugin {name}: {plugin}")
         except PluginLifecycleException as e:
             raise e
         except Exception:
@@ -1525,9 +1503,7 @@ class PluginManager(object):
 
     def unload_plugin(self, name):
         if name not in self.plugins:
-            self.logger.warning(
-                "Trying to unload unknown plugin {name}".format(**locals())
-            )
+            self.logger.warning(f"Trying to unload unknown plugin {name}")
             return
 
         plugin = self.plugins[name]
@@ -1547,13 +1523,11 @@ class PluginManager(object):
 
             plugin.loaded = False
 
-            self.logger.debug("Unloaded plugin {name}: {plugin}".format(**locals()))
+            self.logger.debug(f"Unloaded plugin {name}: {plugin}")
         except PluginLifecycleException as e:
             raise e
         except Exception:
-            self.logger.exception(
-                "There was an error unloading plugin {name}".format(**locals())
-            )
+            self.logger.exception(f"There was an error unloading plugin {name}")
 
             # make sure the plugin is NOT in the list of enabled plugins but in the list of disabled plugins
             if name in self.enabled_plugins:
@@ -1567,9 +1541,7 @@ class PluginManager(object):
         """Enables a plugin"""
         if name not in self.disabled_plugins:
             self.logger.warning(
-                "Tried to enable plugin {name}, however it is not disabled".format(
-                    **locals()
-                )
+                f"Tried to enable plugin {name}, however it is not disabled"
             )
             return
 
@@ -1596,9 +1568,7 @@ class PluginManager(object):
         except PluginLifecycleException as e:
             raise e
         except Exception:
-            self.logger.exception(
-                "There was an error while enabling plugin {name}".format(**locals())
-            )
+            self.logger.exception(f"There was an error while enabling plugin {name}")
             return False
         else:
             if name in self.disabled_plugins:
@@ -1613,7 +1583,7 @@ class PluginManager(object):
                 plugin.implementation.on_plugin_enabled()
             self.on_plugin_enabled(name, plugin)
 
-            self.logger.debug("Enabled plugin {name}: {plugin}".format(**locals()))
+            self.logger.debug(f"Enabled plugin {name}: {plugin}")
 
         return True
 
@@ -1621,9 +1591,7 @@ class PluginManager(object):
         """Disables a plugin"""
         if name not in self.enabled_plugins:
             self.logger.warning(
-                "Tried to disable plugin {name}, however it is not enabled".format(
-                    **locals()
-                )
+                f"Tried to disable plugin {name}, however it is not enabled"
             )
             return
 
@@ -1639,9 +1607,7 @@ class PluginManager(object):
         except PluginLifecycleException as e:
             raise e
         except Exception:
-            self.logger.exception(
-                "There was an error while disabling plugin {name}".format(**locals())
-            )
+            self.logger.exception(f"There was an error while disabling plugin {name}")
             return False
         else:
             if name in self.enabled_plugins:
@@ -1653,7 +1619,7 @@ class PluginManager(object):
                 plugin.implementation.on_plugin_disabled()
             self.on_plugin_disabled(name, plugin)
 
-            self.logger.debug("Disabled plugin {name}: {plugin}".format(**locals()))
+            self.logger.debug(f"Disabled plugin {name}: {plugin}")
 
         return True
 
@@ -1991,17 +1957,13 @@ class PluginManager(object):
                 raise e
             else:
                 self.logger.exception(
-                    "Exception while initializing plugin {name}, disabling it".format(
-                        **locals()
-                    )
+                    f"Exception while initializing plugin {name}, disabling it"
                 )
                 return False
         else:
             self.on_plugin_implementations_initialized(name, plugin)
 
-        self.logger.debug(
-            "Initialized plugin mixin implementation for plugin {name}".format(**locals())
-        )
+        self.logger.debug(f"Initialized plugin mixin implementation for plugin {name}")
         return True
 
     def log_all_plugins(
@@ -2042,7 +2004,7 @@ class PluginManager(object):
                         show_enabled=show_enabled,
                         enabled_strs=enabled_str,
                     ),
-                    sorted(self.plugins.values(), key=lambda x: unicode(x).lower()),
+                    sorted(self.plugins.values(), key=lambda x: str(x).lower()),
                 )
             )
             legend = "Prefix legend: {1} = disabled, {2} = blacklisted, {3} = incompatible".format(
@@ -2311,11 +2273,11 @@ def is_sub_path_of(path, parent):
 
 
 def is_editable_install(install_dir, package, module, location):
-    package_link = os.path.join(install_dir, "{}.egg-link".format(package))
+    package_link = os.path.join(install_dir, f"{package}.egg-link")
     if os.path.isfile(package_link):
         expected_target = os.path.normcase(os.path.realpath(location))
         try:
-            with io.open(package_link, "rt", encoding="utf-8") as f:
+            with open(package_link, encoding="utf-8") as f:
                 contents = f.readlines()
             for line in contents:
                 target = os.path.normcase(
@@ -2343,10 +2305,8 @@ class EntryPointMetadata(pkginfo.Distribution):
             for metadata_file in metadata_files:
                 try:
                     return self.entry_point.dist.get_metadata(metadata_file)
-                except (IOError, OSError):  # noqa: B014
+                except OSError:  # noqa: B014
                     # file not found, metadata file might be missing, ignore
-                    # IOError: file not found in Py2
-                    # OSError (specifically FileNotFoundError): file not found in Py3
                     pass
 
         warnings.warn(
@@ -2356,7 +2316,7 @@ class EntryPointMetadata(pkginfo.Distribution):
         )
 
 
-class Plugin(object):
+class Plugin:
     """
     The parent class of all plugin implementations.
 
@@ -2446,11 +2406,7 @@ class PluginNeedsRestart(Exception):
     def __init__(self, name):
         Exception.__init__(self)
         self.name = name
-        self.message = (
-            "Plugin {name} cannot be enabled or disabled after system startup".format(
-                **locals()
-            )
-        )
+        self.message = f"Plugin {name} cannot be enabled or disabled after system startup"
 
 
 class PluginLifecycleException(Exception):

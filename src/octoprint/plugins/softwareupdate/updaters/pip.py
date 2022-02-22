@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -10,9 +7,12 @@ import collections
 import logging
 import threading
 
-import pkg_resources
-
-from octoprint.util.pip import UnknownPip, create_pip_caller
+from octoprint.util.pip import (
+    UnknownPip,
+    create_pip_caller,
+    is_already_installed,
+    is_egg_problem,
+)
 from octoprint.util.version import get_comparable_version
 
 from .. import exceptions
@@ -22,13 +22,8 @@ console_logger = logging.getLogger(
     "octoprint.plugins.softwareupdate.updaters.pip.console"
 )
 
-_ALREADY_INSTALLED = "Requirement already satisfied (use --upgrade to upgrade)"
-_POTENTIAL_EGG_PROBLEM_POSIX = "No such file or directory"
-_POTENTIAL_EGG_PROBLEM_WINDOWS = "The system cannot find the file specified"
-
 _pip_callers = {}
 _pip_caller_mutex = collections.defaultdict(threading.RLock)
-_pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
 
 def can_perform_update(target, check, online=True):
@@ -71,6 +66,8 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
     if not online and not check.get("offline", False):
         raise exceptions.CannotUpdateOffline()
 
+    force = force or check.get("force_reinstall", False)
+
     pip_caller = _get_pip_caller(command=pip_command)
     if pip_caller is None:
         raise exceptions.UpdateError("Can't run pip", None)
@@ -101,10 +98,10 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
         target_version=target_version, target=target_version
     )
 
-    logger.debug("Target: {}, executing pip install {}".format(target, install_arg))
+    logger.debug(f"Target: {target}, executing pip install {install_arg}")
     pip_args = ["--disable-pip-version-check", "install", install_arg, "--no-cache-dir"]
     pip_kwargs = {
-        "env": {"PYTHONWARNINGS": b"ignore:DEPRECATION::pip._internal.cli.base_command"}
+        "env": {"PYTHONWARNINGS": "ignore:DEPRECATION::pip._internal.cli.base_command"}
     }
     if pip_working_directory is not None:
         pip_kwargs.update(cwd=pip_working_directory)
@@ -114,21 +111,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
 
     returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)
     if returncode != 0:
-        # This could be caused by an issue with pip/setuptools: If something (target or dependency of target) was
-        # installed as an egg at an earlier date (e.g. thanks to just running python setup.py install), pip install
-        # will throw an error after updating that something to a newer (non-egg) version since it will still have
-        # the egg on its sys.path and expect to read data from it. Running the exact same command a second time
-        # solved this during hunt for a workaround, so this is what we'll now do if it indeed looks like this
-        # specific problem
-        def is_egg_problem(line):
-            return (
-                _POTENTIAL_EGG_PROBLEM_POSIX in line
-                or _POTENTIAL_EGG_PROBLEM_WINDOWS in line
-            ) and ".egg" in line
-
-        if any(map(lambda x: is_egg_problem(x), stderr)) or any(
-            map(lambda x: is_egg_problem(x), stdout)
-        ):
+        if is_egg_problem(stdout) or is_egg_problem(stderr):
             _log_message(
                 'This looks like an error caused by a specific issue in upgrading Python "eggs"',
                 "via current versions of pip.",
@@ -144,13 +127,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
                 "Error while executing pip install", (stdout, stderr)
             )
 
-    if not force and any(
-        map(
-            lambda x: x.strip().startswith(_ALREADY_INSTALLED)
-            and (install_arg in x or install_arg in x.lower()),
-            stdout,
-        )
-    ):
+    if not force and is_already_installed(stdout):
         _log_message(
             "Looks like we were already installed in this version. Forcing a reinstall."
         )

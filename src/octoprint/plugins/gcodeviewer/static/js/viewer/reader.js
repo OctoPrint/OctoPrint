@@ -242,7 +242,8 @@ GCODE.gCodeReader = (function () {
             this.clear();
 
             var totalSize = reader.target.result.length;
-            lines = reader.target.result.split(/[\r\n]/g);
+            // With a regex split below as previous, memory usage is huge & takes longer.
+            lines = reader.target.result.replace("\r\n", "\n").split("\n");
             reader.target.result = null;
             prepareGCode(totalSize);
 

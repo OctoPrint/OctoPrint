@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -9,7 +6,6 @@ import logging
 import pkg_resources
 import requests
 
-from octoprint.util import to_native_str  # noqa: F401
 from octoprint.util.version import (
     get_comparable_version,
     is_prerelease,
@@ -31,13 +27,13 @@ def _filter_out_latest(releases, include_prerelease=False, python_version=None):
         >>> requires_py23 = ">=2.7.9, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
         >>> requires_py3 = ">=3.6, <4"
         >>> releases = {"1.3.12": [dict(requires_python=requires_py2, upload_time_iso_8601="2019-10-22T10:06:03.190293Z")], "1.4.0rc1": [dict(requires_python=requires_py23, upload_time_iso_8601="2019-11-22T10:06:03.190293Z")], "2.0.0rc1": [dict(requires_python=requires_py3, upload_time_iso_8601="2020-10-22T10:06:03.190293Z")]}
-        >>> to_native_str(_filter_out_latest(releases, python_version="2.7.9"))
+        >>> _filter_out_latest(releases, python_version="2.7.9")
         '1.3.12'
-        >>> to_native_str(_filter_out_latest(releases, include_prerelease=True, python_version="2.7.9"))
+        >>> _filter_out_latest(releases, include_prerelease=True, python_version="2.7.9")
         '1.4.0rc1'
-        >>> to_native_str(_filter_out_latest(releases, include_prerelease=True, python_version="3.6.0"))
+        >>> _filter_out_latest(releases, include_prerelease=True, python_version="3.6.0")
         '2.0.0rc1'
-        >>> to_native_str(_filter_out_latest(releases, python_version="3.6.0"))
+        >>> _filter_out_latest(releases, python_version="3.6.0")
     """
     releases = [{"version": k, "data": v[0]} for k, v in releases.items()]
 

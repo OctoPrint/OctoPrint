@@ -1,21 +1,16 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import
-
-import io
+from typing import Any, Dict, Hashable, TextIO, Union
 
 
-def load_from_file(file=None, path=None):
+def load_from_file(
+    file: TextIO = None, path: str = None
+) -> Union[Dict[Hashable, Any], list, None]:
     """
     Safely and performantly loads yaml data from the given source. Either a
     path or a file must be passed in.
-
-    :rtype: Union[dict[Hashable, Any], list, None]
-    :type path: str | None
-    :type file: typing.TextIO | None
     """
     if path is not None:
         assert file is None
-        with io.open(path, mode="rt", encoding="utf-8-sig") as f:
+        with open(path, encoding="utf-8-sig") as f:
             return load_from_file(file=f)
 
     if file is not None:
@@ -36,7 +31,7 @@ def load_from_file(file=None, path=None):
 def _save_to_file_base(data, file=None, path=None, pretty=False, **kwargs):
     if path is not None:
         assert file is None
-        with io.open(path, "wt", encoding="utf-8") as f:
+        with open(path, "wt", encoding="utf-8") as f:
             return _save_to_file_base(data, file=f, pretty=pretty, **kwargs)
 
     if file is not None:

@@ -13,7 +13,8 @@ $(function () {
             if (self.settings.settings.plugins.errortracking.enabled()) return;
 
             // RC release channel?
-            var releaseChannel = self.settings.settings.plugins.softwareupdate.octoprint_release_channel();
+            var releaseChannel =
+                self.settings.settings.plugins.softwareupdate.octoprint_release_channel();
             if (releaseChannel === "rc/maintenance" || releaseChannel === "rc/devel") {
                 if (notification !== undefined) return;
 
@@ -101,21 +102,24 @@ $(function () {
         };
 
         var subbed = false;
-        self.onStartup = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            performCheck();
-            if (
-                self.settings &&
-                self.settings.settings &&
-                self.settings.settings.plugins &&
-                self.settings.settings.plugins.softwareupdate &&
-                !subbed
-            ) {
-                subbed = true;
-                self.settings.settings.plugins.softwareupdate.octoprint_release_channel.subscribe(
-                    performCheck
-                );
-            }
-        };
+        self.onStartup =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    performCheck();
+                    if (
+                        self.settings &&
+                        self.settings.settings &&
+                        self.settings.settings.plugins &&
+                        self.settings.settings.plugins.softwareupdate &&
+                        !subbed
+                    ) {
+                        subbed = true;
+                        self.settings.settings.plugins.softwareupdate.octoprint_release_channel.subscribe(
+                            performCheck
+                        );
+                    }
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push({

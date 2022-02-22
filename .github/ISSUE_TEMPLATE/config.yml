@@ -1,3 +1,4 @@
+blank_issues_enabled: false
 contact_links:
   - name: 🤔 Have questions or need support?
     url: https://community.octoprint.org

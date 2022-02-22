@@ -48,7 +48,7 @@ $(function () {
         self.enablePrint = ko.pureComputed(function () {
             return (
                 self.isOperational() &&
-                self.isReady() &&
+                (self.isReady() || self.isPaused()) &&
                 !self.isPrinting() &&
                 !self.isCancelling() &&
                 !self.isPausing() &&
@@ -441,11 +441,13 @@ $(function () {
                         OctoPrint.job.start();
                     };
 
-                    callViewModels(self.allViewModels, "onBeforePrintStart", function (
-                        method
-                    ) {
-                        prevented = prevented || method(callback) === false;
-                    });
+                    callViewModels(
+                        self.allViewModels,
+                        "onBeforePrintStart",
+                        function (method) {
+                            prevented = prevented || method(callback) === false;
+                        }
+                    );
 
                     if (!prevented) {
                         callback();

@@ -1,21 +1,13 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import unittest
-
-import ddt
-
-try:
-    import unittest.mock as mock
-except ImportError:
-    import mock
-
 import os
 import time
+import unittest
 from collections import OrderedDict, namedtuple
+from unittest import mock
+
+import ddt
 
 import octoprint.plugin
 import octoprint.settings
@@ -63,7 +55,7 @@ class TimelapseTest(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     @mock.patch("os.remove")
-    @mock.patch("octoprint.timelapse.scandir")
+    @mock.patch("os.scandir")
     def test_delete_unrendered_timelapse(self, mock_scandir, mock_remove):
         ## prepare
 
@@ -96,7 +88,7 @@ class TimelapseTest(unittest.TestCase):
 
     @mock.patch("time.time")
     @mock.patch("os.remove")
-    @mock.patch("octoprint.timelapse.scandir")
+    @mock.patch("os.scandir")
     def test_delete_old_unrendered_timelapses(self, mock_scandir, mock_remove, mock_time):
         ## prepare
 
@@ -135,7 +127,7 @@ class TimelapseTest(unittest.TestCase):
         expected_deletion_calls = list(map(mock.call, expected_deletions))
         self.assertListEqual(mock_remove.mock_calls, expected_deletion_calls)
 
-    @mock.patch("octoprint.timelapse.scandir")
+    @mock.patch("os.scandir")
     def test_get_finished_timelapses(self, mock_listdir):
 
         ## prepare
@@ -161,7 +153,7 @@ class TimelapseTest(unittest.TestCase):
         self.assertEqual(result[1]["name"], "two.mpg")
         self.assertEqual(result[1]["bytes"], 2048)
 
-    @mock.patch("octoprint.timelapse.scandir")
+    @mock.patch("os.scandir")
     def test_unrendered_timelapses(self, mock_scandir):
         ## prepare
         files = {}

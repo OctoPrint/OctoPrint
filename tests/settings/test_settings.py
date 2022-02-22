@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 Tests for OctoPrint's Settings class
 
@@ -13,7 +10,6 @@ Tests for OctoPrint's Settings class
 
 import contextlib
 import hashlib
-import io
 import os
 import re
 import shutil
@@ -28,13 +24,13 @@ import octoprint.settings
 
 
 @ddt.ddt
-class TestSettings(unittest.TestCase):
+class SettingsTest(unittest.TestCase):
     def _load_yaml(self, fname):
-        with io.open(fname, "rt", encoding="utf-8") as f:
+        with open(fname, encoding="utf-8") as f:
             return yaml.safe_load(f)
 
     def _dump_yaml(self, fname, config):
-        with io.open(fname, "wt", encoding="utf-8") as f:
+        with open(fname, "wt", encoding="utf-8") as f:
             yaml.safe_dump(config, f)
 
     def setUp(self):
@@ -181,7 +177,7 @@ class TestSettings(unittest.TestCase):
             # can switch to assertIsNone after 3.x upgrade.
             self.assertFalse(
                 match_result,
-                "string matched and it shouldn't have: {!r}".format(terminal_string),
+                f"string matched and it shouldn't have: {terminal_string!r}",
             )
 
     def test_temperature_regex_matches(self):
@@ -207,7 +203,7 @@ class TestSettings(unittest.TestCase):
             # can switch to assertIsNotNone after 3.x upgrade.
             self.assertTrue(
                 match_result,
-                "string did not match and it should have: {!r}".format(terminal_string),
+                f"string did not match and it should have: {terminal_string!r}",
             )
 
     ##~~ test getters
@@ -300,8 +296,8 @@ class TestSettings(unittest.TestCase):
 
             data = settings.get(["devel", "virtualPrinter"])
 
-            self.assertEqual(len(data), 1)
             self.assertDictEqual({"enabled": True}, data)
+            self.assertEqual(len(data), 1)
 
     def test_get_map_merged(self):
         with self.mocked_config():
@@ -469,7 +465,7 @@ class TestSettings(unittest.TestCase):
 
             settings.set(["server", "port"], 5000)
 
-            self.assertNotIn("port", settings._config["server"])
+            self.assertNotIn("server", settings._config)
             self.assertEqual(5000, settings.get(["server", "port"]))
 
     def test_set_none(self):
@@ -480,7 +476,7 @@ class TestSettings(unittest.TestCase):
 
             settings.set(["server", "port"], None)
 
-            self.assertFalse("port" in settings._config["server"])
+            self.assertIs(settings.get(["server", "port"]), None)
 
     @ddt.data(
         [], ["api", "lock"], ["api", "lock", "door"], ["serial", "additionalPorts", "key"]
@@ -505,7 +501,9 @@ class TestSettings(unittest.TestCase):
 
             settings.remove(["server", "port"])
 
-            self.assertFalse("port" in settings._config["server"])
+            self.assertFalse(
+                "server" in settings._config and "port" in settings._config["server"]
+            )
             self.assertEqual(5000, settings.get(["server", "port"]))
 
     @ddt.data([], ["server", "lock"], ["serial", "additionalPorts", "key"])
@@ -691,3 +689,74 @@ class TestSettings(unittest.TestCase):
                 yield basedir, fresh_config_path
             finally:
                 octoprint.settings.default_settings = orig_defaults
+
+
+@ddt.ddt
+class HelpersTest(unittest.TestCase):
+    @ddt.data(
+        (True, True),
+        ("true", True),
+        ("True", True),
+        ("tRuE", True),
+        ("yes", True),
+        ("YES", True),
+        ("y", True),
+        ("Y", True),
+        ("1", True),
+        (1, True),
+        (False, False),
+        ("Truuuuuuuuue", False),
+        ("Nope", False),
+        (None, False),
+    )
+    @ddt.unpack
+    def test_valid_boolean_trues(self, value, expected):
+        self.assertEqual(expected, value in octoprint.settings.valid_boolean_trues)
+
+
+def _key(*path):
+    return octoprint.settings._CHAINMAP_SEP.join(path)
+
+
+@ddt.ddt
+class ChainmapTest(unittest.TestCase):
+    @ddt.data(
+        (
+            {"a": 1},
+            {_key("a"): 1},
+        ),
+        ({"a": {"b": "b"}}, {_key("a", "b"): "b"}),
+        (
+            {"a": {"b": "b", "c": "c", "d": {"e": "e"}}},
+            {_key("a", "b"): "b", _key("a", "c"): "c", _key("a", "d", "e"): "e"},
+        ),
+    )
+    @ddt.unpack
+    def test_flatten(self, value, expected):
+        self.assertEqual(
+            expected, octoprint.settings.HierarchicalChainMap._flatten(value)
+        )
+
+    @ddt.data(
+        (
+            {_key("a"): 1},
+            {"a": 1},
+        ),
+        (
+            {_key("a", "b"): "b"},
+            {"a": {"b": "b"}},
+        ),
+        (
+            {_key("a", "b"): "b", _key("a", "c"): "c", _key("a", "d", "e"): "e"},
+            {"a": {"b": "b", "c": "c", "d": {"e": "e"}}},
+        ),
+        (
+            {_key("a"): None, _key("a", "b"): "b"},
+            {"a": {"b": "b"}},
+        ),
+    )
+    @ddt.unpack
+    def test_unflatten(self, value, expected):
+        self.assertEqual(
+            expected, octoprint.settings.HierarchicalChainMap._unflatten(value)
+        )

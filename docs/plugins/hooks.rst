@@ -28,7 +28,6 @@ or as ``postfix`` (after the existing lines).
 .. code-block:: python
    :linenos:
 
-   from past import basestring
    self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
 
    # ...
@@ -45,7 +44,7 @@ or as ``postfix`` (after the existing lines).
                continue
 
            def to_list(data):
-               if isinstance(data, basestring):
+               if isinstance(data, str):
                    data = map(x.strip() for x in data.split("\n"))
 
                if isinstance(data, (list, tuple)):
@@ -228,7 +227,7 @@ octoprint.access.permissions
        suffice.
      * ``dangerous``: Whether this permission should be considered dangerous (``True``) or not (``False``)
      * ``default_groups``: A list of standard groups this permission should be apply to by default. Standard groups
-       are ``admins``, ``users``, ``readonly`` and ``guests``
+       are ``octoprint.access.ADMIN_GROUP``, ``octoprint.access.USER_GROUP``, ``octoprint.access.READONLY_GROUP`` and ``octoprint.access.GUEST_GROUP``
 
    The following example is based on some actual code included in the bundled Application Keys plugin and defines
    one additional permission called ``ADMIN`` with a role ``admin`` which is marked as dangerous (since it gives
@@ -237,6 +236,8 @@ octoprint.access.permissions
 
    .. code-block:: python
 
+      from octoprint.access import ADMIN_GROUP
+      
       def get_additional_permissions(*args, **kwargs):
           return [
               dict(key="ADMIN",

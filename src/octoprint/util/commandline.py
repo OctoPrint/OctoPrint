@@ -1,61 +1,61 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
 import logging
+import queue
 import re
 import time
+import warnings
+from typing import List, Optional, Tuple, Union
 
 import sarge
-from past.builtins import unicode
 
+from octoprint.util import to_bytes, to_unicode
 from octoprint.util.platform import CLOSE_FDS
-
-from . import to_native_str, to_unicode
-from .platform import get_os
-
-try:
-    import queue
-except ImportError:  # pragma: no cover
-    import Queue as queue
 
 # These regexes are based on the colorama package
 # Author: Jonathan Hartley
 # License: BSD-3 (https://github.com/tartley/colorama/blob/master/LICENSE.txt)
 # Website: https://github.com/tartley/colorama/
 _ANSI_CSI_PATTERN = (
-    b"\001?\033\\[(\\??(?:\\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
+    "\001?\033\\[(\\??(?:\\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
 )
-_ANSI_OSC_PATTERN = b"\001?\033\\]((?:.|;)*?)(\x07)\002?"  # Operating System Command
-_ANSI_REGEX = re.compile(b"|".join([_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN]))
+_ANSI_OSC_PATTERN = "\001?\033\\]((?:.|;)*?)(\x07)\002?"  # Operating System Command
+_ANSI_PATTERN = "|".join([_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN])
+
+_ANSI_REGEX = re.compile(_ANSI_PATTERN)
 
 
-def clean_ansi(line):
+def clean_ansi(line: Union[str, bytes]) -> Union[str, bytes]:
     """
     Removes ANSI control codes from ``line``.
 
+    Note: This function also still supports an input of ``bytes``, leading to an
+    ``output`` of ``bytes``. This if for reasons of backwards compatibility only,
+    should no longer be used and considered to be deprecated and to be removed in
+    a future version of OctoPrint. A warning will be logged.
+
     Parameters:
-        line (bytes or unicode): the line to process
+        line (str or bytes): the line to process
 
     Returns:
-        (bytes or unicode) The line without any ANSI control codes
+        (str or bytes) The line without any ANSI control codes
 
-    Example::
+    .. changed:: 1.8.0
 
-        >>> text = b"Some text with some \x1b[31mred words\x1b[39m in it"
-        >>> clean_ansi(text) # doctest: +ALLOW_BYTES
-        'Some text with some red words in it'
-        >>> text = b"We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here"
-        >>> clean_ansi(text) # doctest: +ALLOW_BYTES
-        'We hide the cursor here and then show it again here'
+       Usage as ``clean_ansi(line: bytes) -> bytes`` is now deprecated and will be removed
+       in a future version of OctoPrint.
     """
-    if isinstance(line, unicode):
-        return _ANSI_REGEX.sub(b"", line.encode("latin1")).decode("latin1")
-    return _ANSI_REGEX.sub(b"", line)
+    # TODO: bytes support is deprecated, remove in 2.0.0
+    if isinstance(line, bytes):
+        warnings.warn(
+            "Calling clean_ansi with bytes is deprecated, call with str instead",
+            DeprecationWarning,
+        )
+        return to_bytes(_ANSI_REGEX.sub("", to_unicode(line)))
+    return _ANSI_REGEX.sub("", line)
 
 
 class CommandlineError(Exception):
@@ -74,7 +74,7 @@ class CommandlineError(Exception):
         self.stderr = stderr
 
 
-class CommandlineCaller(object):
+class CommandlineCaller:
     """
     The CommandlineCaller is a utility class that allows running command line commands while logging their stdout
     and stderr via configurable callback functions.
@@ -132,7 +132,9 @@ class CommandlineCaller(object):
         self.on_log_stderr = lambda *args, **kwargs: None
         """Callback for stderr output"""
 
-    def checked_call(self, command, **kwargs):
+    def checked_call(
+        self, command: Union[str, List[str], Tuple[str]], **kwargs
+    ) -> Tuple[int, List[str], List[str]]:
         """
         Calls a command and raises an error if it doesn't return with return code 0
 
@@ -154,7 +156,13 @@ class CommandlineCaller(object):
 
         return returncode, stdout, stderr
 
-    def call(self, command, **kwargs):
+    def call(
+        self,
+        command: Union[str, List[str], Tuple[str]],
+        delimiter: bytes = b"\n",
+        buffer_size: int = -1,
+        **kwargs,
+    ) -> Tuple[Optional[int], List[str], List[str]]:
         """
         Calls a command
 
@@ -167,57 +175,10 @@ class CommandlineCaller(object):
             (tuple) a 3-tuple of return code, full stdout and full stderr output
         """
 
-        if isinstance(command, (list, tuple)):
-            joined_command = " ".join(command)
-        else:
-            joined_command = command
-        self._logger.debug("Calling: {}".format(joined_command))
-        self.on_log_call(joined_command)
-
-        # if we are running under windows, make sure there are no unicode strings in the env
-        if get_os() == "windows" and "env" in kwargs:
-            kwargs["env"] = {
-                to_native_str(k): to_native_str(v) for k, v in kwargs["env"].items()
-            }
-
-        delimiter = kwargs.get("delimiter", b"\n")
-        try:
-            kwargs.pop("delimiter")
-        except KeyError:
-            pass
-
-        buffer_size = kwargs.get("buffer_size", -1)
-        try:
-            kwargs.pop("buffer_size")
-        except KeyError:
-            pass
-
-        kwargs.update(
-            {
-                "close_fds": CLOSE_FDS,
-                "async_": True,
-                "stdout": DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
-                "stderr": DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
-            }
+        p = self.non_blocking_call(
+            command, delimiter=delimiter, buffer_size=buffer_size, **kwargs
         )
-
-        p = sarge.run(command, **kwargs)
-        while len(p.commands) == 0:
-            # somewhat ugly... we can't use wait_events because
-            # the events might not be all set if an exception
-            # by sarge is triggered within the async process
-            # thread
-            time.sleep(0.01)
-
-        # by now we should have a command, let's wait for its
-        # process to have been prepared
-        p.commands[0].process_ready.wait()
-
-        if not p.commands[0].process:
-            # the process might have been set to None in case of any exception
-            self._logger.error(
-                "Error while trying to run command {}".format(joined_command)
-            )
+        if p is None:
             return None, [], []
 
         all_stdout = []
@@ -251,6 +212,48 @@ class CommandlineCaller(object):
         all_stdout += process_stdout(p.stdout.readlines())
 
         return p.returncode, all_stdout, all_stderr
+
+    def non_blocking_call(
+        self,
+        command: Union[str, List, Tuple],
+        delimiter: bytes = b"\n",
+        buffer_size: int = -1,
+        **kwargs,
+    ) -> Optional[sarge.Pipeline]:
+        if isinstance(command, (list, tuple)):
+            joined_command = " ".join(command)
+        else:
+            joined_command = command
+        self._logger.debug(f"Calling: {joined_command}")
+        self.on_log_call(joined_command)
+
+        kwargs.update(
+            {
+                "close_fds": CLOSE_FDS,
+                "async_": True,
+                "stdout": DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
+                "stderr": DelimiterCapture(delimiter=delimiter, buffer_size=buffer_size),
+            }
+        )
+
+        p = sarge.run(command, **kwargs)
+        while len(p.commands) == 0:
+            # somewhat ugly... we can't use wait_events because
+            # the events might not be all set if an exception
+            # by sarge is triggered within the async process
+            # thread
+            time.sleep(0.01)
+
+        # by now we should have a command, let's wait for its
+        # process to have been prepared
+        p.commands[0].process_ready.wait()
+
+        if not p.commands[0].process:
+            # the process might have been set to None in case of any exception
+            self._logger.error(f"Error while trying to run command {joined_command}")
+            return None
+
+        return p
 
     def _log_stdout(self, *lines):
         self.on_log_stdout(*lines)

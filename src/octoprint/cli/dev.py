@@ -1,16 +1,12 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import sys
 
 import click
 
 click.disable_unicode_literals_warning = True
-
-from past.builtins import basestring
 
 
 class OctoPrintDevelCommands(click.MultiCommand):
@@ -21,7 +17,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
     """
 
     sep = ":"
-    groups = ("plugin",)
+    groups = ("plugin", "css")
 
     def __init__(self, *args, **kwargs):
         click.MultiCommand.__init__(self, *args, **kwargs)
@@ -38,9 +34,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
             return log
 
         self.command_caller = CommandlineCaller()
-        self.command_caller.on_log_call = log_util(
-            lambda x: click.echo(">> {}".format(x))
-        )
+        self.command_caller.on_log_call = log_util(lambda x: click.echo(f">> {x}"))
         self.command_caller.on_log_stdout = log_util(click.echo)
         self.command_caller.on_log_stderr = log_util(partial(click.echo, err=True))
 
@@ -58,7 +52,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
     def _get_commands(self):
         result = {}
         for group in self.groups:
-            for command in self._get_commands_from_prefix_methods("{}_".format(group)):
+            for command in self._get_commands_from_prefix_methods(f"{group}_"):
                 result[group + self.sep + command.name] = command
         return result
 
@@ -125,7 +119,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
                     if key in options:
                         val = options[key]
                     else:
-                        if not isinstance(raw, basestring):
+                        if not isinstance(raw, str):
                             raw = str(raw)
                         val = env.from_string(raw).render(cookiecutter=cookiecutter_dict)
 
@@ -221,7 +215,6 @@ class OctoPrintDevelCommands(click.MultiCommand):
             """
 
             import os
-            import sys
 
             if not path:
                 path = os.getcwd()
@@ -242,7 +235,6 @@ class OctoPrintDevelCommands(click.MultiCommand):
         @click.argument("name")
         def command(name):
             """Uninstalls the plugin with the given name."""
-            import sys
 
             lower_name = name.lower()
             if not lower_name.startswith("octoprint_") and not lower_name.startswith(
@@ -256,13 +248,124 @@ class OctoPrintDevelCommands(click.MultiCommand):
 
         return command
 
+    def css_build(self):
+        @click.command("build")
+        @click.option(
+            "--file",
+            "-f",
+            "files",
+            multiple=True,
+            help="Specify files to build, for a list of options use --list",
+        )
+        @click.option("--all", "all_files", is_flag=True, help="Build all less files")
+        @click.option(
+            "--list", "list_files", is_flag=True, help="List all available files and exit"
+        )
+        def command(files, all_files, list_files):
+            import os.path
+            import shutil
 
-@click.group()
-def dev_commands():
-    pass
+            available_files = {
+                "core": {
+                    "source": "static/less/octoprint.less",
+                    "output": "static/css/octoprint.css",
+                },
+                "login": {
+                    "source": "static/less/login.less",
+                    "output": "static/css/login.css",
+                },
+                "recovery": {
+                    "source": "static/less/recovery.less",
+                    "output": "static/css/recovery.css",
+                },
+                "plugin_announcements": {
+                    "source": "plugins/announcements/static/less/announcements.less",
+                    "output": "plugins/announcements/static/css/announcements.css",
+                },
+                "plugin_appkeys_core": {
+                    "source": "plugins/appkeys/static/less/appkeys.less",
+                    "output": "plugins/appkeys/static/css/appkeys.css",
+                },
+                "plugin_appkeys_authdialog": {
+                    "source": "plugins/appkeys/static/less/authdialog.less",
+                    "output": "plugins/appkeys/static/css/authdialog.css",
+                },
+                "plugin_backup": {
+                    "source": "plugins/backup/static/less/backup.less",
+                    "output": "plugins/backup/static/css/backup.css",
+                },
+                "plugin_gcodeviewer": {
+                    "source": "plugins/gcodeviewer/static/less/gcodeviewer.less",
+                    "output": "plugins/gcodeviewer/static/css/gcodeviewer.css",
+                },
+                "plugin_logging": {
+                    "source": "plugins/logging/static/less/logging.less",
+                    "output": "plugins/logging/static/css/logging.css",
+                },
+                "plugin_pluginmanager": {
+                    "source": "plugins/pluginmanager/static/less/pluginmanager.less",
+                    "output": "plugins/pluginmanager/static/css/pluginmanager.css",
+                },
+                "plugin_softwareupdate": {
+                    "source": "plugins/softwareupdate/static/less/softwareupdate.less",
+                    "output": "plugins/softwareupdate/static/css/softwareupdate.css",
+                },
+            }
+
+            if list_files:
+                click.echo("Available files to build:")
+                for name in available_files.keys():
+                    click.echo(f"- {name}")
+                sys.exit(0)
+
+            if all_files:
+                files = available_files.keys()
+
+            if not files:
+                click.echo(
+                    "No files specified. Use `--file <file>` to specify individual files, or `--all` to build all."
+                )
+                sys.exit(1)
+
+            # Check that lessc is installed
+            less = shutil.which("lessc")
+
+            if not less:
+                click.echo(
+                    "lessc is not installed/not available, please install it first"
+                )
+                click.echo(
+                    "Try `npm i -g less` to install it (NOT lessc in this command!)"
+                )
+                sys.exit(1)
+
+            # Find the folder of the `octoprint` package
+            # Two folders up from this file
+            octoprint = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+            for file in files:
+                if file not in available_files.keys():
+                    click.echo(f"Unknown file {file}")
+                    sys.exit(1)
+
+                source_path = os.path.join(octoprint, available_files[file]["source"])
+                output_path = os.path.join(octoprint, available_files[file]["output"])
+
+                # Check the target file exists
+                if not os.path.exists(source_path):
+                    click.echo(f"Target file {source_path} does not exist")
+                    continue
+
+                # Build command line, with necessary options
+                # TODO -x is deprecated, find replacement?
+                less_command = [less, "-x", source_path, output_path]
+
+                self.command_caller.call(less_command)
+
+        return command
 
 
-@dev_commands.group(name="dev", cls=OctoPrintDevelCommands)
-def dev():
+@click.group(cls=OctoPrintDevelCommands)
+def cli():
     """Additional commands for development tasks."""
     pass

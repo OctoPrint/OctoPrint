@@ -399,7 +399,9 @@ Upload file or create folder
             }
           }
         },
-        "done": false
+        "done": false,
+        "effectiveSelect": true,
+        "effectivePrint": true
       }
 
    **Example with UTF-8 encoded filename following RFC 5987**
@@ -440,7 +442,9 @@ Upload file or create folder
             }
           }
         },
-        "done": true
+        "done": true,
+        "effectiveSelect": false,
+        "effectivePrint": false
       }
 
    **Example for creating a folder**
@@ -486,9 +490,12 @@ Upload file or create folder
                      filename or ``foldername`` - basically the parent folder). If unset will be taken from the provided
                      ``file``'s name or ``foldername`` and default to the root folder of the ``location``.
    :form select:     Whether to select the file directly after upload (``true``) or not (``false``). Optional, defaults
-                     to ``false``. Ignored when creating a folder.
+                     to ``false``. If the printer is not operational, this will have no
+                     effect and the ``effectiveSelect`` field in the response will be set to ``false``. Ignored when creating a folder.
    :form print:      Whether to start printing the file directly after upload (``true``) or not (``false``). If set, ``select``
-                     is implicitly ``true`` as well. Optional, defaults to ``false``. Ignored when creating a folder.
+                     is implicitly ``true`` as well. Optional, defaults to ``false``. If the
+                     printer is not operational, this will have no effect and the ``effectivePrint`` field in the response will be set
+                     to ``false``. Ignored when creating a folder.
    :form userdata:   [Optional] An optional string that if specified will be interpreted as JSON and then saved along
                      with the file as metadata (metadata key ``userdata``). Ignored when creating a folder.
    :form foldername: The name of the folder to create. Ignored when uploading a file.
@@ -869,9 +876,8 @@ Upload response
    * - ``files``
      - 0..1
      - Object
-     - Abridged information regarding the file that was just uploaded. If only uploaded to ``local`` this will only
+     - (File only) Abridged information regarding the file that was just uploaded. If only uploaded to ``local`` this will only
        contain the ``local`` property. If uploaded to SD card, this will contain both ``local`` and ``sdcard`` properties.
-       Only contained if a file was uploaded, not present if only a new folder was created.
    * - ``files.local``
      - 1
      - :ref:`sec-api-datamodel-files-fileabridged`
@@ -883,12 +889,23 @@ Upload response
    * - ``folder``
      - 0..1
      - :ref:`sec-api-datamodel-files-fileabridged`
-     - Abridged information regarding the folder that was just created. Only contained if a folder
-       was created, not present if a file was uploaded.
+     - (Folder only) Abridged information regarding the folder that was just created.
    * - ``done``
      - 1
      - Boolean
      - Whether any file processing after upload has already finished (``true``) or not, e.g. due to first needing
        to perform a slicing step (``false``). Clients may use this information to direct progress displays related to
-       the upload.
+       the upload. Always ``true`` for folders.
+   * - ``effectiveSelect``
+     - 0..1
+     - Boolean
+     - (File only) Whether the file that was just uploaded was selected for printing (``true``) or not (``false``). If this
+       is ``false`` but was requested to be ``true`` in the upload request, the user lacked permissions, the printer was not
+       operational or already printing and thus the request could not be fulfilled.
+   * - ``effectivePrint``
+     - 0..1
+     - Boolean
+     - (File only) Whether the file that was just uploaded was started to print (``true``) or not (``false``). If this
+       is ``false`` but was requested to be ``true`` in the upload request, the user lacked permissions, the printer was not
+       operational or already printing and thus the request could not be fulfilled.
 

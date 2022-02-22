@@ -1,11 +1,7 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import logging
 
 from flask import (
@@ -121,7 +117,7 @@ def pluginData(name):
         raise
     except Exception:
         logging.getLogger(__name__).exception(
-            "Error calling SimpleApiPlugin {}".format(name), extra={"plugin": name}
+            f"Error calling SimpleApiPlugin {name}", extra={"plugin": name}
         )
         return abort(500)
 
@@ -163,7 +159,7 @@ def pluginCommand(name):
         raise
     except Exception:
         logging.getLogger(__name__).exception(
-            "Error while executing SimpleApiPlugin {}".format(name),
+            f"Error while executing SimpleApiPlugin {name}",
             extra={"plugin": name},
         )
         return abort(500)
@@ -271,7 +267,7 @@ def apiVersion():
     return jsonify(
         server=octoprint.server.VERSION,
         api=VERSION,
-        text="OctoPrint {}".format(octoprint.server.DISPLAY_VERSION),
+        text=f"OctoPrint {octoprint.server.DISPLAY_VERSION}",
     )
 
 
@@ -484,7 +480,7 @@ def _test_path(data):
                 os.makedirs(path)
             except Exception:
                 logging.getLogger(__name__).exception(
-                    "Error while trying to create {}".format(path)
+                    f"Error while trying to create {path}"
                 )
                 return jsonify(
                     path=path,
@@ -517,12 +513,12 @@ def _test_path(data):
     if check_writable_dir and check_type == "dir":
         try:
             test_path = os.path.join(path, ".testballoon.txt")
-            with io.open(test_path, "wb") as f:
+            with open(test_path, "wb") as f:
                 f.write(b"Test")
             os.remove(test_path)
         except Exception:
             logging.getLogger(__name__).exception(
-                "Error while testing if {} is really writable".format(path)
+                f"Error while testing if {path} is really writable"
             )
             return jsonify(
                 path=path,
@@ -548,7 +544,7 @@ def _test_url(data):
 
     from octoprint import util as util
 
-    class StatusCodeRange(object):
+    class StatusCodeRange:
         def __init__(self, start=None, end=None):
             self.start = start
             self.end = end
@@ -687,7 +683,7 @@ def _test_url(data):
                 response_result["content"] = content
     except Exception:
         logging.getLogger(__name__).exception(
-            "Error while running a test {} request on {}".format(method, url)
+            f"Error while running a test {method} request on {url}"
         )
         outcome = False
 

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -10,7 +7,6 @@ import re
 
 from flask import abort, jsonify, request
 from flask_login import current_user
-from past.builtins import basestring
 
 import octoprint.plugin
 import octoprint.util
@@ -118,11 +114,6 @@ def getSettings():
             "closeModalsWithClick": s.getBoolean(["appearance", "closeModalsWithClick"]),
             "showInternalFilename": s.getBoolean(["appearance", "showInternalFilename"]),
         },
-        "printer": {
-            "defaultExtrusionLength": s.getInt(
-                ["printerParameters", "defaultExtrusionLength"]
-            )
-        },
         "webcam": {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
             "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
@@ -210,6 +201,7 @@ def getSettings():
             "blockedCommands": s.get(["serial", "blockedCommands"]),
             "ignoredCommands": s.get(["serial", "ignoredCommands"]),
             "pausingCommands": s.get(["serial", "pausingCommands"]),
+            "sdCancelCommand": s.get(["serial", "sdCancelCommand"]),
             "emergencyCommands": s.get(["serial", "emergencyCommands"]),
             "helloCommand": s.get(["serial", "helloCommand"]),
             "ignoreErrorsFromFirmware": s.getBoolean(
@@ -224,6 +216,10 @@ def getSettings():
             "waitForStart": s.getBoolean(["serial", "waitForStartOnConnect"]),
             "alwaysSendChecksum": s.getBoolean(["serial", "alwaysSendChecksum"]),
             "neverSendChecksum": s.getBoolean(["serial", "neverSendChecksum"]),
+            "sendChecksumWithUnknownCommands": s.getBoolean(
+                ["serial", "sendChecksumWithUnknownCommands"]
+            ),
+            "unknownCommandsNeedAck": s.getBoolean(["serial", "unknownCommandsNeedAck"]),
             "sdRelativePath": s.getBoolean(["serial", "sdRelativePath"]),
             "sdAlwaysAvailable": s.getBoolean(["serial", "sdAlwaysAvailable"]),
             "sdLowerCase": s.getBoolean(["serial", "sdLowerCase"]),
@@ -265,6 +261,10 @@ def getSettings():
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
             "ignoreEmptyPorts": s.getBoolean(["serial", "ignoreEmptyPorts"]),
+            "encoding": s.get(["serial", "encoding"]),
+            "enableShutdownActionCommand": s.get(
+                ["serial", "enableShutdownActionCommand"]
+            ),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -812,6 +812,8 @@ def _saveSettings(data):
             data["serial"]["pausingCommands"], (list, tuple)
         ):
             s.set(["serial", "pausingCommands"], data["serial"]["pausingCommands"])
+        if "sdCancelCommand" in data["serial"]:
+            s.set(["serial", "sdCancelCommand"], data["serial"]["sdCancelCommand"])
         if "emergencyCommands" in data["serial"] and isinstance(
             data["serial"]["emergencyCommands"], (list, tuple)
         ):
@@ -968,6 +970,15 @@ def _saveSettings(data):
                 ["serial", "ignoreEmptyPorts"], data["serial"]["ignoreEmptyPorts"]
             )
 
+        if "encoding" in data["serial"]:
+            s.set(["serial", "encoding"], data["serial"]["encoding"])
+
+        if "enableShutdownActionCommand" in data["serial"]:
+            s.setBoolean(
+                ["serial", "enableShutdownActionCommand"],
+                data["serial"]["enableShutdownActionCommand"],
+            )
+
         oldLog = s.getBoolean(["serial", "log"])
         if "log" in data["serial"]:
             s.setBoolean(["serial", "log"], data["serial"]["log"])
@@ -1025,7 +1036,7 @@ def _saveSettings(data):
             for name, script in data["scripts"]["gcode"].items():
                 if name == "snippets":
                     continue
-                if not isinstance(script, basestring):
+                if not isinstance(script, str):
                     continue
                 s.saveScript(
                     "gcode", name, script.replace("\r\n", "\n").replace("\r", "\n")

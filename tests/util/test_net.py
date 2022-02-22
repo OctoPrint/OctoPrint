@@ -1,14 +1,11 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import socket
 import unittest
+from unittest import mock
 
 import ddt
-import mock
 
 import octoprint.util.net
 

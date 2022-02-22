@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -16,37 +13,6 @@ import watchdog.events
 import octoprint.filemanager
 import octoprint.filemanager.util
 import octoprint.util
-
-
-def fix_scandir():
-    try:
-        from os import scandir
-
-        # nothing to fix, natively available, return
-        return
-
-    except ImportError:
-        # not natively available, use backport
-        import watchdog.utils.dirsnapshot
-        from scandir import scandir
-
-        OriginalDirectorySnapshot = watchdog.utils.dirsnapshot.DirectorySnapshot
-
-        class FixedDirectorySnapshot(OriginalDirectorySnapshot):
-            def __init__(self, listdir=scandir, *args, **kwargs):
-                OriginalDirectorySnapshot.__init__(self, listdir=listdir, *args, **kwargs)
-
-        watchdog.utils.dirsnapshot.DirectorySnapshot = FixedDirectorySnapshot
-
-        import watchdog.observers.polling
-
-        OriginalPollingEmitter = watchdog.observers.polling.PollingEmitter
-
-        class FixedPollingEmitter(OriginalPollingEmitter):
-            def __init__(self, listdir=scandir, *args, **kwargs):
-                OriginalPollingEmitter.__init__(self, listdir=listdir, *args, **kwargs)
-
-        watchdog.observers.polling.PollingEmitter = FixedPollingEmitter
 
 
 class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
@@ -71,14 +37,9 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
         self._watched_folder = None
 
     def initial_scan(self, folder):
-        try:
-            from os import scandir
-        except ImportError:
-            from scandir import scandir
-
         def _recursive_scandir(path):
             """Recursively yield DirEntry objects for given directory."""
-            for entry in scandir(path):
+            for entry in os.scandir(path):
                 if entry.is_dir(follow_symlinks=False):
                     for entry in _recursive_scandir(entry.path):
                         yield entry
@@ -95,7 +56,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
                 if not self._valid_path(path):
                     continue
 
-                self._logger.info("Found {}, trying to add it".format(path))
+                self._logger.info(f"Found {path}, trying to add it")
                 self._upload(path)
             self._logger.info("... initial scan done.")
 
@@ -185,7 +146,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
                 # file is still there - that should only happen if something went wrong, so mark it as failed
                 # noinspection PyBroadException
                 try:
-                    shutil.move(path, "{}.failed".format(path))
+                    shutil.move(path, f"{path}.failed")
                 except Exception:
                     # something went really wrong here.... but we can't do anything about it, so just log it
                     self._logger.exception(
@@ -228,7 +189,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
             last_size = new_size
             time.sleep(interval)
 
-        self._logger.debug("File at {} is stable, moving it".format(path))
+        self._logger.debug(f"File at {path} is stable, moving it")
         self._upload(path)
 
     def _valid_path(self, path):
