@@ -64,6 +64,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._targetTemp = None
         self._targetBedTemp = None
         self._targetChamberTemp = None
+        self._custom = None
 
         self._temps = DataHistory(
             cutoff=settings().getInt(["temperature", "cutoff"]) * 60
