@@ -725,7 +725,7 @@ class HierarchicalChainMap:
         if config is not None:
             config = self._flatten(config)
         else:
-            config = self.top_map
+            config = self._chainmap.maps[0]
 
         if defaults is not None:
             defaults = [self._flatten(defaults)]
