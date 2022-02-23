@@ -1334,7 +1334,7 @@ $(function () {
                                     confirm: true,
                                     buttons: [
                                         {
-                                            text: "Cancel Updates",
+                                            text: gettext("Cancel Updates"),
                                             addClass: "btn-block btn-danger",
                                             promptTrigger: true,
                                             click: function (notice, value) {
@@ -1346,6 +1346,10 @@ $(function () {
                                                         value
                                                     ]);
                                             }
+                                        },
+                                        {
+                                            text: "",
+                                            addClass: "hidden"
                                         }
                                     ]
                                 };
@@ -1360,7 +1364,7 @@ $(function () {
                             if (typeof self.queuedUpdatesPopup !== "undefined") {
                                 self.queuedUpdatesPopup.update(queuedUpdatesPopupOptions);
                             } else {
-                                self.queuedUpdatesPopup = new PNotify.singleButtonNotify(
+                                self.queuedUpdatesPopup = new PNotify(
                                     queuedUpdatesPopupOptions
                                 );
                                 self.queuedUpdatesPopup

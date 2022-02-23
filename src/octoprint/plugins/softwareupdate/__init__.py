@@ -103,6 +103,7 @@ class SoftwareUpdatePlugin(
         self._update_log_mutex = threading.RLock()
         self._queued_updates = {"targets": [], "force": True}
         self._queued_updates_abort_timer = None
+        self._print_cancelled = False
 
         self._environment_supported = True
         self._environment_versions = {}
@@ -1547,6 +1548,7 @@ class SoftwareUpdatePlugin(
 
         if event == Events.PRINT_STARTED:
             self._queued_updates_timer_stop()
+            self._print_cancelled = False
         elif (
             event == Events.PRINT_DONE
             and self._settings.global_get(["webcam", "timelapse", "type"]) == "off"
@@ -1554,21 +1556,22 @@ class SoftwareUpdatePlugin(
         ):
             self._queued_updates_timer_start()
         elif (
-            event == Events.MOVIE_DONE
-            and self._settings.global_get(["webcam", "timelapse", "type"]) != "off"
-            and len(self._queued_updates.get("targets", [])) > 0
-            and not (self._printer.is_printing() or self._printer.is_paused())
-        ):
-            self._queued_updates_timer_start()
-        elif (
             event == Events.PRINT_FAILED
-            and self._settings.global_get(["webcam", "timelapse", "type"]) == "off"
             and len(self._queued_updates.get("targets", [])) > 0
         ):
             self._send_client_message(
                 "queued_updates",
                 {"print_failed": True, "targets": self._queued_updates["targets"]},
             )
+            self._print_cancelled = True
+        elif (
+            event == Events.MOVIE_DONE
+            and self._settings.global_get(["webcam", "timelapse", "type"]) != "off"
+            and len(self._queued_updates.get("targets", [])) > 0
+            and not (self._printer.is_printing() or self._printer.is_paused())
+            and not self._print_cancelled
+        ):
+            self._queued_updates_timer_start()
         elif (
             event != Events.CONNECTIVITY_CHANGED
             or not payload
