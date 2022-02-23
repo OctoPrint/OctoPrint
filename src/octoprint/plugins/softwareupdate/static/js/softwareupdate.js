@@ -108,10 +108,6 @@ $(function () {
             );
         });
 
-        // Hack to remove automatically added Cancel button
-        // See https://github.com/sciactive/pnotify/issues/141
-        PNotify.prototype.options.confirm.buttons = [];
-
         self.configurationDialog = undefined;
         self._updateClicked = false;
 
@@ -1364,7 +1360,7 @@ $(function () {
                             if (typeof self.queuedUpdatesPopup !== "undefined") {
                                 self.queuedUpdatesPopup.update(queuedUpdatesPopupOptions);
                             } else {
-                                self.queuedUpdatesPopup = new PNotify(
+                                self.queuedUpdatesPopup = new PNotify.singleButtonNotify(
                                     queuedUpdatesPopupOptions
                                 );
                                 self.queuedUpdatesPopup

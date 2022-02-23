@@ -1348,7 +1348,7 @@ class SoftwareUpdatePlugin(
         to_be_checked, checks = self.perform_updates(targets=targets, force=force)
         return flask.jsonify({"order": to_be_checked, "checks": checks})
 
-    @octoprint.plugin.BlueprintPlugin.route("/cancel_queued", methods=["POST"])
+    @octoprint.plugin.BlueprintPlugin.route("/update/queued", methods=["POST"])
     @no_firstrun_access
     @Permissions.PLUGIN_SOFTWAREUPDATE_UPDATE.require(403)
     def cancel_queued(self):
@@ -1359,40 +1359,33 @@ class SoftwareUpdatePlugin(
         if json_data is None:
             flask.abort(400, description="Invalid JSON")
 
-        if "targets" in json_data:
-            targets = list(
-                map(
-                    lambda x: x.strip(),
-                    json_data.get("targets", []),
-                )
+        command = json_data.get("command")
+        if command == "cancel":
+            targets = [x.strip() for x in json_data.get("targets", [])]
+
+            if targets:
+                self._queued_updates["targets"] = [
+                    x for x in self._queued_updates["targets"] if x not in targets
+                ]
+            else:
+                self._queued_updates["targets"] = []
+
+            if not self._queued_updates["targets"] and self._queued_updates_abort_timer:
+                self._queued_updates_abort_timer.cancel()
+                self._queued_updates_abort_timer = None
+
+            self._send_client_message(
+                "queued_updates",
+                {"targets": self._queued_updates["targets"]},
             )
+
+            return (
+                flask.jsonify({"queued": self._queued_updates["targets"]}),
+                202,
+            )
+
         else:
-            targets = []
-
-        if len(targets) > 0:
-            if self._queued_updates:
-                for target in targets:
-                    if target in self._queued_updates.get("targets", []):
-                        self._queued_updates["targets"].remove(target)
-        else:
-            self._queued_updates["targets"] = []
-
-        if (
-            len(self._queued_updates.get("targets", [])) == 0
-            and self._queued_updates_abort_timer is not None
-        ):
-            self._queued_updates_abort_timer.cancel()
-            self._queued_updates_abort_timer = None
-
-        self._send_client_message(
-            "queued_updates",
-            {"targets": self._queued_updates["targets"]},
-        )
-
-        return (
-            flask.jsonify({"queued": self._queued_updates.get("targets", False)}),
-            202,
-        )
+            flask.abort(400, description="Expected a valid command")
 
     @octoprint.plugin.BlueprintPlugin.route("/configure", methods=["POST"])
     @no_firstrun_access
@@ -1554,23 +1547,20 @@ class SoftwareUpdatePlugin(
 
         if event == Events.PRINT_STARTED:
             self._queued_updates_timer_stop()
-
-        if (
+        elif (
             event == Events.PRINT_DONE
             and self._settings.global_get(["webcam", "timelapse", "type"]) == "off"
             and len(self._queued_updates.get("targets", [])) > 0
         ):
             self._queued_updates_timer_start()
-
-        if (
+        elif (
             event == Events.MOVIE_DONE
             and self._settings.global_get(["webcam", "timelapse", "type"]) != "off"
             and len(self._queued_updates.get("targets", [])) > 0
             and not (self._printer.is_printing() or self._printer.is_paused())
         ):
             self._queued_updates_timer_start()
-
-        if (
+        elif (
             event == Events.PRINT_FAILED
             and self._settings.global_get(["webcam", "timelapse", "type"]) == "off"
             and len(self._queued_updates.get("targets", [])) > 0
@@ -1579,8 +1569,7 @@ class SoftwareUpdatePlugin(
                 "queued_updates",
                 {"print_failed": True, "targets": self._queued_updates["targets"]},
             )
-
-        if (
+        elif (
             event != Events.CONNECTIVITY_CHANGED
             or not payload
             or not payload.get("new", False)
