@@ -1,0 +1,6 @@
+devel:
+  virtualPrinter:
+    enabled: false
+    sendWait: true
+    waitInterval: 1.0
+    repetierStyleResends: false
