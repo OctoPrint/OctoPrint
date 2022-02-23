@@ -18,34 +18,35 @@ import time
 import unittest
 
 import ddt
+import pytest
 import yaml
 
 import octoprint.settings
+from octoprint.util import dict_merge
+
+base_path = os.path.join(os.path.dirname(__file__), "_files")
+
+
+def _load_yaml(fname):
+    with open(fname, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+
+def _dump_yaml(fname, config):
+    with open(fname, "wt", encoding="utf-8") as f:
+        yaml.safe_dump(config, f)
 
 
 @ddt.ddt
 class SettingsTest(unittest.TestCase):
-    def _load_yaml(self, fname):
-        with open(fname, encoding="utf-8") as f:
-            return yaml.safe_load(f)
-
-    def _dump_yaml(self, fname, config):
-        with open(fname, "wt", encoding="utf-8") as f:
-            yaml.safe_dump(config, f)
-
     def setUp(self):
-        self.base_path = os.path.join(os.path.dirname(__file__), "_files")
-        self.config_path = os.path.realpath(os.path.join(self.base_path, "config.yaml"))
-        self.overlay_path = os.path.realpath(os.path.join(self.base_path, "overlay.yaml"))
-        self.defaults_path = os.path.realpath(
-            os.path.join(self.base_path, "defaults.yaml")
-        )
+        self.config_path = os.path.realpath(os.path.join(base_path, "config.yaml"))
+        self.overlay_path = os.path.realpath(os.path.join(base_path, "overlay.yaml"))
+        self.defaults_path = os.path.realpath(os.path.join(base_path, "defaults.yaml"))
 
-        self.config = self._load_yaml(self.config_path)
-        self.overlay = self._load_yaml(self.overlay_path)
-        self.defaults = self._load_yaml(self.defaults_path)
-
-        from octoprint.util import dict_merge
+        self.config = _load_yaml(self.config_path)
+        self.overlay = _load_yaml(self.overlay_path)
+        self.defaults = _load_yaml(self.defaults_path)
 
         self.expected_effective = dict_merge(
             dict_merge(self.defaults, self.overlay), self.config
@@ -530,9 +531,9 @@ class SettingsTest(unittest.TestCase):
             self.assertEqual("0.0.0.0", settings.get(["server", "host"]))
 
             # modify yaml file externally
-            config = self._load_yaml(configfile)
+            config = _load_yaml(configfile)
             config["server"]["host"] = "127.0.0.1"
-            self._dump_yaml(configfile, config)
+            _dump_yaml(configfile, config)
 
             # set some value, should also reload file before setting new api key
             settings.set(["api", "key"], "key")
@@ -645,6 +646,63 @@ def _key(*path):
 
 @ddt.ddt
 class ChainmapTest(unittest.TestCase):
+    def setUp(self):
+        self.config_path = os.path.realpath(os.path.join(base_path, "config.yaml"))
+        self.overlay_path = os.path.realpath(os.path.join(base_path, "overlay.yaml"))
+        self.defaults_path = os.path.realpath(os.path.join(base_path, "defaults.yaml"))
+
+        self.config = _load_yaml(self.config_path)
+        self.overlay = _load_yaml(self.overlay_path)
+        self.defaults = _load_yaml(self.defaults_path)
+
+        self.chainmap = octoprint.settings.HierarchicalChainMap(
+            self.config, self.overlay, self.defaults
+        )
+
+    def test_has_path(self):
+        self.assertTrue(self.chainmap.has_path(["api", "key"]))
+        self.assertTrue(self.chainmap.has_path(["devel"]))
+        self.assertTrue(self.chainmap.has_path(["devel", "virtualPrinter"]))
+        self.assertTrue(self.chainmap.has_path(["devel", "virtualPrinter", "enabled"]))
+
+        self.assertFalse(self.chainmap.has_path(["api", "lock"]))
+
+    def test_get_by_path(self):
+        self.assertEqual(
+            True, self.chainmap.get_by_path(["devel", "virtualPrinter", "enabled"])
+        )
+        self.assertEqual(
+            False,
+            self.chainmap.get_by_path(
+                ["devel", "virtualPrinter", "enabled"], only_defaults=True
+            ),
+        )
+
+        with pytest.raises(KeyError):
+            self.assertEqual(None, self.chainmap.get_by_path(["test"], only_local=True))
+        self.assertEqual(self.overlay["test"], self.chainmap.get_by_path(["test"]))
+        self.assertEqual(
+            dict_merge(self.defaults["test"], self.overlay["test"]),
+            self.chainmap.get_by_path(["test"], merged=True),
+        )
+
+    def test_set_by_path(self):
+        self.chainmap.set_by_path(["devel", "virtualPrinter", "sendWait"], False)
+
+        updated = dict(self.config)
+        updated["devel"]["virtualPrinter"]["sendWait"] = False
+        flattened = octoprint.settings.HierarchicalChainMap._flatten(updated)
+
+        self.assertEqual(flattened, self.chainmap._chainmap.maps[0])
+
+    def test_del_by_path(self):
+        self.chainmap.del_by_path(
+            ["devel", "virtualPrinter", "capabilities", "autoreport_temp"]
+        )
+        self.assertEqual(
+            {}, self.chainmap.get_by_path(["devel", "virtualPrinter", "capabilities"])
+        )
+
     @ddt.data(
         (
             {"a": 1},

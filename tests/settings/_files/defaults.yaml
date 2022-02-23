@@ -14,3 +14,8 @@ server:
   host: 0.0.0.0
   port: 5000
 devel: {}
+test:
+  a:
+    a1: 1
+    a2: 2
+    a3: 3

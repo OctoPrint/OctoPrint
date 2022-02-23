@@ -707,7 +707,8 @@ class HierarchicalChainMap:
         # a/b = {}
         # a/b/c = "a"  # deleted
         up_one_path = self._path_to_key(path[:-1])
-        if sum(1 for k in current.keys() if k.startswith(up_one_path)) == 0:
+        up_one_path_prefix = up_one_path + _CHAINMAP_SEP
+        if not any(map(lambda k: k.startswith(up_one_path_prefix), current.keys())):
             current[up_one_path] = {}
 
     def with_config_defaults(self, config=None, defaults=None):
