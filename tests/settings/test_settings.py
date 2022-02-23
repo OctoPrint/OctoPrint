@@ -275,17 +275,16 @@ class SettingsTest(unittest.TestCase):
     def test_get_map(self):
         with self.settings() as settings:
             data = settings.get(["devel", "virtualPrinter"])
-            self.assertDictEqual({"enabled": True}, data)
-            self.assertEqual(len(data), 1)
+            self.assertDictEqual(self.config["devel"]["virtualPrinter"], data)
 
     def test_get_map_merged(self):
         with self.settings() as settings:
             data = settings.get(["devel", "virtualPrinter"], merged=True)
-
-            self.assertGreater(len(data), 1)
-            test_dict = {"enabled": True, "sendWait": True, "waitInterval": 1.0}
-            test_data = {k: v for k, v in data.items() if k in test_dict}
-            self.assertEqual(test_dict, test_data)
+            expected = dict_merge(
+                self.overlay["devel"]["virtualPrinter"],
+                self.config["devel"]["virtualPrinter"],
+            )
+            self.assertEqual(expected, data)
 
     def test_get_multiple(self):
         with self.settings() as settings:
