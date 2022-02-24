@@ -4,7 +4,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-
 import copy
 import hashlib
 import logging
@@ -28,7 +27,7 @@ from octoprint.server.util.flask import (
     no_firstrun_access,
     with_revalidation_checking,
 )
-from octoprint.util import dict_merge, get_formatted_size, to_unicode, yaml
+from octoprint.util import RepeatedTimer, dict_merge, get_formatted_size, to_unicode, yaml
 from octoprint.util.commandline import CommandlineError
 from octoprint.util.pip import create_pip_caller
 from octoprint.util.version import (
@@ -61,7 +60,6 @@ class SoftwareUpdatePlugin(
     octoprint.plugin.WizardPlugin,
     octoprint.plugin.EventHandlerPlugin,
 ):
-
     COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
     CURRENT_TRACKING_TYPES = COMMIT_TRACKING_TYPES + ("etag", "lastmodified", "jsondata")
     RELEASE_TRACKING_TYPES = ("github_release",)
@@ -99,6 +97,9 @@ class SoftwareUpdatePlugin(
         self._update_log_path = None
         self._update_log_dirty = False
         self._update_log_mutex = threading.RLock()
+        self._queued_updates = {"targets": [], "force": True}
+        self._queued_updates_abort_timer = None
+        self._print_cancelled = False
 
         self._environment_supported = True
         self._environment_versions = {}
@@ -762,6 +763,8 @@ class SoftwareUpdatePlugin(
 
         data["pip_enable_check"] = "pip" in checks
 
+        data["queued_updates"] = self._queued_updates.get("targets", [])
+
         return data
 
     def get_settings_restricted_paths(self):
@@ -1284,10 +1287,6 @@ class SoftwareUpdatePlugin(
                 description=message,
             )
 
-        if self._printer.is_printing() or self._printer.is_paused():
-            # do not update while a print job is running
-            flask.abort(409, description="Printer is currently printing or paused")
-
         if not self._environment_supported:
             flask.abort(
                 409,
@@ -1316,8 +1315,63 @@ class SoftwareUpdatePlugin(
 
         force = json_data.get("force", "false") in octoprint.settings.valid_boolean_trues
 
+        if self._printer.is_printing() or self._printer.is_paused():
+            # do not update while a print job is running
+            # store targets to be run later on print done event
+            self._queued_updates["targets"] = list(
+                set(self._queued_updates["targets"] + targets)
+            )
+            self._send_client_message(
+                "queued_updates",
+                {"targets": self._queued_updates["targets"]},
+            )
+
+            return (
+                flask.jsonify({"queued": self._queued_updates.get("targets", False)}),
+                202,
+            )
+
         to_be_checked, checks = self.perform_updates(targets=targets, force=force)
         return flask.jsonify({"order": to_be_checked, "checks": checks})
+
+    @octoprint.plugin.BlueprintPlugin.route("/update/queued", methods=["POST"])
+    @no_firstrun_access
+    @Permissions.PLUGIN_SOFTWAREUPDATE_UPDATE.require(403)
+    def cancel_queued(self):
+        if "application/json" not in flask.request.headers["Content-Type"]:
+            flask.abort(400, description="Expected content-type JSON")
+
+        json_data = flask.request.get_json(silent=True)
+        if json_data is None:
+            flask.abort(400, description="Invalid JSON")
+
+        command = json_data.get("command")
+        if command == "cancel":
+            targets = [x.strip() for x in json_data.get("targets", [])]
+
+            if targets:
+                self._queued_updates["targets"] = [
+                    x for x in self._queued_updates["targets"] if x not in targets
+                ]
+            else:
+                self._queued_updates["targets"] = []
+
+            if not self._queued_updates["targets"] and self._queued_updates_abort_timer:
+                self._queued_updates_abort_timer.cancel()
+                self._queued_updates_abort_timer = None
+
+            self._send_client_message(
+                "queued_updates",
+                {"targets": self._queued_updates["targets"]},
+            )
+
+            return (
+                flask.jsonify({"queued": self._queued_updates["targets"]}),
+                202,
+            )
+
+        else:
+            flask.abort(400, description="Expected a valid command")
 
     @octoprint.plugin.BlueprintPlugin.route("/configure", methods=["POST"])
     @no_firstrun_access
@@ -1475,7 +1529,33 @@ class SoftwareUpdatePlugin(
     def on_event(self, event, payload):
         from octoprint.events import Events
 
-        if (
+        if event == Events.PRINT_STARTED:
+            self._queued_updates_timer_stop()
+            self._print_cancelled = False
+        elif (
+            event == Events.PRINT_DONE
+            and self._settings.global_get(["webcam", "timelapse", "type"]) == "off"
+            and len(self._queued_updates.get("targets", [])) > 0
+        ):
+            self._queued_updates_timer_start()
+        elif (
+            event == Events.PRINT_FAILED
+            and len(self._queued_updates.get("targets", [])) > 0
+        ):
+            self._send_client_message(
+                "queued_updates",
+                {"print_failed": True, "targets": self._queued_updates["targets"]},
+            )
+            self._print_cancelled = True
+        elif (
+            event == Events.MOVIE_DONE
+            and self._settings.global_get(["webcam", "timelapse", "type"]) != "off"
+            and len(self._queued_updates.get("targets", [])) > 0
+            and not (self._printer.is_printing() or self._printer.is_paused())
+            and not self._print_cancelled
+        ):
+            self._queued_updates_timer_start()
+        elif (
             event != Events.CONNECTIVITY_CHANGED
             or not payload
             or not payload.get("new", False)
@@ -1823,6 +1903,52 @@ class SoftwareUpdatePlugin(
         }
         self._version_cache_dirty = True
         return information, update_available, update_possible, online, error
+
+    def _queued_updates_timer_start(self):
+        if self._queued_updates_abort_timer is not None:
+            return
+
+        self._logger.debug("Starting queued updates timer.")
+
+        self._timeout_value = 60
+        self._queued_updates_abort_timer = RepeatedTimer(
+            1, self._queued_updates_timer_task
+        )
+        self._queued_updates_abort_timer.start()
+
+    def _queued_updates_timer_stop(self):
+        if self._queued_updates_abort_timer is not None:
+            self._queued_updates_abort_timer.cancel()
+            self._queued_updates_abort_timer = None
+            self._send_client_message(
+                "queued_updates",
+                {
+                    "targets": self._queued_updates["targets"],
+                    "timeout_value": -1,
+                },
+            )
+
+    def _queued_updates_timer_task(self):
+        if self._timeout_value is None:
+            return
+
+        self._timeout_value -= 1
+        if self._timeout_value <= 0:
+            if self._queued_updates_abort_timer is not None:
+                self._queued_updates_abort_timer.cancel()
+                self._queued_updates_abort_timer = None
+                self.perform_updates(
+                    targets=self._queued_updates["targets"],
+                    force=self._queued_updates["force"],
+                )
+                self._queued_updates = {"targets": [], "force": True}
+        self._send_client_message(
+            "queued_updates",
+            {
+                "targets": self._queued_updates["targets"],
+                "timeout_value": self._timeout_value,
+            },
+        )
 
     def perform_updates(self, force=False, **kwargs):
         """

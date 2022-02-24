@@ -85,3 +85,36 @@ td.settings_plugin_softwareupdate_column_information {
     }
   }
 }
+
+.progress-softwareupdate.progress {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  height: 25px;
+  font-size: 12px;
+
+  .bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    color: white;
+    height: 25px;
+    font-size: 12px;
+  }
+
+  .progress-text {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: white;
+    transition: clip-path 1s linear;
+    height: 25px;
+    font-size: 12px;
+  }
+}
