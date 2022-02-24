@@ -425,7 +425,7 @@ class gcode(object):
                     tool = int(values["tool"])
 
             # G codes
-            if gcode in ("G0", "G1"):  # Move
+            if gcode in ("G0", "G1", "G00", "G01"):  # Move
                 x = getCodeFloat(line, "X")
                 y = getCodeFloat(line, "Y")
                 z = getCodeFloat(line, "Z")
@@ -500,7 +500,7 @@ class gcode(object):
                 if e:
                     self._track_layer(pos)
 
-            if gcode in ("G2", "G3"):  # Arc Move
+            if gcode in ("G2", "G3", "G02", "G03"):  # Arc Move
                 x = getCodeFloat(line, "X")
                 y = getCodeFloat(line, "Y")
                 z = getCodeFloat(line, "Z")
