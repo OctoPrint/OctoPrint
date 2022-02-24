@@ -1,21 +1,13 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>, Lars Norpchen"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import collections
 import datetime
 import logging
-import subprocess
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
-
-import collections
+import queue
 import re
+import subprocess
 import threading
 
 import octoprint.plugin
@@ -33,7 +25,7 @@ def all_events():
     ]
 
 
-class Events(object):
+class Events:
     # server
     STARTUP = "Startup"
     SHUTDOWN = "Shutdown"
@@ -70,8 +62,10 @@ class Events(object):
 
     FILE_ADDED = "FileAdded"
     FILE_REMOVED = "FileRemoved"
+    FILE_MOVED = "FileMoved"
     FOLDER_ADDED = "FolderAdded"
     FOLDER_REMOVED = "FolderRemoved"
+    FOLDER_MOVED = "FolderMoved"
 
     # SD Upload
     TRANSFER_STARTED = "TransferStarted"
@@ -145,7 +139,7 @@ class Events(object):
         return name, event
 
     # based on https://stackoverflow.com/a/1176023
-    _first_cap_re = re.compile("(.)([A-Z][a-z]+)")
+    _first_cap_re = re.compile("([^_])([A-Z][a-z]+)")
     _all_cap_re = re.compile("([a-z0-9])([A-Z])")
 
     @classmethod
@@ -161,7 +155,7 @@ def eventManager():
     return _instance
 
 
-class EventManager(object):
+class EventManager:
     """
     Handles receiving events and dispatching them to subscribers
     """
@@ -169,7 +163,7 @@ class EventManager(object):
     def __init__(self):
         self._registeredListeners = collections.defaultdict(list)
         self._logger = logging.getLogger(__name__)
-        self._logger_fire = logging.getLogger("{}.fire".format(__name__))
+        self._logger_fire = logging.getLogger(f"{__name__}.fire")
 
         self._startup_signaled = False
         self._shutdown_signaled = False
@@ -193,12 +187,10 @@ class EventManager(object):
                     self._shutdown_signaled = True
 
                 eventListeners = self._registeredListeners[event]
-                self._logger_fire.debug(
-                    "Firing event: {} (Payload: {!r})".format(event, payload)
-                )
+                self._logger_fire.debug(f"Firing event: {event} (Payload: {payload!r})")
 
                 for listener in eventListeners:
-                    self._logger.debug("Sending action to {!r}".format(listener))
+                    self._logger.debug(f"Sending action to {listener!r}")
                     try:
                         listener(event, payload)
                     except Exception:
@@ -265,9 +257,7 @@ class EventManager(object):
             return
 
         self._registeredListeners[event].append(callback)
-        self._logger.debug(
-            "Subscribed listener {!r} for event {}".format(callback, event)
-        )
+        self._logger.debug(f"Subscribed listener {callback!r} for event {event}")
 
     def unsubscribe(self, event, callback):
         """
@@ -285,7 +275,7 @@ class EventManager(object):
         return self._worker.is_alive()
 
 
-class GenericEventListener(object):
+class GenericEventListener:
     """
     The GenericEventListener can be subclassed to easily create custom event listeners.
     """
@@ -326,7 +316,7 @@ class DebugEventListener(GenericEventListener):
 
     def eventCallback(self, event, payload):
         GenericEventListener.eventCallback(self, event, payload)
-        self._logger.debug("Received event: {} (Payload: {!r})".format(event, payload))
+        self._logger.debug(f"Received event: {event} (Payload: {payload!r})")
 
 
 class CommandTrigger(GenericEventListener):
@@ -373,7 +363,7 @@ class CommandTrigger(GenericEventListener):
                 continue
 
             if "enabled" in subscription and not subscription["enabled"]:
-                self._logger.info("Disabled command trigger: {!r}".format(subscription))
+                self._logger.info(f"Disabled command trigger: {subscription!r}")
                 continue
 
             events = subscription["event"]
@@ -432,7 +422,7 @@ class CommandTrigger(GenericEventListener):
     def _executeSystemCommand(self, command, debug=False):
         def commandExecutioner(cmd):
             if debug:
-                self._logger.info("Executing system command: {}".format(cmd))
+                self._logger.info(f"Executing system command: {cmd}")
             else:
                 self._logger.info("Executing a system command")
             # we run this with shell=True since we have to trust whatever

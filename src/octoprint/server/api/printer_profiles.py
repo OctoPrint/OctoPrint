@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -9,7 +6,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import copy
 
 from flask import abort, jsonify, request, url_for
-from past.builtins import basestring
 
 from octoprint.access.permissions import Permissions
 from octoprint.printer.profile import CouldNotOverwriteError, InvalidProfileError
@@ -70,7 +66,7 @@ def printerProfilesAdd():
         abort(400, description="profile is missing")
 
     base_profile = printerProfileManager.get_default()
-    if "basedOn" in json_data and isinstance(json_data["basedOn"], basestring):
+    if "basedOn" in json_data and isinstance(json_data["basedOn"], str):
         other_profile = printerProfileManager.get(json_data["basedOn"])
         if other_profile is not None:
             base_profile = other_profile

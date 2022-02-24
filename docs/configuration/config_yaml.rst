@@ -561,6 +561,14 @@ plugins are tracked:
      _forcedCompatible:
      - ...
 
+     # Custom sorting of hooks and implementations provided by plugins. Two-tiered dictionary
+     # structure, plugin identifier mapping to a dictionary of order overrides mapped by
+     # sorting context/hook name
+     _sortingOrder:
+       some_plugin:
+         some_hook: 1
+         some_other_hook: 200
+
      # The rest are individual plugin settings, each tracked by their identifier, e.g.:
      some_plugin:
        some_setting: true
@@ -692,7 +700,7 @@ Use the following settings to configure the serial connection to the printer:
      maxWritePasses: 5
 
      # Use this to define additional patterns to consider for serial port listing. Must be a valid
-     # "glob" pattern (see http://docs.python.org/2/library/glob.html). Defaults to not set.
+     # "glob" pattern (see http://docs.python.org/3/library/glob.html). Defaults to not set.
      additionalPorts:
      - /dev/myPrinterSymlink
 
@@ -709,7 +717,7 @@ Use the following settings to configure the serial connection to the printer:
      - M1
 
      # Commands which should not be sent to the printer and just silently ignored.
-     # An example of when you may wish to use this could be useful if you wish to manually change a filament on M600, 
+     # An example of when you may wish to use this could be useful if you wish to manually change a filament on M600,
      # by using that as a Pausing command (below)
      ignoredCommands:
 
@@ -807,6 +815,16 @@ Use the following settings to configure the serial connection to the printer:
 
      # Whether to support resends without follow-up ok or not
      supportResendsWithoutOk: false
+
+     # encoding to use when talking to a machine
+     # (ascii limits access to characters 0-127)
+     # (latin_1 enables access to the "extended" ascii characters 0-255)
+     # other values can be used:  https://docs.python.org/3/library/codecs.html#standard-encodings
+     encoding: ascii
+
+     # Whether to enable support for the shutdown action command, allowing the printer to
+     # shut down OctoPrint and the system it's running on
+     enableShutdownActionCommand: false
 
      # Whether to "manually" trigger an ok for M29 (a lot of versions of this command are buggy and
      # the response skips on the ok)

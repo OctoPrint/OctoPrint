@@ -14,10 +14,12 @@ $(function () {
         self.popup = undefined;
 
         self.updateInProgress = false;
+        self.cancelInProgress = false;
         self.waitingForRestart = false;
         self.restartTimeout = undefined;
 
         self.currentlyBeingUpdated = [];
+        self.queuedUpdates = ko.observableArray([]);
 
         self.working = ko.observable(false);
         self.workingTitle = ko.observable();
@@ -76,7 +78,6 @@ $(function () {
                 !self.updateInProgress &&
                 self.environmentSupported() &&
                 self.storageSufficient() &&
-                !self.printerState.isPrinting() &&
                 !self.throttled()
             );
         });
@@ -90,6 +91,14 @@ $(function () {
                 self.enableUpdate() && self.availableAndPossibleAndEnabled().length > 0
             );
         });
+
+        self.enableCancelQueued = ko.pureComputed(function () {
+            return self.queuedUpdates().length > 0;
+        });
+
+        self.updateQueued = function (item) {
+            return self.queuedUpdates().indexOf(item.key) > -1;
+        };
 
         self.enable_configSave = ko.pureComputed(function () {
             return (
@@ -155,29 +164,42 @@ $(function () {
             });
         });
 
+        self.availableAndQueued = ko.pureComputed(function () {
+            return _.filter(self.versions.items(), function (info) {
+                return (
+                    info.updateAvailable &&
+                    info.updatePossible &&
+                    self.queuedUpdates.indexOf(info.key) > -1
+                );
+            });
+        });
+
         self.throttled = ko.pureComputed(function () {
             return (
                 self.piSupport &&
                 self.piSupport.currentIssue() &&
-                !self.settings.settings.plugins.pluginmanager.ignore_throttled()
+                !self.settings.settings.plugins.softwareupdate.ignore_throttled()
             );
         });
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            if (
-                self.loginState.hasPermission(
-                    self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK
-                )
-            ) {
-                self.performCheck();
-            } else {
-                self._closePopup();
-            }
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    if (
+                        self.loginState.hasPermission(
+                            self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK
+                        )
+                    ) {
+                        self.performCheck();
+                    } else {
+                        self._closePopup();
+                    }
 
-            if (self.loginState.hasPermission(self.access.permissions.ADMIN)) {
-                self.requestUpdatelog();
-            }
-        };
+                    if (self.loginState.hasPermission(self.access.permissions.ADMIN)) {
+                        self.requestUpdatelog();
+                    }
+                };
 
         self._showPopup = function (options, eventListeners, singleButtonNotify) {
             singleButtonNotify = singleButtonNotify || false;
@@ -247,6 +269,12 @@ $(function () {
                 },
                 sending: true
             });
+        };
+
+        self.onBeforeBinding = function () {
+            self.queuedUpdates(
+                self.settings.settings.plugins.softwareupdate.queued_updates()
+            );
         };
 
         self._copyConfig = function () {
@@ -665,9 +693,8 @@ $(function () {
                 current = JSON.parse(currentString);
             }
             current[self.loginState.username()] = self._informationToRemoteVersions(data);
-            localStorage["plugin.softwareupdate.seen_information"] = JSON.stringify(
-                current
-            );
+            localStorage["plugin.softwareupdate.seen_information"] =
+                JSON.stringify(current);
         };
 
         self._hasNotificationBeenSeen = function (data) {
@@ -704,7 +731,6 @@ $(function () {
 
         self.performUpdate = function (force, items) {
             if (!self.updateAccess()) return;
-            if (self.printerState.isPrinting()) return;
 
             self.updateInProgress = true;
 
@@ -723,6 +749,29 @@ $(function () {
             OctoPrint.plugins.softwareupdate
                 .update(items, force)
                 .done(function (data) {
+                    if (data.hasOwnProperty("queued")) {
+                        self.queuedUpdates(data.queued);
+                        var message =
+                            "<p>" +
+                            gettext(
+                                "The install of the following plugin update(s) has been queued for after current print is finished or cancelled."
+                            ) +
+                            '</p><p><div class="row-fluid"><ul><li>' +
+                            _.map(self.availableAndQueued(), function (info) {
+                                return info.displayName;
+                            }).join("</li><li>") +
+                            "</li></ul></div></p>";
+                        self._showPopup({
+                            title: gettext("Updates Queued"),
+                            text: message,
+                            type: "info",
+                            buttons: {
+                                sticker: false
+                            }
+                        });
+                        self.updateInProgress = false;
+                        return;
+                    }
                     self.currentlyBeingUpdated = data.checks;
                     self._markWorking(
                         gettext("Updating..."),
@@ -778,18 +827,6 @@ $(function () {
                 items = self.availableAndPossibleAndEnabled();
             }
 
-            if (self.printerState.isPrinting()) {
-                self._showPopup({
-                    title: gettext("Can't update while printing"),
-                    text: gettext(
-                        "A print job is currently in progress. Updating will be prevented until it is done."
-                    ),
-                    type: "error"
-                });
-                self._updateClicked = false;
-                return;
-            }
-
             if (self.throttled()) {
                 self._showPopup({
                     title: gettext("Can't update while throttled"),
@@ -834,13 +871,13 @@ $(function () {
                     "Be sure to read through any linked release notes, especially those for OctoPrint since they might contain important information you need to know <strong>before</strong> upgrading."
                 ) +
                 "</p>" +
-                "<p><strong>" +
-                gettext("This action may disrupt any ongoing print jobs.") +
-                "</strong></p>" +
                 "<p>" +
+                gettext("Updates will be queued if currently printing,") +
+                " <strong>" +
                 gettext(
-                    "Depending on your printer's controller and general setup, restarting OctoPrint may cause your printer to be reset."
+                    "however this action may disrupt any ongoing print if OctoPrint is not currently controlling it."
                 ) +
+                "</strong>" +
                 "</p>" +
                 "<p>" +
                 gettext("Are you sure you want to proceed?") +
@@ -968,6 +1005,24 @@ $(function () {
                     self.reloadOverlay.show();
                 }
             }
+        };
+
+        self.cancelQueued = function (items) {
+            self.cancelInProgress = true;
+            OctoPrint.plugins.softwareupdate
+                .cancelQueued({
+                    targets: _.map(items, function (info) {
+                        return info.key;
+                    })
+                })
+                .done(function (data) {
+                    self.queuedUpdates(data.queued);
+                    self.cancelInProgress = false;
+                })
+                .fail(function (response) {
+                    console.log(response);
+                    self.cancelInProgress = false;
+                });
         };
 
         self.onDataUpdaterPluginMessage = function (plugin, data) {
@@ -1168,24 +1223,190 @@ $(function () {
                     self.performCheck();
                     break;
                 }
-            }
+                case "queued_updates":
+                    {
+                        if (!self.updateAccess()) {
+                            return;
+                        }
+                        if (messageData.hasOwnProperty("targets")) {
+                            self.queuedUpdates(messageData.targets);
+                            var queuedUpdatesPopupOptions = {
+                                title: title,
+                                text: text,
+                                type: "notice",
+                                icon: false,
+                                hide: false,
+                                buttons: {
+                                    closer: false,
+                                    sticker: false
+                                },
+                                history: {
+                                    history: false
+                                }
+                            };
 
-            if (options !== undefined) {
-                self._showPopup(options);
-            }
-        };
+                            if (
+                                messageData.print_failed &&
+                                messageData.targets.length > 0
+                            ) {
+                                queuedUpdatesPopupOptions.title = gettext(
+                                    "Queued Updates Paused"
+                                );
+                                queuedUpdatesPopupOptions.text =
+                                    '<div class="row-fluid"><ul><li>' +
+                                    _.map(self.availableAndQueued(), function (info) {
+                                        return info.displayName;
+                                    }).join("</li><li>") +
+                                    "</li></ul></div>";
+                                queuedUpdatesPopupOptions.confirm = {
+                                    confirm: true,
+                                    buttons: [
+                                        {
+                                            text: gettext("Continue Updates"),
+                                            addClass: "btn-block btn-primary",
+                                            promptTrigger: true,
+                                            click: function (notice, value) {
+                                                notice.remove();
+                                                notice
+                                                    .get()
+                                                    .trigger("pnotify.continue", [
+                                                        notice,
+                                                        value
+                                                    ]);
+                                            }
+                                        },
+                                        {
+                                            text: gettext("Cancel Updates"),
+                                            addClass: "btn-block btn-danger",
+                                            promptTrigger: true,
+                                            click: function (notice, value) {
+                                                notice.remove();
+                                                notice
+                                                    .get()
+                                                    .trigger("pnotify.cancel", [
+                                                        notice,
+                                                        value
+                                                    ]);
+                                            }
+                                        }
+                                    ]
+                                };
+                            } else if (
+                                messageData.hasOwnProperty("timeout_value") &&
+                                messageData.timeout_value > 0 &&
+                                messageData.targets.length > 0
+                            ) {
+                                var progress_percent = Math.floor(
+                                    (messageData.timeout_value / 60) * 100
+                                );
+                                var progress_class =
+                                    progress_percent < 25
+                                        ? "progress-danger"
+                                        : progress_percent > 75
+                                        ? "progress-success"
+                                        : "progress-warning";
+                                queuedUpdatesPopupOptions.title = gettext(
+                                    "Starting Queued Updates"
+                                );
+                                queuedUpdatesPopupOptions.text =
+                                    '<div class="row-fluid"><ul><li>' +
+                                    _.map(self.availableAndQueued(), function (info) {
+                                        return info.displayName;
+                                    }).join("</li><li>") +
+                                    '</li></ul></div><div class="progress progress-softwareupdate ' +
+                                    progress_class +
+                                    '"><div class="bar">' +
+                                    gettext("Updating in ") +
+                                    " " +
+                                    messageData.timeout_value +
+                                    " " +
+                                    gettext("secs") +
+                                    '</div><div class="progress-text" style="clip-path: inset(0 0 0 ' +
+                                    progress_percent +
+                                    "%);-webkit-clip-path: inset(0 0 0 " +
+                                    progress_percent +
+                                    '%);">' +
+                                    gettext("Updating in ") +
+                                    " " +
+                                    messageData.timeout_value +
+                                    " " +
+                                    gettext("secs") +
+                                    "</div></div>";
+                                queuedUpdatesPopupOptions.confirm = {
+                                    confirm: true,
+                                    buttons: [
+                                        {
+                                            text: gettext("Cancel Updates"),
+                                            addClass: "btn-block btn-danger",
+                                            promptTrigger: true,
+                                            click: function (notice, value) {
+                                                notice.remove();
+                                                notice
+                                                    .get()
+                                                    .trigger("pnotify.cancel", [
+                                                        notice,
+                                                        value
+                                                    ]);
+                                            }
+                                        },
+                                        {
+                                            text: "",
+                                            addClass: "hidden"
+                                        }
+                                    ]
+                                };
+                            } else {
+                                if (typeof self.queuedUpdatesPopup !== "undefined") {
+                                    self.queuedUpdatesPopup.remove();
+                                    self.queuedUpdatesPopup = undefined;
+                                }
+                                return;
+                            }
 
-        self._forcedStdoutPatterns = [
-            "You are using pip version .*?, however version .*? is available.",
-            "You should consider upgrading via the '.*?' command.",
-            "'.*?' does not exist -- can't clean it"
-        ];
-        self._forcedStdoutLine = new RegExp(self._forcedStdoutPatterns.join("|"));
-        self._preprocessLine = function (line) {
-            if (line.stream === "stderr" && line.line.match(self._forcedStdoutLine)) {
-                line.stream = "stdout";
+                            if (typeof self.queuedUpdatesPopup !== "undefined") {
+                                self.queuedUpdatesPopup.update(queuedUpdatesPopupOptions);
+                            } else {
+                                self.queuedUpdatesPopup = new PNotify(
+                                    queuedUpdatesPopupOptions
+                                );
+                                self.queuedUpdatesPopup
+                                    .get()
+                                    .on("pnotify.cancel", function () {
+                                        self.queuedUpdatesPopup = undefined;
+                                        self.cancelQueued();
+                                    });
+                                self.queuedUpdatesPopup
+                                    .get()
+                                    .on("pnotify.continue", function () {
+                                        self.queuedUpdatesPopup = undefined;
+                                        self.performUpdate(true, self.queuedUpdates());
+                                        self._updateClicked = false;
+                                    });
+                            }
+                        } else {
+                            if (typeof self.queuedUpdatesPopup !== "undefined") {
+                                self.queuedUpdatesPopup.remove();
+                                self.queuedUpdatesPopup = undefined;
+                            }
+                        }
+                    }
+
+                    if (options !== undefined) {
+                        self._showPopup(options);
+                    }
             }
-            return line;
+            self._forcedStdoutPatterns = [
+                "You are using pip version .*?, however version .*? is available.",
+                "You should consider upgrading via the '.*?' command.",
+                "'.*?' does not exist -- can't clean it"
+            ];
+            self._forcedStdoutLine = new RegExp(self._forcedStdoutPatterns.join("|"));
+            self._preprocessLine = function (line) {
+                if (line.stream === "stderr" && line.line.match(self._forcedStdoutLine)) {
+                    line.stream = "stdout";
+                }
+                return line;
+            };
         };
     }
 

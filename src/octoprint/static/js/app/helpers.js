@@ -1584,18 +1584,20 @@ var saveToLocalStorage = function (key, data) {
     localStorage[key] = JSON.stringify(data);
 };
 
-var loadFromLocalStorage = function (key) {
-    if (!Modernizr.localstorage) return {};
+var loadFromLocalStorage = function (key, defaultValue) {
+    defaultValue = defaultValue === undefined ? {} : defaultValue;
+
+    if (!Modernizr.localstorage) return defaultValue;
 
     var currentString = localStorage[key];
     var current;
     if (currentString === undefined) {
-        current = {};
+        current = defaultValue;
     } else {
         try {
             current = JSON.parse(currentString);
         } catch (ex) {
-            current = {};
+            current = defaultValue;
         }
     }
     return current;

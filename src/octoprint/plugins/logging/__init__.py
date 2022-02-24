@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -18,11 +15,6 @@ from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access, redirect_to_tornado
 from octoprint.settings import settings
 from octoprint.util import is_hidden_path, yaml
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
 
 
 class LoggingPlugin(
@@ -144,7 +136,7 @@ class LoggingPlugin(
     def _getLogFiles(self):
         files = []
         basedir = settings().getBaseFolder("logs", check_writable=False)
-        for entry in scandir(basedir):
+        for entry in os.scandir(basedir):
             if is_hidden_path(entry.path) or not entry.name.endswith(".log"):
                 continue
 
@@ -242,7 +234,7 @@ class LoggingPlugin(
         for logger, level in new_levels.items():
             level = logging.getLevelName(level)
 
-            self._logger.info("Setting logger {} level to {}".format(logger, level))
+            self._logger.info(f"Setting logger {logger} level to {level}")
             self._logger.manager.loggerDict[logger].setLevel(level)
 
     def _is_managed_logger(self, logger):
@@ -281,7 +273,7 @@ __plugin_disabling_discouraged__ = gettext(
     "the web interface."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = LoggingPlugin()
 __plugin_hooks__ = {
     "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions

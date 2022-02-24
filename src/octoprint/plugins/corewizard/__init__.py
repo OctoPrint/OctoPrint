@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -57,9 +54,9 @@ class CoreWizardPlugin(
             config = {
                 "type": "wizard",
                 "name": name,
-                "template": "corewizard_{}_wizard.jinja2".format(key),
-                "div": "wizard_plugin_corewizard_{}".format(key),
-                "suffix": "_{}".format(key),
+                "template": f"corewizard_{key}_wizard.jinja2",
+                "div": f"wizard_plugin_corewizard_{key}",
+                "suffix": f"_{key}",
             }
             if key in additional:
                 additional_result = additional[key]()
@@ -136,5 +133,5 @@ __plugin_disabling_discouraged__ = gettext(
     "setup steps that might be required after an update."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = CoreWizardPlugin()

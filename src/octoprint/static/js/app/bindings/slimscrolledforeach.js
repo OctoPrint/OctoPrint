@@ -52,16 +52,18 @@ ko.bindingHandlers.slimScrolledForeach = {
     },
 
     init: function (element, valueAccessor, allBindings, viewModel, bindingContext) {
-        var prepped = ko.bindingHandlers["slimScrolledForeach"].makeTemplateValueAccessor(
-            valueAccessor
-        );
+        var prepped =
+            ko.bindingHandlers["slimScrolledForeach"].makeTemplateValueAccessor(
+                valueAccessor
+            );
         ko.bindingHandlers["slimScrolledForeach"].slimscroll(element, prepped.slimscroll);
         return ko.bindingHandlers["template"]["init"](element, prepped.accessor);
     },
     update: function (element, valueAccessor, allBindings, viewModel, bindingContext) {
-        var prepped = ko.bindingHandlers["slimScrolledForeach"].makeTemplateValueAccessor(
-            valueAccessor
-        );
+        var prepped =
+            ko.bindingHandlers["slimScrolledForeach"].makeTemplateValueAccessor(
+                valueAccessor
+            );
         var options = $.extend(prepped.slimscroll, {scrollBy: 0});
         ko.bindingHandlers["slimScrolledForeach"].slimscroll(element, options);
         return ko.bindingHandlers["template"]["update"](

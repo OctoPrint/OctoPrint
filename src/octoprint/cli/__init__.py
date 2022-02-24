@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -10,6 +7,7 @@ import sys
 import click
 
 import octoprint
+from octoprint.cli.common import LazyGroup
 
 click.disable_unicode_literals_warning = True
 
@@ -17,7 +15,7 @@ click.disable_unicode_literals_warning = True
 # ~~ click context
 
 
-class OctoPrintContext(object):
+class OctoPrintContext:
     """Custom context wrapping the standard options."""
 
     def __init__(self, configfile=None, basedir=None, verbosity=0, safe_mode=False):
@@ -64,6 +62,7 @@ def init_platform_for_cli(ctx):
         get_ctx_obj_option(ctx, "configfile", None),
         overlays=get_ctx_obj_option(ctx, "overlays", None),
         safe_mode=True,
+        disable_color=get_ctx_obj_option(ctx, "no_color", False),
     )
 
     (
@@ -238,6 +237,15 @@ def standard_options(hidden=False):
             expose_value=False,
             help="Enable safe mode; disables all third party plugins.",
         ),
+        factory(
+            "--no-color",
+            "no_color",
+            is_flag=True,
+            callback=set_ctx_obj_option,
+            is_eager=True,
+            expose_value=False,
+            help="Disable colored console output. Alternatively set the NO_COLOR environment variable to a value of 1.",
+        ),
     ]
 
     return bulk_options(options)
@@ -277,16 +285,64 @@ legacy_options = bulk_options(
    Kept available for reasons of backwards compatibility, but hidden from the
    generated help pages."""
 
+# ~~ command groups from sub modules
+
+
+@click.group()
+def subcommands():
+    pass
+
+
+@subcommands.group(
+    name="analysis", cls=LazyGroup, import_name="octoprint.cli.analysis:cli"
+)
+def analysis():
+    """Analysis tools."""
+    pass
+
+
+@subcommands.group(name="client", cls=LazyGroup, import_name="octoprint.cli.client:cli")
+def client():
+    """Basic API client."""
+    pass
+
+
+@subcommands.group(name="config", cls=LazyGroup, import_name="octoprint.cli.config:cli")
+def config():
+    """Basic config manipulation."""
+    pass
+
+
+@subcommands.group(name="dev", cls=LazyGroup, import_name="octoprint.cli.dev:cli")
+def dev():
+    """Additional commands for development tasks."""
+    pass
+
+
+@subcommands.group(name="plugins", cls=LazyGroup, import_name="octoprint.cli.plugins:cli")
+def plugins():
+    """Additional commands provided by plugins."""
+    pass
+
+
+@subcommands.group(
+    name="timelapse", cls=LazyGroup, import_name="octoprint.cli.timelapse:cli"
+)
+def timelapse():
+    """Timelapse related commands."""
+    pass
+
+
+@subcommands.group(name="user", cls=LazyGroup, import_name="octoprint.cli.user:cli")
+def user():
+    """User management."""
+    pass
+
+
 # ~~ "octoprint" command, merges server_commands and plugin_commands groups
 
-from .analysis import analysis_commands  # noqa: E402
-from .client import client_commands  # noqa: E402
-from .config import config_commands  # noqa: E402
-from .dev import dev_commands  # noqa: E402
-from .plugins import plugin_commands  # noqa: E402
-from .server import server_commands  # noqa: E402
-from .systeminfo import systeminfo_commands  # noqa: E402
-from .user import user_commands  # noqa: E402
+from .server import cli as server_commands  # noqa: E402
+from .systeminfo import cli as systeminfo_commands  # noqa: E402
 
 
 @click.group(
@@ -294,13 +350,8 @@ from .user import user_commands  # noqa: E402
     invoke_without_command=True,
     cls=click.CommandCollection,
     sources=[
+        subcommands,
         server_commands,
-        plugin_commands,
-        dev_commands,
-        client_commands,
-        config_commands,
-        analysis_commands,
-        user_commands,
         systeminfo_commands,
     ],
 )

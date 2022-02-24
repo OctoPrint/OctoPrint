@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 Generic linux daemon base class
 
 Originally from http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/#c35
 """
 
-import io
 import os
 import signal
 import sys
@@ -44,7 +40,7 @@ class Daemon:
                 # exit first parent
                 sys.exit(0)
         except OSError as err:
-            self.error("First fork failed: {}".format(str(err)))
+            self.error(f"First fork failed: {str(err)}")
             sys.exit(1)
 
         # decouple from parent environment
@@ -59,16 +55,16 @@ class Daemon:
                 # exit from second parent
                 sys.exit(0)
         except OSError as err:
-            self.error("Second fork failed: {}".format(str(err)))
+            self.error(f"Second fork failed: {str(err)}")
             sys.exit(1)
 
     def _redirect_io(self):
         # redirect standard file descriptors
         sys.stdout.flush()
         sys.stderr.flush()
-        si = io.open(os.devnull, "rt", encoding="utf-8")
-        so = io.open(os.devnull, "at+", encoding="utf-8")
-        se = io.open(os.devnull, "at+", encoding="utf-8")
+        si = open(os.devnull, encoding="utf-8")
+        so = open(os.devnull, "at+", encoding="utf-8")
+        se = open(os.devnull, "at+", encoding="utf-8")
 
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
@@ -156,15 +152,15 @@ class Daemon:
     def get_pid(self):
         """Get the pid from the pidfile."""
         try:
-            with io.open(self.pidfile, "rt", encoding="utf-8") as pf:
+            with open(self.pidfile, encoding="utf-8") as pf:
                 pid = int(pf.read().strip())
-        except (IOError, ValueError):
+        except (OSError, ValueError):
             pid = None
         return pid
 
     def set_pid(self, pid):
         """Write the pid to the pidfile."""
-        with io.open(self.pidfile, "wt+", encoding="utf-8") as f:
+        with open(self.pidfile, "wt+", encoding="utf-8") as f:
             f.write(str(pid) + "\n")
 
     def remove_pidfile(self):

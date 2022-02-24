@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -65,7 +62,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            click.echo("Could not get update information from server, got {}".format(e))
+            click.echo(f"Could not get update information from server, got {e}")
             sys.exit(1)
 
         data = r.json()
@@ -233,7 +230,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
-            click.echo("Could not get update information from server, got {}".format(e))
+            click.echo(f"Could not get update information from server, got {e}")
             sys.exit(1)
 
         data = r.json()
@@ -241,7 +238,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
         checks = data["checks"]
         click.echo("Update in progress, updating:")
         for name in to_be_updated:
-            click.echo("\t{}".format(name if name not in checks else checks[name]))
+            click.echo(f"\t{name if name not in checks else checks[name]}")
 
         socket.wait()
 

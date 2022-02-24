@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -113,14 +110,14 @@ class TestCommHelpers(unittest.TestCase):
             return m.hexdigest()
 
         # rb'' doesn't exist in Python2
-        temp_regex = br"T:((\d*\.)\d+)"
+        temp_regex = rb"T:((\d*\.)\d+)"
         temp_template = b"Temp: {}"
         temp2_template = b"Temperature: {}"
         temp_key = md5sum(temp_regex)
         temp_template_key = md5sum(temp_template)
         temp2_template_key = md5sum(temp2_template)
 
-        x_regex = br"X:(?P<x>\d+)"
+        x_regex = rb"X:(?P<x>\d+)"
         x_template = b"X: {x}"
         x_key = md5sum(x_regex)
         x_template_key = md5sum(x_template)
@@ -184,9 +181,7 @@ class TestCommHelpers(unittest.TestCase):
         self.assertEqual(x_template, x["templates"][x_template_key])
 
         self.assertEqual(
-            "(?P<group{temp_key}>{temp_regex})|(?P<group{x_key}>{x_regex})".format(
-                **locals()
-            ),
+            f"(?P<group{temp_key}>{temp_regex})|(?P<group{x_key}>{x_regex})",
             matcher.pattern,
         )
 

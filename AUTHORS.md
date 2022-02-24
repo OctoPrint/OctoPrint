@@ -154,11 +154,16 @@ date of first contribution):
   * [Bryan Kenote](https://github.com/bryankenote)
   * [Quinn Damerell](https://github.com/QuinnDamerell)
   * [Sven Samoray](https://github.com/thelastWallE)
+  * [Carey Metcalfe](https://github.com/pR0Ps)
   * [Christian Würthner](https://github.com/crysxd)
   * [Maciej Urbański](https://github.com/rooterkyberian)
   * [Adam Wolf](https://github.com/adamwolf)
   * [Didi Kohen](https://github.com/kohend)
   * [Taylor Talkington](https://github.com/The-EG)
+  * [Carey Metcalfe](https://github.com/pR0Ps)
+  * [Shell M. Shrader](https://github.com/synman)
+  * [Johan Verrept](https://github.com/JoveToo)
+  * [Nicu Surdu](https://github.com/surdu)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

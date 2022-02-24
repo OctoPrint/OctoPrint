@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -78,7 +75,7 @@ __plugin_disabling_discouraged__ = gettext(
     "Without this plugin the GCode Viewer in OctoPrint will no longer be " "available."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = GcodeviewerPlugin()
 # __plugin_hooks__ = {
 # 	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions

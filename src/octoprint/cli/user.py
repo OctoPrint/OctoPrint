@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -26,13 +23,8 @@ click.disable_unicode_literals_warning = True
 
 
 @click.group()
-def user_commands():
-    pass
-
-
-@user_commands.group(name="user")
 @click.pass_context
-def user(ctx):
+def cli(ctx):
     """
     User management.
 
@@ -87,7 +79,7 @@ def user(ctx):
         ctx.exit(-1)
 
 
-@user.command(name="list")
+@cli.command(name="list")
 @click.pass_context
 def list_users_command(ctx):
     """Lists user information"""
@@ -95,7 +87,7 @@ def list_users_command(ctx):
     _print_list(users)
 
 
-@user.command(name="add")
+@cli.command(name="add")
 @click.argument("username", type=click.STRING, required=True)
 @click.password_option("--password", "password", help="Password for the user")
 @click.option("-g", "--group", "groups", multiple=True, help="Groups to set on the user")
@@ -131,14 +123,12 @@ def add_user_command(ctx, username, password, groups, permissions, is_admin):
         user = ctx.obj.user_manager.find_user(username)
         if user:
             click.echo("User created:")
-            click.echo("\t{}".format(_user_to_line(user.as_dict())))
+            click.echo(f"\t{_user_to_line(user.as_dict())}")
     except UserAlreadyExists:
-        click.echo(
-            "A user with the name {} does already exist!".format(username), err=True
-        )
+        click.echo(f"A user with the name {username} does already exist!", err=True)
 
 
-@user.command(name="remove")
+@cli.command(name="remove")
 @click.argument("username", type=click.STRING)
 @click.pass_context
 def remove_user_command(ctx, username):
@@ -150,12 +140,12 @@ def remove_user_command(ctx, username):
 
     if confirm.lower() == "yes":
         ctx.obj.user_manager.remove_user(username)
-        click.echo("User {} removed.".format(username))
+        click.echo(f"User {username} removed.")
     else:
-        click.echo("User {} not removed.".format(username))
+        click.echo(f"User {username} not removed.")
 
 
-@user.command(name="password")
+@cli.command(name="password")
 @click.argument("username", type=click.STRING)
 @click.password_option("--password", "password", help="New password for user")
 @click.pass_context
@@ -163,51 +153,51 @@ def change_password_command(ctx, username, password):
     """Change an existing user's password."""
     try:
         ctx.obj.user_manager.change_user_password(username, password)
-        click.echo("Password changed for user {}.".format(username))
+        click.echo(f"Password changed for user {username}.")
     except UnknownUser:
-        click.echo("User {} does not exist!".format(username), err=True)
+        click.echo(f"User {username} does not exist!", err=True)
 
 
-@user.command(name="activate")
+@cli.command(name="activate")
 @click.argument("username", type=click.STRING)
 @click.pass_context
 def activate_command(ctx, username):
     """Activate a user account."""
     try:
         ctx.obj.user_manager.change_user_activation(username, True)
-        click.echo("User {} activated.".format(username))
+        click.echo(f"User {username} activated.")
 
         user = ctx.obj.user_manager.find_user(username)
         if user:
             click.echo("User created:")
-            click.echo("\t{}".format(_user_to_line(user.asDict())))
+            click.echo(f"\t{_user_to_line(user.asDict())}")
     except UnknownUser:
-        click.echo("User {} does not exist!".format(username), err=True)
+        click.echo(f"User {username} does not exist!", err=True)
 
 
-@user.command(name="deactivate")
+@cli.command(name="deactivate")
 @click.argument("username", type=click.STRING)
 @click.pass_context
 def deactivate_command(ctx, username):
     """Activate a user account."""
     try:
         ctx.obj.user_manager.change_user_activation(username, False)
-        click.echo("User {} activated.".format(username))
+        click.echo(f"User {username} activated.")
 
         user = ctx.obj.user_manager.find_user(username)
         if user:
             click.echo("User created:")
-            click.echo("\t{}".format(_user_to_line(user.asDict())))
+            click.echo(f"\t{_user_to_line(user.asDict())}")
     except UnknownUser:
-        click.echo("User {} does not exist!".format(username), err=True)
+        click.echo(f"User {username} does not exist!", err=True)
 
 
 def _print_list(users):
-    click.echo("{} users registered in the system:".format(len(users)))
+    click.echo(f"{len(users)} users registered in the system:")
     for user in sorted(
         map(lambda x: x.as_dict(), users), key=lambda x: sv(x.get("name"))
     ):
-        click.echo("\t{}".format(_user_to_line(user)))
+        click.echo(f"\t{_user_to_line(user)}")
 
 
 def _user_to_line(user):

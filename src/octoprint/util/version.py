@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 This module provides a bunch of utility methods and helpers for version handling.
 """
@@ -10,7 +7,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 import logging
 
 import pkg_resources
-from past.builtins import basestring
 
 from octoprint import __version__
 
@@ -65,7 +61,7 @@ def is_octoprint_compatible(*compatibility_entries, **kwargs):
                 octo_compat.startswith(c)
                 for c in ("<", "<=", "!=", "==", ">=", ">", "~=", "===")
             ):
-                octo_compat = ">={}".format(octo_compat)
+                octo_compat = f">={octo_compat}"
 
             s = pkg_resources.Requirement.parse("OctoPrint" + octo_compat)
             if octoprint_version in s:
@@ -169,7 +165,7 @@ def is_stable(version):
     False
     """
 
-    if isinstance(version, basestring):
+    if isinstance(version, str):
         version = get_comparable_version(version)
 
     if not is_release(version):
@@ -198,7 +194,7 @@ def is_release(version):
     False
     """
 
-    if isinstance(version, basestring):
+    if isinstance(version, str):
         version = get_comparable_version(version)
 
     if isinstance(version, tuple):
@@ -211,7 +207,7 @@ def is_release(version):
 
 
 def is_prerelease(version):
-    if isinstance(version, basestring):
+    if isinstance(version, str):
         version = get_comparable_version(version)
 
     if isinstance(version, tuple):
@@ -223,8 +219,6 @@ def is_prerelease(version):
 
 
 def normalize_version(version):
-    if "-" in version:
-        version = version[: version.find("-")]
 
     # Debian has the python version set to 2.7.15+ which is not PEP440 compliant (bug 914072)
     if version.endswith("+"):

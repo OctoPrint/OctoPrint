@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -8,9 +5,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import io
 import unittest
-
-import _fixups
-import mock
+from unittest import mock
 
 import octoprint.filemanager
 import octoprint.filemanager.util
@@ -398,7 +393,7 @@ class FileManagerTest(unittest.TestCase):
         mock_time.return_value = now
         self.local_storage.path_in_storage.return_value = path
 
-        with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True):
+        with mock.patch("builtins.open", mock.mock_open(), create=True):
             self.file_manager.save_recovery_data(
                 octoprint.filemanager.FileDestinations.LOCAL, path, pos
             )
@@ -432,7 +427,7 @@ class FileManagerTest(unittest.TestCase):
 
         mock_yaml_safe_dump.side_effect = RuntimeError
 
-        with mock.patch(_fixups.OPEN_SIGNATURE, mock.mock_open(), create=True):
+        with mock.patch("builtins.open", mock.mock_open(), create=True):
             self.file_manager.save_recovery_data(
                 octoprint.filemanager.FileDestinations.LOCAL, path, pos
             )
@@ -685,7 +680,7 @@ class FileManagerTest(unittest.TestCase):
 
         # assert that shutil was asked to copy the concatenated multistream
         self.assertEqual(2, len(mocked_shutil.call_args_list))
-        self.assertTrue(isinstance(mocked_shutil.call_args_list[0].args[0], io.BytesIO))
+        self.assertTrue(isinstance(mocked_shutil.call_args_list[0][0][0], io.BytesIO))
 
         # assert that the temporary file was deleted
         mocked_os.assert_called_once_with("tmp.file")

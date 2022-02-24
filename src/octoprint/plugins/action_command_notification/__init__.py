@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -126,7 +123,7 @@ class ActionCommandNotificationPlugin(
         self._notifications.append((time.time(), message))
         self._plugin_manager.send_plugin_message(self._identifier, {"message": message})
 
-        self._logger.info("Got a notification: {}".format(message))
+        self._logger.info(f"Got a notification: {message}")
 
     def _clear_notifications(self):
         self._notifications = []
@@ -144,7 +141,7 @@ __plugin_disabling_discouraged__ = gettext(
     " notifications in OctoPrint"
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = ActionCommandNotificationPlugin()
 __plugin_hooks__ = {
     "octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,

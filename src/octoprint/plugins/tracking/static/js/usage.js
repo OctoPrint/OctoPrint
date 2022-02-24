@@ -74,7 +74,8 @@ $(function () {
             var data = {
                 plugins: {
                     tracking: {
-                        enabled: self.settingsViewModel.settings.plugins.tracking.enabled()
+                        enabled:
+                            self.settingsViewModel.settings.plugins.tracking.enabled()
                     }
                 }
             };

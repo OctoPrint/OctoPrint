@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -24,12 +21,10 @@ from . import (  # noqa: F401
 class GithubRateLimitCheckError(RateLimitCheckError):
     def __init__(self, remaining, ratelimit, reset):
         if reset:
-            message = "Github rate limit exceeded, reset at {}".format(reset)
+            message = f"Github rate limit exceeded, reset at {reset}"
         else:
             message = "Github rate limit exceeded"
-        super(GithubRateLimitCheckError, self).__init__(
-            message, remaining=remaining, limit=ratelimit, reset=reset
-        )
+        super().__init__(message, remaining=remaining, limit=ratelimit, reset=reset)
 
 
 def log_github_ratelimit(logger, r):

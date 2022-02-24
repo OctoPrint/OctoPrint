@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module contains printer profile related code.
 
@@ -84,6 +83,9 @@ A printer profile is a ``dict`` of the following structure:
    * - ``extruder.sharedNozzle``
      - ``boolean``
      - Whether there's only one nozzle shared among all extruders (true) or one nozzle per extruder (false).
+   * - ``extruder.defaultExtrusionLength``
+     - ``int``
+     - Default extrusion length used in Control tab on initial page load in mm.
    * - ``axes``
      - ``dict``
      - Information about the printer axes
@@ -139,7 +141,6 @@ A printer profile is a ``dict`` of the following structure:
 
 .. autoclass:: InvalidProfileError
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -149,11 +150,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import copy
 import logging
 import os
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
 
 from octoprint.settings import settings
 from octoprint.util import (
@@ -183,7 +179,7 @@ class InvalidProfileError(Exception):
     pass
 
 
-class BedFormFactor(object):
+class BedFormFactor:
     """Valid values for bed form factor"""
 
     RECTANGULAR = "rectangular"
@@ -205,7 +201,7 @@ BedTypes = BedFormFactor
 """Deprecated name of :class:`BedFormFactors`"""
 
 
-class BedOrigin(object):
+class BedOrigin:
     """Valid values for bed origin"""
 
     LOWERLEFT = "lowerleft"
@@ -223,7 +219,7 @@ class BedOrigin(object):
         ]
 
 
-class PrinterProfileManager(object):
+class PrinterProfileManager:
     """
     Manager for printer profiles. Offers methods to select the globally used printer profile and to list, add, remove,
     load and save printer profiles.
@@ -249,6 +245,7 @@ class PrinterProfileManager(object):
             "offsets": [(0, 0)],
             "nozzleDiameter": 0.4,
             "sharedNozzle": False,
+            "defaultExtrusionLength": 5,
         },
         "axes": {
             "x": {"speed": 6000, "inverted": False},
@@ -435,7 +432,7 @@ class PrinterProfileManager(object):
         dates = [os.stat(self._folder).st_mtime]
         dates += [
             entry.stat().st_mtime
-            for entry in scandir(self._folder)
+            for entry in os.scandir(self._folder)
             if entry.name.endswith(".profile")
         ]
         return max(dates)
@@ -486,7 +483,7 @@ class PrinterProfileManager(object):
             try:
                 profile = self._load_from_path(path)
             except InvalidProfileError:
-                self._logger.warning("Profile {} is invalid, skipping".format(identifier))
+                self._logger.warning(f"Profile {identifier} is invalid, skipping")
                 continue
 
             if profile is None:
@@ -497,7 +494,7 @@ class PrinterProfileManager(object):
 
     def _load_all_identifiers(self):
         results = {}
-        for entry in scandir(self._folder):
+        for entry in os.scandir(self._folder):
             if is_hidden_path(entry.name) or not entry.name.endswith(".profile"):
                 continue
 
@@ -611,6 +608,12 @@ class PrinterProfileManager(object):
             and profile["extruder"]["sharedNozzle"]
         ):
             profile["extruder"]["offsets"] = [(0.0, 0.0)]
+            modified = True
+
+        if "extruder" in profile and "defaultExtrusionLength" not in profile["extruder"]:
+            profile["extruder"]["defaultExtrusionLength"] = self.default["extruder"][
+                "defaultExtrusionLength"
+            ]
             modified = True
 
         if "heatedChamber" not in profile:
