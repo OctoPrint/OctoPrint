@@ -44,6 +44,7 @@ GCODE.gCodeReader = (function () {
     };
 
     var rendererModel = undefined;
+    var layerPercentageLookup = [];
     var cacheLookAhead = 64;
     var cacheLastLayer = undefined;
     var cacheLastCmd = undefined;
@@ -61,44 +62,23 @@ GCODE.gCodeReader = (function () {
         lines = [];
     };
 
-    var sortLayers = function (m) {
-        var sortedZ = [];
-        var tmpModel = [];
-
-        for (var layer in z_heights) {
-            sortedZ[z_heights[layer]] = layer;
-        }
-
-        sortedZ.sort(function (a, b) {
-            return a - b;
-        });
-
-        for (var i = 0; i < sortedZ.length; i++) {
-            if (typeof z_heights[sortedZ[i]] === "undefined") continue;
-            tmpModel[i] = m[z_heights[sortedZ[i]]];
-        }
-        return tmpModel;
-    };
-
     var searchInPercentageTree = function (key) {
         function searchInLayers(lower, upper, key) {
             while (lower < upper) {
                 var middle = Math.floor((lower + upper) / 2);
 
                 if (
-                    rendererModel[middle][0].percentage <= key &&
-                    (!rendererModel[middle + 1] ||
-                        rendererModel[middle + 1][0].percentage > key)
+                    layerPercentageLookup[middle][0] <= key &&
+                    layerPercentageLookup[middle][1] > key
                 )
                     return middle;
 
-                if (rendererModel[middle][0].percentage > key) {
+                if (layerPercentageLookup[middle][0] > key) {
                     upper = middle - 1;
                 } else {
                     lower = middle + 1;
                 }
             }
-
             return lower;
         }
 
@@ -106,7 +86,12 @@ GCODE.gCodeReader = (function () {
             while (lower < upper) {
                 var middle = Math.floor((lower + upper) / 2);
 
-                if (rendererModel[layer][middle].percentage == key) return middle;
+                if (
+                    rendererModel[layer][middle].percentage == key ||
+                    (rendererModel[layer][middle].percentage <= key &&
+                     rendererModel[layer][middle + 1].percentage > key)
+                )
+                    return middle;
 
                 if (rendererModel[layer][middle].percentage > key) {
                     upper = middle - 1;
@@ -127,68 +112,18 @@ GCODE.gCodeReader = (function () {
         var bestLayer = undefined;
         var bestCmd = undefined;
 
-        // check if we are within cacheLookAhead distance of our last position
-        if (cacheLastLayer !== undefined) {
-            if (
-                rendererModel[cacheLastLayer][0].percentage <= key &&
-                (!rendererModel[cacheLastLayer + 1] ||
-                    rendererModel[cacheLastLayer + 1][0].percentage > key)
-            ) {
-                bestLayer = cacheLastLayer;
+        var bestLayer = searchInLayers(1, rendererModel.length - 1, key);
+        var bestCmd = searchInCmds(
+            bestLayer,
+            0,
+            rendererModel[bestLayer].length - 1,
+            key
+        );
 
-                var upper =
-                    (cacheLastCmd + cacheLookAhead) % rendererModel[bestLayer].length;
-                var tmpresult = searchInCmds(bestLayer, cacheLastCmd, upper, key);
-                if (tmpresult < upper) bestCmd = tmpresult;
-            } else if (
-                rendererModel[cacheLastLayer + 1][0].percentage <= key &&
-                (!rendererModel[cacheLastLayer + 2] ||
-                    rendererModel[cacheLastLayer + 2][0].percentage > key)
-            ) {
-                bestLayer = cacheLastLayer + 1;
-
-                var upper =
-                    (cacheLastCmd +
-                        cacheLookAhead -
-                        rendererModel[cacheLastLayer].length) %
-                    rendererModel[bestLayer].length;
-                var tmpresult = searchInCmds(bestLayer, 0, upper, key);
-                if (tmpresult < upper) bestCmd = tmpresult;
-            }
-        }
-
-        // do a full search if the cache missed
-        if (bestLayer === undefined)
-            bestLayer = searchInLayers(1, rendererModel.length - 1, key);
-        if (bestCmd === undefined)
-            bestCmd = searchInCmds(
-                bestLayer,
-                0,
-                rendererModel[bestLayer].length - 1,
-                key
-            );
-
+        // remember last position
         cacheLastLayer = bestLayer;
         cacheLastCmd = bestCmd;
 
-        /*
-        log.debug(
-            "Layer " +
-                bestLayer +
-                " / " +
-                rendererModel.length +
-                "  cmd " +
-                bestCmd +
-                " / " +
-                rendererModel[bestLayer].length +
-                "  gcodeline " +
-                rendererModel[bestLayer][bestCmd].gcodeLine +
-                "  percentage " +
-                key +
-                " / " +
-                rendererModel[bestLayer][bestCmd].percentage
-        );
-	*/
         return {layer: bestLayer, cmd: bestCmd};
     };
 
@@ -217,6 +152,32 @@ GCODE.gCodeReader = (function () {
         return tmpModel;
     };
 
+    var rebuildLayerPercentageLookup = function (m) {
+        if (!m) return;
+
+        var result = [];
+        for (var i = 0; i < m.length - 1; i++) {
+            if (!m[i]) {
+                result[i] = [-1, -1];
+                continue;
+            }
+            var start = m[i].length ? m[i][0].percentage : -1;
+
+            var end = -1;
+            for (var j = i + 1; j < m.length; j++) {
+                if (m[j].length) {
+                    end = m[j][0].percentage;
+                    break;
+                }
+            }
+
+            result[i] = [start, end];
+        }
+        result[m.length - 1] = [m[m.length - 1][0].percentage, 100];
+
+        layerPercentageLookup = result;
+    };
+    
     // ***** PUBLIC *******
     return {
         clear: function () {
@@ -242,8 +203,7 @@ GCODE.gCodeReader = (function () {
             this.clear();
 
             var totalSize = reader.target.result.length;
-            // With a regex split below as previous, memory usage is huge & takes longer.
-            lines = reader.target.result.replace("\r\n", "\n").split("\n");
+            lines = reader.target.result.split(/[\r\n]/g);
             reader.target.result = null;
             prepareGCode(totalSize);
 
@@ -277,10 +237,10 @@ GCODE.gCodeReader = (function () {
 
         passDataToRenderer: function () {
             var m = model;
-            //if (gCodeOptions["sortLayers"]) m = sortLayers(m);
             if (gCodeOptions["purgeEmptyLayers"]) m = purgeLayers(m);
 
             rendererModel = m;
+            rebuildLayerPercentageLookup(m);
 
             GCODE.renderer.doRender(m, 0);
             return m;
