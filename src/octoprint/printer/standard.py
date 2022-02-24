@@ -56,15 +56,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._fileManager = fileManager
         self._printerProfileManager = printerProfileManager
 
-        # state
-        # TODO do we really need to hold the temperature here?
-        self._temp = None
-        self._bedTemp = None
-        self._chamberTemp = None
-        self._targetTemp = None
-        self._targetBedTemp = None
-        self._targetChamberTemp = None
-
         self._temps = DataHistory(
             cutoff=settings().getInt(["temperature", "cutoff"]) * 60
         )
@@ -842,43 +833,21 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         else:
             offsets = {}
 
-        result = {}
-        if self._temp is not None:
-            for tool in self._temp.keys():
-                result["tool%d" % tool] = {
-                    "actual": self._temp[tool][0],
-                    "target": self._temp[tool][1],
-                    "offset": offsets[tool]
-                    if tool in offsets and offsets[tool] is not None
-                    else 0,
-                }
-        if self._bedTemp is not None:
-            result["bed"] = {
-                "actual": self._bedTemp[0],
-                "target": self._bedTemp[1],
-                "offset": offsets["bed"]
-                if "bed" in offsets and offsets["bed"] is not None
-                else 0,
-            }
-        if self._chamberTemp is not None:
-            result["chamber"] = {
-                "actual": self._chamberTemp[0],
-                "target": self._chamberTemp[1],
-                "offset": offsets["chamber"]
-                if "chamber" in offsets and offsets["chamber"] is not None
-                else 0,
-            }
-        if self._custom is not None:
-            for custom_key in self._custom.keys():
-                result[custom_key] = {
-                    "actual": self._custom[custom_key][0],
-                    "target": self._custom[custom_key][1],
-                }
+        last = self._temps.last
+        if last is None:
+            return {}
 
-        return result
+        return {
+            key: {
+                "actual": value["actual"],
+                "target": value["target"],
+                "offset": offsets[key] if offsets.get(key) is not None else 0,
+            }
+            for key, value in last.items()
+        }
 
     def get_temperature_history(self, *args, **kwargs):
-        return self._temps
+        return list(self._temps)
 
     def get_current_connection(self, *args, **kwargs):
         if self._comm is None:
@@ -1227,11 +1196,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             data[identifier] = self._dict(actual=values[0], target=values[1])
 
         self._temps.append(data)
-
-        self._temp = tools
-        self._bedTemp = bed
-        self._chamberTemp = chamber
-        self._custom = custom
 
         self._stateMonitor.add_temperature(self._dict(**data))
 
@@ -2096,3 +2060,14 @@ class DataHistory(InvariantContainer):
             return [item for item in data if item["time"] >= now - cutoff]
 
         InvariantContainer.__init__(self, guarantee_invariant=data_invariant)
+        self._last = None
+
+    @property
+    def last(self):
+        return self._last
+
+    def append(self, item):
+        try:
+            return super().append(item)
+        finally:
+            self._last = self._data[-1] if len(self._data) else None

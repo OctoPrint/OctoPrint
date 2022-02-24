@@ -13,6 +13,7 @@
         this.updateUrl = url + "update";
         this.configureUrl = url + "configure";
         this.updatelogUrl = url + "updatelog";
+        this.queuedURL = this.updateUrl + "/queued";
     };
 
     OctoPrintSoftwareUpdateClient.prototype.checkEntries = function (
@@ -70,6 +71,37 @@
             force: !!force
         };
         return this.base.postJson(this.updateUrl, data, opts);
+    };
+
+    OctoPrintSoftwareUpdateClient.prototype.cancelQueued = function (targets, opts) {
+        if (arguments.length === 1 && _.isObject(arguments[0])) {
+            var params = arguments[0];
+            targets = params.targets;
+        }
+
+        targets = targets || [];
+        if (typeof targets === "string") {
+            targets = [targets];
+        }
+
+        var data = {
+            command: "cancel",
+            targets: targets
+        };
+        return this.base.postJson(this.queuedURL, data, opts);
+    };
+
+    OctoPrintSoftwareUpdateClient.prototype.cancelAllQueued = function (opts) {
+        if (arguments.length === 1 && _.isObject(arguments[0])) {
+            var params = arguments[0];
+            opts = params.opts;
+        }
+
+        var data = {
+            command: "cancel"
+        };
+
+        return this.base.postJson(this.queuedURL, data, opts);
     };
 
     OctoPrintSoftwareUpdateClient.prototype.updateAll = function (force, opts) {

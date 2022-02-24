@@ -39,6 +39,7 @@ def plugin_manager(
     plugin_bases=None,
     plugin_entry_points=None,
     plugin_disabled_list=None,
+    plugin_sorting_order=None,
     plugin_blacklist=None,
     plugin_restart_needing_hooks=None,
     plugin_obsolete_hooks=None,
@@ -64,6 +65,8 @@ def plugin_manager(
             this defaults to the entry point ``octoprint.plugin``.
         plugin_disabled_list (list): A list of plugin identifiers that are currently disabled. If not provided this
             defaults to all plugins for which ``enabled`` is set to ``False`` in the settings.
+        plugin_sorting_order (dict): A dict containing a custom sorting orders for plugins. The keys are plugin identifiers,
+            mapped to dictionaries containing the sorting contexts as key and the custom sorting value as value.
         plugin_blacklist (list): A list of plugin identifiers/identifier-requirement tuples
             that are currently blacklisted.
         plugin_restart_needing_hooks (list): A list of hook namespaces which cause a plugin to need a restart in order
@@ -121,6 +124,7 @@ def plugin_manager(
                 plugin_entry_points,
                 logging_prefix="octoprint.plugins.",
                 plugin_disabled_list=plugin_disabled_list,
+                plugin_sorting_order=plugin_sorting_order,
                 plugin_blacklist=plugin_blacklist,
                 plugin_restart_needing_hooks=plugin_restart_needing_hooks,
                 plugin_obsolete_hooks=plugin_obsolete_hooks,

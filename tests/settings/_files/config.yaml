@@ -12,3 +12,5 @@ server:
 devel:
   virtualPrinter:
     enabled: true
+    capabilities:
+      autoreport_temp: false

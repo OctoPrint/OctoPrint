@@ -438,7 +438,7 @@ default_settings = {
             "regex": r"Recv: (echo:\s*)?busy:\s*processing",
         },
     ],
-    "plugins": {"_disabled": [], "_forcedCompatible": []},
+    "plugins": {"_disabled": [], "_forcedCompatible": [], "_sortingOrder": {}},
     "scripts": {
         "gcode": {
             "afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0",
@@ -618,7 +618,9 @@ class HierarchicalChainMap:
         else:
             current = self._chainmap
 
-        return self._path_to_key(path) in current
+        key = self._path_to_key(path)
+        prefix = key + _CHAINMAP_SEP
+        return key in current or any(map(lambda x: x.startswith(prefix), current.keys()))
 
     def get_by_path(self, path, only_local=False, only_defaults=False, merged=False):
         if only_defaults:
@@ -656,14 +658,17 @@ class HierarchicalChainMap:
         return result
 
     def set_by_path(self, path, value):
-        current = self._chainmap
+        current = self._chainmap.maps[0]
         key = self._path_to_key(path)
 
         # delete any subkeys
         subkeys_start = key + _CHAINMAP_SEP
+        to_delete = []
         for k in current.keys():
             if k.startswith(subkeys_start):
-                del current[key]
+                to_delete.append(k)
+        for k in to_delete:
+            del current[k]
 
         if isinstance(value, dict):
             current.update(self._flatten(value, key))
@@ -702,7 +707,8 @@ class HierarchicalChainMap:
         # a/b = {}
         # a/b/c = "a"  # deleted
         up_one_path = self._path_to_key(path[:-1])
-        if sum(1 for k in current.keys() if k.startswith(up_one_path)) == 0:
+        up_one_path_prefix = up_one_path + _CHAINMAP_SEP
+        if not any(map(lambda k: k.startswith(up_one_path_prefix), current.keys())):
             current[up_one_path] = {}
 
     def with_config_defaults(self, config=None, defaults=None):
@@ -720,7 +726,7 @@ class HierarchicalChainMap:
         if config is not None:
             config = self._flatten(config)
         else:
-            config = self.top_map
+            config = self._chainmap.maps[0]
 
         if defaults is not None:
             defaults = [self._flatten(defaults)]

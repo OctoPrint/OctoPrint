@@ -463,13 +463,12 @@ def _get_temperature_data(preprocessor):
     tempData = printer.get_current_temperatures()
 
     if "history" in request.values and request.values["history"] in valid_boolean_trues:
-        tempHistory = printer.get_temperature_history()
+        history = printer.get_temperature_history()
 
         limit = 300
         if "limit" in request.values and str(request.values["limit"]).isnumeric():
             limit = int(request.values["limit"])
 
-        history = list(tempHistory)
         limit = min(limit, len(history))
 
         tempData.update(
