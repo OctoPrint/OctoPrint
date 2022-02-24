@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from flask_babel import gettext
 
 import octoprint.events
@@ -55,7 +53,7 @@ class EventManagerPlugin(
 
 
 __plugin_name__ = gettext("Event Manager")
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_author__ = "jneilliii"
 __plugin_license__ = "AGPLv3"
 __plugin_description__ = gettext(

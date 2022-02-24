@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import datetime
 
 __author__ = "Gina Häußge <osd@foosel.net>"
@@ -14,8 +11,6 @@ import logging.handlers
 import os
 import threading
 import time
-
-# noinspection PyCompatibility
 from concurrent import futures
 
 import flask
@@ -33,6 +28,7 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.util import RepeatedTimer, dict_merge, get_formatted_size, to_unicode, yaml
+from octoprint.util.commandline import CommandlineError
 from octoprint.util.pip import create_pip_caller
 from octoprint.util.version import (
     get_comparable_version,
@@ -253,8 +249,8 @@ class SoftwareUpdatePlugin(
                         hook_checks = hook()
                     except Exception:
                         self._logger.exception(
-                            "Error while retrieving update information "
-                            "from plugin {name}".format(**locals()),
+                            f"Error while retrieving update information "
+                            f"from plugin {name}",
                             extra={"plugin": name},
                         )
                     else:
@@ -390,9 +386,7 @@ class SoftwareUpdatePlugin(
                 data = psutil.disk_usage(path)
                 info["free"] = data.free
             except Exception:
-                self._logger.exception(
-                    "Error while determining disk usage of {}".format(path)
-                )
+                self._logger.exception(f"Error while determining disk usage of {path}")
                 continue
 
             storage_info[key] = info
@@ -428,15 +422,13 @@ class SoftwareUpdatePlugin(
         )
 
     def _get_check_overlay(self, url):
-        self._logger.info("Fetching check overlays from {}".format(url))
+        self._logger.info(f"Fetching check overlays from {url}")
         try:
             r = requests.get(url, timeout=3.1)
             r.raise_for_status()
             data = r.json()
         except Exception as exc:
-            self._logger.error(
-                "Could not fetch check overlay from {}: {}".format(url, exc)
-            )
+            self._logger.error(f"Could not fetch check overlay from {url}: {exc}")
             return {}
         else:
             return data
@@ -566,9 +558,7 @@ class SoftwareUpdatePlugin(
             )
             cleaned_up = len(data) - before_cleanup
             if cleaned_up:
-                self._logger.info(
-                    "Cleaned up {} old update log entries".format(cleaned_up)
-                )
+                self._logger.info(f"Cleaned up {cleaned_up} old update log entries")
 
             with self._update_log_mutex:
                 self._update_log = data
@@ -640,8 +630,7 @@ class SoftwareUpdatePlugin(
             return False
 
         restart_type = self._get_restart_type(check)
-        restart_command = self._get_restart_command(restart_type)
-        return restart_command is not None
+        return self._has_restart_command(restart_type)
 
     def _get_restart_type(self, check):
         if check.get("restart") in self.VALID_RESTART_TYPES:
@@ -653,17 +642,13 @@ class SoftwareUpdatePlugin(
 
         return target_restart_type
 
-    def _get_restart_command(self, restart_type):
+    def _has_restart_command(self, restart_type):
         if restart_type == "octoprint":
-            return self._settings.global_get(
-                ["server", "commands", "serverRestartCommand"]
-            )
+            return self._system_commands.has_server_restart_command()
         elif restart_type == "environment":
-            return self._settings.global_get(
-                ["server", "commands", "systemRestartCommand"]
-            )
+            return self._system_commands.has_system_restart_command()
         else:
-            return None
+            return False
 
     # ~~ SettingsPlugin API
 
@@ -1406,9 +1391,7 @@ class SoftwareUpdatePlugin(
             try:
                 populated_check = self._populated_check(target, checks[target])
             except exceptions.UnknownCheckType:
-                self._logger.debug(
-                    "Ignoring unknown check type for target {}".format(target)
-                )
+                self._logger.debug(f"Ignoring unknown check type for target {target}")
                 continue
             except Exception:
                 self._logger.exception(
@@ -1648,7 +1631,7 @@ class SoftwareUpdatePlugin(
                             continue
                         except Exception:
                             self._logger.exception(
-                                "Could not check {} for updates".format(target)
+                                f"Could not check {target} for updates"
                             )
                             continue
 
@@ -1796,9 +1779,9 @@ class SoftwareUpdatePlugin(
             for key in sorted(d.keys()):
                 value = d[key]
                 if isinstance(value, dict):
-                    lines.append("{!r}: {}".format(key, dict_to_sorted_repr(value)))
+                    lines.append(f"{key!r}: {dict_to_sorted_repr(value)}")
                 else:
-                    lines.append("{!r}: {!r}".format(key, value))
+                    lines.append(f"{key!r}: {value!r}")
 
             return "{" + ", ".join(lines) + "}"
 
@@ -1875,7 +1858,7 @@ class SoftwareUpdatePlugin(
             error = "unknown_check"
         except exceptions.NetworkError:
             self._logger.warning(
-                "Could not check {} for updates due to a network error".format(target)
+                f"Could not check {target} for updates due to a network error"
             )
             update_possible = False
             error = "network"
@@ -1889,12 +1872,12 @@ class SoftwareUpdatePlugin(
             error = "ratelimit"
         except exceptions.CheckError:
             self._logger.warning(
-                "Could not check {} for updates due to a check error".format(target)
+                f"Could not check {target} for updates due to a check error"
             )
             update_possible = False
             error = "check"
         except Exception:
-            self._logger.exception("Could not check {} for updates".format(target))
+            self._logger.exception(f"Could not check {target} for updates")
             update_possible = False
             error = "unknown"
         else:
@@ -1904,9 +1887,7 @@ class SoftwareUpdatePlugin(
                     target, check, online=online
                 )
             except Exception:
-                self._logger.exception(
-                    "Error while checking if {} can be updated".format(target)
-                )
+                self._logger.exception(f"Error while checking if {target} can be updated")
                 update_possible = False
 
         self._version_cache[target] = {
@@ -1992,9 +1973,7 @@ class SoftwareUpdatePlugin(
             try:
                 populated_checks[target] = self._populated_check(target, check)
             except exceptions.UnknownCheckType:
-                self._logger.debug(
-                    "Ignoring unknown check type for target {}".format(target)
-                )
+                self._logger.debug(f"Ignoring unknown check type for target {target}")
             except Exception:
                 self._logger.exception(
                     "Error while populating check prior to update for target {}".format(
@@ -2090,14 +2069,13 @@ class SoftwareUpdatePlugin(
                 # one of our updates requires a restart of either type "octoprint" or "environment". Let's see if
                 # we can actually perform that
 
-                restart_command = self._get_restart_command(restart_type)
-                if restart_command:
+                if self._has_restart_command(restart_type):
                     self._send_client_message(
                         "restarting",
                         {"restart_type": restart_type, "results": target_results},
                     )
                     try:
-                        self._perform_restart(restart_command)
+                        self._perform_restart(restart_type)
                     except exceptions.RestartFailed:
                         self._send_client_message(
                             "restart_failed",
@@ -2184,9 +2162,7 @@ class SoftwareUpdatePlugin(
         ### The actual update procedure starts here...
 
         try:
-            self._logger.info(
-                "Starting update of {} to {}...".format(target, target_version)
-            )
+            self._logger.info(f"Starting update of {target} to {target_version}...")
             self._send_client_message(
                 "updating",
                 {
@@ -2200,12 +2176,15 @@ class SoftwareUpdatePlugin(
                 raise exceptions.UnknownUpdateType()
 
             update_result = updater.perform_update(
-                target, populated_check, target_version, log_cb=self._log, online=online
+                target,
+                populated_check,
+                target_version,
+                log_cb=self._log,
+                online=online,
+                force=force,
             )
             target_result = ("success", update_result)
-            self._logger.info(
-                "Update of {} to {} successful!".format(target, target_version)
-            )
+            self._logger.info(f"Update of {target} to {target_version} successful!")
             trigger_event(True)
 
         except exceptions.UnknownUpdateType:
@@ -2306,20 +2285,21 @@ class SoftwareUpdatePlugin(
 
         check["current"] = current
 
-    def _perform_restart(self, restart_command):
+    def _perform_restart(self, restart_type):
         """
-        Performs a restart using the supplied restart_command.
+        Performs a restart using the supplied restart_type.
         """
 
         self._logger.info("Restarting...")
         try:
-            util.execute(restart_command, evaluate_returncode=False, do_async=True)
-        except exceptions.ScriptError as e:
-            self._logger.exception(
-                "Error while restarting via command {}".format(restart_command)
-            )
-            self._logger.warning("Restart stdout:\n{}".format(e.stdout))
-            self._logger.warning("Restart stderr:\n{}".format(e.stderr))
+            if restart_type == "octoprint":
+                return self._system_commands.perform_server_restart()
+            elif restart_type == "environment":
+                return self._system_commands.perform_system_restart()
+        except CommandlineError as e:
+            self._logger.exception(f"Error while restarting of type {restart_type}")
+            self._logger.warning(f"Restart stdout:\n{e.stdout}")
+            self._logger.warning(f"Restart stderr:\n{e.stderr}")
             raise exceptions.RestartFailed()
 
     def _populated_check(self, target, check):
@@ -2448,7 +2428,7 @@ class SoftwareUpdatePlugin(
             data={"loglines": [{"line": line, "stream": stream} for line in lines]},
         )
         for line in lines:
-            self._console_logger.debug("{} {}".format(prefix, line))
+            self._console_logger.debug(f"{prefix} {line}")
 
     def _send_client_message(self, message_type, data=None):
         self._plugin_manager.send_plugin_message(
@@ -2561,7 +2541,7 @@ __plugin_disabling_discouraged__ = gettext(
     "your system at risk."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 
 
 def __plugin_load__():

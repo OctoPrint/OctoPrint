@@ -1,37 +1,19 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import os
 import os.path
 import unittest
+from contextlib import contextmanager
+from unittest import mock
 
-import mock
-import pytest
 from ddt import data, ddt, unpack
 
 from octoprint.filemanager.storage import LocalFileStorage, StorageError
 
-try:
-    import pathvalidate  # noqa: F401
 
-    HAS_PATHVALIDATE = True
-except ImportError:
-    HAS_PATHVALIDATE = False
-
-pathvalidate_unavailable_only = pytest.mark.skipif(
-    HAS_PATHVALIDATE, reason="pathvalidate available"
-)
-pathvalidate_available_only = pytest.mark.skipif(
-    not HAS_PATHVALIDATE, reason="pathvalidate unavailable"
-)
-
-
-class FileWrapper(object):
+class FileWrapper:
     def __init__(self, filename):
         self.path = os.path.join(
             os.path.dirname(os.path.realpath(__file__)), "_files", filename
@@ -41,7 +23,7 @@ class FileWrapper(object):
 
         blocksize = 65536
         hash = hashlib.sha1()
-        with io.open(self.path, "rb") as f:
+        with open(self.path, "rb") as f:
             buffer = f.read(blocksize)
             while len(buffer) > 0:
                 hash.update(buffer)
@@ -617,7 +599,7 @@ class LocalStorageTest(unittest.TestCase):
 
         self.assertEqual("folder", file_list[content_folder]["type"])
         self.assertEqual(0, len(file_list[content_folder]["children"]))
-        self.assertNotEquals(0, file_list[content_folder]["size"])
+        self.assertNotEqual(0, file_list[content_folder]["size"])
 
         self.assertEqual("folder", file_list["empty"]["type"])
         self.assertEqual(0, len(file_list["empty"]["children"]))
@@ -732,33 +714,29 @@ class LocalStorageTest(unittest.TestCase):
         self.assertEqual(0, len(gcode_metadata["links"]))
         self.assertEqual(1, len(stl_metadata["links"]))
 
-    @pathvalidate_unavailable_only
     @data(
-        ("some_file.gco", "some_file.gco"),
+        ("some_file.gco", "some_file.gco", False),
+        ("some file.gco", "some file.gco", False),
+        (
+            "some_file with (parentheses) and ümläuts and digits 123.gco",
+            "some_file with (parentheses) and ümläuts and digits 123.gco",
+            False,
+        ),
+        ("pengüino pequeño.stl", "pengüino pequeño.stl", False),
+        ("some file.gco", "some_file.gco", True),
         (
             "some_file with (parentheses) and ümläuts and digits 123.gco",
             "some_file_with_(parentheses)_and_umlauts_and_digits_123.gco",
+            True,
         ),
-        ("pengüino pequeño.stl", "penguino_pequeno.stl"),
+        ("pengüino pequeño.stl", "penguino_pequeno.stl", True),
     )
     @unpack
-    def test_sanitize_name_pvu(self, input, expected):
-        actual = self.storage.sanitize_name(input)
+    def test_sanitize_name(self, input, expected, really_universal):
+        with _set_really_universal(self.storage, really_universal):
+            actual = self.storage.sanitize_name(input)
         self.assertEqual(expected, actual)
-
-    @pathvalidate_available_only
-    @data(
-        ("some_file.gco", "some_file.gco"),
-        (
-            "some_file with (parentheses) and ümläuts and digits 123.gco",
-            "some_file with (parentheses) and ümläuts and digits 123.gco",
-        ),
-        ("pengüino pequeño.stl", "pengüino pequeño.stl"),
-    )
-    @unpack
-    def test_sanitize_name_pva(self, input, expected):
-        actual = self.storage.sanitize_name(input)
-        self.assertEqual(expected, actual)
+        self.storage._really_universal = False
 
     @data("some/folder/still/left.gco", "also\\no\\backslashes.gco")
     def test_sanitize_name_invalid(self, input):
@@ -790,8 +768,38 @@ class LocalStorageTest(unittest.TestCase):
         except ValueError as e:
             self.assertTrue(e.args[0].startswith("path not contained in base folder: "))
 
-    def _test_sanitize(self, input, expected_path, expected_name):
-        actual = self.storage.sanitize(input)
+    @data(
+        ("", "/", "", False),
+        (
+            "some/folder/with/trailing/slash/",
+            "/some/folder/with/trailing/slash",
+            "",
+            False,
+        ),
+        (("some", "folder", ""), "/some/folder", "", False),
+        ("some/folder/and/some file.gco", "/some/folder/and", "some file.gco", False),
+        (
+            ("some", "folder", "and", "some file.gco"),
+            "/some/folder/and",
+            "some file.gco",
+            False,
+        ),
+        ("some file.gco", "/", "some file.gco", False),
+        (("some file.gco",), "/", "some file.gco", False),
+        ("some/folder/and/some file.gco", "/some/folder/and", "some_file.gco", True),
+        (
+            ("some", "folder", "and", "some file.gco"),
+            "/some/folder/and",
+            "some_file.gco",
+            True,
+        ),
+        ("some file.gco", "/", "some_file.gco", True),
+        (("some file.gco",), "/", "some_file.gco", True),
+    )
+    @unpack
+    def test_sanitize(self, input, expected_path, expected_name, really_universal):
+        with _set_really_universal(self.storage, really_universal):
+            actual = self.storage.sanitize(input)
         self.assertTrue(isinstance(actual, tuple))
         self.assertEqual(2, len(actual))
 
@@ -806,34 +814,6 @@ class LocalStorageTest(unittest.TestCase):
 
         self.assertEqual(expected_path, actual_path)
         self.assertEqual(expected_name, actual_name)
-
-    @pathvalidate_unavailable_only
-    @data(
-        ("some/folder/and/some file.gco", "/some/folder/and", "some_file.gco"),
-        (("some", "folder", "and", "some file.gco"), "/some/folder/and", "some_file.gco"),
-        ("some file.gco", "/", "some_file.gco"),
-        (("some file.gco",), "/", "some_file.gco"),
-        ("", "/", ""),
-        ("some/folder/with/trailing/slash/", "/some/folder/with/trailing/slash", ""),
-        (("some", "folder", ""), "/some/folder", ""),
-    )
-    @unpack
-    def test_sanitize_pvu(self, input, expected_path, expected_name):
-        self._test_sanitize(input, expected_path, expected_name)
-
-    @pathvalidate_available_only
-    @data(
-        ("some/folder/and/some file.gco", "/some/folder/and", "some file.gco"),
-        (("some", "folder", "and", "some file.gco"), "/some/folder/and", "some file.gco"),
-        ("some file.gco", "/", "some file.gco"),
-        (("some file.gco",), "/", "some file.gco"),
-        ("", "/", ""),
-        ("some/folder/with/trailing/slash/", "/some/folder/with/trailing/slash", ""),
-        (("some", "folder", ""), "/some/folder", ""),
-    )
-    @unpack
-    def test_sanitize_pva(self, input, expected_path, expected_name):
-        self._test_sanitize(input, expected_path, expected_name)
 
     def _add_and_verify_file(
         self, path, expected_path, file_object, links=None, overwrite=False, display=None
@@ -853,7 +833,7 @@ class LocalStorageTest(unittest.TestCase):
         # prepare
         import yaml
 
-        with io.open(yaml_path, "wt") as f:
+        with open(yaml_path, "wt") as f:
             yaml.safe_dump(metadata, f)
 
         # migrate
@@ -865,7 +845,7 @@ class LocalStorageTest(unittest.TestCase):
 
         import json
 
-        with io.open(json_path, "rt", encoding="utf-8") as f:
+        with open(json_path, encoding="utf-8") as f:
             json_metadata = json.load(f)
         self.assertDictEqual(metadata, json_metadata)
 
@@ -927,3 +907,13 @@ class LocalStorageTest(unittest.TestCase):
             )
         )
         return sanitized_path
+
+
+@contextmanager
+def _set_really_universal(storage, value):
+    orig = storage._really_universal
+    try:
+        storage._really_universal = value
+        yield
+    finally:
+        storage._really_universal = orig

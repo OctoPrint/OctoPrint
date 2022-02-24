@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
-# NO unicode_literals because Py2 setuptool can't cope with them
+### NOTE #################################################################################
+# This file has to stay format compatible to Python 2, or pip under Python 2 will
+# not be able to detect that OctoPrint requires Python 3 but instead fail with a
+# syntax error.
+#
+# So, no f-strings, no walrus operators, no pyupgrade or codemods.
+##########################################################################################
 
-__author__ = u"Gina Häußge <osd@foosel.net>"
-__license__ = u"GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
-__copyright__ = u"Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__author__ = "Gina Häußge <osd@foosel.net>"
+__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
+__copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import glob
 import os
@@ -64,12 +70,6 @@ def recursively_handle_files(
 def has_requirement(requirement, requirements):
     if requirement is None or requirements is None:
         return False
-
-    # from past.builtins import basestring
-
-    # assert isinstance(requirement, basestring)
-    # assert isinstance(requirements, (list, tuple))
-    # assert all(list(map(lambda x: x is not None and isinstance(x, basestring), requirements)))
 
     requirement = requirement.lower()
     requirements = [r.lower() for r in requirements]

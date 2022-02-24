@@ -1,0 +1,16 @@
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Collecting https://github.com/OctoPrint/OctoPrint/archive/devel.zip
+  Downloading https://github.com/OctoPrint/OctoPrint/archive/devel.zip
+     - 6.5 MB 3.0 MB/s
+    ERROR: Command errored out with exit status 1:
+     command: /home/pi/venv/bin/python2 -c 'import sys, setuptools, tokenize; sys.argv[0] = '"'"'/tmp/pip-req-build-Lnnz41/setup.py'"'"'; __file__='"'"'/tmp/pip-req-build-Lnnz41/setup.py'"'"';f=getattr(tokenize, '"'"'open'"'"', open)(__file__);code=f.read().replace('"'"'\r\n'"'"', '"'"'\n'"'"');f.close();exec(compile(code, __file__, '"'"'exec'"'"'))' egg_info --egg-base /tmp/pip-pip-egg-info-iys_Da
+         cwd: /tmp/pip-req-build-Lnnz41/
+    Complete output (6 lines):
+    Traceback (most recent call last):
+      File "<string>", line 1, in <module>
+      File "/tmp/pip-req-build-Lnnz41/setup.py", line 139
+        print(f"Rendering markdown from {source} to {dest}")
+                                                          ^
+    SyntaxError: invalid syntax
+    ----------------------------------------
+ERROR: Command errored out with exit status 1: python setup.py egg_info Check the logs for full command output.

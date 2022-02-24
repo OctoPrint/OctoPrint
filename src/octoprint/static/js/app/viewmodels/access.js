@@ -843,15 +843,16 @@ $(function () {
             access.permissions.initialize();
         };
 
-        access.onUserPermissionsChanged = access.onUserLoggedIn = access.onUserLoggedOut = function (
-            user
-        ) {
-            if (access.loginState.hasPermission(access.permissions.SETTINGS)) {
-                access.groups.requestData().done(function () {
-                    access.users.requestData();
-                });
-            }
-        };
+        access.onUserPermissionsChanged =
+            access.onUserLoggedIn =
+            access.onUserLoggedOut =
+                function (user) {
+                    if (access.loginState.hasPermission(access.permissions.SETTINGS)) {
+                        access.groups.requestData().done(function () {
+                            access.users.requestData();
+                        });
+                    }
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push([AccessViewModel, ["loginStateViewModel"], []]);

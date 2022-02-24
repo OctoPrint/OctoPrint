@@ -133,21 +133,37 @@
     <button class="btn btn-small" data-bind="click: removeMarkedFiles, enable: markedForFileDeletion().length > 0">{{ _('Delete selected') }}</button>
     <a class="btn btn-small" data-bind="css: { disabled: !enableBulkDownload() }, attr: { href: bulkDownloadButtonUrl }">{{_('Download selected')}}</a>
 </div>
-<table class="table table-striped table-hover table-condensed table-hover" id="timelapse_files">
+<table class="table table-hover table-condensed table-hover" id="timelapse_files">
     <thead>
     <tr>
         <th class="timelapse_files_checkbox"></th>
-        <th class="timelapse_files_name">{{ _('Name') }}</th>
-        <th class="timelapse_files_size">{{ _('Size') }}</th>
+        <th class="timelapse_files_thumb">{{ _('Preview') }}</th>
+        <th class="timelapse_files_details">{{ _('Details') }}</th>
         <th class="timelapse_files_action">{{ _('Action') }}</th>
     </tr>
     </thead>
     <tbody data-bind="foreach: listHelper.paginatedItems">
     <tr data-bind="attr: {title: name}">
         <td class="timelapse_files_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForFileDeletion, invisible: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()"></td>
-        <td class="timelapse_files_name" data-bind="text: name"></td>
-        <td class="timelapse_files_size" data-bind="text: size"></td>
-        <td class="timelapse_files_action"><a href="javascript:void(0)" class="far fa-trash-alt" data-bind="click: function() { $parent.removeFile($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)() }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fas fa-download" data-bind="css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DOWNLOAD)()}, attr: { href: ($root.loginState.hasPermission($root.access.permissions.TIMELAPSE_DOWNLOAD)) ? $data.url : 'javascript:void(0)' }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fas fa-camera" data-bind="css: {disabled: !$root.isTimelapseViewable($data)}, click: $root.showTimelapsePreview"></a></td>
+        <td class="timelapse_files_thumb">
+            <div class="thumb" data-bind="css: { letterbox: $data.thumbnail }">
+                <!-- ko if: $data.thumbnail -->
+                <img data-bind="attr:{src: thumbnail}" loading="lazy" />
+                <!-- /ko -->
+                <a href="javascript:void(0)" data-bind="css: {disabled: !$root.isTimelapseViewable($data)}, click: $root.showTimelapsePreview"></a>
+            </div>
+        </td>
+        <td class="timelapse_files_details">
+            <p class="name" data-bind="text: name"></p>
+            <p class="detail">{{ _('Recorded:') }} <span data-bind="text: formatTimeAgo(timestamp)"/></p>
+            <p class="detail">{{ _('Size:') }} <span data-bind="text: size"/></p>
+        </td>
+        <td class="timelapse_files_action">
+            <div class="btn-group action-buttons">
+                <div href="javascript:void(0)" class="btn btn-mini" data-bind="click: function() { $parent.removeFile($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)() }"><i class="far fa-trash-alt"></i></div>
+                <a href="javascript:void(0)" class="btn btn-mini" data-bind="css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DOWNLOAD)()}, attr: { href: ($root.loginState.hasPermission($root.access.permissions.TIMELAPSE_DOWNLOAD)) ? $data.url : 'javascript:void(0)' }"><i class="fas fa-download"></i></a>
+            </div>
+        </td>
     </tr>
     </tbody>
 </table>

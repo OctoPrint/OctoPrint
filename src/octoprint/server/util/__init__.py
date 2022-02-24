@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -9,7 +6,7 @@ import base64
 import logging
 import sys
 
-PY3 = sys.version_info[0] == 3
+PY3 = sys.version_info[0] == 3  # should now always be true, kept for plugins
 
 import flask as _flask
 import flask_login
@@ -314,7 +311,7 @@ def get_authorization_header(request):
 def get_plugin_hash():
     from octoprint.plugin import plugin_manager
 
-    plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
+    plugin_signature = lambda impl: f"{impl._identifier}:{impl._plugin_version}"
     template_plugins = list(
         map(
             plugin_signature,

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -34,6 +31,7 @@ def run_server(
     ignore_blacklist,
     octoprint_daemon=None,
     overlays=None,
+    disable_color=False,
 ):
     """Initializes the environment and starts up the server."""
 
@@ -47,7 +45,7 @@ def run_server(
         PluginTimingsLogHandler.arm_rollover()
 
         logger.info(get_divider_line("*"))
-        logger.info("Starting OctoPrint {}".format(__display_version__))
+        logger.info(f"Starting OctoPrint {__display_version__}")
         if safe_mode:
             logger.info("Starting in SAFE MODE. Third party plugins will be disabled!")
             if safe_mode == "flag":
@@ -58,7 +56,7 @@ def run_server(
                 reason = "problem during last startup"
             else:
                 reason = "unknown"
-            logger.info("Reason for safe mode: {}".format(reason))
+            logger.info(f"Reason for safe mode: {reason}")
 
         if recorder and len(recorder):
             logger.info(get_divider_line("-", "Logged during platform initialization:"))
@@ -101,7 +99,7 @@ def run_server(
                 log_to_handler(logger, handler, level, message)
 
             _log(get_divider_line("-", "Log roll over detected"))
-            _log("OctoPrint {}".format(__display_version__))
+            _log(f"OctoPrint {__display_version__}")
             if safe_mode:
                 _log("SAFE MODE is active. Third party plugins are disabled!")
             plugin_manager.log_all_plugins(only_to_handler=handler)
@@ -123,6 +121,7 @@ def run_server(
             ignore_blacklist=ignore_blacklist,
             after_safe_mode=log_startup,
             after_environment_detector=log_register_rollover,
+            disable_color=disable_color,
         )
         (
             settings,
@@ -251,11 +250,11 @@ daemon_options = bulk_options(
 
 
 @click.group()
-def server_commands():
+def cli():
     pass
 
 
-@server_commands.command(name="safemode")
+@cli.command(name="safemode")
 @standard_options()
 @click.pass_context
 def enable_safemode(ctx, **kwargs):
@@ -286,7 +285,7 @@ def enable_safemode(ctx, **kwargs):
         )
 
 
-@server_commands.command(name="serve")
+@cli.command(name="serve")
 @standard_options()
 @server_options
 @click.pass_context
@@ -310,6 +309,7 @@ def serve_command(ctx, **kwargs):
     safe_mode = "flag" if get_value("safe_mode") else None
     ignore_blacklist = get_value("ignore_blacklist")
     overlays = get_value("overlays")
+    no_color = get_value("no_color")
 
     if v4 and not host:
         host = "0.0.0.0"
@@ -327,13 +327,14 @@ def serve_command(ctx, **kwargs):
         safe_mode,
         ignore_blacklist,
         overlays=overlays,
+        disable_color=no_color,
     )
 
 
 if sys.platform != "win32" and sys.platform != "darwin":
     # we do not support daemon mode under windows or macosx
 
-    @server_commands.command(name="daemon")
+    @cli.command(name="daemon")
     @standard_options()
     @server_options
     @daemon_options
