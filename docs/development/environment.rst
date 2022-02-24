@@ -101,7 +101,7 @@ installed:
 
     .. code-block:: none
 
-       sudo apt-get install python python-pip python-dev python-setuptools python-virtualenv python3 python3-virtualenv python3-dev git libyaml-dev build-essential
+       sudo apt-get install python python-pip python-dev python-setuptools python-virtualenv python3 python3-virtualenv python3-dev git libyaml-dev build-essential rustc
 
 Then:
 
