@@ -197,7 +197,7 @@ GCODE.gCodeReader = (function () {
             rendererModel = undefined;
             layerPercentageLookup = undefined;
             cacheLastLayer = undefined;
-            cacheLastCmd = undefined;            
+            cacheLastCmd = undefined;
         },
 
         loadFile: function (reader) {
