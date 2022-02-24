@@ -380,7 +380,7 @@ var doParse = function () {
 
         var log = false;
 
-        if (/^(?:G0|G1|G2|G3)(\.\d+)?\s/i.test(line)) {
+        if (/^(?:G0|G1|G2|G3|G00|G01|G02|G03)(\.\d+)?\s/i.test(line)) {
             args = line.split(/\s/);
 
             for (j = 0; j < args.length; j++) {
