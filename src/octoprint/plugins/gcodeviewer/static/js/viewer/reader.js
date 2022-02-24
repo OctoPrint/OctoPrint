@@ -89,7 +89,7 @@ GCODE.gCodeReader = (function () {
                 if (
                     rendererModel[layer][middle].percentage == key ||
                     (rendererModel[layer][middle].percentage <= key &&
-                     rendererModel[layer][middle + 1].percentage > key)
+                        rendererModel[layer][middle + 1].percentage > key)
                 )
                     return middle;
 
@@ -177,7 +177,7 @@ GCODE.gCodeReader = (function () {
 
         layerPercentageLookup = result;
     };
-    
+
     // ***** PUBLIC *******
     return {
         clear: function () {
