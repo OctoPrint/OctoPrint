@@ -72,7 +72,6 @@ $(function () {
         self.renderer_showPrevious = ko.observable(false);
         self.renderer_syncProgress = ko.observable(true);
 
-        self.reader_sortLayers = ko.observable(true);
         self.reader_hideEmptyLayers = ko.observable(true);
         self.reader_ignoreOutsideBed = ko.observable(true);
 
@@ -118,7 +117,6 @@ $(function () {
             }
 
             var reader = {
-                sortLayers: self.reader_sortLayers(),
                 purgeEmptyLayers: self.reader_hideEmptyLayers(),
                 ignoreOutsideBed: self.reader_ignoreOutsideBed()
             };
@@ -161,7 +159,6 @@ $(function () {
         self.renderer_showCurrent.subscribe(self.rendererOptionUpdated);
         self.renderer_showPrevious.subscribe(self.rendererOptionUpdated);
 
-        self.reader_sortLayers.subscribe(self.readerOptionUpdated);
         self.reader_hideEmptyLayers.subscribe(self.readerOptionUpdated);
         self.reader_ignoreOutsideBed.subscribe(self.readerOptionUpdated);
 
@@ -427,7 +424,6 @@ $(function () {
             self.renderer_showPrevious(false);
             self.renderer_syncProgress(true);
 
-            self.reader_sortLayers(true);
             self.reader_hideEmptyLayers(true);
             self.reader_ignoreOutsideBed(true);
         };
@@ -926,8 +922,7 @@ $(function () {
                 showFullsize: self.renderer_showFullSize(),
                 showBoundingBox: self.renderer_showBoundingBox(),
                 showLayerBoundingBox: self.renderer_showLayerBoundingBox(),
-                hideEmptyLayers: self.reader_hideEmptyLayers(),
-                sortLayers: self.reader_sortLayers()
+                hideEmptyLayers: self.reader_hideEmptyLayers()
             });
         };
         self._fromLocalStorage = function () {
@@ -964,8 +959,6 @@ $(function () {
                 self.renderer_showLayerBoundingBox(current["showLayerBoundingBox"]);
             if (current["hideEmptyLayers"] !== undefined)
                 self.reader_hideEmptyLayers(current["hideEmptyLayers"]);
-            if (current["sortLayers"] !== undefined)
-                self.reader_sortLayers(current["sortLayers"]);
         };
     }
 
