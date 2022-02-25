@@ -20,7 +20,7 @@ repos:
         args: ["--py37-plus"]
         exclude: "setup.py|versioneer.py|src/octoprint_setuptools/__init__.py"
   - repo: https://github.com/OctoPrint/codemods
-    rev: "0.6.2"
+    rev: "0.6.3"
     hooks:
       - id: codemod_batch
         args:
