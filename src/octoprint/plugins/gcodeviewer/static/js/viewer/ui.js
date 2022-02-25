@@ -79,7 +79,7 @@ GCODE.ui = (function () {
 
             case "returnLayers":
                 GCODE.gCodeReader.processLayersFromWorker(data.msg);
-                setProgress("loading", data.msg.progress / 2);
+                setProgress("parsing", data.msg.progress / 2);
                 break;
 
             case "analyzeProgress":

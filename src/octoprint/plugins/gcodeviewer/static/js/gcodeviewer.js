@@ -9,14 +9,23 @@ $(function () {
         self.sizeThresholdStr = undefined;
         self.mobileSizeThresholdStr = undefined;
 
+        self.ui_progress_busy = ko.observable(false);
         self.ui_progress_percentage = ko.observable();
         self.ui_progress_type = ko.observable();
         self.ui_progress_text = ko.pureComputed(function () {
             var text = "";
             switch (self.ui_progress_type()) {
-                case "loading": {
+                case "downloading": {
+                    text = gettext("Downloading...");
+                    break;
+                }
+                case "splitting": {
+                    text = gettext("Splitting lines...");
+                    break;
+                }
+                case "parsing": {
                     text =
-                        gettext("Loading...") +
+                        gettext("Parsing...") +
                         " (" +
                         self.ui_progress_percentage().toFixed(0) +
                         "%)";
@@ -31,7 +40,7 @@ $(function () {
                     break;
                 }
                 case "done": {
-                    text = gettext("Analyzed");
+                    text = gettext("Ready!");
                     break;
                 }
             }
@@ -489,6 +498,7 @@ $(function () {
             self.needsLoad = false;
             if (self.status === "idle" && self.errorCount < 3) {
                 self.status = "request";
+                self._onProgress("downloading");
                 OctoPrint.files
                     .download("local", path)
                     .done(function (response, rstatus) {
@@ -528,6 +538,7 @@ $(function () {
                 }
             };
             GCODE.renderer.clear();
+            self._onProgress("splitting");
             GCODE.gCodeReader.loadFile(par);
 
             if (self.layerSlider !== undefined) {
@@ -651,7 +662,8 @@ $(function () {
 
         self._onProgress = function (type, percentage) {
             self.ui_progress_type(type);
-            self.ui_progress_percentage(percentage);
+            self.ui_progress_percentage(percentage === undefined ? 100 : percentage);
+            self.ui_progress_busy(percentage === undefined);
         };
 
         self._onModelLoaded = function (model) {
