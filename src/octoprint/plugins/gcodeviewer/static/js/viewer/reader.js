@@ -7,7 +7,6 @@
 GCODE.gCodeReader = (function () {
     // ***** PRIVATE ******
     var gcode, lines;
-    var z_heights = {};
     var model = [];
     var max = {x: undefined, y: undefined, z: undefined};
     var min = {x: undefined, y: undefined, z: undefined};
@@ -45,9 +44,8 @@ GCODE.gCodeReader = (function () {
 
     var rendererModel = undefined;
     var layerPercentageLookup = [];
-    var cacheLookAhead = 64;
-    var cacheLastLayer = undefined;
-    var cacheLastCmd = undefined;
+    var cachedLayer = undefined;
+    var cachedCmd = undefined;
 
     var prepareGCode = function (totalSize) {
         if (!lines) return;
@@ -107,64 +105,47 @@ GCODE.gCodeReader = (function () {
         // this happens when the print is stopped.
         // just return last position to keep the last
         // position on screen.
-        if (key == null) return {layer: cacheLastLayer, cmd: cacheLastCmd};
+        if (key == null) return {layer: cachedLayer, cmd: cachedCmd};
 
-        var bestLayer = undefined;
-        var bestCmd = undefined;
-
-        var bestLayer = searchInLayers(1, rendererModel.length - 1, key);
-        var bestCmd = searchInCmds(
-            bestLayer,
-            0,
-            rendererModel[bestLayer].length - 1,
-            key
-        );
+        var layer = searchInLayers(0, rendererModel.length - 1, key);
+        var cmd = searchInCmds(layer, 0, rendererModel[layer].length - 1, key);
 
         // remember last position
-        cacheLastLayer = bestLayer;
-        cacheLastCmd = bestCmd;
+        cachedLayer = layer;
+        cachedCmd = cmd;
 
-        return {layer: bestLayer, cmd: bestCmd};
+        return {layer: layer, cmd: cmd};
     };
 
-    var purgeLayers = function (m) {
-        if (!m) return;
-        var tmpModel = [];
+    var sanitizeModel = function (m) {
+        if (!m) return [];
+        return _.filter(m, function (layer) {
+            return !!layer;
+        });
+    };
 
-        var purge;
-        for (var i = 0; i < m.length; i++) {
-            purge = true;
-
-            if (typeof m[i] !== "undefined") {
-                for (var j = 0; j < m[i].length; j++) {
-                    if (m[i][j].extrude) {
-                        purge = false;
-                        break;
-                    }
-                }
-            }
-
-            if (!purge) {
-                tmpModel.push(m[i]);
-            }
-        }
-
-        return tmpModel;
+    var purgeEmptyLayers = function (m) {
+        return _.filter(m, function (layer) {
+            return (
+                !!layer &&
+                layer.length > 0 &&
+                _.find(layer, function (cmd) {
+                    return cmd && cmd.extrude;
+                }) !== undefined
+            );
+        });
     };
 
     var rebuildLayerPercentageLookup = function (m) {
-        if (!m) return;
-
         var result = [];
         for (var i = 0; i < m.length - 1; i++) {
-            if (!m[i]) {
-                result[i] = [-1, -1];
-                continue;
-            }
+            // start is first command of current layer
             var start = m[i].length ? m[i][0].percentage : -1;
 
             var end = -1;
             for (var j = i + 1; j < m.length; j++) {
+                // end is percentage of first command that follows our start, might
+                // be later layers if the next layer is empty!
                 if (m[j].length) {
                     end = m[j][0].percentage;
                     break;
@@ -173,7 +154,11 @@ GCODE.gCodeReader = (function () {
 
             result[i] = [start, end];
         }
-        result[m.length - 1] = [m[m.length - 1][0].percentage, 100];
+
+        // final start-end-pair is start percentage of last layer and 100%
+        result[m.length - 1] = m[m.length - 1].length
+            ? [m[m.length - 1][0].percentage, 100]
+            : [-1, -1];
 
         layerPercentageLookup = result;
     };
@@ -182,7 +167,6 @@ GCODE.gCodeReader = (function () {
     return {
         clear: function () {
             model = [];
-            z_heights = [];
             max = {x: undefined, y: undefined, z: undefined};
             min = {x: undefined, y: undefined, z: undefined};
             modelSize = {x: undefined, y: undefined, z: undefined};
@@ -196,8 +180,8 @@ GCODE.gCodeReader = (function () {
             };
             rendererModel = undefined;
             layerPercentageLookup = undefined;
-            cacheLastLayer = undefined;
-            cacheLastCmd = undefined;
+            cachedLayer = undefined;
+            cachedCmd = undefined;
         },
 
         loadFile: function (reader) {
@@ -238,8 +222,8 @@ GCODE.gCodeReader = (function () {
         },
 
         passDataToRenderer: function () {
-            var m = model;
-            if (gCodeOptions["purgeEmptyLayers"]) m = purgeLayers(m);
+            var m = sanitizeModel(model);
+            if (gCodeOptions["purgeEmptyLayers"]) m = purgeEmptyLayers(m);
 
             rendererModel = m;
             rebuildLayerPercentageLookup(m);
@@ -248,15 +232,9 @@ GCODE.gCodeReader = (function () {
             return m;
         },
 
-        processLayerFromWorker: function (msg) {
-            model[msg.layerNum] = msg.cmds;
-            z_heights[msg.zHeightObject.zValue] = msg.zHeightObject.layer;
-        },
-
-        processMultiLayerFromWorker: function (msg) {
-            for (var i = 0; i < msg.layerNum.length; i++) {
-                model[msg.layerNum[i]] = msg.model[msg.layerNum[i]];
-                z_heights[msg.zHeightObject.zValue[i]] = msg.layerNum[i];
+        processLayersFromWorker: function (msg) {
+            for (var i = 0; i < msg.layers.length; i++) {
+                model[msg.layers[i]] = msg.model[msg.layers[i]];
             }
         },
 

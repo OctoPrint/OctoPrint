@@ -77,13 +77,8 @@ GCODE.ui = (function () {
                 switchLayer(0);
                 break;
 
-            case "returnLayer":
-                GCODE.gCodeReader.processLayerFromWorker(data.msg);
-                setProgress("loading", data.msg.progress / 2);
-                break;
-
-            case "returnMultiLayer":
-                GCODE.gCodeReader.processMultiLayerFromWorker(data.msg);
+            case "returnLayers":
+                GCODE.gCodeReader.processLayersFromWorker(data.msg);
                 setProgress("loading", data.msg.progress / 2);
                 break;
 
