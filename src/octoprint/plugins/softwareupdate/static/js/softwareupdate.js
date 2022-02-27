@@ -64,6 +64,7 @@ $(function () {
         self.config_releaseChannel = ko.observable();
         self.config_pipEnableCheck = ko.observable();
         self.config_minimumFreeStorage = ko.observable();
+        self.config_githubToken = ko.observable();
 
         self.error_checkoutFolder = ko.pureComputed(function () {
             return (
@@ -254,7 +255,10 @@ $(function () {
                         octoprint_tracked_branch: self.config_trackedBranch(),
                         octoprint_pip_target: self.config_pipTarget(),
                         pip_enable_check: self.config_pipEnableCheck(),
-                        minimum_free_storage: self.config_minimumFreeStorage()
+                        minimum_free_storage: self.config_minimumFreeStorage(),
+                        credentials: {
+                            github: self.config_githubToken()
+                        }
                     }
                 }
             };
