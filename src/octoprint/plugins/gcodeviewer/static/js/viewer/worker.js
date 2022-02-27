@@ -56,8 +56,7 @@ var sendLayersToParent = function (layers, progress) {
     var m = [];
     for (var i = 0; i < l.length; i++) {
         if (!model[l[i]]) continue;
-        if (!(model[l[i]] instanceof Uint8Array))
-            model[l[i]] = compress(model[l[i]]);
+        if (!(model[l[i]] instanceof Uint8Array)) model[l[i]] = compress(model[l[i]]);
         m[l[i]] = model[l[i]];
     }
 
@@ -669,9 +668,7 @@ var doParse = function () {
                             1
                         );
                         if (model[zLiftLayer] instanceof Uint8Array)
-                            model[zLiftLayer] = decompress(
-                                model[zLiftLayer]
-                            );
+                            model[zLiftLayer] = decompress(model[zLiftLayer]);
                         // ... to z-lift layer
                         model[zLiftLayer].push(zLiftMove.command);
                     });
