@@ -94,9 +94,8 @@ GCODE.gCodeReader = (function () {
                 var middle = Math.floor((lower + upper) / 2);
 
                 if (
-                    rendererModel[layer][middle].percentage == key ||
-                    (rendererModel[layer][middle].percentage <= key &&
-                        rendererModel[layer][middle + 1].percentage > key)
+                    cmds[middle].percentage == key ||
+                    (cmds[middle].percentage <= key && cmds[middle + 1].percentage > key)
                 )
                     return middle;
 
@@ -117,7 +116,7 @@ GCODE.gCodeReader = (function () {
         if (key == null) return {layer: cachedLayer, cmd: cachedCmd};
 
         var layer = searchInLayers(0, rendererModel.length - 1, key);
-        var cmd = searchInCmds(layer, 0, rendererModel[layer].length - 1, key);
+        var cmd = searchInCmds(layer, 0, GCODE.renderer.getLayer(layer).length - 1, key);
 
         // remember last position
         cachedLayer = layer;
