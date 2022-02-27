@@ -135,10 +135,11 @@ GCODE.gCodeReader = (function () {
 
     var purgeEmptyLayers = function (m) {
         return _.filter(m, function (layer) {
+            if (!layer) return false;
+            var cmds = decompress(layer);
             return (
-                !!layer &&
-                layer.length > 0 &&
-                _.find(layer, function (cmd) {
+                cmds.length > 0 &&
+                _.find(cmds, function (cmd) {
                     return cmd && cmd.extrude;
                 }) !== undefined
             );
@@ -147,27 +148,37 @@ GCODE.gCodeReader = (function () {
 
     var rebuildLayerPercentageLookup = function (m) {
         var result = [];
+        var cachedLayers = [];
         for (var i = 0; i < m.length - 1; i++) {
+            var cmds = cachedLayers[i];
+            if (!cmds) {
+                cmds = decompress(m[i]);
+                cachedLayers[i] = cmds;
+            }
             // start is first command of current layer
-            var start = m[i].length ? m[i][0].percentage : -1;
+            var start = cmds.length ? cmds[0].percentage : -1;
 
             var end = -1;
             for (var j = i + 1; j < m.length; j++) {
+                var cmds2 = cachedLayers[j];
+                if (!cmds2) {
+                    cmds2 = decompress(m[j]);
+                    cachedLayers[i] = cmds2;
+                }
                 // end is percentage of first command that follows our start, might
                 // be later layers if the next layer is empty!
-                if (m[j].length) {
-                    end = m[j][0].percentage;
+                if (cmds2.length) {
+                    end = cmds2[0].percentage;
                     break;
                 }
             }
 
             result[i] = [start, end];
+            cachedLayers[i] = undefined;
         }
 
         // final start-end-pair is start percentage of last layer and 100%
-        result[m.length - 1] = m[m.length - 1].length
-            ? [m[m.length - 1][0].percentage, 100]
-            : [-1, -1];
+        result[result.length - 1] = [result[result.length - 1][0], 100];
 
         layerPercentageLookup = result;
     };
