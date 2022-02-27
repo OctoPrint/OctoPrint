@@ -188,6 +188,8 @@ GCODE.gCodeReader = (function () {
                 maxZ: undefined
             };
             rendererModel = undefined;
+            rendererEmptyLayers = undefined;
+            rendererPercentageByLayer = undefined;
             layerPercentageLookup = undefined;
             cachedLayer = undefined;
             cachedCmd = undefined;
