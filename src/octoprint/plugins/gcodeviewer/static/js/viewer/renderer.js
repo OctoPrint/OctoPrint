@@ -1387,6 +1387,7 @@ GCODE.renderer = (function () {
             speeds = [];
             speedsByLayer = {};
             modelInfo = undefined;
+            layerCache = [];
 
             this.doRender([], 0);
         },
