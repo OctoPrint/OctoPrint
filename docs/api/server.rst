@@ -29,7 +29,7 @@ Server information
       Content-Type: application/json
 
       {
-        "server": "1.5.0",
+        "version": "1.5.0",
         "safemode": "incomplete_startup"
       }
 
