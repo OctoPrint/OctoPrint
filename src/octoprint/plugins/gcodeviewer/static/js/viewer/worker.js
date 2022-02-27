@@ -36,6 +36,8 @@ var layerHeight = 0;
 var layerCnt = 0;
 var speeds = {extrude: [], retract: [], move: []};
 var speedsByLayer = {extrude: {}, retract: {}, move: {}};
+var emptyLayers = [];
+var percentageByLayer = [];
 
 importScripts("pako.js");
 
@@ -96,7 +98,9 @@ var sendAnalyzeDone = function () {
             layerTotal: model.length,
             speeds: speeds,
             speedsByLayer: speedsByLayer,
-            printTimeByLayer: printTimeByLayer
+            printTimeByLayer: printTimeByLayer,
+            percentageByLayer: percentageByLayer,
+            emptyLayers: emptyLayers
         }
     });
 };
@@ -170,6 +174,11 @@ var analyzeModel = function () {
         if (!cmds) continue;
         if (cmds instanceof Uint8Array) cmds = decompress(cmds);
 
+        if (cmds.length > 0) {
+            percentageByLayer[i] = cmds[0].percentage;
+        }
+
+        var layerExtrude = false;
         for (var j = 0; j < cmds.length; j++) {
             var tool = cmds[j].tool;
 
@@ -302,7 +311,16 @@ var analyzeModel = function () {
             if (speedsByLayer[type][cmds[j].prevZ].indexOf(cmds[j].speed) === -1) {
                 speedsByLayer[type][cmds[j].prevZ][speedIndex] = cmds[j].speed;
             }
+
+            if (extrude) {
+                layerExtrude = true;
+            }
         }
+
+        if (!layerExtrude) {
+            emptyLayers[i] = true;
+        }
+
         sendSizeProgress((i / model.length) * 100);
     }
     purgeLayers();

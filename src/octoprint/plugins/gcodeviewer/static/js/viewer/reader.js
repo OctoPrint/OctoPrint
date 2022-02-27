@@ -42,7 +42,12 @@ GCODE.gCodeReader = (function () {
         bedZ: 0
     };
 
+    var emptyLayers = [];
+    var percentageByLayer = [];
+
     var rendererModel = undefined;
+    var rendererEmptyLayers = undefined;
+    var rendererPercentageByLayer = undefined;
     var layerPercentageLookup = [];
     var cachedLayer = undefined;
     var cachedCmd = undefined;
@@ -125,59 +130,44 @@ GCODE.gCodeReader = (function () {
         return {layer: layer, cmd: cmd};
     };
 
-    var sanitizeModel = function (m) {
+    var cleanModel = function (m) {
         if (!m) return [];
-        return _.filter(m, function (layer) {
-            return !!layer;
-        });
-    };
 
-    var purgeEmptyLayers = function (m) {
-        return _.filter(m, function (layer) {
-            if (!layer) return false;
-            var cmds = decompress(layer);
-            return (
-                cmds.length > 0 &&
-                _.find(cmds, function (cmd) {
-                    return cmd && cmd.extrude;
-                }) !== undefined
-            );
-        });
+        var result = [];
+        rendererEmptyLayers = [];
+        rendererPercentageByLayer = [];
+        for (var i = 0; i < m.length; i++) {
+            if (!m[i]) continue;
+            if (gCodeOptions["purgeEmptyLayers"] && emptyLayers[i]) continue;
+
+            result.push(m[i]);
+            rendererPercentageByLayer.push(percentageByLayer[i]);
+            if (emptyLayers[i]) rendererEmptyLayers.push(true);
+        }
+        return result;
     };
 
     var rebuildLayerPercentageLookup = function (m) {
         var result = [];
-        var cachedLayers = [];
         for (var i = 0; i < m.length - 1; i++) {
-            var cmds = cachedLayers[i];
-            if (!cmds) {
-                cmds = decompress(m[i]);
-                cachedLayers[i] = cmds;
-            }
             // start is first command of current layer
-            var start = cmds.length ? cmds[0].percentage : -1;
+            var start = rendererPercentageByLayer[i];
 
             var end = -1;
             for (var j = i + 1; j < m.length; j++) {
-                var cmds2 = cachedLayers[j];
-                if (!cmds2) {
-                    cmds2 = decompress(m[j]);
-                    cachedLayers[i] = cmds2;
-                }
                 // end is percentage of first command that follows our start, might
                 // be later layers if the next layer is empty!
-                if (cmds2.length) {
-                    end = cmds2[0].percentage;
+                if (!rendererEmptyLayers[i]) {
+                    end = rendererPercentageByLayer[j];
                     break;
                 }
             }
 
             result[i] = [start, end];
-            cachedLayers[i] = undefined;
         }
 
         // final start-end-pair is start percentage of last layer and 100%
-        result[result.length - 1] = [result[result.length - 1][0], 100];
+        result[result.length] = [rendererPercentageByLayer[m.length - 1], 100];
 
         layerPercentageLookup = result;
     };
@@ -241,14 +231,11 @@ GCODE.gCodeReader = (function () {
         },
 
         passDataToRenderer: function () {
-            var m = sanitizeModel(model);
-            if (gCodeOptions["purgeEmptyLayers"]) m = purgeEmptyLayers(m);
+            rendererModel = cleanModel(model);
+            rebuildLayerPercentageLookup(rendererModel);
 
-            rendererModel = m;
-            rebuildLayerPercentageLookup(m);
-
-            GCODE.renderer.doRender(m, 0);
-            return m;
+            GCODE.renderer.doRender(rendererModel, 0);
+            return rendererModel;
         },
 
         processLayersFromWorker: function (msg) {
@@ -268,6 +255,8 @@ GCODE.gCodeReader = (function () {
             speedsByLayer = msg.speedsByLayer;
             printTime = msg.printTime;
             printTimeByLayer = msg.printTimeByLayer;
+            emptyLayers = msg.emptyLayers;
+            percentageByLayer = msg.percentageByLayer;
         },
 
         getLayerFilament: function (z) {
