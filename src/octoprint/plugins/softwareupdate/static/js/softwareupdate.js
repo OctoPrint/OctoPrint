@@ -244,6 +244,8 @@ $(function () {
             var target = $(event.target);
             target.prepend('<i class="fa fa-spinner fa-spin"></i> ');
 
+            var githubToken = self.config_githubToken();
+
             var data = {
                 plugins: {
                     softwareupdate: {
@@ -255,13 +257,13 @@ $(function () {
                         octoprint_tracked_branch: self.config_trackedBranch(),
                         octoprint_pip_target: self.config_pipTarget(),
                         pip_enable_check: self.config_pipEnableCheck(),
-                        minimum_free_storage: self.config_minimumFreeStorage(),
-                        credentials: {
-                            github: self.config_githubToken()
-                        }
+                        minimum_free_storage: self.config_minimumFreeStorage()
                     }
                 }
             };
+            if (githubToken) {
+                data.plugins.softwareupdate.credentials = {github: githubToken};
+            }
             self.settings.saveData(data, {
                 success: function () {
                     self.configurationDialog.modal("hide");
@@ -270,6 +272,7 @@ $(function () {
                 },
                 complete: function () {
                     $("i.fa-spinner", target).remove();
+                    self.config_githubToken("");
                 },
                 sending: true
             });
