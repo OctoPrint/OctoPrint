@@ -48,7 +48,7 @@ class GcodeviewerPlugin(
             "mobileSizeThreshold": 2 * 1024 * 1024,  # 2MB
             "sizeThreshold": 20 * 1024 * 1024,  # 20MB
             "skipUntilThis": None,
-            "alwaysCompress": True,
+            "alwaysCompress": False,
             "compressionSizeThreshold": 200 * 1024 * 1024,
         }
 
