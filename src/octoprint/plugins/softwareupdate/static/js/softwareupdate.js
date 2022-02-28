@@ -64,6 +64,7 @@ $(function () {
         self.config_releaseChannel = ko.observable();
         self.config_pipEnableCheck = ko.observable();
         self.config_minimumFreeStorage = ko.observable();
+        self.config_githubToken = ko.observable();
 
         self.error_checkoutFolder = ko.pureComputed(function () {
             return (
@@ -243,6 +244,8 @@ $(function () {
             var target = $(event.target);
             target.prepend('<i class="fa fa-spinner fa-spin"></i> ');
 
+            var githubToken = self.config_githubToken();
+
             var data = {
                 plugins: {
                     softwareupdate: {
@@ -258,6 +261,9 @@ $(function () {
                     }
                 }
             };
+            if (githubToken) {
+                data.plugins.softwareupdate.credentials = {github: githubToken};
+            }
             self.settings.saveData(data, {
                 success: function () {
                     self.configurationDialog.modal("hide");
@@ -266,6 +272,7 @@ $(function () {
                 },
                 complete: function () {
                     $("i.fa-spinner", target).remove();
+                    self.config_githubToken("");
                 },
                 sending: true
             });
