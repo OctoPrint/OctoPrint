@@ -137,7 +137,7 @@ GCODE.gCodeReader = (function () {
 
             result.push(m[i]);
             rendererPercentageByLayer.push(percentageByLayer[i]);
-            if (emptyLayers[i]) rendererEmptyLayers.push(true);
+            if (emptyLayers[i]) rendererEmptyLayers[result.length - 1] = true;
         }
         return result;
     };
