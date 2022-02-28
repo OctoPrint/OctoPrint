@@ -101,11 +101,9 @@ GCODE.renderer = (function () {
 
     var layerCache = [];
 
-    var compress = function (data) {
-        return pako.deflate(JSON.stringify(data));
-    };
-
     var decompress = function (data) {
+        if (!(data instanceof Uint8Array)) return data;
+
         return JSON.parse(pako.inflate(data, {to: "string"}));
     };
 
@@ -119,7 +117,8 @@ GCODE.renderer = (function () {
     var cleanCache = function (layer) {
         var newCache = [];
         for (var l in layerCache) {
-            if (l == layer || l == layer + 1 || l == layer - 1)
+            if (l == layer || l == layer + 1) newCache[l] = layerCache[l];
+            if (l == layer - 1 && renderOptions["showPreviousLayer"])
                 newCache[l] = layerCache[l];
         }
 

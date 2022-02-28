@@ -39,9 +39,13 @@ var speedsByLayer = {extrude: {}, retract: {}, move: {}};
 var emptyLayers = [];
 var percentageByLayer = [];
 
+var mustCompress = false;
+
 importScripts("pako.js");
 
 var compress = function (data) {
+    if (!mustCompress) return data;
+
     return pako.deflate(JSON.stringify(data));
 };
 
@@ -749,6 +753,7 @@ var parseGCode = function (message) {
     ignoreOutsideBed = message.options.ignoreOutsideBed;
     g90InfluencesExtruder = message.options.g90InfluencesExtruder;
     boundingBox.minZ = min.z = message.options.bedZ;
+    mustCompress = message.options.compress;
 
     doParse();
     gcode = [];

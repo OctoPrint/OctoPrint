@@ -8,6 +8,7 @@ $(function () {
 
         self.sizeThresholdStr = undefined;
         self.mobileSizeThresholdStr = undefined;
+        self.compressionSizeThresholdStr = undefined;
 
         self.ui_progress_busy = ko.observable(false);
         self.ui_progress_percentage = ko.observable();
@@ -83,6 +84,7 @@ $(function () {
 
         self.reader_hideEmptyLayers = ko.observable(true);
         self.reader_ignoreOutsideBed = ko.observable(true);
+        self.reader_forceCompression = ko.observable(false);
 
         self.layerSelectionEnabled = ko.observable(false);
         self.layerUpEnabled = ko.observable(false);
@@ -127,7 +129,12 @@ $(function () {
 
             var reader = {
                 purgeEmptyLayers: self.reader_hideEmptyLayers(),
-                ignoreOutsideBed: self.reader_ignoreOutsideBed()
+                ignoreOutsideBed: self.reader_ignoreOutsideBed(),
+                alwaysCompress:
+                    self.settings.settings.plugins.gcodeviewer.alwaysCompress(),
+                compressionSizeThreshold:
+                    self.settings.settings.plugins.gcodeviewer.compressionSizeThreshold(),
+                forceCompression: self.reader_forceCompression()
             };
             if (additionalReaderOptions) {
                 _.extend(reader, additionalReaderOptions);
@@ -170,6 +177,7 @@ $(function () {
 
         self.reader_hideEmptyLayers.subscribe(self.readerOptionUpdated);
         self.reader_ignoreOutsideBed.subscribe(self.readerOptionUpdated);
+        self.reader_forceCompression.subscribe(self.readerOptionUpdated);
 
         self._printerProfileUpdated = function () {
             if (!self.enabled) return;
@@ -360,6 +368,9 @@ $(function () {
             self.mobileSizeThresholdStr = sizeObservable(
                 self.settings.settings.plugins.gcodeviewer.mobileSizeThreshold
             );
+            self.compressionSizeThresholdStr = sizeObservable(
+                self.settings.settings.plugins.gcodeviewer.compressionSizeThreshold
+            );
 
             var layerSliderElement = $("#gcode_slider_layers");
             var commandSliderElement = $("#gcode_slider_commands");
@@ -395,6 +406,13 @@ $(function () {
                     log.info("Could not initialize GCODE viewer component");
                     return;
                 }
+
+                self.settings.settings.plugins.gcodeviewer.alwaysCompress.subscribe(
+                    self.readerOptionUpdated
+                );
+                self.settings.settings.plugins.gcodeviewer.compressionSizeThreshold.subscribe(
+                    self.readerOptionUpdated
+                );
 
                 self.synchronizeOptions();
                 self.enabled = true;
@@ -435,6 +453,7 @@ $(function () {
 
             self.reader_hideEmptyLayers(true);
             self.reader_ignoreOutsideBed(true);
+            self.reader_forceCompression(false);
         };
 
         self.clear = function () {
@@ -935,6 +954,7 @@ $(function () {
                 showBoundingBox: self.renderer_showBoundingBox(),
                 showLayerBoundingBox: self.renderer_showLayerBoundingBox(),
                 hideEmptyLayers: self.reader_hideEmptyLayers()
+                // reader_forceCompression is never saved.
             });
         };
         self._fromLocalStorage = function () {

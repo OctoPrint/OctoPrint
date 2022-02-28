@@ -39,7 +39,10 @@ GCODE.gCodeReader = (function () {
         },
         ignoreOutsideBed: false,
         g90InfluencesExtruder: false,
-        bedZ: 0
+        bedZ: 0,
+        alwaysCompress: false,
+        compressionSizeThreshold: 0,
+        forceCompression: false
     };
 
     var emptyLayers = [];
@@ -51,14 +54,6 @@ GCODE.gCodeReader = (function () {
     var layerPercentageLookup = [];
     var cachedLayer = undefined;
     var cachedCmd = undefined;
-
-    var compress = function (data) {
-        return pako.deflate(JSON.stringify(data));
-    };
-
-    var decompress = function (data) {
-        return JSON.parse(pako.inflate(data, {to: "string"}));
-    };
 
     var prepareGCode = function (totalSize) {
         if (!lines) return;
@@ -151,7 +146,10 @@ GCODE.gCodeReader = (function () {
         var result = [];
         for (var i = 0; i < m.length - 1; i++) {
             // start is first command of current layer
-            var start = rendererPercentageByLayer[i];
+            var start =
+                rendererPercentageByLayer[i] !== undefined
+                    ? rendererPercentageByLayer[i]
+                    : -1;
 
             var end = -1;
             for (var j = i + 1; j < m.length; j++) {
@@ -204,6 +202,12 @@ GCODE.gCodeReader = (function () {
             reader.target.result = null;
             prepareGCode(totalSize);
 
+            var mustCompress =
+                gCodeOptions["forceCompression"] ||
+                gCodeOptions["alwaysCompress"] ||
+                (gCodeOptions["compressionSizeThreshold"] > 0 &&
+                    gCodeOptions["compressionSizeThreshold"] <= totalSize);
+
             GCODE.ui.worker.postMessage({
                 cmd: "parseGCode",
                 msg: {
@@ -214,7 +218,8 @@ GCODE.gCodeReader = (function () {
                         bed: gCodeOptions["bed"],
                         ignoreOutsideBed: gCodeOptions["ignoreOutsideBed"],
                         g90InfluencesExtruder: gCodeOptions["g90InfluencesExtruder"],
-                        bedZ: gCodeOptions["bedZ"]
+                        bedZ: gCodeOptions["bedZ"],
+                        compress: mustCompress
                     }
                 }
             });
