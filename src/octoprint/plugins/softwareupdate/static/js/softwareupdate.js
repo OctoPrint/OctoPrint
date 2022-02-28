@@ -661,7 +661,14 @@ $(function () {
                     return gettext("Cannot check for update, need online connection");
                 }
                 case "network": {
-                    return gettext("Network error while checking for update");
+                    return gettext(
+                        "Network error while checking for update, please check the logs"
+                    );
+                }
+                case "api": {
+                    return gettext(
+                        "API error while checking for update, please check the logs"
+                    );
                 }
                 case "ratelimit": {
                     return gettext(
@@ -669,7 +676,9 @@ $(function () {
                     );
                 }
                 case "check": {
-                    return gettext("Check internal error while checking for update");
+                    return gettext(
+                        "Check internal error while checking for update, please check the logs"
+                    );
                 }
                 case "unknown": {
                     return gettext(

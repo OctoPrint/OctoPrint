@@ -6,6 +6,8 @@ import logging
 
 import requests
 
+from . import ApiCheckError
+
 BRANCH_HEAD_URL = (
     "https://api.bitbucket.org/2.0/repositories/{user}/{repo}/commit/{branch}"
 )
@@ -13,6 +15,26 @@ BRANCH_HEAD_URL = (
 logger = logging.getLogger(
     "octoprint.plugins.softwareupdate.version_checks.bitbucket_commit"
 )
+
+
+class BitbucketApiError(ApiCheckError):
+    API = "Bitbucket API"
+
+
+def check_bitbucket_api_response(logger, r, ok_codes=None):
+    if ok_codes is None:
+        ok_codes = [requests.codes.ok]
+
+    if r.status_code not in ok_codes:
+        try:
+            data = r.json()
+            message = data.get("message", "Unknown error")
+        except Exception:
+            message = "Not a valid JSON response"
+
+        exc = BitbucketApiError(r.status_code, message)
+        logger.error(exc.message)
+        raise exc
 
 
 def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
@@ -31,12 +53,11 @@ def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
     except requests.ConnectionError as exc:
         raise NetworkError(cause=exc)
 
-    if not r.status_code == requests.codes.ok:
-        return None
+    check_bitbucket_api_response(logger, r)
 
     reference = r.json()
     if "hash" not in reference:
-        return None
+        raise BitbucketApiError(r.status_code, "No commit hash found in response")
 
     return reference["hash"]
 

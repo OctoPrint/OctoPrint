@@ -105,8 +105,6 @@ def _get_latest_release(
 ):
     from ..exceptions import NetworkError
 
-    nothing = None, None, None
-
     headers = {}
     if apikey:
         auth = "token " + apikey
@@ -119,12 +117,10 @@ def _get_latest_release(
     except requests.ConnectionError as exc:
         raise NetworkError(cause=exc)
 
-    from . import log_github_ratelimit
+    from . import check_github_apiresponse, check_github_ratelimit
 
-    log_github_ratelimit(logger, r)
-
-    if not r.status_code == requests.codes.ok:
-        return nothing
+    check_github_ratelimit(logger, r)
+    check_github_apiresponse(logger, r)
 
     releases = r.json()
 
@@ -170,26 +166,6 @@ def _get_sanitized_version(version_string):
     if version_string is not None and "-" in version_string:
         version_string = version_string[: version_string.find("-")]
     return version_string
-
-
-def _get_base_from_version_tuple(version_tuple):
-    """
-    Reduces version tuple to base version.
-
-    Tests:
-
-        >>> _get_base_from_version_tuple(("1", "2", "15"))
-        ('1', '2', '15')
-        >>> _get_base_from_version_tuple(("1", "2", "15", "*", "dev12"))
-        ('1', '2', '15')
-    """
-
-    base_version = []
-    for part in version_tuple:
-        if part.startswith("*"):
-            break
-        base_version.append(part)
-    return tuple(base_version)
 
 
 def _get_comparable_version_semantic(version_string, force_base=True):

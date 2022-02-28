@@ -1862,6 +1862,12 @@ class SoftwareUpdatePlugin(
             )
             update_possible = False
             error = "network"
+        except exceptions.ApiCheckError as exc:
+            self._logger.warning(
+                f"Could not check {target} for updates due to an API error: {exc}"
+            )
+            update_possible = False
+            error = "api"
         except exceptions.RateLimitCheckError as exc:
             self._logger.warning(
                 "Could not check {} for updates due to running into a rate limit: {}".format(
