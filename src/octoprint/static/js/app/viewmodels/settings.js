@@ -311,6 +311,9 @@ $(function () {
             self.webcam_ffmpegPathOk(false);
             self.webcam_ffmpegPathBroken(false);
         };
+        self.webcam_streamType = ko.pureComputed(function () {
+            return determineWebcamStreamType(self.webcam_streamUrl());
+        });
 
         self.server_onlineCheckText = ko.observable();
         self.server_onlineCheckOk = ko.observable(false);
@@ -442,7 +445,7 @@ $(function () {
             var text = gettext(
                 "If you see your webcam stream below, the entered stream URL is ok."
             );
-            var streamType = determineWebcamStreamType(self.webcam_streamUrl());
+            var streamType = self.webcam_streamType();
             var webcam_element;
             var webrtc_peer_connection;
             if (streamType == "mjpg") {
