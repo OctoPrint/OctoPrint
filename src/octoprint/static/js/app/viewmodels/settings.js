@@ -312,7 +312,11 @@ $(function () {
             self.webcam_ffmpegPathBroken(false);
         };
         self.webcam_streamType = ko.pureComputed(function () {
-            return determineWebcamStreamType(self.webcam_streamUrl());
+            try {
+                return determineWebcamStreamType(self.webcam_streamUrl());
+            } catch (e) {
+                return "";
+            }
         });
 
         self.server_onlineCheckText = ko.observable();
