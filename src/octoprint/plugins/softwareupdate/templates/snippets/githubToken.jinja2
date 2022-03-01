@@ -1,0 +1,7 @@
+<div class="control-group">
+    <label class="control-label">{{ _('GitHub Access Token') }}</label>
+    <div class="controls">
+        <input type="text" class="input-block-level" data-bind="value: config_githubToken" placeholder="{{ _('Enter a new token...')|edq }}">
+        <span class="help-block">{{ _('Set this if you keep running into rate limiting issues. <a href="%(url)s" target="_blank" rel="noopener noreferer">See here for how to obtain a token</a>.', url="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token") }}</span>
+    </div>
+</div>
