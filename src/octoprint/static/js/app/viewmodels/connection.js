@@ -21,6 +21,7 @@ $(function () {
             self.selectedPrinter(self.printerProfiles.currentProfile());
         });
 
+        self.portOptionsFetched = ko.observable(false);
         self.portOptions = ko.observableArray(undefined);
         self.baudrateOptions = ko.observableArray(undefined);
         self.printerOptions = ko.observableArray(undefined);
@@ -53,6 +54,7 @@ $(function () {
 
         self.validPort = ko.pureComputed(function () {
             return (
+                !self.portOptionsFetched() ||
                 self.portOptions().length > 0 ||
                 self.settings.settings.serial.ignoreEmptyPorts()
             );
@@ -119,6 +121,7 @@ $(function () {
             }
 
             self.saveSettings(false);
+            self.portOptionsFetched(true);
         };
 
         self.fromHistoryData = function (data) {
