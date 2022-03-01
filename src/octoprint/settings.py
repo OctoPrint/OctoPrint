@@ -662,13 +662,7 @@ class HierarchicalChainMap:
         key = self._path_to_key(path)
 
         # delete any subkeys
-        subkeys_start = key + _CHAINMAP_SEP
-        to_delete = []
-        for k in current.keys():
-            if k.startswith(subkeys_start):
-                to_delete.append(k)
-        for k in to_delete:
-            del current[k]
+        self._del_prefix(current, key)
 
         if isinstance(value, dict):
             current.update(self._flatten(value, key))
@@ -687,19 +681,11 @@ class HierarchicalChainMap:
         if not path:
             raise ValueError("Invalid path")
 
-        current = self._chainmap
+        current = self._chainmap.maps[0]
 
-        # used to check if we've deleted anything
-        deleted_any = False
-
-        # we delete recursively: the path that we got, and any subpaths
+        # delete any subkeys
         delete_key = self._path_to_key(path)
-        for key in self._chainmap.keys():
-            if key.startswith(delete_key):
-                del current[key]
-                deleted_any = True
-
-        if not deleted_any:
+        if not self._del_prefix(current, delete_key):
             raise KeyError("Could not find entry for " + str(path))
 
         # create a placeholder object above if needed
@@ -710,6 +696,15 @@ class HierarchicalChainMap:
         up_one_path_prefix = up_one_path + _CHAINMAP_SEP
         if not any(map(lambda k: k.startswith(up_one_path_prefix), current.keys())):
             current[up_one_path] = {}
+
+    def _del_prefix(self, current, key):
+        prefix = key + _CHAINMAP_SEP
+
+        to_delete = [k for k in current if k.startswith(prefix)]
+        for k in to_delete:
+            del current[k]
+
+        return len(to_delete) > 0
 
     def with_config_defaults(self, config=None, defaults=None):
         """
