@@ -553,6 +553,10 @@ class TrackingPlugin(
                 payload["octopi_version"] = self._environment["plugins"]["pi_support"][
                     "octopi_version"
                 ]
+            if "octopiuptodate_build" in self._environment["plugins"]["pi_support"]:
+                payload["octopiuptodate_build"] = self._environment["plugins"][
+                    "pi_support"
+                ]["octopiuptodate_build"]
 
         return payload
 
