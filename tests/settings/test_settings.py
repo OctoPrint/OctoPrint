@@ -407,6 +407,18 @@ class SettingsTest(unittest.TestCase):
             self.assertNotIn("server", settings._config)
             self.assertEqual(5000, settings.get(["server", "port"]))
 
+    def test_set_default_subtree(self):
+        with self.settings() as settings:
+            default = {"host": "0.0.0.0", "port": 5000}
+            self.assertEqual(
+                {"host": "0.0.0.0", "port": 8080}, settings.get(["server"], merged=True)
+            )
+
+            settings.set(["server"], default)
+
+            self.assertNotIn("server", settings._config)
+            self.assertEqual(default, settings.get(["server"], merged=True))
+
     def test_set_none(self):
         with self.settings() as settings:
             self.assertTrue("port" in settings._config["server"])
@@ -698,9 +710,31 @@ class ChainmapTest(unittest.TestCase):
         self.chainmap.del_by_path(
             ["devel", "virtualPrinter", "capabilities", "autoreport_temp"]
         )
+
+        # make sure we only see the empty default now
         self.assertEqual(
             {}, self.chainmap.get_by_path(["devel", "virtualPrinter", "capabilities"])
         )
+
+        # make sure the whole (empty) tree is gone from top layer
+        path = ["devel", "virtualPrinter", "capabilities", "autoreport_temp"]
+        while len(path):
+            self.assertFalse(_key(*path) in self.chainmap._chainmap.maps[0])
+            path = path[:-1]
+
+    def test_del_by_path_with_subtree(self):
+        self.chainmap.del_by_path(["devel", "virtualPrinter", "capabilities"])
+
+        # make sure we only see the empty default now
+        self.assertEqual(
+            {}, self.chainmap.get_by_path(["devel", "virtualPrinter", "capabilities"])
+        )
+
+        # make sure the whole (empty) tree is gone from top layer
+        path = ["devel", "virtualPrinter", "capabilities", "autoreport_temp"]
+        while len(path):
+            self.assertFalse(_key(*path) in self.chainmap._chainmap.maps[0])
+            path = path[:-1]
 
     @ddt.data(
         (

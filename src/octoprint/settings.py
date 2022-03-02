@@ -658,58 +658,72 @@ class HierarchicalChainMap:
         return result
 
     def set_by_path(self, path, value):
-        current = self._chainmap.maps[0]
+        current = self._chainmap.maps[0]  # config only
         key = self._path_to_key(path)
 
         # delete any subkeys
-        subkeys_start = key + _CHAINMAP_SEP
-        to_delete = []
-        for k in current.keys():
-            if k.startswith(subkeys_start):
-                to_delete.append(k)
-        for k in to_delete:
-            del current[k]
+        self._del_prefix(current, key)
 
         if isinstance(value, dict):
             current.update(self._flatten(value, key))
         else:
-            # when assigning to a existing, empty dict, delete the dict
-            #
-            # a/b = {} <- delete this
-            # a/b/c = "a"
-            up_one_path = self._path_to_key(path[:-1])
-            if up_one_path in current and current[up_one_path] == {}:
-                del current[up_one_path]
-
-            current[self._path_to_key(path)] = value
+            # make sure to clear anything below the path (e.g. switching from dict
+            # to something else, for whatever reason)
+            self._clean_upward_path(current, path)
+            current[key] = value
 
     def del_by_path(self, path):
         if not path:
             raise ValueError("Invalid path")
 
-        current = self._chainmap
-
-        # used to check if we've deleted anything
-        deleted_any = False
-
-        # we delete recursively: the path that we got, and any subpaths
+        current = self._chainmap.maps[0]  # config only
         delete_key = self._path_to_key(path)
-        for key in self._chainmap.keys():
-            if key.startswith(delete_key):
-                del current[key]
-                deleted_any = True
+        deleted = False
 
-        if not deleted_any:
+        # delete any subkeys
+        deleted = self._del_prefix(current, delete_key)
+
+        # delete the key itself if it's there
+        try:
+            del current[delete_key]
+            deleted = True
+        except KeyError:
+            pass
+
+        if not deleted:
             raise KeyError("Could not find entry for " + str(path))
 
-        # create a placeholder object above if needed
-        #
-        # a/b = {}
-        # a/b/c = "a"  # deleted
-        up_one_path = self._path_to_key(path[:-1])
-        up_one_path_prefix = up_one_path + _CHAINMAP_SEP
-        if not any(map(lambda k: k.startswith(up_one_path_prefix), current.keys())):
-            current[up_one_path] = {}
+        # clean anything that's now empty and above our path
+        self._clean_upward_path(current, path)
+
+    def _del_prefix(self, current, key):
+        prefix = key + _CHAINMAP_SEP
+
+        to_delete = [k for k in current if k.startswith(prefix)]
+        for k in to_delete:
+            del current[k]
+
+        return len(to_delete) > 0
+
+    def _clean_upward_path(self, current, path):
+        working_path = path
+        while len(working_path):
+            working_path = working_path[:-1]
+            if not working_path:
+                break
+
+            key = self._path_to_key(working_path)
+            prefix = key + _CHAINMAP_SEP
+            if any(map(lambda k: k.startswith(prefix), current)):
+                # there's at least one subkey here, we're done
+                break
+
+            # delete the key itself if it's there
+            try:
+                del current[key]
+            except KeyError:
+                # key itself wasn't in there
+                pass
 
     def with_config_defaults(self, config=None, defaults=None):
         """
