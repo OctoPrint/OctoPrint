@@ -1622,6 +1622,7 @@ class MachineCom:
                 timeout
             )
         )
+        self._record_cancel_data = False
         self._cancel_preparation_done()
 
     def _cancel_preparation_done(self, check_timer=True, user=None):
@@ -1781,6 +1782,7 @@ class MachineCom:
                 timeout
             )
         )
+        self._record_pause_data = False
         self._pause_preparation_done()
 
     def _pause_preparation_done(self, check_timer=True, suppress_script=False, user=None):
