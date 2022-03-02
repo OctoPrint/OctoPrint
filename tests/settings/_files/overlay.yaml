@@ -4,6 +4,7 @@ devel:
     sendWait: true
     waitInterval: 1.0
     repetierStyleResends: false
+    capabilities: {}
 test:
   b:
     b1: 1
