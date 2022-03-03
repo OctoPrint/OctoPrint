@@ -1321,32 +1321,31 @@ $(function () {
                                         : progress_percent > 75
                                         ? "progress-success"
                                         : "progress-warning";
+                                var countdownText = _.sprintf(
+                                    gettext("Updating in %(sec)i secs..."),
+                                    {
+                                        sec: messageData.timeout_value
+                                    }
+                                );
+
                                 queuedUpdatesPopupOptions.title = gettext(
                                     "Starting Queued Updates"
                                 );
                                 queuedUpdatesPopupOptions.text =
-                                    '<div class="row-fluid"><ul><li>' +
+                                    '<div class="row-fluid"><p></p><ul><li>' +
                                     _.map(self.availableAndQueued(), function (info) {
                                         return info.displayName;
                                     }).join("</li><li>") +
-                                    '</li></ul></div><div class="progress progress-softwareupdate ' +
+                                    '</li></ul></p></div><div class="progress progress-softwareupdate ' +
                                     progress_class +
                                     '"><div class="bar">' +
-                                    gettext("Updating in ") +
-                                    " " +
-                                    messageData.timeout_value +
-                                    " " +
-                                    gettext("secs") +
+                                    countdownText +
                                     '</div><div class="progress-text" style="clip-path: inset(0 0 0 ' +
                                     progress_percent +
                                     "%);-webkit-clip-path: inset(0 0 0 " +
                                     progress_percent +
                                     '%);">' +
-                                    gettext("Updating in ") +
-                                    " " +
-                                    messageData.timeout_value +
-                                    " " +
-                                    gettext("secs") +
+                                    countdownText +
                                     "</div></div>";
                                 queuedUpdatesPopupOptions.confirm = {
                                     confirm: true,
