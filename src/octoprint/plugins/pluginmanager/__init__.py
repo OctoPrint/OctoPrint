@@ -119,7 +119,7 @@ class PluginManagerPlugin(
     octoprint.plugin.EventHandlerPlugin,
 ):
 
-    ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar", ".gz")
+    ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar", ".gz", ".whl")
     PYTHON_EXTENSIONS = (".py",)
 
     # valid pip install URL schemes according to https://pip.pypa.io/en/stable/reference/pip_install/
@@ -463,6 +463,10 @@ class PluginManagerPlugin(
             },
             "safe_mode": safe_mode,
             "online": self._connectivity_checker.online,
+            "supported_extensions": {
+                "archive": self.ARCHIVE_EXTENSIONS,
+                "python": self.PYTHON_EXTENSIONS,
+            },
         }
 
     @octoprint.plugin.BlueprintPlugin.route("/plugins")
@@ -489,6 +493,8 @@ class PluginManagerPlugin(
             hash_update(repr(self._notices))
             hash_update(repr(safe_mode))
             hash_update(repr(self._connectivity_checker.online))
+            hash_update(repr(self.ARCHIVE_EXTENSIONS))
+            hash_update(repr(self.PYTHON_EXTENSIONS))
             hash_update(repr(_DATA_FORMAT_VERSION))
             return hash.hexdigest()
 
