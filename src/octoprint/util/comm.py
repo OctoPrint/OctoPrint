@@ -310,13 +310,13 @@ class PositionRecord:
         return True
 
     def __init__(self, *args, **kwargs):
-        attrs = self._standard_attrs | {key for key in kwargs if self.valid_e(key)}
+        attrs = self._attrs(*kwargs.keys())
         for attr in attrs:
             setattr(self, attr, kwargs.get(attr))
 
     def copy_from(self, other):
         # make sure all standard attrs and attrs from other are set
-        attrs = self._standard_attrs | {key for key in dir(other) if self.valid_e(key)}
+        attrs = self._attrs(*dir(other))
         for attr in attrs:
             setattr(self, attr, getattr(other, attr))
 
@@ -326,8 +326,15 @@ class PositionRecord:
             delattr(self, attr)
 
     def as_dict(self):
-        attrs = self._standard_attrs | {key for key in dir(self) if self.valid_e(key)}
+        attrs = self._attrs(*dir(self))
         return {attr: getattr(self, attr) for attr in attrs}
+
+    def _attrs(self, *args):
+        return self._standard_attrs | {key for key in args if self.valid_e(key)}
+
+    def reset(self):
+        for attr in self._attrs(*dir(self)):
+            setattr(self, attr, None)
 
 
 class TemperatureRecord:
@@ -1619,6 +1626,7 @@ class MachineCom:
                 timeout
             )
         )
+        self._record_cancel_data = False
         self._cancel_preparation_done()
 
     def _cancel_preparation_done(self, check_timer=True, user=None):
@@ -1705,6 +1713,7 @@ class MachineCom:
                 # we don't call on_print_job_cancelled on our callback here
                 # because we do this only after our M114 has been answered
                 # by the firmware
+                self.cancel_position.reset()
                 self._record_cancel_data = True
 
                 with self._cancel_mutex:
@@ -1778,6 +1787,7 @@ class MachineCom:
                 timeout
             )
         )
+        self._record_pause_data = False
         self._pause_preparation_done()
 
     def _pause_preparation_done(self, check_timer=True, suppress_script=False, user=None):
@@ -1899,6 +1909,7 @@ class MachineCom:
                     # we don't call on_print_job_paused on our callback here
                     # because we do this only after our M114 has been answered
                     # by the firmware
+                    self.pause_position.reset()
                     self._record_pause_data = True
 
                     with self._pause_mutex:

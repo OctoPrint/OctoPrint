@@ -844,6 +844,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 "offset": offsets[key] if offsets.get(key) is not None else 0,
             }
             for key, value in last.items()
+            if key != "time"
         }
 
     def get_temperature_history(self, *args, **kwargs):
