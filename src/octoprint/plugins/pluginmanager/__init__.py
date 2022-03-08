@@ -489,6 +489,7 @@ class PluginManagerPlugin(
                 hash.update(value)
 
             hash_update(repr(self._get_plugins()))
+            hash_update(repr(self._pip_caller.version_string))
             hash_update(str(self._notices_available))
             hash_update(repr(self._notices))
             hash_update(repr(safe_mode))
