@@ -31,7 +31,7 @@ SETUP_REQUIRES = []
 bundled_plugins = [
     "OctoPrint-FileCheck>=2021.2.23",
     "OctoPrint-FirmwareCheck>=2021.10.11",
-    "OctoPrint-PiSupport>=2021.10.28",
+    "OctoPrint-PiSupport>=2021.3.1",
 ]
 core_deps = [
     "cachelib>=0.2,<0.3",
