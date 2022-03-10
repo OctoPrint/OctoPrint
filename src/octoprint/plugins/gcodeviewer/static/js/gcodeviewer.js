@@ -614,7 +614,7 @@ $(function () {
                 }
                 self.errorCount = 0;
             } else {
-                self.clear();
+                if (self.status === "idle") self.clear();
                 if (
                     data.job.file.path &&
                     data.job.file.origin !== "sdcard" &&
