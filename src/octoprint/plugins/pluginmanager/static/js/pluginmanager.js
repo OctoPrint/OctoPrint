@@ -237,10 +237,12 @@ $(function () {
             var pythonExts = createExtensionsHelp(self.supportedPythonExtensions());
 
             return _.sprintf(
-                "This does not look like a valid plugin. Valid plugins should be " +
-                    "either archives installable via <code>pip</code> that " +
-                    "have the extension %(archiveExtensions)s, or single file python " +
-                    "plugins with the extension %(pythonExtensions)s.",
+                gettext(
+                    "This does not look like a valid plugin. Valid plugins should be " +
+                        "either archives installable via <code>pip</code> that " +
+                        "have the extension %(archiveExtensions)s, or single file python " +
+                        "plugins with the extension %(pythonExtensions)s."
+                ),
                 {archiveExtensions: archiveExts, pythonExtensions: pythonExts}
             );
         });

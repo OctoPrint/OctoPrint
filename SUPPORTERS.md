@@ -15,6 +15,7 @@ thanks to everyone who contributed!
   * Boris Hussein
   * Brad Jackson
   * BuildBee
+  * Calvin Vette
   * Christian Petropolis
   * Christian Wolf
   * Christian Würthner
@@ -40,11 +41,9 @@ thanks to everyone who contributed!
   * Justin Kaufman
   * Kaile Riser
   * Kazuhiro Ogura
-  * Kelly C McNiece
   * Kenneth Jiang
   * Kurt Wubbels
   * Kyle Menigoz
-  * LA 3D Printer Repair
   * Lachlan Bell
   * Lee Dohm
   * Lefteris Lertas
@@ -56,7 +55,6 @@ thanks to everyone who contributed!
   * Miles Flavel
   * Mosaic Manufacturing
   * Nat Friedman
-  * Neil R. Goldberg
   * Norman Jaffe
   * Peopoly
   * Pete Barnwell
@@ -72,12 +70,11 @@ thanks to everyone who contributed!
   * Stefan Krister
   * Steve Dougherty
   * Steve Thompson
-  * Sven Mueller
   * TH3D
   * The Spaghetti Detective
   * TJ Horner
+  * Trent Shumay
   * Ulderico Cirello
   * Ulrich Kempken
-  * Yehuda Katz
 
-and 2285 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2298 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
