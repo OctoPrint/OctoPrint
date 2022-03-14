@@ -58,7 +58,7 @@ core_deps = [
     "requests>=2.26.0,<3",
     "sarge==0.1.6",
     "semantic_version>=2.8.5,<3",
-    "sentry-sdk>=1.3.1,<2",
+    "sentry-sdk>=1.5.7,<2",
     "tornado>=6.0.4,<7",
     "watchdog>=1,<2",
     "websocket-client>=1.2.1,<2",
