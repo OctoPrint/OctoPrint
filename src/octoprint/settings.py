@@ -563,7 +563,7 @@ class HierarchicalChainMap:
 
         items = []
         for k, v in d.items():
-            new_key = parent_key + _CHAINMAP_SEP + k if parent_key else k
+            new_key = parent_key + _CHAINMAP_SEP + str(k) if parent_key else str(k)
             if v and isinstance(v, dict):
                 items.extend(HierarchicalChainMap._flatten(v, new_key).items())
             else:
