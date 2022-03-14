@@ -60,7 +60,7 @@ core_deps = [
     "semantic_version>=2.8.5,<3",
     "sentry-sdk>=1.3.1,<2",
     "tornado>=6.0.4,<7",
-    "watchdog==1.0.0",
+    "watchdog>=1,<2",
     "websocket-client>=1.2.1,<2",
     "wrapt>=1.13.3,<1.14",
     "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
