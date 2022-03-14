@@ -192,14 +192,14 @@ GCODE.gCodeReader = (function () {
             /*
              * Split by line ending
              *
-             * Note that for windows line endings \r\n this leaves the \r attached to
+             * Be aware that for windows line endings \r\n this leaves the \r attached to
              * the lines. That will not influence our parser, but makes file position
              * calculation way easier (line length + 1), so we just leave it in.
              *
              * This cannot cope with old MacOS \r line endings, but those should
              * really not be used anymore and thus we'll happily ignore them here.
              *
-             * A simple string split uses up *much* less memory than regex.
+             * Note: A simple string split uses up *much* less memory than regex.
              */
             lines = reader.target.result.split("\n");
 
