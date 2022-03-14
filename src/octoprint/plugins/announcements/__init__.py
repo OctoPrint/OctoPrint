@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 
 import calendar
+import logging
 import os
 import re
 import threading
@@ -436,9 +437,11 @@ class AnnouncementPlugin(
                 self._logger.debug(f"Loaded channel {key} from cache at {channel_path}")
                 return d
             except Exception:
-                self._logger.exception(
-                    f"Could not read channel {key} from cache {channel_path}"
-                )
+                if self._logger.isEnabledFor(logging.DEBUG):
+                    self._logger.exception(
+                        f"Could not read channel {key} from cache at {channel_path}"
+                    )
+
                 try:
                     os.remove(channel_path)
                 except OSError:
