@@ -54,7 +54,7 @@ GCODE.gCodeReader = (function () {
 
         byteCount = 0;
         for (i = 0; i < lines.length; i++) {
-            byteCount += lines[i].length + 1; // line length + line ending
+            byteCount += lines[i].length + 1; // line length + '\n'
             gcode.push({line: lines[i], percentage: (byteCount * 100) / totalSize});
         }
         lines = [];
@@ -188,8 +188,21 @@ GCODE.gCodeReader = (function () {
             this.clear();
 
             var totalSize = reader.target.result.length;
-            // With a regex split below as previous, memory usage is huge & takes longer.
-            lines = reader.target.result.replace("\r\n", "\n").split("\n");
+
+            /*
+             * Split by line ending
+             *
+             * Be aware that for windows line endings \r\n this leaves the \r attached to
+             * the lines. That will not influence our parser, but makes file position
+             * calculation way easier (line length + 1), so we just leave it in.
+             *
+             * This cannot cope with old MacOS \r line endings, but those should
+             * really not be used anymore and thus we'll happily ignore them here.
+             *
+             * Note: A simple string split uses up *much* less memory than regex.
+             */
+            lines = reader.target.result.split("\n");
+
             reader.target.result = null;
             prepareGCode(totalSize);
 
