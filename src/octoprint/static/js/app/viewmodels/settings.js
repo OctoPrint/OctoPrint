@@ -250,6 +250,7 @@ $(function () {
         self.serial_ackMax = ko.observable(undefined);
         self.serial_resendRatioThreshold = ko.observable(100);
         self.serial_resendRatioStart = ko.observable(100);
+        self.serial_ignoreEmptyPorts = ko.observable(undefined);
         self.serial_enableShutdownActionCommand = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
