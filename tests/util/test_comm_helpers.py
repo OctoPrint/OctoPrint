@@ -284,6 +284,52 @@ class TestCommHelpers(unittest.TestCase):
             {"T0": (-55.7, 0), "T1": (150.0, 210.0)},
             1,
         ),
+        (
+            "T:210.04 /210.00 B:52.00 /52.00 @:85 B@:31pS_XYZ:5",
+            0,
+            {
+                "T0": (210.04, 210.0),
+                "B": (52.00, 52.0),
+            },
+            0,
+        ),
+        (
+            "T:210.04 /210.00 B:52.00 /52.00 @:85 31pS_XYZ:5",
+            0,
+            {
+                "T0": (210.04, 210.0),
+                "B": (52.00, 52.0),
+                "31pS_XYZ": (5, None),
+            },
+            0,
+        ),
+        (
+            "T:210.04 /210.00 B:52.00 /52.00 @:85 F0:255.0 /255.0",
+            0,
+            {
+                "T0": (210.04, 210.0),
+                "B": (52.00, 52.0),
+                "F0": (255.0, 255.0),
+            },
+            0,
+        ),
+        (
+            "T:210.04 /210.00 @B:52.00 /52.00",
+            0,
+            {
+                "T0": (210.04, 210.0),
+            },
+            0,
+        ),
+        (
+            "T:210.04 /210.00 @B:52.00 /52.00 TXYZ:2",
+            0,
+            {
+                "T0": (210.04, 210.0),
+                "TXYZ": (2, None),
+            },
+            0,
+        ),
     )
     @unpack
     def test_process_temperature_line(self, line, current, expected_result, expected_max):
@@ -533,3 +579,29 @@ class TestPositionRecord(unittest.TestCase):
         from octoprint.util.comm import PositionRecord
 
         return PositionRecord(**kwargs)
+
+
+@ddt
+class TestTemperatureRecord(unittest.TestCase):
+    @data("TX", "B2", "BX", "SOMETHING_CUSTOM", "1234B456", "blub", "fnord", "C1", "CX")
+    def test_set_custom(self, identifier):
+        temperature = self._create_temperature()
+
+        temperature.set_custom(identifier, 1, 2)
+
+        self.assertTrue(identifier in temperature.custom)
+
+    @data("T", "T1", "T42", "B", "C")
+    def test_set_custom_reserved(self, identifier):
+        temperature = self._create_temperature()
+
+        try:
+            temperature.set_custom(identifier, 1, 2)
+            self.fail(f"Expected ValueError for reserved identifier {identifier}")
+        except ValueError as ex:
+            self.assertTrue("is a reserved identifier" in str(ex))
+
+    def _create_temperature(self, **kwargs):
+        from octoprint.util.comm import TemperatureRecord
+
+        return TemperatureRecord(**kwargs)
