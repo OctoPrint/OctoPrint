@@ -110,7 +110,7 @@ Groups will be as follows:
 """
 
 regex_temp = re.compile(
-    r"(?P<sensor>B|C|T(?P<toolnum>\d*)|([\w]+)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?"
+    r"(^|\s)(?P<sensor>B|C|T(?P<toolnum>\d*)|([\w]+)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?"
     % (regex_float_pattern, regex_float_pattern)
 )
 """Regex matching temperature entries in line.
@@ -338,7 +338,7 @@ class PositionRecord:
 
 
 class TemperatureRecord:
-    RESERVED_IDENTIFIER_REGEX = re.compile("[0-9]+|[bc]")
+    RESERVED_IDENTIFIER_REGEX = re.compile(r"B|C|T\d*")
 
     def __init__(self):
         self._tools = {}
@@ -363,7 +363,7 @@ class TemperatureRecord:
         self._chamber = self._to_new_tuple(current, actual, target)
 
     def set_custom(self, identifier, actual=None, target=None):
-        if self.RESERVED_IDENTIFIER_REGEX.match(identifier):
+        if self.RESERVED_IDENTIFIER_REGEX.fullmatch(identifier):
             raise ValueError(f"{identifier} is a reserved identifier")
         current = self._custom.get(identifier, (None, None))
         self._custom[identifier] = self._to_new_tuple(current, actual, target)
@@ -2100,7 +2100,7 @@ class MachineCom:
 
     def _processTemperatures(self, line):
         current_tool = self._currentTool if self._currentTool is not None else 0
-        current_tool_key = "T%d" % current_tool
+        current_tool_key = f"T{current_tool}"
         maxToolNum, parsedTemps = parse_temperature_line(line, current_tool)
 
         maxToolNum = max(
@@ -2156,10 +2156,15 @@ class MachineCom:
             del parsedTemps["C"]
             self.last_temperature.set_chamber(actual=actual, target=target)
 
-        # all other injected temperatures
-        for key in parsedTemps.keys():
-            actual, target = parsedTemps[key]
-            self.last_temperature.set_custom(key, actual=actual, target=target)
+        # all other injected temperatures or temperature-like entries
+        for key, data in parsedTemps.items():
+            try:
+                actual, target = data
+                self.last_temperature.set_custom(key, actual=actual, target=target)
+            except Exception as ex:
+                self._logger.warning(
+                    f"Could not add custom temperature record {key}: {ex}"
+                )
 
     ##~~ Serial monitor processing received messages
 

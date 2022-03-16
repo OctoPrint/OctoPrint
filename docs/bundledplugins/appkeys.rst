@@ -45,10 +45,11 @@ of the following steps:
   2. The App :ref:`probes for workflow support <sec-bundledplugins-appkeys-api-probe>` on the Server. If this request
      doesn't get an HTTP :http:statuscode:`204` the App needs to direct the user to an alternative manual workflow
      (copy-paste API key) and abort this one. Otherwise it proceeds to the next step.
-  3. The App sends a :ref:`key request <sec-bundledplugins-appkey-datamodel-keyrequest>` to the Server to start the
+  3. The App sends an :ref:`Authorization request <sec-bundledplugins-appkey-datamodel-authrequest>` to the Server to start the
      authorization process.
-  4. The Server triggers a confirmation dialog for the User on the Webinterface and returns an endpoint to the
-     App to poll for a decision in the ``Location`` header of an HTTP :http:statuscode:`201`.
+  4. The Server triggers a confirmation dialog for the User on the Webinterface (unused here) and returns an endpoint to the
+     App to poll for a decision in the ``Location`` header of an HTTP :http:statuscode:`201`
+     and an :ref:`Authorization response <sec-bundledplugins-appkey-datamodel-authresponse>` (unused here).
   5. The App uses the obtained request specific endpoint to poll for a decision every second. An HTTP :http:statuscode:`202`
      signals that no decision has been made yet.
   6. The User either accepts or denies the access request which makes the Webinterface send a
@@ -116,6 +117,98 @@ of the following steps:
 
       end
 
+.. _sec-bundledplugins-appkeys-workflow-authdialog:
+
+Workflow with redirect to auth dialog
+-------------------------------------
+
+.. versionadded:: 1.8.0
+
+Instead of asking the user to open the full blown OctoPrint interface to confirm the request,
+since OctoPrint 1.8.0 there also exists the alternative of redirecting the user to a
+basic auth dialog that allows logging in and confirming the request in a light-weight
+dialog. To implementat that, follow these steps:
+
+  1. The User opens the App and gets prompted to enter or select an instance URL. Optionally (recommended!) the User also
+     enters their username which is also their user ID into the App.
+  2. The App :ref:`probes for workflow support <sec-bundledplugins-appkeys-api-probe>` on the Server. If this request
+     doesn't get an HTTP :http:statuscode:`204` the App needs to direct the user to an alternative manual workflow
+     (copy-paste API key) and abort this one. Otherwise it proceeds to the next step.
+  3. The App sends an :ref:`Authorization request <sec-bundledplugins-appkey-datamodel-authrequest>` to the Server to start the
+     authorization process.
+  4. The Server triggers a confirmation dialog for the User on the Webinterface (unused here) and returns an endpoint to the
+     App to poll for a decision in the ``Location`` header of an HTTP :http:statuscode:`201`
+     and an :ref:`Authorization response <sec-bundledplugins-appkey-datamodel-authresponse>`.
+  5. The App opens a browser window with the provided `auth_dialog` URL for the user to log in and confirm the request. At the
+     same time the App also uses the obtained request specific endpoint to poll for a decision every second. An HTTP :http:statuscode:`202`
+     signals that no decision has been made yet.
+  6. The User logs in and either accepts or denies the access request which makes the auth dialog send a
+     :ref:`decision request <sec-bundledplugins-appkey-datamodel-decisionrequest>` to the Server.
+  7. If the User accepted the request, the App receives an HTTP :http:statuscode:`200` with an attached
+     :ref:`API key response <sec-bundledplugins-appkey-datamodel-keyresponse>`. If they deny it, the App will receive
+     an HTTP :http:statuscode:`404`.
+
+
+.. mermaid::
+
+   sequenceDiagram
+      participant User
+      participant App
+      participant Auth Dialog
+      participant Server
+
+      note over User, Server: Step 1, 2 & 3
+
+      User->>App: enters URL of instance to connect to and optional user_id
+
+      App->>Server: GET /plugin/appkeys/probe
+
+      alt Workflow unsupported
+
+      Server->>App: 404
+      App->>User: alternative workflow, copy-paste key manually
+
+      else Workflow supported
+
+      App->>Server: POST /plugin/appkeys/request, (app_name, user_id)
+
+      note over User, Server: Step 4
+
+      Server->>App: 201, Location: /plugin/appkeys/request/<app_token>, auth_dialog: <auth_dialog>
+
+      note over User, Server: Step 5
+
+      App-->>Auth Dialog: open new browser window with auth_dialog URL
+
+      loop Poll for decision
+      App->>Server: GET /plugin/appkeys/request/<app_token>
+      Server->>App: 202
+      end
+
+      note over User, Server: Step 6 & 7
+
+      User->>Auth Dialog: Logs in
+
+      alt User accepts
+
+      User-->>Auth Dialog: Allow access
+      Auth Dialog->>Server: POST /plugin/appkeys/decision/<user_token>, (True)
+      Server->>Auth Dialog: 204
+      App->>Server: GET /plugin/appkeys/request/<app_token>
+      Server->>App: 200, api_key
+
+      else User denies
+
+      User-->>Auth Dialog: Deny access
+      Auth Dialog->>Server: POST /plugin/appkeys/decision/<user_token>, (False)
+      Server->>Auth Dialog: 204
+      App->>Server: GET /plugin/appkeys/request/<app_token>
+      Server->>App: 404
+
+      end
+
+      end
+
 .. _sec-bundledplugins-appkeys-api:
 
 API
@@ -144,7 +237,7 @@ Start authorization process
 
    Starts the authorization process.
 
-   Expects a :ref:`Key request <sec-bundledplugins-appkey-datamodel-keyrequest>` as request body.
+   Expects a :ref:`Authorization request <sec-bundledplugins-appkey-datamodel-authrequest>` as request body.
 
    The ``app`` parameter should be a human readable identifier to use
    for the application requesting access. It will be displayed to the user. Internally it will be used case insensitively,
@@ -155,6 +248,9 @@ Start authorization process
    account. E.g. if a user ``me`` starts the process in an app, the app should request that name from the user and use
    it in the ``user`` parameter. OctoPrint will then only display the authorization request on browsers the user ``me``
    is logged in on.
+
+   Returns a :ref:`Authorization response <sec-bundledplugins-appkey-datamodel-authresponse>`
+   and HTTP :http:statuscode:`201` with the ``Location`` header set to the endpoint to poll for a decision.
 
    :json app: application identifier to use for the request, case insensitive
    :json user: optional user id to restrict the decision to the specified user
@@ -287,10 +383,10 @@ Issue an application key command
 Data model
 ----------
 
-.. _sec-bundledplugins-appkey-datamodel-keyrequest:
+.. _sec-bundledplugins-appkey-datamodel-authrequest:
 
-Key request
-...........
+Authorization request
+.....................
 
 .. list-table::
    :widths: 15 5 10 30
@@ -308,6 +404,29 @@ Key request
      - 0..1
      - str
      - User identifier/name to restrict the request to
+
+.. _sec-bundledplugins-appkey-datamodel-authresponse:
+
+Authorization response
+......................
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``app_token``
+     - 1
+     - str
+     - Application token to use to poll for the decision.
+   * - ``auth_dialog``
+     - 1
+     - str
+     - An URL with which a dedicated auth dialog can be used for the user to log into
+       and authorize the request.
 
 .. _sec-bundledplugins-appkey-datamodel-keyresponse:
 

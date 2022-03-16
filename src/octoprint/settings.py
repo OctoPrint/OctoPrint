@@ -562,7 +562,7 @@ class HierarchicalChainMap:
 
         items = []
         for k, v in d.items():
-            new_key = parent_key + _CHAINMAP_SEP + k if parent_key else k
+            new_key = parent_key + _CHAINMAP_SEP + str(k) if parent_key else str(k)
             if v and isinstance(v, dict):
                 items.extend(HierarchicalChainMap._flatten(v, new_key).items())
             else:
@@ -630,14 +630,13 @@ class HierarchicalChainMap:
             current = self._chainmap
 
         key = self._path_to_key(path)
+        prefix = key + _CHAINMAP_SEP
 
-        if key in current:
+        if key in current and not any(k.startswith(prefix) for k in current.keys()):
             # found it, return
             return current[key]
 
         # if we arrived here we might be trying to grab a dict, look for children
-
-        key = key + _CHAINMAP_SEP
 
         # TODO 2.0.0 remove this & make 'merged' the default
         if not merged and hasattr(current, "maps"):
@@ -645,12 +644,12 @@ class HierarchicalChainMap:
             # full contents of the key. Instead, we only include the contents of the key
             # on the first level where we find the value.
             for layer in current.maps:
-                if any(k.startswith(key) for k in layer):
+                if any(k.startswith(prefix) for k in layer):
                     current = layer
                     break
 
         result = self._unflatten(
-            {k: v for k, v in current.items() if k.startswith(key)}, prefix=key
+            {k: v for k, v in current.items() if k.startswith(prefix)}, prefix=prefix
         )
         if not result:
             raise KeyError("Could not find entry for " + str(path))

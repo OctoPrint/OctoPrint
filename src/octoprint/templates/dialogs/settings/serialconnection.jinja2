@@ -92,6 +92,19 @@
                         </label>
                     </div>
                 </div>
+                <div>
+                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_general_connection .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                    <div class="hide">
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_ignoreEmptyPorts" id="settings-serialIgnoreEmptyPorts"> {{ _('Ignore empty ports') }}
+                                    <span class="help-block">{{ _('By checking this you\'ll disable OctoPrint warning you if no serial ports to connect to were found.') }}</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </fieldset>
             <fieldset id="settings_serial_general_logging">
                 <legend>{{ _('Serial logging') }}</legend>
