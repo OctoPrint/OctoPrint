@@ -138,27 +138,30 @@ GCODE.gCodeReader = (function () {
 
     var rebuildLayerPercentageLookup = function (m) {
         var result = [];
-        for (var i = 0; i < m.length - 1; i++) {
-            // start is first command of current layer
-            var start = m[i].length ? m[i][0].percentage : -1;
 
-            var end = -1;
-            for (var j = i + 1; j < m.length; j++) {
-                // end is percentage of first command that follows our start, might
-                // be later layers if the next layer is empty!
-                if (m[j].length) {
-                    end = m[j][0].percentage;
-                    break;
+        if (m && m.length > 0) {
+            for (var i = 0; i < m.length - 1; i++) {
+                // start is first command of current layer
+                var start = m[i].length ? m[i][0].percentage : -1;
+
+                var end = -1;
+                for (var j = i + 1; j < m.length; j++) {
+                    // end is percentage of first command that follows our start, might
+                    // be later layers if the next layer is empty!
+                    if (m[j].length) {
+                        end = m[j][0].percentage;
+                        break;
+                    }
                 }
+
+                result[i] = [start, end];
             }
 
-            result[i] = [start, end];
+            // final start-end-pair is start percentage of last layer and 100%
+            result[m.length - 1] = m[m.length - 1].length
+                ? [m[m.length - 1][0].percentage, 100]
+                : [-1, -1];
         }
-
-        // final start-end-pair is start percentage of last layer and 100%
-        result[m.length - 1] = m[m.length - 1].length
-            ? [m[m.length - 1][0].percentage, 100]
-            : [-1, -1];
 
         layerPercentageLookup = result;
     };

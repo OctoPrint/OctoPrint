@@ -507,11 +507,14 @@ class SettingsTest(unittest.TestCase):
     def test_get_preprocessor(self):
         with self.settings() as settings:
             config = {}
-            defaults = {"test": "some string"}
-            preprocessors = {"test": lambda x: x.upper()}
+            defaults = {"test_preprocessor": "some string"}
+            preprocessors = {"test_preprocessor": lambda x: x.upper()}
 
             value = settings.get(
-                ["test"], config=config, defaults=defaults, preprocessors=preprocessors
+                ["test_preprocessor"],
+                config=config,
+                defaults=defaults,
+                preprocessors=preprocessors,
             )
 
             self.assertEqual("SOME STRING", value)
@@ -519,18 +522,18 @@ class SettingsTest(unittest.TestCase):
     def test_set_preprocessor(self):
         with self.settings() as settings:
             config = {}
-            defaults = {"foo": {"bar": "fnord"}}
-            preprocessors = {"foo": {"bar": lambda x: x.upper()}}
+            defaults = {"foo_preprocessor": {"bar": "fnord"}}
+            preprocessors = {"foo_preprocessor": {"bar": lambda x: x.upper()}}
 
             settings.set(
-                ["foo", "bar"],
+                ["foo_preprocessor", "bar"],
                 "value",
                 config=config,
                 defaults=defaults,
                 preprocessors=preprocessors,
             )
 
-            self.assertEqual("VALUE", config["foo"]["bar"])
+            self.assertEqual("VALUE", config["foo_preprocessor"]["bar"])
 
     def test_set_external_modification(self):
         with self.settings() as settings:
@@ -675,6 +678,7 @@ class ChainmapTest(unittest.TestCase):
         self.assertTrue(self.chainmap.has_path(["devel"]))
         self.assertTrue(self.chainmap.has_path(["devel", "virtualPrinter"]))
         self.assertTrue(self.chainmap.has_path(["devel", "virtualPrinter", "enabled"]))
+        self.assertTrue(self.chainmap.has_path(["plugins", "foo", "bar"]))
 
         self.assertFalse(self.chainmap.has_path(["api", "lock"]))
 
@@ -695,6 +699,23 @@ class ChainmapTest(unittest.TestCase):
         self.assertEqual(
             dict_merge(self.defaults["test"], self.overlay["test"]),
             self.chainmap.get_by_path(["test"], merged=True),
+        )
+
+        self.assertEqual(
+            self.config["plugins"]["foo"]["bar"],
+            self.chainmap.get_by_path(["plugins", "foo", "bar"]),
+        )
+
+        self.assertEqual(
+            self.config["plugins"]["fnord"]["bar"],
+            self.chainmap.get_by_path(["plugins", "fnord", "bar"]),
+        )
+        self.assertEqual(
+            dict_merge(
+                self.overlay["plugins"]["fnord"]["bar"],
+                self.config["plugins"]["fnord"]["bar"],
+            ),
+            self.chainmap.get_by_path(["plugins", "fnord", "bar"], merged=True),
         )
 
     def test_set_by_path(self):
