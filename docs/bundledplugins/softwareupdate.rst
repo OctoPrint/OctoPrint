@@ -551,7 +551,7 @@ Global credentials
 
 .. versionadded:: 1.5.0
 
-Starting with OctoPrint 1.5.0, the Software Update Plugin supports supplyting a GitHub
+Starting with OctoPrint 1.5.0, the Software Update Plugin supports supplying a GitHub
 API token to use for the ``github_release`` and ``github_commit`` version check types,
 to work around possible rate limit problems if a lot of checks are to be made from a single
 external IP. You may create a `personal access token <https://docs.github.com/en/free-pro-team@latest/github/authenticating-to-github/creating-a-personal-access-token>`_
