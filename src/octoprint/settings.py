@@ -654,7 +654,7 @@ class Settings(object):
         serial:
             port: "/dev/ttyACM0"
             baudrate: 250000
-            timeouts:
+            timeout:
                 communication: 20.0
                 temperature: 5.0
                 sdStatus: 1.0
