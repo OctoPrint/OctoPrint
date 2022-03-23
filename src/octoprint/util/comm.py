@@ -2593,7 +2593,7 @@ class MachineCom:
                             )
 
                         for key in [
-                            key for key in parsed if key.startswith("e") and len(key) > 1
+                            x for x in parsed if x.startswith("e") and len(x) > 1
                         ]:
                             setattr(self.last_position, key, parsed.get(key))
 
