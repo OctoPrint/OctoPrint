@@ -709,11 +709,16 @@ var doParse = function () {
             }
 
             if (sendMultiLayer.indexOf(sendLayer) === -1) {
-                sendMultiLayer[sendMultiLayer.length] = sendLayer;
+                sendMultiLayer.push(sendLayer);
             }
 
             sendLayer = undefined;
         }
+    }
+
+    // we are done, send the final layer
+    if (sendMultiLayer.indexOf(activeLayer) === -1) {
+        sendMultiLayer.push(activeLayer);
     }
     sendLayersToParent(sendMultiLayer, 100);
 };
