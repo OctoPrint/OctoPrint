@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.8.0rc2.dev12+g056eb122f.dirty\n"
+"Project-Id-Version: OctoPrint 1.8.0rc3.dev8+g54207abbe.dirty\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2022-03-15 19:27+0100\n"
+"POT-Creation-Date: 2022-03-28 14:13+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3999,7 +3999,7 @@ msgstr ""
 #: src/octoprint/static/js/app/helpers.js:793
 #: src/octoprint/static/js/app/viewmodels/access.js:324
 #: src/octoprint/static/js/app/viewmodels/access.js:656
-#: src/octoprint/static/js/app/viewmodels/connection.js:187
+#: src/octoprint/static/js/app/viewmodels/connection.js:188
 msgid "Are you sure?"
 msgstr ""
 
@@ -4140,21 +4140,21 @@ msgstr ""
 msgid "You are about to delete the group \"%(name)s\"."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:47
+#: src/octoprint/static/js/app/viewmodels/connection.js:48
 #: src/octoprint/templates/sidebar/connection.jinja2:17
 msgid "Connect"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:48
-#: src/octoprint/static/js/app/viewmodels/connection.js:200
+#: src/octoprint/static/js/app/viewmodels/connection.js:49
+#: src/octoprint/static/js/app/viewmodels/connection.js:201
 msgid "Disconnect"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:52
+#: src/octoprint/static/js/app/viewmodels/connection.js:53
 msgid "No serial port found"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:188
+#: src/octoprint/static/js/app/viewmodels/connection.js:189
 msgid ""
 "<p><strong>You are about to disconnect from the printer while a print is "
 "in progress.</strong></p><p>Disconnecting while a print is in progress "
@@ -4163,11 +4163,11 @@ msgid ""
 "OctoPrint or reconnect to the printer could interrupt the print.<p>"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:196
+#: src/octoprint/static/js/app/viewmodels/connection.js:197
 msgid "Are you sure you want to disconnect from the printer?"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:199
+#: src/octoprint/static/js/app/viewmodels/connection.js:200
 msgid "Stay Connected"
 msgstr ""
 
