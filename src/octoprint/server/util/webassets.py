@@ -6,6 +6,7 @@ import gzip
 import logging
 import os
 import re
+import threading
 from urllib import parse as urlparse
 
 import webassets.filter.cssrewrite.urlpath as urlpath
@@ -14,6 +15,7 @@ from webassets.filter import Filter
 from webassets.filter.cssrewrite.base import PatternRewriter
 from webassets.filter.rjsmin import rjsmin
 from webassets.merge import BaseHunk, MemoryHunk
+from webassets.version import Manifest
 
 
 def replace_url(source_url, output_url, url):
@@ -207,3 +209,19 @@ class JsPluginBundle(Bundle):
             (hunk, lambda x: x.replace("\n", "\n        ")),
             MemoryHunk(_PLUGIN_BUNDLE_WRAPPER_SUFFIX.format(plugin=self.plugin)),
         )
+
+
+class MemoryManifest(Manifest):
+    id = "memory"
+
+    def __init__(self, *args, **kwargs):
+        self.manifest = {}
+        self._lock = threading.RLock()
+
+    def remember(self, bundle, ctx, version):
+        with self._lock:
+            self.manifest[bundle.output] = version
+
+    def query(self, bundle, ctx):
+        with self._lock:
+            return self.manifest.get(bundle.output, None)
