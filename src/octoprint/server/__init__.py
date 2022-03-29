@@ -1959,6 +1959,8 @@ class Server:
         global assets
         global pluginManager
 
+        from octoprint.server.util.webassets import MemoryManifest  # noqa: F401
+
         util.flask.fix_webassets_filtertool()
 
         base_folder = self._settings.getBaseFolder("generated")
@@ -1970,7 +1972,8 @@ class Server:
 
             for entry, recreate in (
                 ("webassets", True),
-                (".webassets-cache", False),  # no longer used, but clean up just in case
+                # no longer used, but clean up just in case
+                (".webassets-cache", False),
                 (".webassets-manifest.json", False),
             ):
                 path = os.path.join(base_folder, entry)
@@ -2057,7 +2060,7 @@ class Server:
         # few seconds for regeneration in development, if it means we can get rid of
         # a whole monkey patch and in internal use of pickle with non-tamperproof files
         assets.cache = False
-        assets.manifest = "json:.webassets-manifest.json"
+        assets.manifest = "memory"
 
         UpdaterType = type(util.flask.SettingsCheckUpdater)(
             util.flask.SettingsCheckUpdater.__name__,

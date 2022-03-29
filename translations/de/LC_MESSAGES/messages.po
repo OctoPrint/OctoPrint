@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint 1.8.0\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2022-03-15 19:27+0100\n"
+"POT-Creation-Date: 2022-03-28 14:13+0200\n"
 "PO-Revision-Date: 2021-08-04 11:01+0200\n"
 "Last-Translator: Gina Häußge <gina@octoprint.org>\n"
 "Language: de\n"
@@ -4661,7 +4661,7 @@ msgstr "Aus"
 #: src/octoprint/static/js/app/helpers.js:793
 #: src/octoprint/static/js/app/viewmodels/access.js:324
 #: src/octoprint/static/js/app/viewmodels/access.js:656
-#: src/octoprint/static/js/app/viewmodels/connection.js:187
+#: src/octoprint/static/js/app/viewmodels/connection.js:188
 msgid "Are you sure?"
 msgstr "Bist Du sicher?"
 
@@ -4804,21 +4804,21 @@ msgstr "Gruppe \"%(name)s\" bearbeiten"
 msgid "You are about to delete the group \"%(name)s\"."
 msgstr "Du bist im Begriff die Gruppe\"%(name)s\" zu löschen."
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:47
+#: src/octoprint/static/js/app/viewmodels/connection.js:48
 #: src/octoprint/templates/sidebar/connection.jinja2:17
 msgid "Connect"
 msgstr "Verbinden"
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:48
-#: src/octoprint/static/js/app/viewmodels/connection.js:200
+#: src/octoprint/static/js/app/viewmodels/connection.js:49
+#: src/octoprint/static/js/app/viewmodels/connection.js:201
 msgid "Disconnect"
 msgstr "Trennen"
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:52
+#: src/octoprint/static/js/app/viewmodels/connection.js:53
 msgid "No serial port found"
 msgstr "Keine serielle Schnittstelle gefunden"
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:188
+#: src/octoprint/static/js/app/viewmodels/connection.js:189
 msgid ""
 "<p><strong>You are about to disconnect from the printer while a print is "
 "in progress.</strong></p><p>Disconnecting while a print is in progress "
@@ -4833,11 +4833,11 @@ msgstr ""
 "Versuch, OctoPrint neuzustarten oder erneut mit dem Drucker zu verbinden "
 "den Druck unterbrechen.<p>"
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:196
+#: src/octoprint/static/js/app/viewmodels/connection.js:197
 msgid "Are you sure you want to disconnect from the printer?"
 msgstr "Bist Du sicher, dass du die Verbindung zum Drucker trennen willst?"
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:199
+#: src/octoprint/static/js/app/viewmodels/connection.js:200
 msgid "Stay Connected"
 msgstr "Verbunden bleiben"
 
@@ -6962,8 +6962,8 @@ msgid ""
 "By checking this you'll disable OctoPrint warning you if no serial ports "
 "to connect to were found."
 msgstr ""
-"Wenn du das auswählst, wird OctoPrint dich nicht warnen, wenn keine seriellen "
-"Ports zum Verbinden gefunden werden konnten."
+"Wenn du das auswählst, wird OctoPrint dich nicht warnen, wenn keine "
+"seriellen Ports zum Verbinden gefunden werden konnten."
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:110
 msgid "Serial logging"
