@@ -42,6 +42,7 @@ core_deps = [
     "filetype>=1.0.7,<2",
     "Flask-Assets>=2.0,<3",
     "Flask-Babel>=2.0,<3",
+    "Flask-Login>=0.5,<0.6",  # flask-login doesn't use semver & breaks stuff on minor version increases
     "flask>=2,<3",
     "frozendict>=2.0,<3",
     "future>=0.18.2,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
