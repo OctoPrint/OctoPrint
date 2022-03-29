@@ -45,7 +45,6 @@ thanks to everyone who contributed!
   * Kurt Wubbels
   * Kyle Menigoz
   * Lachlan Bell
-  * Lee Dohm
   * Lefteris Lertas
   * LulzBot
   * Makespace Madrid
@@ -54,7 +53,6 @@ thanks to everyone who contributed!
   * Mike Kershaw
   * Miles Flavel
   * Mosaic Manufacturing
-  * Nat Friedman
   * Norman Jaffe
   * Peopoly
   * Pete Barnwell
@@ -74,7 +72,7 @@ thanks to everyone who contributed!
   * The Spaghetti Detective
   * TJ Horner
   * Trent Shumay
-  * Ulderico Cirello
   * Ulrich Kempken
+  * Yehuda Katz
 
-and 2298 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2307 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
