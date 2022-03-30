@@ -1716,7 +1716,7 @@ def serialize(filename, data, encoding="utf-8", compressed=True):
     If `compressed` is True (the default), the serialized data put through zlib.compress.
 
     Supported data types are listed at the bottom of
-    :ref:`octoprint.util.comprehensive_json`, and include some data types that are not
+    :func:`octoprint.util.comprehensive_json`, and include some data types that are not
     supported by json.dumps by default.
 
     This is not thread-safe, if concurrent access is required, the caller needs to ensure

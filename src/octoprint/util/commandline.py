@@ -43,7 +43,7 @@ def clean_ansi(line: Union[str, bytes]) -> Union[str, bytes]:
     Returns:
         (str or bytes) The line without any ANSI control codes
 
-    .. changed:: 1.8.0
+    .. versionchanged:: 1.8.0
 
        Usage as ``clean_ansi(line: bytes) -> bytes`` is now deprecated and will be removed
        in a future version of OctoPrint.
