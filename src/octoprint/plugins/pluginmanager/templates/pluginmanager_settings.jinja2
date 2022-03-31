@@ -217,7 +217,7 @@
                 {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='https://plugins.octoprint.org') }}
             </h4>
 
-            <div style="margin-bottom: 1em" class="clearfix">
+            <div class="clearfix">
                 <form class="form-search" data-bind="submit: performRepositorySearch">
                     <input type="text" class="input-block search-query pull-left" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}">
                 </form>
@@ -243,12 +243,25 @@
                     </div>
                 </div>
             </div>
+            <div style="text-align: center">
+                <!-- My Settings Bar -->
+                <div style="margin: 0 auto;">
+                    <span class="muted" style="margin-right: 8px;" data-bind="text: repoSelectionSize() + ' selected'"></span>
+                    <button data-bind="click: console.log(RepoSelection())">debug</button>
+                    <button class="btn btn-primary" data-bind="enable: repoInstallSelectionEnabled(), click: repoInstallSelectionClick, text: repoInstallSelectionButtonText()"></button>
+                </div>
+            </div>
+            <hr />
 
             <div data-bind="visible: repositoryAvailable() && repositoryplugins.paginatedItems().length > 0">
                 <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="foreach: repositoryplugins.paginatedItems">
                     <div class="entry">
                         <div class="row-fluid">
-                            <div class="span12">
+                            <!-- My Checkbox -->
+                            <label class="checkbox span1">
+                                <input type="checkbox" data-bind="value: $data, checked: $parent.RepoSelection">
+                            </label>
+                            <div class="span11">
                                 <div class="span3 pull-right">
                                     <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }"><i class="fas fa-add"></i> <span data-bind="text: $root.installButtonText($data)"></span></button>
                                     <div data-bind="visible: $data.disabled !== undefined" style="text-align: center"><small><a data-bind="attr: {href: page}" target="_blank">{{ _('"Why?"') }}</a></small></div>

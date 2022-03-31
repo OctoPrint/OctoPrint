@@ -482,6 +482,146 @@ $(function () {
             }
         };
 
+        /* My Shit */
+
+        self.RepoSelection = ko.observableArray();
+
+        self.repoSelectionSize = function() {
+            return self.RepoSelection().length;
+        }
+
+        self.repoInstallSelectionButtonText = function () {
+            return self.RepoSelection().some(self.installed) ? "(Re)install selected" : "Install selected" ;
+        };
+
+        self.repoInstallSelectionEnabled = function() {
+            return (
+                self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL) && 
+                self.enableManagement() &&
+                self.pipAvailable() &&
+                !self.safeMode() &&
+                !self.throttled() &&
+                self.online() &&
+                self.repoSelectionSize() > 0 &&
+                self.RepoSelection().every(self.isCompatible)
+            );
+        }
+
+        self.repoInstallSelectionClick = function() {
+            if (!self.repoInstallSelectionEnabled()) return;
+
+            // if (self.repoSelectionSize() == 1) {
+            //     self.installFromRepository(self.RepoSelection[0]);
+            // } Commented for testing
+
+            self.repoInstallSelectionConfirm();
+        }
+
+        self.repoInstallSelectionConfirm = function() { 
+            showConfirmationDialog({
+                title: "Confirm Multiple Installation",
+                message: "msg",
+                question: gettext("Do you still want to disable it?"),
+                cancel: gettext("Cancel"),
+                proceed: "Install Plugins",
+                onproceed: self.multiInstallSelection
+            });
+        }
+
+        self.MultiInstallRunning = ko.observable(False);
+        self.MultiInstallIndex = ko.observable(0);
+
+        self.multiInstallFromSelection = function() {
+            if (self.MultiInstallRunning || !self.repoInstallSelectionEnabled()) return;
+
+            self._markWorking('Installing Multiple Plugins', 'Starting Multiple Plugin Install');
+            self.MultiInstallPart(0);
+        }
+
+        self.MultiInstallPart = function (index) {
+            /* Here */
+            let size = self.repoSelectionSize();
+
+            let plugin = self.RepoSelection()[index];
+            let url = plugin.archive,
+                name = plugin.title,
+                reinstall = self.installed(plugin) ? plugin.id : undefined,
+                followDependencyLinks = plugin.follow_dependency_links || self.followDependencyLinks();
+            
+            let workText = name ? 
+            _.sprintf( gettext('Installing plugin "%(name)s" from %(url)s...'), {url: _.escape(url), name: _.escape(name)} ) :
+            _.sprintf( gettext("Installing plugin from %(url)s..."), { url: _.escape(url) } );
+
+            let versionText = `[${index+1}/${size}]`;
+
+            self.loglines.push({line: `${versionText} ${workText}`, stream: 'message'});
+
+
+            let onSuccess = function (response) {
+                if (!response.in_progress) {
+                    self.loglines.push({line: `Success! ${JSON.stringify(response)}`, stream: 'message'});
+                    return;
+                }
+                if (size == index + 1) { // Finished
+                    self.installUrl("");
+                    self.RepoSelection([]);
+                } else { // Some more
+                    self.MultiInstallPart(index+1);
+                }
+            }
+                
+            let onError = function (jqXHR) {
+                if (jqXHR.status === 409) {
+                    // there's already a plugin being installed
+                    self._markDone(
+                        "There's already another plugin install in progress."
+                    );
+                } else {
+                    self._markDone(
+                        "Could not install plugin, unknown error, please consult octoprint.log for details"
+                    );
+                    new PNotify({
+                        title: gettext("Something went wrong"),
+                        text: gettext("Please consult octoprint.log for details"),
+                        type: "error",
+                        hide: false
+                    });
+                }
+            };
+
+            // Call
+
+            if (reinstall) {
+                OctoPrint.plugins.pluginmanager
+                    .reinstall(reinstall, url, followDependencyLinks)
+                    .done(onSuccess)
+                    .fail(onError);
+            } else {
+                OctoPrint.plugins.pluginmanager
+                    .install(url, followDependencyLinks)
+                    .done(onSuccess)
+                    .fail(onError);
+            }
+        }
+
+        self.alertMultiInstallPartDone = function(response) {
+            /* {"type":"result","action":"install","result":true,"source":"https://github.com/marian42/octoprint-preheat/archive/master.zip","source_type":"url","needs_restart":true,"needs_refresh":true,
+            "needs_reconnect":false,"was_reinstalled":true,"plugin":{"key":"preheat","name":"Preheat Button","description":"Automatically heat printhead to the printing temperature of the current gcode file",
+            "disabling_discouraged":false,"author":"Marian Kleineberg","version":"0.8.0","url":"https://github.com/marian42/octoprint-preheat","license":"AGPLv3","python":">=2.7,<4","bundled":false,
+            "managable":true,"enabled":false,"blacklisted":false,"forced_disabled":false,"incompatible":false,"safe_mode_victim":false,"pending_enable":false,"pending_disable":false,"pending_install":true,
+            "pending_uninstall":false,"origin":"entry_point","notifications":null}}, install, Preheat Button */
+
+            if (response.action != "install" || response.result == False)
+                return;
+            
+            if (self.RepoSelection()[self.MultiInstallIndex].id !== response.plugin.key)
+                return; // could implement a check if it just out of order for some reason, also should probably throw error
+
+            // is this beyond reasonable doubt that we are done? idk man
+            
+            //TODO Start here
+        }
+
         self.performRepositorySearch = function () {
             var query = self.repositorySearchQuery();
             if (query !== undefined && query.trim() !== "") {
@@ -1215,6 +1355,8 @@ $(function () {
 
         self._processPluginManagementResult = function (response, action, plugin) {
             if (response.result) {
+                if (action == "install" && self.MultiInstallRunning)
+                    self.alertMultiInstallPartDone(response)
                 self._markDone();
             } else {
                 self._markDone(response.reason, response.faq);
