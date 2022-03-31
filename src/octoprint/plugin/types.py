@@ -631,12 +631,10 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
     at it being a mobile device:
 
     .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/__init__.py
-       :linenos:
        :tab-width: 4
        :caption: `dummy_mobile_ui/__init__.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/__init__.py>`_
 
     .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2
-       :linenos:
        :tab-width: 4
        :caption: `dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2 <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2>`_
 
@@ -1191,7 +1189,6 @@ class SimpleApiPlugin(OctoPrintPlugin):
     Take this example of a plugin registered under plugin identifier ``mysimpleapiplugin``:
 
     .. code-block:: python
-       :linenos:
 
        import octoprint.plugin
 
@@ -1327,7 +1324,6 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
     which behaves exactly the same like Flask's regular ``route`` decorators. Example:
 
     .. code-block:: python
-       :linenos:
 
        import octoprint.plugin
        import flask
