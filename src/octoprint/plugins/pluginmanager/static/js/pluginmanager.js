@@ -484,14 +484,28 @@ $(function () {
 
         /* My Shit */
 
+        self.debugOut = function(title, text) {
+            new PNotify({
+                title: title,
+                text: text,
+                type: "error",
+                hide: false
+            });
+        }
+
         self.RepoSelection = ko.observableArray();
 
         self.repoSelectionSize = function() {
             return self.RepoSelection().length;
         }
 
+        self.repoSelectionSomeReinstall = function() {
+            return self.RepoSelection().some(self.installed)
+        }
+
+
         self.repoInstallSelectionButtonText = function () {
-            return self.RepoSelection().some(self.installed) ? "(Re)install selected" : "Install selected" ;
+            return self.repoSelectionSomeReinstall() ? "(Re)install selected" : "Install selected" ;
         };
 
         self.repoInstallSelectionEnabled = function() {
@@ -504,73 +518,87 @@ $(function () {
                 self.online() &&
                 self.repoSelectionSize() > 0 &&
                 self.RepoSelection().every(self.isCompatible)
+                // Would love to check for duplicates in RepoSelection but it's tough without ES6
             );
         }
 
-        self.repoInstallSelectionClick = function() {
+        self.repoInstallSelectionConfirm = function() { 
             if (!self.repoInstallSelectionEnabled()) return;
 
-            // if (self.repoSelectionSize() == 1) {
-            //     self.installFromRepository(self.RepoSelection[0]);
-            // } Commented for testing
+            if (self.repoSelectionSize() == 1) {
+                self.installFromRepository(self.RepoSelection()[0]);
+                return;
+            }
 
-            self.repoInstallSelectionConfirm();
-        }
+            let message = `Please confirm you want to ${self.repoSelectionSomeReinstall() ? '(re)' : ''}install these packages:`;
+            
+            let question = '<ul>';
+            self.RepoSelection().forEach(function(plugin) {
+                let action = self.installed(plugin) ? "Reinstall" : "Install";
 
-        self.repoInstallSelectionConfirm = function() { 
+                question += `<li>${action} <em><b>${plugin.title}@${plugin.github.latest_release.tag}</b></em></li>`
+            });
+            question += "</ul>"
+
             showConfirmationDialog({
-                title: "Confirm Multiple Installation",
-                message: "msg",
-                question: gettext("Do you still want to disable it?"),
+                title: "Confirm Multiple Installer",
+                message: message,
+                question: question,
                 cancel: gettext("Cancel"),
                 proceed: "Install Plugins",
-                onproceed: self.multiInstallSelection
+                proceedClass: "primary",
+                onproceed: self.multiInstallFromSelection
             });
         }
 
-        self.MultiInstallRunning = ko.observable(False);
-        self.MultiInstallIndex = ko.observable(0);
+        self.MultiInstallRunning = ko.observable(false);
+        self.MultiInstallSize = ko.observable(0);
 
         self.multiInstallFromSelection = function() {
-            if (self.MultiInstallRunning || !self.repoInstallSelectionEnabled()) return;
+            if (self.MultiInstallRunning() || !self.repoInstallSelectionEnabled()) return;
+
+            self.MultiInstallRunning(true);
+            self.MultiInstallSize(self.repoSelectionSize());
+
+            // self.debugOut('MI', 'Starting Install');
 
             self._markWorking('Installing Multiple Plugins', 'Starting Multiple Plugin Install');
-            self.MultiInstallPart(0);
+            self.performMultiInstallPart();
         }
 
-        self.MultiInstallPart = function (index) {
-            /* Here */
-            let size = self.repoSelectionSize();
+        self.multiInstallProgressText = function() {
+            total = self.MultiInstallSize();
+            index = self.MultiInstallSize() - self.repoSelectionSize() + 1;
+            return `[${index}/${total}] `
+        }
 
-            let plugin = self.RepoSelection()[index];
+        self.performMultiInstallPart = function () {
+            /* Here */
+            if (!self.MultiInstallRunning())
+                return;
+                
+            let plugin = self.RepoSelection()[0];
             let url = plugin.archive,
                 name = plugin.title,
                 reinstall = self.installed(plugin) ? plugin.id : undefined,
                 followDependencyLinks = plugin.follow_dependency_links || self.followDependencyLinks();
             
-            let workText = name ? 
-            _.sprintf( gettext('Installing plugin "%(name)s" from %(url)s...'), {url: _.escape(url), name: _.escape(name)} ) :
-            _.sprintf( gettext("Installing plugin from %(url)s..."), { url: _.escape(url) } );
 
-            let versionText = `[${index+1}/${size}]`;
+            let workText = _.sprintf(
+                reinstall ? gettext('Reinstalling plugin "%(name)s" from %(url)s...') : 
+                    name ? gettext('Installing plugin "%(name)s" from %(url)s...') : gettext("Installing plugin from %(url)s...")
+                , {url: _.escape(url), name: _.escape(name)}
+            );
 
-            self.loglines.push({line: `${versionText} ${workText}`, stream: 'message'});
+            let line = `${self.multiInstallProgressText()} ${workText}`;
 
+            self.loglines.push({line: line, stream: 'message'});
 
-            let onSuccess = function (response) {
-                if (!response.in_progress) {
-                    self.loglines.push({line: `Success! ${JSON.stringify(response)}`, stream: 'message'});
-                    return;
-                }
-                if (size == index + 1) { // Finished
-                    self.installUrl("");
-                    self.RepoSelection([]);
-                } else { // Some more
-                    self.MultiInstallPart(index+1);
-                }
-            }
-                
             let onError = function (jqXHR) {
+                self.debugOut('onError', JSON.stringify(jqXHR));
+                // stop MultiInstall
+                self.MultiInstallRunning(false);
+
                 if (jqXHR.status === 409) {
                     // there's already a plugin being installed
                     self._markDone(
@@ -594,32 +622,35 @@ $(function () {
             if (reinstall) {
                 OctoPrint.plugins.pluginmanager
                     .reinstall(reinstall, url, followDependencyLinks)
-                    .done(onSuccess)
                     .fail(onError);
             } else {
                 OctoPrint.plugins.pluginmanager
                     .install(url, followDependencyLinks)
-                    .done(onSuccess)
                     .fail(onError);
             }
         }
 
         self.alertMultiInstallPartDone = function(response) {
-            /* {"type":"result","action":"install","result":true,"source":"https://github.com/marian42/octoprint-preheat/archive/master.zip","source_type":"url","needs_restart":true,"needs_refresh":true,
+            /* exxample response: {"type":"result","action":"install","result":true,"source":"https://github.com/marian42/octoprint-preheat/archive/master.zip","source_type":"url","needs_restart":true,"needs_refresh":true,
             "needs_reconnect":false,"was_reinstalled":true,"plugin":{"key":"preheat","name":"Preheat Button","description":"Automatically heat printhead to the printing temperature of the current gcode file",
             "disabling_discouraged":false,"author":"Marian Kleineberg","version":"0.8.0","url":"https://github.com/marian42/octoprint-preheat","license":"AGPLv3","python":">=2.7,<4","bundled":false,
             "managable":true,"enabled":false,"blacklisted":false,"forced_disabled":false,"incompatible":false,"safe_mode_victim":false,"pending_enable":false,"pending_disable":false,"pending_install":true,
-            "pending_uninstall":false,"origin":"entry_point","notifications":null}}, install, Preheat Button */
+            "pending_uninstall":false,"origin":"entry_point","notifications":null}} */
 
-            if (response.action != "install" || response.result == False)
+            if (response.action != "install" || !response.result || !self.MultiInstallRunning())
                 return;
-            
-            if (self.RepoSelection()[self.MultiInstallIndex].id !== response.plugin.key)
-                return; // could implement a check if it just out of order for some reason, also should probably throw error
 
-            // is this beyond reasonable doubt that we are done? idk man
+            if (self.RepoSelection()[0].id !== response.plugin.key)
+                return; // could implement a check if it just out of order for some reason, also should probably throw error
             
-            //TODO Start here
+            self.RepoSelection(self.RepoSelection().splice(0, 1));
+            if (self.repoSelectionSize() === 0) {
+                self.performMultiInstallPart();self.debugOut("MI", "Done w all")
+                self.installUrl("");
+                self.RepoSelection([]);
+                self.MultiInstallRunning(false);
+                self._markDone();
+            }
         }
 
         self.performRepositorySearch = function () {
@@ -1355,9 +1386,14 @@ $(function () {
 
         self._processPluginManagementResult = function (response, action, plugin) {
             if (response.result) {
-                if (action == "install" && self.MultiInstallRunning)
-                    self.alertMultiInstallPartDone(response)
-                self._markDone();
+                if (self.MultiInstallRunning() && action == "install") {
+                    self.alertMultiInstallPartDone(response);
+                } else {
+                    if (self.repoSelectionSize() === 1 && self.RepoSelection()[0].id === response.plugin.key)
+                        // Single installation but through the install selected button
+                        self.RepoSelection([]);
+                    self._markDone();
+                }
             } else {
                 self._markDone(response.reason, response.faq);
             }

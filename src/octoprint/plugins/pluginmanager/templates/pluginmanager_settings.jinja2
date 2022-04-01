@@ -247,8 +247,7 @@
                 <!-- My Settings Bar -->
                 <div style="margin: 0 auto;">
                     <span class="muted" style="margin-right: 8px;" data-bind="text: repoSelectionSize() + ' selected'"></span>
-                    <button data-bind="click: console.log(RepoSelection())">debug</button>
-                    <button class="btn btn-primary" data-bind="enable: repoInstallSelectionEnabled(), click: repoInstallSelectionClick, text: repoInstallSelectionButtonText()"></button>
+                    <button class="btn btn-primary" data-bind="enable: repoInstallSelectionEnabled(), click: repoInstallSelectionConfirm, text: repoInstallSelectionButtonText()"></button>
                 </div>
             </div>
             <hr />
