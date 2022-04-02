@@ -519,13 +519,13 @@ $(function () {
                 return;
             }
 
-            let message = self.repoSelectionSomeReinstall() ?
+            var message = self.repoSelectionSomeReinstall() ?
                 gettext("Please confirm you want to (re)install these packages:") : 
                 gettext("Please confirm you want to install these packages:");
             
-            let question = "<ul>";
+            var question = "<ul>";
             self.RepoSelection().forEach(function(plugin) {
-                let action = self.installed(plugin) ? gettext("Reinstall") : gettext("Install");
+                var action = self.installed(plugin) ? gettext("Reinstall") : gettext("Install");
 
                 question += _.sprintf("<li>%(action)s <em><b>%(name)s@%(version)s</b></em></li>", {
                     action: _.escape(action), name: _.escape(plugin.title), version: _.escape(plugin.github.latest_release.tag)
@@ -570,24 +570,24 @@ $(function () {
             if (!self.MultiInstallRunning())
                 return;
                 
-            let plugin = self.RepoSelection()[0];
-            let url = plugin.archive,
+            var plugin = self.RepoSelection()[0];
+            var url = plugin.archive,
                 name = plugin.title,
                 reinstall = self.installed(plugin) ? plugin.id : undefined,
                 followDependencyLinks = plugin.follow_dependency_links || self.followDependencyLinks();
             
 
-            let workText = _.sprintf(
+            var workText = _.sprintf(
                 reinstall ? gettext('Reinstalling plugin "%(name)s" from %(url)s...') : 
                     name ? gettext('Installing plugin "%(name)s" from %(url)s...') : gettext("Installing plugin from %(url)s...")
                 , {url: _.escape(url), name: _.escape(name)}
             );
 
-            let line =  self.multiInstallProgressText() + ' ' + workText;
+            var line =  self.multiInstallProgressText() + ' ' + workText;
 
             self.loglines.push({line: line, stream: 'message'});
 
-            let onError = function (jqXHR) {
+            var onError = function (jqXHR) {
                 self.MultiInstallRunning(false);
 
                 if (jqXHR.status === 409) {
