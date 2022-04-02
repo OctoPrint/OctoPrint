@@ -244,7 +244,6 @@
                 </div>
             </div>
             <div style="text-align: center">
-                <!-- My Settings Bar -->
                 <div style="margin: 0 auto;">
                     <span class="muted" style="margin-right: 8px;" data-bind="text: repoSelectionSize() + ' selected'"></span>
                     <button class="btn btn-primary" data-bind="enable: repoInstallSelectionEnabled(), click: repoInstallSelectionConfirm, text: repoInstallSelectionButtonText()"></button>
@@ -256,7 +255,6 @@
                 <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="foreach: repositoryplugins.paginatedItems">
                     <div class="entry">
                         <div class="row-fluid">
-                            <!-- My Checkbox -->
                             <label class="checkbox span1">
                                 <input type="checkbox" data-bind="value: $data, checked: $parent.RepoSelection">
                             </label>
