@@ -151,6 +151,7 @@ date of first contribution):
   * [Bryan Kenote](https://github.com/bryankenote)
   * [Quinn Damerell](https://github.com/QuinnDamerell)
   * [Zack Lewis](https://github.com/lima3w)
+  * ["tempodat"](https://github.com/tempodat)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
