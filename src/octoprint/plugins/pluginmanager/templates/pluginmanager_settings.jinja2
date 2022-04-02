@@ -245,8 +245,8 @@
             </div>
             <div style="text-align: center">
                 <div style="margin: 0 auto;">
-                    <span class="muted" style="margin-right: 8px;" data-bind="text: repoSelectionSize() + ' selected'"></span>
-                    <button class="btn btn-primary" data-bind="enable: repoInstallSelectionEnabled(), click: repoInstallSelectionConfirm, text: repoInstallSelectionButtonText()"></button>
+                    <span class="muted" style="margin-right: 8px;" data-bind="text: MIQueueSize() + ' selected'"></span>
+                    <button class="btn btn-primary" data-bind="enable: MIValid(), click: repoInstallSelectedConfirm, text: repoInstallSelectedButtonText()"></button>
                 </div>
             </div>
             <hr />
@@ -256,7 +256,7 @@
                     <div class="entry">
                         <div class="row-fluid">
                             <label class="checkbox span1">
-                                <input type="checkbox" data-bind="value: $data, checked: $parent.RepoSelection">
+                                <input type="checkbox" data-bind="value: $data, checked: $parent.MIQueue">
                             </label>
                             <div class="span11">
                                 <div class="span3 pull-right">

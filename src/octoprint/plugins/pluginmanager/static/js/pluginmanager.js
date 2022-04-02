@@ -482,118 +482,126 @@ $(function () {
             }
         };
 
-        self.RepoSelection = ko.observableArray();
+        // MI = MultiInstall henceforth
+        self.MIQueue = ko.observableArray(); // Queue of install jobs, binded to the checkboxes
+        self.MIRunning = ko.observable(false); // True while multiinstaller is running
+        self.MIInitialSize = ko.observable(0); // initial size of the multiinstaller queue, used to output the progress of multiinstall
 
-        self.repoSelectionSize = function() {
-            return self.RepoSelection().length;
-        }
-
-        self.repoSelectionSomeReinstall = function() {
-            return self.RepoSelection().some(self.installed)
-        }
-
-
-        self.repoInstallSelectionButtonText = function () {
-            return self.repoSelectionSomeReinstall() ? "(Re)install selected" : "Install selected" ;
+        self.MIQueueSize = function () {
+            return self.MIQueue().length;
         };
 
-        self.repoInstallSelectionEnabled = function() {
+        self.MICurrentJob = function () {
+            return self.MIQueue()[self.MIQueueSize() - 1];
+        };
+
+        self.MIValid = function () {
             return (
-                self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL) && 
+                self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL
+                ) &&
                 self.enableManagement() &&
                 self.pipAvailable() &&
                 !self.safeMode() &&
                 !self.throttled() &&
                 self.online() &&
-                self.repoSelectionSize() > 0 &&
-                self.RepoSelection().every(self.isCompatible)
-                // Would love to check for duplicates in RepoSelection but it's tough without ES6
+                self.MIQueueSize() > 0 &&
+                self.MIQueue().every(self.isCompatible)
             );
-        }
+        };
 
-        self.repoInstallSelectionConfirm = function() { 
-            if (!self.repoInstallSelectionEnabled()) return;
+        self.MIIndex = function () {
+            return self.MIInitialSize() - self.MIQueueSize() + 1;
+        };
 
-            if (self.repoSelectionSize() == 1) {
-                self.installFromRepository(self.RepoSelection()[0]);
+        self.repoInstallSelectedButtonText = function () {
+            return self.MIQueue().some(self.installed)
+                ? "(Re)install selected"
+                : "Install selected";
+        };
+
+        self.repoInstallSelectedConfirm = function () {
+            if (!self.MIValid()) return;
+
+            if (self.MIQueueSize() == 1) {
+                self.installFromRepository(self.MIQueue()[0]);
                 return;
             }
 
-            var message = self.repoSelectionSomeReinstall() ?
-                gettext("Please confirm you want to (re)install these packages:") : 
-                gettext("Please confirm you want to install these packages:");
-            
             var question = "<ul>";
-            self.RepoSelection().forEach(function(plugin) {
-                var action = self.installed(plugin) ? gettext("Reinstall") : gettext("Install");
+            self.MIQueue().forEach(function (plugin) {
+                var action = self.installed(plugin)
+                    ? gettext("Reinstall")
+                    : gettext("Install");
 
-                question += _.sprintf("<li>%(action)s <em><b>%(name)s@%(version)s</b></em></li>", {
-                    action: _.escape(action), name: _.escape(plugin.title), version: _.escape(plugin.github.latest_release.tag)
-                })
+                question += _.sprintf(
+                    "<li>%(action)s <em><b>%(name)s@%(version)s</b></em></li>",
+                    {
+                        action: _.escape(action),
+                        name: _.escape(plugin.title),
+                        version: _.escape(plugin.github.latest_release.tag)
+                    }
+                );
             });
-            question += "</ul>"
+            question += "</ul>";
 
             showConfirmationDialog({
                 title: gettext("Confirm Multiple Installer"),
-                message: message,
+                message: gettext("Please confirm you want to perform these actions:"),
                 question: question,
                 cancel: gettext("Cancel"),
                 proceed: gettext("Install"),
                 proceedClass: "primary",
-                onproceed: self.multiInstallFromSelection
+                onproceed: self.startMI
             });
-        }
+        };
 
-        self.MultiInstallRunning = ko.observable(false);
-        self.MultiInstallSize = ko.observable(0);
+        self.startMI = function () {
+            if (self.MIRunning() || !self.MIValid()) return;
 
-        self.multiInstallFromSelection = function() {
-            if (self.MultiInstallRunning() || !self.repoInstallSelectionEnabled()) return;
-
-            self.MultiInstallRunning(true);
-            self.MultiInstallSize(self.repoSelectionSize());
+            self.MIRunning(true);
+            self.MIInitialSize(self.MIQueueSize());
 
             self._markWorking(
-                gettext("Installing Multiple Plugins"), 
+                gettext("Installing Multiple Plugins"),
                 gettext("Starting Multiple Plugin Install")
             );
-            self.performMultiInstallPart();
-        }
+            self.performMIJob();
+        };
 
-        self.multiInstallProgressText = function() {
-            total = self.MultiInstallSize();
-            index = total - self.repoSelectionSize() + 1;
-            return _.sprintf("[%(index)d/%(total)d]", {index: index, total: total});
-        }
+        self.performMIJob = function () {
+            if (!self.MIRunning() || self.MIQueueSize() === 0) return;
 
-        self.performMultiInstallPart = function () {
-            if (!self.MultiInstallRunning())
-                return;
-                
-            var plugin = self.RepoSelection()[0];
+            var plugin = self.MICurrentJob();
             var url = plugin.archive,
                 name = plugin.title,
                 reinstall = self.installed(plugin) ? plugin.id : undefined,
-                followDependencyLinks = plugin.follow_dependency_links || self.followDependencyLinks();
-            
+                followDependencyLinks =
+                    plugin.follow_dependency_links || self.followDependencyLinks();
 
             var workText = _.sprintf(
-                reinstall ? gettext('Reinstalling plugin "%(name)s" from %(url)s...') : 
-                    name ? gettext('Installing plugin "%(name)s" from %(url)s...') : gettext("Installing plugin from %(url)s...")
-                , {url: _.escape(url), name: _.escape(name)}
+                reinstall
+                    ? gettext('Reinstalling plugin "%(name)s" from %(url)s...')
+                    : name
+                    ? gettext('Installing plugin "%(name)s" from %(url)s...')
+                    : gettext("Installing plugin from %(url)s..."),
+                {url: _.escape(url), name: _.escape(name)}
             );
 
-            var line =  self.multiInstallProgressText() + ' ' + workText;
+            var progressText = _.sprintf("[%(index)d/%(total)d]", {
+                index: self.MIIndex(),
+                total: this.MIInitialSize()
+            });
 
-            self.loglines.push({line: line, stream: 'message'});
+            var line = progressText + " " + workText;
+
+            self.loglines.push({line: line, stream: "message"});
 
             var onError = function (jqXHR) {
-                self.MultiInstallRunning(false);
+                self.MIRunning(false);
 
                 if (jqXHR.status === 409) {
-                    self._markDone(
-                        "There's already another plugin install in progress."
-                    );
+                    self._markDone("There's already another plugin install in progress.");
                 } else {
                     self._markDone(
                         "Could not install plugin, unknown error, please consult octoprint.log for details"
@@ -616,24 +624,29 @@ $(function () {
                     .install(url, followDependencyLinks)
                     .fail(onError);
             }
-        }
+        };
 
-        self.alertMultiInstallPartDone = function(response) {
-            if (response.action != "install" || !response.result || !self.MultiInstallRunning())
+        self.alertMIJobDone = function (response) {
+            if (
+                !self.MIRunning() ||
+                response.action != "install" ||
+                !response.result ||
+                self.MIQueueSize() === 0
+            )
                 return;
 
-            if (self.RepoSelection()[0].id !== response.plugin.key)
-                return; // could implement a check if it just out of order for some reason, also should probably throw error
-            
-            self.RepoSelection(self.RepoSelection().splice(0, 1));
-            if (self.repoSelectionSize() === 0) {
-                self.performMultiInstallPart();
+            if (self.MICurrentJob().id !== response.plugin.key) return;
+
+            self.MIQueue.pop();
+            if (self.MIQueueSize() === 0) {
                 self.installUrl("");
-                self.RepoSelection([]);
-                self.MultiInstallRunning(false);
+                self.MIQueue([]);
+                self.MIRunning(false);
                 self._markDone();
+            } else {
+                self.performMIJob();
             }
-        }
+        };
 
         self.performRepositorySearch = function () {
             var query = self.repositorySearchQuery();
@@ -1368,12 +1381,18 @@ $(function () {
 
         self._processPluginManagementResult = function (response, action, plugin) {
             if (response.result) {
-                if (self.MultiInstallRunning() && action == "install") {
-                    self.alertMultiInstallPartDone(response);
+                if (self.MIRunning() && action == "install") {
+                    // A MultiInstall job has finished
+                    self.alertMIJobDone(response);
+                } else if (
+                    self.MIQueueSize() === 1 &&
+                    self.MIQueue()[0].id === response.plugin.key
+                ) {
+                    // A normal installation, but was started with the 'Install Selected' button.
+                    self.MIQueue([]);
+                    self._markDone();
                 } else {
-                    if (self.repoSelectionSize() === 1 && self.RepoSelection()[0].id === response.plugin.key)
-                        // Single installation but through the install selected button
-                        self.RepoSelection([]);
+                    // Not connected to MultiInstall
                     self._markDone();
                 }
             } else {
