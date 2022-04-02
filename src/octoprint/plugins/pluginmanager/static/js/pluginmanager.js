@@ -482,17 +482,6 @@ $(function () {
             }
         };
 
-        /* My Shit */
-
-        self.debugOut = function(title, text) {
-            new PNotify({
-                title: title,
-                text: text,
-                type: "error",
-                hide: false
-            });
-        }
-
         self.RepoSelection = ko.observableArray();
 
         self.repoSelectionSize = function() {
@@ -530,22 +519,26 @@ $(function () {
                 return;
             }
 
-            let message = `Please confirm you want to ${self.repoSelectionSomeReinstall() ? '(re)' : ''}install these packages:`;
+            let message = self.repoSelectionSomeReinstall() ?
+                gettext("Please confirm you want to (re)install these packages:") : 
+                gettext("Please confirm you want to install these packages:");
             
-            let question = '<ul>';
+            let question = "<ul>";
             self.RepoSelection().forEach(function(plugin) {
-                let action = self.installed(plugin) ? "Reinstall" : "Install";
+                let action = self.installed(plugin) ? gettext("Reinstall") : gettext("Install");
 
-                question += `<li>${action} <em><b>${plugin.title}@${plugin.github.latest_release.tag}</b></em></li>`
+                question += _.sprintf("<li>%(action)s <em><b>%(name)s@%(version)s</b></em></li>", {
+                    action: _.escape(action), name: _.escape(plugin.title), version: _.escape(plugin.github.latest_release.tag)
+                })
             });
             question += "</ul>"
 
             showConfirmationDialog({
-                title: "Confirm Multiple Installer",
+                title: gettext("Confirm Multiple Installer"),
                 message: message,
                 question: question,
                 cancel: gettext("Cancel"),
-                proceed: "Install Plugins",
+                proceed: gettext("Install"),
                 proceedClass: "primary",
                 onproceed: self.multiInstallFromSelection
             });
@@ -560,20 +553,20 @@ $(function () {
             self.MultiInstallRunning(true);
             self.MultiInstallSize(self.repoSelectionSize());
 
-            // self.debugOut('MI', 'Starting Install');
-
-            self._markWorking('Installing Multiple Plugins', 'Starting Multiple Plugin Install');
+            self._markWorking(
+                gettext("Installing Multiple Plugins"), 
+                gettext("Starting Multiple Plugin Install")
+            );
             self.performMultiInstallPart();
         }
 
         self.multiInstallProgressText = function() {
             total = self.MultiInstallSize();
-            index = self.MultiInstallSize() - self.repoSelectionSize() + 1;
-            return `[${index}/${total}] `
+            index = total - self.repoSelectionSize() + 1;
+            return _.sprintf("[%(index)d/%(total)d]", {index: index, total: total});
         }
 
         self.performMultiInstallPart = function () {
-            /* Here */
             if (!self.MultiInstallRunning())
                 return;
                 
@@ -590,17 +583,14 @@ $(function () {
                 , {url: _.escape(url), name: _.escape(name)}
             );
 
-            let line = `${self.multiInstallProgressText()} ${workText}`;
+            let line =  self.multiInstallProgressText() + ' ' + workText;
 
             self.loglines.push({line: line, stream: 'message'});
 
             let onError = function (jqXHR) {
-                self.debugOut('onError', JSON.stringify(jqXHR));
-                // stop MultiInstall
                 self.MultiInstallRunning(false);
 
                 if (jqXHR.status === 409) {
-                    // there's already a plugin being installed
                     self._markDone(
                         "There's already another plugin install in progress."
                     );
@@ -617,8 +607,6 @@ $(function () {
                 }
             };
 
-            // Call
-
             if (reinstall) {
                 OctoPrint.plugins.pluginmanager
                     .reinstall(reinstall, url, followDependencyLinks)
@@ -631,12 +619,6 @@ $(function () {
         }
 
         self.alertMultiInstallPartDone = function(response) {
-            /* exxample response: {"type":"result","action":"install","result":true,"source":"https://github.com/marian42/octoprint-preheat/archive/master.zip","source_type":"url","needs_restart":true,"needs_refresh":true,
-            "needs_reconnect":false,"was_reinstalled":true,"plugin":{"key":"preheat","name":"Preheat Button","description":"Automatically heat printhead to the printing temperature of the current gcode file",
-            "disabling_discouraged":false,"author":"Marian Kleineberg","version":"0.8.0","url":"https://github.com/marian42/octoprint-preheat","license":"AGPLv3","python":">=2.7,<4","bundled":false,
-            "managable":true,"enabled":false,"blacklisted":false,"forced_disabled":false,"incompatible":false,"safe_mode_victim":false,"pending_enable":false,"pending_disable":false,"pending_install":true,
-            "pending_uninstall":false,"origin":"entry_point","notifications":null}} */
-
             if (response.action != "install" || !response.result || !self.MultiInstallRunning())
                 return;
 
@@ -645,7 +627,7 @@ $(function () {
             
             self.RepoSelection(self.RepoSelection().splice(0, 1));
             if (self.repoSelectionSize() === 0) {
-                self.performMultiInstallPart();self.debugOut("MI", "Done w all")
+                self.performMultiInstallPart();
                 self.installUrl("");
                 self.RepoSelection([]);
                 self.MultiInstallRunning(false);
