@@ -791,6 +791,10 @@ class ChainmapTest(unittest.TestCase):
             {_key("a"): None, _key("a", "b"): "b"},
             {"a": {"b": "b"}},
         ),
+        (
+            {_key("a"): "", _key("a", "b"): "b"},
+            {"a": {"b": "b"}},
+        ),
     )
     @ddt.unpack
     def test_unflatten(self, value, expected):
