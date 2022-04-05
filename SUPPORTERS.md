@@ -20,6 +20,7 @@ thanks to everyone who contributed!
   * Christian Wolf
   * Christian Würthner
   * Christoph Sigrist
+  * Craig Parker
   * Creality3D
   * David Bounds
   * DeltaMaker 3D Printers
@@ -34,6 +35,7 @@ thanks to everyone who contributed!
   * Hog Duske
   * Itay Shem-tov
   * James Mackay
+  * Jeff Green
   * Jeff Moe
   * Jeremy Cole
   * Joshua Wills
@@ -49,6 +51,7 @@ thanks to everyone who contributed!
   * LulzBot
   * Makespace Madrid
   * Mark Walker
+  * Matt Van Itallie
   * Michael Aumock
   * Mike Kershaw
   * Miles Flavel

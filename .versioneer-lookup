@@ -31,8 +31,8 @@ bug/.* 1.7.4 59cbfadf8922d85b9df40f8d0173e8c21724c3b8 pep440-dev
 
 # staging/maintenance is currently the branch for preparation of 1.8.0rc4
 # so is regressionfix/...
-staging/maintenance 1.8.0rc4 3c478036ae9edde3dd294af28bf1d8c78a2555d5 pep440-dev
-regressionfix/.* 1.8.0rc4 3c478036ae9edde3dd294af28bf1d8c78a2555d5 pep440-dev
+staging/maintenance 1.8.0rc5 c5b095a8b905d759c84acab5e8a65ed3170d124c pep440-dev
+regressionfix/.* 1.8.0rc5 c5b095a8b905d759c84acab5e8a65ed3170d124c pep440-dev
 
 # staging/devel is currently inactive (but has the 1.4.1rc4 namespace)
 staging/devel 1.4.1rc4 650d54d1885409fa1d411eb54b9e8c7ff428910f pep440-dev

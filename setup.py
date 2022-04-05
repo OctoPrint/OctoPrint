@@ -97,11 +97,11 @@ EXTRA_REQUIRES = {
     "plugins": ["cookiecutter>=1.7.2,<1.8"],
     # Dependencies for building the documentation
     "docs": [
-        "readthedocs-sphinx-ext",
-        "sphinx_rtd_theme",
-        "sphinx>=3,<4",
-        "sphinxcontrib-httpdomain",
-        "sphinxcontrib-mermaid",
+        "readthedocs-sphinx-ext>=2.1.5,<3",
+        "sphinx_rtd_theme>=1,<2",
+        "sphinx>=4,<5",
+        "sphinxcontrib-httpdomain>=1.8.0,<2",
+        "sphinxcontrib-mermaid>=0.7.1,<0.8",
     ],
 }
 

@@ -627,9 +627,11 @@ Profile
      - ``float``
      - The diameter of the printer's nozzle(s) in mm.
    * - ``extruder.sharedNozzle``
+     - 0..1
      - ``boolean``
      - Whether there's only one nozzle shared among all extruders (true) or one nozzle per extruder (false).
    * - ``extruder.defaultExtrusionLength``
+     - 0..1
      - ``int``
      - Default extrusion length used in Control tab on initial page load in mm.
    * - ``extruder.count``
