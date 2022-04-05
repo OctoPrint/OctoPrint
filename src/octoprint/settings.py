@@ -577,16 +577,30 @@ class HierarchicalChainMap:
         if d is None:
             return {}
 
-        result = dict()
+        result = {}
         for key, value in d.items():
             if not key.startswith(prefix):
                 continue
             subkeys = key[len(prefix) :].split(_CHAINMAP_SEP)
             current = result
+
+            path = []
             for subkey in subkeys[:-1]:
-                if subkey not in current or current[subkey] is None:
+                # we only need that for logging in case of data weirdness below
+                path.append(subkey)
+
+                # make sure the subkey is in the current dict, and that it is a dict
+                if subkey not in current:
                     current[subkey] = {}
+                elif not isinstance(current[subkey], dict):
+                    logging.getLogger(__name__).warning(
+                        f"There is a non-dict value on the path to {key} at {path!r}, ignoring."
+                    )
+                    current[subkey] = {}
+
+                # go down a level
                 current = current[subkey]
+
             current[subkeys[-1]] = value
 
         return result
