@@ -2114,7 +2114,7 @@ class Server:
             "css/bootstrap-slider.css",
             "css/bootstrap-tabdrop.css",
             "vendor/font-awesome-3.2.1/css/font-awesome.min.css",
-            "vendor/font-awesome-6.0.0/css/all.min.css",
+            "vendor/fontawesome-6.1.1/css/all.min.css",
             "css/jquery.fileupload-ui.css",
             "css/pnotify.core.min.css",
             "css/pnotify.buttons.min.css",
