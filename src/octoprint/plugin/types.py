@@ -500,7 +500,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
               :widths: 5 95
 
               * - icon
-                - Icon to use for the sidebar header, should be the name of a Font Awesome icon without the leading ``icon-`` part.
+                - Icon to use for the sidebar header, should be the full name of a Font Awesome icon including the ``fas``/``far``/``fab`` prefix, eg. ``fas fa-plus``.
               * - template_header
                 - Additional template to include in the head section of the sidebar item. For an example of this, see the additional
                   options included in the "Files" section.

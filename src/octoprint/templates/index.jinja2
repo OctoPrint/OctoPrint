@@ -96,8 +96,18 @@
                                  {% if "styles_wrapper" in data %} style="{{ data.styles_wrapper|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                     >
                                 <div class="accordion-heading">
+
                                     <a class="accordion-toggle" data-toggle="collapse" data-test-id="sidebar-{{ data._div }}-toggle" data-target="#{{ data._div }}">
-                                        {% if "icon" in data %}<i class="fa icon-black fa-{{ data.icon }}"></i> {% endif %}{{ entry|e }} <!-- TODO fontawesom 5 upgrade - note this may not be possible for back-compat reasons - for 2.0.0? -->
+                                        {% if "icon" in data %}
+                                            {% if data.icon.startswith("fa") %}
+                                                {# Fontawesome 5 allows using fas, far, fab etc. (FA6 also has fa-solid, fa-regular) so plugins should use the prefix they want #}
+                                                <i class="icon-black {{ data.icon }} "></i>
+                                            {% else %}
+                                                {# Those without the prefix will use just fa, relying on FA4 backwards compatibility #}
+                                                <i class="icon-black fa fa-{{ data.icon }}"></i>
+                                            {% endif %}
+                                        {% endif %}
+                                        {{ entry|e }}
                                     </a>
                                     {% if "template_header" in data %}
                                         {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template_header ignore missing %}{% endtry %}
