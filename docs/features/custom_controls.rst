@@ -44,7 +44,7 @@ a GCODE script including user input.
      - name: Example for multiple commands
        children:
        - name: Move X (static)
-         confirm: You are about to move the X axis right by 10mm with 3000mm/s.
+         confirm: You are about to move the X axis right by 10mm with 3000mm/min.
          commands:
          - G91
          - G1 X10 F3000
