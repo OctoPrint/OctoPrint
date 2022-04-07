@@ -13,9 +13,9 @@ serial:
 server:
   host: 0.0.0.0
   port: 5000
-devel:
-  virtualPrinter:
-    enabled: false
-    sendWait: true
-    waitInterval: 1.0
-    repetierStyleResends: false
+devel: {}
+test:
+  a:
+    a1: 1
+    a2: 2
+    a3: 3

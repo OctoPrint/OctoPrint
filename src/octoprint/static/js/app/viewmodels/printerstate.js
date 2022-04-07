@@ -48,7 +48,7 @@ $(function () {
         self.enablePrint = ko.pureComputed(function () {
             return (
                 self.isOperational() &&
-                self.isReady() &&
+                (self.isReady() || self.isPaused()) &&
                 !self.isPrinting() &&
                 !self.isCancelling() &&
                 !self.isPausing() &&

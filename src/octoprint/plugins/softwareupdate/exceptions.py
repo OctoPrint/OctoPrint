@@ -42,6 +42,14 @@ class CheckError(Exception):
         return self.message
 
 
+class ApiCheckError(CheckError):
+    API = "API"
+
+    def __init__(self, status_code, message):
+        self.status_code = status_code
+        super().__init__(f"{self.API} error: {message} (HTTP {status_code})")
+
+
 class RateLimitCheckError(CheckError):
     def __init__(self, message, remaining=None, limit=None, reset=None):
         super().__init__(message)

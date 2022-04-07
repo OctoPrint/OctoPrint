@@ -16,7 +16,7 @@
         </button>
     </div>
 
-    <div class="progress progress-text-centered">
+    <div class="progress progress-text-centered" data-bind="css: { 'active': ui_progress_busy, 'progress-striped': ui_progress_busy }">
         <div class="bar" data-bind="style: { width: ui_progress_percentage() + '%' }"></div>
 	<span class="progress-text-back" data-bind="css: { 'progress-text-front': (ui_progress_percentage() >= 50), 'progress-text-back': (ui_progress_percentage() < 50) }, text: ui_progress_text()"></span>
     </div>
@@ -102,9 +102,6 @@
                     <p>
                         <label class="checkbox">
                             <input type="checkbox" data-bind="checked: reader_hideEmptyLayers">{{ _('Hide empty layers') }} <span class="label">{{ _('Causes reload') }}</span>
-                        </label>
-                        <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: reader_sortLayers">{{ _('Sort layers') }} <span class="label">{{ _('Causes reload') }}</span>
                         </label>
                     </p>
                     <p>

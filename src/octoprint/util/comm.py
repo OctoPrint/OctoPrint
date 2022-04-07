@@ -113,7 +113,7 @@ Groups will be as follows:
 """
 
 regex_temp = re.compile(
-    r"(?P<sensor>B|C|T(?P<toolnum>\d*)|([\w]+)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?"
+    r"(^|\s)(?P<sensor>B|C|T(?P<toolnum>\d*)|([\w]+)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?"
     % (regex_float_pattern, regex_float_pattern)
 )
 """Regex matching temperature entries in line.
@@ -313,13 +313,13 @@ class PositionRecord:
         return True
 
     def __init__(self, *args, **kwargs):
-        attrs = self._standard_attrs | {key for key in kwargs if self.valid_e(key)}
+        attrs = self._attrs(*kwargs.keys())
         for attr in attrs:
             setattr(self, attr, kwargs.get(attr))
 
     def copy_from(self, other):
         # make sure all standard attrs and attrs from other are set
-        attrs = self._standard_attrs | {key for key in dir(other) if self.valid_e(key)}
+        attrs = self._attrs(*dir(other))
         for attr in attrs:
             setattr(self, attr, getattr(other, attr))
 
@@ -329,12 +329,19 @@ class PositionRecord:
             delattr(self, attr)
 
     def as_dict(self):
-        attrs = self._standard_attrs | {key for key in dir(self) if self.valid_e(key)}
+        attrs = self._attrs(*dir(self))
         return {attr: getattr(self, attr) for attr in attrs}
+
+    def _attrs(self, *args):
+        return self._standard_attrs | {key for key in args if self.valid_e(key)}
+
+    def reset(self):
+        for attr in self._attrs(*dir(self)):
+            setattr(self, attr, None)
 
 
 class TemperatureRecord:
-    RESERVED_IDENTIFIER_REGEX = re.compile("[0-9]+|[bc]")
+    RESERVED_IDENTIFIER_REGEX = re.compile(r"B|C|T\d*")
 
     def __init__(self):
         self._tools = {}
@@ -359,7 +366,7 @@ class TemperatureRecord:
         self._chamber = self._to_new_tuple(current, actual, target)
 
     def set_custom(self, identifier, actual=None, target=None):
-        if self.RESERVED_IDENTIFIER_REGEX.match(identifier):
+        if self.RESERVED_IDENTIFIER_REGEX.fullmatch(identifier):
             raise ValueError(f"{identifier} is a reserved identifier")
         current = self._custom.get(identifier, (None, None))
         self._custom[identifier] = self._to_new_tuple(current, actual, target)
@@ -1622,6 +1629,7 @@ class MachineCom:
                 timeout
             )
         )
+        self._record_cancel_data = False
         self._cancel_preparation_done()
 
     def _cancel_preparation_done(self, check_timer=True, user=None):
@@ -1708,6 +1716,7 @@ class MachineCom:
                 # we don't call on_print_job_cancelled on our callback here
                 # because we do this only after our M114 has been answered
                 # by the firmware
+                self.cancel_position.reset()
                 self._record_cancel_data = True
 
                 with self._cancel_mutex:
@@ -1781,6 +1790,7 @@ class MachineCom:
                 timeout
             )
         )
+        self._record_pause_data = False
         self._pause_preparation_done()
 
     def _pause_preparation_done(self, check_timer=True, suppress_script=False, user=None):
@@ -1902,6 +1912,7 @@ class MachineCom:
                     # we don't call on_print_job_paused on our callback here
                     # because we do this only after our M114 has been answered
                     # by the firmware
+                    self.pause_position.reset()
                     self._record_pause_data = True
 
                     with self._pause_mutex:
@@ -2092,7 +2103,7 @@ class MachineCom:
 
     def _processTemperatures(self, line):
         current_tool = self._currentTool if self._currentTool is not None else 0
-        current_tool_key = "T%d" % current_tool
+        current_tool_key = f"T{current_tool}"
         maxToolNum, parsedTemps = parse_temperature_line(line, current_tool)
 
         maxToolNum = max(
@@ -2148,10 +2159,15 @@ class MachineCom:
             del parsedTemps["C"]
             self.last_temperature.set_chamber(actual=actual, target=target)
 
-        # all other injected temperatures
-        for key in parsedTemps.keys():
-            actual, target = parsedTemps[key]
-            self.last_temperature.set_custom(key, actual=actual, target=target)
+        # all other injected temperatures or temperature-like entries
+        for key, data in parsedTemps.items():
+            try:
+                actual, target = data
+                self.last_temperature.set_custom(key, actual=actual, target=target)
+            except Exception as ex:
+                self._logger.warning(
+                    f"Could not add custom temperature record {key}: {ex}"
+                )
 
     ##~~ Serial monitor processing received messages
 
@@ -2577,7 +2593,7 @@ class MachineCom:
                             )
 
                         for key in [
-                            key for key in parsed if key.startswith("e") and len(key) > 1
+                            x for x in parsed if x.startswith("e") and len(x) > 1
                         ]:
                             setattr(self.last_position, key, parsed.get(key))
 
@@ -2819,6 +2835,8 @@ class MachineCom:
                                 )
 
                                 self._sdLowerCase = True
+                                self._sendChecksumWithUnknownCommands = True
+                                self._unknownCommandsNeedAck = True
 
                         self._firmware_info_received = True
                         self._firmware_info = data

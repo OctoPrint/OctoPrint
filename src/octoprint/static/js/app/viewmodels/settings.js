@@ -219,6 +219,8 @@ $(function () {
         self.serial_triggerOkForM29 = ko.observable(undefined);
         self.serial_waitForStart = ko.observable(undefined);
         self.serial_sendChecksum = ko.observable("print");
+        self.serial_sendChecksumWithUnknownCommands = ko.observable(undefined);
+        self.serial_unknownCommandsNeedAck = ko.observable(undefined);
         self.serial_sdRelativePath = ko.observable(undefined);
         self.serial_sdLowerCase = ko.observable(undefined);
         self.serial_sdAlwaysAvailable = ko.observable(undefined);
@@ -248,6 +250,7 @@ $(function () {
         self.serial_ackMax = ko.observable(undefined);
         self.serial_resendRatioThreshold = ko.observable(100);
         self.serial_resendRatioStart = ko.observable(100);
+        self.serial_ignoreEmptyPorts = ko.observable(undefined);
         self.serial_enableShutdownActionCommand = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
@@ -309,6 +312,13 @@ $(function () {
             self.webcam_ffmpegPathOk(false);
             self.webcam_ffmpegPathBroken(false);
         };
+        self.webcam_streamType = ko.pureComputed(function () {
+            try {
+                return determineWebcamStreamType(self.webcam_streamUrl());
+            } catch (e) {
+                return "";
+            }
+        });
 
         self.server_onlineCheckText = ko.observable();
         self.server_onlineCheckOk = ko.observable(false);
@@ -440,7 +450,7 @@ $(function () {
             var text = gettext(
                 "If you see your webcam stream below, the entered stream URL is ok."
             );
-            var streamType = determineWebcamStreamType(self.webcam_streamUrl());
+            var streamType = self.webcam_streamType();
             var webcam_element;
             var webrtc_peer_connection;
             if (streamType == "mjpg") {

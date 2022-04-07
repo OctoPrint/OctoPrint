@@ -1,0 +1,17 @@
+devel:
+  virtualPrinter:
+    enabled: false
+    sendWait: true
+    waitInterval: 1.0
+    repetierStyleResends: false
+    capabilities: {}
+plugins:
+  foo:
+    bar: {}
+  fnord:
+    bar:
+      d: 4
+test:
+  b:
+    b1: 1
+    b2: 2

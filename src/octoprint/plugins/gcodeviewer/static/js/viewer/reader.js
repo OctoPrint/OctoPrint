@@ -7,7 +7,6 @@
 GCODE.gCodeReader = (function () {
     // ***** PRIVATE ******
     var gcode, lines;
-    var z_heights = {};
     var model = [];
     var max = {x: undefined, y: undefined, z: undefined};
     var min = {x: undefined, y: undefined, z: undefined};
@@ -43,7 +42,10 @@ GCODE.gCodeReader = (function () {
         bedZ: 0
     };
 
-    var percentageTree = undefined;
+    var rendererModel = undefined;
+    var layerPercentageLookup = [];
+    var cachedLayer = undefined;
+    var cachedCmd = undefined;
 
     var prepareGCode = function (totalSize) {
         if (!lines) return;
@@ -52,91 +54,122 @@ GCODE.gCodeReader = (function () {
 
         byteCount = 0;
         for (i = 0; i < lines.length; i++) {
-            byteCount += lines[i].length + 1; // line length + line ending
+            byteCount += lines[i].length + 1; // line length + '\n'
             gcode.push({line: lines[i], percentage: (byteCount * 100) / totalSize});
         }
         lines = [];
     };
 
-    var sortLayers = function (m) {
-        var sortedZ = [];
-        var tmpModel = [];
+    var searchInPercentageTree = function (key) {
+        function searchInLayers(lower, upper, key) {
+            while (lower < upper) {
+                var middle = Math.floor((lower + upper) / 2);
 
-        for (var layer in z_heights) {
-            sortedZ[z_heights[layer]] = layer;
-        }
+                if (
+                    layerPercentageLookup[middle][0] <= key &&
+                    layerPercentageLookup[middle][1] > key
+                )
+                    return middle;
 
-        sortedZ.sort(function (a, b) {
-            return a - b;
-        });
-
-        for (var i = 0; i < sortedZ.length; i++) {
-            if (typeof z_heights[sortedZ[i]] === "undefined") continue;
-            tmpModel[i] = m[z_heights[sortedZ[i]]];
-        }
-        return tmpModel;
-    };
-
-    var prepareLinesIndex = function (m) {
-        percentageTree = undefined;
-
-        for (var l = 0; l < m.length; l++) {
-            if (m[l] === undefined) continue;
-            for (var i = 0; i < m[l].length; i++) {
-                var percentage = m[l][i].percentage;
-                var value = {layer: l, cmd: i};
-                if (!percentageTree) {
-                    percentageTree = new AVLTree({key: percentage, value: value}, "key");
+                if (layerPercentageLookup[middle][0] > key) {
+                    upper = middle - 1;
                 } else {
-                    percentageTree.add({key: percentage, value: value});
+                    lower = middle + 1;
                 }
             }
+            return lower;
         }
+
+        function searchInCmds(layer, lower, upper, key) {
+            while (lower < upper) {
+                var middle = Math.floor((lower + upper) / 2);
+
+                if (
+                    rendererModel[layer][middle].percentage == key ||
+                    (rendererModel[layer][middle].percentage <= key &&
+                        rendererModel[layer][middle + 1].percentage > key)
+                )
+                    return middle;
+
+                if (rendererModel[layer][middle].percentage > key) {
+                    upper = middle - 1;
+                } else {
+                    lower = middle + 1;
+                }
+            }
+            return lower;
+        }
+
+        if (rendererModel === undefined) return undefined;
+
+        // this happens when the print is stopped.
+        // just return last position to keep the last
+        // position on screen.
+        if (key == null) return {layer: cachedLayer, cmd: cachedCmd};
+
+        var layer = searchInLayers(0, rendererModel.length - 1, key);
+        var cmd = searchInCmds(layer, 0, rendererModel[layer].length - 1, key);
+
+        // remember last position
+        cachedLayer = layer;
+        cachedCmd = cmd;
+
+        return {layer: layer, cmd: cmd};
     };
 
-    var searchInPercentageTree = function (key) {
-        if (percentageTree === undefined) {
-            return undefined;
-        }
-
-        var elements = percentageTree.findBest(key);
-        if (elements.length === 0) {
-            return undefined;
-        }
-
-        return elements[0];
+    var sanitizeModel = function (m) {
+        if (!m) return [];
+        return _.filter(m, function (layer) {
+            return !!layer;
+        });
     };
 
-    var purgeLayers = function (m) {
-        if (!m) return;
-        var tmpModel = [];
+    var purgeEmptyLayers = function (m) {
+        return _.filter(m, function (layer) {
+            return (
+                !!layer &&
+                layer.length > 0 &&
+                _.find(layer, function (cmd) {
+                    return cmd && cmd.extrude;
+                }) !== undefined
+            );
+        });
+    };
 
-        var purge;
-        for (var i = 0; i < m.length; i++) {
-            purge = true;
+    var rebuildLayerPercentageLookup = function (m) {
+        var result = [];
 
-            if (typeof m[i] !== "undefined") {
-                for (var j = 0; j < m[i].length; j++) {
-                    if (m[i][j].extrude) {
-                        purge = false;
+        if (m && m.length > 0) {
+            for (var i = 0; i < m.length - 1; i++) {
+                // start is first command of current layer
+                var start = m[i].length ? m[i][0].percentage : -1;
+
+                var end = -1;
+                for (var j = i + 1; j < m.length; j++) {
+                    // end is percentage of first command that follows our start, might
+                    // be later layers if the next layer is empty!
+                    if (m[j].length) {
+                        end = m[j][0].percentage;
                         break;
                     }
                 }
+
+                result[i] = [start, end];
             }
 
-            if (!purge) {
-                tmpModel.push(m[i]);
-            }
+            // final start-end-pair is start percentage of last layer and 100%
+            result[m.length - 1] = m[m.length - 1].length
+                ? [m[m.length - 1][0].percentage, 100]
+                : [-1, -1];
         }
 
-        return tmpModel;
+        layerPercentageLookup = result;
     };
 
     // ***** PUBLIC *******
     return {
         clear: function () {
             model = [];
-            z_heights = [];
             max = {x: undefined, y: undefined, z: undefined};
             min = {x: undefined, y: undefined, z: undefined};
             modelSize = {x: undefined, y: undefined, z: undefined};
@@ -148,13 +181,31 @@ GCODE.gCodeReader = (function () {
                 minZ: undefined,
                 maxZ: undefined
             };
+            rendererModel = undefined;
+            layerPercentageLookup = undefined;
+            cachedLayer = undefined;
+            cachedCmd = undefined;
         },
 
         loadFile: function (reader) {
             this.clear();
 
             var totalSize = reader.target.result.length;
-            lines = reader.target.result.split(/[\r\n]/g);
+
+            /*
+             * Split by line ending
+             *
+             * Be aware that for windows line endings \r\n this leaves the \r attached to
+             * the lines. That will not influence our parser, but makes file position
+             * calculation way easier (line length + 1), so we just leave it in.
+             *
+             * This cannot cope with old MacOS \r line endings, but those should
+             * really not be used anymore and thus we'll happily ignore them here.
+             *
+             * Note: A simple string split uses up *much* less memory than regex.
+             */
+            lines = reader.target.result.split("\n");
+
             reader.target.result = null;
             prepareGCode(totalSize);
 
@@ -187,23 +238,19 @@ GCODE.gCodeReader = (function () {
         },
 
         passDataToRenderer: function () {
-            var m = model;
-            if (gCodeOptions["sortLayers"]) m = sortLayers(m);
-            if (gCodeOptions["purgeEmptyLayers"]) m = purgeLayers(m);
-            prepareLinesIndex(m);
+            var m = sanitizeModel(model);
+            if (gCodeOptions["purgeEmptyLayers"]) m = purgeEmptyLayers(m);
+
+            rendererModel = m;
+            rebuildLayerPercentageLookup(m);
+
             GCODE.renderer.doRender(m, 0);
             return m;
         },
 
-        processLayerFromWorker: function (msg) {
-            model[msg.layerNum] = msg.cmds;
-            z_heights[msg.zHeightObject.zValue] = msg.zHeightObject.layer;
-        },
-
-        processMultiLayerFromWorker: function (msg) {
-            for (var i = 0; i < msg.layerNum.length; i++) {
-                model[msg.layerNum[i]] = msg.model[msg.layerNum[i]];
-                z_heights[msg.zHeightObject.zValue[i]] = msg.layerNum[i];
+        processLayersFromWorker: function (msg) {
+            for (var i = 0; i < msg.layers.length; i++) {
+                model[msg.layers[i]] = msg.model[msg.layers[i]];
             }
         },
 
@@ -251,12 +298,7 @@ GCODE.gCodeReader = (function () {
         },
 
         getCmdIndexForPercentage: function (percentage) {
-            var command = searchInPercentageTree(percentage);
-            if (command === undefined) {
-                return undefined;
-            } else {
-                return command.value;
-            }
+            return searchInPercentageTree(percentage);
         }
     };
 })();

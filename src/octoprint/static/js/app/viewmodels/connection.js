@@ -21,6 +21,7 @@ $(function () {
             self.selectedPrinter(self.printerProfiles.currentProfile());
         });
 
+        self.portOptionsFetched = ko.observable(false);
         self.portOptions = ko.observableArray(undefined);
         self.baudrateOptions = ko.observableArray(undefined);
         self.printerOptions = ko.observableArray(undefined);
@@ -39,7 +40,8 @@ $(function () {
         self.isLoading = ko.observable(undefined);
 
         self.enableConnect = ko.pureComputed(function () {
-            return self.enablePort() || !self.isErrorOrClosed();
+            //return self.enablePort() || !self.isErrorOrClosed();
+            return true; // enable always for now, until we have an auto refresh in 1.9.0
         });
 
         self.buttonText = ko.pureComputed(function () {
@@ -53,6 +55,7 @@ $(function () {
 
         self.validPort = ko.pureComputed(function () {
             return (
+                !self.portOptionsFetched() ||
                 self.portOptions().length > 0 ||
                 self.settings.settings.serial.ignoreEmptyPorts()
             );
@@ -119,6 +122,7 @@ $(function () {
             }
 
             self.saveSettings(false);
+            self.portOptionsFetched(true);
         };
 
         self.fromHistoryData = function (data) {

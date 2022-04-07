@@ -796,6 +796,7 @@ class PluginManager:
 
     plugin_timings_logtarget = "PLUGIN_TIMINGS"
     plugin_timings_message = "{func} - {timing:05.2f}ms"
+    default_order = 1000
 
     def __init__(
         self,
@@ -804,6 +805,7 @@ class PluginManager:
         plugin_entry_points,
         logging_prefix=None,
         plugin_disabled_list=None,
+        plugin_sorting_order=None,
         plugin_blacklist=None,
         plugin_restart_needing_hooks=None,
         plugin_obsolete_hooks=None,
@@ -823,6 +825,8 @@ class PluginManager:
             plugin_entry_points = []
         if plugin_disabled_list is None:
             plugin_disabled_list = []
+        if plugin_sorting_order is None:
+            plugin_sorting_order = {}
         if plugin_blacklist is None:
             plugin_blacklist = []
         if compatibility_ignored_list is None:
@@ -850,6 +854,7 @@ class PluginManager:
         self.plugin_bases = plugin_bases
         self.plugin_entry_points = plugin_entry_points
         self.plugin_disabled_list = plugin_disabled_list
+        self.plugin_sorting_order = plugin_sorting_order
         self.plugin_blacklist = processed_blacklist
         self.plugin_restart_needing_hooks = plugin_restart_needing_hooks
         self.plugin_obsolete_hooks = plugin_obsolete_hooks
@@ -1638,6 +1643,13 @@ class PluginManager:
                 )
                 continue
 
+            if not order:
+                order = self.default_order
+
+            override = self.plugin_sorting_order.get(name, {}).get(hook, None)
+            if override:
+                order = override
+
             self._plugin_hooks[hook].append((order, name, callback))
             self._sort_hooks(hook)
 
@@ -1680,6 +1692,9 @@ class PluginManager:
                     )
                 )
                 continue
+
+            if not order:
+                order = self.default_order
 
             try:
                 self._plugin_hooks[hook].remove((order, name, callback))
@@ -2125,11 +2140,18 @@ class PluginManager:
                                 impl[0], sorting_context
                             )
                         )
-                        sorting_value = None
+                        sorting_value = self.default_order
+                else:
+                    sorting_value = self.default_order
+
+                override = self.plugin_sorting_order.get(impl[0], {}).get(
+                    sorting_context, None
+                )
+                if override:
+                    sorting_value = override
 
             plugin_info = self.get_plugin_info(impl[0], require_enabled=False)
             return (
-                sorting_value is None,
                 sv(sorting_value),
                 not plugin_info.bundled if plugin_info else True,
                 sv(impl[0]),
@@ -2223,7 +2245,7 @@ class PluginManager:
     def _sort_hooks(self, hook):
         self._plugin_hooks[hook] = sorted(
             self._plugin_hooks[hook],
-            key=lambda x: (x[0] is None, sv(x[0]), sv(x[1]), sv(x[2])),
+            key=lambda x: (sv(x[0]), sv(x[1]), sv(x[2])),
         )
 
     def _get_callback_and_order(self, hook):

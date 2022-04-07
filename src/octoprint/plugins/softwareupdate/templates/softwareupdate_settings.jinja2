@@ -63,15 +63,6 @@
         Read more on this in <a href="https://faq.octoprint.org/pi-issues" target="_blank" rel="noopener noreferrer">the FAQ</a>.
     </p>
 {% endtrans %}</div>
-<div class="alert" data-bind="visible: printerState.isPrinting()">{% trans %}
-    <p>
-        <strong>OctoPrint is currently printing, updates are disabled.</strong>
-    </p>
-    <p>
-        Running updates is not supported while printing in order to not risk any kind of disruption to the print job.
-        Please let the print finish before trying to update.
-    </p>
-{% endtrans %}</div>
 
 <ul class="nav nav-pills">
     <li class="active">
@@ -85,6 +76,9 @@
 <div class="tab-content">
     <div class="tab-pane active" id="settings_plugin_softwareupdate_updates">
         <div class="pull-right">
+            <div class="btn-group">
+                <button class="btn btn-primary" data-bind="click: function() { $root.cancelQueued(); }, enable: enableCancelQueued, css: {disabled: !enableCancelQueued}, visible: enableCancelQueued" title="{{ _('Cancel all queued updates') | edq }}" style="display: none;"><i class="fas fa-spinner fa-spin" data-bind="visible: cancelInProgress"></i> {{ _('Cancel Queued') }}</button>
+            </div>
             <div class="btn-group">
                 <button class="btn btn-primary" data-bind="click: function() { $root.updateEnabled(); }, enable: enableUpdateEnabled, css: {disabled: !enableUpdateEnabled}" title="{{ _('Update all enabled') | edq }}"><i class="fas fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
                 <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
@@ -113,7 +107,8 @@
                         <span data-bind="visible: !compatible" class="muted"><i class="fas fa-power-off" title="{{ _('Not compatible') }}|edq"></i></span>
                     </td>
                     <td class="settings_plugin_softwareupdate_column_information">
-                        <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible" class="btn btn-primary pull-right">{{ _('Update') }}</a>
+                        <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible && !$root.updateQueued($data)" class="btn btn-primary pull-right">{{ _('Update') }}</a>
+                        <a href="javascript:void(0)" data-bind="click: function() { $root.cancelQueued([$data]) }, visible: $root.updateQueued($data)" class="btn btn-primary pull-right">{{ _('Cancel Queued') }}</a>
                         <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fas fa-exclamation-triangle" data-bind="css: {'fa-unlink': !online && information && information.needs_online, 'fa-exclamation-triangle': !(!online && information && information.needs_online)}, attr: {title: $root.iconTitleForEntry($data)}"></i></span><br>
                         <small data-bind="visible: compatible" class="muted">
                             <span data-bind="visible: releaseChannels && releaseChannels.available" class="line">{{ _('Release Channel:') }} <select class="settings_plugin_softwareupdate_release_channel" data-bind="visible: releaseChannels && releaseChannels.available, value: releaseChannels.current, options: releaseChannels.available, optionsText: 'name', optionsValue: 'channel'"></select> <a href="https://faq.octoprint.org/using-release-channels" target="_blank"><i class="fas fa-question-circle"></i></a></span>
@@ -176,6 +171,7 @@
             {% include "snippets/checkoutFolder.jinja2" %}
             {% include "snippets/pipTarget.jinja2" %}
             {% include "snippets/pipEnableCheck.jinja2" %}
+            {% include "snippets/githubToken.jinja2" %}
             <div class="control-group">
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
                 <div class="controls">

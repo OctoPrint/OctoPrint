@@ -451,6 +451,11 @@ Use the following settings to enable or disable OctoPrint features:
 
      # whether G90/G91 also influence absolute/relative mode of extruders
      g90InfluencesExtruder: false
+     
+     # Replace all special characters and spaces with text equivalent to make them univerally compatible.
+     # Most OS filesystems work fine with unicode characters, but just in case you can revert to the
+     # older behaviour by setting this to true.
+     enforceReallyUniversalFilenames: false
 
 .. _sec-configuration-config_yaml-folder:
 
@@ -560,6 +565,14 @@ plugins are tracked:
      # the plugin considered compatible in any case. Only for development, do NOT use in production.
      _forcedCompatible:
      - ...
+
+     # Custom sorting of hooks and implementations provided by plugins. Two-tiered dictionary
+     # structure, plugin identifier mapping to a dictionary of order overrides mapped by
+     # sorting context/hook name
+     _sortingOrder:
+       some_plugin:
+         some_hook: 1
+         some_other_hook: 200
 
      # The rest are individual plugin settings, each tracked by their identifier, e.g.:
      some_plugin:
@@ -692,7 +705,7 @@ Use the following settings to configure the serial connection to the printer:
      maxWritePasses: 5
 
      # Use this to define additional patterns to consider for serial port listing. Must be a valid
-     # "glob" pattern (see http://docs.python.org/2/library/glob.html). Defaults to not set.
+     # "glob" pattern (see http://docs.python.org/3/library/glob.html). Defaults to not set.
      additionalPorts:
      - /dev/myPrinterSymlink
 

@@ -8,5 +8,5 @@
   "screenshotsFolder": "screenshots",
   "videosFolder": "videos",
   "modifyObstructiveCode": false,
-  "retries": 3
+  "retries": 5
 }

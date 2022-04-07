@@ -164,6 +164,7 @@ date of first contribution):
   * [Shell M. Shrader](https://github.com/synman)
   * [Johan Verrept](https://github.com/JoveToo)
   * [Nicu Surdu](https://github.com/surdu)
+  * [Zack Lewis](https://github.com/lima3w)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

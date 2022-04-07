@@ -11,7 +11,6 @@ import codecs
 import collections
 import contextlib
 import copy
-import json
 import logging
 import os
 import pickle
@@ -1712,9 +1711,13 @@ def serialize(filename, data, encoding="utf-8", compressed=True):
     """
     Serializes data to a file
 
-    In the current implementation this uses json.dumps and - if compressed is True (the
-    default) - zlib.compress. Only data that can be serialized by json.dumps in the stock
-    configuration is supported.
+    In the current implementation this uses json.dumps.
+
+    If `compressed` is True (the default), the serialized data put through zlib.compress.
+
+    Supported data types are listed at the bottom of
+    :func:`octoprint.util.comprehensive_json`, and include some data types that are not
+    supported by json.dumps by default.
 
     This is not thread-safe, if concurrent access is required, the caller needs to ensure
     that only one thread is writing to the file at any given time.
@@ -1725,7 +1728,9 @@ def serialize(filename, data, encoding="utf-8", compressed=True):
         encoding (str): The encoding to use for the file
         compressed (bool): Whether to compress the data before writing it to the file
     """
-    serialized = json.dumps(data).encode(encoding)
+    from octoprint.util import json
+
+    serialized = json.serializing.dumps(data).encode(encoding)
 
     if compressed:
         serialized = zlib.compress(serialized)
@@ -1756,4 +1761,6 @@ def deserialize(filename, encoding="utf-8"):
     except zlib.error:
         pass
 
-    return json.loads(serialized.decode(encoding))
+    from octoprint.util import json
+
+    return json.serializing.loads(serialized.decode(encoding))

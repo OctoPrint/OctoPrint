@@ -7,8 +7,21 @@ serial:
   additionalPorts:
     - /dev/portA
     - /dev/portB
+plugins:
+  foo:
+    bar:
+      a: 1
+      b: 2
+      c: 3
+  fnord:
+    bar:
+      a: 1
+      b: 2
+      c: 3
 server:
   port: 8080
 devel:
   virtualPrinter:
     enabled: true
+    capabilities:
+      autoreport_temp: false

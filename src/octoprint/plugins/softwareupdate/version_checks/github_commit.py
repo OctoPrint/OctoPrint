@@ -30,12 +30,10 @@ def _get_latest_commit(user, repo, branch, apikey=None):
     except requests.ConnectionError as exc:
         raise NetworkError(cause=exc)
 
-    from . import log_github_ratelimit
+    from . import check_github_apiresponse, check_github_ratelimit
 
-    log_github_ratelimit(logger, r)
-
-    if not r.status_code == requests.codes.ok:
-        return None
+    check_github_ratelimit(logger, r)
+    check_github_apiresponse(logger, r)
 
     reference = r.json()
     if "object" not in reference or "sha" not in reference["object"]:

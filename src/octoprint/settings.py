@@ -416,7 +416,7 @@ default_settings = {
         "remoteUserHeader": "REMOTE_USER",
         "addRemoteUsers": False,
     },
-    "slicing": {"enabled": True, "defaultSlicer": None, "defaultProfiles": None},
+    "slicing": {"enabled": True, "defaultSlicer": None, "defaultProfiles": {}},
     "events": {"enabled": True, "subscriptions": []},
     "api": {"key": None, "allowCrossOrigin": False, "apps": {}},
     "terminalFilters": [
@@ -438,7 +438,7 @@ default_settings = {
             "regex": r"Recv: (echo:\s*)?busy:\s*processing",
         },
     ],
-    "plugins": {"_disabled": [], "_forcedCompatible": []},
+    "plugins": {"_disabled": [], "_forcedCompatible": [], "_sortingOrder": {}},
     "scripts": {
         "gcode": {
             "afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0",
@@ -555,49 +555,55 @@ class HierarchicalChainMap:
     """
 
     @staticmethod
-    def _unflatten(kv_pairs, prefix=""):
-        """
-        :type kv_pairs: Iterable[Tuple[str, any]]
-        """
-        result = dict()
-        for key, value in kv_pairs:
-            if not key.startswith(prefix):
-                continue
-            subkeys = key[len(prefix) :].split(_CHAINMAP_SEP)
-            current = result
-            for subkey in subkeys[:-1]:
-                if subkey not in current:
-                    current[subkey] = {}
-                current = current[subkey]
-            current[subkeys[-1]] = value
+    def _flatten(d: dict, parent_key: str = "") -> dict:
+        """Flattens a hierarchical dictionary."""
 
-        return result
-
-    def __init__(self, *maps):
-        self._chainmap = ChainMap(*map(self._flatten, maps))
-
-    @staticmethod
-    def from_layers(*layers):
-        result = HierarchicalChainMap()
-        result._chainmap.maps = layers
-        return result
-
-    @staticmethod
-    def _flatten(d, parent_key=""):
         if d is None:
             return {}
 
         items = []
         for k, v in d.items():
-            new_key = parent_key + _CHAINMAP_SEP + k if parent_key else k
+            new_key = parent_key + _CHAINMAP_SEP + str(k) if parent_key else str(k)
             if v and isinstance(v, dict):
                 items.extend(HierarchicalChainMap._flatten(v, new_key).items())
             else:
                 items.append((new_key, v))
         return dict(items)
 
-    def deep_dict(self):
-        return self._unflatten(self._chainmap.items())
+    @staticmethod
+    def _unflatten(d: dict, prefix: str = "") -> dict:
+        """Unflattens a flattened dictionary."""
+
+        if d is None:
+            return {}
+
+        result = {}
+        for key, value in d.items():
+            if not key.startswith(prefix):
+                continue
+            subkeys = key[len(prefix) :].split(_CHAINMAP_SEP)
+            current = result
+
+            path = []
+            for subkey in subkeys[:-1]:
+                # we only need that for logging in case of data weirdness below
+                path.append(subkey)
+
+                # make sure the subkey is in the current dict, and that it is a dict
+                if subkey not in current:
+                    current[subkey] = {}
+                elif not isinstance(current[subkey], dict):
+                    logging.getLogger(__name__).warning(
+                        f"There is a non-dict value on the path to {key} at {path!r}, ignoring."
+                    )
+                    current[subkey] = {}
+
+                # go down a level
+                current = current[subkey]
+
+            current[subkeys[-1]] = value
+
+        return result
 
     @staticmethod
     def _path_to_key(path):
@@ -605,6 +611,18 @@ class HierarchicalChainMap:
         :type path: List[str]
         """
         return _CHAINMAP_SEP.join(path)
+
+    @staticmethod
+    def from_layers(*layers):
+        result = HierarchicalChainMap()
+        result._chainmap.maps = layers
+        return result
+
+    def __init__(self, *maps):
+        self._chainmap = ChainMap(*map(self._flatten, maps))
+
+    def deep_dict(self):
+        return self._unflatten(self._chainmap)
 
     def has_path(self, path, only_local=False, only_defaults=False):
         if only_defaults:
@@ -614,7 +632,9 @@ class HierarchicalChainMap:
         else:
             current = self._chainmap
 
-        return self._path_to_key(path) in current
+        key = self._path_to_key(path)
+        prefix = key + _CHAINMAP_SEP
+        return key in current or any(map(lambda x: x.startswith(prefix), current.keys()))
 
     def get_by_path(self, path, only_local=False, only_defaults=False, merged=False):
         if only_defaults:
@@ -625,81 +645,98 @@ class HierarchicalChainMap:
             current = self._chainmap
 
         key = self._path_to_key(path)
+        prefix = key + _CHAINMAP_SEP
 
-        # we do something a bit odd here: if merged is not true, we don't include the
-        # full contents of the key. Instead, we only include the contents of the key on
-        # the first level where we find the value.
-        if not merged and not only_local:
+        if key in current and not any(k.startswith(prefix) for k in current.keys()):
+            # found it, return
+            return current[key]
+
+        # if we arrived here we might be trying to grab a dict, look for children
+
+        # TODO 2.0.0 remove this & make 'merged' the default
+        if not merged and hasattr(current, "maps"):
+            # we do something a bit odd here: if merged is not true, we don't include the
+            # full contents of the key. Instead, we only include the contents of the key
+            # on the first level where we find the value.
             for layer in current.maps:
-                for k in layer:
-                    if k.startswith(key):
-                        current = layer
-                        break
-                else:
-                    continue
-                break
+                if any(k.startswith(prefix) for k in layer):
+                    current = layer
+                    break
 
-        if key not in current:
-            # we might be trying to grab a dict, look for children
-            key = key + _CHAINMAP_SEP
-            result = self._unflatten(
-                ((k, v) for k, v in current.items() if k.startswith(key)), prefix=key
-            )
-            if not result:
-                raise KeyError("Could not find entry for " + str(path))
-            return result
-
-        return current[key]
+        result = self._unflatten(
+            {k: v for k, v in current.items() if k.startswith(prefix)}, prefix=prefix
+        )
+        if not result:
+            raise KeyError("Could not find entry for " + str(path))
+        return result
 
     def set_by_path(self, path, value):
-        current = self._chainmap
+        current = self._chainmap.maps[0]  # config only
         key = self._path_to_key(path)
 
         # delete any subkeys
-        subkeys_start = key + _CHAINMAP_SEP
-        for k in current.keys():
-            if k.startswith(subkeys_start):
-                del current[key]
+        self._del_prefix(current, key)
 
         if isinstance(value, dict):
             current.update(self._flatten(value, key))
         else:
-            # when assigning to a existing, empty dict, delete the dict
-            #
-            # a/b = {} <- delete this
-            # a/b/c = "a"
-            up_one_path = self._path_to_key(path[:-1])
-            if up_one_path in current and current[up_one_path] == {}:
-                del current[up_one_path]
-
-            current[self._path_to_key(path)] = value
+            # make sure to clear anything below the path (e.g. switching from dict
+            # to something else, for whatever reason)
+            self._clean_upward_path(current, path)
+            current[key] = value
 
     def del_by_path(self, path):
         if not path:
             raise ValueError("Invalid path")
 
-        current = self._chainmap
-
-        # used to check if we've deleted anything
-        deleted_any = False
-
-        # we delete recursively: the path that we got, and any subpaths
+        current = self._chainmap.maps[0]  # config only
         delete_key = self._path_to_key(path)
-        for key in self._chainmap.keys():
-            if key.startswith(delete_key):
-                del current[key]
-                deleted_any = True
+        deleted = False
 
-        if not deleted_any:
+        # delete any subkeys
+        deleted = self._del_prefix(current, delete_key)
+
+        # delete the key itself if it's there
+        try:
+            del current[delete_key]
+            deleted = True
+        except KeyError:
+            pass
+
+        if not deleted:
             raise KeyError("Could not find entry for " + str(path))
 
-        # create a placeholder object above if needed
-        #
-        # a/b = {}
-        # a/b/c = "a"  # deleted
-        up_one_path = self._path_to_key(path[:-1])
-        if sum(1 for k in current.keys() if k.startswith(up_one_path)) == 0:
-            current[up_one_path] = {}
+        # clean anything that's now empty and above our path
+        self._clean_upward_path(current, path)
+
+    def _del_prefix(self, current, key):
+        prefix = key + _CHAINMAP_SEP
+
+        to_delete = [k for k in current if k.startswith(prefix)]
+        for k in to_delete:
+            del current[k]
+
+        return len(to_delete) > 0
+
+    def _clean_upward_path(self, current, path):
+        working_path = path
+        while len(working_path):
+            working_path = working_path[:-1]
+            if not working_path:
+                break
+
+            key = self._path_to_key(working_path)
+            prefix = key + _CHAINMAP_SEP
+            if any(map(lambda k: k.startswith(prefix), current)):
+                # there's at least one subkey here, we're done
+                break
+
+            # delete the key itself if it's there
+            try:
+                del current[key]
+            except KeyError:
+                # key itself wasn't in there
+                pass
 
     def with_config_defaults(self, config=None, defaults=None):
         """
@@ -716,7 +753,7 @@ class HierarchicalChainMap:
         if config is not None:
             config = self._flatten(config)
         else:
-            config = self.top_map
+            config = self._chainmap.maps[0]
 
         if defaults is not None:
             defaults = [self._flatten(defaults)]
@@ -729,7 +766,7 @@ class HierarchicalChainMap:
     @property
     def top_map(self):
         """This is the layer that is written to"""
-        return self._unflatten(self._chainmap.maps[0].items())
+        return self._unflatten(self._chainmap.maps[0])
 
     @top_map.setter
     def top_map(self, value):
@@ -772,7 +809,7 @@ class Settings:
         serial:
             port: "/dev/ttyACM0"
             baudrate: 250000
-            timeouts:
+            timeout:
                 communication: 20.0
                 temperature: 5.0
                 sdStatus: 1.0
@@ -1866,7 +1903,7 @@ class Settings:
         for key in keys:
             try:
                 value = chain.get_by_path(
-                    parent_path + [key], only_local=not incl_defaults
+                    parent_path + [key], only_local=not incl_defaults, merged=merged
                 )
             except KeyError:
                 raise NoSuchSettingsPath()

@@ -150,9 +150,9 @@ def _valid_status_for_cache(status_code):
     return 200 <= status_code < 400
 
 
-def _add_additional_assets(hook):
+def _add_additional_assets(hook_name):
     result = []
-    for name, hook in pluginManager.get_hooks(hook).items():
+    for name, hook in pluginManager.get_hooks(hook_name).items():
         try:
             assets = hook()
             if isinstance(assets, (tuple, list)):
@@ -1223,9 +1223,17 @@ def fetch_template_data(refresh=False):
         for var_name, var_value in vars.items():
             plugin_vars["plugin_" + name + "_" + var_name] = var_value
 
-        includes = _process_template_configs(
-            name, implementation, configs, template_rules
-        )
+        try:
+            includes = _process_template_configs(
+                name, implementation, configs, template_rules
+            )
+        except Exception:
+            _logger.exception(
+                "Error while processing template configs for plugin {}, ignoring it".format(
+                    name
+                ),
+                extra={"plugin": name},
+            )
 
         if not wizard_required or wizard_ignored:
             includes["wizard"] = list()
@@ -1483,11 +1491,14 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
             )
             return None
 
-    if "template" not in data:
-        data["template"] = rule["template"](name)
-    data["template"] = implementation.template_folder_key + "/" + data["template"]
+    if data.get("template"):
+        data["template"] = implementation.template_folder_key + "/" + data["template"]
+    else:
+        data["template"] = (
+            implementation.template_folder_key + "/" + rule["template"](name)
+        )
 
-    if "template_header" in data:
+    if data.get("template_header"):
         data["template_header"] = (
             implementation.template_folder_key + "/" + data["template_header"]
         )

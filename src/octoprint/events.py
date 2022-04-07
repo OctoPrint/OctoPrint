@@ -139,7 +139,7 @@ class Events:
         return name, event
 
     # based on https://stackoverflow.com/a/1176023
-    _first_cap_re = re.compile("(.)([A-Z][a-z]+)")
+    _first_cap_re = re.compile("([^_])([A-Z][a-z]+)")
     _all_cap_re = re.compile("([a-z0-9])([A-Z])")
 
     @classmethod

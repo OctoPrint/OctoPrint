@@ -24,7 +24,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.access.users import LoginStatusListener
 from octoprint.events import Events
 from octoprint.settings import settings
-from octoprint.util.json import dump as json_dump
+from octoprint.util.json import dumps as json_dumps
 from octoprint.util.version import get_python_version_string
 
 
@@ -65,7 +65,7 @@ class ThreadSafeSession(octoprint.vendor.sockjs.tornado.session.Session):
 class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
     def send_message(self, msg, stats=True, binary=False):
         self.send_jsonified(
-            json_dump(octoprint.vendor.sockjs.tornado.util.bytes_to_str(msg)),
+            json_dumps(octoprint.vendor.sockjs.tornado.util.bytes_to_str(msg)),
             stats,
         )
 
