@@ -34,6 +34,7 @@ from yaml import YAMLError
 from octoprint.util import (
     CaseInsensitiveSet,
     atomic_write,
+    deprecated,
     dict_merge,
     fast_deepcopy,
     generate_api_key,
@@ -862,7 +863,6 @@ class Settings:
         self._map = HierarchicalChainMap({}, default_settings)
         self.load_overlays(overlays)
 
-        self._config = None
         self._dirty = False
         self._dirty_time = 0
         self._last_config_hash = None
@@ -1125,7 +1125,7 @@ class Settings:
 
     @property
     def config_yaml(self):
-        return yaml.dump(self._config)
+        return yaml.dump(self.config)
 
     @property
     def config_hash(self):
@@ -1140,10 +1140,28 @@ class Settings:
         return self._last_config_hash
 
     @property
-    def _config(self):
+    def config(self):
+        """
+        A view of the local config as stored in config.yaml
+
+        Does not support modifications, they will be thrown away silently. If you need to
+        modify anything in the settings, utilize the provided set and remove methods.
+        """
         return self._map.top_map
 
+    @property
+    @deprecated(
+        "Settings._config has been deprecated and is a read-only view. Please use Settings.config or the set & remove methods instead.",
+        since="1.8.0",
+    )
+    def _config(self):
+        return self.config
+
     @_config.setter
+    @deprecated(
+        "Setting of Settings._config has been deprecated. Please use the set & remove methods instead and get in touch if you have a usecase they don't cover.",
+        since="1.8.0",
+    )
     def _config(self, value):
         self._map.top_map = value
 
@@ -1174,11 +1192,14 @@ class Settings:
     # ~~ load and save
 
     def load(self, migrate=False):
+        config = None
+        mtime = None
+
         if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
             with open(self._configfile, encoding="utf-8", errors="replace") as f:
                 try:
-                    self._config = yaml.load_from_file(file=f)
-                    self._mtime = self.last_modified
+                    config = yaml.load_from_file(file=f)
+                    mtime = self.last_modified
 
                 except YAMLError as e:
                     details = str(e)
@@ -1198,8 +1219,11 @@ class Settings:
                     )
 
         # changed from else to handle cases where the file exists, but is empty / 0 bytes
-        if not self._config or not isinstance(self._config, dict):
-            self._config = {}
+        if not config or not isinstance(config, dict):
+            config = {}
+
+        self._map.top_map = config
+        self._mtime = mtime
 
         if migrate:
             self._migrate_config()
@@ -1293,7 +1317,7 @@ class Settings:
 
     def _migrate_config(self, config=None, persist=False):
         if config is None:
-            config = self._config
+            config = self._map.top_map
             persist = True
 
         dirty = False
@@ -1315,6 +1339,9 @@ class Settings:
             dirty = migrate(config) or dirty
 
         if dirty and persist:
+            self._map.top_map = (
+                config  # we need to write it back here or the changes will be lost
+            )
             self.save(force=True)
 
     def _migrate_gcode_scripts(self, config):
@@ -1833,7 +1860,7 @@ class Settings:
                 permissions=0o600,
                 max_permissions=0o666,
             ) as configFile:
-                yaml.save_to_file(self._config, file=configFile)
+                yaml.save_to_file(self._map.top_map, file=configFile)
                 self._dirty = False
         except Exception:
             self._logger.exception("Error while saving config.yaml!")
@@ -2072,10 +2099,7 @@ class Settings:
                 folder = default_folder
 
                 try:
-                    del self._config["folder"][type]
-                    if not len(self._config["folder"]):
-                        del self._config["folder"]
-                    self._mark_dirty()
+                    self.remove(["folder", type])
                     self.save()
                 except KeyError:
                     pass
@@ -2270,23 +2294,12 @@ class Settings:
 
         currentPath = self.getBaseFolder(type)
         defaultPath = self._get_default_folder(type)
-        if (
-            (path is None or path == defaultPath)
-            and "folder" in self._config
-            and type in self._config["folder"]
-        ):
-            del self._config["folder"][type]
-            if not self._config["folder"]:
-                del self._config["folder"]
-            self._mark_dirty()
+        if path is None or path == defaultPath:
+            self.remove(["folder", type])
         elif (path != currentPath and path != defaultPath) or force:
             if validate:
                 _validate_folder(path, check_writable=True, deep_check_writable=True)
-
-            if "folder" not in self._config:
-                self._config["folder"] = {}
-            self._config["folder"][type] = path
-            self._mark_dirty()
+            self.set(["folder", type], path, force=force)
 
     def saveScript(self, script_type, name, script):
         script_folder = self.getBaseFolder("scripts")
