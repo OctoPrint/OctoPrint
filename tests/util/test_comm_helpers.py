@@ -330,6 +330,16 @@ class TestCommHelpers(unittest.TestCase):
             },
             0,
         ),
+        (
+            # Only first occurrence of a sensor should be used, second B gets ignored
+            "T:210.04 /210.00 B:52.00 /52.00 @:85 B:1234.0 /1234.0",
+            0,
+            {
+                "T0": (210.04, 210.0),
+                "B": (52.00, 52.0),
+            },
+            0,
+        ),
     )
     @unpack
     def test_process_temperature_line(self, line, current, expected_result, expected_max):

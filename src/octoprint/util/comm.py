@@ -6268,6 +6268,10 @@ def parse_temperature_line(line, current):
     for match in re.finditer(regex_temp, line):
         values = match.groupdict()
         sensor = values["sensor"]
+        if sensor in result:
+            # sensor already seen, let's not overwrite stuff
+            continue
+
         toolnum = values.get("toolnum", None)
         tool_number = int(toolnum) if toolnum is not None and len(toolnum) else None
         if tool_number and tool_number > max_tool_num:
