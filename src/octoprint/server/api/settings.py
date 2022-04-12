@@ -473,6 +473,7 @@ def _saveSettings(data):
 
                 s.setBaseFolder(folder, future[folder])
         except Exception:
+            logger.exception("Something went wrong while saving a folder path")
             abort(400, description="At least one of the configured folders is invalid")
 
     if "api" in data:
