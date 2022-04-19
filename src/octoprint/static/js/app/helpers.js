@@ -662,7 +662,13 @@ function formatTemperature(temp, showF, offThreshold, returnUnicode) {
     }
 
     if (showF) {
-        return _.sprintf("%.1f%sC (%.1f%sF)", temp, degreeSymbol, (temp * 9) / 5 + 32, degreeSymbol);
+        return _.sprintf(
+            "%.1f%sC (%.1f%sF)",
+            temp,
+            degreeSymbol,
+            (temp * 9) / 5 + 32,
+            degreeSymbol
+        );
     } else {
         return _.sprintf("%.1f%sC", temp, degreeSymbol);
     }

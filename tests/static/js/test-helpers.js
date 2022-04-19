@@ -92,22 +92,86 @@ QUnit.cases(
         var cases = [];
 
         var params = [
-            {input: undefined, showF: undefined, useUnicode: undefined, offThreshold: undefined, expected: "-"},
-            {input: "", showF: undefined, useUnicode: undefined, offThreshold: undefined, expected: "-"},
-            {input: 1.0, showF: undefined, useUnicode: undefined, offThreshold: 1.1, expected: "off"},
-            {input: 1.0, showF: undefined, useUnicode: undefined, offThreshold: 1.0, expected: "1.0&deg;C"},
-            {input: 1.0, showF: undefined, useUnicode: undefined, offThreshold: undefined, expected: "1.0&deg;C"},
-            {input: 1.0, showF: true, useUnicode: undefined, offThreshold: undefined, expected: "1.0&deg;C (33.8&deg;F)"},
-            {input: 1.0, showF: true, useUnicode: true, offThreshold: undefined, expected: "1.0\u00B0C (33.8\u00B0F)"},
-            {input: 1.0, showF: undefined, useUnicode: false, offThreshold: undefined, expected: "1.0&deg;C"},
-            {input: 1.0, showF: undefined, useUnicode: true, offThreshold: undefined, expected: "1.0\u00B0C"},
-            {input: 1.1, showF: undefined, useUnicode: undefined, offThreshold: undefined, expected: "1.1&deg;C"}
+            {
+                input: undefined,
+                showF: undefined,
+                useUnicode: undefined,
+                offThreshold: undefined,
+                expected: "-"
+            },
+            {
+                input: "",
+                showF: undefined,
+                useUnicode: undefined,
+                offThreshold: undefined,
+                expected: "-"
+            },
+            {
+                input: 1.0,
+                showF: undefined,
+                useUnicode: undefined,
+                offThreshold: 1.1,
+                expected: "off"
+            },
+            {
+                input: 1.0,
+                showF: undefined,
+                useUnicode: undefined,
+                offThreshold: 1.0,
+                expected: "1.0&deg;C"
+            },
+            {
+                input: 1.0,
+                showF: undefined,
+                useUnicode: undefined,
+                offThreshold: undefined,
+                expected: "1.0&deg;C"
+            },
+            {
+                input: 1.0,
+                showF: true,
+                useUnicode: undefined,
+                offThreshold: undefined,
+                expected: "1.0&deg;C (33.8&deg;F)"
+            },
+            {
+                input: 1.0,
+                showF: true,
+                useUnicode: true,
+                offThreshold: undefined,
+                expected: "1.0\u00B0C (33.8\u00B0F)"
+            },
+            {
+                input: 1.0,
+                showF: undefined,
+                useUnicode: false,
+                offThreshold: undefined,
+                expected: "1.0&deg;C"
+            },
+            {
+                input: 1.0,
+                showF: undefined,
+                useUnicode: true,
+                offThreshold: undefined,
+                expected: "1.0\u00B0C"
+            },
+            {
+                input: 1.1,
+                showF: undefined,
+                useUnicode: undefined,
+                offThreshold: undefined,
+                expected: "1.1&deg;C"
+            }
         ];
 
         var param, i;
         for (i = 0; i < params.length; i++) {
             param = params[i];
-            param["title"] = String(param.input) + String(param.showF) + String(param.useUnicode);
+            param["title"] =
+                String(param.input) +
+                String(param.showF) +
+                String(param.offThreshold) +
+                String(param.useUnicode);
             cases.push(param);
         }
 
@@ -116,7 +180,12 @@ QUnit.cases(
 ).test("formatTemperature", function (params, assert) {
     assert.equal(
         params.expected,
-        formatTemperature(params.input, params.showF, params.offThreshold, params.useUnicode),
+        formatTemperature(
+            params.input,
+            params.showF,
+            params.offThreshold,
+            params.useUnicode
+        ),
         "As expected: " + String(params.expected)
     );
 });
