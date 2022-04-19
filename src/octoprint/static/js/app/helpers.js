@@ -652,13 +652,19 @@ function cleanTemperature(temp, offThreshold) {
     return temp;
 }
 
-function formatTemperature(temp, showF, offThreshold) {
+function formatTemperature(temp, showF, offThreshold, returnUnicode) {
     if (temp === undefined || !_.isNumber(temp)) return "-";
     if (offThreshold !== undefined && temp < offThreshold) return gettext("off");
+
+    var degreeSymbol = "&deg;";
+    if (returnUnicode !== undefined && returnUnicode) {
+        degreeSymbol = "\u00B0";
+    }
+
     if (showF) {
-        return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, (temp * 9) / 5 + 32);
+        return _.sprintf("%.1f%sC (%.1f%sF)", temp, degreeSymbol, (temp * 9) / 5 + 32, degreeSymbol);
     } else {
-        return _.sprintf("%.1f&deg;C", temp);
+        return _.sprintf("%.1f%sC", temp, degreeSymbol);
     }
 }
 
