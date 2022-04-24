@@ -1077,8 +1077,8 @@ class MethodReplacedByBooleanProperty(object):
 class FlaskLoginMethodReplacedByBooleanProperty(MethodReplacedByBooleanProperty):
     def __init__(self, name, getter):
         message = (
-            "{name} is now a property in Flask-Login versions >= 0.3.0, which OctoPrint now uses. "
-            + "Use {name} instead of {name}(). This compatibility layer will be removed in OctoPrint 1.5.0."
+            f"{name} is now a property in Flask-Login versions >= 0.3.0, which OctoPrint now uses. "
+            + f"Use {name} instead of {name}(). This compatibility layer will be removed in OctoPrint 1.5.0."
         )
         MethodReplacedByBooleanProperty.__init__(self, name, message, getter)
 
@@ -1087,8 +1087,8 @@ class FlaskLoginMethodReplacedByBooleanProperty(MethodReplacedByBooleanProperty)
 class OctoPrintUserMethodReplacedByBooleanProperty(MethodReplacedByBooleanProperty):
     def __init__(self, name, getter):
         message = (
-            "{name} is now a property for consistency reasons with Flask-Login versions >= 0.3.0, which "
-            + "OctoPrint now uses. Use {name} instead of {name}(). This compatibility layer will be removed "
+            f"{name} is now a property for consistency reasons with Flask-Login versions >= 0.3.0, which "
+            + f"OctoPrint now uses. Use {name} instead of {name}(). This compatibility layer will be removed "
             + "in OctoPrint 1.5.0."
         )
         MethodReplacedByBooleanProperty.__init__(self, name, message, getter)

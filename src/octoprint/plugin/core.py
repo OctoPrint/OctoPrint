@@ -2466,19 +2466,19 @@ class PluginLifecycleException(Exception):
 class PluginCantInitialize(PluginLifecycleException):
     def __init__(self, name, reason):
         PluginLifecycleException.__init__(
-            self, name, reason, "Plugin {name} cannot be initialized: {reason}"
+            self, name, reason, f"Plugin {name} cannot be initialized: {reason}"
         )
 
 
 class PluginCantEnable(PluginLifecycleException):
     def __init__(self, name, reason):
         PluginLifecycleException.__init__(
-            self, name, reason, "Plugin {name} cannot be enabled: {reason}"
+            self, name, reason, f"Plugin {name} cannot be enabled: {reason}"
         )
 
 
 class PluginCantDisable(PluginLifecycleException):
     def __init__(self, name, reason):
         PluginLifecycleException.__init__(
-            self, name, reason, "Plugin {name} cannot be disabled: {reason}"
+            self, name, reason, f"Plugin {name} cannot be disabled: {reason}"
         )
