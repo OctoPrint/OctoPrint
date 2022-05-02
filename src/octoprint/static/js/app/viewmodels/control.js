@@ -728,9 +728,12 @@ $(function () {
                     // z home
                     button = $("#control-zhome");
                     break;
-                default:
+                case 9: // prevent tab key from removing focus from webcam
                     event.preventDefault();
                     return false;
+                default:
+                    // don't prevent other keys
+                    return true;
             }
 
             if (button === undefined) {
