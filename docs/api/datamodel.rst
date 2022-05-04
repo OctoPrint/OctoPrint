@@ -649,7 +649,7 @@ Permission record
    * - ``dangerous``
      - 1
      - boolean
-     - Whether the permission should be considered dangerous due to a high reponsibility (true) or not (false).
+     - Whether the permission should be considered dangerous due to a high responsibility (true) or not (false).
    * - ``default_groups``
      - 1
      - List of string
