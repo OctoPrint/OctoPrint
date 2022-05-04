@@ -1911,7 +1911,7 @@ octoprint.timelapse.capture.post
    Perform specific actions after capturing a timelapse frame.
 
    ``filename`` will be the path of the frame that should have been saved.
-   ``sucesss`` indicates whether the capture was successful or not.
+   ``success`` indicates whether the capture was successful or not.
 
    :param str filename: The path of the frame that should have been saved.
    :param boolean success: Indicates whether the capture was successful or not.

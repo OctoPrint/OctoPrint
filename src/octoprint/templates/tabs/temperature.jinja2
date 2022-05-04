@@ -49,7 +49,7 @@
 
     <script type="text/html" id="temprow-template">
         <th class="temperature_tool" data-bind="text: name, attr: {title: name}"></th>
-        <td class="temperature_actual" data-bind="html: formatTemperature(actual()), attr: {title: formatTemperature(actual())}"></td>
+        <td class="temperature_actual" data-bind="html: formatTemperature(actual()), attr: {title: formatTemperature(actual(), undefined, undefined, true)}"></td>
         <td class="temperature_target">
             <form class="form-inline" style="margin:0" data-bind="submit: function(element) { $root.setTarget($data, element) }">
                 <div class="input-prepend input-append">

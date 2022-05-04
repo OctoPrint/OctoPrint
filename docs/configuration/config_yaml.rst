@@ -452,7 +452,7 @@ Use the following settings to enable or disable OctoPrint features:
      # whether G90/G91 also influence absolute/relative mode of extruders
      g90InfluencesExtruder: false
      
-     # Replace all special characters and spaces with text equivalent to make them univerally compatible.
+     # Replace all special characters and spaces with text equivalent to make them universally compatible.
      # Most OS filesystems work fine with unicode characters, but just in case you can revert to the
      # older behaviour by setting this to true.
      enforceReallyUniversalFilenames: false

@@ -133,7 +133,7 @@ Example: Your PC has an IP address of ``192.168.23.42`` and a subnet mask of
 The easy way: Using the OctoPrint-AutoLoginConfig plugin
 ........................................................
 
-The easist way to configure AutoLogin is to install the
+The easiest way to configure AutoLogin is to install the
 `OctoPrint-AutoLoginConfig plugin <https://plugins.octoprint.org/plugins/autologin_config/>`_
 via the plugin manager.
 
