@@ -1352,6 +1352,7 @@ class Server:
 
         app.config["TEMPLATES_AUTO_RELOAD"] = True
         app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+        app.config["REMEMBER_COOKIE_HTTPONLY"] = True
 
         # we must not set this before TEMPLATES_AUTO_RELOAD is set to True or that won't take
         app.debug = self._debug
