@@ -319,6 +319,10 @@ $(function () {
                 return "";
             }
         });
+        self.webcam_streamValid = ko.pureComputed(function () {
+            var url = self.webcam_streamUrl();
+            return !url || validateWebcamUrl(url);
+        });
 
         self.server_onlineCheckText = ko.observable();
         self.server_onlineCheckOk = ko.observable(false);
@@ -450,12 +454,19 @@ $(function () {
             var text = gettext(
                 "If you see your webcam stream below, the entered stream URL is ok."
             );
-            var streamType = self.webcam_streamType();
+
+            var streamType;
+            try {
+                streamType = self.webcam_streamType();
+            } catch (e) {
+                streamType = "";
+            }
+
             var webcam_element;
             var webrtc_peer_connection;
-            if (streamType == "mjpg") {
+            if (streamType === "mjpg") {
                 webcam_element = $('<img src="' + self.webcam_streamUrl() + '">');
-            } else if (streamType == "hls") {
+            } else if (streamType === "hls") {
                 webcam_element = $(
                     '<video id="webcam_hls" muted autoplay style="width: 100%"/>'
                 );
@@ -467,7 +478,7 @@ $(function () {
                     hls.loadSource(self.webcam_streamUrl());
                     hls.attachMedia(video_element);
                 }
-            } else if (isWebRTCAvailable() && streamType == "webrtc") {
+            } else if (isWebRTCAvailable() && streamType === "webrtc") {
                 webcam_element = $(
                     '<video id="webcam_webrtc" muted autoplay playsinline controls style="width: 100%"/>'
                 );
