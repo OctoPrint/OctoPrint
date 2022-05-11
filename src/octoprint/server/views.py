@@ -8,6 +8,7 @@ import logging
 import os
 import re
 from collections import defaultdict
+from urllib.parse import urlparse
 
 from flask import (
     Response,
@@ -170,7 +171,16 @@ def _add_additional_assets(hook):
 def login():
     from flask_login import current_user
 
-    redirect_url = request.args.get("redirect", request.script_root + url_for("index"))
+    default_redirect_url = request.script_root + url_for("index")
+    redirect_url = request.args.get("redirect", default_redirect_url)
+
+    parsed = urlparse(redirect_url)  # check if redirect url is valid
+    if parsed.scheme != "" or parsed.netloc != "":
+        _logger.warning(
+            f"Got an invalid redirect URL with the login attempt, misconfiguration or attack attempt: {redirect_url}"
+        )
+        redirect_url = default_redirect_url
+
     permissions = sorted(
         filter(
             lambda x: x is not None and isinstance(x, OctoPrintPermission),
