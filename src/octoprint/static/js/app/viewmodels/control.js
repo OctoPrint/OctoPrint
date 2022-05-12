@@ -573,7 +573,13 @@ $(function () {
             }
 
             // Determine stream type and switch to corresponding webcam.
-            var streamType = determineWebcamStreamType(self.settings.webcam_streamUrl());
+            var streamType;
+            try {
+                streamType = determineWebcamStreamType(self.settings.webcam_streamUrl());
+            } catch (e) {
+                streamType = "";
+            }
+
             if (streamType == "mjpg") {
                 self._switchToMjpgWebcam();
             } else if (streamType == "hls") {
