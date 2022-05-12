@@ -312,15 +312,18 @@ $(function () {
             self.webcam_ffmpegPathOk(false);
             self.webcam_ffmpegPathBroken(false);
         };
+        self.webcam_streamUrlEscaped = ko.pureComputed(function () {
+            return encodeURI(self.webcam_streamUrl());
+        });
         self.webcam_streamType = ko.pureComputed(function () {
             try {
-                return determineWebcamStreamType(self.webcam_streamUrl());
+                return determineWebcamStreamType(self.webcam_streamUrlEscaped());
             } catch (e) {
                 return "";
             }
         });
         self.webcam_streamValid = ko.pureComputed(function () {
-            var url = self.webcam_streamUrl();
+            var url = self.webcam_streamUrlEscaped();
             return !url || validateWebcamUrl(url);
         });
 
@@ -443,7 +446,8 @@ $(function () {
 
         self.testWebcamStreamUrlBusy = ko.observable(false);
         self.testWebcamStreamUrl = function () {
-            if (!self.webcam_streamUrl()) {
+            var url = self.webcam_streamUrlEscaped();
+            if (!url) {
                 return;
             }
 
@@ -465,17 +469,17 @@ $(function () {
             var webcam_element;
             var webrtc_peer_connection;
             if (streamType === "mjpg") {
-                webcam_element = $('<img src="' + self.webcam_streamUrl() + '">');
+                webcam_element = $('<img src="' + url + '">');
             } else if (streamType === "hls") {
                 webcam_element = $(
                     '<video id="webcam_hls" muted autoplay style="width: 100%"/>'
                 );
                 video_element = webcam_element[0];
                 if (video_element.canPlayType("application/vnd.apple.mpegurl")) {
-                    video_element.src = self.webcam_streamUrl();
+                    video_element.src = url;
                 } else if (Hls.isSupported()) {
                     var hls = new Hls();
-                    hls.loadSource(self.webcam_streamUrl());
+                    hls.loadSource(url);
                     hls.attachMedia(video_element);
                 }
             } else if (isWebRTCAvailable() && streamType === "webrtc") {
@@ -486,7 +490,7 @@ $(function () {
 
                 webrtc_peer_connection = startWebRTC(
                     video_element,
-                    self.webcam_streamUrl(),
+                    url,
                     self.webcam_streamWebrtcIceServers()
                 );
             } else {
