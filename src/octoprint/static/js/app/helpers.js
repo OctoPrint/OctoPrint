@@ -1571,9 +1571,10 @@ var validateWebcamUrl = function (streamUrl) {
     } else if (
         lower.startsWith("http:") ||
         lower.startsWith("https:") ||
-        lower.startsWith("webrtc:")
+        lower.startsWith("webrtc:") ||
+        lower.startsWith("webrtcs:")
     ) {
-        // absolute & http/https/webrtc
+        // absolute & supported protocol
         toParse = streamUrl;
     } else {
         return false;
@@ -1596,7 +1597,7 @@ var determineWebcamStreamType = function (streamUrl) {
         throw "Invalid streamUrl. Cannot determine stream type.";
     }
 
-    if (parsed.protocol === "webrtc:") {
+    if (parsed.protocol === "webrtc:" || parsed.protocol === "webrtcs:") {
         return "webrtc";
     }
 
