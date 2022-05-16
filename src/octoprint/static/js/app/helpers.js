@@ -56,9 +56,10 @@ function ItemListHelper(
         for (var i = 0; i < itemList.length; i++) {
             if (matcher(itemList[i])) {
                 self.selectedItem(itemList[i]);
-                break;
+                return true;
             }
         }
+        return false;
     };
 
     self.selectNone = function () {
@@ -1541,37 +1542,75 @@ var copyToClipboard = function (text) {
     temp.remove();
 };
 
-var determineWebcamStreamType = function (streamUrl) {
-    if (streamUrl) {
-        var lastDotPosition = streamUrl.lastIndexOf(".");
-        var firstQuotationSignPosition = streamUrl.indexOf("?");
-        if (
-            lastDotPosition != -1 &&
-            firstQuotationSignPosition != -1 &&
-            lastDotPosition >= firstQuotationSignPosition
-        ) {
-            throw "Malformed URL. Cannot determine stream type.";
-        }
+var getExternalHostUrl = function () {
+    var loc = window.location;
+    var port = "";
+    if (
+        (loc.protocol === "http:" && loc.port !== "80") ||
+        (loc.protocol === "https:" && loc.port !== "443")
+    ) {
+        port = ":" + loc.port;
+    }
+    return loc.protocol + "//" + loc.hostname + port;
+};
 
-        // If we have found a dot, try to extract the extension.
-        if (lastDotPosition > -1) {
-            if (firstQuotationSignPosition > -1) {
-                var extension = streamUrl.slice(
-                    lastDotPosition + 1,
-                    firstQuotationSignPosition - 1
-                );
-            } else {
-                var extension = streamUrl.slice(lastDotPosition + 1);
-            }
-            if (extension.toLowerCase() == "m3u8") {
-                return "hls";
-            }
-        }
-        // By default, 'mjpg' is the stream type.
-        return "mjpg";
+var validateWebcamUrl = function (streamUrl) {
+    if (!streamUrl) {
+        return false;
+    }
+
+    var lower = streamUrl.toLowerCase();
+    var toParse = streamUrl;
+
+    if (lower.startsWith("//")) {
+        // protocol relative
+        toParse = window.location.protocol + streamUrl;
+    } else if (lower.startsWith("/")) {
+        // host relative
+        toParse = getExternalHostUrl() + streamUrl;
+    } else if (
+        lower.startsWith("http:") ||
+        lower.startsWith("https:") ||
+        lower.startsWith("webrtc:") ||
+        lower.startsWith("webrtcs:")
+    ) {
+        // absolute & supported protocol
+        toParse = streamUrl;
     } else {
+        return false;
+    }
+
+    try {
+        return new URL(toParse);
+    } catch (e) {
+        return false;
+    }
+};
+
+var determineWebcamStreamType = function (streamUrl) {
+    if (!streamUrl) {
         throw "Empty streamUrl. Cannot determine stream type.";
     }
+
+    var parsed = validateWebcamUrl(streamUrl);
+    if (!parsed) {
+        throw "Invalid streamUrl. Cannot determine stream type.";
+    }
+
+    if (parsed.protocol === "webrtc:" || parsed.protocol === "webrtcs:") {
+        return "webrtc";
+    }
+
+    var lastDotPosition = parsed.pathname.lastIndexOf(".");
+    if (lastDotPosition !== -1) {
+        var extension = parsed.pathname.substring(lastDotPosition + 1);
+        if (extension.toLowerCase() === "m3u8") {
+            return "hls";
+        }
+    }
+
+    // By default, 'mjpg' is the stream type.
+    return "mjpg";
 };
 
 var saveToLocalStorage = function (key, data) {
@@ -1579,18 +1618,20 @@ var saveToLocalStorage = function (key, data) {
     localStorage[key] = JSON.stringify(data);
 };
 
-var loadFromLocalStorage = function (key) {
-    if (!Modernizr.localstorage) return {};
+var loadFromLocalStorage = function (key, defaultValue) {
+    defaultValue = defaultValue === undefined ? {} : defaultValue;
+
+    if (!Modernizr.localstorage) return defaultValue;
 
     var currentString = localStorage[key];
     var current;
     if (currentString === undefined) {
-        current = {};
+        current = defaultValue;
     } else {
         try {
             current = JSON.parse(currentString);
         } catch (ex) {
-            current = {};
+            current = defaultValue;
         }
     }
     return current;
@@ -1618,4 +1659,83 @@ var deepMerge = function (target, source) {
     });
 
     return target;
+};
+
+var isWebRTCAvailable = function () {
+    return (
+        typeof RTCPeerConnection == "function" &&
+        typeof RTCPeerConnection.prototype.addEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.addTransceiver == "function" &&
+        typeof RTCPeerConnection.prototype.createOffer == "function" &&
+        typeof RTCPeerConnection.prototype.setLocalDescription == "function" &&
+        typeof RTCPeerConnection.prototype.removeEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.addEventListener == "function" &&
+        typeof RTCPeerConnection.prototype.setRemoteDescription == "function"
+    );
+};
+
+var negotiateWebRTC = function (streamUrl) {
+    pc.addTransceiver("video", {direction: "recvonly"});
+    pc.addTransceiver("audio", {direction: "recvonly"});
+    return pc
+        .createOffer()
+        .then(function (offer) {
+            return pc.setLocalDescription(offer);
+        })
+        .then(function () {
+            // Wait for ICE gathering to complete
+            return new Promise(function (resolve) {
+                if (pc.iceGatheringState === "complete") {
+                    resolve();
+                } else {
+                    function checkState() {
+                        if (pc.iceGatheringState === "complete") {
+                            pc.removeEventListener("icegatheringstatechange", checkState);
+                            resolve();
+                        }
+                    }
+                    pc.addEventListener("icegatheringstatechange", checkState);
+                }
+            });
+        })
+        .then(function () {
+            var offer = pc.localDescription;
+            // webrtc://host.com becomes http://host.com
+            // webrtcs://host.com becomes https://host.com
+            streamUrl = "http" + streamUrl.slice("webrtc".length);
+            return $.ajax({
+                url: streamUrl,
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    sdp: offer.sdp,
+                    type: offer.type
+                }),
+                contentType: "application/json; charset=UTF-8"
+            });
+        })
+        .then(function (response) {
+            return pc.setRemoteDescription(response);
+        })
+        .catch(function (e) {
+            console.error(e);
+        });
+};
+
+var startWebRTC = function (videoElement, streamUrl, iceServers) {
+    var config = {
+        sdpSemantics: "unified-plan"
+    };
+    if (iceServers) {
+        config.iceServers = [{urls: iceServers}];
+    }
+    pc = new RTCPeerConnection(config);
+    pc.addEventListener("track", function (evt) {
+        if (evt.track.kind == "video") {
+            videoElement.srcObject = evt.streams[0];
+        }
+    });
+
+    negotiateWebRTC(streamUrl);
+    return pc;
 };

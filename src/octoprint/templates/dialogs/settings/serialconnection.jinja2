@@ -37,7 +37,7 @@
                     <label class="control-label" for="settings-serialAdditionalPorts">{{ _('Additional serial ports') }}</label>
                     <div class="controls">
                         <textarea rows="4" class="block" id="settings-serialAdditionalPorts" data-bind="value: serial_additionalPorts"></textarea>
-                        <span class="help-inline">{{ _('Use this to define additional <a href="%%(glob_url)s">glob patterns</a> matching serial ports to list for connecting against, e.g. <code>/dev/ttyAMA*</code>. One entry per line. Please note that ports will only be offered to connect to if they get also detected by the <em>operating system</em>. Adding a port here will not make it magically appear in OctoPrint. If the operating system doesn\'t see your printer you need to solve this first.')|format(glob_url="http://docs.python.org/2/library/glob.html") }}</span>
+                        <span class="help-inline">{{ _('Use this to define additional <a href="%%(glob_url)s">glob patterns</a> matching serial ports to list for connecting against, e.g. <code>/dev/ttyAMA*</code>. One entry per line. Please note that ports will only be offered to connect to if they get also detected by the <em>operating system</em>. Adding a port here will not make it magically appear in OctoPrint. If the operating system doesn\'t see your printer you need to solve this first.')|format(glob_url="http://docs.python.org/3/library/glob.html") }}</span>
                     </div>
                 </div>
                 <div class="control-group">
@@ -51,7 +51,7 @@
                     <label class="control-label" for="settings-serialBlacklistedPorts">{{ _('Blacklisted serial ports') }}</label>
                     <div class="controls">
                         <textarea rows="4" class="block" id="settings-serialBlacklistedPorts" data-bind="value: serial_blacklistedPorts"></textarea>
-                        <span class="help-inline">{{ _('Use this to define <a href="%%(glob_url)s">glob patterns</a> matching serial ports to blacklist for connecting against, e.g. <code>/dev/ttyS*</code>. One entry per line.')|format(glob_url="http://docs.python.org/2/library/glob.html") }}</span>
+                        <span class="help-inline">{{ _('Use this to define <a href="%%(glob_url)s">glob patterns</a> matching serial ports to blacklist for connecting against, e.g. <code>/dev/ttyS*</code>. One entry per line.')|format(glob_url="http://docs.python.org/3/library/glob.html") }}</span>
                     </div>
                 </div>
                 <div class="control-group">
@@ -90,6 +90,19 @@
                             <input type="radio" name="useParityWorkaroundGroup" value="never" data-bind="checked: serial_useParityWorkaround" id="settings-serialUseParityWorkaroundNever"> {{ _('Never') }}
                             <span class="help-block">{{ _('Use this if connecting to your printer fails with <code>(22, \'Invalid argument\')</code>.') }}</span>
                         </label>
+                    </div>
+                </div>
+                <div>
+                    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_general_connection .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                    <div class="hide">
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_ignoreEmptyPorts" id="settings-serialIgnoreEmptyPorts"> {{ _('Ignore empty ports') }}
+                                    <span class="help-block">{{ _('By checking this you\'ll disable OctoPrint warning you if no serial ports to connect to were found.') }}</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </fieldset>
@@ -343,7 +356,23 @@
                             </label>
                         </div>
                     </div>
-                </div>
+                    <div class="control-group" title="{{ _('Send line numbers & checksums for non-GCODE commands')|edq }}">
+                        <div class="controls">
+                            <label class="checkbox">
+                                <input type="checkbox" data-bind="checked: serial_sendChecksumWithUnknownCommands" id="settings-sendChecksumWithUnknownCommands"> {{ _('Send line numbers & checksums for non-GCODE commands') }} <span class="label">{{ _('Prusa Firmware') }}</span>
+                                <span class="help-block">{{ _('Check this if your printer supports commands outside of the GCODE format (e.g. <code>Tx</code> or similar) but requires them to be treated identical to GCODE.') }}</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="control-group" title="{{ _('Wait for \'ok\' for non-GCODE commands')|edq }}">
+                        <div class="controls">
+                            <label class="checkbox">
+                                <input type="checkbox" data-bind="checked: serial_unknownCommandsNeedAck" id="settings-unknownCommandsNeedAck"> {{ _('Wait for acknowledging <code>ok</code> for non-GCODE commands') }} <span class="label">{{ _('Prusa Firmware') }}</span>
+                                <span class="help-block">{{ _('Check this if your printer supports commands outside of the GCODE format (e.g. <code>Tx</code> or similar) but requires them to be treated identical to GCODE.') }}</span>
+                            </label>
+                        </div>
+                    </div>
+            </div>
                 <div>
                     <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_firmware .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">
@@ -447,10 +476,18 @@
                     </div>
                 </div>
                 <div class="control-group">
+                    <label class="control-label" for="settings-serialSdCancelCommand">{{ _('SD Cancel Command') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" id="settings-serialSdCancelCommand" data-bind="value: serial_sdCancelCommand">
+                        <span class="help-inline">{{ _('The command to send to printer when cancelling a SD card print. Defaults to <code>M25</code>.') }}</span>
+                    </div>
+                </div>
+                <div class="control-group">
                     <label class="control-label" for="settings-serialEmergencyCommands">{{ _('Emergency commands') }}</label>
                     <div class="controls">
                         <input type="text" class="input-block-level" id="settings-serialEmergencyCommands" data-bind="value: serial_emergencyCommands">
-                        <span class="help-inline">{{ _('Use this to specify emergency commands which should jump any queues and - if supported by the firmware - be force sent. Just the G or M code, comma separated. Defaults to <code>M112</code>, <code>M108</code> and <code>M410</code>.') }}</span>                    </div>
+                        <span class="help-inline">{{ _('Use this to specify emergency commands which should jump any queues and - if supported by the firmware - be force sent. Just the G or M code, comma separated. Defaults to <code>M112</code>, <code>M108</code> and <code>M410</code>.') }}</span>
+                    </div>
                 </div>
                 <div>
                     <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_finetuning .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
@@ -484,6 +521,15 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>{{ _('Action commands') }}</legend>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: serial_enableShutdownActionCommand" id="settings-serialEnableShutdownActionCommand"> {{ _('Enable the <code>shutdown</code> action command') }}
+                        <span class="help-block">{{ _('If enabled and the system shutdown command is configured, your printer\'s firmware will be able to shutdown your OctoPrint server via an action command on the serial connection. This could get abused, so only enable this if you trust your firmware and your GCODE files!') }}</span>
+                    </label>
                 </div>
             </fieldset>
         </div>

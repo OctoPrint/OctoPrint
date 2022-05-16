@@ -1,16 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
 import os
-
-try:
-    from os import scandir, walk
-except ImportError:
-    from scandir import scandir, walk  # noqa: F401
 
 from jinja2 import nodes
 from jinja2.ext import Extension
@@ -117,10 +109,46 @@ class SelectedFilesWithConversionLoader(SelectedFilesLoader):
         return contents
 
 
+class PrefixChoiceLoader(BaseLoader):
+    def __init__(self, loader):
+        self.loader = loader
+
+    def get_source(self, environment, template):
+        for prefix in sorted(self.loader.mapping.keys()):
+            try:
+                return self.loader.mapping[prefix].get_source(environment, template)
+            except TemplateNotFound:
+                pass
+
+        raise TemplateNotFound(template)
+
+
+class WarningLoader(BaseLoader):
+    """
+    Logs a warning if the loader is used to successfully load a template.
+    """
+
+    def __init__(self, loader, warning_message):
+        self.loader = loader
+        self.warning_message = warning_message
+
+    def get_source(self, environment, template):
+        import logging
+
+        try:
+            contents, filename, uptodate = self.loader.get_source(environment, template)
+            logging.getLogger(__name__).warning(
+                self.warning_message.format(template=template, filename=filename)
+            )
+            return contents, filename, uptodate
+        except TemplateNotFound:
+            raise
+
+
 def get_all_template_paths(loader):
     def walk_folder(folder):
         files = []
-        walk_dir = walk(folder, followlinks=True)
+        walk_dir = os.walk(folder, followlinks=True)
         for dirpath, _, filenames in walk_dir:
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
@@ -192,7 +220,7 @@ class ExceptionHandlerExtension(Extension):
     tags = {"try"}
 
     def __init__(self, environment):
-        super(ExceptionHandlerExtension, self).__init__(environment)
+        super().__init__(environment)
         self._logger = logging.getLogger(__name__)
 
     def parse(self, parser):
@@ -227,9 +255,7 @@ class ExceptionHandlerExtension(Extension):
             return caller()
         except Exception as e:
             self._logger.exception(
-                "Caught exception while compiling template {filename} at line {lineno}".format(
-                    **locals()
-                )
+                f"Caught exception while compiling template {filename} at line {lineno}"
             )
             error_string = self._format_error(error, e, filename, lineno)
             return error_string if error_string else ""
@@ -245,9 +271,7 @@ class ExceptionHandlerExtension(Extension):
             return error.format(exception=exception, filename=filename, lineno=lineno)
         except Exception:
             self._logger.exception(
-                "Error while compiling exception output for template {filename} at line {lineno}".format(
-                    **locals()
-                )
+                f"Error while compiling exception output for template {filename} at line {lineno}"
             )
             return "Unknown error"
 
@@ -255,14 +279,14 @@ class ExceptionHandlerExtension(Extension):
 trycatch = ExceptionHandlerExtension
 
 
-class MarkdownFilter(object):
+class MarkdownFilter:
     def __init__(self, app, **markdown_options):
         self._markdown_options = markdown_options
         app.jinja_env.filters.setdefault("markdown", self)
 
     def __call__(self, stream):
-        from jinja2 import Markup
         from markdown import Markdown
+        from markupsafe import Markup
 
         # Markdown is not thread safe
         markdown = Markdown(**self._markdown_options)

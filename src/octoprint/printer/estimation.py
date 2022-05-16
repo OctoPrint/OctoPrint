@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -9,7 +6,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from octoprint.settings import settings
 
 
-class PrintTimeEstimator(object):
+class PrintTimeEstimator:
     """
     Estimator implementation.
 
@@ -199,7 +196,7 @@ class PrintTimeEstimator(object):
             return self._data.update(printTime / progress)
 
 
-class TimeEstimationHelper(object):
+class TimeEstimationHelper:
 
     STABLE_THRESHOLD = 0.1
     STABLE_COUNTDOWN = 250

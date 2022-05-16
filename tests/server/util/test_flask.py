@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 Unit tests for ``octoprint.server.util.flask``.
 """
@@ -11,8 +8,8 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 
 import unittest
+from unittest import mock
 
-import mock
 from ddt import data, ddt, unpack
 
 from octoprint.server.util.flask import (

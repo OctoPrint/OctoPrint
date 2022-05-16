@@ -153,6 +153,7 @@ $(function () {
         self.webcam_streamUrl = ko.observable(undefined);
         self.webcam_streamRatio = ko.observable(undefined);
         self.webcam_streamTimeout = ko.observable(undefined);
+        self.webcam_streamWebrtcIceServers = ko.observable(undefined);
         self.webcam_snapshotUrl = ko.observable(undefined);
         self.webcam_snapshotTimeout = ko.observable(undefined);
         self.webcam_snapshotSslValidation = ko.observable(undefined);
@@ -172,6 +173,7 @@ $(function () {
         self.feature_keyboardControl = ko.observable(undefined);
         self.feature_pollWatched = ko.observable(undefined);
         self.feature_modelSizeDetection = ko.observable(undefined);
+        self.feature_rememberFileFolder = ko.observable(undefined);
         self.feature_printStartConfirmation = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
         self.feature_uploadOverwriteConfirmation = ko.observable(undefined);
@@ -210,12 +212,15 @@ $(function () {
         self.serial_blockedCommands = ko.observable(undefined);
         self.serial_ignoredCommands = ko.observable(undefined);
         self.serial_pausingCommands = ko.observable(undefined);
+        self.serial_sdCancelCommand = ko.observable(undefined);
         self.serial_emergencyCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
         self.serial_waitForStart = ko.observable(undefined);
         self.serial_sendChecksum = ko.observable("print");
+        self.serial_sendChecksumWithUnknownCommands = ko.observable(undefined);
+        self.serial_unknownCommandsNeedAck = ko.observable(undefined);
         self.serial_sdRelativePath = ko.observable(undefined);
         self.serial_sdLowerCase = ko.observable(undefined);
         self.serial_sdAlwaysAvailable = ko.observable(undefined);
@@ -245,6 +250,8 @@ $(function () {
         self.serial_ackMax = ko.observable(undefined);
         self.serial_resendRatioThreshold = ko.observable(100);
         self.serial_resendRatioStart = ko.observable(100);
+        self.serial_ignoreEmptyPorts = ko.observable(undefined);
+        self.serial_enableShutdownActionCommand = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -305,6 +312,20 @@ $(function () {
             self.webcam_ffmpegPathOk(false);
             self.webcam_ffmpegPathBroken(false);
         };
+        self.webcam_streamUrlEscaped = ko.pureComputed(function () {
+            return encodeURI(self.webcam_streamUrl());
+        });
+        self.webcam_streamType = ko.pureComputed(function () {
+            try {
+                return determineWebcamStreamType(self.webcam_streamUrlEscaped());
+            } catch (e) {
+                return "";
+            }
+        });
+        self.webcam_streamValid = ko.pureComputed(function () {
+            var url = self.webcam_streamUrlEscaped();
+            return !url || validateWebcamUrl(url);
+        });
 
         self.server_onlineCheckText = ko.observable();
         self.server_onlineCheckOk = ko.observable(false);
@@ -415,8 +436,7 @@ $(function () {
         self.addTerminalFilter = function () {
             self.terminalFilters.push({
                 name: "New",
-                regex:
-                    "(Send:\\s+(N\\d+\\s+)?M105)|(Recv:\\s+(ok\\s+([PBN]\\d+\\s+)*)?.*([BCLPR]|T\\d*):-?\\d+)"
+                regex: "(Send:\\s+(N\\d+\\s+)?M105)|(Recv:\\s+(ok\\s+([PBN]\\d+\\s+)*)?.*([BCLPR]|T\\d*):-?\\d+)"
             });
         };
 
@@ -426,7 +446,8 @@ $(function () {
 
         self.testWebcamStreamUrlBusy = ko.observable(false);
         self.testWebcamStreamUrl = function () {
-            if (!self.webcam_streamUrl()) {
+            var url = self.webcam_streamUrlEscaped();
+            if (!url) {
                 return;
             }
 
@@ -437,22 +458,41 @@ $(function () {
             var text = gettext(
                 "If you see your webcam stream below, the entered stream URL is ok."
             );
-            var streamType = determineWebcamStreamType(self.webcam_streamUrl());
+
+            var streamType;
+            try {
+                streamType = self.webcam_streamType();
+            } catch (e) {
+                streamType = "";
+            }
+
             var webcam_element;
-            if (streamType == "mjpg") {
-                webcam_element = $('<img src="' + self.webcam_streamUrl() + '">');
-            } else if (streamType == "hls") {
+            var webrtc_peer_connection;
+            if (streamType === "mjpg") {
+                webcam_element = $('<img src="' + url + '">');
+            } else if (streamType === "hls") {
                 webcam_element = $(
                     '<video id="webcam_hls" muted autoplay style="width: 100%"/>'
                 );
                 video_element = webcam_element[0];
                 if (video_element.canPlayType("application/vnd.apple.mpegurl")) {
-                    video_element.src = self.webcam_streamUrl();
+                    video_element.src = url;
                 } else if (Hls.isSupported()) {
                     var hls = new Hls();
-                    hls.loadSource(self.webcam_streamUrl());
+                    hls.loadSource(url);
                     hls.attachMedia(video_element);
                 }
+            } else if (isWebRTCAvailable() && streamType === "webrtc") {
+                webcam_element = $(
+                    '<video id="webcam_webrtc" muted autoplay playsinline controls style="width: 100%"/>'
+                );
+                video_element = webcam_element[0];
+
+                webrtc_peer_connection = startWebRTC(
+                    video_element,
+                    url,
+                    self.webcam_streamWebrtcIceServers()
+                );
             } else {
                 throw "Unknown stream type " + streamType;
             }
@@ -468,6 +508,10 @@ $(function () {
                 message: message,
                 onclose: function () {
                     self.testWebcamStreamUrlBusy(false);
+                    if (webrtc_peer_connection != null) {
+                        webrtc_peer_connection.close();
+                        webrtc_peer_connection = null;
+                    }
                 }
             });
         };
@@ -1147,6 +1191,15 @@ $(function () {
                         });
                         return result;
                     }
+                },
+                webcam: {
+                    streamWebrtcIceServers: function () {
+                        return splitTextToArray(
+                            self.webcam_streamWebrtcIceServers(),
+                            ",",
+                            true
+                        );
+                    }
                 }
             };
 
@@ -1306,6 +1359,11 @@ $(function () {
                 temperature: {
                     profiles: function (value) {
                         self.temperature_profiles($.extend(true, [], value));
+                    }
+                },
+                webcam: {
+                    streamWebrtcIceServers: function (value) {
+                        self.webcam_streamWebrtcIceServers(value.join(", "));
                     }
                 }
             };
@@ -1510,11 +1568,14 @@ $(function () {
             self.requestData();
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            // we might have other user rights now, refresh (but only if startup has fully completed)
-            if (!self._startupComplete) return;
-            self.requestData();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    // we might have other user rights now, refresh (but only if startup has fully completed)
+                    if (!self._startupComplete) return;
+                    self.requestData();
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push({

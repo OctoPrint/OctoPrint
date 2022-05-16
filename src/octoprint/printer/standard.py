@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 """
 This module holds the standard implementation of the :class:`PrinterInterface` and it helpers.
 """
@@ -15,13 +12,7 @@ import os
 import threading
 import time
 
-try:
-    from immutabledict import immutabledict
-except ImportError:
-    # Python 2
-    from frozendict import frozendict as immutabledict
-
-from past.builtins import basestring, long
+from frozendict import frozendict
 
 import octoprint.util.json
 from octoprint import util as util
@@ -40,7 +31,7 @@ from octoprint.settings import settings
 from octoprint.util import InvariantContainer
 from octoprint.util import comm as comm
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import monotonic_time, to_unicode
+from octoprint.util import to_unicode
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -53,10 +44,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         from collections import deque
 
         self._logger = logging.getLogger(__name__)
-        self._logger_job = logging.getLogger("{}.job".format(__name__))
+        self._logger_job = logging.getLogger(f"{__name__}.job")
 
         self._dict = (
-            immutabledict
+            frozendict
             if settings().getBoolean(["devel", "useFrozenDictForPrinterState"])
             else dict
         )
@@ -65,24 +56,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._fileManager = fileManager
         self._printerProfileManager = printerProfileManager
 
-        # state
-        # TODO do we really need to hold the temperature here?
-        self._temp = None
-        self._bedTemp = None
-        self._chamberTemp = None
-        self._targetTemp = None
-        self._targetBedTemp = None
-        self._targetChamberTemp = None
-        self._temps = TemperatureHistory(
+        self._temps = DataHistory(
             cutoff=settings().getInt(["temperature", "cutoff"]) * 60
         )
-        self._tempBacklog = []
+        self._markings = DataHistory(
+            cutoff=settings().getInt(["temperature", "cutoff"]) * 60
+        )
 
         self._messages = deque([], 300)
-        self._messageBacklog = []
-
         self._log = deque([], 300)
-        self._logBacklog = []
 
         self._state = None
 
@@ -113,13 +95,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             try:
                 estimator = hook()
                 if estimator is not None:
-                    self._logger.info(
-                        "Using print time estimator provided by {}".format(name)
-                    )
+                    self._logger.info(f"Using print time estimator provided by {name}")
                     self._estimator_factory = estimator
             except Exception:
                 self._logger.exception(
-                    "Error while processing analysis queues from {}".format(name),
+                    f"Error while processing analysis queues from {name}",
                     extra={"plugin": name},
                 )
 
@@ -203,7 +183,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
     @property
     def firmware_info(self):
-        return immutabledict(self._firmware_info) if self._firmware_info else None
+        return frozendict(self._firmware_info) if self._firmware_info else None
 
     # ~~ handling of PrinterCallbacks
 
@@ -286,11 +266,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             try:
                 additional = hook(initial=initial)
                 if additional and isinstance(additional, dict):
-                    octoprint.util.json.dump({name: additional})
+                    octoprint.util.json.dumps({name: additional})
                     plugin_data[name] = additional
             except ValueError:
                 self._logger.exception(
-                    "Invalid additional data from plugin {}".format(name),
+                    f"Invalid additional data from plugin {name}",
                     extra={"plugin": name},
                 )
             except Exception:
@@ -371,13 +351,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 if hook(
                     self, port=port, baudrate=baudrate, profile=profile, *args, **kwargs
                 ):
-                    self._logger.info(
-                        "Connect signalled as handled by plugin {}".format(name)
-                    )
+                    self._logger.info(f"Connect signalled as handled by plugin {name}")
                     return
             except Exception:
                 self._logger.exception(
-                    "Exception while handling connect in plugin {}".format(name),
+                    f"Exception while handling connect in plugin {name}",
                     extra={"plugin": name},
                 )
 
@@ -472,7 +450,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         # this code preserves existing CamelCase
         event_name = name[0].upper() + name[1:]
 
-        event_start = "GcodeScript{}Running".format(event_name)
+        event_start = f"GcodeScript{event_name}Running"
         payload = context.get("event", None) if isinstance(context, dict) else None
 
         eventManager().fire(event_start, payload)
@@ -486,21 +464,19 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         if not result and must_be_set:
             raise UnknownScript(name)
 
-        event_end = "GcodeScript{}Finished".format(event_name)
+        event_end = f"GcodeScript{event_name}Finished"
         eventManager().fire(event_end, payload)
 
     def jog(self, axes, relative=True, speed=None, *args, **kwargs):
-        if isinstance(axes, basestring):
+        if isinstance(axes, str):
             # legacy parameter format, there should be an amount as first anonymous positional arguments too
             axis = axes
 
             if not len(args) >= 1:
                 raise ValueError("amount not set")
             amount = args[0]
-            if not isinstance(amount, (int, long, float)):
-                raise ValueError(
-                    "amount must be a valid number: {amount}".format(amount=amount)
-                )
+            if not isinstance(amount, (int, float)):
+                raise ValueError(f"amount must be a valid number: {amount}")
 
             axes = {}
             axes[axis] = amount
@@ -517,15 +493,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 )
 
         command = "G0 {}".format(
-            " ".join(["{}{}".format(axis.upper(), amt) for axis, amt in axes.items()])
+            " ".join([f"{axis.upper()}{amt}" for axis, amt in axes.items()])
         )
 
         if speed is None:
             printer_profile = self._printerProfileManager.get_current_or_default()
-            speed = min([printer_profile["axes"][axis]["speed"] for axis in axes])
+            speed = min(printer_profile["axes"][axis]["speed"] for axis in axes)
 
         if speed and not isinstance(speed, bool):
-            command += " F{}".format(speed)
+            command += f" F{speed}"
 
         if relative:
             commands = ["G91", command, "G90"]
@@ -536,12 +512,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
     def home(self, axes, *args, **kwargs):
         if not isinstance(axes, (list, tuple)):
-            if isinstance(axes, basestring):
+            if isinstance(axes, str):
                 axes = [axes]
             else:
-                raise ValueError(
-                    "axes is neither a list nor a string: {axes}".format(axes=axes)
-                )
+                raise ValueError(f"axes is neither a list nor a string: {axes}")
 
         validated_axes = list(
             filter(
@@ -549,7 +523,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             )
         )
         if len(axes) != len(validated_axes):
-            raise ValueError("axes contains invalid axes: {axes}".format(axes=axes))
+            raise ValueError(f"axes contains invalid axes: {axes}")
 
         self.commands(
             [
@@ -561,10 +535,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         )
 
     def extrude(self, amount, speed=None, *args, **kwargs):
-        if not isinstance(amount, (int, long, float)):
-            raise ValueError(
-                "amount must be a valid number: {amount}".format(amount=amount)
-            )
+        if not isinstance(amount, (int, float)):
+            raise ValueError(f"amount must be a valid number: {amount}")
 
         printer_profile = self._printerProfileManager.get_current_or_default()
 
@@ -585,7 +557,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
     def change_tool(self, tool, *args, **kwargs):
         if not PrinterInterface.valid_tool_regex.match(tool):
-            raise ValueError('tool must match "tool[0-9]+": {tool}'.format(tool=tool))
+            raise ValueError(f'tool must match "tool[0-9]+": {tool}')
 
         tool_num = int(tool[len("tool") :])
         self.commands(
@@ -601,10 +573,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 )
             )
 
-        if not isinstance(value, (int, long, float)) or value < 0:
-            raise ValueError(
-                "value must be a valid number >= 0: {value}".format(value=value)
-            )
+        if not isinstance(value, (int, float)) or value < 0:
+            raise ValueError(f"value must be a valid number >= 0: {value}")
 
         tags = kwargs.get("tags", set()) | {"trigger:printer.set_temperature"}
 
@@ -614,15 +584,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             shared_nozzle = printer_profile["extruder"]["sharedNozzle"]
             if extruder_count > 1 and not shared_nozzle:
                 toolNum = int(heater[len("tool") :])
-                self.commands("M104 T{} S{}".format(toolNum, value), tags=tags)
+                self.commands(f"M104 T{toolNum} S{value}", tags=tags)
             else:
-                self.commands("M104 S{}".format(value), tags=tags)
+                self.commands(f"M104 S{value}", tags=tags)
 
         elif heater == "bed":
-            self.commands("M140 S{}".format(value), tags=tags)
+            self.commands(f"M140 S{value}", tags=tags)
 
         elif heater == "chamber":
-            self.commands("M141 S{}".format(value), tags=tags)
+            self.commands(f"M141 S{value}", tags=tags)
 
     def set_temperature_offset(self, offsets=None, *args, **kwargs):
         if offsets is None:
@@ -635,17 +605,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             filter(lambda x: PrinterInterface.valid_heater_regex.match(x), offsets.keys())
         )
         validated_values = list(
-            filter(lambda x: isinstance(x, (int, long, float)), offsets.values())
+            filter(lambda x: isinstance(x, (int, float)), offsets.values())
         )
 
         if len(validated_keys) != len(offsets):
-            raise ValueError(
-                "offsets contains invalid keys: {offsets}".format(offsets=offsets)
-            )
+            raise ValueError(f"offsets contains invalid keys: {offsets}")
         if len(validated_values) != len(offsets):
-            raise ValueError(
-                "offsets contains invalid values: {offsets}".format(offsets=offsets)
-            )
+            raise ValueError(f"offsets contains invalid values: {offsets}")
 
         if self._comm is None:
             return
@@ -654,16 +620,16 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._setOffsets(self._comm.getOffsets())
 
     def _convert_rate_value(self, factor, min_val=None, max_val=None):
-        if not isinstance(factor, (int, float, long)):
+        if not isinstance(factor, (int, float)):
             raise ValueError("factor is not a number")
 
         if isinstance(factor, float):
             factor = int(factor * 100)
 
         if min_val and factor < min_val:
-            raise ValueError("factor must be a value >={}".format(min_val))
+            raise ValueError(f"factor must be a value >={min_val}")
         elif max_val and factor > max_val:
-            raise ValueError("factor must be a value <={}".format(max_val))
+            raise ValueError(f"factor must be a value <={max_val}")
 
         return factor
 
@@ -746,6 +712,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 return None
 
         return self._comm.getFilePosition()
+
+    def add_marking(self, type):
+        self._markings.append(
+            {
+                "type": type,
+                "time": time.time(),
+            }
+        )
+
+    def get_markings(self):
+        return self._markings
 
     def start_print(self, pos=None, user=None, *args, **kwargs):
         """
@@ -844,11 +821,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             return self._comm.getErrorString()
 
     def get_current_data(self, *args, **kwargs):
-        return util.thaw_immutabledict(self._stateMonitor.get_current_data())
+        return util.thaw_frozendict(self._stateMonitor.get_current_data())
 
     def get_current_job(self, *args, **kwargs):
         currentData = self._stateMonitor.get_current_data()
-        return util.thaw_immutabledict(currentData["job"])
+        return util.thaw_frozendict(currentData["job"])
 
     def get_current_temperatures(self, *args, **kwargs):
         if self._comm is not None:
@@ -856,37 +833,22 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         else:
             offsets = {}
 
-        result = {}
-        if self._temp is not None:
-            for tool in self._temp.keys():
-                result["tool%d" % tool] = {
-                    "actual": self._temp[tool][0],
-                    "target": self._temp[tool][1],
-                    "offset": offsets[tool]
-                    if tool in offsets and offsets[tool] is not None
-                    else 0,
-                }
-        if self._bedTemp is not None:
-            result["bed"] = {
-                "actual": self._bedTemp[0],
-                "target": self._bedTemp[1],
-                "offset": offsets["bed"]
-                if "bed" in offsets and offsets["bed"] is not None
-                else 0,
-            }
-        if self._chamberTemp is not None:
-            result["chamber"] = {
-                "actual": self._chamberTemp[0],
-                "target": self._chamberTemp[1],
-                "offset": offsets["chamber"]
-                if "chamber" in offsets and offsets["chamber"] is not None
-                else 0,
-            }
+        last = self._temps.last
+        if last is None:
+            return {}
 
-        return result
+        return {
+            key: {
+                "actual": value["actual"],
+                "target": value["target"],
+                "offset": offsets[key] if offsets.get(key) is not None else 0,
+            }
+            for key, value in last.items()
+            if key != "time"
+        }
 
     def get_temperature_history(self, *args, **kwargs):
-        return self._temps
+        return list(self._temps)
 
     def get_current_connection(self, *args, **kwargs):
         if self._comm is None:
@@ -926,7 +888,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
     def is_ready(self, *args, **kwargs):
         return (
             self.is_operational()
-            and not self.is_printing()
+            and not self._comm.isBusy()
+            # isBusy is true when paused
             and not self._comm.isStreaming()
         )
 
@@ -1003,7 +966,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     sd_upload_succeeded,
                     sd_upload_failed,
                     *args,
-                    **kwargs
+                    **kwargs,
                 )
                 if result is not None:
                     return result
@@ -1195,7 +1158,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                         printTimeLeft = int(printTimeLeft)
                 except Exception:
                     self._logger.exception(
-                        "Error while estimating print time via {}".format(estimator)
+                        f"Error while estimating print time via {estimator}"
                     )
 
         return self._dict(
@@ -1235,18 +1198,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         self._temps.append(data)
 
-        self._temp = tools
-        self._bedTemp = bed
-        self._chamberTemp = chamber
-        self._custom = custom
-
         self._stateMonitor.add_temperature(self._dict(**data))
 
     def _validateJob(self, filename, sd):
         if not valid_file_type(filename, type="machinecode"):
-            raise InvalidFileType(
-                "{} is not a machinecode file, cannot print".format(filename)
-            )
+            raise InvalidFileType(f"{filename} is not a machinecode file, cannot print")
 
         if sd:
             return
@@ -1414,6 +1370,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 temps=list(self._temps),
                 logs=list(self._log),
                 messages=list(self._messages),
+                markings=list(self._markings),
             )
 
             plugin_data = self._get_additional_plugin_data(initial=False)
@@ -1626,6 +1583,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event(print_job_user=user, action_user=user)
         if payload:
             eventManager().fire(Events.PRINT_STARTED, payload)
+            self.add_marking("print")
             self._logger_job.info(
                 "Print job started - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -1649,6 +1607,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event()
         if payload:
             payload["time"] = self._comm.getPrintTime()
+            self.add_marking("done")
             self._updateProgressData(
                 completion=1.0,
                 filepos=payload["size"],
@@ -1725,6 +1684,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             payload["time"] = self._comm.getPrintTime()
 
             eventManager().fire(Events.PRINT_CANCELLED, payload)
+            self.add_marking("cancel")
             self._logger_job.info(
                 "Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -1776,6 +1736,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     payload.get("user"),
                 )
             )
+            self.add_marking("pause")
             if not suppress_script:
                 self.script(
                     "afterPrintPaused",
@@ -1788,6 +1749,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event(action_user=user)
         if payload:
             eventManager().fire(Events.PRINT_RESUMED, payload)
+            self.add_marking("resume")
             self._logger_job.info(
                 "Print job resumed - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -1932,7 +1894,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         return result
 
 
-class StateMonitor(object):
+class StateMonitor:
     def __init__(
         self,
         interval=0.5,
@@ -1966,7 +1928,7 @@ class StateMonitor(object):
         self._progress_lock = threading.Lock()
         self._resends_lock = threading.Lock()
 
-        self._last_update = monotonic_time()
+        self._last_update = time.monotonic()
         self._worker = threading.Thread(target=self._work)
         self._worker.daemon = True
         self._worker.start()
@@ -2052,7 +2014,7 @@ class StateMonitor(object):
             while True:
                 self._change_event.wait()
 
-                now = monotonic_time()
+                now = time.monotonic()
                 delta = now - self._last_update
                 additional_wait_time = self._interval - delta
                 if additional_wait_time > 0:
@@ -2061,7 +2023,7 @@ class StateMonitor(object):
                 with self._state_lock:
                     data = self.get_current_data()
                     self._update_callback(data)
-                    self._last_update = monotonic_time()
+                    self._last_update = time.monotonic()
                     self._change_event.clear()
         except Exception:
             logging.getLogger(__name__).exception(
@@ -2091,11 +2053,22 @@ class StateMonitor(object):
         }
 
 
-class TemperatureHistory(InvariantContainer):
+class DataHistory(InvariantContainer):
     def __init__(self, cutoff=30 * 60):
-        def temperature_invariant(data):
+        def data_invariant(data):
             data.sort(key=lambda x: x["time"])
             now = int(time.time())
             return [item for item in data if item["time"] >= now - cutoff]
 
-        InvariantContainer.__init__(self, guarantee_invariant=temperature_invariant)
+        InvariantContainer.__init__(self, guarantee_invariant=data_invariant)
+        self._last = None
+
+    @property
+    def last(self):
+        return self._last
+
+    def append(self, item):
+        try:
+            return super().append(item)
+        finally:
+            self._last = self._data[-1] if len(self._data) else None

@@ -1,12 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import copy
-import io
 import logging
 import os
 import re
@@ -19,15 +15,15 @@ from datetime import datetime
 
 import filetype
 import pkg_resources
+import pylru
 import requests
 import sarge
 from flask import Response, abort, jsonify, request
 from flask_babel import gettext
-from past.builtins import basestring
 
 import octoprint.plugin
 import octoprint.plugin.core
-from octoprint.access import ADMIN_GROUP
+from octoprint.access import ADMIN_GROUP, READONLY_GROUP, USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 from octoprint.server import safe_mode
@@ -37,9 +33,15 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import TemporaryDirectory, deprecated, to_bytes, to_native_str
+from octoprint.util import deprecated, to_bytes
 from octoprint.util.net import download_file
-from octoprint.util.pip import create_pip_caller
+from octoprint.util.pip import (
+    OUTPUT_SUCCESS,
+    create_pip_caller,
+    get_result_line,
+    is_already_installed,
+    is_python_mismatch,
+)
 from octoprint.util.platform import get_os, is_os_compatible
 from octoprint.util.version import (
     get_octoprint_version,
@@ -49,11 +51,6 @@ from octoprint.util.version import (
 )
 
 from . import exceptions
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
 
 _DATA_FORMAT_VERSION = "v3"
 
@@ -94,7 +91,7 @@ def map_repository_entry(entry):
         if (
             "python" in entry["compatibility"]
             and entry["compatibility"]["python"] is not None
-            and isinstance(entry["compatibility"]["python"], basestring)
+            and isinstance(entry["compatibility"]["python"], str)
         ):
             result["is_compatible"]["python"] = is_python_compatible(
                 entry["compatibility"]["python"]
@@ -122,7 +119,7 @@ class PluginManagerPlugin(
     octoprint.plugin.EventHandlerPlugin,
 ):
 
-    ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar", ".gz")
+    ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar", ".gz", ".whl")
     PYTHON_EXTENSIONS = (".py",)
 
     # valid pip install URL schemes according to https://pip.pypa.io/en/stable/reference/pip_install/
@@ -226,6 +223,13 @@ class PluginManagerPlugin(
 
     def get_additional_permissions(self):
         return [
+            {
+                "key": "LIST",
+                "name": "List plugins",
+                "description": gettext("Allows to list installed plugins."),
+                "default_groups": [READONLY_GROUP, USER_GROUP, ADMIN_GROUP],
+                "roles": ["manage"],
+            },
             {
                 "key": "MANAGE",
                 "name": "Manage plugins",
@@ -459,6 +463,10 @@ class PluginManagerPlugin(
             },
             "safe_mode": safe_mode,
             "online": self._connectivity_checker.online,
+            "supported_extensions": {
+                "archive": self.ARCHIVE_EXTENSIONS,
+                "python": self.PYTHON_EXTENSIONS,
+            },
         }
 
     @octoprint.plugin.BlueprintPlugin.route("/plugins")
@@ -481,10 +489,13 @@ class PluginManagerPlugin(
                 hash.update(value)
 
             hash_update(repr(self._get_plugins()))
+            hash_update(repr(self._pip_caller.version_string))
             hash_update(str(self._notices_available))
             hash_update(repr(self._notices))
             hash_update(repr(safe_mode))
             hash_update(repr(self._connectivity_checker.online))
+            hash_update(repr(self.ARCHIVE_EXTENSIONS))
+            hash_update(repr(self.PYTHON_EXTENSIONS))
             hash_update(repr(_DATA_FORMAT_VERSION))
             return hash.hexdigest()
 
@@ -496,6 +507,13 @@ class PluginManagerPlugin(
             condition=lambda *args, **kwargs: condition(),
             unless=lambda: refresh,
         )(view)()
+
+    @octoprint.plugin.BlueprintPlugin.route("/plugins/versions")
+    @Permissions.PLUGIN_PLUGINMANAGER_LIST.require(403)
+    def retrieve_plugin_list(self):
+        return jsonify(
+            {p["key"]: p["version"] for p in self._get_plugins() if p["enabled"]}
+        )
 
     @octoprint.plugin.BlueprintPlugin.route("/plugins/<string:key>")
     @Permissions.PLUGIN_PLUGINMANAGER_MANAGE.require(403)
@@ -718,9 +736,9 @@ class PluginManagerPlugin(
         if ext in PluginManagerPlugin.ARCHIVE_EXTENSIONS:
             return True
 
-        kind = filetype.guess(to_native_str(path))
+        kind = filetype.guess(path)
         if kind:
-            return ".{}".format(kind.extension) in PluginManagerPlugin.ARCHIVE_EXTENSIONS
+            return f".{kind.extension}" in PluginManagerPlugin.ARCHIVE_EXTENSIONS
         return False
 
     def _is_pythonfile(self, path):
@@ -729,13 +747,11 @@ class PluginManagerPlugin(
             import ast
 
             try:
-                with io.open(path, "rb") as f:
+                with open(path, "rb") as f:
                     ast.parse(f.read(), filename=path)
                 return True
             except Exception as exc:
-                self._logger.exception(
-                    "Could not parse {} as python file: {}".format(path, exc)
-                )
+                self._logger.exception(f"Could not parse {path} as python file: {exc}")
 
         return False
 
@@ -757,7 +773,7 @@ class PluginManagerPlugin(
 
                 if url is not None:
                     # fetch URL
-                    folder = TemporaryDirectory()
+                    folder = tempfile.TemporaryDirectory()
                     path = download_file(url, folder.name)
                     source = url
                     source_type = "url"
@@ -782,12 +798,12 @@ class PluginManagerPlugin(
                     raise exceptions.InvalidPackageFormat()
 
             except requests.exceptions.HTTPError as e:
-                self._logger.error("Could not fetch plugin from server, got {}".format(e))
+                self._logger.error(f"Could not fetch plugin from server, got {e}")
                 result = {
                     "result": False,
                     "source": source,
                     "source_type": source_type,
-                    "reason": "Could not fetch plugin from server, got {}".format(e),
+                    "reason": f"Could not fetch plugin from server, got {e}",
                 }
                 self._send_result_notification("install", result)
 
@@ -860,12 +876,7 @@ class PluginManagerPlugin(
             self._send_result_notification("install", result)
             return result
 
-        try:
-            # Py3
-            from urllib.parse import quote as url_quote
-        except ImportError:
-            # Py2
-            from urllib import quote as url_quote
+        from urllib.parse import quote as url_quote
 
         path = os.path.abspath(path)
         if os.sep != "/":
@@ -879,11 +890,7 @@ class PluginManagerPlugin(
             path_url = "file://" + url_quote(path)
             shell_quote = sarge.shell_quote
 
-        already_installed_check = (
-            lambda line: path_url in line.lower()
-        )  # lower case in case of windows
-
-        self._logger.info("Installing plugin from {}".format(source))
+        self._logger.info(f"Installing plugin from {source}")
         pip_args = [
             "--disable-pip-version-check",
             "install",
@@ -897,28 +904,9 @@ class PluginManagerPlugin(
         all_plugins_before = self._plugin_manager.find_plugins(existing={})
 
         try:
-            returncode, stdout, stderr = self._call_pip(pip_args)
+            _, stdout, stderr = self._call_pip(pip_args)
 
-            # pip's output for a package that is already installed looks something like any of these:
-            #
-            #   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin==1.0 from \
-            #     https://example.com/foobar.zip in <lib>
-            #   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin in <lib>
-            #   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin==1.0 from \
-            #     file:///tmp/foobar.zip in <lib>
-            #   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin==1.0 from \
-            #     file:///C:/Temp/foobar.zip in <lib>
-            #
-            # If we detect any of these matching what we just tried to install, we'll need to trigger a second
-            # install with reinstall flags.
-
-            if not force and any(
-                map(
-                    lambda x: x.strip().startswith(already_installed_string)
-                    and already_installed_check(x),
-                    stdout,
-                )
-            ):
+            if not force and is_already_installed(stdout):
                 self._logger.info(
                     "Plugin to be installed from {} was already installed, forcing a reinstall".format(
                         source
@@ -929,8 +917,8 @@ class PluginManagerPlugin(
                 )
                 force = True
         except Exception as e:
-            self._logger.exception("Could not install plugin from {}".format(source))
-            self._logger.exception("Reason: {}".format(repr(e)))
+            self._logger.exception(f"Could not install plugin from {source}")
+            self._logger.exception(f"Reason: {repr(e)}")
             result = {
                 "result": False,
                 "source": source,
@@ -942,54 +930,34 @@ class PluginManagerPlugin(
             self._send_result_notification("install", result)
             return result
 
-        else:
-            if force:
-                # We don't use --upgrade here because that will also happily update all our dependencies - we'd rather
-                # do that in a controlled manner
-                pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
-                try:
-                    returncode, stdout, stderr = self._call_pip(pip_args)
-                except Exception as e:
-                    self._logger.exception(
-                        "Could not install plugin from {}".format(source)
-                    )
-                    self._logger.exception("Reason: {}".format(repr(e)))
-                    result = {
-                        "result": False,
-                        "source": source,
-                        "source_type": source_type,
-                        "reason": "Could not install plugin from source {}, see the log for more details".format(
-                            source
-                        ),
-                    }
-                    self._send_result_notification("install", result)
-                    return result
+        if is_python_mismatch(stderr):
+            return self.handle_python_mismatch(source, source_type)
 
-        if any(map(lambda x: python_mismatch_string in x, stderr)):
-            self._logger.error(
-                "Installing the plugin from {} failed, pip reported a Python version mismatch".format(
-                    source
-                )
-            )
-            result = {
-                "result": False,
-                "source": source,
-                "source_type": source_type,
-                "reason": "Pip reported a Python version mismatch",
-                "faq": "https://faq.octoprint.org/plugin-python-mismatch",
-            }
-            self._send_result_notification("install", result)
-            return result
+        if force:
+            # We don't use --upgrade here because that will also happily update all our dependencies - we'd rather
+            # do that in a controlled manner
+            pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
+            try:
+                _, stdout, stderr = self._call_pip(pip_args)
+            except Exception as e:
+                self._logger.exception(f"Could not install plugin from {source}")
+                self._logger.exception(f"Reason: {repr(e)}")
+                result = {
+                    "result": False,
+                    "source": source,
+                    "source_type": source_type,
+                    "reason": "Could not install plugin from source {}, see the log for more details".format(
+                        source
+                    ),
+                }
+                self._send_result_notification("install", result)
+                return result
 
-        try:
-            result_line = list(
-                filter(
-                    lambda x: x.startswith(success_string)
-                    or x.startswith(failure_string),
-                    stdout,
-                )
-            )[-1]
-        except IndexError:
+            if is_python_mismatch(stderr):
+                return self.handle_python_mismatch(source, source_type)
+
+        result_line = get_result_line(stdout)
+        if not result_line:
             self._logger.error(
                 "Installing the plugin from {} failed, could not parse output from pip. "
                 "See plugin_pluginmanager_console.log for generated output".format(source)
@@ -1004,16 +972,7 @@ class PluginManagerPlugin(
             self._send_result_notification("install", result)
             return result
 
-        # The final output of a pip install command looks something like this:
-        #
-        #   Successfully installed OctoPrint-Plugin-1.0 Dependency-One-0.1 Dependency-Two-9.3
-        #
-        # or this:
-        #
-        #   Successfully installed OctoPrint-Plugin Dependency-One Dependency-Two
-        #   Cleaning up...
-        #
-        # So we'll need to fetch the "Successfully installed" line, strip the "Successfully" part, then split
+        # We'll need to fetch the "Successfully installed" line, strip the "Successfully" part, then split
         # by whitespace and strip to get all installed packages.
         #
         # We then need to iterate over all known plugins and see if either the package name or the package name plus
@@ -1025,7 +984,7 @@ class PluginManagerPlugin(
         # so that it can report on more than one installed plugin.
 
         result_line = result_line.strip()
-        if not result_line.startswith(success_string):
+        if not result_line.startswith(OUTPUT_SUCCESS):
             self._logger.error(
                 "Installing the plugin from {} failed, pip did not report successful installation".format(
                     source
@@ -1041,7 +1000,7 @@ class PluginManagerPlugin(
             return result
 
         installed = list(
-            map(lambda x: x.strip(), result_line[len(success_string) :].split(" "))
+            map(lambda x: x.strip(), result_line[len(OUTPUT_SUCCESS) :].split(" "))
         )
         all_plugins_after = self._plugin_manager.find_plugins(
             existing={}, ignore_uninstalled=False
@@ -1123,12 +1082,28 @@ class PluginManagerPlugin(
         self._send_result_notification("install", result)
         return result
 
+    def _handle_python_mismatch(self, source, source_type):
+        self._logger.error(
+            "Installing the plugin from {} failed, pip reported a Python version mismatch".format(
+                source
+            )
+        )
+        result = {
+            "result": False,
+            "source": source,
+            "source_type": source_type,
+            "reason": "Pip reported a Python version mismatch",
+            "faq": "https://faq.octoprint.org/plugin-python-mismatch",
+        }
+        self._send_result_notification("install", result)
+        return result
+
     # noinspection DuplicatedCode
     def _command_install_pythonfile(self, path, source=None, source_type=None, name=None):
         if name is None:
             name = os.path.basename(path)
 
-        self._logger.info("Installing single file plugin {} from {}".format(name, source))
+        self._logger.info(f"Installing single file plugin {name} from {source}")
 
         all_plugins_before = self._plugin_manager.find_plugins(existing={})
 
@@ -1172,10 +1147,10 @@ class PluginManagerPlugin(
 
         # copy plugin
         try:
-            self._log_call("cp {} {}".format(path, destination))
+            self._log_call(f"cp {path} {destination}")
             shutil.copy(path, destination)
         except Exception:
-            self._logger.exception("Installing plugin from {} failed".format(source))
+            self._logger.exception(f"Installing plugin from {source} failed")
             result = {
                 "result": False,
                 "source": source,
@@ -1263,11 +1238,17 @@ class PluginManagerPlugin(
 
         if plugin.origin is None:
             self._logger.warning(
-                "Trying to uninstall plugin {plugin} but origin is unknown".format(
-                    **locals()
-                )
+                f"Trying to uninstall plugin {plugin} but origin is unknown"
             )
             abort(500, description="Could not uninstall plugin, its origin is unknown")
+
+        if plugin.implementation:
+            try:
+                plugin.implementation.on_plugin_pending_uninstall()
+            except Exception:
+                self._logger.exception(
+                    "Error while calling on_plugin_pending_uninstall on the plugin, proceeding regardless"
+                )
 
         if plugin.origin.type == "entry_point":
             # plugin is installed through entry point, need to use pip to uninstall it
@@ -1293,29 +1274,21 @@ class PluginManagerPlugin(
 
             if os.path.isdir(full_path):
                 # plugin is installed via a plugin folder, need to use rmtree to get rid of it
-                self._log_stdout(
-                    "Deleting plugin from {folder}".format(folder=plugin.location)
-                )
+                self._log_stdout(f"Deleting plugin from {plugin.location}")
                 shutil.rmtree(full_path)
             elif os.path.isfile(full_path):
-                self._log_stdout(
-                    "Deleting plugin from {file}".format(file=plugin.location)
-                )
+                self._log_stdout(f"Deleting plugin from {plugin.location}")
                 os.remove(full_path)
 
                 if full_path.endswith(".py"):
-                    pyc_file = "{full_path}c".format(**locals())
+                    pyc_file = f"{full_path}c"
                     if os.path.isfile(pyc_file):
-                        self._log_stdout(
-                            "Deleting plugin from {file}".format(file=pyc_file)
-                        )
+                        self._log_stdout(f"Deleting plugin from {pyc_file}")
                         os.remove(pyc_file)
 
         else:
             self._logger.warning(
-                "Trying to uninstall plugin {plugin} but origin is unknown ({plugin.origin.type})".format(
-                    **locals()
-                )
+                f"Trying to uninstall plugin {plugin} but origin is unknown ({plugin.origin.type})"
             )
             abort(500, description="Could not uninstall plugin, its origin is unknown")
 
@@ -1342,9 +1315,7 @@ class PluginManagerPlugin(
                 if plugin.enabled:
                     self._plugin_manager.disable_plugin(plugin.key, plugin=plugin)
             except octoprint.plugin.core.PluginLifecycleException as e:
-                self._logger.exception(
-                    "Problem disabling plugin {name}".format(name=plugin.key)
-                )
+                self._logger.exception(f"Problem disabling plugin {plugin.key}")
                 result = {
                     "result": False,
                     "uninstalled": True,
@@ -1359,9 +1330,7 @@ class PluginManagerPlugin(
                 if plugin.loaded:
                     self._plugin_manager.unload_plugin(plugin.key)
             except octoprint.plugin.core.PluginLifecycleException as e:
-                self._logger.exception(
-                    "Problem unloading plugin {name}".format(name=plugin.key)
-                )
+                self._logger.exception(f"Problem unloading plugin {plugin.key}")
                 result = {
                     "result": False,
                     "uninstalled": True,
@@ -1388,7 +1357,7 @@ class PluginManagerPlugin(
             "plugin": self._to_external_plugin(plugin),
         }
         self._send_result_notification("uninstall", result)
-        self._logger.info("Plugin {} uninstalled".format(plugin.key))
+        self._logger.info(f"Plugin {plugin.key} uninstalled")
 
         self._cleanup_disabled(plugin.key)
         if cleanup:
@@ -1403,13 +1372,13 @@ class PluginManagerPlugin(
         result_notifications=True,
         settings_save=True,
     ):
-        if isinstance(plugin, basestring):
+        if isinstance(plugin, str):
             key = result_value = plugin
         else:
             key = plugin.key
             result_value = self._to_external_plugin(plugin)
 
-        message = "Cleaning up plugin {}...".format(key)
+        message = f"Cleaning up plugin {key}..."
         self._logger.info(message)
         self._log_stdout(message)
 
@@ -1423,7 +1392,7 @@ class PluginManagerPlugin(
         # delete plugin data folder
         result_data = True
         if not self._cleanup_data(key):
-            message = "Could not delete data folder of plugin {}".format(key)
+            message = f"Could not delete data folder of plugin {key}"
             self._logger.exception(message)
             self._log_stderr(message)
             result_data = False
@@ -1461,9 +1430,7 @@ class PluginManagerPlugin(
             "cleaned_up": sorted(list(cleaned_up)),
         }
         self._send_result_notification("cleanup_all", result)
-        self._logger.info(
-            "Cleaned up all data, {} left overs removed".format(len(cleaned_up))
-        )
+        self._logger.info(f"Cleaned up all data, {len(cleaned_up)} left overs removed")
 
         # cleaning orphan cache
         self._orphans = None
@@ -1497,7 +1464,7 @@ class PluginManagerPlugin(
                 return True
             except Exception:
                 self._logger.exception(
-                    "Could not delete plugin data folder at {}".format(data_folder)
+                    f"Could not delete plugin data folder at {data_folder}"
                 )
                 return False
         else:
@@ -1571,7 +1538,7 @@ class PluginManagerPlugin(
 
             package_name = plugin.origin.package_name
             package_version = plugin.origin.package_version
-            versioned_package = "{package_name}-{package_version}".format(**locals())
+            versioned_package = f"{package_name}-{package_version}"
 
             if package_name in packages or versioned_package in packages:
                 # exact match, we are done here
@@ -1598,7 +1565,7 @@ class PluginManagerPlugin(
 
     def _call_pip(self, args):
         if self._pip_caller is None or not self._pip_caller.available:
-            raise RuntimeError("No pip available, can't operate".format(**locals()))
+            raise RuntimeError("No pip available, can't operate")
 
         if "--process-dependency-links" in args:
             self._log_message(
@@ -1654,7 +1621,7 @@ class PluginManagerPlugin(
             },
         )
         for line in lines:  # noqa: B007
-            self._console_logger.debug("{prefix} {line}".format(**locals()))
+            self._console_logger.debug(f"{prefix} {line}")
 
     def _mark_plugin_enabled(self, plugin, needs_restart=False):
         disabled_list = list(
@@ -1751,9 +1718,7 @@ class PluginManagerPlugin(
                 try:
                     import json
 
-                    with io.open(
-                        self._repository_cache_path, "rt", encoding="utf-8"
-                    ) as f:
+                    with open(self._repository_cache_path, encoding="utf-8") as f:
                         repo_data = json.load(f)
                     self._repository_mtime = mtime
                     self._logger.info(
@@ -1779,9 +1744,7 @@ class PluginManagerPlugin(
         try:
             r = requests.get(repository_url, timeout=30)
             r.raise_for_status()
-            self._logger.info(
-                "Loaded plugin repository data from {}".format(repository_url)
-            )
+            self._logger.info(f"Loaded plugin repository data from {repository_url}")
         except Exception as e:
             self._logger.exception(
                 "Could not fetch plugins from repository at {repository_url}: {message}".format(
@@ -1793,13 +1756,13 @@ class PluginManagerPlugin(
         try:
             repo_data = r.json()
         except Exception as e:
-            self._logger.exception("Error while reading repository data: {}".format(e))
+            self._logger.exception(f"Error while reading repository data: {e}")
             return None
 
         # validation
         if not isinstance(repo_data, (list, tuple)):
             self._logger.warning(
-                "Invalid repository data: expected a list, got {!r}".format(repo_data)
+                f"Invalid repository data: expected a list, got {repo_data!r}"
             )
             return None
 
@@ -1846,7 +1809,7 @@ class PluginManagerPlugin(
                 try:
                     import json
 
-                    with io.open(self._notices_cache_path, "rt", encoding="utf-8") as f:
+                    with open(self._notices_cache_path, encoding="utf-8") as f:
                         notice_data = json.load(f)
                     self._notices_mtime = mtime
                     self._logger.info("Loaded notice data from disk, was still valid")
@@ -1870,7 +1833,7 @@ class PluginManagerPlugin(
         try:
             r = requests.get(notices_url, timeout=30)
             r.raise_for_status()
-            self._logger.info("Loaded plugin notices data from {}".format(notices_url))
+            self._logger.info(f"Loaded plugin notices data from {notices_url}")
         except Exception as e:
             self._logger.exception(
                 "Could not fetch notices from {notices_url}: {message}".format(
@@ -1953,7 +1916,7 @@ class PluginManagerPlugin(
                 orphans[key]["settings"] = True
 
         # data
-        for entry in scandir(self._settings.getBaseFolder("data")):
+        for entry in os.scandir(self._settings.getBaseFolder("data")):
             if not entry.is_dir():
                 continue
 
@@ -1980,13 +1943,11 @@ class PluginManagerPlugin(
             try:
                 result = hook()
                 if isinstance(result, (list, tuple)):
-                    reconnect_hooks.extend(
-                        filter(lambda x: isinstance(x, basestring), result)
-                    )
+                    reconnect_hooks.extend(filter(lambda x: isinstance(x, str), result))
             except Exception:
                 self._logger.exception(
-                    "Error while retrieving additional hooks for which a "
-                    "reconnect is required from plugin {name}".format(**locals()),
+                    f"Error while retrieving additional hooks for which a "
+                    f"reconnect is required from plugin {name}",
                     extra={"plugin": name},
                 )
 
@@ -2103,6 +2064,11 @@ class PluginManagerPlugin(
         }
 
 
+@pylru.lrudecorator(size=127)
+def parse_requirement(line):
+    return pkg_resources.Requirement.parse(line)
+
+
 def _filter_relevant_notification(notification, plugin_version, octoprint_version):
     if "pluginversions" in notification:
         pluginversions = notification["pluginversions"]
@@ -2110,7 +2076,7 @@ def _filter_relevant_notification(notification, plugin_version, octoprint_versio
         is_range = lambda x: "=" in x or ">" in x or "<" in x
         version_ranges = list(
             map(
-                lambda x: pkg_resources.Requirement.parse(notification["plugin"] + x),
+                lambda x: parse_requirement(notification["plugin"] + x),
                 filter(is_range, pluginversions),
             )
         )
@@ -2147,10 +2113,10 @@ def _register_custom_events(*args, **kwargs):
 
 __plugin_name__ = "Plugin Manager"
 __plugin_author__ = "Gina Häußge"
-__plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html"
+__plugin_url__ = "https://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html"
 __plugin_description__ = "Allows installing and managing OctoPrint plugins"
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_hidden__ = True
 
 

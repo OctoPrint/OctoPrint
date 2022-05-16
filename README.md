@@ -17,7 +17,7 @@
 </p>
 
 OctoPrint provides a snappy web interface for controlling consumer 3D printers. It is Free Software
-and released under the [GNU Affero General Public License V3](http://www.gnu.org/licenses/agpl.html).
+and released under the [GNU Affero General Public License V3](https://www.gnu.org/licenses/agpl-3.0.html).
 
 Its website can be found at [octoprint.org](https://octoprint.org/?utm_source=github&utm_medium=readme).
 
@@ -27,7 +27,7 @@ An invite to the Discord server can be found at [discord.octoprint.org](https://
 
 The FAQ can be accessed by following [faq.octoprint.org](https://faq.octoprint.org/?utm_source=github&utm_medium=readme).
 
-The documentation is located at [docs.octoprint.org](http://docs.octoprint.org).
+The documentation is located at [docs.octoprint.org](https://docs.octoprint.org).
 
 The official plugin repository can be reached at [plugins.octoprint.org](https://plugins.octoprint.org/?utm_source=github&utm_medium=readme).
 
@@ -38,14 +38,14 @@ If you enjoy OctoPrint, please consider becoming a regular supporter!**
 
 You are currently looking at the source code repository of OctoPrint. If you already installed it
 (e.g. by using the Raspberry Pi targeted distribution [OctoPi](https://github.com/guysoft/OctoPi)) and only
-want to find out how to use it, [the documentation](http://docs.octoprint.org/) might be of more interest for you. You might also want to subscribe to join
+want to find out how to use it, [the documentation](https://docs.octoprint.org/) might be of more interest for you. You might also want to subscribe to join
 [the community forum at community.octoprint.org](https://community.octoprint.org) where there are other active users who might be
 able to help you with any questions you might have.
 
 ## Contributing
 
 Contributions of all kinds are welcome, not only in the form of code but also with regards to the
-[official documentation](http://docs.octoprint.org/), debugging help
+[official documentation](https://docs.octoprint.org/), debugging help
 in the [bug tracker](https://github.com/OctoPrint/OctoPrint/issues), support of other users on
 [the community forum at community.octoprint.org](https://community.octoprint.org) or
 [the official discord at discord.octoprint.org](https://discord.octoprint.org)
@@ -69,7 +69,7 @@ which is a custom SD card image that includes OctoPrint plus dependencies.
 The generic steps that should basically be done regardless of operating system
 and runtime environment are the following (as *regular
 user*, please keep your hands *off* of the `sudo` command here!) - this assumes
-you already have Python 2.7, 3.6 or 3.7, pip and virtualenv and their dependencies set up on your system:
+you already have Python 3.7+, pip and virtualenv and their dependencies set up on your system:
 
 1. Create a user-owned virtual environment therein: `virtualenv venv`. If you want to specify a specific python
    to use instead of whatever version your system defaults to, you can also explicitly require that via the `--python`
@@ -87,7 +87,7 @@ access control as necessary.
 OctoPrint depends on a few python modules to do its job. Those are automatically installed when installing
 OctoPrint via `pip`.
 
-OctoPrint currently supports Python 2.7, 3.6 and 3.7.
+OctoPrint currently supports Python 3.7, 3.8, 3.9 and 3.10.
 
 ## Usage
 
@@ -140,7 +140,7 @@ which is located at `~/.octoprint` on Linux, at `%APPDATA%/OctoPrint` on Windows
 at `~/Library/Application Support/OctoPrint` on MacOS.
 
 A comprehensive overview of all available configuration settings can be found
-[in the docs](http://docs.octoprint.org/en/master/configuration/config_yaml.html).
+[in the docs](https://docs.octoprint.org/en/master/configuration/config_yaml.html).
 Please note that the most commonly used configuration settings can also easily
 be edited from OctoPrint's settings dialog.
 

@@ -1,13 +1,17 @@
+<div style="margin-bottom: 10px" class="alert alert-error" data-bind="visible: !validPort()"><small>{% trans link="<a href='https://faq.octoprint.org/no-candidates' target='_blank' rel='noopener noreferer'>", endlink="</a>", refresh="<a href='javascript:void(0)' data-bind='click: $root.requestData'>", endrefresh="</a>" %}
+    No serial port found, are you sure your printer is physically connected and supported?
+    Try {{ refresh }}refreshing{{ endrefresh }} and if that doesn't help please see {{ link }}the FAQ{{ endlink }}.
+{% endtrans %}</small></div>
 <label for="connection_ports" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Serial Port') }}</label>
-<select id="connection_ports" data-test-id="connection-ports" data-bind="options: portOptions, optionsCaption: 'AUTO', value: selectedPort, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
+<select id="connection_ports" data-test-id="connection-ports" data-bind="options: portOptions, optionsCaption: portCaption, value: selectedPort, css: {disabled: !isErrorOrClosed()}, enable: enablePort()"></select>
 <label for="connection_baudrates" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Baudrate') }}</label>
 <select id="connection_baudrates" data-test-id="connection-baudrates" data-bind="options: baudrateOptions, optionsCaption: 'AUTO', value: selectedBaudrate, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
 <label for="connection_printers" data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _('Printer Profile') }}</label>
 <select id="connection_printers" data-test-id="connection-printer-profiles" data-bind="options: printerOptions, optionsText: 'name', optionsValue: 'id', value: selectedPrinter, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"></select>
-<label class="checkbox">
-    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"> {{ _('Save connection settings') }}
+<label class="checkbox" data-bind="css: {muted: !enableSaveSettings()}">
+    <input type="checkbox" id="connection_save" data-bind="checked: saveSettings, enable: enableSaveSettings()"> {{ _('Save connection settings') }}
 </label>
-<label class="checkbox">
-    <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()"> {{ _('Auto-connect on server startup') }}
+<label class="checkbox" data-bind="css: {muted: !enableAutoConnect()}">
+    <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, enable: enableAutoConnect()"> {{ _('Auto-connect on server startup') }}
 </label>
-<button class="btn btn-block" id="printer_connect" data-test-id="connection-connect" data-bind="click: connect, text: buttonText">{{ _('Connect') }}</button>
+<button class="btn btn-block" id="printer_connect" data-test-id="connection-connect" data-bind="click: connect, text: buttonText, enable: enableConnect">{{ _('Connect') }}</button>

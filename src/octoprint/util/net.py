@@ -1,10 +1,6 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import logging
 import os
 import socket
@@ -45,7 +41,7 @@ if hasattr(socket, "IPPROTO_IPV6") and hasattr(socket, "IPV6_V6ONLY"):
     IPV6_V6ONLY = socket.IPV6_V6ONLY
 else:
     if sys.platform == "win32":
-        # Python 2.7 on Windows lacks IPPROTO_IPV6, but supports the socket options just fine, let's redefine it
+        # Python on Windows lacks IPPROTO_IPV6, but supports the socket options just fine, let's redefine it
         IPPROTO_IPV6 = 41
         IPV6_V6ONLY = 27
     else:
@@ -66,7 +62,7 @@ def get_lan_ranges(additional_private=None):
             _, prefix = prefix.split("/")
 
         addr = strip_interface_tag(address["addr"])
-        return netaddr.IPNetwork("{}/{}".format(addr, prefix))
+        return netaddr.IPNetwork(f"{addr}/{prefix}")
 
     subnets = []
 
@@ -164,7 +160,7 @@ def unmap_v4_as_v6(address):
     return address
 
 
-def interface_addresses(family=None, interfaces=None):
+def interface_addresses(family=None, interfaces=None, ignored=None):
     """
     Retrieves all of the host's network interface addresses.
     """
@@ -176,6 +172,9 @@ def interface_addresses(family=None, interfaces=None):
 
     if interfaces is None:
         interfaces = netifaces.interfaces()
+
+    if ignored is not None:
+        interfaces = [i for i in interfaces if i not in ignored]
 
     for interface in interfaces:
         try:
@@ -189,13 +188,15 @@ def interface_addresses(family=None, interfaces=None):
                     yield ifaddress["addr"]
 
 
-def address_for_client(host, port, timeout=3.05, addresses=None, interfaces=None):
+def address_for_client(
+    host, port, timeout=3.05, addresses=None, interfaces=None, ignored=None
+):
     """
     Determines the address of the network interface on this host needed to connect to the indicated client host and port.
     """
 
     if addresses is None:
-        addresses = interface_addresses(interfaces=interfaces)
+        addresses = interface_addresses(interfaces=interfaces, ignored=ignored)
 
     for address in addresses:
         try:
@@ -225,17 +226,24 @@ def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
     if proto not in ("tcp", "udp"):
         raise ValueError("proto must be either 'tcp' or 'udp'")
 
-    try:
-        sock = socket.socket(
-            socket.AF_INET, socket.SOCK_DGRAM if proto == "udp" else socket.SOCK_STREAM
-        )
-        sock.settimeout(timeout)
-        if source is not None:
-            sock.bind((source, 0))
-        sock.connect((host, port))
-        return True
-    except Exception:
-        return False
+    if HAS_V6:
+        families = [socket.AF_INET6, socket.AF_INET]
+    else:
+        families = [socket.AF_INET]
+
+    for family in families:
+        try:
+            sock = socket.socket(
+                family, socket.SOCK_DGRAM if proto == "udp" else socket.SOCK_STREAM
+            )
+            sock.settimeout(timeout)
+            if source is not None:
+                sock.bind((source, 0))
+            sock.connect((host, port))
+            return True
+        except Exception:
+            pass
+    return False
 
 
 def resolve_host(host):
@@ -269,7 +277,7 @@ def download_file(url, folder, max_length=None):
         path = os.path.abspath(os.path.join(folder, filename))
         assert path.startswith(folder)
 
-        with io.open(path, "wb") as f:
+        with open(path, "wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
     return path

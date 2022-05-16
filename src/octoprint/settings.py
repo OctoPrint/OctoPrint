@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module represents OctoPrint's settings management. Within this module the default settings for the core
 application are defined and the instance of the :class:`Settings` is held, which offers getter and setter
@@ -16,48 +15,31 @@ of various types and the configuration file itself.
    :members:
    :undoc-members:
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import copy
 import fnmatch
-import io
 import logging
 import os
 import re
 import sys
 import time
+from collections import ChainMap
+from collections.abc import KeysView
 
-import yaml
-import yaml.parser
-
-# noinspection PyCompatibility
-from past.builtins import basestring
-
-try:
-    from collections import ChainMap
-except ImportError:
-    from chainmap import ChainMap
-
-try:
-    from collections.abc import KeysView
-except ImportError:
-    from collections import KeysView
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
+from yaml import YAMLError
 
 from octoprint.util import (
     CaseInsensitiveSet,
     atomic_write,
+    deprecated,
     dict_merge,
+    fast_deepcopy,
     generate_api_key,
     is_hidden_path,
+    yaml,
 )
 
 _APPNAME = "OctoPrint"
@@ -158,6 +140,7 @@ default_settings = {
         "sdRelativePath": False,
         "sdAlwaysAvailable": False,
         "sdLowerCase": False,
+        "sdCancelCommand": "M25",
         "maxNotSdPrinting": 2,
         "swallowOkAfterResend": True,
         "repetierTargetTemp": False,
@@ -185,6 +168,9 @@ default_settings = {
         },
         "resendRatioThreshold": 10,
         "resendRatioStart": 100,
+        "ignoreEmptyPorts": False,
+        "encoding": "ascii",
+        "enableShutdownActionCommand": False,
         # command specific flags
         "triggerOkForM29": True,
     },
@@ -250,6 +236,7 @@ default_settings = {
         "stream": None,
         "streamRatio": "16:9",
         "streamTimeout": 5,
+        "streamWebrtcIceServers": ["stun:stun.l.google.com:19302"],
         "snapshot": None,
         "snapshotTimeout": 5,
         "snapshotSslValidation": True,
@@ -261,7 +248,8 @@ default_settings = {
         "flipH": False,
         "flipV": False,
         "rotate90": False,
-        "ffmpegCommandline": '{ffmpeg} -r {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b:v {bitrate} -f {containerformat} -y {filters} "{output}"',
+        "ffmpegCommandline": '{ffmpeg} -framerate {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b:v {bitrate} -f {containerformat} -y {filters} "{output}"',
+        "ffmpegThumbnailCommandline": '{ffmpeg} -sseof -1 -i "{input}" -update 1 -q:v 0.7 "{output}"',
         "timelapse": {
             "type": "off",
             "options": {},
@@ -285,6 +273,7 @@ default_settings = {
         "keyboardControl": True,
         "pollWatched": False,
         "modelSizeDetection": True,
+        "rememberFileFolder": False,
         "printStartConfirmation": False,
         "printCancelConfirmation": True,
         "uploadOverwriteConfirmation": True,
@@ -317,7 +306,7 @@ default_settings = {
         "sendAutomaticallyAfter": 1,
     },
     "printerProfiles": {"default": None},
-    "printerParameters": {"pauseTriggers": [], "defaultExtrusionLength": 5},
+    "printerParameters": {"pauseTriggers": []},
     "appearance": {
         "name": "",
         "color": "default",
@@ -428,7 +417,7 @@ default_settings = {
         "remoteUserHeader": "REMOTE_USER",
         "addRemoteUsers": False,
     },
-    "slicing": {"enabled": True, "defaultSlicer": None, "defaultProfiles": None},
+    "slicing": {"enabled": True, "defaultSlicer": None, "defaultProfiles": {}},
     "events": {"enabled": True, "subscriptions": []},
     "api": {"key": None, "allowCrossOrigin": False, "apps": {}},
     "terminalFilters": [
@@ -450,7 +439,7 @@ default_settings = {
             "regex": r"Recv: (echo:\s*)?busy:\s*processing",
         },
     ],
-    "plugins": {"_disabled": [], "_forcedCompatible": []},
+    "plugins": {"_disabled": [], "_forcedCompatible": [], "_sortingOrder": {}},
     "scripts": {
         "gcode": {
             "afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0",
@@ -542,105 +531,272 @@ class DuplicateFolderPaths(InvalidSettings):
         )
 
 
-class HierarchicalChainMap(ChainMap):
-    def deep_dict(self, root=None):
-        if root is None:
-            root = self
+_CHAINMAP_SEP = "\x1f"
+
+
+class HierarchicalChainMap:
+    """
+    Stores a bunch of nested dictionaries in chain map, allowing queries of nested values
+    work on lower directories. For example:
+
+    Example:
+        >>> example_dict = {"a": "a", "b": {"c": "c"}}
+        >>> hcm = HierarchicalChainMap({"b": {"d": "d"}}, example_dict)
+        >>> cm = ChainMap({"b": {"d": "d"}}, example_dict)
+        >>> cm["b"]["d"]
+        'd'
+        >>> cm["b"]["c"]
+        Traceback (most recent call last):
+            ...
+        KeyError: 'c'
+        >>> hcm.get_by_path(["b", "d"])
+        'd'
+        >>> hcm.get_by_path(["b", "c"])
+        'c'
+    """
+
+    @staticmethod
+    def _flatten(d: dict, parent_key: str = "") -> dict:
+        """Flattens a hierarchical dictionary."""
+
+        if d is None:
+            return {}
+
+        items = []
+        for k, v in d.items():
+            new_key = parent_key + _CHAINMAP_SEP + str(k) if parent_key else str(k)
+            if v and isinstance(v, dict):
+                items.extend(HierarchicalChainMap._flatten(v, new_key).items())
+            else:
+                items.append((new_key, v))
+        return dict(items)
+
+    @staticmethod
+    def _unflatten(d: dict, prefix: str = "") -> dict:
+        """Unflattens a flattened dictionary."""
+
+        if d is None:
+            return {}
 
         result = {}
-        for key, value in root.items():
-            if isinstance(value, dict):
-                result[key] = self.deep_dict(root=self.__class__._get_next(key, root))
-            else:
-                result[key] = value
+        for key, value in d.items():
+            if not key.startswith(prefix):
+                continue
+            subkeys = key[len(prefix) :].split(_CHAINMAP_SEP)
+            current = result
+
+            path = []
+            for subkey in subkeys[:-1]:
+                # we only need that for logging in case of data weirdness below
+                path.append(subkey)
+
+                # make sure the subkey is in the current dict, and that it is a dict
+                if subkey not in current:
+                    current[subkey] = {}
+                elif not isinstance(current[subkey], dict):
+                    logging.getLogger(__name__).warning(
+                        f"There is a non-dict value on the path to {key} at {path!r}, ignoring."
+                    )
+                    current[subkey] = {}
+
+                # go down a level
+                current = current[subkey]
+
+            current[subkeys[-1]] = value
+
         return result
+
+    @staticmethod
+    def _path_to_key(path):
+        """
+        :type path: List[str]
+        """
+        return _CHAINMAP_SEP.join(path)
+
+    @staticmethod
+    def from_layers(*layers):
+        result = HierarchicalChainMap()
+        result._chainmap.maps = layers
+        return result
+
+    def __init__(self, *maps):
+        self._chainmap = ChainMap(*map(self._flatten, maps))
+
+    def deep_dict(self):
+        return self._unflatten(self._chainmap)
 
     def has_path(self, path, only_local=False, only_defaults=False):
         if only_defaults:
-            current = self.parents
+            current = self._chainmap.parents
         elif only_local:
-            current = self.__class__(self.maps[0])
+            current = self._chainmap.maps[0]
         else:
-            current = self
+            current = self._chainmap
 
-        try:
-            for key in path[:-1]:
-                value = current[key]
-                if isinstance(value, dict):
-                    current = self.__class__._get_next(
-                        key, current, only_local=only_local
-                    )
-                else:
-                    return False
-            return path[-1] in current
-        except KeyError:
-            return False
+        key = self._path_to_key(path)
+        prefix = key + _CHAINMAP_SEP
+        return key in current or any(map(lambda x: x.startswith(prefix), current.keys()))
 
     def get_by_path(self, path, only_local=False, only_defaults=False, merged=False):
         if only_defaults:
-            current = self.parents
+            current = self._chainmap.parents
         elif only_local:
-            current = self.__class__(self.maps[0])
+            current = self._chainmap.maps[0]
         else:
-            current = self
+            current = self._chainmap
 
-        for key in path[:-1]:
-            value = current[key]
-            if isinstance(value, dict):
-                current = self.__class__._get_next(key, current, only_local=only_local)
-            else:
-                raise KeyError(key)
+        key = self._path_to_key(path)
+        prefix = key + _CHAINMAP_SEP
 
-        if merged:
-            current = current.deep_dict()
-        return current[path[-1]]
+        if key in current and not any(k.startswith(prefix) for k in current.keys()):
+            # found it, return
+            return current[key]
+
+        # if we arrived here we might be trying to grab a dict, look for children
+
+        # TODO 2.0.0 remove this & make 'merged' the default
+        if not merged and hasattr(current, "maps"):
+            # we do something a bit odd here: if merged is not true, we don't include the
+            # full contents of the key. Instead, we only include the contents of the key
+            # on the first level where we find the value.
+            for layer in current.maps:
+                if any(k.startswith(prefix) for k in layer):
+                    current = layer
+                    break
+
+        result = self._unflatten(
+            {k: v for k, v in current.items() if k.startswith(prefix)}, prefix=prefix
+        )
+        if not result:
+            raise KeyError("Could not find entry for " + str(path))
+        return result
 
     def set_by_path(self, path, value):
-        current = self
+        current = self._chainmap.maps[0]  # config only
+        key = self._path_to_key(path)
 
-        for key in path[:-1]:
-            if key not in current.maps[0]:
-                current.maps[0][key] = {}
-            if not isinstance(current[key], dict):
-                raise KeyError(key)
-            current = self.__class__._hierarchy_for_key(key, current)
+        # delete any subkeys
+        self._del_prefix(current, key)
 
-        current[path[-1]] = value
+        if isinstance(value, dict):
+            current.update(self._flatten(value, key))
+        else:
+            # make sure to clear anything below the path (e.g. switching from dict
+            # to something else, for whatever reason)
+            self._clean_upward_path(current, path)
+            current[key] = value
 
     def del_by_path(self, path):
         if not path:
             raise ValueError("Invalid path")
 
-        current = self
+        current = self._chainmap.maps[0]  # config only
+        delete_key = self._path_to_key(path)
+        deleted = False
 
-        for key in path[:-1]:
-            if not isinstance(current[key], dict):
-                raise KeyError(key)
-            current = self.__class__._hierarchy_for_key(key, current)
+        # delete any subkeys
+        deleted = self._del_prefix(current, delete_key)
 
-        del current[path[-1]]
+        # delete the key itself if it's there
+        try:
+            del current[delete_key]
+            deleted = True
+        except KeyError:
+            pass
 
-    @classmethod
-    def _hierarchy_for_key(cls, key, chain):
-        wrapped_mappings = list()
-        for mapping in chain.maps:
-            if key in mapping and mapping[key] is not None:
-                wrapped_mappings.append(mapping[key])
-            else:
-                wrapped_mappings.append({})
-        return HierarchicalChainMap(*wrapped_mappings)
+        if not deleted:
+            raise KeyError("Could not find entry for " + str(path))
 
-    @classmethod
-    def _get_next(cls, key, node, only_local=False):
-        if isinstance(node, dict):
-            return node[key]
-        elif only_local and key not in node.maps[0]:
-            raise KeyError(key)
+        # clean anything that's now empty and above our path
+        self._clean_upward_path(current, path)
+
+    def _del_prefix(self, current, key):
+        prefix = key + _CHAINMAP_SEP
+
+        to_delete = [k for k in current if k.startswith(prefix)]
+        for k in to_delete:
+            del current[k]
+
+        return len(to_delete) > 0
+
+    def _clean_upward_path(self, current, path):
+        working_path = path
+        while len(working_path):
+            working_path = working_path[:-1]
+            if not working_path:
+                break
+
+            key = self._path_to_key(working_path)
+            prefix = key + _CHAINMAP_SEP
+            if any(map(lambda k: k.startswith(prefix), current)):
+                # there's at least one subkey here, we're done
+                break
+
+            # delete the key itself if it's there
+            try:
+                del current[key]
+            except KeyError:
+                # key itself wasn't in there
+                pass
+
+    def with_config_defaults(self, config=None, defaults=None):
+        """
+        Builds a new map with the following layers: provided config + any intermediary
+        parents + provided defaults + regular defaults
+
+        :param config:
+        :param defaults:
+        :return:
+        """
+        if config is None and defaults is None:
+            return self
+
+        if config is not None:
+            config = self._flatten(config)
         else:
-            return cls._hierarchy_for_key(key, node)
+            config = self._chainmap.maps[0]
+
+        if defaults is not None:
+            defaults = [self._flatten(defaults)]
+        else:
+            defaults = []
+
+        layers = [config] + self._middle_layers() + defaults + [self._chainmap.maps[-1]]
+        return HierarchicalChainMap.from_layers(*layers)
+
+    @property
+    def top_map(self):
+        """This is the layer that is written to"""
+        return self._unflatten(self._chainmap.maps[0])
+
+    @top_map.setter
+    def top_map(self, value):
+        self._chainmap.maps[0] = self._flatten(value)
+
+    @property
+    def bottom_map(self):
+        """The very bottom layer is the default layer"""
+        return self._unflatten(self._chainmap.maps[-1])
+
+    def insert_map(self, pos, d):
+        self._chainmap.maps.insert(pos, self._flatten(d))
+
+    def delete_map(self, pos):
+        del self._chainmap.maps[pos]
+
+    @property
+    def all_layers(self):
+        """A list of all layers in this map. read-only"""
+        return self._chainmap.maps
+
+    def _middle_layers(self):
+        if len(self._chainmap.maps) > 2:
+            return self._chainmap.maps[1:-1]
+        else:
+            return []
 
 
-class Settings(object):
+class Settings:
     """
     The :class:`Settings` class allows managing all of OctoPrint's settings. It takes care of initializing the settings
     directory, loading the configuration from ``config.yaml``, persisting changes to disk etc and provides access
@@ -707,7 +863,6 @@ class Settings(object):
         self._map = HierarchicalChainMap({}, default_settings)
         self.load_overlays(overlays)
 
-        self._config = None
         self._dirty = False
         self._dirty_time = 0
         self._last_config_hash = None
@@ -825,7 +980,7 @@ class Settings(object):
                                 lambda x: key + "/" + x, self._get_templates(scripts[key])
                             )
                         )
-                    elif isinstance(scripts[key], basestring):
+                    elif isinstance(scripts[key], str):
                         templates.append(key)
                 return templates
 
@@ -900,9 +1055,7 @@ class Settings(object):
             return None
         except Exception:
             self._logger.exception(
-                "Exception while trying to resolve template {template_name}".format(
-                    **locals()
-                )
+                f"Exception while trying to resolve template {template_name}"
             )
             return None
 
@@ -956,9 +1109,7 @@ class Settings(object):
 
     @property
     def effective_yaml(self):
-        import yaml
-
-        return yaml.safe_dump(self.effective)
+        return yaml.dump(self.effective)
 
     @property
     def effective_hash(self):
@@ -974,9 +1125,7 @@ class Settings(object):
 
     @property
     def config_yaml(self):
-        import yaml
-
-        return yaml.safe_dump(self._config)
+        return yaml.dump(self.config)
 
     @property
     def config_hash(self):
@@ -991,23 +1140,41 @@ class Settings(object):
         return self._last_config_hash
 
     @property
-    def _config(self):
-        return self._map.maps[0]
+    def config(self):
+        """
+        A view of the local config as stored in config.yaml
 
-    @_config.setter
-    def _config(self, value):
-        self._map.maps[0] = value
+        Does not support modifications, they will be thrown away silently. If you need to
+        modify anything in the settings, utilize the provided set and remove methods.
+        """
+        return self._map.top_map
 
     @property
-    def _overlay_maps(self):
-        if len(self._map.maps) > 2:
-            return self._map.maps[1:-1]
+    @deprecated(
+        "Settings._config has been deprecated and is a read-only view. Please use Settings.config or the set & remove methods instead.",
+        since="1.8.0",
+    )
+    def _config(self):
+        return self.config
+
+    @_config.setter
+    @deprecated(
+        "Setting of Settings._config has been deprecated. Please use the set & remove methods instead and get in touch if you have a usecase they don't cover.",
+        since="1.8.0",
+    )
+    def _config(self, value):
+        self._map.top_map = value
+
+    @property
+    def _overlay_layers(self):
+        if len(self._map.all_layers) > 2:
+            return self._map.all_layers[1:-1]
         else:
             return []
 
     @property
     def _default_map(self):
-        return self._map.maps[-1]
+        return self._map.bottom_map
 
     @property
     def last_modified(self):
@@ -1025,13 +1192,16 @@ class Settings(object):
     # ~~ load and save
 
     def load(self, migrate=False):
-        if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
-            with io.open(self._configfile, "rt", encoding="utf-8", errors="replace") as f:
-                try:
-                    self._config = yaml.safe_load(f)
-                    self._mtime = self.last_modified
+        config = None
+        mtime = None
 
-                except yaml.YAMLError as e:
+        if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
+            with open(self._configfile, encoding="utf-8", errors="replace") as f:
+                try:
+                    config = yaml.load_from_file(file=f)
+                    mtime = self.last_modified
+
+                except YAMLError as e:
                     details = str(e)
 
                     if hasattr(e, "problem_mark"):
@@ -1049,8 +1219,11 @@ class Settings(object):
                     )
 
         # changed from else to handle cases where the file exists, but is empty / 0 bytes
-        if not self._config or not isinstance(self._config, dict):
-            self._config = {}
+        if not config or not isinstance(config, dict):
+            config = {}
+
+        self._map.top_map = config
+        self._mtime = mtime
 
         if migrate:
             self._migrate_config()
@@ -1066,17 +1239,15 @@ class Settings(object):
                 try:
                     overlay_config = self.load_overlay(path, migrate=migrate)
                     self.add_overlay(overlay_config)
-                    self._logger.info("Added config overlay from {}".format(path))
+                    self._logger.info(f"Added config overlay from {path}")
                 except Exception:
-                    self._logger.exception(
-                        "Could not add config overlay from {}".format(path)
-                    )
+                    self._logger.exception(f"Could not add config overlay from {path}")
 
             if os.path.isfile(overlay):
                 process(overlay)
 
             elif os.path.isdir(overlay):
-                for entry in scandir(overlay):
+                for entry in os.scandir(overlay):
                     name = entry.name
                     path = entry.path
 
@@ -1095,10 +1266,9 @@ class Settings(object):
                 self._logger.exception("Error loading overlay from callable")
                 return
 
-        if isinstance(overlay, basestring):
+        if isinstance(overlay, str):
             if os.path.exists(overlay) and os.path.isfile(overlay):
-                with io.open(overlay, "rt", encoding="utf-8", errors="replace") as f:
-                    config = yaml.safe_load(f)
+                config = yaml.load_from_file(path=overlay)
         elif isinstance(overlay, dict):
             config = overlay
         else:
@@ -1108,7 +1278,7 @@ class Settings(object):
 
         if not isinstance(config, dict):
             raise ValueError(
-                "Configuration data must be a dict but is a {}".format(config.__class__)
+                f"Configuration data must be a dict but is a {config.__class__}"
             )
 
         if migrate:
@@ -1119,7 +1289,7 @@ class Settings(object):
         assert isinstance(overlay, dict)
 
         if key is None:
-            overlay_yaml = yaml.safe_dump(overlay)
+            overlay_yaml = yaml.dump(overlay)
             import hashlib
 
             hash = hashlib.md5()
@@ -1128,27 +1298,26 @@ class Settings(object):
 
         overlay[self.OVERLAY_KEY] = key
         if at_end:
-            pos = len(self._map.maps) - 1
-            self._map.maps.insert(pos, overlay)
+            self._map.insert_map(-1, overlay)
         else:
-            self._map.maps.insert(1, overlay)
+            self._map.insert_map(1, overlay)
 
         return key
 
     def remove_overlay(self, key):
         index = -1
-        for i, overlay in enumerate(self._overlay_maps):
+        for i, overlay in enumerate(self._overlay_layers):
             if key == overlay.get(self.OVERLAY_KEY):
                 index = i
 
         if index > -1:
-            del self._map.maps[index + 1]
+            self._map.delete_map(index + 1)
             return True
         return False
 
     def _migrate_config(self, config=None, persist=False):
         if config is None:
-            config = self._config
+            config = self._map.top_map
             persist = True
 
         dirty = False
@@ -1170,6 +1339,9 @@ class Settings(object):
             dirty = migrate(config) or dirty
 
         if dirty and persist:
+            self._map.top_map = (
+                config  # we need to write it back here or the changes will be lost
+            )
             self.save(force=True)
 
     def _migrate_gcode_scripts(self, config):
@@ -1630,7 +1802,7 @@ class Settings(object):
                 config["serial"]["blockedCommands"] = sorted(blockedCommands)
             else:
                 config["serial"]["blockedCommands"] = sorted(
-                    [v for v in blockedCommands if v not in ("M0", "M1")]
+                    v for v in blockedCommands if v not in ("M0", "M1")
                 )
             del config["serial"]["blockM0M1"]
             return True
@@ -1688,13 +1860,7 @@ class Settings(object):
                 permissions=0o600,
                 max_permissions=0o666,
             ) as configFile:
-                yaml.safe_dump(
-                    self._config,
-                    configFile,
-                    default_flow_style=False,
-                    indent=2,
-                    allow_unicode=True,
-                )
+                yaml.save_to_file(self._map.top_map, file=configFile)
                 self._dirty = False
         except Exception:
             self._logger.exception("Error while saving config.yaml!")
@@ -1737,18 +1903,7 @@ class Settings(object):
         if not path:
             raise NoSuchSettingsPath()
 
-        if config is not None or defaults is not None:
-            if config is None:
-                config = self._config
-
-            if defaults is None:
-                defaults = dict(self._map.parents)
-
-            # mappings: provided config + any intermediary parents + provided defaults + regular defaults
-            mappings = [config] + self._overlay_maps + [defaults, self._default_map]
-            chain = HierarchicalChainMap(*mappings)
-        else:
-            chain = self._map
+        chain = self._map.with_config_defaults(config=config, defaults=defaults)
 
         if preprocessors is None:
             preprocessors = self._get_preprocessors
@@ -1775,7 +1930,7 @@ class Settings(object):
         for key in keys:
             try:
                 value = chain.get_by_path(
-                    parent_path + [key], only_local=not incl_defaults
+                    parent_path + [key], only_local=not incl_defaults, merged=merged
                 )
             except KeyError:
                 raise NoSuchSettingsPath()
@@ -1790,19 +1945,13 @@ class Settings(object):
                 except KeyError:
                     raise NoSuchSettingsPath()
 
-            if preprocessors is not None:
-                try:
-                    preprocessor = self._get_by_path(path, preprocessors)
-                except Exception:
-                    pass
-
-                if callable(preprocessor):
-                    value = preprocessor(value)
+            if callable(preprocessor):
+                value = preprocessor(value)
 
             if do_copy:
                 if isinstance(value, KeysView):
                     value = list(value)
-                value = copy.deepcopy(value)
+                value = fast_deepcopy(value)
 
             if asdict:
                 results[key] = value
@@ -1903,7 +2052,7 @@ class Settings(object):
             return value
         if isinstance(value, (int, float)):
             return value != 0
-        if isinstance(value, basestring):
+        if isinstance(value, str):
             return value.lower() in valid_boolean_trues
         return value is not None
 
@@ -1950,10 +2099,7 @@ class Settings(object):
                 folder = default_folder
 
                 try:
-                    del self._config["folder"][type]
-                    if not len(self._config["folder"]):
-                        del self._config["folder"]
-                    self._mark_dirty()
+                    self.remove(["folder", type])
                     self.save()
                 except KeyError:
                     pass
@@ -1989,9 +2135,7 @@ class Settings(object):
                 script = template.render(**context)
             except Exception:
                 self._logger.exception(
-                    "Exception while trying to render script {script_type}:{name}".format(
-                        **locals()
-                    )
+                    f"Exception while trying to render script {script_type}:{name}"
                 )
                 return None
 
@@ -2005,16 +2149,7 @@ class Settings(object):
                 raise NoSuchSettingsPath()
             return
 
-        if config is not None or defaults is not None:
-            if config is None:
-                config = self._config
-
-            if defaults is None:
-                defaults = dict(self._map.parents)
-
-            chain = HierarchicalChainMap(config, defaults)
-        else:
-            chain = self._map
+        chain = self._map.with_config_defaults(config=config, defaults=defaults)
 
         try:
             chain.del_by_path(path)
@@ -2036,7 +2171,7 @@ class Settings(object):
         preprocessors=None,
         error_on_path=False,
         *args,
-        **kwargs
+        **kwargs,
     ):
         if not path:
             if error_on_path:
@@ -2046,16 +2181,7 @@ class Settings(object):
         if self._mtime is not None and self.last_modified != self._mtime:
             self.load()
 
-        if config is not None or defaults is not None:
-            if config is None:
-                config = self._config
-
-            if defaults is None:
-                defaults = dict(self._map.parents)
-
-            chain = HierarchicalChainMap(config, defaults)
-        else:
-            chain = self._map
+        chain = self._map.with_config_defaults(config=config, defaults=defaults)
 
         if preprocessors is None:
             preprocessors = self._set_preprocessors
@@ -2097,11 +2223,14 @@ class Settings(object):
             or (not in_local and in_defaults and default_value != value)
             or (in_local and current != value)
         ):
-            if value is None and in_local:
-                chain.del_by_path(path)
-            else:
-                chain.set_by_path(path, value)
+            chain.set_by_path(path, value)
             self._mark_dirty()
+
+        # we've changed the interface to no longer mutate the passed in config, so we
+        # must manually do that here
+        if config is not None:
+            config.clear()
+            config.update(chain.top_map)
 
     def setInt(self, path, value, **kwargs):
         if value is None:
@@ -2154,7 +2283,7 @@ class Settings(object):
     def setBoolean(self, path, value, **kwargs):
         if value is None or isinstance(value, bool):
             self.set(path, value, **kwargs)
-        elif isinstance(value, basestring) and value.lower() in valid_boolean_trues:
+        elif isinstance(value, str) and value.lower() in valid_boolean_trues:
             self.set(path, True, **kwargs)
         else:
             self.set(path, False, **kwargs)
@@ -2165,23 +2294,12 @@ class Settings(object):
 
         currentPath = self.getBaseFolder(type)
         defaultPath = self._get_default_folder(type)
-        if (
-            (path is None or path == defaultPath)
-            and "folder" in self._config
-            and type in self._config["folder"]
-        ):
-            del self._config["folder"][type]
-            if not self._config["folder"]:
-                del self._config["folder"]
-            self._mark_dirty()
+        if path is None or path == defaultPath:
+            self.remove(["folder", type])
         elif (path != currentPath and path != defaultPath) or force:
             if validate:
                 _validate_folder(path, check_writable=True, deep_check_writable=True)
-
-            if "folder" not in self._config:
-                self._config["folder"] = {}
-            self._config["folder"][type] = path
-            self._mark_dirty()
+            self.set(["folder", type], path, force=force)
 
     def saveScript(self, script_type, name, script):
         script_folder = self.getBaseFolder("scripts")
@@ -2189,9 +2307,7 @@ class Settings(object):
         if not filename.startswith(os.path.realpath(script_folder)):
             # oops, jail break, that shouldn't happen
             raise ValueError(
-                "Invalid script path to save to: {filename} (from {script_type}:{name})".format(
-                    **locals()
-                )
+                f"Invalid script path to save to: {filename} (from {script_type}:{name})"
             )
 
         path, _ = os.path.split(filename)
@@ -2229,15 +2345,15 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
     if not os.path.exists(folder):
         if os.path.islink(folder):
             # broken symlink, see #2644
-            raise IOError("Folder at {} appears to be a broken symlink".format(folder))
+            raise OSError(f"Folder at {folder} appears to be a broken symlink")
 
         elif create:
             # non existing, but we are allowed to create it
             try:
                 os.makedirs(folder)
             except Exception:
-                logger.exception("Could not create {}".format(folder))
-                raise IOError(
+                logger.exception(f"Could not create {folder}")
+                raise OSError(
                     "Folder for type {} at {} does not exist and creation failed".format(
                         type, folder
                     )
@@ -2245,11 +2361,11 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
 
         else:
             # not extisting, not allowed to create it
-            raise IOError("No such folder: {}".format(folder))
+            raise OSError(f"No such folder: {folder}")
 
     elif os.path.isfile(folder):
         # hardening against misconfiguration, see #1953
-        raise IOError("Expected a folder at {} but found a file instead".format(folder))
+        raise OSError(f"Expected a folder at {folder} but found a file instead")
 
     elif check_writable:
         # make sure we can also write into the folder
@@ -2257,16 +2373,16 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
             folder
         )
         if not os.access(folder, os.W_OK):
-            raise IOError(error)
+            raise OSError(error)
 
         elif deep_check_writable:
             # try to write a file to the folder - on network shares that might be the only reliable way
             # to determine whether things are *actually* writable
             testfile = os.path.join(folder, ".testballoon.txt")
             try:
-                with io.open(testfile, "wt", encoding="utf-8") as f:
+                with open(testfile, "wt", encoding="utf-8") as f:
                     f.write("test")
                 os.remove(testfile)
             except Exception:
-                logger.exception("Could not write test file to {}".format(testfile))
-                raise IOError(error)
+                logger.exception(f"Could not write test file to {testfile}")
+                raise OSError(error)

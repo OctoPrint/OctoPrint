@@ -1,13 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import os
 
-import yaml
 from flask import abort, jsonify, request, url_for
 from flask_babel import gettext
 from werkzeug.exceptions import BadRequest
@@ -19,12 +14,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access, redirect_to_tornado
 from octoprint.settings import settings
-from octoprint.util import is_hidden_path
-
-try:
-    from os import scandir
-except ImportError:
-    from scandir import scandir
+from octoprint.util import is_hidden_path, yaml
 
 
 class LoggingPlugin(
@@ -146,7 +136,7 @@ class LoggingPlugin(
     def _getLogFiles(self):
         files = []
         basedir = settings().getBaseFolder("logs", check_writable=False)
-        for entry in scandir(basedir):
+        for entry in os.scandir(basedir):
             if is_hidden_path(entry.path) or not entry.name.endswith(".log"):
                 continue
 
@@ -188,10 +178,7 @@ class LoggingPlugin(
 
         config_from_file = {}
         if os.path.exists(logging_file) and os.path.isfile(logging_file):
-            import yaml
-
-            with io.open(logging_file, "rt", encoding="utf-8") as f:
-                config_from_file = yaml.safe_load(f)
+            config_from_file = yaml.load_from_file(path=logging_file)
         return config_from_file
 
     def _get_logging_levels(self):
@@ -241,15 +228,13 @@ class LoggingPlugin(
         with octoprint.util.atomic_write(
             self._get_logging_file(), mode="wt", max_permissions=0o666
         ) as f:
-            yaml.safe_dump(
-                config, f, default_flow_style=False, indent=2, allow_unicode=True
-            )
+            yaml.save_to_file(config, file=f, pretty=True)
 
         # set runtime logging levels now
         for logger, level in new_levels.items():
             level = logging.getLevelName(level)
 
-            self._logger.info("Setting logger {} level to {}".format(logger, level))
+            self._logger.info(f"Setting logger {logger} level to {level}")
             self._logger.manager.loggerDict[logger].setLevel(level)
 
     def _is_managed_logger(self, logger):
@@ -288,7 +273,7 @@ __plugin_disabling_discouraged__ = gettext(
     "the web interface."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = LoggingPlugin()
 __plugin_hooks__ = {
     "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions

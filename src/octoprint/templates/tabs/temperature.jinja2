@@ -1,5 +1,17 @@
 {% if enableTemperatureGraph %}
     <div class="row-fluid">
+        <div class="dropdown pull-right">
+            <div class="btn-group">
+                <button class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="javascript:void(0)">
+                    <i class="fas fa-wrench"></i>
+                </button>
+                <ul class="dropdown-menu pull-right">
+                    <li><a href="javascript:void(0)" data-bind="click: toggleStateMarks"><i class="fas fa-check" data-bind="style: {visibility: showStateMarks() ? 'visible' : 'hidden'}"></i> {{ _('Show state marks') }}</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="row-fluid">
         <div id="temperature-graph" style="width: 100%"></div>
     </div>
 {% endif %}

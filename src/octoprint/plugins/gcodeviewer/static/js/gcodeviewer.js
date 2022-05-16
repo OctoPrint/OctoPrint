@@ -9,14 +9,23 @@ $(function () {
         self.sizeThresholdStr = undefined;
         self.mobileSizeThresholdStr = undefined;
 
+        self.ui_progress_busy = ko.observable(false);
         self.ui_progress_percentage = ko.observable();
         self.ui_progress_type = ko.observable();
         self.ui_progress_text = ko.pureComputed(function () {
             var text = "";
             switch (self.ui_progress_type()) {
-                case "loading": {
+                case "downloading": {
+                    text = gettext("Downloading...");
+                    break;
+                }
+                case "splitting": {
+                    text = gettext("Splitting lines...");
+                    break;
+                }
+                case "parsing": {
                     text =
-                        gettext("Loading...") +
+                        gettext("Parsing...") +
                         " (" +
                         self.ui_progress_percentage().toFixed(0) +
                         "%)";
@@ -31,7 +40,7 @@ $(function () {
                     break;
                 }
                 case "done": {
-                    text = gettext("Analyzed");
+                    text = gettext("Ready!");
                     break;
                 }
             }
@@ -72,7 +81,6 @@ $(function () {
         self.renderer_showPrevious = ko.observable(false);
         self.renderer_syncProgress = ko.observable(true);
 
-        self.reader_sortLayers = ko.observable(true);
         self.reader_hideEmptyLayers = ko.observable(true);
         self.reader_ignoreOutsideBed = ko.observable(true);
 
@@ -118,7 +126,6 @@ $(function () {
             }
 
             var reader = {
-                sortLayers: self.reader_sortLayers(),
                 purgeEmptyLayers: self.reader_hideEmptyLayers(),
                 ignoreOutsideBed: self.reader_ignoreOutsideBed()
             };
@@ -161,7 +168,6 @@ $(function () {
         self.renderer_showCurrent.subscribe(self.rendererOptionUpdated);
         self.renderer_showPrevious.subscribe(self.rendererOptionUpdated);
 
-        self.reader_sortLayers.subscribe(self.readerOptionUpdated);
         self.reader_hideEmptyLayers.subscribe(self.readerOptionUpdated);
         self.reader_ignoreOutsideBed.subscribe(self.readerOptionUpdated);
 
@@ -371,6 +377,7 @@ $(function () {
 
             self._configureLayerSlider(layerSliderElement);
             self._configureLayerCommandSlider(commandSliderElement);
+            self._configureContainerElement(containerElement);
 
             self.settings.firstRequest.done(function () {
                 var initResult = GCODE.ui.init({
@@ -426,7 +433,6 @@ $(function () {
             self.renderer_showPrevious(false);
             self.renderer_syncProgress(true);
 
-            self.reader_sortLayers(true);
             self.reader_hideEmptyLayers(true);
             self.reader_ignoreOutsideBed(true);
         };
@@ -475,11 +481,24 @@ $(function () {
                 .on("slide", self.changeCommandRange);
         };
 
+        self._configureContainerElement = function (containerElement) {
+            // Prevent the default browser action for the mouse wheel down event. The desired behavor is to have the
+            // gocde canvas pan on mouse down + drag, which happens. But if we don't prevent the default action, the browser
+            // will also scroll the entire page.
+            containerElement.mousedown(function (event) {
+                // Middle mouse button
+                if (event.which === 2) {
+                    event.preventDefault();
+                }
+            });
+        };
+
         self.loadFile = function (path, date) {
             self.enableReload(false);
             self.needsLoad = false;
             if (self.status === "idle" && self.errorCount < 3) {
                 self.status = "request";
+                self._onProgress("downloading");
                 OctoPrint.files
                     .download("local", path)
                     .done(function (response, rstatus) {
@@ -519,6 +538,7 @@ $(function () {
                 }
             };
             GCODE.renderer.clear();
+            self._onProgress("splitting");
             GCODE.gCodeReader.loadFile(par);
 
             if (self.layerSlider !== undefined) {
@@ -594,7 +614,7 @@ $(function () {
                 }
                 self.errorCount = 0;
             } else {
-                self.clear();
+                if (self.status === "idle") self.clear();
                 if (
                     data.job.file.path &&
                     data.job.file.origin !== "sdcard" &&
@@ -642,7 +662,8 @@ $(function () {
 
         self._onProgress = function (type, percentage) {
             self.ui_progress_type(type);
-            self.ui_progress_percentage(percentage);
+            self.ui_progress_percentage(percentage === undefined ? 100 : percentage);
+            self.ui_progress_busy(percentage === undefined);
         };
 
         self._onModelLoaded = function (model) {
@@ -913,8 +934,7 @@ $(function () {
                 showFullsize: self.renderer_showFullSize(),
                 showBoundingBox: self.renderer_showBoundingBox(),
                 showLayerBoundingBox: self.renderer_showLayerBoundingBox(),
-                hideEmptyLayers: self.reader_hideEmptyLayers(),
-                sortLayers: self.reader_sortLayers()
+                hideEmptyLayers: self.reader_hideEmptyLayers()
             });
         };
         self._fromLocalStorage = function () {
@@ -951,8 +971,6 @@ $(function () {
                 self.renderer_showLayerBoundingBox(current["showLayerBoundingBox"]);
             if (current["hideEmptyLayers"] !== undefined)
                 self.reader_hideEmptyLayers(current["hideEmptyLayers"]);
-            if (current["sortLayers"] !== undefined)
-                self.reader_sortLayers(current["sortLayers"]);
         };
     }
 

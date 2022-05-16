@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -10,7 +7,6 @@ import re
 import threading
 
 import psutil
-import sarge
 from flask import abort, jsonify, request, url_for
 from flask_babel import gettext
 
@@ -21,7 +17,8 @@ from octoprint.server import NO_CONTENT
 from octoprint.server.api import api
 from octoprint.server.util.flask import get_remote_address, no_firstrun_access
 from octoprint.settings import settings as s
-from octoprint.util.platform import CLOSE_FDS
+from octoprint.systemcommands import system_command_manager
+from octoprint.util.commandline import CommandlineCaller
 
 
 @api.route("/system/usage", methods=["GET"])
@@ -47,6 +44,7 @@ def getSystemInfo():
     systeminfo = get_systeminfo(
         environmentDetector,
         connectivityChecker,
+        s(),
         {
             "browser.user_agent": request.headers.get("User-Agent"),
             "octoprint.safe_mode": safe_mode is not None,
@@ -150,14 +148,14 @@ def executeSystemCommand(source, command):
             )
         )
     else:
-        logger.info("Performing command for {}:{}".format(source, command))
+        logger.info(f"Performing command for {source}:{command}")
 
     try:
         if "before" in command_spec and callable(command_spec["before"]):
             command_spec["before"]()
     except Exception as e:
         if not do_ignore:
-            error = 'Command "before" for {}:{} failed: {}'.format(source, command, e)
+            error = f'Command "before" for {source}:{command} failed: {e}'
             logger.warning(error)
             abort(500, description=error)
 
@@ -167,22 +165,14 @@ def executeSystemCommand(source, command):
             # we run this with shell=True since we have to trust whatever
             # our admin configured as command and since we want to allow
             # shell-alike handling here...
-            p = sarge.run(
-                command_spec["command"],
-                close_fds=CLOSE_FDS,
-                stdout=sarge.Capture(),
-                stderr=sarge.Capture(),
-                shell=True,
+            return_code, stdout_lines, stderr_lines = CommandlineCaller().call(
+                command_spec["command"], shell=True
             )
 
-            if not do_ignore and p.returncode != 0:
-                returncode = p.returncode
-                stdout_text = p.stdout.text
-                stderr_text = p.stderr.text
-
-                error = "Command for {}:{} failed with return code {}:\nSTDOUT: {}\nSTDERR: {}".format(
-                    source, command, returncode, stdout_text, stderr_text
-                )
+            if not do_ignore and return_code != 0:
+                stdout = "\n".join(stdout_lines)
+                stderr = "\n".join(stderr_lines)
+                error = f"Command for {source}:{command} failed with return code {return_code}:\n\nSTDOUT:\n{stdout}\n\nSTDERR:\n{stderr}"
                 logger.warning(prefix_multilines(error, prefix="! "))
                 if not do_async:
                     raise CommandFailed(error)
@@ -200,7 +190,7 @@ def executeSystemCommand(source, command):
 
     except Exception as e:
         if not do_ignore:
-            error = "Command for {}:{} failed: {}".format(source, command, e)
+            error = f"Command for {source}:{command} failed: {e}"
             logger.warning(error)
             abort(500, error)
 
@@ -243,28 +233,28 @@ def _get_core_command_specs():
 
     commands = collections.OrderedDict(
         shutdown={
-            "command": s().get(["server", "commands", "systemShutdownCommand"]),
+            "command": system_command_manager().get_system_shutdown_command(),
             "name": gettext("Shutdown system"),
             "confirm": gettext(
                 "<strong>You are about to shutdown the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."
             ),
         },
         reboot={
-            "command": s().get(["server", "commands", "systemRestartCommand"]),
+            "command": system_command_manager().get_system_restart_command(),
             "name": gettext("Reboot system"),
             "confirm": gettext(
                 "<strong>You are about to reboot the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."
             ),
         },
         restart={
-            "command": s().get(["server", "commands", "serverRestartCommand"]),
+            "command": system_command_manager().get_server_restart_command(),
             "name": gettext("Restart OctoPrint"),
             "confirm": gettext(
                 "<strong>You are about to restart the OctoPrint server.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."
             ),
         },
         restart_safe={
-            "command": s().get(["server", "commands", "serverRestartCommand"]),
+            "command": system_command_manager().get_server_restart_command(),
             "name": gettext("Restart OctoPrint in safe mode"),
             "confirm": gettext(
                 "<strong>You are about to restart the OctoPrint server in safe mode.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."
@@ -327,7 +317,7 @@ def _get_plugin_command_specs(plugin=None):
                 specs[action] = copied
         except Exception:
             logging.getLogger(__name__).exception(
-                "Error while fetching additional actions from plugin {}".format(name),
+                f"Error while fetching additional actions from plugin {name}",
                 extra={"plugin": name},
             )
     return specs
@@ -351,7 +341,7 @@ def _get_custom_command_specs():
         action = spec["action"]
         if action == "divider":
             dividers += 1
-            action = "divider_{}".format(dividers)
+            action = f"divider_{dividers}"
         specs[action] = copied
     return specs
 

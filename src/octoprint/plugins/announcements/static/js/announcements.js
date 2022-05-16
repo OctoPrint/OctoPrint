@@ -243,7 +243,8 @@ $(function () {
             )
                 return;
 
-            var displayLimit = self.settings.settings.plugins.announcements.display_limit();
+            var displayLimit =
+                self.settings.settings.plugins.announcements.display_limit();
             var maxLength = self.settings.settings.plugins.announcements.summary_limit();
 
             var cutAfterNewline = function (text) {
@@ -399,17 +400,20 @@ $(function () {
             self.settings.show("settings_plugin_announcements");
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            if (
-                !self.loginState.hasPermission(
-                    self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ
-                )
-            ) {
-                self.hideAnnouncements();
-            } else {
-                self.retrieveData();
-            }
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    if (
+                        !self.loginState.hasPermission(
+                            self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ
+                        )
+                    ) {
+                        self.hideAnnouncements();
+                    } else {
+                        self.retrieveData();
+                    }
+                };
 
         self.onStartup = function () {
             self.announcementDialog = $("#plugin_announcements_dialog");

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -11,14 +8,14 @@ import sys
 import threading
 
 import psutil
-import yaml
 
 from octoprint.plugin import EnvironmentDetectionPlugin
+from octoprint.util import yaml
 from octoprint.util.platform import get_os
 from octoprint.util.version import get_python_version_string
 
 
-class EnvironmentDetector(object):
+class EnvironmentDetector:
     def __init__(self, plugin_manager):
         self._plugin_manager = plugin_manager
 
@@ -73,7 +70,7 @@ class EnvironmentDetector(object):
         return {
             "id": get_os(),
             "platform": sys.platform,
-            "bits": 64 if sys.maxsize > 2 ** 32 else 32,
+            "bits": 64 if sys.maxsize > 2**32 else 32,
         }
 
     def _detect_python(self):
@@ -168,11 +165,9 @@ class EnvironmentDetector(object):
                 self.run_detection()
             environment = copy.deepcopy(self._cache)
 
-        dumped_environment = yaml.safe_dump(
-            environment, default_flow_style=False, indent=2, allow_unicode=True
-        ).strip()
+        dumped_environment = yaml.dump(environment, pretty=True).strip()
         environment_lines = "\n".join(
-            map(lambda l: "|  {}".format(l), dumped_environment.split("\n"))
+            map(lambda l: f"|  {l}", dumped_environment.split("\n"))
         )
         return "Detected environment is Python {} under {} ({}). Details:\n{}".format(
             environment["python"]["version"],

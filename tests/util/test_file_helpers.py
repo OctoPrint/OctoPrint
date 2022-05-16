@@ -1,17 +1,12 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-import io
 import os
 import sys
 import unittest
+from unittest import mock
 
 import ddt
-import mock
-from past.builtins import unicode
 
 import octoprint.util
 
@@ -81,7 +76,7 @@ class BomAwareOpenTest(unittest.TestCase):
     def test_bom_aware_open_parameters_text_mode(self):
         """Tests that the parameters are propagated properly in text mode."""
 
-        with mock.patch("io.open", wraps=io.open) as mock_open:
+        with mock.patch("builtins.open", wraps=open) as mock_open:
             with octoprint.util.bom_aware_open(
                 self.filename_utf8_without_bom,
                 mode="rt",
@@ -113,6 +108,47 @@ class BomAwareOpenTest(unittest.TestCase):
         )
 
 
+class GetBomTest(unittest.TestCase):
+    """
+    Tests for :func:`octoprint.util.get_bom`.
+    """
+
+    def setUp(self):
+        self.filename_utf8_with_bom = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)), "_files", "utf8_with_bom.txt"
+        )
+        self.filename_utf8_without_bom = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)), "_files", "utf8_without_bom.txt"
+        )
+
+    def test_get_bom_no_bom(self):
+        """Tests that no BOM is returned if no BOM is present."""
+
+        # test
+        bom = octoprint.util.get_bom(self.filename_utf8_without_bom, "utf-8-sig")
+
+        # assert
+        self.assertIsNone(bom)
+
+    def test_get_bom_utf8_bom(self):
+        """Tests that a UTF8 BOM is returned if present."""
+
+        # test
+        bom = octoprint.util.get_bom(self.filename_utf8_with_bom, "utf-8-sig")
+
+        # assert
+        self.assertEqual(bom, b"\xef\xbb\xbf")
+
+    def test_get_bom_wrong_encoding(self):
+        """Tests that an UTF8 BOM is only returned if proper encoding was set."""
+
+        # test
+        bom = octoprint.util.get_bom(self.filename_utf8_with_bom, "utf-16-le")
+
+        # assert
+        self.assertIsNone(bom)
+
+
 class TestAtomicWrite(unittest.TestCase):
     """
     Tests for :func:`octoprint.util.atomic_write`.
@@ -122,26 +158,20 @@ class TestAtomicWrite(unittest.TestCase):
         pass
 
     @mock.patch("shutil.move")
-    @mock.patch("tempfile.mkstemp")
-    @mock.patch("io.open")
-    @mock.patch("os.close")
+    @mock.patch("tempfile.NamedTemporaryFile")
     @mock.patch("os.chmod")
     @mock.patch("os.path.exists")
-    def test_atomic_write(
-        self, mock_exists, mock_chmod, mock_close, mock_open, mock_mkstemp, mock_move
-    ):
+    def test_atomic_write(self, mock_exists, mock_chmod, mock_ntf, mock_move):
         """Tests the regular basic "good" case."""
 
         # setup
-        fd = 0
         path = "tempfile.tmp"
         umask = 0o026
 
         mock_file = mock.MagicMock()
         mock_file.name = path
 
-        mock_mkstemp.return_value = fd, path
-        mock_open.return_value = mock_file
+        mock_ntf.return_value = mock_file
         mock_exists.return_value = False
 
         # test
@@ -150,27 +180,22 @@ class TestAtomicWrite(unittest.TestCase):
                 f.write("test")
 
         # assert
-        mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
-        mock_close.assert_called_once_with(fd)
-        mock_open.assert_called_once_with(path, mode="w+b")
+        mock_ntf.assert_called_once_with(
+            mode="w+b", prefix="tmp", suffix="", dir="", delete=False
+        )
         mock_file.write.assert_called_once_with("test")
         mock_file.close.assert_called_once_with()
         mock_chmod.assert_called_once_with(path, 0o644 & ~umask)
         mock_move.assert_called_once_with(path, "somefile.yaml")
 
     @mock.patch("shutil.move")
-    @mock.patch("tempfile.mkstemp")
-    @mock.patch("io.open")
-    @mock.patch("os.close")
-    @mock.patch("os.chmod")
+    @mock.patch("tempfile.NamedTemporaryFile")
+    @mock.patch("os.chmod")  # not used but needs to be mocked
     @mock.patch("os.path.exists")
-    def test_atomic_write_path_aware(
-        self, mock_exists, mock_chmod, mock_close, mock_open, mock_mkstemp, mock_move
-    ):
+    def test_atomic_write_path_aware(self, mock_exists, mock_chmod, mock_ntf, mock_move):
         """Tests whether the tempoary file is to created in the same directory as the target file."""
 
         # setup
-        fd = 0
         tmpdirpath = "/testpath/with/subdirectories"
         path = os.path.join(tmpdirpath, "tempfile.tmp")
         targetpath = os.path.join(tmpdirpath, "somefile.yaml")
@@ -178,8 +203,7 @@ class TestAtomicWrite(unittest.TestCase):
         mock_file = mock.MagicMock()
         mock_file.name = path
 
-        mock_mkstemp.return_value = fd, path
-        mock_open.return_value = mock_file
+        mock_ntf.return_value = mock_file
         mock_exists.return_value = False
 
         # test
@@ -187,23 +211,25 @@ class TestAtomicWrite(unittest.TestCase):
             f.write("test")
 
         # assert
-        mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir=tmpdirpath)
-        mock_open.assert_called_once_with(path, mode="w+b")
+        mock_ntf.assert_called_once_with(
+            mode="w+b",
+            prefix="tmp",
+            suffix="",
+            dir=tmpdirpath,
+            delete=False,
+        )
         mock_move.assert_called_once_with(path, targetpath)
 
     @mock.patch("shutil.move")
-    @mock.patch("tempfile.mkstemp")
-    @mock.patch("io.open")
-    @mock.patch("os.close")
-    @mock.patch("os.chmod")
+    @mock.patch("tempfile.NamedTemporaryFile")
+    @mock.patch("os.chmod")  # not used but needs to be mocked
     @mock.patch("os.path.exists")
     def test_atomic_write_rel_path_aware(
-        self, mock_exists, mock_chmod, mock_close, mock_open, mock_mkstemp, mock_move
+        self, mock_exists, mock_chmod, mock_ntf, mock_move
     ):
-        """Tests whether the tempoary file is to created in the same directory as the target file. This time submitting a relative path. """
+        """Tests whether the tempoary file is to created in the same directory as the target file. This time submitting a relative path."""
 
         # setup
-        fd = 0
         tmpdirpath = "../test"
         path = os.path.join(tmpdirpath, "tempfile.tmp")
         targetpath = os.path.join(tmpdirpath, "somefile.yaml")
@@ -211,8 +237,7 @@ class TestAtomicWrite(unittest.TestCase):
         mock_file = mock.MagicMock()
         mock_file.name = path
 
-        mock_mkstemp.return_value = fd, path
-        mock_open.return_value = mock_file
+        mock_ntf.return_value = mock_file
         mock_exists.return_value = False
 
         # test
@@ -220,31 +245,32 @@ class TestAtomicWrite(unittest.TestCase):
             f.write("test")
 
         # assert
-        mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir=tmpdirpath)
-        mock_open.assert_called_once_with(path, mode="w+b")
+        mock_ntf.assert_called_once_with(
+            mode="w+b",
+            prefix="tmp",
+            suffix="",
+            dir=tmpdirpath,
+            delete=False,
+        )
         mock_move.assert_called_once_with(path, targetpath)
 
     @mock.patch("shutil.move")
-    @mock.patch("tempfile.mkstemp")
-    @mock.patch("io.open")
-    @mock.patch("os.close")
+    @mock.patch("tempfile.NamedTemporaryFile")
     @mock.patch("os.chmod")
     @mock.patch("os.path.exists")
     def test_atomic_write_error_on_write(
-        self, mock_exists, mock_chmod, mock_close, mock_open, mock_mkstemp, mock_move
+        self, mock_exists, mock_chmod, mock_ntf, mock_move
     ):
         """Tests the error case where something in the wrapped code fails."""
 
         # setup
-        fd = 0
         path = "tempfile.tmp"
 
         mock_file = mock.MagicMock()
         mock_file.name = path
         mock_file.write.side_effect = RuntimeError()
 
-        mock_mkstemp.return_value = fd, path
-        mock_open.return_value = mock_file
+        mock_ntf.return_value = mock_file
         mock_exists.return_value = False
 
         # test
@@ -256,32 +282,28 @@ class TestAtomicWrite(unittest.TestCase):
             pass
 
         # assert
-        mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
-        mock_close.assert_called_once_with(fd)
-        mock_open.assert_called_once_with(path, mode="w+b")
+        mock_ntf.assert_called_once_with(
+            mode="w+b", prefix="tmp", suffix="", dir="", delete=False
+        )
         mock_file.close.assert_called_once_with()
         self.assertFalse(mock_move.called)
         self.assertFalse(mock_chmod.called)
 
     @mock.patch("shutil.move")
-    @mock.patch("tempfile.mkstemp")
-    @mock.patch("io.open")
-    @mock.patch("os.close")
+    @mock.patch("tempfile.NamedTemporaryFile")
     @mock.patch("os.chmod")
     @mock.patch("os.path.exists")
     def test_atomic_write_error_on_move(
-        self, mock_exists, mock_chmod, mock_close, mock_open, mock_mkstemp, mock_move
+        self, mock_exists, mock_chmod, mock_ntf, mock_move
     ):
         """Tests the error case where the final move fails."""
         # setup
-        fd = 0
         path = "tempfile.tmp"
 
         mock_file = mock.MagicMock()
         mock_file.name = path
 
-        mock_mkstemp.return_value = fd, path
-        mock_open.return_value = mock_file
+        mock_ntf.return_value = mock_file
         mock_move.side_effect = RuntimeError()
         mock_exists.return_value = False
 
@@ -294,34 +316,28 @@ class TestAtomicWrite(unittest.TestCase):
             pass
 
         # assert
-        mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
-        mock_close.assert_called_once_with(fd)
-        mock_open.assert_called_once_with(path, mode="w+b")
+        mock_ntf.assert_called_once_with(
+            mode="w+b", prefix="tmp", suffix="", dir="", delete=False
+        )
         mock_file.close.assert_called_once_with()
         self.assertTrue(mock_move.called)
         self.assertTrue(mock_chmod.called)
 
     @mock.patch("shutil.move")
-    @mock.patch("tempfile.mkstemp")
-    @mock.patch("io.open")
-    @mock.patch("os.close")
+    @mock.patch("tempfile.NamedTemporaryFile")
     @mock.patch("os.chmod")
     @mock.patch("os.path.exists")
-    def test_atomic_write_parameters(
-        self, mock_exists, mock_chmod, mock_close, mock_open, mock_mkstemp, mock_move
-    ):
+    def test_atomic_write_parameters(self, mock_exists, mock_chmod, mock_ntf, mock_move):
         """Tests that the open parameters are propagated properly."""
 
         # setup
-        fd = 0
         path = "tempfile.tmp"
         umask = 0o026
 
         mock_file = mock.MagicMock()
         mock_file.name = path
 
-        mock_mkstemp.return_value = fd, path
-        mock_open.return_value = mock_file
+        mock_ntf.return_value = mock_file
         mock_exists.return_value = False
 
         # test
@@ -332,33 +348,29 @@ class TestAtomicWrite(unittest.TestCase):
                 f.write("test")
 
         # assert
-        mock_mkstemp.assert_called_once_with(prefix="foo", suffix="bar", dir="")
-        mock_close.assert_called_once_with(fd)
-        mock_open.assert_called_once_with(path, mode="w", encoding="utf-8")
+        mock_ntf.assert_called_once_with(
+            mode="w", prefix="foo", suffix="bar", dir="", delete=False, encoding="utf-8"
+        )
         mock_file.close.assert_called_once_with()
         mock_chmod.assert_called_once_with(path, 0o664 & ~umask)
         mock_move.assert_called_once_with(path, "somefile.yaml")
 
     @mock.patch("shutil.move")
-    @mock.patch("tempfile.mkstemp")
-    @mock.patch("io.open")
-    @mock.patch("os.close")
+    @mock.patch("tempfile.NamedTemporaryFile")
     @mock.patch("os.chmod")
     @mock.patch("os.path.exists")
     def test_atomic_write_custom_permissions(
-        self, mock_exists, mock_chmod, mock_close, mock_open, mock_mkstemp, mock_move
+        self, mock_exists, mock_chmod, mock_ntf, mock_move
     ):
         """Tests that custom permissions may be set."""
 
         # setup
-        fd = 0
         path = "tempfile.tmp"
 
         mock_file = mock.MagicMock()
         mock_file.name = path
 
-        mock_mkstemp.return_value = fd, path
-        mock_open.return_value = mock_file
+        mock_ntf.return_value = mock_file
         mock_exists.return_value = False
 
         # test
@@ -368,17 +380,15 @@ class TestAtomicWrite(unittest.TestCase):
             f.write("test")
 
         # assert
-        mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
-        mock_close.assert_called_once_with(fd)
-        mock_open.assert_called_once_with(path, mode="wt", encoding="utf-8")
+        mock_ntf.assert_called_once_with(
+            mode="wt", prefix="tmp", suffix="", dir="", delete=False, encoding="utf-8"
+        )
         mock_file.close.assert_called_once_with()
         mock_chmod.assert_called_once_with(path, 0o755)
         mock_move.assert_called_once_with(path, "somefile.yaml")
 
     @mock.patch("shutil.move")
-    @mock.patch("tempfile.mkstemp")
-    @mock.patch("io.open")
-    @mock.patch("os.close")
+    @mock.patch("tempfile.NamedTemporaryFile")
     @mock.patch("os.chmod")
     @mock.patch("os.path.exists")
     @mock.patch("os.stat")
@@ -387,22 +397,18 @@ class TestAtomicWrite(unittest.TestCase):
         mock_stat,
         mock_exists,
         mock_chmod,
-        mock_close,
-        mock_open,
-        mock_mkstemp,
+        mock_ntf,
         mock_move,
     ):
         """Tests that the permissions of an existing file are combined with the requested permissions."""
 
         # setup
-        fd = 0
         path = "tempfile.tmp"
 
         mock_file = mock.MagicMock()
         mock_file.name = path
 
-        mock_mkstemp.return_value = fd, path
-        mock_open.return_value = mock_file
+        mock_ntf.return_value = mock_file
         mock_exists.return_value = True
 
         mock_stat_result = mock.MagicMock()
@@ -416,17 +422,15 @@ class TestAtomicWrite(unittest.TestCase):
             f.write("test")
 
         # assert
-        mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
-        mock_close.assert_called_once_with(fd)
-        mock_open.assert_called_once_with(path, mode="wt", encoding="utf-8")
+        mock_ntf.assert_called_once_with(
+            mode="wt", prefix="tmp", suffix="", dir="", delete=False, encoding="utf-8"
+        )
         mock_file.close.assert_called_once_with()
         mock_chmod.assert_called_once_with(path, 0o777)  # 0o755 | 0o666
         mock_move.assert_called_once_with(path, "somefile.yaml")
 
     @mock.patch("shutil.move")
-    @mock.patch("tempfile.mkstemp")
-    @mock.patch("io.open")
-    @mock.patch("os.close")
+    @mock.patch("tempfile.NamedTemporaryFile")
     @mock.patch("os.chmod")
     @mock.patch("os.path.exists")
     @mock.patch("os.stat")
@@ -435,22 +439,18 @@ class TestAtomicWrite(unittest.TestCase):
         mock_stat,
         mock_exists,
         mock_chmod,
-        mock_close,
-        mock_open,
-        mock_mkstemp,
+        mock_ntf,
         mock_move,
     ):
         """Tests that max_permissions limit the combined file permissions."""
 
         # setup
-        fd = 0
         path = "tempfile.tmp"
 
         mock_file = mock.MagicMock()
         mock_file.name = path
 
-        mock_mkstemp.return_value = fd, path
-        mock_open.return_value = mock_file
+        mock_ntf.return_value = mock_file
         mock_exists.return_value = True
 
         mock_stat_result = mock.MagicMock()
@@ -464,13 +464,13 @@ class TestAtomicWrite(unittest.TestCase):
             f.write("test")
 
         # assert
-        mock_mkstemp.assert_called_once_with(prefix="tmp", suffix="", dir="")
-        mock_close.assert_called_once_with(fd)
-        mock_open.assert_called_once_with(path, mode="wt", encoding="utf-8")
+        mock_ntf.assert_called_once_with(
+            mode="wt", prefix="tmp", suffix="", dir="", delete=False, encoding="utf-8"
+        )
         mock_file.close.assert_called_once_with()
         mock_chmod.assert_called_once_with(
             path, 0o644
-        )  # (0o600 | 0o755) & 0o666 = 0o755 & 0o666
+        )  # (0o600 | 0o755) & 0o666 = 0o755 & 0o666 = 0o644
         mock_move.assert_called_once_with(path, "somefile.yaml")
 
 
@@ -548,7 +548,7 @@ class IsHiddenPathTest(unittest.TestCase):
             "path_always_hidden",
         ):
             path = getattr(self, attr)
-            with io.open(path, "wt+", encoding="utf-8") as f:
+            with open(path, "wt+", encoding="utf-8") as f:
                 f.write(attr)
 
         if sys.platform == "win32":
@@ -556,9 +556,7 @@ class IsHiddenPathTest(unittest.TestCase):
             # only hidden on windows
             import ctypes
 
-            ctypes.windll.kernel32.SetFileAttributesW(
-                unicode(self.path_hidden_on_windows), 2
-            )
+            ctypes.windll.kernel32.SetFileAttributesW(str(self.path_hidden_on_windows), 2)
 
     def tearDown(self):
         import shutil
@@ -575,45 +573,3 @@ class IsHiddenPathTest(unittest.TestCase):
     def test_is_hidden_path(self, path_id, expected):
         path = getattr(self, path_id) if path_id is not None else None
         self.assertEqual(octoprint.util.is_hidden_path(path), expected)
-
-
-try:
-    from glob import escape  # noqa: F401
-
-except ImportError:
-    # no glob.escape - tests for our ported implementation
-
-    @ddt.ddt
-    class GlobEscapeTest(unittest.TestCase):
-        """
-        Ported from Python 3.4
-
-        See https://github.com/python/cpython/commit/fd32fffa5ada8b8be8a65bd51b001d989f99a3d3
-        """
-
-        @ddt.data(
-            ("abc", "abc"),
-            ("[", "[[]"),
-            ("?", "[?]"),
-            ("*", "[*]"),
-            ("[[_/*?*/_]]", "[[][[]_/[*][?][*]/_]]"),
-            ("/[[_/*?*/_]]/", "/[[][[]_/[*][?][*]/_]]/"),
-        )
-        @ddt.unpack
-        def test_glob_escape(self, text, expected):
-            actual = octoprint.util.glob_escape(text)
-            self.assertEqual(actual, expected)
-
-        @ddt.data(
-            ("?:?", "?:[?]"),
-            ("*:*", "*:[*]"),
-            (r"\\?\c:\?", r"\\?\c:\[?]"),
-            (r"\\*\*\*", r"\\*\*\[*]"),
-            ("//?/c:/?", "//?/c:/[?]"),
-            ("//*/*/*", "//*/*/[*]"),
-        )
-        @ddt.unpack
-        @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
-        def test_glob_escape_windows(self, text, expected):
-            actual = octoprint.util.glob_escape(text)
-            self.assertEqual(actual, expected)

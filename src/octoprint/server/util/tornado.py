@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -10,6 +7,7 @@ import mimetypes
 import os
 import re
 import sys
+from urllib.parse import urlparse
 
 import tornado
 import tornado.escape
@@ -22,16 +20,9 @@ import tornado.iostream
 import tornado.tcpserver
 import tornado.util
 import tornado.web
-from past.builtins import basestring, unicode
+from zipstream.ng import ZIP_DEFLATED, ZipStream
 
 import octoprint.util
-
-try:
-    from urllib.parse import urlparse  # py3
-except ImportError:
-    from urlparse import urlparse  # py2
-
-from . import PY3
 
 
 def fix_json_encode():
@@ -52,6 +43,18 @@ def fix_json_encode():
     import tornado.escape
 
     tornado.escape.json_encode = fixed_json_encode
+
+
+def enable_per_message_deflate_extension():
+    """
+    This configures tornado.websocket.WebSocketHandler.get_compression_options to support the permessage-deflate extension
+    to the websocket protocol, minimizing data bandwidth if clients support the extension as well
+    """
+
+    def get_compression_options(self):
+        return {"compression_level": 1, "mem_level": 1}
+
+    tornado.websocket.WebSocketHandler.get_compression_options = get_compression_options
 
 
 def fix_websocket_check_origin():
@@ -634,23 +637,16 @@ def _extended_header_value(value):
 
     if value.lower().startswith("iso-8859-1'") or value.lower().startswith("utf-8'"):
         # RFC 5987 section 3.2
-        try:
-            from urllib import unquote
-        except ImportError:
-            from urllib.parse import unquote
+        from urllib.parse import unquote
+
         encoding, _, value = value.split("'", 2)
-        if PY3:
-            return unquote(value, encoding=encoding)
-        else:
-            return unquote(octoprint.util.to_bytes(value, encoding="iso-8859-1")).decode(
-                encoding
-            )
+        return unquote(value, encoding=encoding)
     else:
         # no encoding provided, strip potentially present quotes and call it a day
         return octoprint.util.to_unicode(_strip_value_quotes(value), encoding="utf-8")
 
 
-class WsgiInputContainer(object):
+class WsgiInputContainer:
     """
     A WSGI container for use with Tornado that allows supplying the request body to be used for ``wsgi.input`` in the
     generated WSGI environment upon call.
@@ -762,7 +758,7 @@ class WsgiInputContainer(object):
 
         # determine the request_body to supply as wsgi.input
         if body is not None:
-            if isinstance(body, (bytes, str, unicode)):
+            if isinstance(body, (bytes, str)):
                 request_body = io.BytesIO(tornado.escape.utf8(body))
             else:
                 request_body = body
@@ -1203,7 +1199,7 @@ class LargeResponseHandler(
             etag = str(self.get_content_version(self.absolute_path))
 
         if not etag.endswith('"'):
-            etag = '"{}"'.format(etag)
+            etag = f'"{etag}"'
         return etag
 
     # noinspection PyAttributeOutsideInit
@@ -1347,7 +1343,7 @@ class UrlProxyHandler(
         if not extension:
             return None
 
-        return "{}{}".format(self._basename, extension)
+        return f"{self._basename}{extension}"
 
 
 class StaticDataHandler(
@@ -1390,7 +1386,7 @@ class DeprecatedEndpointHandler(CorsSupportMixin, tornado.web.RequestHandler):
     def _handle_method(self, *args, **kwargs):
         to_url = self._url.format(*args)
         self._logger.info(
-            "Redirecting deprecated endpoint {} to {}".format(self.request.path, to_url)
+            f"Redirecting deprecated endpoint {self.request.path} to {to_url}"
         )
         self.redirect(to_url, permanent=True)
 
@@ -1432,11 +1428,10 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
     def get_attachment_name(self):
         return self._attachment_name
 
-    # noinspection PyCompatibility
     def normalize_files(self, files):
         result = []
         for f in files:
-            if isinstance(f, basestring):
+            if isinstance(f, str):
                 result.append({"path": f})
             elif isinstance(f, dict) and ("path" in f or "iter" in f or "content" in f):
                 result.append(f)
@@ -1448,35 +1443,30 @@ class StaticZipBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
         if self._as_attachment:
             self.set_header(
                 "Content-Disposition",
-                'attachment; filename="{}"'.format(self.get_attachment_name()),
+                f'attachment; filename="{self.get_attachment_name()}"',
             )
 
-        import zipstream
-
-        compress_type = zipstream.ZIP_STORED
+        z = ZipStream(sized=True)
         if self._compress:
             try:
-                import zlib  # noqa: F401
-
-                compress_type = zipstream.ZIP_DEFLATED
-            except ImportError:
-                # no zlib, no compression
+                z = ZipStream(compress_type=ZIP_DEFLATED)
+            except RuntimeError:
+                # no zlib support
                 pass
 
-        z = zipstream.ZipFile()
         for f in self.normalize_files(files):
-            # noinspection PyCompatibility
             name = f.get("name")
             path = f.get("path")
-            iter = f.get("iter")
-            content = f.get("content")
+            data = f.get("iter") or f.get("content")
 
             if path:
-                z.write(path, arcname=name, compress_type=compress_type)
-            elif iter and name:
-                z.write_iter(name, iter, compress_type=compress_type)
-            elif content and name:
-                z.writestr(name, content, compress_type=compress_type)
+                z.add_path(path, arcname=name)
+            elif data and name:
+                z.add(data, arcname=name)
+
+        if z.sized:
+            self.set_header("Content-Length", len(z))
+        self.set_header("Last-Modified", z.last_modified)
 
         for chunk in z:
             try:
@@ -1580,6 +1570,7 @@ class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
         systeminfo = get_systeminfo(
             environmentDetector,
             connectivityChecker,
+            settings(),
             {
                 "browser.user_agent": self.request.headers.get("User-Agent"),
                 "octoprint.safe_mode": safe_mode is not None,
@@ -1597,8 +1588,11 @@ class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
         self.set_header("Content-Type", "application/zip")
         self.set_header(
             "Content-Disposition",
-            'attachment; filename="{}"'.format(get_systeminfo_bundle_name()),
+            f'attachment; filename="{get_systeminfo_bundle_name()}"',
         )
+        if z.sized:
+            self.set_header("Content-Length", len(z))
+        self.set_header("Last-Modified", z.last_modified)
 
         for chunk in z:
             try:
@@ -1629,7 +1623,7 @@ class GlobalHeaderTransform(tornado.web.OutputTransform):
             removed_headers = []
 
         return type(
-            octoprint.util.to_native_str(name),
+            name,
             (GlobalHeaderTransform,),
             {
                 "HEADERS": headers,

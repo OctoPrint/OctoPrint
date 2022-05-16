@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -10,7 +7,6 @@ import re
 
 from flask import abort, jsonify, request
 from flask_login import current_user
-from past.builtins import basestring
 
 import octoprint.plugin
 import octoprint.util
@@ -118,17 +114,13 @@ def getSettings():
             "closeModalsWithClick": s.getBoolean(["appearance", "closeModalsWithClick"]),
             "showInternalFilename": s.getBoolean(["appearance", "showInternalFilename"]),
         },
-        "printer": {
-            "defaultExtrusionLength": s.getInt(
-                ["printerParameters", "defaultExtrusionLength"]
-            )
-        },
         "webcam": {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
             "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
             "streamUrl": s.get(["webcam", "stream"]),
             "streamRatio": s.get(["webcam", "streamRatio"]),
             "streamTimeout": s.getInt(["webcam", "streamTimeout"]),
+            "streamWebrtcIceServers": s.get(["webcam", "streamWebrtcIceServers"]),
             "snapshotUrl": s.get(["webcam", "snapshot"]),
             "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
             "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
@@ -149,6 +141,7 @@ def getSettings():
             "keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
             "pollWatched": s.getBoolean(["feature", "pollWatched"]),
             "modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"]),
+            "rememberFileFolder": s.getBoolean(["feature", "rememberFileFolder"]),
             "printStartConfirmation": s.getBoolean(["feature", "printStartConfirmation"]),
             "printCancelConfirmation": s.getBoolean(
                 ["feature", "printCancelConfirmation"]
@@ -208,6 +201,7 @@ def getSettings():
             "blockedCommands": s.get(["serial", "blockedCommands"]),
             "ignoredCommands": s.get(["serial", "ignoredCommands"]),
             "pausingCommands": s.get(["serial", "pausingCommands"]),
+            "sdCancelCommand": s.get(["serial", "sdCancelCommand"]),
             "emergencyCommands": s.get(["serial", "emergencyCommands"]),
             "helloCommand": s.get(["serial", "helloCommand"]),
             "ignoreErrorsFromFirmware": s.getBoolean(
@@ -222,6 +216,10 @@ def getSettings():
             "waitForStart": s.getBoolean(["serial", "waitForStartOnConnect"]),
             "alwaysSendChecksum": s.getBoolean(["serial", "alwaysSendChecksum"]),
             "neverSendChecksum": s.getBoolean(["serial", "neverSendChecksum"]),
+            "sendChecksumWithUnknownCommands": s.getBoolean(
+                ["serial", "sendChecksumWithUnknownCommands"]
+            ),
+            "unknownCommandsNeedAck": s.getBoolean(["serial", "unknownCommandsNeedAck"]),
             "sdRelativePath": s.getBoolean(["serial", "sdRelativePath"]),
             "sdAlwaysAvailable": s.getBoolean(["serial", "sdAlwaysAvailable"]),
             "sdLowerCase": s.getBoolean(["serial", "sdLowerCase"]),
@@ -262,6 +260,11 @@ def getSettings():
             "capExtendedM20": s.getBoolean(["serial", "capabilities", "extended_m20"]),
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
+            "ignoreEmptyPorts": s.getBoolean(["serial", "ignoreEmptyPorts"]),
+            "encoding": s.get(["serial", "encoding"]),
+            "enableShutdownActionCommand": s.get(
+                ["serial", "enableShutdownActionCommand"]
+            ),
         },
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
@@ -469,9 +472,9 @@ def _saveSettings(data):
             for folder in FOLDER_TYPES:
                 future[folder] = s.getBaseFolder(folder)
                 if folder in folders:
-                    future[folder] = data["folder"][folder]
+                    future[folder] = folders[folder]
 
-            for folder in data["folder"]:
+            for folder in folders:
                 if folder not in FOLDER_TYPES:
                     continue
                 for other_folder in FOLDER_TYPES:
@@ -487,6 +490,7 @@ def _saveSettings(data):
 
                 s.setBaseFolder(folder, future[folder])
         except Exception:
+            logger.exception("Something went wrong while saving a folder path")
             abort(400, description="At least one of the configured folders is invalid")
 
     if "api" in data:
@@ -549,6 +553,13 @@ def _saveSettings(data):
             s.set(["webcam", "streamRatio"], data["webcam"]["streamRatio"])
         if "streamTimeout" in data["webcam"]:
             s.setInt(["webcam", "streamTimeout"], data["webcam"]["streamTimeout"])
+        if "streamWebrtcIceServers" in data["webcam"] and isinstance(
+            data["webcam"]["streamWebrtcIceServers"], (list, tuple)
+        ):
+            s.set(
+                ["webcam", "streamWebrtcIceServers"],
+                data["webcam"]["streamWebrtcIceServers"],
+            )
         if "snapshotUrl" in data["webcam"]:
             s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
         if "snapshotTimeout" in data["webcam"]:
@@ -628,6 +639,11 @@ def _saveSettings(data):
         if "modelSizeDetection" in data["feature"]:
             s.setBoolean(
                 ["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"]
+            )
+        if "rememberFileFolder" in data["feature"]:
+            s.setBoolean(
+                ["feature", "rememberFileFolder"],
+                data["feature"]["rememberFileFolder"],
             )
         if "printStartConfirmation" in data["feature"]:
             s.setBoolean(
@@ -797,6 +813,8 @@ def _saveSettings(data):
             data["serial"]["pausingCommands"], (list, tuple)
         ):
             s.set(["serial", "pausingCommands"], data["serial"]["pausingCommands"])
+        if "sdCancelCommand" in data["serial"]:
+            s.set(["serial", "sdCancelCommand"], data["serial"]["sdCancelCommand"])
         if "emergencyCommands" in data["serial"] and isinstance(
             data["serial"]["emergencyCommands"], (list, tuple)
         ):
@@ -948,6 +966,19 @@ def _saveSettings(data):
             )
         if "resendRatioStart" in data["serial"]:
             s.setInt(["serial", "resendRatioStart"], data["serial"]["resendRatioStart"])
+        if "ignoreEmptyPorts" in data["serial"]:
+            s.setBoolean(
+                ["serial", "ignoreEmptyPorts"], data["serial"]["ignoreEmptyPorts"]
+            )
+
+        if "encoding" in data["serial"]:
+            s.set(["serial", "encoding"], data["serial"]["encoding"])
+
+        if "enableShutdownActionCommand" in data["serial"]:
+            s.setBoolean(
+                ["serial", "enableShutdownActionCommand"],
+                data["serial"]["enableShutdownActionCommand"],
+            )
 
         oldLog = s.getBoolean(["serial", "log"])
         if "log" in data["serial"]:
@@ -1006,7 +1037,7 @@ def _saveSettings(data):
             for name, script in data["scripts"]["gcode"].items():
                 if name == "snippets":
                     continue
-                if not isinstance(script, basestring):
+                if not isinstance(script, str):
                     continue
                 s.saveScript(
                     "gcode", name, script.replace("\r\n", "\n").replace("\r", "\n")
@@ -1114,7 +1145,7 @@ def _saveSettings(data):
                     plugin.on_settings_save(data["plugins"][plugin_id])
                 except TypeError:
                     logger.warning(
-                        "Could not save settings for plugin {name} ({version}) since it called super(...)".format(
+                        "Could not save settings for plugin {name} ({version}). It may have called super(...)".format(
                             name=plugin._plugin_name, version=plugin._plugin_version
                         )
                     )
@@ -1125,7 +1156,8 @@ def _saveSettings(data):
                         "Please contact the plugin's author and ask to update the plugin to use a direct call like"
                     )
                     logger.warning(
-                        "octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead."
+                        "octoprint.plugin.SettingsPlugin.on_settings_save(self, data) instead.",
+                        exc_info=True,
                     )
                 except Exception:
                     logger.exception(

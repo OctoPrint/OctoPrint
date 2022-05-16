@@ -28,7 +28,6 @@ or as ``postfix`` (after the existing lines).
 .. code-block:: python
    :linenos:
 
-   from past import basestring
    self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
 
    # ...
@@ -45,7 +44,7 @@ or as ``postfix`` (after the existing lines).
                continue
 
            def to_list(data):
-               if isinstance(data, basestring):
+               if isinstance(data, str):
                    data = map(x.strip() for x in data.split("\n"))
 
                if isinstance(data, (list, tuple)):

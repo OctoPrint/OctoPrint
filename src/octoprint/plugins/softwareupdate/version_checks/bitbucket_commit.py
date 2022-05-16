@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -9,6 +6,8 @@ import logging
 
 import requests
 
+from . import ApiCheckError
+
 BRANCH_HEAD_URL = (
     "https://api.bitbucket.org/2.0/repositories/{user}/{repo}/commit/{branch}"
 )
@@ -16,6 +15,26 @@ BRANCH_HEAD_URL = (
 logger = logging.getLogger(
     "octoprint.plugins.softwareupdate.version_checks.bitbucket_commit"
 )
+
+
+class BitbucketApiError(ApiCheckError):
+    API = "Bitbucket API"
+
+
+def check_bitbucket_api_response(logger, r, ok_codes=None):
+    if ok_codes is None:
+        ok_codes = [requests.codes.ok]
+
+    if r.status_code not in ok_codes:
+        try:
+            data = r.json()
+            message = data.get("message", "Unknown error")
+        except Exception:
+            message = "Not a valid JSON response"
+
+        exc = BitbucketApiError(r.status_code, message)
+        logger.error(exc.message)
+        raise exc
 
 
 def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
@@ -27,19 +46,18 @@ def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
         auth_value = base64.b64encode(
             b"{user}:{pw}".format(user=api_user, pw=api_password)
         )
-        headers["authorization"] = "Basic {}".format(auth_value)
+        headers["authorization"] = f"Basic {auth_value}"
 
     try:
         r = requests.get(url, headers=headers, timeout=(3.05, 30))
     except requests.ConnectionError as exc:
         raise NetworkError(cause=exc)
 
-    if not r.status_code == requests.codes.ok:
-        return None
+    check_bitbucket_api_response(logger, r)
 
     reference = r.json()
     if "hash" not in reference:
-        return None
+        raise BitbucketApiError(r.status_code, "No commit hash found in response")
 
     return reference["hash"]
 
@@ -82,19 +100,13 @@ def get_latest(target, check, online=True, credentials=None, *args, **kwargs):
     remote_commit = _get_latest_commit(
         check["user"], check["repo"], branch, api_user, api_password
     )
-    remote_name = (
-        "Commit {commit}".format(commit=remote_commit)
-        if remote_commit is not None
-        else "-"
-    )
+    remote_name = f"Commit {remote_commit}" if remote_commit is not None else "-"
 
     information["remote"] = {"name": remote_name, "value": remote_commit}
     is_current = (
         current is not None and current == remote_commit
     ) or remote_commit is None
 
-    logger.debug(
-        "Target: {}, local: {}, remote: {}".format(target, current, remote_commit)
-    )
+    logger.debug(f"Target: {target}, local: {current}, remote: {remote_commit}")
 
     return information, is_current

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module defines the interface for communicating with a connected printer.
 
@@ -14,7 +13,6 @@ abstracted version of the actual printer communication.
 .. autoclass:: PrinterCallback
    :members:
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -36,7 +34,7 @@ def get_connection_options():
     return PrinterInterface.get_connection_options()
 
 
-class PrinterInterface(object):
+class PrinterInterface:
     """
     The :class:`PrinterInterface` represents the developer interface to the :class:`~octoprint.printer.standard.Printer`
     instance.
@@ -605,7 +603,7 @@ class PrinterInterface(object):
         raise NotImplementedError()
 
 
-class PrinterCallback(object):
+class PrinterCallback:
     def on_printer_add_log(self, data):
         """
         Called when the :class:`PrinterInterface` receives a new communication log entry from the communication layer.

@@ -56,6 +56,9 @@
                 <input type="checkbox" data-bind="checked: debug" />
             </div>
         </div>
+        <p><small>
+            {{ _('Please note that any event handlers you define here will be processed <em>asynchronously</em> to OctoPrint\'s own processing of the event. You cannot stall, block or otherwise influence internal execution with event handlers.') }}
+        </small></p>
     </div>
     <div class="modal-footer">
         <div class="row-fluid">

@@ -1,0 +1,14 @@
+<div class="control-group">
+    <div class="controls">
+        <label class="checkbox">
+            <input type="checkbox" data-bind="checked: config_pipEnableCheck"> {{ _('Enable <code>pip</code> update checks') }} <label class="label label-important">{{ _('Warning') }}</label>
+            <span class="help-block">{% trans %}
+                If you check this, OctoPrint will also notify you of updates of the
+                <code>pip</code> tool used by OctoPrint to manage plugins and updates
+                and allow you to update it through OctoPrint. <strong><code>pip</code> is
+                outside of the control of the OctoPrint maintainers, so enable at your
+                own risk! Things might break!</strong>
+            {% endtrans %}</span>
+        </label>
+    </div>
+</div>

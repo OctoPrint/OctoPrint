@@ -1,5 +1,12 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
+
+### NOTE #################################################################################
+# This file has to stay format compatible to Python 2, or pip under Python 2 will
+# not be able to detect that OctoPrint requires Python 3 but instead fail with a
+# syntax error.
+#
+# So, no f-strings, no walrus operators, no pyupgrade or codemods.
+##########################################################################################
 
 import os
 import sys
@@ -15,98 +22,72 @@ import octoprint_setuptools  # noqa: F401,E402
 # ----------------------------------------------------------------------------------------
 
 # Supported python versions
-# we test against 2.7, 3.6 and 3.7, so that's what we'll mark as supported
-PYTHON_REQUIRES = ">=2.7.9, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
+PYTHON_REQUIRES = ">=3.7, <4"
 
 # Requirements for setup.py
-SETUP_REQUIRES = ["markdown>=3.1,<3.2"]  # newer versions require Python 3
+SETUP_REQUIRES = []
 
 # Requirements for our application
-INSTALL_REQUIRES = [
-    # additional OctoPrint plugins that are maintained on a different release cycle
+bundled_plugins = [
     "OctoPrint-FileCheck>=2021.2.23",
     "OctoPrint-FirmwareCheck>=2021.10.11",
-    "OctoPrint-PiSupport>=2021.10.28",
-    # the following dependencies are non trivial to update since later versions
-    # introduce backwards incompatible changes that might affect plugins, or due to
-    # other observed problems
-    "markupsafe>=1.1,<2.0",  # Jinja dependency, newer versions require Python 3
-    "markdown>=3.1,<3.2",  # newer versions require Python 3
-    "wrapt>=1.12.1,<1.13",  # newer versions fail to build on OctoPi 0.15
-    # anything below this should be checked on releases for new versions
-    "flask>=1.1.4,<2",  # newer versions require Python 3
-    "Jinja2>=2.11.3,<3",  # newer versions require Python 3
-    "Flask-Login>=0.5,<0.6",  # flask-login doesn't use semver & breaks stuff on minor version increases
-    "Flask-Babel>=1.0,<2",  # newer versions require Python 3
-    "Flask-Assets>=2.0,<3",
-    "werkzeug>=1.0.1,<2",  # newer versions require Python 3
-    "itsdangerous>=1.1.0,<2",  # newer versions require Python 3
-    "cachelib>=0.1,<0.2",  # newer versions require Python 3
-    "PyYAML>=5.4.1,<6",
-    "pyserial>=3.4,<4",
-    "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
-    "watchdog==0.10.4",  # newer versions require Python 3
-    "sarge==0.1.6",
-    "netifaces>=0.11,<1",
-    "pylru>=1.2,<2",
-    "pkginfo>=1.7.1,<2",
-    "requests>=2.26.0,<3",
-    "semantic_version>=2.8.5,<3",
-    "psutil>=5.8,<6",
-    "Click>=7.1.2,<8",  # newer versions require Python 3
-    "future>=0.18.2,<1",
-    "websocket-client>=0.59,<1",  # newer versions require Python 3
+    "OctoPrint-PiSupport>=2022.3.28",
+]
+core_deps = [
+    "cachelib>=0.2,<0.3",
+    "Click>=8.0.3,<9",
+    "colorlog>=6,<7",
     "emoji>=1.4.2,<2",
-    "sentry-sdk>=1.3.1,<2",
-    "filetype>=1.0.7,<2",
-    "zipstream-new>=1.1.8,<1.2",
-    # vendor bundled dependencies
-    "blinker>=1.4,<2",  # dependency of flask_principal
-]
-
-# Python 2 specific requirements
-INSTALL_REQUIRES_PYTHON2 = [
-    "feedparser>=5.2.1,<6",  # newer versions require Python 3
-    "tornado==5.1.1",  # newer versions require Python 3
-    "futures>=3.3,<4",
-    "monotonic>=1.6,<2",
-    "scandir>=1.10,<2",
-    "chainmap>=1.0.3,<2",
-    "typing>=3.10.0.0,<4",
-    "enum34>=1.1.10,<1.2",
-    "frozendict==1.2",  # newer versions from different maintainer require Python 3
-    "colorlog<5",  # newer versions require Python 3
-    # vendor bundled dependencies
-    "unidecode<1.3",  # dependency of awesome-slugify, newer versions require Python 3
-    "regex<2022.1.18",  # dependency of awesome-slugify, newer versions require Python 3
-]
-
-# Python 3 specific requirements
-INSTALL_REQUIRES_PYTHON3 = [
     "feedparser>=6.0.8,<7",
-    "tornado>=6,<7",  # tornado < 6 is incompatible with Python 3.10
-    "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
-    "immutabledict>=2.1,<3",
+    "filetype>=1.0.7,<2",
+    "Flask-Assets>=2.0,<3",
+    "Flask-Babel>=2.0,<3",
+    "Flask-Login>=0.5,<0.6",  # flask-login doesn't use semver & breaks stuff on minor version increases
+    "flask>=2,<3",
+    "frozendict>=2.0,<3",
+    "future>=0.18.2,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
+    "markdown>=3.2.2,<4",
+    "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
+    "netifaces>=0.11,<1",
     "pathvalidate>=2.4.1,<3",
-    "colorlog>=5.0.1,<6",
-    # vendor bundled dependencies
-    "unidecode",  # dependency of awesome-slugify, leave w/o range to not cause dependency hell w/ Octolapse deps
+    "pkginfo>=1.7.1,<2",
+    "psutil>=5.8,<6",
+    "pylru>=1.2,<2",
+    "pyserial>=3.4,<4",
+    "PyYAML>=5.4.1,<6",
+    "requests>=2.26.0,<3",
+    "sarge==0.1.6",
+    "semantic_version>=2.8.5,<3",
+    "sentry-sdk>=1.5.7,<2",
+    "tornado>=6.0.4,<7",
+    "watchdog>=1,<2",
+    "websocket-client>=1.2.1,<2",
+    "werkzeug>=2.0,<2.1",  # breaking changes can happen on minor version increases, flask-login 0.5 is incompatible with 2.1
+    "wrapt>=1.13.3,<1.14",
+    "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
+    "zipstream-ng>=1.3.4,<2.0.0",
+]
+vendored_deps = [
+    "blinker>=1.4,<2",  # dependency of flask_principal
     "regex",  # dependency of awesome-slugify
+    "unidecode",  # dependency of awesome-slugify
 ]
 
-# OSX specific requirements
-INSTALL_REQUIRES_OSX = [
-    "appdirs>=1.4.4,<2",
-]
+INSTALL_REQUIRES = bundled_plugins + core_deps + vendored_deps
 
-# Additional requirements for optional install options
+# Additional requirements for optional install options and/or OS-specific dependencies
 EXTRA_REQUIRES = {
+    # Dependencies for OSX
+    ":sys_platform == 'darwin'": [
+        "appdirs>=1.4.4,<2",
+    ],
+    # Dependencies for core development
     "develop": [
         # Testing dependencies
-        "mock>=3.0.5,<4",
-        "pytest==4.6.10",
-        "pytest-doctest-custom>=1.0.0,<2",
         "ddt",
+        "mock>=4,<5",
+        "pytest-doctest-custom>=1.0.0,<2",
+        "pytest>=6.2.5,<7",
         # pre-commit
         "pre-commit",
         # profiler
@@ -114,59 +95,38 @@ EXTRA_REQUIRES = {
     ],
     # Dependencies for developing OctoPrint plugins
     "plugins": ["cookiecutter>=1.7.2,<1.8"],
-    # Dependencies for building the documentation - Python 3 required!
+    # Dependencies for building the documentation
     "docs": [
+        "readthedocs-sphinx-ext",
+        "sphinx_rtd_theme",
         "sphinx>=3,<4",
         "sphinxcontrib-httpdomain",
         "sphinxcontrib-mermaid",
-        "sphinx_rtd_theme",
-        "readthedocs-sphinx-ext",
     ],
 }
 
-# Dependency links for any of the aforementioned dependencies
-DEPENDENCY_LINKS = []
-
-# adapted from https://hynek.me/articles/conditional-python-dependencies/
-if int(setuptools.__version__.split(".", 1)[0]) < 18:
-    # no bdist_wheel support for setuptools < 18 since we build universal wheels and our optional dependencies
-    # would get lost there
-    assert "bdist_wheel" not in sys.argv
-
-    # add optional dependencies for setuptools versions < 18 that don't yet support environment markers
-    if sys.version_info[0] < 3:
-        INSTALL_REQUIRES += INSTALL_REQUIRES_PYTHON2
-    else:
-        INSTALL_REQUIRES += INSTALL_REQUIRES_PYTHON3
-
-    if sys.platform == "darwin":
-        INSTALL_REQUIRES += INSTALL_REQUIRES_OSX
-else:
-    # environment markers supported
-    EXTRA_REQUIRES[":python_version < '3'"] = INSTALL_REQUIRES_PYTHON2
-    EXTRA_REQUIRES[":python_version >= '3'"] = INSTALL_REQUIRES_PYTHON3
-    EXTRA_REQUIRES[":sys_platform == 'darwin'"] = INSTALL_REQUIRES_OSX
-
-# -----------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
 # Anything below here is just command setup and general setup configuration
 
 here = os.path.abspath(os.path.dirname(__file__))
 
 
 def read_file_contents(path):
-    import codecs
+    import io
 
-    with codecs.open(path, encoding="utf-8") as f:
+    with io.open(path, encoding="utf-8") as f:
         return f.read()
 
 
-def md_to_html_build_py_factory(files, baseclass):
-    class md_to_html_build_py(baseclass):
+def copy_files_build_py_factory(files, baseclass):
+    class copy_files_build_py(baseclass):
         files = {}
 
         def run(self):
-            print("RUNNING md_to_html_build_py")
+            print("RUNNING copy_files_build_py")
             if not self.dry_run:
+                import shutil
+
                 for directory, files in self.files.items():
                     target_dir = os.path.join(self.build_lib, directory)
                     self.mkpath(target_dir)
@@ -178,17 +138,15 @@ def md_to_html_build_py_factory(files, baseclass):
                             source, dest = entry[0], os.path.join(target_dir, entry[1])
                         else:
                             source = entry
-                            dest = os.path.join(target_dir, source + ".html")
+                            dest = os.path.join(target_dir, source)
 
-                        print("Rendering markdown from {} to {}".format(source, dest))
+                        print("Copying {} to {}".format(source, dest))
+                        shutil.copy2(source, dest)
 
-                        from markdown import markdownFromFile
-
-                        markdownFromFile(input=source, output=dest, encoding="utf-8")
             baseclass.run(self)
 
-    return type(md_to_html_build_py)(
-        md_to_html_build_py.__name__, (md_to_html_build_py,), {"files": files}
+    return type(copy_files_build_py)(
+        copy_files_build_py.__name__, (copy_files_build_py,), {"files": files}
     )
 
 
@@ -221,7 +179,7 @@ def get_cmdclass():
         )
     )
 
-    cmdclass["build_py"] = md_to_html_build_py_factory(
+    cmdclass["build_py"] = copy_files_build_py_factory(
         {
             "octoprint/templates/_data": [
                 "AUTHORS.md",
@@ -237,7 +195,7 @@ def get_cmdclass():
 
 def params():
     # make sure these are always available, even when run by dependabot
-    global versioneer, get_cmdclass, read_file_contents, here, PYTHON_REQUIRES, SETUP_REQUIRES, INSTALL_REQUIRES, EXTRA_REQUIRES, DEPENDENCY_LINKS
+    global versioneer, get_cmdclass, read_file_contents, here, PYTHON_REQUIRES, SETUP_REQUIRES, INSTALL_REQUIRES, EXTRA_REQUIRES
 
     name = "OctoPrint"
     version = versioneer.get_version()
@@ -251,7 +209,6 @@ def params():
     setup_requires = SETUP_REQUIRES
     install_requires = INSTALL_REQUIRES
     extras_require = EXTRA_REQUIRES
-    dependency_links = DEPENDENCY_LINKS
 
     classifiers = [
         "Development Status :: 5 - Production/Stable",
@@ -268,12 +225,11 @@ def params():
         "Natural Language :: German",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: JavaScript",
         "Topic :: Printing",
@@ -308,8 +264,7 @@ def params():
 
     if os.environ.get("READTHEDOCS", None) == "True":
         # we can't tell read the docs to please perform a pip install -e .[docs], so we help
-        # it a bit here by explicitly adding the development dependencies, which include our
-        # documentation dependencies
+        # it a bit here by explicitly adding the docs dependencies
         install_requires = install_requires + extras_require["docs"]
 
     entry_points = {"console_scripts": ["octoprint = octoprint:main"]}

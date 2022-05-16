@@ -104,9 +104,19 @@
             <h3>{{ _('Installed Plugins') }}</h3>
 
             <div style="margin-bottom: 1em" class="clearfix">
-                <input type="text" class="input-block search-query pull-left" data-bind="value: listingSearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}">
+                <input type="text" class="input-block search-query pull-left" data-bind="value: listingSearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}" spellcheck="false">
 
                 <div class="pull-right">
+                    <div class="btn-group">
+                        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="far fa-square"></i> <span class="caret"></span></button>
+                        <ul class="dropdown-menu">
+                            <li><a href="javascript:void(0)" data-bind="click: selectAllVisiblePlugins">{{ _('Select all visible') }}</a></li>
+                            <li><a href="javascript:void(0)" data-bind="click: clearPluginsSelection">{{ _('Clear selection') }}</a></li>
+                            <li class="divider"></li>
+                            <li><a href="javascript:void(0)" data-bind="click: disableSelectedPlugins, css: {disabled: selectedPlugins().length == 0}"><i class="fa fa-toggle-off"></i> {{ _('Disable selected') }}</a></li>
+                            <li><a href="javascript:void(0)" data-bind="click: enableSelectedPlugins, css: {disabled: selectedPlugins().length == 0}"><i class="fa fa-toggle-on"></i> {{ _('Enable selected') }}</a></li>
+                        </ul>
+                    </div>
                     <div class="btn-group">
                         <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('bundled'); plugins.removeFilter('3rdparty'); }, css: {active: !_.contains(plugins.currentFilters(), 'bundled') && !_.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show both bundled and third-party plugins')|edq }}">All</button>
                         <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('bundled') }, css: {active: _.contains(plugins.currentFilters(), 'bundled')}" title="{{ _('Show only bundled plugins')|edq }}">{{ _('Bundled') }}</button>
@@ -124,12 +134,17 @@
             <table class="table table-striped table-hover table-condensed table-hover">
                 <thead>
                 <tr>
+                    <th class="settings_plugin_plugin_manager_plugins_checkbox">
+                    </th>
                     <th class="settings_plugin_plugin_manager_plugins_name">{{ _('Name') }}</th>
                     <th class="settings_plugin_plugin_manager_plugins_actions">{{ _('Actions') }}</th>
                 </tr>
                 </thead>
                 <tbody data-bind="foreach: plugins.paginatedItems">
                 <tr>
+                    <td class="settings_plugin_plugin_manager_plugins_checkbox">
+                        <input type="checkbox" data-bind="value: key, checked: $root.selectedPlugins, enable: $root.enableBulk($data)" title="{{ _('Bundled and incompatible plugins do not support bulk operations') | edq }}">
+                    </td>
                     <td class="settings_plugin_plugin_manager_plugins_name">
                         <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint')|edq }}" class="fas fa-th-large" data-bind="visible: bundled"></i> <i class="fas fa-lock" title="{{ _('Cannot be uninstalled through OctoPrint')|edq }}" data-bind="visible: !managable"></i> <i class="fas fa-bolt" title="{{ _('Incompatible to OctoPrint or the underlying Python environment')|edq }}" data-bind="visible: incompatible"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect')|edq }}" class="fas fa-sync" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install')|edq }}" class="fas fa-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall')|edq }}" class="fas fa-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode')|edq }}" class="fas fa-medkit" data-bind="visible: safe_mode_victim"></i> <i class="fas fa-exclamation-triangle" title="{{ _('There are notices available regarding this plugin')|edq }}" data-bind="visible: notifications && notifications.length"></i> <i class="fas fa-ban" title="{{ _('This plugin is blacklisted')|edq }}" data-bind="visible: blacklisted"></i></div>
                         <div data-bind="css: {muted: !enabled}">
@@ -151,6 +166,7 @@
                 </tbody>
             </table>
         </div>
+        <small>{{ _('Please note that bundled and incompatible plugins do not support bulk operations.') }}</small>
     </div>
     <div class="tab-pane" id="settings_plugin_pluginmanager_cleanup">
         <div class="pull-right">
@@ -219,7 +235,7 @@
 
             <div style="margin-bottom: 1em" class="clearfix">
                 <form class="form-search" data-bind="submit: performRepositorySearch">
-                    <input type="text" class="input-block search-query pull-left" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}">
+                    <input type="text" class="input-block search-query pull-left" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}" spellcheck="false">
                 </form>
                 <div class="dropdown pull-right">
                     <div class="btn-group">
@@ -323,7 +339,7 @@
                     </div>
                     <button id="settings_plugin_pluginmanager_repositorydialog_upload_start" class="btn btn-primary span3" data-bind="enable: enableFileInstall, css: {disabled: !enableFileInstall()}, click: function(){}">{{ _('Install') }}</button>
                 </div>
-                <span class="help-block" data-bind="visible: invalidFile">{{ _('This does not look like a valid plugin. Valid plugins should be either zip files or tarballs installable via <code>pip</code> that have the extension ".zip", ".tar.gz", ".tgz" or ".tar", or single file python plugins with the extension ".py"') }}</span>
+                <span class="help-block" data-bind="visible: invalidFile, html: supportedExtensionsHelp"></span>
             </form>
 
             <div>

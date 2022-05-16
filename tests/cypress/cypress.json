@@ -7,5 +7,6 @@
   "supportFile": "support/index.js",
   "screenshotsFolder": "screenshots",
   "videosFolder": "videos",
-  "modifyObstructiveCode": false
+  "modifyObstructiveCode": false,
+  "retries": 5
 }

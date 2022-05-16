@@ -1,20 +1,12 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import collections
 import copy
 import logging
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
-
-import collections
 import os
+import queue
 import threading
 import time
 
@@ -22,7 +14,7 @@ from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import dict_merge
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import monotonic_time
+from octoprint.util import yaml
 from octoprint.util.platform import CLOSE_FDS
 
 EMPTY_RESULT = {
@@ -62,7 +54,7 @@ class QueueEntry(
     """
 
     def __str__(self):
-        return "{location}:{path}".format(location=self.location, path=self.path)
+        return f"{self.location}:{self.path}"
 
 
 class AnalysisAborted(Exception):
@@ -71,7 +63,7 @@ class AnalysisAborted(Exception):
         self.reenqueue = reenqueue
 
 
-class AnalysisQueue(object):
+class AnalysisQueue:
     """
     OctoPrint's :class:`AnalysisQueue` can manage various :class:`AbstractAnalysisQueue` implementations, mapped
     by their machine code type.
@@ -137,7 +129,7 @@ class AnalysisQueue(object):
                 callback(entry, result)
             except Exception:
                 self._logger.exception(
-                    "Error while pushing analysis data to callback {}".format(callback),
+                    f"Error while pushing analysis data to callback {callback}",
                     extra={"callback": fqcn(callback)},
                 )
         eventManager().fire(
@@ -151,7 +143,7 @@ class AnalysisQueue(object):
         )
 
 
-class AbstractAnalysisQueue(object):
+class AbstractAnalysisQueue:
     """
     The :class:`AbstractAnalysisQueue` is the parent class of all specific analysis queues such as the
     :class:`GcodeAnalysisQueue`. It offers methods to enqueue new entries to analyze and pausing and resuming analysis
@@ -208,9 +200,7 @@ class AbstractAnalysisQueue(object):
         """
 
         if settings().get(["gcodeAnalysis", "runAt"]) == "never":
-            self._logger.debug(
-                "Ignoring entry {entry} for analysis queue".format(entry=entry)
-            )
+            self._logger.debug(f"Ignoring entry {entry} for analysis queue")
             return
         elif high_priority:
             self._logger.debug(
@@ -277,7 +267,7 @@ class AbstractAnalysisQueue(object):
         while True:
             (priority, entry, high_priority) = self._queue.get()
             self._logger.debug(
-                "Processing entry {} from queue (priority {})".format(entry, priority)
+                f"Processing entry {entry} from queue (priority {priority})"
             )
             self._active.wait()
 
@@ -296,7 +286,7 @@ class AbstractAnalysisQueue(object):
                             high_priority,
                         )
                     )
-                self._logger.debug("Running analysis of entry {} aborted".format(entry))
+                self._logger.debug(f"Running analysis of entry {entry} aborted")
                 self._queue.task_done()
                 self._done.set()
             else:
@@ -312,8 +302,8 @@ class AbstractAnalysisQueue(object):
         self._current_progress = 0
 
         try:
-            start_time = monotonic_time()
-            self._logger.info("Starting analysis of {}".format(entry))
+            start_time = time.monotonic()
+            self._logger.info(f"Starting analysis of {entry}")
             eventManager().fire(
                 Events.METADATA_ANALYSIS_STARTED,
                 {
@@ -329,14 +319,12 @@ class AbstractAnalysisQueue(object):
                 result = self._do_analysis()
             self._logger.info(
                 "Analysis of entry {} finished, needed {:.2f}s".format(
-                    entry, monotonic_time() - start_time
+                    entry, time.monotonic() - start_time
                 )
             )
             self._finished_callback(self._current, result)
         except RuntimeError as exc:
-            self._logger.error(
-                "Analysis for {} ran into error: {}".format(self._current, exc)
-            )
+            self._logger.error(f"Analysis for {self._current} ran into error: {exc}")
         finally:
             self._current = None
             self._current_progress = None
@@ -414,7 +402,6 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
         import sys
 
         import sarge
-        import yaml
 
         if self._current.analysis and all(
             map(
@@ -444,12 +431,12 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
                 "octoprint",
                 "analysis",
                 "gcode",
-                "--speed-x={}".format(speedx),
-                "--speed-y={}".format(speedy),
-                "--max-t={}".format(max_extruders),
-                "--throttle={}".format(throttle),
-                "--throttle-lines={}".format(throttle_lines),
-                "--bed-z={}".format(bed_z),
+                f"--speed-x={speedx}",
+                f"--speed-y={speedy}",
+                f"--max-t={max_extruders}",
+                f"--throttle={throttle}",
+                f"--throttle-lines={throttle_lines}",
+                f"--bed-z={bed_z}",
             ]
             for offset in offsets[1:]:
                 command += ["--offset", str(offset[0]), str(offset[1])]
@@ -495,7 +482,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
                 p.close()
 
             output = p.stdout.text
-            self._logger.debug("Got output: {!r}".format(output))
+            self._logger.debug(f"Got output: {output!r}")
 
             result = {}
             if "ERROR:" in output:
@@ -508,7 +495,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
                 raise RuntimeError("No analysis result found")
             else:
                 _, output = output.split("RESULTS:")
-                analysis = yaml.safe_load(output)
+                analysis = yaml.load_from_file(file=output)
 
                 result["printingArea"] = analysis["printing_area"]
                 result["dimensions"] = analysis["dimensions"]

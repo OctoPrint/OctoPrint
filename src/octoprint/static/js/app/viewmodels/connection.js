@@ -21,6 +21,7 @@ $(function () {
             self.selectedPrinter(self.printerProfiles.currentProfile());
         });
 
+        self.portOptionsFetched = ko.observable(false);
         self.portOptions = ko.observableArray(undefined);
         self.baudrateOptions = ko.observableArray(undefined);
         self.printerOptions = ko.observableArray(undefined);
@@ -38,9 +39,38 @@ $(function () {
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
 
+        self.enableConnect = ko.pureComputed(function () {
+            //return self.enablePort() || !self.isErrorOrClosed();
+            return true; // enable always for now, until we have an auto refresh in 1.9.0
+        });
+
         self.buttonText = ko.pureComputed(function () {
             if (self.isErrorOrClosed()) return gettext("Connect");
             else return gettext("Disconnect");
+        });
+
+        self.portCaption = ko.pureComputed(function () {
+            return self.validPort() ? "AUTO" : gettext("No serial port found");
+        });
+
+        self.validPort = ko.pureComputed(function () {
+            return (
+                !self.portOptionsFetched() ||
+                self.portOptions().length > 0 ||
+                self.settings.settings.serial.ignoreEmptyPorts()
+            );
+        });
+
+        self.enablePort = ko.pureComputed(function () {
+            return self.validPort() && self.isErrorOrClosed();
+        });
+
+        self.enableSaveSettings = ko.pureComputed(function () {
+            return self.enableConnect() && self.isErrorOrClosed();
+        });
+
+        self.enableAutoConnect = ko.pureComputed(function () {
+            return self.enableConnect() && self.isErrorOrClosed();
         });
 
         self.previousIsOperational = undefined;
@@ -92,6 +122,7 @@ $(function () {
             }
 
             self.saveSettings(false);
+            self.portOptionsFetched(true);
         };
 
         self.fromHistoryData = function (data) {
@@ -203,9 +234,12 @@ $(function () {
             self.openOrCloseOnStateChange(true);
         };
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.requestData();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    self.requestData();
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push({

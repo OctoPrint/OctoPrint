@@ -318,6 +318,7 @@ table {
     &.timelapse_files_checkbox,
     &.timelapse_unrendered_checkbox {
       text-align: center;
+      vertical-align: middle;
       width: 10px;
 
       input[type="checkbox"] {
@@ -325,10 +326,71 @@ table {
       }
     }
 
-    &.timelapse_files_name,
     &.timelapse_unrendered_name {
       text-overflow: ellipsis;
       text-align: left;
+    }
+
+    &.timelapse_files_details {
+      .name {
+        text-overflow: ellipsis;
+        text-align: left;
+        margin: 0 0 0 0;
+      }
+      .detail {
+        text-overflow: ellipsis;
+        text-align: left;
+        margin: 0 0 0 0;
+        font-size: 85%;
+        color: #999;
+      }
+    }
+
+    &.timelapse_files_thumb {
+      @thumb-size: 110px;
+      @thumb-corner: 3px;
+      width: @thumb-size;
+      position: relative;
+
+      .thumb {
+        width: @thumb-size;
+        height: calc(@thumb-size * 9 / 16);
+        border-radius: @thumb-corner;
+        background-color: rgb(238, 238, 238);
+        position: relative;
+
+        &.letterbox {
+          background-color: #000;
+        }
+
+        img {
+          max-width: 100%;
+          max-height: 100%;
+          border-radius: @thumb-corner;
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+        }
+
+        a {
+          background-image: url(/static/img/play.svg);
+          background-position: center;
+          background-repeat: no-repeat;
+          background-size: 32px 32px;
+          width: 100%;
+          height: 100%;
+          opacity: 0.8;
+          position: absolute;
+          top: 0;
+          left: 0;
+          content: "";
+
+          &:hover {
+            opacity: 1;
+          }
+        }
+      }
     }
 
     &.timelapse_files_size {
@@ -349,7 +411,14 @@ table {
     &.timelapse_files_action,
     &.timelapse_unrendered_action {
       width: 60px;
+      position: relative;
+
       .actioncol;
+      .btn-group {
+        position: absolute;
+        bottom: 5px;
+        right: 5px;
+      }
     }
 
     // user settings
@@ -503,6 +572,15 @@ table {
   }
 }
 
+.temperature-mark-label {
+  position: absolute;
+  color: white;
+  padding: 0 5px;
+  font-size: 8px;
+  transform-origin: 0 0;
+  transform: rotate(-90deg);
+}
+
 /** Various */
 
 .tab-content,
@@ -584,6 +662,57 @@ ul.dropdown-menu li a {
 }
 
 /** Webcam */
+#webcam_video_container {
+  width: 100%;
+  position: relative;
+  outline: none;
+
+  .video-controls {
+    position: absolute;
+    bottom: 0px;
+    right: 8px;
+    z-index: 10;
+    opacity: 0.4;
+  }
+
+  &:hover {
+    .video-controls {
+      opacity: 1;
+    }
+  }
+
+  #webcam_hls,
+  #webcam_rtsp {
+    width: 100%;
+    height: 100%;
+  }
+
+  .webcam_rotated {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: auto;
+
+    .rotation_target {
+      position: absolute;
+      transform: rotate(-90deg);
+      width: 100%;
+
+      div {
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+
+  .webcam_unrotated {
+    position: relative;
+    width: 100%;
+  }
+}
 
 #webcam_container {
   width: 100%;

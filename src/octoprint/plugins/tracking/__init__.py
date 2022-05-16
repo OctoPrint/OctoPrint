@@ -1,28 +1,18 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import concurrent.futures
 import hashlib
 import logging
+import time
+from urllib.parse import urlencode
 
 import requests
 from flask_babel import gettext
 
 import octoprint.plugin
-
-try:
-    # noinspection PyCompatibility
-    from urllib.parse import urlencode
-except ImportError:
-    from urllib import urlencode
-
-# noinspection PyCompatibility
-import concurrent.futures
-
 from octoprint.events import Events
-from octoprint.util import RepeatedTimer, monotonic_time
+from octoprint.util import RepeatedTimer
 from octoprint.util.version import get_octoprint_version_string
 
 TRACKING_URL = "https://tracking.octoprint.org/track/{id}/{event}/"
@@ -52,7 +42,7 @@ class TrackingPlugin(
 
         self._record_next_firmware_info = False
 
-        self._startup_time = monotonic_time()
+        self._startup_time = time.monotonic()
 
     def initialize(self):
         self._init_id()
@@ -262,7 +252,7 @@ class TrackingPlugin(
         if not self._settings.get_boolean(["enabled"]):
             return
 
-        uptime = int(monotonic_time() - self._startup_time)
+        uptime = int(time.monotonic() - self._startup_time)
         printer_state = self._printer.get_state_id()
         self._track("ping", octoprint_uptime=uptime, printer_state=printer_state)
 
@@ -523,7 +513,7 @@ class TrackingPlugin(
         # Don't print the URL or UUID! That would expose the UUID in forums/tickets
         # if pasted. It's okay for the user to know their uuid, but it shouldn't be shared.
 
-        headers = {"User-Agent": "OctoPrint/{}".format(get_octoprint_version_string())}
+        headers = {"User-Agent": f"OctoPrint/{get_octoprint_version_string()}"}
         try:
             params = urlencode(kwargs, doseq=True).replace("+", "%20")
 
@@ -532,9 +522,7 @@ class TrackingPlugin(
             else:
                 requests.get(url, params=params, timeout=3.1, headers=headers)
 
-            self._logger.info(
-                "Sent tracking event {}, payload: {!r}".format(event, kwargs)
-            )
+            self._logger.info(f"Sent tracking event {event}, payload: {kwargs!r}")
         except Exception:
             if self._logger.isEnabledFor(logging.DEBUG):
                 self._logger.exception(
@@ -565,6 +553,10 @@ class TrackingPlugin(
                 payload["octopi_version"] = self._environment["plugins"]["pi_support"][
                     "octopi_version"
                 ]
+            if "octopiuptodate_build" in self._environment["plugins"]["pi_support"]:
+                payload["octopiuptodate_build"] = self._environment["plugins"][
+                    "pi_support"
+                ]["octopiuptodate_build"]
 
         return payload
 
@@ -576,6 +568,6 @@ __plugin_description__ = (
 __plugin_url__ = "https://tracking.octoprint.org"
 __plugin_author__ = "Gina Häußge"
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=2.7,<4"
+__plugin_pythoncompat__ = ">=3.7,<4"
 
 __plugin_implementation__ = TrackingPlugin()

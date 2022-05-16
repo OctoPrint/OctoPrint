@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -33,12 +30,10 @@ def _get_latest_commit(user, repo, branch, apikey=None):
     except requests.ConnectionError as exc:
         raise NetworkError(cause=exc)
 
-    from . import log_github_ratelimit
+    from . import check_github_apiresponse, check_github_ratelimit
 
-    log_github_ratelimit(logger, r)
-
-    if not r.status_code == requests.codes.ok:
-        return None
+    check_github_ratelimit(logger, r)
+    check_github_apiresponse(logger, r)
 
     reference = r.json()
     if "object" not in reference or "sha" not in reference["object"]:
@@ -86,19 +81,13 @@ def get_latest(target, check, online=True, credentials=None, *args, **kwargs):
     remote_commit = _get_latest_commit(
         check["user"], check["repo"], branch, apikey=apikey
     )
-    remote_name = (
-        "Commit {commit}".format(commit=remote_commit)
-        if remote_commit is not None
-        else "-"
-    )
+    remote_name = f"Commit {remote_commit}" if remote_commit is not None else "-"
 
     information["remote"] = {"name": remote_name, "value": remote_commit}
     is_current = (
         current is not None and current == remote_commit
     ) or remote_commit is None
 
-    logger.debug(
-        "Target: {}, local: {}, remote: {}".format(target, current, remote_commit)
-    )
+    logger.debug(f"Target: {target}, local: {current}, remote: {remote_commit}")
 
     return information, is_current

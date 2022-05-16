@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import os
 import site
 import unittest
+from unittest import mock
 
 import ddt
-import mock
 import pkg_resources
 
 import octoprint.util.pip
@@ -149,3 +147,64 @@ class PipCallerTest(unittest.TestCase):
         caller = octoprint.util.pip.PipCaller()
         self.assertIsNotNone(caller._command)
         self.assertIsNotNone(caller._version)
+
+
+@ddt.ddt
+class PipUtilTest(unittest.TestCase):
+    def setUp(self):
+        self._test_data = os.path.join(
+            os.path.dirname(__file__), "_files", "pip_test_data"
+        )
+
+    def _get_lines(self, file):
+        with open(os.path.join(self._test_data, file), encoding="utf-8") as f:
+            lines = list(map(str.rstrip, f.readlines()))
+        return lines
+
+    @ddt.data(
+        ("already_installed_1.txt", True),
+        ("already_installed_2.txt", True),
+        ("successful_install_1.txt", False),
+    )
+    @ddt.unpack
+    def test_is_already_installed(self, file, expected):
+        lines = self._get_lines(file)
+        actual = octoprint.util.pip.is_already_installed(lines)
+        self.assertEqual(expected, actual)
+
+    @ddt.data(
+        ("egg_problem_1.txt", True),
+        ("egg_problem_2.txt", True),
+        ("successful_install_1.txt", False),
+        ("already_installed_1.txt", False),
+    )
+    @ddt.unpack
+    def test_is_egg_problem(self, file, expected):
+        lines = self._get_lines(file)
+        actual = octoprint.util.pip.is_egg_problem(lines)
+        self.assertEqual(expected, actual)
+
+    @ddt.data(
+        ("python_mismatch_1.txt", True),
+        ("python_mismatch_2.txt", True),
+        ("successful_install_1.txt", False),
+        ("already_installed_1.txt", False),
+    )
+    @ddt.unpack
+    def test_is_python_mismatch(self, file, expected):
+        lines = self._get_lines(file)
+        actual = octoprint.util.pip.is_python_mismatch(lines)
+        self.assertEqual(expected, actual)
+
+    @ddt.data(
+        (
+            "successful_install_1.txt",
+            "Successfully installed Better-Grbl-Support-2.1.0-rc1.3",
+        ),
+        ("already_installed_1.txt", ""),
+    )
+    @ddt.unpack
+    def test_get_result_line(self, file, expected):
+        lines = self._get_lines(file)
+        actual = octoprint.util.pip.get_result_line(lines)
+        self.assertEqual(expected, actual)

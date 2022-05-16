@@ -2,7 +2,6 @@
 
 ## Web Interface
 
-  * [AVLTree](https://gist.github.com/viking/2424106) (modified): GPL, LGPL (dual licensed)
   * [Babel JavaScript Support](https://github.com/mitsuhiko/babel/blob/master/contrib/babel.js): BSD
   * [@babel/polyfill](https://babeljs.io/docs/en/babel-polyfill/): MIT
   * [Bootstrap](http://getbootstrap.com/): Apache License 2.0
@@ -74,6 +73,7 @@
   * [watchdog](http://github.com/gorakhargosh/watchdog): Apache License 2.0
   * [websocket-client](https://github.com/liris/websocket-client): LGPLv3
   * [wrapt](http://wrapt.readthedocs.org/): BSD
+  * [zipstream-ng](https://github.com/pR0Ps/zipstream-ng): LGPLv3
 
 ## Development (testing, documentation generation, etc)
 

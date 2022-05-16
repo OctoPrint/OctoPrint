@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """
 Unit tests for ``octoprint.server.api``.
 """
 
-from __future__ import absolute_import, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"

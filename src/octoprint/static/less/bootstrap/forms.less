@@ -81,7 +81,7 @@ input[type="color"],
   display: inline-block;
   height: @baseLineHeight;
   padding: 4px 6px;
-  margin-bottom: @baseLineHeight / 2;
+  margin-bottom: (@baseLineHeight / 2);
   font-size: @baseFontSize;
   line-height: @baseLineHeight;
   color: @gray;
@@ -399,7 +399,7 @@ select:focus:invalid {
 
 .help-block {
   display: block; // account for any element using help-block
-  margin-bottom: @baseLineHeight / 2;
+  margin-bottom: (@baseLineHeight / 2);
 }
 
 .help-inline {
@@ -416,7 +416,7 @@ select:focus:invalid {
 .input-append,
 .input-prepend {
   display: inline-block;
-  margin-bottom: @baseLineHeight / 2;
+  margin-bottom: (@baseLineHeight / 2);
   vertical-align: middle;
   font-size: 0; // white space collapse hack
   white-space: nowrap; // Prevent span and input from separating
@@ -617,7 +617,7 @@ input.search-query {
 
 // Margin to space out fieldsets
 .control-group {
-  margin-bottom: @baseLineHeight / 2;
+  margin-bottom: (@baseLineHeight / 2);
 }
 
 // Legend collapses margin, so next element is responsible for spacing
@@ -666,7 +666,7 @@ legend + .control-group {
   .input-prepend,
   .input-append {
     + .help-block {
-      margin-top: @baseLineHeight / 2;
+      margin-top: (@baseLineHeight / 2);
     }
   }
   // Move over buttons in .form-actions to align with .controls

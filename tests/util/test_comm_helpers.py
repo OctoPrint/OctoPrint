@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -113,14 +110,14 @@ class TestCommHelpers(unittest.TestCase):
             return m.hexdigest()
 
         # rb'' doesn't exist in Python2
-        temp_regex = br"T:((\d*\.)\d+)"
+        temp_regex = rb"T:((\d*\.)\d+)"
         temp_template = b"Temp: {}"
         temp2_template = b"Temperature: {}"
         temp_key = md5sum(temp_regex)
         temp_template_key = md5sum(temp_template)
         temp2_template_key = md5sum(temp2_template)
 
-        x_regex = br"X:(?P<x>\d+)"
+        x_regex = rb"X:(?P<x>\d+)"
         x_template = b"X: {x}"
         x_key = md5sum(x_regex)
         x_template_key = md5sum(x_template)
@@ -184,9 +181,7 @@ class TestCommHelpers(unittest.TestCase):
         self.assertEqual(x_template, x["templates"][x_template_key])
 
         self.assertEqual(
-            "(?P<group{temp_key}>{temp_regex})|(?P<group{x_key}>{x_regex})".format(
-                **locals()
-            ),
+            f"(?P<group{temp_key}>{temp_regex})|(?P<group{x_key}>{x_regex})",
             matcher.pattern,
         )
 
@@ -288,6 +283,62 @@ class TestCommHelpers(unittest.TestCase):
             1,
             {"T0": (-55.7, 0), "T1": (150.0, 210.0)},
             1,
+        ),
+        (
+            "T:210.04 /210.00 B:52.00 /52.00 @:85 B@:31pS_XYZ:5",
+            0,
+            {
+                "T0": (210.04, 210.0),
+                "B": (52.00, 52.0),
+            },
+            0,
+        ),
+        (
+            "T:210.04 /210.00 B:52.00 /52.00 @:85 31pS_XYZ:5",
+            0,
+            {
+                "T0": (210.04, 210.0),
+                "B": (52.00, 52.0),
+                "31pS_XYZ": (5, None),
+            },
+            0,
+        ),
+        (
+            "T:210.04 /210.00 B:52.00 /52.00 @:85 F0:255.0 /255.0",
+            0,
+            {
+                "T0": (210.04, 210.0),
+                "B": (52.00, 52.0),
+                "F0": (255.0, 255.0),
+            },
+            0,
+        ),
+        (
+            "T:210.04 /210.00 @B:52.00 /52.00",
+            0,
+            {
+                "T0": (210.04, 210.0),
+            },
+            0,
+        ),
+        (
+            "T:210.04 /210.00 @B:52.00 /52.00 TXYZ:2",
+            0,
+            {
+                "T0": (210.04, 210.0),
+                "TXYZ": (2, None),
+            },
+            0,
+        ),
+        (
+            # Only first occurrence of a sensor should be used, second B gets ignored
+            "T:210.04 /210.00 B:52.00 /52.00 @:85 B:1234.0 /1234.0",
+            0,
+            {
+                "T0": (210.04, 210.0),
+                "B": (52.00, 52.0),
+            },
+            0,
         ),
     )
     @unpack
@@ -538,3 +589,29 @@ class TestPositionRecord(unittest.TestCase):
         from octoprint.util.comm import PositionRecord
 
         return PositionRecord(**kwargs)
+
+
+@ddt
+class TestTemperatureRecord(unittest.TestCase):
+    @data("TX", "B2", "BX", "SOMETHING_CUSTOM", "1234B456", "blub", "fnord", "C1", "CX")
+    def test_set_custom(self, identifier):
+        temperature = self._create_temperature()
+
+        temperature.set_custom(identifier, 1, 2)
+
+        self.assertTrue(identifier in temperature.custom)
+
+    @data("T", "T1", "T42", "B", "C")
+    def test_set_custom_reserved(self, identifier):
+        temperature = self._create_temperature()
+
+        try:
+            temperature.set_custom(identifier, 1, 2)
+            self.fail(f"Expected ValueError for reserved identifier {identifier}")
+        except ValueError as ex:
+            self.assertTrue("is a reserved identifier" in str(ex))
+
+    def _create_temperature(self, **kwargs):
+        from octoprint.util.comm import TemperatureRecord
+
+        return TemperatureRecord(**kwargs)

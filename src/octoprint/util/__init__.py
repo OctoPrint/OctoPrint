@@ -1,20 +1,20 @@
-# -*- coding: utf-8 -*-
 """
 This module bundles commonly used utility methods or helper classes that are used in multiple places within
 OctoPrint's source code.
 """
 
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
+import codecs
 import collections
 import contextlib
 import copy
-import io
 import logging
 import os
+import pickle
+import queue
 import re
 import shutil
 import sys
@@ -23,30 +23,14 @@ import threading
 import time
 import traceback
 import warnings
+import zlib
+from collections.abc import Iterable, MutableMapping, Set
 from functools import wraps
+from glob import escape as glob_escape  # noqa: F401
+from time import monotonic as monotonic_time  # noqa: F401
 from typing import Union
 
-try:
-    from collections.abc import Iterable, MutableMapping, Set
-except ImportError:
-    # Python 2.7
-    from collections import Iterable, MutableMapping, Set
-
-try:
-    from immutabledict import immutabledict
-except ImportError:
-    # Python 2
-    from frozendict import frozendict as immutabledict
-
-import past.builtins
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
-
-# noinspection PyCompatibility
-from past.builtins import basestring, unicode
+from frozendict import frozendict
 
 from octoprint import UMASK
 from octoprint.util.connectivity import ConnectivityChecker  # noqa: F401
@@ -64,64 +48,54 @@ from octoprint.util.net import (  # noqa: F401
 logger = logging.getLogger(__name__)
 
 
-def to_bytes(s_or_u, encoding="utf-8", errors="strict"):
-    # type: (Union[unicode, bytes], str, str) -> bytes
+def to_bytes(
+    s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
+) -> bytes:
     """
     Make sure ``s_or_u`` is a byte string.
 
     Arguments:
-        s_or_u (string or unicode): The value to convert
-        encoding (string): encoding to use if necessary, see :meth:`python:str.encode`
-        errors (string): error handling to use if necessary, see :meth:`python:str.encode`
+        s_or_u (str or bytes): The value to convert
+        encoding (str): encoding to use if necessary, see :meth:`python:str.encode`
+        errors (str): error handling to use if necessary, see :meth:`python:str.encode`
     Returns:
         bytes: converted bytes.
     """
     if s_or_u is None:
         return s_or_u
 
-    if not isinstance(s_or_u, basestring):
+    if not isinstance(s_or_u, (str, bytes)):
         s_or_u = str(s_or_u)
 
-    if isinstance(s_or_u, unicode):
+    if isinstance(s_or_u, str):
         return s_or_u.encode(encoding, errors=errors)
     else:
         return s_or_u
 
 
-def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
-    # type: (Union[unicode, bytes], str, str) -> unicode
+def to_unicode(
+    s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
+) -> str:
     """
-    Make sure ``s_or_u`` is a unicode string.
+    Make sure ``s_or_u`` is a unicode string (str).
 
     Arguments:
-        s_or_u (string or unicode): The value to convert
-        encoding (string): encoding to use if necessary, see :meth:`python:bytes.decode`
-        errors (string): error handling to use if necessary, see :meth:`python:bytes.decode`
+        s_or_u (str or bytes): The value to convert
+        encoding (str): encoding to use if necessary, see :meth:`python:bytes.decode`
+        errors (str): error handling to use if necessary, see :meth:`python:bytes.decode`
     Returns:
-        string: converted string.
+        str: converted string.
     """
     if s_or_u is None:
         return s_or_u
 
-    if not isinstance(s_or_u, basestring):
+    if not isinstance(s_or_u, (str, bytes)):
         s_or_u = str(s_or_u)
 
     if isinstance(s_or_u, bytes):
         return s_or_u.decode(encoding, errors=errors)
     else:
         return s_or_u
-
-
-def to_native_str(s_or_u):
-    # type: (Union[unicode, bytes]) -> str
-    """
-    Make sure ``s_or_u`` is a native 'str' for the current Python version
-
-    Will ensure a byte string under Python 2 and a unicode string under Python 3."""
-    if sys.version_info[0] == 2:
-        return to_bytes(s_or_u)
-    else:
-        return to_unicode(s_or_u)
 
 
 def sortable_value(value, default_value=""):
@@ -135,21 +109,21 @@ sv = sortable_value
 
 def pp(value):
     """
-    >>> pp(dict()) # doctest: +ALLOW_UNICODE
+    >>> pp(dict())
     'dict()'
-    >>> pp(dict(a=1, b=2, c=3)) # doctest: +ALLOW_UNICODE
+    >>> pp(dict(a=1, b=2, c=3))
     'dict(a=1, b=2, c=3)'
-    >>> pp(set()) # doctest: +ALLOW_UNICODE
+    >>> pp(set())
     'set()'
-    >>> pp({"a", "b"}) # doctest: +ALLOW_UNICODE
+    >>> pp({"a", "b"})
     "{'a', 'b'}"
-    >>> pp(["a", "b", "d", "c"]) # doctest: +ALLOW_UNICODE
+    >>> pp(["a", "b", "d", "c"])
     "['a', 'b', 'd', 'c']"
-    >>> pp(("a", "b", "d", "c")) # doctest: +ALLOW_UNICODE
+    >>> pp(("a", "b", "d", "c"))
     "('a', 'b', 'd', 'c')"
-    >>> pp("foo") # doctest: +ALLOW_UNICODE
+    >>> pp("foo")
     "'foo'"
-    >>> pp([dict(a=1, b=2), {"a", "c", "b"}, (1, 2), None, 1, True, "foo"]) # doctest: +ALLOW_UNICODE
+    >>> pp([dict(a=1, b=2), {"a", "c", "b"}, (1, 2), None, 1, True, "foo"])
     "[dict(a=1, b=2), {'a', 'b', 'c'}, (1, 2), None, 1, True, 'foo']"
     """
 
@@ -340,12 +314,19 @@ Returns:
     value: The value of the variable with the deprecation warnings in place.
 """
 
-
+# TODO rename to_unicode to to_str and deprecate to_unicode in 2.0.0
 to_str = deprecated(
-    "to_str has been renamed to to_bytes",
-    includedoc="to_str has been renamed to to_bytes",
+    "to_str has been renamed to to_bytes and in a future version will become the new to_unicode",
+    includedoc="to_str has been renamed to to_bytes and in a future version will become the new to_unicode",
     since="1.3.11",
 )(to_bytes)
+
+
+to_native_str = deprecated(
+    "to_native_str is no longer needed, use to_unicode instead",
+    includedoc="to_native_str is no longer needed, use to_unicode instead",
+    since="1.8.0",
+)(to_unicode)
 
 
 def get_formatted_size(num):
@@ -364,7 +345,7 @@ def get_formatted_size(num):
 
     for x in ["B", "KB", "MB", "GB"]:
         if num < 1024:
-            return "{:3.1f}{}".format(num, x)
+            return f"{num:3.1f}{x}"
         num /= 1024
     return "{:3.1f}{}".format(num, "TB")
 
@@ -486,9 +467,9 @@ def get_exception_string(fmt="{type}: '{message}' @ {file}:{function}:{line}"):
 
 
 def sanitize_ascii(line):
-    if not isinstance(line, basestring):
+    if not isinstance(line, (str, bytes)):
         raise ValueError(
-            "Expected either str or unicode but got {} instead".format(
+            "Expected str but got {} instead".format(
                 line.__class__.__name__ if line is not None else None
             )
         )
@@ -536,6 +517,18 @@ def is_running_from_source():
     return os.path.isdir(os.path.join(root, "src")) and os.path.isfile(
         os.path.join(root, "setup.py")
     )
+
+
+def fast_deepcopy(obj):
+    # the best way to implement this would be as a C module, that way we'd be able to use
+    # the fast path every time.
+    try:
+        # implemented in C and much faster than deepcopy:
+        # https://stackoverflow.com/a/29385667
+        return pickle.loads(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
+    except (AttributeError, pickle.PicklingError):
+        # fall back when something unpickable is found
+        return copy.deepcopy(obj)
 
 
 def dict_merge(a, b, leaf_merger=None, in_place=False):
@@ -586,8 +579,6 @@ def dict_merge(a, b, leaf_merger=None, in_place=False):
         dict: ``b`` deep-merged into ``a``
     """
 
-    from copy import deepcopy
-
     if a is None:
         a = {}
     if b is None:
@@ -599,7 +590,7 @@ def dict_merge(a, b, leaf_merger=None, in_place=False):
     if in_place:
         result = a
     else:
-        result = deepcopy(a)
+        result = fast_deepcopy(a)
 
     for k, v in b.items():
         if k in result and isinstance(result[k], dict):
@@ -616,7 +607,7 @@ def dict_merge(a, b, leaf_merger=None, in_place=False):
                     pass
 
             if merged is None:
-                merged = deepcopy(v)
+                merged = fast_deepcopy(v)
 
             result[k] = merged
     return result
@@ -844,8 +835,7 @@ class fallback_dict(dict):
 
     def _all(self):
         yield self.custom
-        for d in self.fallbacks:
-            yield d
+        yield from self.fallbacks
 
 
 def dict_filter(dictionary, filter_function):
@@ -936,7 +926,7 @@ class DefaultOrderedDict(collections.OrderedDict):
         )
 
 
-class Object(object):
+class Object:
     pass
 
 
@@ -949,8 +939,8 @@ def guess_mime_type(data):
 def parse_mime_type(mime):
     import cgi
 
-    if not mime or not isinstance(mime, basestring):
-        raise ValueError("mime must be a non empty str or unicode")
+    if not mime or not isinstance(mime, (str, bytes)):
+        raise ValueError("mime must be a non empty str")
 
     mime, params = cgi.parse_header(mime)
 
@@ -1000,17 +990,18 @@ def atomic_write(
 
     # Ensure we create the file in the target dir so our move is atomic. See #3719
     dir = os.path.dirname(filename)
+    kwargs = {
+        "mode": mode,
+        "prefix": prefix,
+        "suffix": suffix,
+        "dir": dir,
+        "delete": False,
+    }
+    if "b" not in mode:
+        kwargs["encoding"] = encoding
 
-    # NamedTemporaryFile doesn't yet have an encoding parameter in py2, so we go the long way
-    fd, path = tempfile.mkstemp(suffix=suffix, prefix=prefix, dir=dir)
+    fd = tempfile.NamedTemporaryFile(**kwargs)
     try:
-        os.close(fd)
-
-        if "b" in mode:
-            fd = io.open(path, mode=mode)
-        else:
-            fd = io.open(path, mode=mode, encoding=encoding)
-
         try:
             yield fd
         finally:
@@ -1018,8 +1009,7 @@ def atomic_write(
         os.chmod(fd.name, permissions)
         shutil.move(fd.name, filename)
     finally:
-        # just in case something went wrong and the temporary file is still there, nuke it now
-        silent_remove(path)
+        silent_remove(fd.name)
 
 
 @contextlib.contextmanager
@@ -1050,35 +1040,12 @@ def temppath(prefix=None, suffix=""):
         os.remove(temp.name)
 
 
-if hasattr(tempfile, "TemporaryDirectory"):
-    # Python 3
-    TemporaryDirectory = tempfile.TemporaryDirectory
-else:
-    # Python 2
-    class TemporaryDirectory(object):
-        def __init__(self, suffix="", prefix="tmp", dir=None):
-            self._path = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
-
-        @property
-        def name(self):
-            return self._path
-
-        def cleanup(self):
-            try:
-                os.remove(self._path)
-            except Exception as exc:
-                logging.getLogger(__name__).warning(
-                    "Could not delete temporary directory {}: {}".format(self.name, exc)
-                )
-
-        def __enter__(self):
-            return self.name
-
-        def __exit__(self):
-            self.cleanup()
+TemporaryDirectory = tempfile.TemporaryDirectory
 
 
+@deprecated("Please use open with '-sig' encoding instead", since="1.8.0")
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
+    # TODO Remove in 2.0.0
     import codecs
 
     assert "b" not in mode, "binary mode not support by bom_aware_open"
@@ -1094,13 +1061,42 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
         # these encodings might have a BOM, so let's see if there is one
         bom = getattr(codecs, potential_bom_attribute)
 
-        with io.open(filename, mode="rb") as f:
+        with open(filename, mode="rb") as f:
             header = f.read(4)
 
         if header.startswith(bom):
             encoding += "-sig"
 
-    return io.open(filename, encoding=encoding, mode=mode, **kwargs)
+    return open(filename, encoding=encoding, mode=mode, **kwargs)
+
+
+BOMS = {
+    "utf-8-sig": codecs.BOM_UTF8,
+    "utf-16-le": codecs.BOM_UTF16_LE,
+    "utf-16-be": codecs.BOM_UTF16_BE,
+    "utf-32-le": codecs.BOM_UTF32_LE,
+    "utf-32-be": codecs.BOM_UTF32_BE,
+}
+
+
+def get_bom(filename, encoding):
+    """
+    Check if the file has a BOM and if so return it.
+
+    Params:
+        filename (str): The file to check.
+        encoding (str): The encoding to check for.
+
+    Returns:
+        (bytes) the BOM or None if there is no BOM.
+    """
+    with open(filename, mode="rb") as f:
+        header = f.read(4)
+
+    for enc, bom in BOMS.items():
+        if header.startswith(bom) and encoding.lower() == enc:
+            return bom
+    return None
 
 
 def is_hidden_path(path):
@@ -1131,75 +1127,32 @@ def is_hidden_path(path):
     return False
 
 
-try:
-    from glob import escape
-
-    glob_escape = escape
-except ImportError:
-    # no glob.escape - we need to implement our own
-    _glob_escape_check = re.compile("([*?[])")
-    _glob_escape_check_bytes = re.compile(b"([*?[])")
-
-    def glob_escape(pathname):
-        """
-        Ported from Python 3.4
-
-        See https://github.com/python/cpython/commit/fd32fffa5ada8b8be8a65bd51b001d989f99a3d3
-        """
-
-        drive, pathname = os.path.splitdrive(pathname)
-        if isinstance(pathname, bytes):
-            pathname = _glob_escape_check_bytes.sub(br"[\1]", pathname)
-        else:
-            pathname = _glob_escape_check.sub(r"[\1]", pathname)
-        return drive + pathname
-
-
-try:
-    # py3
-    from time import monotonic as monotonic_time
-except ImportError:
-    try:
-        # py2 w/ suitable source for monotonic time
-        from monotonic import monotonic as monotonic_time
-    except RuntimeError:
-        # no source of monotonic time available, nothing left but using time.time *cringe*
-        monotonic_time = time.time
-
-
-def thaw_immutabledict(obj):
-    if not isinstance(obj, (dict, immutabledict)):
-        raise ValueError("obj must be a dict or immutabledict instance")
+def thaw_frozendict(obj):
+    if not isinstance(obj, (dict, frozendict)):
+        raise ValueError("obj must be a dict or frozendict instance")
 
     # only true love can thaw a frozen dict
     letitgo = {}
     for key, value in obj.items():
-        if isinstance(value, (dict, immutabledict)):
-            letitgo[key] = thaw_immutabledict(value)
+        if isinstance(value, (dict, frozendict)):
+            letitgo[key] = thaw_frozendict(value)
         else:
             letitgo[key] = copy.deepcopy(value)
     return letitgo
 
 
-thaw_frozendict = deprecated(
-    "thaw_frozendict has been renamed to thaw_immutabledict", since="1.6.0"
-)(thaw_immutabledict)
+thaw_immutabledict = deprecated(
+    "thaw_immutabledict has been renamed back to thaw_frozendict", since="1.8.0"
+)(thaw_frozendict)
 
 
 def utmify(link, source=None, medium=None, name=None, term=None, content=None):
     if source is None:
         return link
 
+    import urllib.parse as urlparse
     from collections import OrderedDict
-
-    try:
-        from urllib import urlencode
-
-        import urlparse
-    except ImportError:
-        # python 3
-        import urllib.parse as urlparse
-        from urllib.parse import urlencode
+    from urllib.parse import urlencode
 
     # inspired by https://stackoverflow.com/a/2506477
     parts = list(urlparse.urlparse(link))
@@ -1457,7 +1410,7 @@ class ResettableTimer(threading.Thread):
             self.on_reset()
 
 
-class CountedEvent(object):
+class CountedEvent:
     def __init__(self, value=0, minimum=0, maximum=None, **kwargs):
         self._counter = 0
         self._min = minimum
@@ -1532,7 +1485,7 @@ class CountedEvent(object):
             self._event.set()
 
 
-class InvariantContainer(object):
+class InvariantContainer:
     def __init__(self, initial_data=None, guarantee_invariant=None):
         from threading import RLock
 
@@ -1619,7 +1572,7 @@ class TypedQueue(PrependableQueue):
         if item_type is not None:
             if item_type in self._lookup:
                 raise TypeAlreadyInQueue(
-                    item_type, "Type {} is already in queue".format(item_type)
+                    item_type, f"Type {item_type} is already in queue"
                 )
             else:
                 self._lookup.add(item_type)
@@ -1640,7 +1593,7 @@ class TypedQueue(PrependableQueue):
         if item_type is not None:
             if item_type in self._lookup:
                 raise TypeAlreadyInQueue(
-                    item_type, "Type {} is already in queue".format(item_type)
+                    item_type, f"Type {item_type} is already in queue"
                 )
             else:
                 self._lookup.add(item_type)
@@ -1662,12 +1615,10 @@ class CaseInsensitiveSet(Set):
     """
 
     def __init__(self, *args):
-        self.data = {
-            x.lower() if isinstance(x, past.builtins.basestring) else x for x in args
-        }
+        self.data = {x.lower() if isinstance(x, str) else x for x in args}
 
     def __contains__(self, item):
-        if isinstance(item, past.builtins.basestring):
+        if isinstance(item, str):
             return item.lower() in self.data
         else:
             return item in self.data
@@ -1699,7 +1650,7 @@ def fqfn(f):
             f.__self__.__class__.__module__, f.__self__.__class__.__name__, f.__name__
         )
     else:
-        return "{}.{}".format(f.__module__, f.__name__)
+        return f"{f.__module__}.{f.__name__}"
 
 
 def time_this(
@@ -1726,7 +1677,7 @@ def time_this(
                 data.update(
                     func_args=",".join(map(repr, args)),
                     func_kwargs=",".join(
-                        map(lambda x: "{}={!r}".format(x[0], x[1]), kwargs.items())
+                        map(lambda x: f"{x[0]}={x[1]!r}", kwargs.items())
                     ),
                 )
             if log_enter:
@@ -1747,12 +1698,69 @@ def time_this(
 
 
 def generate_api_key():
-    # noinspection PyCompatibility
     import uuid
-    from builtins import bytes
 
     return "".join("%02X" % z for z in bytes(uuid.uuid4().bytes))
 
 
 def map_boolean(value, true_text, false_text):
     return true_text if value else false_text
+
+
+def serialize(filename, data, encoding="utf-8", compressed=True):
+    """
+    Serializes data to a file
+
+    In the current implementation this uses json.dumps.
+
+    If `compressed` is True (the default), the serialized data put through zlib.compress.
+
+    Supported data types are listed at the bottom of
+    :ref:`octoprint.util.comprehensive_json`, and include some data types that are not
+    supported by json.dumps by default.
+
+    This is not thread-safe, if concurrent access is required, the caller needs to ensure
+    that only one thread is writing to the file at any given time.
+
+    Arguments:
+        filename (str): The file to write to
+        data (object): The data to serialize
+        encoding (str): The encoding to use for the file
+        compressed (bool): Whether to compress the data before writing it to the file
+    """
+    from octoprint.util import json
+
+    serialized = json.serializing.dumps(data).encode(encoding)
+
+    if compressed:
+        serialized = zlib.compress(serialized)
+
+    with open(filename, "wb") as f:
+        f.write(serialized)
+
+
+def deserialize(filename, encoding="utf-8"):
+    """
+    Deserializes data from a file
+
+    In the current implementation this uses json.loads and - if the file is found to be
+    compressed - zlib.decompress.
+
+    Arguments:
+        filename (str): The file to deserialize from
+        encoding (str): The encoding to use for the file, defaults to utf-8
+
+    Returns:
+        The deserialized data structure
+    """
+    with open(filename, "rb") as f:
+        serialized = f.read()
+
+    try:
+        serialized = zlib.decompress(serialized)
+    except zlib.error:
+        pass
+
+    from octoprint.util import json
+
+    return json.serializing.loads(serialized.decode(encoding))

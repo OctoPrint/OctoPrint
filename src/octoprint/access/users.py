@@ -1,22 +1,14 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import hashlib
-import io
 import logging
 import os
+import time
 import uuid
 
-# noinspection PyCompatibility
-from builtins import bytes, range
-
 import wrapt
-import yaml
 from flask_login import AnonymousUserMixin, UserMixin
-from past.builtins import basestring
 from werkzeug.local import LocalProxy
 
 from octoprint.access.groups import Group, GroupChangeListener
@@ -24,10 +16,10 @@ from octoprint.access.permissions import OctoPrintPermission, Permissions
 from octoprint.settings import settings as s
 from octoprint.util import atomic_write, deprecated, generate_api_key
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import monotonic_time, to_bytes
+from octoprint.util import to_bytes, yaml
 
 
-class UserManager(GroupChangeListener, object):
+class UserManager(GroupChangeListener):
     def __init__(self, group_manager, settings=None):
         self._group_manager = group_manager
         self._group_manager.register_listener(self)
@@ -87,11 +79,11 @@ class UserManager(GroupChangeListener, object):
                 listener.on_user_logged_in(user)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_logged_in on {!r}".format(listener),
+                    f"Error in on_user_logged_in on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
-        self._logger.info("Logged in user: {}".format(user.get_id()))
+        self._logger.info(f"Logged in user: {user.get_id()}")
 
         return user
 
@@ -125,17 +117,17 @@ class UserManager(GroupChangeListener, object):
                 listener.on_user_logged_out(user, stale=stale)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_logged_out on {!r}".format(listener),
+                    f"Error in on_user_logged_out on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
-        self._logger.info("Logged out user: {}".format(user.get_id()))
+        self._logger.info(f"Logged out user: {user.get_id()}")
 
     def _cleanup_sessions(self):
         for session, user in list(self._session_users_by_session.items()):
             if not isinstance(user, SessionUser):
                 continue
-            if user.created + (24 * 60 * 60) < monotonic_time():
+            if user.created + (24 * 60 * 60) < time.monotonic():
                 self._logger.info(
                     "Cleaning up user session {} for user {}".format(
                         session, user.get_id()
@@ -273,9 +265,7 @@ class UserManager(GroupChangeListener, object):
         return False
 
     def on_group_removed(self, group):
-        self._logger.debug(
-            "Group {} got removed, removing from all users".format(group.key)
-        )
+        self._logger.debug(f"Group {group.key} got removed, removing from all users")
         self.remove_groups_from_users([group])
 
     def on_group_permissions_changed(self, group, added=None, removed=None):
@@ -286,7 +276,7 @@ class UserManager(GroupChangeListener, object):
                     listener.on_user_modified(user)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_modified on {!r}".format(listener),
+                    f"Error in on_user_modified on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
@@ -299,12 +289,12 @@ class UserManager(GroupChangeListener, object):
                     listener.on_user_modified(user)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_modified on {!r}".format(listener),
+                    f"Error in on_user_modified on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
     def _trigger_on_user_modified(self, user):
-        if isinstance(user, basestring):
+        if isinstance(user, str):
             # user id
             users = []
             try:
@@ -331,7 +321,7 @@ class UserManager(GroupChangeListener, object):
                     listener.on_user_modified(user)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_modified on {!r}".format(listener),
+                    f"Error in on_user_modified on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
@@ -341,7 +331,7 @@ class UserManager(GroupChangeListener, object):
                 listener.on_user_removed(username)
             except Exception:
                 self._logger.exception(
-                    "Error in on_user_removed on {!r}".format(listener),
+                    f"Error in on_user_removed on {listener!r}",
                     extra={"callback": fqcn(listener)},
                 )
 
@@ -481,7 +471,7 @@ class UserManager(GroupChangeListener, object):
     )(has_been_customized)
 
 
-class LoginStatusListener(object):
+class LoginStatusListener:
     def on_user_logged_in(self, user):
         pass
 
@@ -519,64 +509,60 @@ class FilebasedUserManager(UserManager):
 
     def _load(self):
         if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
-            # noinspection PyBroadException
-            with io.open(self._userfile, "rt", encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+            data = yaml.load_from_file(path=self._userfile)
 
-                if not data or not isinstance(data, dict):
-                    self._logger.fatal(
-                        "{} does not contain a valid map of users. Fix "
-                        "the file, or remove it, then restart OctoPrint.".format(
-                            self._userfile
-                        )
+            if not data or not isinstance(data, dict):
+                self._logger.fatal(
+                    "{} does not contain a valid map of users. Fix "
+                    "the file, or remove it, then restart OctoPrint.".format(
+                        self._userfile
                     )
-                    raise CorruptUserStorage()
+                )
+                raise CorruptUserStorage()
 
-                for name, attributes in data.items():
-                    if not isinstance(attributes, dict):
-                        continue
+            for name, attributes in data.items():
+                if not isinstance(attributes, dict):
+                    continue
 
-                    permissions = []
-                    if "permissions" in attributes:
-                        permissions = attributes["permissions"]
+                permissions = []
+                if "permissions" in attributes:
+                    permissions = attributes["permissions"]
 
-                    if "groups" in attributes:
-                        groups = set(attributes["groups"])
-                    else:
-                        groups = {self._group_manager.user_group}
+                if "groups" in attributes:
+                    groups = set(attributes["groups"])
+                else:
+                    groups = {self._group_manager.user_group}
 
-                    # migrate from roles to permissions
-                    if "roles" in attributes and "permissions" not in attributes:
-                        self._logger.info(
-                            "Migrating user {} to new granular permission system".format(
-                                name
-                            )
-                        )
-
-                        groups |= set(self._migrate_roles_to_groups(attributes["roles"]))
-                        self._dirty = True
-
-                    apikey = None
-                    if "apikey" in attributes:
-                        apikey = attributes["apikey"]
-                    settings = {}
-                    if "settings" in attributes:
-                        settings = attributes["settings"]
-
-                    self._users[name] = User(
-                        username=name,
-                        passwordHash=attributes["password"],
-                        active=attributes["active"],
-                        permissions=self._to_permissions(*permissions),
-                        groups=self._to_groups(*groups),
-                        apikey=apikey,
-                        settings=settings,
+                # migrate from roles to permissions
+                if "roles" in attributes and "permissions" not in attributes:
+                    self._logger.info(
+                        f"Migrating user {name} to new granular permission system"
                     )
-                    for sessionid in self._sessionids_by_userid.get(name, set()):
-                        if sessionid in self._session_users_by_session:
-                            self._session_users_by_session[sessionid].update_user(
-                                self._users[name]
-                            )
+
+                    groups |= set(self._migrate_roles_to_groups(attributes["roles"]))
+                    self._dirty = True
+
+                apikey = None
+                if "apikey" in attributes:
+                    apikey = attributes["apikey"]
+                settings = {}
+                if "settings" in attributes:
+                    settings = attributes["settings"]
+
+                self._users[name] = User(
+                    username=name,
+                    passwordHash=attributes["password"],
+                    active=attributes["active"],
+                    permissions=self._to_permissions(*permissions),
+                    groups=self._to_groups(*groups),
+                    apikey=apikey,
+                    settings=settings,
+                )
+                for sessionid in self._sessionids_by_userid.get(name, set()):
+                    if sessionid in self._session_users_by_session:
+                        self._session_users_by_session[sessionid].update_user(
+                            self._users[name]
+                        )
 
             if self._dirty:
                 self._save()
@@ -608,9 +594,7 @@ class FilebasedUserManager(UserManager):
         with atomic_write(
             self._userfile, mode="wt", permissions=0o600, max_permissions=0o666
         ) as f:
-            yaml.safe_dump(
-                data, f, default_flow_style=False, indent=2, allow_unicode=True
-            )
+            yaml.save_to_file(data, file=f, pretty=True)
             self._dirty = False
         self._load()
 
@@ -1031,7 +1015,7 @@ class CorruptUserStorage(Exception):
 ##~~ Refactoring helpers
 
 
-class MethodReplacedByBooleanProperty(object):
+class MethodReplacedByBooleanProperty:
     def __init__(self, name, message, getter):
         self._name = name
         self._message = message
@@ -1399,8 +1383,8 @@ class SessionUser(wrapt.ObjectProxy):
         wrapt.ObjectProxy.__init__(self, user)
 
         self._self_session = "".join("%02X" % z for z in bytes(uuid.uuid4().bytes))
-        self._self_created = monotonic_time()
-        self._self_touched = monotonic_time()
+        self._self_created = time.monotonic()
+        self._self_touched = time.monotonic()
 
     @property
     def session(self):
@@ -1415,7 +1399,7 @@ class SessionUser(wrapt.ObjectProxy):
         return self._self_touched
 
     def touch(self):
-        self._self_touched = monotonic_time()
+        self._self_touched = time.monotonic()
 
     @deprecated(
         "SessionUser.get_session() has been deprecated, use SessionUser.session instead",

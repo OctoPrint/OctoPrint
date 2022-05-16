@@ -220,8 +220,10 @@ Upload
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``target``: the target storage location to which the file was uploaded, either ``local`` or ``sdcard``
-     * ``select``: whether the file will immediately be selected, as requested on the API by the corresponding parameter
-     * ``print``: whether the file will immediately start printing, as requested on the API by the corresponding parameter
+     * ``select``: whether an immediate selection of the file was requested on the API by the corresponding parameter
+     * ``print``: whether an immediate print start of the file was requested on the API by the corresponding parameter
+     * ``effective_select``: whether the file will actually be selected (``select`` request got granted)
+     * ``effective_print``: whether the file will actually start printing (``print`` request got granted)
      * ``userdata``: optional ``userdata`` if provided on the API, will only be present if supplied in the upload request
 
    .. deprecated:: 1.3.0
@@ -263,6 +265,26 @@ FileRemoved
 
   .. versionadded:: 1.3.3
 
+FileMoved
+   A file has been moved from one location to an other location.
+
+   Payload:
+     * ``storage``: the storage's identifier
+     * ``source_path``: the source file's path within its storage location
+     * ``source_name``: the source file's name
+     * ``source_type``: the source file's type, a list of the path within the type hierarchy, e.g. ``["machinecode", "gcode"]`` or
+       ``["model", "stl"]``
+     * ``destination_path``: the source file's path within its storage location
+     * ``destination_name``: the source file's name
+     * ``destination_type``: the source file's type, a list of the path within the type hierarchy, e.g. ``["machinecode", "gcode"]`` or
+       ``["model", "stl"]``
+
+   .. note::
+
+      A moved file still triggers first a ``FileRemoved`` for its original path and then ``FileAdded`` event for the new one. After that a ```UpdatedFiles``` event is also fired.
+
+  .. versionadded:: 1.8.0
+
 FolderAdded
    A folder has been added to a storage.
 
@@ -291,6 +313,22 @@ FolderRemoved
       A moved folder first triggers ``FolderRemoved`` for its original path and then ``FolderAdded`` for the new one.
 
   .. versionadded:: 1.3.3
+
+FolderMoved
+   A folder has been moved from one location to an other location.
+
+   Payload:
+     * ``storage``: the storage's identifier
+     * ``source_path``: the source folder's path within its storage location
+     * ``source_name``: the source folder's name
+     * ``destination_path``: the source folder's path within its storage location
+     * ``destination_name``: the source folder's name
+
+   .. note::
+
+      A moved folder still triggers first a ``FolderRemoved`` for its original path and then ``FolderAdded`` event for the new one. After that a ```UpdatedFiles``` event is also fired.
+
+  .. versionadded:: 1.8.0
 
 UpdatedFiles
    A file list was modified.

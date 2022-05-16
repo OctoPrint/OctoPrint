@@ -25,7 +25,8 @@ $(function () {
                 count: 1,
                 offsets: [[0, 0]],
                 nozzleDiameter: 0.4,
-                sharedNozzle: false
+                sharedNozzle: false,
+                defaultExtrusionLength: 5
             }
         };
     };
@@ -72,6 +73,7 @@ $(function () {
         self.extruders = ko.observable();
         self.extruderOffsets = ko.observableArray();
         self.sharedNozzle = ko.observable();
+        self.defaultExtrusionLength = ko.observable();
 
         self.axisXSpeed = ko.observable();
         self.axisYSpeed = ko.observable();
@@ -233,6 +235,7 @@ $(function () {
 
             self.nozzleDiameter(data.extruder.nozzleDiameter);
             self.sharedNozzle(data.extruder.sharedNozzle);
+            self.defaultExtrusionLength(data.extruder.defaultExtrusionLength);
             self.extruders(data.extruder.count);
             var offsets = [];
             if (data.extruder.count > 1) {
@@ -298,7 +301,11 @@ $(function () {
                         self.nozzleDiameter(),
                         defaultProfile.extruder.nozzleDiameter
                     ),
-                    sharedNozzle: self.sharedNozzle()
+                    sharedNozzle: self.sharedNozzle(),
+                    defaultExtrusionLength: validInt(
+                        self.defaultExtrusionLength(),
+                        defaultProfile.extruder.defaultExtrusionLength
+                    )
                 },
                 axes: {
                     x: {
@@ -696,9 +703,12 @@ $(function () {
 
         self.onSettingsShown = self.requestData;
 
-        self.onUserPermissionsChanged = self.onUserLoggedIn = self.onUserLoggedOut = function () {
-            self.requestData();
-        };
+        self.onUserPermissionsChanged =
+            self.onUserLoggedIn =
+            self.onUserLoggedOut =
+                function () {
+                    self.requestData();
+                };
     }
 
     OCTOPRINT_VIEWMODELS.push({

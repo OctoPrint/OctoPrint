@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 In this module the slicing support of OctoPrint is encapsulated.
 
@@ -11,7 +10,6 @@ In this module the slicing support of OctoPrint is encapsulated.
 .. autoclass:: SlicingManager
    :members:
 """
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -37,7 +35,7 @@ from .exceptions import (
 )
 
 
-class SlicingProfile(object):
+class SlicingProfile:
     """
     A wrapper for slicing profiles, both meta data and actual profile data.
 
@@ -61,7 +59,7 @@ class SlicingProfile(object):
         self.default = default
 
 
-class TemporaryProfile(object):
+class TemporaryProfile:
     """
     A wrapper for a temporary slicing profile to be used for a slicing job, based on a :class:`SlicingProfile` with
     optional ``overrides`` applied through the supplied ``save_profile`` method.
@@ -109,7 +107,7 @@ class TemporaryProfile(object):
             pass
 
 
-class SlicingManager(object):
+class SlicingManager:
     """
     The :class:`SlicingManager` is responsible for managing available slicers and slicing profiles.
 
@@ -308,10 +306,10 @@ class SlicingManager(object):
 
         if slicer_name not in self.configured_slicers:
             if slicer_name not in self.registered_slicers:
-                error = "No such slicer: {slicer_name}".format(**locals())
+                error = f"No such slicer: {slicer_name}"
                 exc = UnknownSlicer(slicer_name)
             else:
-                error = "Slicer not configured: {slicer_name}".format(**locals())
+                error = f"Slicer not configured: {slicer_name}"
                 exc = SlicerNotConfigured(slicer_name)
             callback_kwargs.update({"_error": error, "_exc": exc})
             callback(*callback_args, **callback_kwargs)
@@ -426,7 +424,7 @@ class SlicingManager(object):
 
         try:
             path = self.get_profile_path(slicer, name, must_exist=True)
-        except IOError:
+        except OSError:
             return None
         return self._load_profile_from_path(
             slicer, path, require_configured=require_configured
@@ -534,7 +532,7 @@ class SlicingManager(object):
         if name:
             try:
                 profile = self.load_profile(slicer, name)
-            except (UnknownProfile, IOError):
+            except (UnknownProfile, OSError):
                 # in that case we'll use the default profile
                 pass
 
@@ -726,15 +724,9 @@ class SlicingManager(object):
 
         name = self._sanitize(name)
 
-        path = os.path.join(
-            self.get_slicer_profile_path(slicer), "{name}.profile".format(name=name)
-        )
+        path = os.path.join(self.get_slicer_profile_path(slicer), f"{name}.profile")
         if not os.path.realpath(path).startswith(os.path.realpath(self._profile_path)):
-            raise IOError(
-                "Path to profile {name} tried to break out of allows sub path".format(
-                    **locals()
-                )
-            )
+            raise OSError(f"Path to profile {name} tried to break out of allows sub path")
         if must_exist and not (os.path.exists(path) and os.path.isfile(path)):
             raise UnknownProfile(slicer, name)
         return path
@@ -784,7 +776,7 @@ class SlicingManager(object):
         if default_profiles and slicer in default_profiles:
             try:
                 return self.load_profile(slicer, default_profiles[slicer])
-            except (UnknownProfile, IOError):
+            except (UnknownProfile, OSError):
                 # in that case we'll use the slicers predefined default profile
                 pass
 
