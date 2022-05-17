@@ -8,6 +8,7 @@ thanks to everyone who contributed!
 
   * 3D-TECH
   * 3DPrinterOS
+  * Al Mucci
   * Arnljot Arntsen
   * Artillery 3D
   * Ash King
@@ -37,6 +38,7 @@ thanks to everyone who contributed!
   * James Mackay
   * Jeff Green
   * Jeff Moe
+  * jeffiel
   * Jeremy Cole
   * Joshua Wills
   * Julian Melo
@@ -67,6 +69,7 @@ thanks to everyone who contributed!
   * Richard Stocks
   * Robert Gusek
   * Ronald Griehsler
+  * Sean Jensen-Grey
   * Sebastien Andrivet
   * Stefan Krister
   * Steve Dougherty
@@ -78,4 +81,4 @@ thanks to everyone who contributed!
   * Ulrich Kempken
   * Yehuda Katz
 
-and 2307 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2279 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!

@@ -216,7 +216,7 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
        
        # Enable virtual EEPROM
        # If enabled, a file `eeprom.json` will be created in the plugin data folder
-       # to enable settings persistence across connections. Enables M500/1/2/4 commmands
+       # to enable settings persistence across connections. Enables M500/1/2/4 commands
        # And a selection of other settings commands. Responses modeled on Marlin 2.0
        enable_eeprom: true
        
