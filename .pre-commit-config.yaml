@@ -46,7 +46,6 @@ repos:
     rev: 22.1.0
     hooks:
       - id: black
-        args: ["--config", "black.toml"]
         additional_dependencies:
           - click==8.0.4
   - repo: https://gitlab.com/pycqa/flake8
