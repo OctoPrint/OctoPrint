@@ -1,6 +1,7 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import re
 import time
 
 import flask
@@ -60,7 +61,7 @@ class ActionCommandNotificationPlugin(
     # ~ SettingsPlugin
 
     def get_settings_defaults(self):
-        return {"enable": True, "enable_popups": False}
+        return {"enable": True, "enable_popups": False, "filters": ""}
 
     # ~ SimpleApiPlugin
 
@@ -120,6 +121,12 @@ class ActionCommandNotificationPlugin(
             return
 
         message = parameter.strip()
+
+        filters = self._settings.get(["filters"]).split("\n")
+        for filter in filters:
+            if re.fullmatch(filter, message):
+                return
+
         self._notifications.append((time.time(), message))
         self._plugin_manager.send_plugin_message(self._identifier, {"message": message})
 

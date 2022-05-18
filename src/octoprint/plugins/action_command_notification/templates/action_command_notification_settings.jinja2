@@ -16,4 +16,11 @@
             </label>
         </div>
     </div>
+    <div class="control-group">
+        <label class="control-label" for="settings-serialAdditionalPorts">{{ _('Notification Filters') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" id="settings-serialAdditionalPorts" data-bind="value: settings.plugins.action_command_notification.filters"></textarea>
+            <span class="help-inline">{{ _("Use this to define filters to hide unwanted notifications. One regular expression per line. Notifications that match a regular expression will not be shown.") }}</span>
+        </div>
+    </div>
 </form>
