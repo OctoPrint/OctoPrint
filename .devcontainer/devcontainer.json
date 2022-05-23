@@ -41,5 +41,10 @@
   },
   "postCreateCommand": "pip install --upgrade pip && pip install -e '.[develop,plugins,docs]' && pre-commit install && git config blame.ignoreRevsFile .git-blame-ignore-revs",
   "postAttachCommand": "octoprint serve --host=127.0.0.1 --port=8080",
-  "remoteUser": "vscode"
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "ms-python.vscode-pylance"]
+    }
+  }
 }
