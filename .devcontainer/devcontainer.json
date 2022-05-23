@@ -1,0 +1,45 @@
+{
+  "name": "OctoPrint - Python 3",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "VARIANT": "3.10-bullseye"
+    }
+  },
+  "settings": {
+    "python.defaultInterpreterPath": "/usr/local/bin/python",
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": ["--config", "black.toml"],
+    "editor.formatOnSave": true,
+    "python.sortImports.args": ["--profile=black"],
+    "[python]": {
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+      }
+    },
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.enabled": true,
+    "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+    "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+    "python.formatting.yapfPath": "/usr/local/py-utils/bin/yapf",
+    "python.linting.banditPath": "/usr/local/py-utils/bin/bandit",
+    "python.linting.flake8Path": "/usr/local/py-utils/bin/flake8",
+    "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
+    "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
+    "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
+    "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
+  },
+  "extensions": ["ms-python.python", "ms-python.vscode-pylance"],
+  "portsAttributes": {
+    "8080": {
+      "label": "OctoPrint",
+      "onAutoForward": "openBrowser",
+      "protocol": "http"
+    }
+  },
+  "postCreateCommand": "pip install --upgrade pip && pip install -e '.[develop,plugins,docs]' && pre-commit install && git config blame.ignoreRevsFile .git-blame-ignore-revs",
+  "postAttachCommand": "octoprint serve --host=127.0.0.1 --port=8080",
+  "remoteUser": "vscode"
+}
