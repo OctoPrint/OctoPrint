@@ -16,9 +16,9 @@
     "[python]": {
       "editor.codeActionsOnSave": {
         "source.organizeImports": true
-      }
+      },
+      "editor.defaultFormatter": "ms-python.vscode-pylance"
     },
-    "python.linting.pylintEnabled": false,
     "python.linting.flake8Enabled": true,
     "python.linting.enabled": true,
     "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
@@ -29,7 +29,9 @@
     "python.linting.mypyPath": "/usr/local/py-utils/bin/mypy",
     "python.linting.pycodestylePath": "/usr/local/py-utils/bin/pycodestyle",
     "python.linting.pydocstylePath": "/usr/local/py-utils/bin/pydocstyle",
-    "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
+    "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint",
+    "python.languageServer": "Pylance",
+    "editor.formatOnSaveMode": "file"
   },
   "extensions": ["ms-python.python", "ms-python.vscode-pylance"],
   "portsAttributes": {
