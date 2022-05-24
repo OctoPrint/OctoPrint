@@ -378,9 +378,6 @@ def require_login_with(permissions=None, user_id=None):
     ):
         requires_login = False
 
-        if current_user.is_anonymous:
-            requires_login = True
-
         if permissions is not None and not has_permissions(*permissions):
             requires_login = True
             login_kwargs["permissions"] = ",".join([x.key for x in permissions])
