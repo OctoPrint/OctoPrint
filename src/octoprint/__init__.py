@@ -496,8 +496,8 @@ def init_settings_plugin_config_migration_and_cleanup(plugin_manager):
             )
         except Exception:
             logging.getLogger(__name__).exception(
-                "Error while trying to migrate settings for "
-                "plugin {}, ignoring it".format(implementation._identifier),
+                "Error while trying to migrate settings for " "plugin %s, ignoring it",
+                implementation._identifier,
                 extra={"plugin": implementation._identifier},
             )
 
@@ -525,13 +525,16 @@ def init_custom_events(plugin_manager):
                         event, prefix=f"plugin_{name}_"
                     )
                     logger.debug(
-                        'Registered event {} of plugin {} as Events.{} = "{}"'.format(
-                            event, name, constant, value
-                        )
+                        'Registered event %s of plugin %s as Events. %s = "%s"',
+                        event,
+                        name,
+                        constant,
+                        value,
                     )
         except Exception:
             logger.exception(
-                f"Error while retrieving custom event list from plugin {name}",
+                "Error while retrieving custom event list from plugin %s",
+                name,
                 extra={"plugin": name},
             )
 
@@ -660,7 +663,7 @@ def init_pluginsystem(
                 disabled_from_overlays[name] = (disabled_plugins, order)
 
             settings_overlays[name] = overlay
-            logger.debug(f"Found settings overlay on plugin {name}")
+            logger.debug("Found settings overlay on plugin %s", name)
 
     def handle_plugins_loaded(
         startup=False, initialize_implementations=True, force_reload=None
@@ -685,24 +688,22 @@ def init_pluginsystem(
 
                     if addon in already_processed:
                         logger.info(
-                            "Plugin {} wants to disable plugin {}, but that was already processed".format(
-                                name, addon
-                            )
+                            "Plugin %s wants to disable plugin %s, but that was already processed",
+                            name,
+                            addon,
                         )
 
                     if addon not in already_processed and addon not in disabled_list:
                         disabled_list.append(addon)
                         logger.info(
-                            "Disabling plugin {} as defined by plugin {}".format(
-                                addon, name
-                            )
+                            "Disabling plugin %s as defined by plugin %s", addon, name
                         )
                 already_processed.append(name)
 
     def handle_plugin_enabled(name, plugin):
         if name in settings_overlays:
             settings.add_overlay(settings_overlays[name])
-            logger.info(f"Added settings overlay from plugin {name}")
+            logger.info("Added settings overlay from plugin %s", name)
 
     pm.on_plugin_loaded = handle_plugin_loaded
     pm.on_plugins_loaded = handle_plugins_loaded
@@ -755,22 +756,22 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
             if "pluginversions" in entry:
                 logger.debug(
-                    "Blacklisted plugin: {}, versions: {}".format(
-                        entry["plugin"], ", ".join(entry["pluginversions"])
-                    )
+                    "Blacklisted plugin: %s, versions: %s",
+                    entry["plugin"],
+                    ", ".join(entry["pluginversions"]),
                 )
                 for version in entry["pluginversions"]:
                     result.append((entry["plugin"], version))
             elif "versions" in entry:
                 logger.debug(
-                    "Blacklisted plugin: {}, versions: {}".format(
-                        entry["plugin"], ", ".join(entry["versions"])
-                    )
+                    "Blacklisted plugin: %s, versions: %s",
+                    entry["plugin"],
+                    ", ".join(entry["versions"]),
                 )
                 for version in entry["versions"]:
                     result.append((entry["plugin"], f"=={version}"))
             else:
-                logger.debug("Blacklisted plugin: {}".format(entry["plugin"]))
+                logger.debug("Blacklisted plugin: %s", entry["plugin"])
                 result.append(entry["plugin"])
 
         return result
@@ -807,9 +808,9 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
                     )
         except Exception as e:
             logger.info(
-                "Unable to fetch plugin blacklist from {}, proceeding without it: {}".format(
-                    url, e
-                )
+                "Unable to fetch plugin blacklist from %s, proceeding without it: %s",
+                url,
+                e,
             )
         return result
 
@@ -831,10 +832,9 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
         if blacklist:
             logger.info(
-                "Blacklist processing done, "
-                "adding {} blacklisted plugin versions: {}".format(
-                    len(blacklist), format_blacklist(blacklist)
-                )
+                "Blacklist processing done, adding %s blacklisted plugin versions: %s",
+                len(blacklist),
+                format_blacklist(blacklist),
             )
         else:
             logger.info("Blacklist processing done")

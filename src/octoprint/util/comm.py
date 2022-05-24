@@ -195,10 +195,15 @@ def serialList():
 
     else:
         candidates = []
-        with os.scandir("/dev") as it:
-            for entry in it:
-                if regex_serial_devices.match(entry.name):
-                    candidates.append(entry.path)
+        try:
+            with os.scandir("/dev") as it:
+                for entry in it:
+                    if regex_serial_devices.match(entry.name):
+                        candidates.append(entry.path)
+        except Exception:
+            logging.getLogger(__name__).exception(
+                "Could not scan /dev for serial ports on the system"
+            )
 
     # additional ports
     additionalPorts = settings().get(["serial", "additionalPorts"])
