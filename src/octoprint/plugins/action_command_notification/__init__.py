@@ -22,6 +22,7 @@ class ActionCommandNotificationPlugin(
 ):
     def __init__(self):
         self._notifications = []
+        self._filters = []
 
     # Additional permissions hook
 
@@ -57,6 +58,8 @@ class ActionCommandNotificationPlugin(
     def on_event(self, event, payload):
         if event == Events.DISCONNECTED:
             self._clear_notifications()
+        elif event == Events.SETTINGS_UPDATED or event == Events.STARTUP:
+            self._configure_filters()
 
     # ~ SettingsPlugin
 
@@ -122,9 +125,8 @@ class ActionCommandNotificationPlugin(
 
         message = parameter.strip()
 
-        filters = self._settings.get(["filters"]).split("\n")
-        for filter in filters:
-            if re.fullmatch(filter, message):
+        for filter in self._filters:
+            if filter.fullmatch(message):
                 return
 
         self._notifications.append((time.time(), message))
@@ -136,6 +138,13 @@ class ActionCommandNotificationPlugin(
         self._notifications = []
         self._plugin_manager.send_plugin_message(self._identifier, {})
         self._logger.info("Notifications cleared")
+
+    def _configure_filters(self):
+        filters = self._settings.get(["filters"]).split("\n")
+
+        self._filters.clear()
+        for filter in filters:
+            self._filters.append(re.compile(filter))
 
 
 __plugin_name__ = "Action Command Notification Support"
