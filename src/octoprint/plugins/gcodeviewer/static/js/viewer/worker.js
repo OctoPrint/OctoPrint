@@ -685,7 +685,9 @@ var doParse = function () {
                     if (prevZ < maxLiftZ) {
                         zLiftMoves.forEach(function (zLiftMove) {
                             if (model[zLiftMove.layer] instanceof Uint8Array)
-                                model[zLiftMove.layer] = decompress(model[zLiftMove.layer]);
+                                model[zLiftMove.layer] = decompress(
+                                    model[zLiftMove.layer]
+                                );
                             // move command from move layer...
                             model[zLiftMove.layer].splice(
                                 model[layer].indexOf(zLiftMove.command),
