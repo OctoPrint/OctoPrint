@@ -189,3 +189,224 @@ QUnit.cases(
         "As expected: " + String(params.expected)
     );
 });
+
+QUnit.module("determineWebcamStreamType");
+QUnit.cases(
+    (function () {
+        var cases = [];
+
+        var params = [
+            {
+                streamUrl: undefined,
+                exceptionExpected: "Empty streamUrl. Cannot determine stream type.",
+                expectedResult: undefined
+            },
+            {
+                streamUrl: "invalidUrl",
+                exceptionExpected: "Invalid streamUrl. Cannot determine stream type.",
+                expectedResult: undefined
+            },
+            {
+                streamUrl: "webrtc://localhost/stream",
+                exceptionExpected: undefined,
+                expectedResult: "webrtc"
+            },
+            {
+                streamUrl: "webrtcs://localhost/stream",
+                exceptionExpected: undefined,
+                expectedResult: "webrtc"
+            },
+            {
+                streamUrl: "https://localhost/stream.m3u8",
+                exceptionExpected: undefined,
+                expectedResult: "hls"
+            },
+            {
+                streamUrl: "https://localhost/stream",
+                exceptionExpected: undefined,
+                expectedResult: "mjpg"
+            }
+        ];
+
+        var param, i;
+        for (i = 0; i < params.length; i++) {
+            param = params[i];
+            param["title"] =
+                String(param.streamUrl) +
+                String(param.exceptionExpected) +
+                String(param.expectedResult);
+            cases.push(param);
+        }
+
+        return cases;
+    })()
+).test("determineWebcamStreamType", function (params, assert) {
+    var exceptionMessage = undefined;
+    var result = undefined;
+
+    try {
+        result = determineWebcamStreamType(params.streamUrl);
+    } catch (ex) {
+        exceptionMessage = ex;
+    }
+
+    assert.equal(
+        params.exceptionExpected,
+        exceptionMessage,
+        "Exception expected: " + String(params.exceptionExpected)
+    );
+
+    assert.equal(
+        params.expectedResult,
+        result,
+        "As expected: " + String(params.expectedResult)
+    );
+});
+
+QUnit.module("validateWebcamUrl");
+QUnit.cases(
+    (function () {
+        var cases = [];
+
+        var params = [
+            {
+                streamUrl: undefined,
+                expected: false,
+                windowLocationOverride: undefined
+            },
+            {
+                streamUrl: "//localhost/stream",
+                expected: new URL("https://localhost/stream"),
+                windowLocationOverride: {protocol: "https:"}
+            },
+            {
+                streamUrl: "/stream",
+                expected: new URL("https://localhost/stream"),
+                windowLocationOverride: {
+                    protocol: "https:",
+                    port: "443",
+                    hostname: "localhost"
+                }
+            },
+            {
+                streamUrl: "http://localhost/stream",
+                expected: new URL("http://localhost/stream"),
+                windowLocationOverride: undefined
+            },
+            {
+                streamUrl: "https://localhost/stream",
+                expected: new URL("https://localhost/stream"),
+                windowLocationOverride: undefined
+            },
+            {
+                streamUrl: "webrtc://localhost/stream",
+                expected: new URL("webrtc://localhost/stream"),
+                windowLocationOverride: undefined
+            },
+            {
+                streamUrl: "webrtcs://localhost/stream",
+                expected: new URL("webrtcs://localhost/stream"),
+                windowLocationOverride: undefined
+            },
+            {
+                streamUrl: "invalid",
+                expected: false,
+                windowLocationOverride: undefined
+            },
+            {
+                streamUrl: "//exception",
+                expected: false,
+                windowLocationOverride: {protocol: ":"}
+            }
+        ];
+
+        var param, i;
+        for (i = 0; i < params.length; i++) {
+            param = params[i];
+            param["title"] = String(param.streamUrl) + String(param.expected);
+            cases.push(param);
+        }
+
+        return cases;
+    })()
+).test("validateWebcamUrl", function (params, assert) {
+    if (params.windowLocationOverride) {
+        fetchWindowLocation = function () {
+            return params.windowLocationOverride;
+        };
+    }
+
+    var result = validateWebcamUrl(params.streamUrl);
+
+    assert.equal(
+        params.expected.toString(),
+        result.toString(),
+        "As expected: " + String(params.expected)
+    );
+});
+
+QUnit.module("getExternalHostUrl");
+QUnit.cases(
+    (function () {
+        var cases = [];
+
+        var params = [
+            {
+                windowLocation: {
+                    protocol: "https:",
+                    port: "443",
+                    hostname: "localhost"
+                },
+                expected: "https://localhost"
+            },
+            {
+                windowLocation: {
+                    protocol: "https:",
+                    port: "8000",
+                    hostname: "localhost"
+                },
+                expected: "https://localhost:8000"
+            },
+
+            {
+                windowLocation: {
+                    protocol: "http:",
+                    port: "80",
+                    hostname: "localhost"
+                },
+                expected: "http://localhost"
+            },
+            {
+                windowLocation: {
+                    protocol: "http:",
+                    port: "8000",
+                    hostname: "localhost"
+                },
+                expected: "http://localhost:8000"
+            }
+        ];
+
+        var param, i;
+        for (i = 0; i < params.length; i++) {
+            param = params[i];
+            param["title"] =
+                String(param.windowLocation.protocol) +
+                "//" +
+                String(param.windowLocation.hostname) +
+                String(param.windowLocation.port);
+            cases.push(param);
+        }
+
+        return cases;
+    })()
+).test("getExternalHostUrl", function (params, assert) {
+    if (params.windowLocation) {
+        fetchWindowLocation = function () {
+            return params.windowLocation;
+        };
+    }
+
+    var result = getExternalHostUrl();
+
+    assert.equal(params.expected, result, "As expected: " + String(params.expected));
+});
