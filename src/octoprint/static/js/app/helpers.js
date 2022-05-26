@@ -652,13 +652,25 @@ function cleanTemperature(temp, offThreshold) {
     return temp;
 }
 
-function formatTemperature(temp, showF, offThreshold) {
+function formatTemperature(temp, showF, offThreshold, returnUnicode) {
     if (temp === undefined || !_.isNumber(temp)) return "-";
     if (offThreshold !== undefined && temp < offThreshold) return gettext("off");
+
+    var degreeSymbol = "&deg;";
+    if (returnUnicode !== undefined && returnUnicode) {
+        degreeSymbol = "\u00B0";
+    }
+
     if (showF) {
-        return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, (temp * 9) / 5 + 32);
+        return _.sprintf(
+            "%.1f%sC (%.1f%sF)",
+            temp,
+            degreeSymbol,
+            (temp * 9) / 5 + 32,
+            degreeSymbol
+        );
     } else {
-        return _.sprintf("%.1f&deg;C", temp);
+        return _.sprintf("%.1f%sC", temp, degreeSymbol);
     }
 }
 
@@ -1542,41 +1554,75 @@ var copyToClipboard = function (text) {
     temp.remove();
 };
 
-var determineWebcamStreamType = function (streamUrl) {
-    if (streamUrl) {
-        if (streamUrl.startsWith("webrtc")) {
-            return "webrtc";
-        }
+var getExternalHostUrl = function () {
+    var loc = window.location;
+    var port = "";
+    if (
+        (loc.protocol === "http:" && loc.port !== "80") ||
+        (loc.protocol === "https:" && loc.port !== "443")
+    ) {
+        port = ":" + loc.port;
+    }
+    return loc.protocol + "//" + loc.hostname + port;
+};
 
-        var lastDotPosition = streamUrl.lastIndexOf(".");
-        var firstQuotationSignPosition = streamUrl.indexOf("?");
-        if (
-            lastDotPosition != -1 &&
-            firstQuotationSignPosition != -1 &&
-            lastDotPosition >= firstQuotationSignPosition
-        ) {
-            throw "Malformed URL. Cannot determine stream type.";
-        }
+var validateWebcamUrl = function (streamUrl) {
+    if (!streamUrl) {
+        return false;
+    }
 
-        // If we have found a dot, try to extract the extension.
-        if (lastDotPosition > -1) {
-            if (firstQuotationSignPosition > -1) {
-                var extension = streamUrl.slice(
-                    lastDotPosition + 1,
-                    firstQuotationSignPosition - 1
-                );
-            } else {
-                var extension = streamUrl.slice(lastDotPosition + 1);
-            }
-            if (extension.toLowerCase() == "m3u8") {
-                return "hls";
-            }
-        }
-        // By default, 'mjpg' is the stream type.
-        return "mjpg";
+    var lower = streamUrl.toLowerCase();
+    var toParse = streamUrl;
+
+    if (lower.startsWith("//")) {
+        // protocol relative
+        toParse = window.location.protocol + streamUrl;
+    } else if (lower.startsWith("/")) {
+        // host relative
+        toParse = getExternalHostUrl() + streamUrl;
+    } else if (
+        lower.startsWith("http:") ||
+        lower.startsWith("https:") ||
+        lower.startsWith("webrtc:") ||
+        lower.startsWith("webrtcs:")
+    ) {
+        // absolute & supported protocol
+        toParse = streamUrl;
     } else {
+        return false;
+    }
+
+    try {
+        return new URL(toParse);
+    } catch (e) {
+        return false;
+    }
+};
+
+var determineWebcamStreamType = function (streamUrl) {
+    if (!streamUrl) {
         throw "Empty streamUrl. Cannot determine stream type.";
     }
+
+    var parsed = validateWebcamUrl(streamUrl);
+    if (!parsed) {
+        throw "Invalid streamUrl. Cannot determine stream type.";
+    }
+
+    if (parsed.protocol === "webrtc:" || parsed.protocol === "webrtcs:") {
+        return "webrtc";
+    }
+
+    var lastDotPosition = parsed.pathname.lastIndexOf(".");
+    if (lastDotPosition !== -1) {
+        var extension = parsed.pathname.substring(lastDotPosition + 1);
+        if (extension.toLowerCase() === "m3u8") {
+            return "hls";
+        }
+    }
+
+    // By default, 'mjpg' is the stream type.
+    return "mjpg";
 };
 
 var saveToLocalStorage = function (key, data) {

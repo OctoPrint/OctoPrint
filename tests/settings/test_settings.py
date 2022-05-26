@@ -407,6 +407,18 @@ class SettingsTest(unittest.TestCase):
             self.assertNotIn("server", settings._config)
             self.assertEqual(5000, settings.get(["server", "port"]))
 
+    def test_set_default_subtree(self):
+        with self.settings() as settings:
+            default = {"host": "0.0.0.0", "port": 5000}
+            self.assertEqual(
+                {"host": "0.0.0.0", "port": 8080}, settings.get(["server"], merged=True)
+            )
+
+            settings.set(["server"], default)
+
+            self.assertNotIn("server", settings._config)
+            self.assertEqual(default, settings.get(["server"], merged=True))
+
     def test_set_none(self):
         with self.settings() as settings:
             self.assertTrue("port" in settings._config["server"])
@@ -495,11 +507,14 @@ class SettingsTest(unittest.TestCase):
     def test_get_preprocessor(self):
         with self.settings() as settings:
             config = {}
-            defaults = {"test": "some string"}
-            preprocessors = {"test": lambda x: x.upper()}
+            defaults = {"test_preprocessor": "some string"}
+            preprocessors = {"test_preprocessor": lambda x: x.upper()}
 
             value = settings.get(
-                ["test"], config=config, defaults=defaults, preprocessors=preprocessors
+                ["test_preprocessor"],
+                config=config,
+                defaults=defaults,
+                preprocessors=preprocessors,
             )
 
             self.assertEqual("SOME STRING", value)
@@ -507,18 +522,18 @@ class SettingsTest(unittest.TestCase):
     def test_set_preprocessor(self):
         with self.settings() as settings:
             config = {}
-            defaults = {"foo": {"bar": "fnord"}}
-            preprocessors = {"foo": {"bar": lambda x: x.upper()}}
+            defaults = {"foo_preprocessor": {"bar": "fnord"}}
+            preprocessors = {"foo_preprocessor": {"bar": lambda x: x.upper()}}
 
             settings.set(
-                ["foo", "bar"],
+                ["foo_preprocessor", "bar"],
                 "value",
                 config=config,
                 defaults=defaults,
                 preprocessors=preprocessors,
             )
 
-            self.assertEqual("VALUE", config["foo"]["bar"])
+            self.assertEqual("VALUE", config["foo_preprocessor"]["bar"])
 
     def test_set_external_modification(self):
         with self.settings() as settings:
@@ -663,6 +678,7 @@ class ChainmapTest(unittest.TestCase):
         self.assertTrue(self.chainmap.has_path(["devel"]))
         self.assertTrue(self.chainmap.has_path(["devel", "virtualPrinter"]))
         self.assertTrue(self.chainmap.has_path(["devel", "virtualPrinter", "enabled"]))
+        self.assertTrue(self.chainmap.has_path(["plugins", "foo", "bar"]))
 
         self.assertFalse(self.chainmap.has_path(["api", "lock"]))
 
@@ -685,6 +701,23 @@ class ChainmapTest(unittest.TestCase):
             self.chainmap.get_by_path(["test"], merged=True),
         )
 
+        self.assertEqual(
+            self.config["plugins"]["foo"]["bar"],
+            self.chainmap.get_by_path(["plugins", "foo", "bar"]),
+        )
+
+        self.assertEqual(
+            self.config["plugins"]["fnord"]["bar"],
+            self.chainmap.get_by_path(["plugins", "fnord", "bar"]),
+        )
+        self.assertEqual(
+            dict_merge(
+                self.overlay["plugins"]["fnord"]["bar"],
+                self.config["plugins"]["fnord"]["bar"],
+            ),
+            self.chainmap.get_by_path(["plugins", "fnord", "bar"], merged=True),
+        )
+
     def test_set_by_path(self):
         self.chainmap.set_by_path(["devel", "virtualPrinter", "sendWait"], False)
 
@@ -698,9 +731,31 @@ class ChainmapTest(unittest.TestCase):
         self.chainmap.del_by_path(
             ["devel", "virtualPrinter", "capabilities", "autoreport_temp"]
         )
+
+        # make sure we only see the empty default now
         self.assertEqual(
             {}, self.chainmap.get_by_path(["devel", "virtualPrinter", "capabilities"])
         )
+
+        # make sure the whole (empty) tree is gone from top layer
+        path = ["devel", "virtualPrinter", "capabilities", "autoreport_temp"]
+        while len(path):
+            self.assertFalse(_key(*path) in self.chainmap._chainmap.maps[0])
+            path = path[:-1]
+
+    def test_del_by_path_with_subtree(self):
+        self.chainmap.del_by_path(["devel", "virtualPrinter", "capabilities"])
+
+        # make sure we only see the empty default now
+        self.assertEqual(
+            {}, self.chainmap.get_by_path(["devel", "virtualPrinter", "capabilities"])
+        )
+
+        # make sure the whole (empty) tree is gone from top layer
+        path = ["devel", "virtualPrinter", "capabilities", "autoreport_temp"]
+        while len(path):
+            self.assertFalse(_key(*path) in self.chainmap._chainmap.maps[0])
+            path = path[:-1]
 
     @ddt.data(
         (
@@ -734,6 +789,10 @@ class ChainmapTest(unittest.TestCase):
         ),
         (
             {_key("a"): None, _key("a", "b"): "b"},
+            {"a": {"b": "b"}},
+        ),
+        (
+            {_key("a"): "", _key("a", "b"): "b"},
             {"a": {"b": "b"}},
         ),
     )

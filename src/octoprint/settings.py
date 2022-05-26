@@ -34,6 +34,7 @@ from yaml import YAMLError
 from octoprint.util import (
     CaseInsensitiveSet,
     atomic_write,
+    deprecated,
     dict_merge,
     fast_deepcopy,
     generate_api_key,
@@ -563,7 +564,7 @@ class HierarchicalChainMap:
 
         items = []
         for k, v in d.items():
-            new_key = parent_key + _CHAINMAP_SEP + k if parent_key else k
+            new_key = parent_key + _CHAINMAP_SEP + str(k) if parent_key else str(k)
             if v and isinstance(v, dict):
                 items.extend(HierarchicalChainMap._flatten(v, new_key).items())
             else:
@@ -577,16 +578,30 @@ class HierarchicalChainMap:
         if d is None:
             return {}
 
-        result = dict()
+        result = {}
         for key, value in d.items():
             if not key.startswith(prefix):
                 continue
             subkeys = key[len(prefix) :].split(_CHAINMAP_SEP)
             current = result
+
+            path = []
             for subkey in subkeys[:-1]:
-                if subkey not in current or current[subkey] is None:
+                # we only need that for logging in case of data weirdness below
+                path.append(subkey)
+
+                # make sure the subkey is in the current dict, and that it is a dict
+                if subkey not in current:
                     current[subkey] = {}
+                elif not isinstance(current[subkey], dict):
+                    logging.getLogger(__name__).warning(
+                        f"There is a non-dict value on the path to {key} at {path!r}, ignoring."
+                    )
+                    current[subkey] = {}
+
+                # go down a level
                 current = current[subkey]
+
             current[subkeys[-1]] = value
 
         return result
@@ -631,14 +646,13 @@ class HierarchicalChainMap:
             current = self._chainmap
 
         key = self._path_to_key(path)
+        prefix = key + _CHAINMAP_SEP
 
-        if key in current:
+        if key in current and not any(k.startswith(prefix) for k in current.keys()):
             # found it, return
             return current[key]
 
         # if we arrived here we might be trying to grab a dict, look for children
-
-        key = key + _CHAINMAP_SEP
 
         # TODO 2.0.0 remove this & make 'merged' the default
         if not merged and hasattr(current, "maps"):
@@ -646,70 +660,84 @@ class HierarchicalChainMap:
             # full contents of the key. Instead, we only include the contents of the key
             # on the first level where we find the value.
             for layer in current.maps:
-                if any(k.startswith(key) for k in layer):
+                if any(k.startswith(prefix) for k in layer):
                     current = layer
                     break
 
         result = self._unflatten(
-            {k: v for k, v in current.items() if k.startswith(key)}, prefix=key
+            {k: v for k, v in current.items() if k.startswith(prefix)}, prefix=prefix
         )
         if not result:
             raise KeyError("Could not find entry for " + str(path))
         return result
 
     def set_by_path(self, path, value):
-        current = self._chainmap.maps[0]
+        current = self._chainmap.maps[0]  # config only
         key = self._path_to_key(path)
 
         # delete any subkeys
-        subkeys_start = key + _CHAINMAP_SEP
-        to_delete = []
-        for k in current.keys():
-            if k.startswith(subkeys_start):
-                to_delete.append(k)
-        for k in to_delete:
-            del current[k]
+        self._del_prefix(current, key)
 
         if isinstance(value, dict):
             current.update(self._flatten(value, key))
         else:
-            # when assigning to a existing, empty dict, delete the dict
-            #
-            # a/b = {} <- delete this
-            # a/b/c = "a"
-            up_one_path = self._path_to_key(path[:-1])
-            if up_one_path in current and current[up_one_path] == {}:
-                del current[up_one_path]
-
-            current[self._path_to_key(path)] = value
+            # make sure to clear anything below the path (e.g. switching from dict
+            # to something else, for whatever reason)
+            self._clean_upward_path(current, path)
+            current[key] = value
 
     def del_by_path(self, path):
         if not path:
             raise ValueError("Invalid path")
 
-        current = self._chainmap
-
-        # used to check if we've deleted anything
-        deleted_any = False
-
-        # we delete recursively: the path that we got, and any subpaths
+        current = self._chainmap.maps[0]  # config only
         delete_key = self._path_to_key(path)
-        for key in self._chainmap.keys():
-            if key.startswith(delete_key):
-                del current[key]
-                deleted_any = True
+        deleted = False
 
-        if not deleted_any:
+        # delete any subkeys
+        deleted = self._del_prefix(current, delete_key)
+
+        # delete the key itself if it's there
+        try:
+            del current[delete_key]
+            deleted = True
+        except KeyError:
+            pass
+
+        if not deleted:
             raise KeyError("Could not find entry for " + str(path))
 
-        # create a placeholder object above if needed
-        #
-        # a/b = {}
-        # a/b/c = "a"  # deleted
-        up_one_path = self._path_to_key(path[:-1])
-        up_one_path_prefix = up_one_path + _CHAINMAP_SEP
-        if not any(map(lambda k: k.startswith(up_one_path_prefix), current.keys())):
-            current[up_one_path] = {}
+        # clean anything that's now empty and above our path
+        self._clean_upward_path(current, path)
+
+    def _del_prefix(self, current, key):
+        prefix = key + _CHAINMAP_SEP
+
+        to_delete = [k for k in current if k.startswith(prefix)]
+        for k in to_delete:
+            del current[k]
+
+        return len(to_delete) > 0
+
+    def _clean_upward_path(self, current, path):
+        working_path = path
+        while len(working_path):
+            working_path = working_path[:-1]
+            if not working_path:
+                break
+
+            key = self._path_to_key(working_path)
+            prefix = key + _CHAINMAP_SEP
+            if any(map(lambda k: k.startswith(prefix), current)):
+                # there's at least one subkey here, we're done
+                break
+
+            # delete the key itself if it's there
+            try:
+                del current[key]
+            except KeyError:
+                # key itself wasn't in there
+                pass
 
     def with_config_defaults(self, config=None, defaults=None):
         """
@@ -782,7 +810,7 @@ class Settings:
         serial:
             port: "/dev/ttyACM0"
             baudrate: 250000
-            timeouts:
+            timeout:
                 communication: 20.0
                 temperature: 5.0
                 sdStatus: 1.0
@@ -835,7 +863,6 @@ class Settings:
         self._map = HierarchicalChainMap({}, default_settings)
         self.load_overlays(overlays)
 
-        self._config = None
         self._dirty = False
         self._dirty_time = 0
         self._last_config_hash = None
@@ -1098,7 +1125,7 @@ class Settings:
 
     @property
     def config_yaml(self):
-        return yaml.dump(self._config)
+        return yaml.dump(self.config)
 
     @property
     def config_hash(self):
@@ -1113,10 +1140,28 @@ class Settings:
         return self._last_config_hash
 
     @property
-    def _config(self):
+    def config(self):
+        """
+        A view of the local config as stored in config.yaml
+
+        Does not support modifications, they will be thrown away silently. If you need to
+        modify anything in the settings, utilize the provided set and remove methods.
+        """
         return self._map.top_map
 
+    @property
+    @deprecated(
+        "Settings._config has been deprecated and is a read-only view. Please use Settings.config or the set & remove methods instead.",
+        since="1.8.0",
+    )
+    def _config(self):
+        return self.config
+
     @_config.setter
+    @deprecated(
+        "Setting of Settings._config has been deprecated. Please use the set & remove methods instead and get in touch if you have a usecase they don't cover.",
+        since="1.8.0",
+    )
     def _config(self, value):
         self._map.top_map = value
 
@@ -1147,11 +1192,14 @@ class Settings:
     # ~~ load and save
 
     def load(self, migrate=False):
+        config = None
+        mtime = None
+
         if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
             with open(self._configfile, encoding="utf-8", errors="replace") as f:
                 try:
-                    self._config = yaml.load_from_file(file=f)
-                    self._mtime = self.last_modified
+                    config = yaml.load_from_file(file=f)
+                    mtime = self.last_modified
 
                 except YAMLError as e:
                     details = str(e)
@@ -1171,8 +1219,11 @@ class Settings:
                     )
 
         # changed from else to handle cases where the file exists, but is empty / 0 bytes
-        if not self._config or not isinstance(self._config, dict):
-            self._config = {}
+        if not config or not isinstance(config, dict):
+            config = {}
+
+        self._map.top_map = config
+        self._mtime = mtime
 
         if migrate:
             self._migrate_config()
@@ -1266,7 +1317,7 @@ class Settings:
 
     def _migrate_config(self, config=None, persist=False):
         if config is None:
-            config = self._config
+            config = self._map.top_map
             persist = True
 
         dirty = False
@@ -1288,6 +1339,9 @@ class Settings:
             dirty = migrate(config) or dirty
 
         if dirty and persist:
+            self._map.top_map = (
+                config  # we need to write it back here or the changes will be lost
+            )
             self.save(force=True)
 
     def _migrate_gcode_scripts(self, config):
@@ -1806,7 +1860,7 @@ class Settings:
                 permissions=0o600,
                 max_permissions=0o666,
             ) as configFile:
-                yaml.save_to_file(self._config, file=configFile)
+                yaml.save_to_file(self._map.top_map, file=configFile)
                 self._dirty = False
         except Exception:
             self._logger.exception("Error while saving config.yaml!")
@@ -2045,10 +2099,7 @@ class Settings:
                 folder = default_folder
 
                 try:
-                    del self._config["folder"][type]
-                    if not len(self._config["folder"]):
-                        del self._config["folder"]
-                    self._mark_dirty()
+                    self.remove(["folder", type])
                     self.save()
                 except KeyError:
                     pass
@@ -2243,23 +2294,12 @@ class Settings:
 
         currentPath = self.getBaseFolder(type)
         defaultPath = self._get_default_folder(type)
-        if (
-            (path is None or path == defaultPath)
-            and "folder" in self._config
-            and type in self._config["folder"]
-        ):
-            del self._config["folder"][type]
-            if not self._config["folder"]:
-                del self._config["folder"]
-            self._mark_dirty()
+        if path is None or path == defaultPath:
+            self.remove(["folder", type])
         elif (path != currentPath and path != defaultPath) or force:
             if validate:
                 _validate_folder(path, check_writable=True, deep_check_writable=True)
-
-            if "folder" not in self._config:
-                self._config["folder"] = {}
-            self._config["folder"][type] = path
-            self._mark_dirty()
+            self.set(["folder", type], path, force=force)
 
     def saveScript(self, script_type, name, script):
         script_folder = self.getBaseFolder("scripts")

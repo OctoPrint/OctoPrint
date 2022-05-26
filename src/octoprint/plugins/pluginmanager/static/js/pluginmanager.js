@@ -210,6 +210,42 @@ $(function () {
 
         self.safeMode = ko.observable();
         self.online = ko.observable();
+        self.supportedArchiveExtensions = ko.observableArray([]);
+        self.supportedPythonExtensions = ko.observableArray([]);
+
+        var createExtensionsHelp = function (extensions) {
+            return _.reduce(
+                extensions,
+                function (result, ext, index) {
+                    return (
+                        result +
+                        '"' +
+                        ext +
+                        '"' +
+                        (index < extensions.length - 2
+                            ? ", "
+                            : index == extensions.length - 2
+                            ? " " + gettext("and") + " "
+                            : "")
+                    );
+                },
+                ""
+            );
+        };
+        self.supportedExtensionsHelp = ko.pureComputed(function () {
+            var archiveExts = createExtensionsHelp(self.supportedArchiveExtensions());
+            var pythonExts = createExtensionsHelp(self.supportedPythonExtensions());
+
+            return _.sprintf(
+                gettext(
+                    "This does not look like a valid plugin. Valid plugins should be " +
+                        "either archives installable via <code>pip</code> that " +
+                        "have the extension %(archiveExtensions)s, or single file python " +
+                        "plugins with the extension %(pythonExtensions)s."
+                ),
+                {archiveExtensions: archiveExts, pythonExtensions: pythonExts}
+            );
+        });
 
         self.requestError = ko.observable(false);
 
@@ -395,7 +431,9 @@ $(function () {
         });
 
         self.invalidFile = ko.pureComputed(function () {
-            var allowedFileExtensions = [".zip", ".tar.gz", ".tgz", ".tar", ".py"];
+            var allowedFileExtensions = self
+                .supportedArchiveExtensions()
+                .concat(self.supportedPythonExtensions());
 
             var name = self.uploadFilename();
             var lowerName = name !== undefined ? name.toLocaleLowerCase() : undefined;
@@ -594,6 +632,12 @@ $(function () {
             }
         };
 
+        self.fromSupportedExtensionsResponse = function (data) {
+            if (!data) return;
+            self.supportedArchiveExtensions(data.archive || []);
+            self.supportedPythonExtensions(data.python || []);
+        };
+
         self.dataPluginsDeferred = undefined;
         self.requestPluginData = function (options) {
             if (!_.isPlainObject(options)) {
@@ -632,6 +676,7 @@ $(function () {
                     self.requestError(false);
                     self.fromPluginsResponse(data.plugins, options);
                     self.fromPipResponse(data.pip);
+                    self.fromSupportedExtensionsResponse(data.supported_extensions);
                     self.safeMode(data.safe_mode || false);
                     deferred.resolveWith(data);
                 });

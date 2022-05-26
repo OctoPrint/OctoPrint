@@ -573,7 +573,7 @@ $(function () {
             }
 
             // Determine stream type and switch to corresponding webcam.
-            var streamType = determineWebcamStreamType(self.settings.webcam_streamUrl());
+            var streamType = self.settings.webcam_streamType();
             if (streamType == "mjpg") {
                 self._switchToMjpgWebcam();
             } else if (streamType == "hls") {
@@ -728,9 +728,12 @@ $(function () {
                     // z home
                     button = $("#control-zhome");
                     break;
-                default:
+                case 9: // prevent tab key from removing focus from webcam
                     event.preventDefault();
                     return false;
+                default:
+                    // don't prevent other keys
+                    return true;
             }
 
             if (button === undefined) {
@@ -760,7 +763,7 @@ $(function () {
                 return;
             }
 
-            var newSrc = self.settings.webcam_streamUrl();
+            var newSrc = self.settings.webcam_streamUrlEscaped();
             if (currentSrc != newSrc) {
                 if (self.settings.webcam_cacheBuster()) {
                     if (newSrc.lastIndexOf("?") > -1) {
@@ -797,10 +800,10 @@ $(function () {
                 typeof video.canPlayType != undefined &&
                 video.canPlayType("application/vnd.apple.mpegurl") == "probably"
             ) {
-                video.src = self.settings.webcam_streamUrl();
+                video.src = self.settings.webcam_streamUrlEscaped();
             } else if (Hls.isSupported()) {
                 self.hls = new Hls();
-                self.hls.loadSource(self.settings.webcam_streamUrl());
+                self.hls.loadSource(self.settings.webcam_streamUrlEscaped());
                 self.hls.attachMedia(video);
             }
 
@@ -836,7 +839,7 @@ $(function () {
             if (self.webRTCPeerConnection == null) {
                 self.webRTCPeerConnection = startWebRTC(
                     video,
-                    self.settings.webcam_streamUrl(),
+                    self.settings.webcam_streamUrlEscaped(),
                     self.settings.webcam_streamWebrtcIceServers()
                 );
             }

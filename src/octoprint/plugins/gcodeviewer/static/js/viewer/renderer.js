@@ -1070,7 +1070,14 @@ GCODE.renderer = (function () {
                 if (renderOptions["showMoves"] && !isNotCurrentLayer) {
                     // move => draw line from (prevX, prevY) to (x, y) in move color
                     ctx.lineWidth = lineWidthFactor;
-                    ctx.lineTo(x, y);
+
+                    if (cmd.direction !== undefined && cmd.direction !== 0) {
+                        var arc = getArcParams(cmd);
+                        var ccw = cmd.direction < 0; // Y-axis is inverted so direction is also inverted
+                        ctx.arc(arc.x, arc.y, arc.r, arc.startAngle, arc.endAngle, ccw);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
                 }
             } else if (cmd.extrude) {
                 if (cmd.retract == 0) {

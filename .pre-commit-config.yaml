@@ -43,16 +43,17 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/psf/black
-    rev: 22.1.0
+    rev: 22.3.0
     hooks:
       - id: black
-        args: ["--config", "black.toml"]
+        additional_dependencies:
+          - click==8.0.4
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
     hooks:
       - id: flake8
         additional_dependencies:
-          - flake8-bugbear
+          - flake8-bugbear==22.3.20
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v2.5.1
     hooks:

@@ -266,7 +266,7 @@
                         <div class="row-fluid">
                             <div class="span12">
                                 <div class="span3 pull-right">
-                                    <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }"><i class="fas fa-add"></i> <span data-bind="text: $root.installButtonText($data)"></span></button>
+                                    <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }"><span data-bind="text: $root.installButtonText($data)"></span></button>
                                     <div data-bind="visible: $data.disabled !== undefined" style="text-align: center"><small><a data-bind="attr: {href: page}" target="_blank">{{ _('"Why?"') }}</a></small></div>
                                 </div>
                                 <div>
@@ -339,7 +339,7 @@
                     </div>
                     <button id="settings_plugin_pluginmanager_repositorydialog_upload_start" class="btn btn-primary span3" data-bind="enable: enableFileInstall, css: {disabled: !enableFileInstall()}, click: function(){}">{{ _('Install') }}</button>
                 </div>
-                <span class="help-block" data-bind="visible: invalidFile">{{ _('This does not look like a valid plugin. Valid plugins should be either zip files or tarballs installable via <code>pip</code> that have the extension ".zip", ".tar.gz", ".tgz" or ".tar", or single file python plugins with the extension ".py"') }}</span>
+                <span class="help-block" data-bind="visible: invalidFile, html: supportedExtensionsHelp"></span>
             </form>
 
             <div>

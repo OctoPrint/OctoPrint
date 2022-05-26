@@ -64,6 +64,7 @@ $(function () {
         self.config_releaseChannel = ko.observable();
         self.config_pipEnableCheck = ko.observable();
         self.config_minimumFreeStorage = ko.observable();
+        self.config_githubToken = ko.observable();
 
         self.error_checkoutFolder = ko.pureComputed(function () {
             return (
@@ -243,6 +244,8 @@ $(function () {
             var target = $(event.target);
             target.prepend('<i class="fa fa-spinner fa-spin"></i> ');
 
+            var githubToken = self.config_githubToken();
+
             var data = {
                 plugins: {
                     softwareupdate: {
@@ -258,6 +261,9 @@ $(function () {
                     }
                 }
             };
+            if (githubToken) {
+                data.plugins.softwareupdate.credentials = {github: githubToken};
+            }
             self.settings.saveData(data, {
                 success: function () {
                     self.configurationDialog.modal("hide");
@@ -266,6 +272,7 @@ $(function () {
                 },
                 complete: function () {
                     $("i.fa-spinner", target).remove();
+                    self.config_githubToken("");
                 },
                 sending: true
             });
@@ -661,7 +668,14 @@ $(function () {
                     return gettext("Cannot check for update, need online connection");
                 }
                 case "network": {
-                    return gettext("Network error while checking for update");
+                    return gettext(
+                        "Network error while checking for update, please check the logs"
+                    );
+                }
+                case "api": {
+                    return gettext(
+                        "API error while checking for update, please check the logs"
+                    );
                 }
                 case "ratelimit": {
                     return gettext(
@@ -669,7 +683,9 @@ $(function () {
                     );
                 }
                 case "check": {
-                    return gettext("Check internal error while checking for update");
+                    return gettext(
+                        "Check internal error while checking for update, please check the logs"
+                    );
                 }
                 case "unknown": {
                     return gettext(
@@ -1305,32 +1321,31 @@ $(function () {
                                         : progress_percent > 75
                                         ? "progress-success"
                                         : "progress-warning";
+                                var countdownText = _.sprintf(
+                                    gettext("Updating in %(sec)i secs..."),
+                                    {
+                                        sec: messageData.timeout_value
+                                    }
+                                );
+
                                 queuedUpdatesPopupOptions.title = gettext(
                                     "Starting Queued Updates"
                                 );
                                 queuedUpdatesPopupOptions.text =
-                                    '<div class="row-fluid"><ul><li>' +
+                                    '<div class="row-fluid"><p></p><ul><li>' +
                                     _.map(self.availableAndQueued(), function (info) {
                                         return info.displayName;
                                     }).join("</li><li>") +
-                                    '</li></ul></div><div class="progress progress-softwareupdate ' +
+                                    '</li></ul></p></div><div class="progress progress-softwareupdate ' +
                                     progress_class +
                                     '"><div class="bar">' +
-                                    gettext("Updating in ") +
-                                    " " +
-                                    messageData.timeout_value +
-                                    " " +
-                                    gettext("secs") +
+                                    countdownText +
                                     '</div><div class="progress-text" style="clip-path: inset(0 0 0 ' +
                                     progress_percent +
                                     "%);-webkit-clip-path: inset(0 0 0 " +
                                     progress_percent +
                                     '%);">' +
-                                    gettext("Updating in ") +
-                                    " " +
-                                    messageData.timeout_value +
-                                    " " +
-                                    gettext("secs") +
+                                    countdownText +
                                     "</div></div>";
                                 queuedUpdatesPopupOptions.confirm = {
                                     confirm: true,

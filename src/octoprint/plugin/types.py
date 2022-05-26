@@ -500,7 +500,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
               :widths: 5 95
 
               * - icon
-                - Icon to use for the sidebar header, should be the name of a Font Awesome icon without the leading ``icon-`` part.
+                - Icon to use for the sidebar header, should be the full name of a Font Awesome icon including the ``fas``/``far``/``fab`` prefix, eg. ``fas fa-plus``.
               * - template_header
                 - Additional template to include in the head section of the sidebar item. For an example of this, see the additional
                   options included in the "Files" section.
@@ -631,12 +631,10 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
     at it being a mobile device:
 
     .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/__init__.py
-       :linenos:
        :tab-width: 4
        :caption: `dummy_mobile_ui/__init__.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/__init__.py>`_
 
     .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2
-       :linenos:
        :tab-width: 4
        :caption: `dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2 <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2>`_
 
@@ -1191,7 +1189,6 @@ class SimpleApiPlugin(OctoPrintPlugin):
     Take this example of a plugin registered under plugin identifier ``mysimpleapiplugin``:
 
     .. code-block:: python
-       :linenos:
 
        import octoprint.plugin
 
@@ -1327,7 +1324,6 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
     which behaves exactly the same like Flask's regular ``route`` decorators. Example:
 
     .. code-block:: python
-       :linenos:
 
        import octoprint.plugin
        import flask
@@ -1428,7 +1424,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         # we now iterate over all members of ourselves and look if we find an attribute
         # that has data originating from one of our decorators - we ignore anything
         # starting with a _ to only handle public stuff
-        for member in [member for member in dir(self) if not member.startswith("_")]:
+        for member in [x for x in dir(self) if not x.startswith("_")]:
             f = getattr(self, member)
 
             if hasattr(f, "_blueprint_rules") and member in f._blueprint_rules:

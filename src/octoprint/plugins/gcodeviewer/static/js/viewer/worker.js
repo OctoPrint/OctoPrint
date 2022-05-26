@@ -339,6 +339,7 @@ var analyzeModel = function () {
 
 var doParse = function () {
     var argChar, numSlice;
+    var activeLayer = undefined;
     var sendLayer = undefined;
     var sendMultiLayer = [];
     var lastSend = 0;
@@ -635,7 +636,6 @@ var doParse = function () {
             }
 
             layer = model.length;
-            sendLayer = layer;
             prevZ = z;
         }
 
@@ -673,53 +673,66 @@ var doParse = function () {
             };
 
             if (zLift) {
-                // Insert zLift moves for later processing
+                // Insert zLift moves for later processing - they might be part of
+                // the active layer still
                 zLiftMoves.push({
                     command: command,
                     layer: layer
                 });
-            } else if (zLiftMoves.length > 0) {
-                // there's something to be checked in the Z-lift cache
-                if (prevZ < maxLiftZ) {
-                    zLiftMoves.forEach(function (zLiftMove) {
-                        if (model[zLiftMove.layer] instanceof Uint8Array)
-                            model[zLiftMove.layer] = decompress(model[zLiftMove.layer]);
-                        // move command from move layer...
-                        model[zLiftMove.layer].splice(
-                            model[layer].indexOf(zLiftMove.command),
-                            1
-                        );
-                        if (model[zLiftLayer] instanceof Uint8Array)
-                            model[zLiftLayer] = decompress(model[zLiftLayer]);
-                        // ... to z-lift layer
-                        model[zLiftLayer].push(zLiftMove.command);
-                    });
+            } else {
+                if (zLiftMoves.length > 0) {
+                    // there's something to be checked in the Z-lift cache
+                    if (prevZ < maxLiftZ) {
+                        zLiftMoves.forEach(function (zLiftMove) {
+                            if (model[zLiftMove.layer] instanceof Uint8Array)
+                                model[zLiftMove.layer] = decompress(model[zLiftMove.layer]);
+                            // move command from move layer...
+                            model[zLiftMove.layer].splice(
+                                model[layer].indexOf(zLiftMove.command),
+                                1
+                            );
+                            if (model[zLiftLayer] instanceof Uint8Array)
+                                model[zLiftLayer] = decompress(model[zLiftLayer]);
+                            // ... to z-lift layer
+                            model[zLiftLayer].push(zLiftMove.command);
+                        });
 
-                    // clean up empty layers at the end of the model
-                    var spliceFrom = undefined;
-                    for (var l = model.length - 1; l > 0; l--) {
-                        if (model[l].length > 0) break;
-                        spliceFrom = l;
-                    }
-                    if (spliceFrom !== undefined) {
-                        model.splice(spliceFrom, model.length - spliceFrom);
+                        // clean up empty layers at the end of the model
+                        var spliceFrom = undefined;
+                        for (var l = model.length - 1; l > 0; l--) {
+                            if (model[l].length > 0) break;
+                            spliceFrom = l;
+                        }
+                        if (spliceFrom !== undefined) {
+                            model.splice(spliceFrom, model.length - spliceFrom);
+                        }
+
+                        // finally determine the new active layer
+                        if (prevZ === zLiftZ) {
+                            // initial lifted on layer if we are back at a prior height
+                            layer = zLiftLayer;
+                        } else {
+                            // new layer if this a new z, just lower than max z-lift
+                            model[model.length] = [];
+                            layer = model.length - 1;
+                        }
                     }
 
-                    // finally determine the new active layer
-                    if (prevZ === zLiftZ) {
-                        // initial lifted on layer if we are back at a prior height
-                        layer = zLiftLayer;
-                    } else {
-                        // new layer if this a new z, just lower than max z-lift
-                        model[model.length] = [];
-                        layer = model.length - 1;
-                    }
+                    // clear up cached Z-lift moves
+                    zLiftMoves = [];
+                    zLiftZ = undefined;
+                    maxLiftZ = undefined;
+                    zLiftLayer = undefined;
                 }
-                // clear up cached Z-lift moves
-                zLiftMoves = [];
-                zLiftZ = undefined;
-                maxLiftZ = undefined;
-                zLiftLayer = undefined;
+
+                // have we progressed a layer?
+                if (activeLayer === undefined || layer > activeLayer) {
+                    // the formerly active layer is now done and can be sent
+                    sendLayer = activeLayer;
+
+                    // the current layer is the new active layer
+                    activeLayer = layer;
+                }
             }
 
             model[layer].push(command);
@@ -737,9 +750,18 @@ var doParse = function () {
                 sendMultiLayer = [];
                 sendMultiLayerZ = [];
             }
-            sendMultiLayer[sendMultiLayer.length] = sendLayer;
+
+            if (sendMultiLayer.indexOf(sendLayer) === -1) {
+                sendMultiLayer.push(sendLayer);
+            }
+
             sendLayer = undefined;
         }
+    }
+
+    // we are done, send the final layer
+    if (sendMultiLayer.indexOf(activeLayer) === -1) {
+        sendMultiLayer.push(activeLayer);
     }
     sendLayersToParent(sendMultiLayer, 100);
 };

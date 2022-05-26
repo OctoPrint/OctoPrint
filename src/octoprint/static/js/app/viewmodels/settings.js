@@ -250,6 +250,7 @@ $(function () {
         self.serial_ackMax = ko.observable(undefined);
         self.serial_resendRatioThreshold = ko.observable(100);
         self.serial_resendRatioStart = ko.observable(100);
+        self.serial_ignoreEmptyPorts = ko.observable(undefined);
         self.serial_enableShutdownActionCommand = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
@@ -311,6 +312,20 @@ $(function () {
             self.webcam_ffmpegPathOk(false);
             self.webcam_ffmpegPathBroken(false);
         };
+        self.webcam_streamUrlEscaped = ko.pureComputed(function () {
+            return encodeURI(self.webcam_streamUrl());
+        });
+        self.webcam_streamType = ko.pureComputed(function () {
+            try {
+                return determineWebcamStreamType(self.webcam_streamUrlEscaped());
+            } catch (e) {
+                return "";
+            }
+        });
+        self.webcam_streamValid = ko.pureComputed(function () {
+            var url = self.webcam_streamUrlEscaped();
+            return !url || validateWebcamUrl(url);
+        });
 
         self.server_onlineCheckText = ko.observable();
         self.server_onlineCheckOk = ko.observable(false);
@@ -431,7 +446,8 @@ $(function () {
 
         self.testWebcamStreamUrlBusy = ko.observable(false);
         self.testWebcamStreamUrl = function () {
-            if (!self.webcam_streamUrl()) {
+            var url = self.webcam_streamUrlEscaped();
+            if (!url) {
                 return;
             }
 
@@ -442,24 +458,31 @@ $(function () {
             var text = gettext(
                 "If you see your webcam stream below, the entered stream URL is ok."
             );
-            var streamType = determineWebcamStreamType(self.webcam_streamUrl());
+
+            var streamType;
+            try {
+                streamType = self.webcam_streamType();
+            } catch (e) {
+                streamType = "";
+            }
+
             var webcam_element;
             var webrtc_peer_connection;
-            if (streamType == "mjpg") {
-                webcam_element = $('<img src="' + self.webcam_streamUrl() + '">');
-            } else if (streamType == "hls") {
+            if (streamType === "mjpg") {
+                webcam_element = $('<img src="' + url + '">');
+            } else if (streamType === "hls") {
                 webcam_element = $(
                     '<video id="webcam_hls" muted autoplay style="width: 100%"/>'
                 );
                 video_element = webcam_element[0];
                 if (video_element.canPlayType("application/vnd.apple.mpegurl")) {
-                    video_element.src = self.webcam_streamUrl();
+                    video_element.src = url;
                 } else if (Hls.isSupported()) {
                     var hls = new Hls();
-                    hls.loadSource(self.webcam_streamUrl());
+                    hls.loadSource(url);
                     hls.attachMedia(video_element);
                 }
-            } else if (isWebRTCAvailable() && streamType == "webrtc") {
+            } else if (isWebRTCAvailable() && streamType === "webrtc") {
                 webcam_element = $(
                     '<video id="webcam_webrtc" muted autoplay playsinline controls style="width: 100%"/>'
                 );
@@ -467,7 +490,7 @@ $(function () {
 
                 webrtc_peer_connection = startWebRTC(
                     video_element,
-                    self.webcam_streamUrl(),
+                    url,
                     self.webcam_streamWebrtcIceServers()
                 );
             } else {
