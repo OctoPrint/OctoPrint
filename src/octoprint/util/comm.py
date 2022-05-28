@@ -429,6 +429,21 @@ class TemperatureRecord:
             return actual, target
 
 
+class FanspeedRecord:
+    def __init__(self):
+        self._fanspeed = None
+
+    def copy_from(self, other):
+        self._fanspeed = other.fanspeed
+
+    def set_speed(self, speed):
+        self._fanspeed = speed
+
+    @property
+    def fanspeed(self):
+        return self._fanspeed
+
+
 class MachineCom:
     STATE_NONE = 0
     STATE_OPEN_SERIAL = 1
@@ -759,6 +774,10 @@ class MachineCom:
         self.last_position = PositionRecord()
         self.pause_position = PositionRecord()
         self.cancel_position = PositionRecord()
+
+        self.last_fanspeed = FanspeedRecord()
+        self.pause_fanspeed = FanspeedRecord()
+        self.cancel_fanspeed = FanspeedRecord()
 
         self._record_pause_data = False
         self._record_cancel_data = False
@@ -1299,6 +1318,7 @@ class MachineCom:
                 "printer_profile": self._printerProfileManager.get_current_or_default(),
                 "last_position": self.last_position,
                 "last_temperature": self.last_temperature.as_script_dict(),
+                "last_fanspeed": self.last_fanspeed,
             }
         )
 
@@ -1307,6 +1327,7 @@ class MachineCom:
                 {
                     "pause_position": self.pause_position,
                     "pause_temperature": self.pause_temperature.as_script_dict(),
+                    "pause_fanspeed": self.pause_fanspeed,
                 }
             )
         elif scriptName == "afterPrintCancelled":
@@ -1314,6 +1335,7 @@ class MachineCom:
                 {
                     "cancel_position": self.cancel_position,
                     "cancel_temperature": self.cancel_temperature.as_script_dict(),
+                    "cancel_fanspeed": self.cancel_fanspeed,
                 }
             )
 
@@ -2616,6 +2638,7 @@ class MachineCom:
                             self._record_pause_data = False
                             self.pause_position.copy_from(self.last_position)
                             self.pause_temperature.copy_from(self.last_temperature)
+                            self.pause_fanspeed.copy_from(self.last_fanspeed)
                             self._pause_preparation_done()
 
                         if self._record_cancel_data:
@@ -2623,6 +2646,7 @@ class MachineCom:
                             self._record_cancel_data = False
                             self.cancel_position.copy_from(self.last_position)
                             self.cancel_temperature.copy_from(self.last_temperature)
+                            self.cancel_fanspeed.copy_from(self.last_fanspeed)
                             self._cancel_preparation_done()
 
                         self._callback.on_comm_position_update(
@@ -5370,6 +5394,23 @@ class MachineCom:
 
         self._timeout = self._get_new_communication_timeout() + _timeout
         self._dwelling_until = time.monotonic() + _timeout
+
+    def _gcode_M106_sent(
+        self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
+    ):
+        s_match = regexes_parameters["intS"].search(cmd)
+
+        _fanspeed = 0
+        if s_match:
+            _fanspeed = int(s_match.group("value"))
+
+        self.last_fanspeed.set_speed(_fanspeed)
+
+    def _gcode_M107_sent(
+        self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
+    ):
+        _fanspeed = 0
+        self.last_fanspeed.set_speed(_fanspeed)
 
     def _emergency_force_send(self, cmd, message, gcode=None, *args, **kwargs):
         # only jump the queue with our command if the EMERGENCY_PARSER capability is available
