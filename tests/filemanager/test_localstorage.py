@@ -896,7 +896,7 @@ class LocalStorageTest(unittest.TestCase):
         """
         Adds a folder to the storage.
 
-        Verifies existance of folder.
+        Verifies existence of folder.
 
         Returns sanitized path.
         """

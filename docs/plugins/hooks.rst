@@ -1433,7 +1433,7 @@ octoprint.server.http.access_validator
 
    Allows adding additional access validators to the default tornado routers.
 
-   Your plugin might need to this to restrict acccess to downloads and webcam snapshots further.
+   Your plugin might need to this to restrict access to downloads and webcam snapshots further.
 
    .. important::
 
