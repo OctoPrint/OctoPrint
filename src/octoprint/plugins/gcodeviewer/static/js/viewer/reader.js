@@ -144,34 +144,29 @@ GCODE.gCodeReader = (function () {
 
     var rebuildLayerPercentageLookup = function (m) {
         var result = [];
-        for (var i = 0; i < m.length - 1; i++) {
-            // start is first command of current layer
-            var start =
-                rendererPercentageByLayer[i] !== undefined
-                    ? rendererPercentageByLayer[i]
-                    : -1;
+        if (m && m.length > 0) {
+            for (var i = 0; i < m.length - 1; i++) {
+                // start is first command of current layer
+                var start =
+                    rendererPercentageByLayer[i] !== undefined
+                        ? rendererPercentageByLayer[i]
+                        : -1;
 
-            var end = -1;
-            for (var j = i + 1; j < m.length; j++) {
-                // end is percentage of first command that follows our start, might
-                // be later layers if the next layer is empty!
-                if (!rendererEmptyLayers[i]) {
-                    end = rendererPercentageByLayer[j];
-                    break;
+                var end = -1;
+                for (var j = i + 1; j < m.length; j++) {
+                    // end is percentage of first command that follows our start, might
+                    // be later layers if the next layer is empty!
+                    if (!rendererEmptyLayers[j]) {
+                        end = rendererPercentageByLayer[j];
+                        break;
+                    }
                 }
-
                 result[i] = [start, end];
             }
 
             // final start-end-pair is start percentage of last layer and 100%
-            result[m.length - 1] = m[m.length - 1].length
-                ? [m[m.length - 1][0].percentage, 100]
-                : [-1, -1];
+            result[result.length] = [rendererPercentageByLayer[m.length - 1], 100];
         }
-
-        // final start-end-pair is start percentage of last layer and 100%
-        result[result.length] = [rendererPercentageByLayer[m.length - 1], 100];
-
         layerPercentageLookup = result;
     };
 
