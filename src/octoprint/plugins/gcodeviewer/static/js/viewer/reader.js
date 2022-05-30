@@ -7,7 +7,6 @@
 GCODE.gCodeReader = (function () {
     // ***** PRIVATE ******
     var gcode, lines;
-    var model = [];
     var max = {x: undefined, y: undefined, z: undefined};
     var min = {x: undefined, y: undefined, z: undefined};
     var modelSize = {x: undefined, y: undefined, z: undefined};
@@ -45,13 +44,25 @@ GCODE.gCodeReader = (function () {
         forceCompression: false
     };
 
+    // This is the data as received from the worker.
+    // This is preserved so the user can turn on or off
+    // the "purgeEmptyLayers" option without forcing
+    // a new download and reparsing of the gcode data
+    // by the worker.
+    var model = [];
     var emptyLayers = [];
     var percentageByLayer = [];
 
+    // This is the data after being processed here in the
+    // reader. It has empty indexes removed and
+    // any layers without extrusion when the "purgeEmptyLayers"
+    // option is set.
+    // This is the data that is passed to the renderer.
     var rendererModel = undefined;
     var rendererEmptyLayers = undefined;
     var rendererPercentageByLayer = undefined;
     var layerPercentageLookup = [];
+
     var cachedLayer = undefined;
     var cachedCmd = undefined;
 
@@ -132,7 +143,10 @@ GCODE.gCodeReader = (function () {
         rendererEmptyLayers = [];
         rendererPercentageByLayer = [];
         for (var i = 0; i < m.length; i++) {
+            // remove any empty indexes that might be in the model.
             if (!m[i]) continue;
+            // if the purgeEmptyLayers option is set, remove any layer
+            // with commands but without extrusion.
             if (gCodeOptions["purgeEmptyLayers"] && emptyLayers[i]) continue;
 
             result.push(m[i]);
