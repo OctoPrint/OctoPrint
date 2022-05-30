@@ -31,12 +31,14 @@ jobs:
         run: |
           pip install .
       - name: 📧 Discord success notification
+        continue-on-error: true
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
         uses: Ilshidur/action-discord@master
         with:
           args: "☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ matrix.branch }}` was successful"
       - name: 📧 Discord failure notification
+        continue-on-error: true
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
@@ -65,12 +67,14 @@ jobs:
         run: |
           pip install https://github.com/OctoPrint/OctoPrint/archive/${{ steps.latest.outputs.release }}.zip
       - name: 📧 Discord success notification
+        continue-on-error: true
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
         uses: Ilshidur/action-discord@master
         with:
           args: "☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ steps.latest.outputs.release }}` was successful"
       - name: 📧 Discord failure notification
+        continue-on-error: true
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
