@@ -1555,7 +1555,7 @@ var copyToClipboard = function (text) {
 };
 
 var getExternalHostUrl = function () {
-    var loc = window.location;
+    var loc = fetchWindowLocation();
     var port = "";
     if (
         (loc.protocol === "http:" && loc.port !== "80") ||
@@ -1576,7 +1576,7 @@ var validateWebcamUrl = function (streamUrl) {
 
     if (lower.startsWith("//")) {
         // protocol relative
-        toParse = window.location.protocol + streamUrl;
+        toParse = fetchWindowLocation().protocol + streamUrl;
     } else if (lower.startsWith("/")) {
         // host relative
         toParse = getExternalHostUrl() + streamUrl;
@@ -1750,4 +1750,8 @@ var startWebRTC = function (videoElement, streamUrl, iceServers) {
 
     negotiateWebRTC(streamUrl);
     return pc;
+};
+
+var fetchWindowLocation = function () {
+    return window.location;
 };
