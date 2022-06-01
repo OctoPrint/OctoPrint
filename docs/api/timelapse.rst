@@ -76,7 +76,7 @@ Change current timelapse config
 .. http:post:: /api/timelapse
 
    Save a new :ref:`timelapse configuration <sec-api-timelapse-datamodel-config>` to use for the next print. Set the optional ``save`` flag in the
-   configuration to ``true`` in order to make the new configuration persist accross restarts.
+   configuration to ``true`` in order to make the new configuration persist across restarts.
 
    The configuration is expected as the request body.
 
@@ -220,7 +220,7 @@ Timelapse configuration
    * - ``save``
      - 1
      - bool
-     - Optional flag to be included when when saving a configuration to make the configuration persist accross restarts
+     - Optional flag to be included when when saving a configuration to make the configuration persist across restarts
 
 Further fields are timelapse type specific, see below for details.
 
