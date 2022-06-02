@@ -84,8 +84,8 @@ All GCODE scripts have access to the following template variables through the te
     to the corresponding temperature in degrees Celsius. Note that not all tools your printer has must necessarily be
     present here, neither must the heated bed - it depends on whether OctoPrint has values for a tool or the bed. Also
     note that ``actual`` and ``target`` might be ``None``.
-  * ``last_fanspeed``: Last fan speed set. Consist of ``fanspeed`` taken from command (M106 and M107) sent through OctoPrint.
-    The ``fanspeed`` might be ``None`` if no fan speed has been set.
+  * ``last_fanspeed``: Last fan speed set. It contains the value taken from command (M106 and M107) sent through OctoPrint.
+    The value might be ``None`` if no fan speed has been set.
   * ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
     and ``script.name`` respectively.
   * ``plugins``: An object containing variables provided by plugins (e.g ``plugins.myplugin.myvariable``)
