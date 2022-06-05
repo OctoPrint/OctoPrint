@@ -1497,7 +1497,7 @@ var sizeObservable = function (observable) {
 var getQueryParameterByName = function (name, url) {
     // from http://stackoverflow.com/a/901144/2028598
     if (!url) {
-        url = window.location.href;
+        url = fetchWindowLocation().href;
     }
     name = name.replace(/[\[\]]/g, "\\$&");
     var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
