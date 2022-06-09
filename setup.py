@@ -67,7 +67,7 @@ core_deps = [
     "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
     "zipstream-ng>=1.3.4,<2.0.0",
     "pydantic>=1.9.1,<2",
-    "pydantic-settings>0.25,<1",  # TODO: replace with vendored with_attrs_docs
+    "pydantic-settings>0.2.5,<1",  # TODO: replace with vendored with_attrs_docs
 ]
 vendored_deps = [
     "blinker>=1.4,<2",  # dependency of flask_principal
