@@ -2237,3 +2237,19 @@ class ProgressPlugin(OctoPrintPlugin):
         :param int progress:                Current progress as a value between 0 and 100
         """
         pass
+
+
+class WebcamPlugin(OctoPrintPlugin):
+    """
+    The ``WebcamPlugin`` can be used to provide a webcam visible on the frontend and used for snapshots/timelapses.
+    """
+
+    def get_snapshot_configurations(self):
+        """
+        Used to retrive a list of snpashot available configurations
+
+        Returns:
+            A list of :class:`~octoprint.SnapshotConfiguration`: The available snapshot configurations, can be empty if none available.
+        """
+
+        pass
