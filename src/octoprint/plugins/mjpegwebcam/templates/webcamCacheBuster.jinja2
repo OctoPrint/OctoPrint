@@ -1,0 +1,13 @@
+<div class="control-group" title="{{ _('Enable the cache buster on the webcam URl')|edq }}">
+    <div class="controls">
+        <label class="checkbox">
+            <input type="checkbox" data-bind="checked: webcam_cacheBuster" id="settings-webcamCacheBuster">
+            {{ _('Enable Cache buster') }}
+            <span class="help-block">
+                <span class="label label-warning">{{ _("Warning") }}</span>
+                {{ _("This may cause unpredictable caching behaviour. Only disable if your webcam server is incompatible and does not work in OctoPrint's UI") }}
+            </span>
+        </label>
+
+    </div>
+</div>
