@@ -1988,9 +1988,11 @@ ul.dropdown-menu li a {
 /** Webcam */
 #webcam_plugins_container {
   position: relative;
-  border-radius: 4px;
+  border-radius: 5px;
   margin-top: 6px;
   overflow: hidden;
+  min-height: 300px;
+  background-color: #000;
 }
 #webcam_plugins_container .tab-content {
   border: none;
@@ -2000,7 +2002,7 @@ ul.dropdown-menu li a {
   opacity: 1;
 }
 #webcam_plugins_container .nav {
-  padding: 5px;
+  padding: 3px;
   position: absolute;
   left: 0px;
   top: 0px;

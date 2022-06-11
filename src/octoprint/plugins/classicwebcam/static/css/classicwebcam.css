@@ -40,13 +40,13 @@
   position: relative;
   width: 100%;
 }
-#webcam_container {
+#webcam_img_container {
   width: 100%;
   position: relative;
   outline: none;
   background-color: black;
 }
-#webcam_container .keycontrol_overlay {
+#webcam_img_container .keycontrol_overlay {
   position: absolute;
   left: 10px;
   right: 10px;
@@ -56,7 +56,7 @@
   color: white;
   padding: 0;
 }
-#webcam_container .keycontrol_overlay kbd {
+#webcam_img_container .keycontrol_overlay kbd {
   border: 1px solid #eeeeee;
   border-radius: 3px;
   margin-left: 2px;
@@ -65,25 +65,25 @@
   padding: 2px;
   min-width: 1em;
 }
-#webcam_container .keycontrol_overlay .keycontrol_overlay_heading {
+#webcam_img_container .keycontrol_overlay .keycontrol_overlay_heading {
   position: relative;
   padding: 10px;
   font-weight: bold;
 }
-#webcam_container .keycontrol_overlay .keycontrol_overlay_column {
+#webcam_img_container .keycontrol_overlay .keycontrol_overlay_column {
   position: relative;
   width: 45%;
   padding: 10px;
   float: left;
 }
-#webcam_container .nowebcam {
+#webcam_img_container .nowebcam {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
 }
-#webcam_container .nowebcam .text {
+#webcam_img_container .nowebcam .text {
   color: white;
   text-align: center;
   position: relative;
@@ -93,44 +93,44 @@
   transform: translateY(-50%);
   display: block;
 }
-#webcam_container .nowebcam .text.webcam_loading {
+#webcam_img_container .nowebcam .text.webcam_loading {
   animation: pulsate 3s ease-out;
   animation-iteration-count: infinite;
 }
-#webcam_container .webcam_rotated {
+#webcam_img_container .webcam_rotated {
   position: relative;
   width: 100%;
   padding-bottom: 100%;
   pointer-events: none;
 }
-#webcam_container .webcam_rotated .webcam_fixed_ratio {
+#webcam_img_container .webcam_rotated .webcam_fixed_ratio {
   position: absolute;
   transform: rotate(-90deg);
   top: 0;
   bottom: 0;
   pointer-events: none;
 }
-#webcam_container .webcam_rotated .webcam_fixed_ratio .webcam_fixed_ratio_inner {
+#webcam_img_container .webcam_rotated .webcam_fixed_ratio .webcam_fixed_ratio_inner {
   width: 100%;
   height: 100%;
   pointer-events: none;
 }
-#webcam_container .webcam_unrotated .webcam_fixed_ratio {
+#webcam_img_container .webcam_unrotated .webcam_fixed_ratio {
   width: 100%;
   pointer-events: none;
   padding-bottom: 100%;
   position: relative;
 }
-#webcam_container .webcam_unrotated .webcam_fixed_ratio.ratio43 {
+#webcam_img_container .webcam_unrotated .webcam_fixed_ratio.ratio43 {
   padding-bottom: 75%;
 }
-#webcam_container .webcam_unrotated .webcam_fixed_ratio.ratio169 {
+#webcam_img_container .webcam_unrotated .webcam_fixed_ratio.ratio169 {
   padding-bottom: 56.25%;
 }
-#webcam_container .webcam_unrotated .webcam_fixed_ratio.ratio1610 {
+#webcam_img_container .webcam_unrotated .webcam_fixed_ratio.ratio1610 {
   padding-bottom: 62.5%;
 }
-#webcam_container .webcam_unrotated .webcam_fixed_ratio .webcam_fixed_ratio_inner {
+#webcam_img_container .webcam_unrotated .webcam_fixed_ratio .webcam_fixed_ratio_inner {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -138,7 +138,7 @@
   right: 0;
   pointer-events: none;
 }
-#webcam_container img {
+#webcam_img_container img {
   width: 100%;
   height: 100%;
   object-fit: contain;

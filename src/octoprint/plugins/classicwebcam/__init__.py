@@ -13,15 +13,8 @@ class MjpegWebcamPlugin(
     octoprint.plugin.WebcamPlugin,
 ):
     def get_assets(self):
-        js = [
-            # "js/gcodeviewer.js",
-            # "js/viewer/ui.js",
-            # "js/viewer/reader.js",
-            # "js/viewer/renderer.js",
-        ]
-
         return {
-            "js": js,
+            "js": ["js/classicwebcam.js"],
             "less": ["less/classicwebcam.less"],
             "css": ["css/classicwebcam.css"],
         }
@@ -35,9 +28,9 @@ class MjpegWebcamPlugin(
             },
             {
                 "type": "webcam",
-                "name": "Real Webcam",
+                "name": "Classic Webcam",
                 "template": "classicwebcam_webcam.jinja2",
-                "custom_bindings": False,
+                "custom_bindings": True,
                 "suffix": "_real",
             },
             {
