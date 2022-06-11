@@ -13,20 +13,73 @@
         }
 
         #webcam_plugins_container .nav {
-            padding: 10px;
+            padding: 5px;
             position: absolute;
             left: 0px;
             top: 0px;
             right: 0px;
             opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        #webcam_plugins_container .dropdown-toggle i::before {
+            content: "\f03d";
+        }
+
+        #webcam_plugins_container .dropdown-toggle {
+            background: rgba(0, 0, 0, 0.5);
+            color: #ffffff;
+        }
+
+        #webcam_plugins_container .dropdown-toggle .caret {
+            border-bottom-color: #ffffff;
+            border-top-color: #ffffff;
+        }
+
+        #webcam_plugins_container .keycontrol_overlay {
+            position: absolute;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            border-radius: 4px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.5);
+            font-size: 85%;
+            color: white;
+            padding: 0;
+        }
+
+        #webcam_plugins_container .keycontrol_overlay kbd {
+            border: 1px solid #eeeeee;
+            border-radius: 3px;
+            margin-left: 2px;
+            margin-right: 2px;
+            font-size: 90%;
+            padding: 2px;
+            min-width: 1em;
+        }
+
+        #webcam_plugins_container .keycontrol_overlay .keycontrol_overlay_heading {
+            position: relative;
+            padding: 10px;
+            font-weight: bold;
+        }
+
+        #webcam_plugins_container .keycontrol_overlay  .keycontrol_overlay_column {
+            position: relative;
+            width: 45%;
+            padding: 10px;
+            float: left;
         }
 
         #webcam_plugins_container:hover .nav {
             opacity: 1;
         }
+
+
     </style>
     <!-- ko if: loginState.hasPermissionKo(access.permissions.WEBCAM) -->
-     <div id="webcam_plugins_container">
+    <div id="webcam_plugins_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
         <div class="tabbable row-fluid">
             {% set ns = namespace(mark_active = True) %}
 
@@ -59,9 +112,26 @@
             {% endfor %}
         </ul>
 
-        <div data-bind="visible: keycontrolPossible() && loginState.hasPermissionKo(access.permissions.WEBCAM)() && loginState.hasPermissionKo(access.permissions.CONTROL)()">
-            <small class="muted">{{ _("Hint: If you move your mouse over the picture, you enter keyboard control mode.") }}</small>
+        <div class="keycontrol_overlay" data-bind="visible: showKeycontrols">
+            <div class="keycontrol_overlay_heading">{{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i class="fas" data-bind="css: { 'fa-chevron-down': !keycontrolHelpActive(), 'fa-chevron-up': keycontrolHelpActive() }"></i></a></div>
+            <div data-bind="visible: keycontrolHelpActive">
+                <div class="keycontrol_overlay_column">
+                    <kbd>&rarr;</kbd> / <kbd>&larr;</kbd>: {{ _("X Axis") }} +/-<br>
+                    <kbd>&uarr;</kbd> / <kbd>&darr;</kbd>: {{ _("Y Axis") }} +/-<br>
+                    <kbd>W</kbd>, <kbd>{{ _("Page&uarr;") }}</kbd> / <kbd>S</kbd>, <kbd>{{ _("Page&darr;") }}</kbd>: {{ _("Z Axis") }} +/-
+                </div>
+                <div class="keycontrol_overlay_column">
+                    <kbd>Home</kbd>: {{ _("Home X/Y") }}<br>
+                    <kbd>End</kbd>: {{ _("Home Z") }}<br>
+                    <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>: {{ _("Stepsize") }} 0.1, 1, 10, 100mm
+                </div>
+            </div>
         </div>
+
+    </div>
+
+    <div data-bind="visible: keycontrolPossible() && loginState.hasPermissionKo(access.permissions.WEBCAM)() && loginState.hasPermissionKo(access.permissions.CONTROL)()">
+        <small class="muted">{{ _("Hint: If you move your mouse over the picture, you enter keyboard control mode.") }}</small>
     </div>
     <!-- /ko -->
 {% endif %}

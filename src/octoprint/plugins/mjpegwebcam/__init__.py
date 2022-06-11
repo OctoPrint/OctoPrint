@@ -35,8 +35,17 @@ class MjpegWebcamPlugin(
             },
             {
                 "type": "webcam",
+                "name": "Real Webcam",
                 "template": "mjpegwebcam_webcam.jinja2",
                 "custom_bindings": False,
+                "suffix": "_real",
+            },
+            {
+                "type": "webcam",
+                "name": "Dummy Webcam",
+                "template": "mjpegwebcam_webcam_2.jinja2",
+                "custom_bindings": False,
+                "suffix": "_dummy",
             },
         ]
 

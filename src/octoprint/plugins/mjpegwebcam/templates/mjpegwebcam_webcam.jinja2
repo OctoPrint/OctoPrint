@@ -20,7 +20,7 @@
         </div>
     </div>
 </div>
-<div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }, visible: webcamMjpgEnabled()">
+<div id="webcam_container" data-bind="visible: webcamMjpgEnabled()">
     <div class="nowebcam" data-bind="visible: !webcamLoaded()">
         <div class="text webcam_loading" data-bind="visible: !webcamLoaded() && !webcamError()">
             <p><strong>{{ _('Webcam stream loading...') }}</strong></p>
@@ -39,22 +39,4 @@
             </div>
         </div>
     </div>
-    <div class="keycontrol_overlay" data-bind="visible: showKeycontrols">
-        <div class="keycontrol_overlay_heading">{{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i class="fas" data-bind="css: { 'fa-chevron-down': !keycontrolHelpActive(), 'fa-chevron-up': keycontrolHelpActive() }"></i></a></div>
-        <div data-bind="visible: keycontrolHelpActive">
-            <div class="keycontrol_overlay_column">
-                <kbd>&rarr;</kbd> / <kbd>&larr;</kbd>: {{ _("X Axis") }} +/-<br>
-                <kbd>&uarr;</kbd> / <kbd>&darr;</kbd>: {{ _("Y Axis") }} +/-<br>
-                <kbd>W</kbd>, <kbd>{{ _("Page&uarr;") }}</kbd> / <kbd>S</kbd>, <kbd>{{ _("Page&darr;") }}</kbd>: {{ _("Z Axis") }} +/-
-            </div>
-            <div class="keycontrol_overlay_column">
-                <kbd>Home</kbd>: {{ _("Home X/Y") }}<br>
-                <kbd>End</kbd>: {{ _("Home Z") }}<br>
-                <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>: {{ _("Stepsize") }} 0.1, 1, 10, 100mm
-            </div>
-        </div>
-    </div>
-</div>
-<div data-bind="visible: keycontrolPossible() && loginState.hasPermissionKo(access.permissions.WEBCAM)() && loginState.hasPermissionKo(access.permissions.CONTROL)()">
-    <small class="muted">{{ _("Hint: If you move your mouse over the picture, you enter keyboard control mode.") }}</small>
 </div>
