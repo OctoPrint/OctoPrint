@@ -673,12 +673,80 @@ ul.dropdown-menu li a {
 }
 
 /** Webcam */
+#webcam_plugins_container {
+  position: relative;
+  border-radius: 4px;
+  margin-top: 6px;
+  overflow: hidden;
 
-// Predict height of webcam test container for modal positioning
-// height is 3/4 the fixed modal width, for 4:3 webcam stream.
-// Yes it's hardcoded, but so is the modal width.
-#webcamTestContainer {
-  min-height: 384px;
+  .tab-content {
+    border: none;
+    padding: 0px;
+  }
+
+  &:hover .nav {
+    opacity: 1;
+  }
+
+  .nav {
+    padding: 5px;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    right: 0px;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+  }
+
+  .dropdown-toggle {
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+
+    i::before {
+      content: "\f03d";
+    }
+
+    .caret {
+      border-bottom-color: white;
+      border-top-color: white;
+    }
+  }
+
+  .keycontrol_overlay {
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.5);
+    font-size: 85%;
+    color: white;
+    padding: 0;
+
+    kbd {
+      border: 1px solid #eeeeee;
+      border-radius: 3px;
+      margin-left: 2px;
+      margin-right: 2px;
+      font-size: 90%;
+      padding: 2px;
+      min-width: 1em;
+    }
+
+    .keycontrol_overlay_heading {
+      position: relative;
+      padding: 10px;
+      font-weight: bold;
+    }
+
+    .keycontrol_overlay_column {
+      position: relative;
+      width: 45%;
+      padding: 10px;
+      float: left;
+    }
+  }
 }
 
 /** State sidebar panel */
