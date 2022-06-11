@@ -1,0 +1,20 @@
+<h3>{{ _('Stream') }}</h3>
+<form class="form-horizontal" onsubmit="return false;">
+    {% include "classicwebcamStreamUrl.jinja2" %}
+    {% include "classicwebcamStreamRatio.jinja2" %}
+    {% include "classicwebcamOrientation.jinja2" %}
+
+    <div>
+        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div class="hide">
+            {% include "classicwebcamStreamTimeout.jinja2" %}
+            {% include "classicwebcamCacheBuster.jinja2" %}
+        </div>
+    </div>
+</form>
+
+<h3>{{ _('Snapshots & Timelapse') }}</h3>
+
+<form class="form-horizontal" onsubmit="return false;">
+    {% include "snippets/settings/webcam/webcamSnapshotUrl.jinja2" %}
+</form>
