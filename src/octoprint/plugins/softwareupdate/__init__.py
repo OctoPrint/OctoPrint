@@ -717,10 +717,7 @@ class SoftwareUpdatePlugin(
         # set credentials data flags and remove credentials fields
         if "credentials" in data:
             if "github" in data["credentials"]:
-                data["credentials"]["github_set"] = (
-                    data["credentials"]["github"] is not None
-                    and data["credentials"]["github"] != ""
-                )
+                data["credentials"]["github_set"] = bool(data["credentials"]["github"])
             for key in data["credentials"]:
                 if key == "github_set":
                     continue
