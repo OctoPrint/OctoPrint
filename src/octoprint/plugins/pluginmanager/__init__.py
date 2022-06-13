@@ -97,7 +97,7 @@ def map_repository_entry(entry):
                 entry["compatibility"]["python"]
             )
         else:
-            # we default to only assume py2 compatiblity for now
+            # we default to only assume py2 compatibility for now
             result["is_compatible"]["python"] = is_python_compatible(">=2.7,<3")
 
     return result

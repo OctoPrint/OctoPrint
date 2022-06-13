@@ -1497,7 +1497,7 @@ var sizeObservable = function (observable) {
 var getQueryParameterByName = function (name, url) {
     // from http://stackoverflow.com/a/901144/2028598
     if (!url) {
-        url = window.location.href;
+        url = fetchWindowLocation().href;
     }
     name = name.replace(/[\[\]]/g, "\\$&");
     var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
@@ -1555,7 +1555,7 @@ var copyToClipboard = function (text) {
 };
 
 var getExternalHostUrl = function () {
-    var loc = window.location;
+    var loc = fetchWindowLocation();
     var port = "";
     if (
         (loc.protocol === "http:" && loc.port !== "80") ||
@@ -1576,7 +1576,7 @@ var validateWebcamUrl = function (streamUrl) {
 
     if (lower.startsWith("//")) {
         // protocol relative
-        toParse = window.location.protocol + streamUrl;
+        toParse = fetchWindowLocation().protocol + streamUrl;
     } else if (lower.startsWith("/")) {
         // host relative
         toParse = getExternalHostUrl() + streamUrl;
@@ -1750,4 +1750,8 @@ var startWebRTC = function (videoElement, streamUrl, iceServers) {
 
     negotiateWebRTC(streamUrl);
     return pc;
+};
+
+var fetchWindowLocation = function () {
+    return window.location;
 };

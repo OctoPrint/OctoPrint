@@ -235,7 +235,7 @@ will now fail with an error. You'll need to explicitly make the import a relativ
 
    from . import my_sub_package
 
-To make your code behave the same in that regard unter both Python 2 and Python 3, you should add the corresponding
+To make your code behave the same in that regard in both Python 2 and Python 3, you should add the corresponding
 future import:
 
 .. code-block:: python
