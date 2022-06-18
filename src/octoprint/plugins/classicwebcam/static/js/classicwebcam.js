@@ -16,6 +16,12 @@ $(function () {
         self.webcamElementHls = null;
         self.webcamElementWebrtc = null;
 
+        // TODO: This is not supposed to be required....
+        window.setTimeout(function () {
+            ko.cleanNode(document.getElementById("classic_webcam_container"));
+            ko.applyBindings(self, document.getElementById("classic_webcam_container"));
+        }, 1000);
+
         self.webcamRatioClass = ko.pureComputed(function () {
             if (self.settings.webcam_streamRatio() == "4:3") {
                 return "ratio43";
