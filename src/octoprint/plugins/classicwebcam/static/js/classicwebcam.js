@@ -23,21 +23,41 @@ $(function () {
         }, 1000);
 
         self.webcamRatioClass = ko.pureComputed(function () {
-            if (self.settings.webcam_streamRatio() == "4:3") {
+            if (self.settings.settings.plugins.classicwebcam.streamRatio() == "4:3") {
                 return "ratio43";
             } else {
                 return "ratio169";
             }
         });
 
-        // Subscribe to rotation event to ensure we update calculations.
-        // We need to wait for the CSS to be updated by KO, thus we use a timeout to
-        // ensure our calculations run after the CSS was updated
-        self.settings.webcam_rotate90.subscribe(function () {
-            window.setTimeout(function () {
-                self._updateVideoTagWebcamLayout();
-            }, 1);
-        });
+        self.onBeforeBinding = function () {
+            // Subscribe to rotation event to ensure we update calculations.
+            // We need to wait for the CSS to be updated by KO, thus we use a timeout to
+            // ensure our calculations run after the CSS was updated
+            self.settings.settings.plugins.classicwebcam.rotate90.subscribe(function () {
+                window.setTimeout(function () {
+                    self._updateVideoTagWebcamLayout();
+                }, 1);
+            });
+
+            self.streamUrlEscaped = ko.pureComputed(function () {
+                return encodeURI(self.settings.settings.plugins.classicwebcam.stream());
+            });
+
+            self.webcamStreamType = ko.pureComputed(function () {
+                try {
+                    return self.determineWebcamStreamType(self.streamUrlEscaped());
+                } catch (e) {
+                    console.error(e);
+                    return "test";
+                }
+            });
+
+            self.webcamStreamValid = ko.pureComputed(function () {
+                var url = self.streamUrlEscaped();
+                return !url || validateWebcamUrl(url);
+            });
+        };
 
         self.onEventSettingsUpdated = function (payload) {
             // the webcam url might have changed, make sure we replace it now if the
@@ -78,7 +98,8 @@ $(function () {
                 return;
             }
 
-            var timeout = self.settings.webcam_streamTimeout() || 5;
+            var timeout =
+                self.settings.settings.plugins.classicwebcam.streamTimeout() || 5;
             self.webcamDisableTimeout = setTimeout(function () {
                 log.debug("Unloading webcam stream");
                 $("#webcam_image").attr("src", "");
@@ -100,11 +121,12 @@ $(function () {
 
             // IF disabled then we dont need to do anything
             if (self.settings.webcam_webcamEnabled() == false) {
+                console.log("Webcam not enabled");
                 return;
             }
 
             // Determine stream type and switch to corresponding webcam.
-            var streamType = self.settings.webcam_streamType();
+            var streamType = self.webcamStreamType();
             if (streamType == "mjpg") {
                 self._switchToMjpgWebcam();
             } else if (streamType == "hls") {
@@ -175,12 +197,10 @@ $(function () {
                 return;
             }
 
-            var newSrc = self.settings.webcam_streamUrlEscaped();
+            var newSrc = self.streamUrlEscaped();
 
             if (currentSrc != newSrc) {
-                console.log("switch webcam ", webcamImage, newSrc);
-
-                if (self.settings.webcam_cacheBuster()) {
+                if (self.settings.settings.plugins.classicwebcam.cacheBuster()) {
                     if (newSrc.lastIndexOf("?") > -1) {
                         newSrc += "&";
                     } else {
@@ -195,7 +215,6 @@ $(function () {
 
                 self.webcamHlsEnabled(false);
                 self.webcamMjpgEnabled(true);
-                console.log("---> enable true (1)", self.webcamMjpgEnabled());
                 self.webcamWebRTCEnabled(false);
             }
         };
@@ -216,14 +235,13 @@ $(function () {
                 typeof video.canPlayType != undefined &&
                 video.canPlayType("application/vnd.apple.mpegurl") == "probably"
             ) {
-                video.src = self.settings.webcam_streamUrlEscaped();
+                video.src = self.streamUrlEscaped();
             } else if (Hls.isSupported()) {
                 self.hls = new Hls();
-                self.hls.loadSource(self.settings.webcam_streamUrlEscaped());
+                self.hls.loadSource(self.streamUrlEscaped());
                 self.hls.attachMedia(video);
             }
 
-            console.log("---> enable false (2)");
             self.webcamMjpgEnabled(false);
             self.webcamHlsEnabled(true);
             self.webcamWebRTCEnabled(false);
@@ -256,12 +274,11 @@ $(function () {
             if (self.webRTCPeerConnection == null) {
                 self.webRTCPeerConnection = startWebRTC(
                     video,
-                    self.settings.webcam_streamUrlEscaped(),
-                    self.settings.webcam_streamWebrtcIceServers()
+                    self.streamUrlEscaped(),
+                    self.settings.settings.plugins.classicwebcam.settings.plugins.classicwebcam.streamWebrtcIceServers()
                 );
             }
 
-            console.log("---> enable false (3)");
             self.webcamMjpgEnabled(false);
             self.webcamHlsEnabled(false);
             self.webcamWebRTCEnabled(true);
@@ -316,6 +333,32 @@ $(function () {
                 unrotationTarget.style.height = null;
                 unrotationTarget.style.width = null;
             }
+        };
+
+        self.determineWebcamStreamType = function (streamUrl) {
+            if (!streamUrl) {
+                throw "Empty streamUrl. Cannot determine stream type.";
+            }
+
+            var parsed = validateWebcamUrl(streamUrl);
+            if (!parsed) {
+                throw "Invalid streamUrl. Cannot determine stream type.";
+            }
+
+            if (parsed.protocol === "webrtc:" || parsed.protocol === "webrtcs:") {
+                return "webrtc";
+            }
+
+            var lastDotPosition = parsed.pathname.lastIndexOf(".");
+            if (lastDotPosition !== -1) {
+                var extension = parsed.pathname.substring(lastDotPosition + 1);
+                if (extension.toLowerCase() === "m3u8") {
+                    return "hls";
+                }
+            }
+
+            // By default, 'mjpg' is the stream type.
+            return "mjpg";
         };
     }
 

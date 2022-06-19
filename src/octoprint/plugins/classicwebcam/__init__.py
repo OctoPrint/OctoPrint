@@ -42,30 +42,59 @@ class MjpegWebcamPlugin(
             },
         ]
 
-    def get_settings_defaults(self):
-        return {
-            "mobileSizeThreshold": 2 * 1024 * 1024,  # 2MB
-            "sizeThreshold": 20 * 1024 * 1024,  # 20MB
-            "skipUntilThis": None,
-        }
-
     def get_settings_version(self):
         return 1
 
     def on_settings_migrate(self, target, current):
         if current is None:
-            config = self._settings.global_get(["gcodeViewer"])
+            config = self._settings.global_get(["webcam"])
             if config:
                 self._logger.info(
-                    "Migrating settings from gcodeViewer to plugins.gcodeviewer..."
+                    "Migrating settings from webcam to plugins.classicwebcam..."
                 )
-                if "mobileSizeThreshold" in config:
-                    self._settings.set_int(
-                        ["mobileSizeThreshold"], config["mobileSizeThreshold"]
-                    )
-                if "sizeThreshold" in config:
-                    self._settings.set_int(["sizeThreshold"], config["sizeThreshold"])
-                self._settings.global_remove(["gcodeViewer"])
+
+                self._settings.set_boolean(
+                    ["flipH"], config.get("flipH", False), force=True
+                )
+                self._settings.global_remove(["webcam", "flipH"])
+
+                self._settings.set_boolean(
+                    ["flipV"], config.get("flipV", False), force=True
+                )
+                self._settings.global_remove(["webcam", "flipV"])
+
+                self._settings.set_boolean(
+                    ["rotate90"], config.get("rotate90", False), force=True
+                )
+                self._settings.global_remove(["webcam", "rotate90"])
+
+                self._settings.set(["stream"], config.get("stream", ""), force=True)
+                self._settings.global_remove(["webcam", "stream"])
+
+                self._settings.set_int(
+                    ["streamTimeout"], config.get("streamTimeout", ""), force=True
+                )
+                self._settings.global_remove(["webcam", "streamTimeout"])
+
+                self._settings.set(
+                    ["streamRatio"], config.get("streamRatio", ""), force=True
+                )
+                self._settings.global_remove(["webcam", "streamRatio"])
+
+                self._settings.set(
+                    ["streamWebrtcIceServers"],
+                    config.get("streamWebrtcIceServers", []),
+                    force=True,
+                )
+                self._settings.global_remove(["webcam", "streamWebrtcIceServers"])
+
+                self._settings.set(["snapshot"], config.get("snapshot", ""), force=True)
+                self._settings.global_remove(["webcam", "snapshot"])
+
+                self._settings.set_boolean(
+                    ["cacheBuster"], config.get("cacheBuster", ""), force=True
+                )
+                self._settings.global_remove(["webcam", "cacheBuster"])
 
 
 __plugin_name__ = gettext("Classic Webcam")

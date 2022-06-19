@@ -362,9 +362,7 @@ def index():
     enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
     enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])
     enable_sd_support = settings().get(["feature", "sdSupport"])
-    enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"]) and bool(
-        settings().get(["webcam", "stream"])
-    )
+    enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"])
     enable_temperature_graph = settings().get(["feature", "temperatureGraph"])
     sockjs_connect_timeout = settings().getInt(["devel", "sockJsConnectTimeout"])
 
