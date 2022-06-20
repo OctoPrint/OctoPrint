@@ -17,4 +17,4 @@ jobs:
       - uses: actions/add-to-project@main
         with:
           project-url: https://github.com/orgs/OctoPrint/projects/6
-          github-token: ${{ secrets.BACKLOG_PAT }}
+          github-token: ${{ secrets.BACKLOG_PROJECT_ACCESS }}
