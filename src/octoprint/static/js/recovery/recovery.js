@@ -41,7 +41,7 @@ $(function () {
         // system commands
         self.systemCommands = ko.observableArray([]);
 
-        // systen info
+        // system info
         self.systemInfo = ko.observableArray([]);
 
         // printer

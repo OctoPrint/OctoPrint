@@ -65,6 +65,19 @@ jobs:
         run: |
           pytest
 
+  test-js-unit:
+    name: 🧪 JavaScript unit tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up test dependencies
+        run: |
+          npm -g install node-qunit-puppeteer@2.1.0
+      - name: 🚀 Run helpers.js test suite
+        run: |
+          node-qunit-puppeteer tests/static/js/test-helpers.html
+
   test-install:
     name: 🧪 Installation tests
     needs: build
@@ -96,6 +109,7 @@ jobs:
     name: 🧪 E2E tests
     needs: build
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: ⬇ Checkout code
         uses: actions/checkout@v2
@@ -141,10 +155,11 @@ jobs:
 
   publish-on-testpypi:
     name: 📦 Publish on TestPyPI
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' && github.repository == 'OctoPrint/OctoPrint'
     needs:
       - pre-commit
       - test-unit
+      - test-js-unit
       - test-install
       - test-e2e
     runs-on: ubuntu-latest
@@ -163,7 +178,7 @@ jobs:
 
   publish-on-pypi:
     name: 📦 Publish tagged releases to PyPI
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' && github.repository == 'OctoPrint/OctoPrint'
     needs: publish-on-testpypi
     runs-on: ubuntu-latest
     steps:
@@ -179,7 +194,7 @@ jobs:
 
   notify-custopizer-build:
     name: 📧 Notify OctoPi-UpToDate
-    if: github.event_name == 'release'
+    if: github.event_name == 'release' && github.repository == 'OctoPrint/OctoPrint'
     needs: publish-on-pypi
     runs-on: ubuntu-latest
     steps:
