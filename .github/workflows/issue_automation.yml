@@ -28,6 +28,11 @@ jobs:
                   labels = labels.filter(label => label !== 'triage');
                   setLabels = true;
                 }
+                if (context.payload.issue.title.match(/\[task\]/i)) {
+                  labels.push('task');
+                  labels = labels.filter(label => label !== 'triage');
+                  setLabels = true;
+                }
 
                 if (labels.length === 0) {
                   labels.push('triage');
@@ -37,7 +42,7 @@ jobs:
               }
 
               case 'closed': {
-                if (labels.includes('bug') || labels.includes('request') || labels.includes('improvement')) {
+                if (labels.includes('bug') || labels.includes('request') || labels.includes('improvement') || labels.includes('task')) {
                   labels.push('done');
                   setLabels = true;
                 }
