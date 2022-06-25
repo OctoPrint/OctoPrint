@@ -678,10 +678,17 @@ class gcode:
                 f = getCodeFloat(line, "F")
                 if s is not None and f is not None:
                     if gcode == "M207":
-                        fwretractTime = s / f
+                        # Ensure division is valid
+                        if f > 0:
+                            fwretractTime = s / f
+                        else:
+                            fwretractTime = 0
                         fwretractDist = s
                     else:
-                        fwrecoverTime = (fwretractDist + s) / f
+                        if f > 0:
+                            fwrecoverTime = (fwretractDist + s) / f
+                        else:
+                            fwrecoverTime = 0
             elif gcode == "M605":  # Duplication/Mirroring mode
                 s = getCodeInt(line, "S")
                 if s in [2, 4, 5, 6]:
