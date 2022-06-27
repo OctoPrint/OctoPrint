@@ -16,14 +16,6 @@ $(function () {
         self.ui_progress_text = ko.pureComputed(function () {
             var text = "";
             switch (self.ui_progress_type()) {
-                case "downloading": {
-                    text = gettext("Downloading...");
-                    break;
-                }
-                case "splitting": {
-                    text = gettext("Splitting lines...");
-                    break;
-                }
                 case "parsing": {
                     text =
                         gettext("Parsing...") +
@@ -396,6 +388,7 @@ $(function () {
                     onProgress: self._onProgress,
                     onModelLoaded: self._onModelLoaded,
                     onLayerSelected: self._onLayerSelected,
+                    onFileLoaded: self._onFileLoaded,
                     bed: self._retrieveBedDimensions(),
                     toolOffsets: self._retrieveToolOffsets(),
                     invertAxes: self._retrieveAxesConfiguration(),
@@ -517,51 +510,32 @@ $(function () {
             self.needsLoad = false;
             if (self.status === "idle" && self.errorCount < 3) {
                 self.status = "request";
-                self._onProgress("downloading");
-                OctoPrint.files
-                    .download("local", path)
-                    .done(function (response, rstatus) {
-                        if (rstatus === "success") {
-                            self.showGCodeViewer(response, rstatus);
-                            self.loadedFilepath = path;
-                            self.loadedFileDate = date;
-                            self.status = "idle";
-                            self.enableReload(true);
-                        }
-                    })
-                    .fail(function () {
-                        self.status = "idle";
-                        self.errorCount++;
-                    });
+
+                self.cachedPath = path;
+                self.cachedDate = date;
+                var par = {
+                    path: OctoPrint.files.downloadPath("local", path),
+                    skipuntil: self.settings.settings.plugins.gcodeviewer.skipUntilThis()
+                };
+
+                GCODE.renderer.clear();
+                self._onProgress("parsing");
+                GCODE.gCodeReader.loadFile(par);
+
+                if (self.layerSlider !== undefined) {
+                    self.layerSlider.slider("disable");
+                }
+                if (self.layerCommandSlider !== undefined) {
+                    self.layerCommandSlider.slider("disable");
+                }
             }
         };
 
-        self.showGCodeViewer = function (response, rstatus) {
-            // Slice of the gcode
-            var findThis = self.settings.settings.plugins.gcodeviewer.skipUntilThis();
-            if (findThis && findThis !== "") {
-                var indexPos = response.indexOf("\n" + findThis);
-                if (indexPos !== -1) {
-                    // Slice and make sure we comment out any string left back after slicing - so if a user configures something like "G1" we dont end up with a snippet of gcode commands
-                    // Yes it would be prettier to parse it line by line and remove the entire line, that is very slow and uses mem - this way we find the string, and remove it
-                    response = ";" + response.slice(indexPos + findThis.length + 1);
-                }
-            }
-            var par = {
-                target: {
-                    result: response
-                }
-            };
-            GCODE.renderer.clear();
-            self._onProgress("splitting");
-            GCODE.gCodeReader.loadFile(par);
-
-            if (self.layerSlider !== undefined) {
-                self.layerSlider.slider("disable");
-            }
-            if (self.layerCommandSlider !== undefined) {
-                self.layerCommandSlider.slider("disable");
-            }
+        self._onFileLoaded = function () {
+            self.loadedFilepath = self.cachedPath;
+            self.loadedFileDate = self.cachedDate;
+            self.status = "idle";
+            self.enableReload(true);
         };
 
         self.reload = function () {
