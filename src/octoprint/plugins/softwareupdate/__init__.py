@@ -704,7 +704,6 @@ class SoftwareUpdatePlugin(
             "updatelog_cutoff": 30 * 24 * 60,  # 30 days
             "credentials": {
                 "github": None,
-                "github_set": False,
                 "bitbucket_user": None,
                 "bitbucket_password": None,
             },
@@ -714,14 +713,11 @@ class SoftwareUpdatePlugin(
         # ensure we don't persist check configs we receive on the API
         data = dict(octoprint.plugin.SettingsPlugin.on_settings_load(self))
 
-        # set credentials data flags and remove credentials fields
-        if "credentials" in data:
-            if "github" in data["credentials"]:
-                data["credentials"]["github_set"] = bool(data["credentials"]["github"])
-            for key in data["credentials"]:
-                if key == "github_set":
-                    continue
-                data["credentials"][key] = None
+        # set credentials flag
+        credentials = self._settings.get(["credentials"])
+        data["credentials"] = {}
+        for key, value in credentials.items():
+            data["credentials"][f"{key}_set"] = bool(value)
 
         if "checks" in data:
             del data["checks"]
@@ -779,7 +775,7 @@ class SoftwareUpdatePlugin(
         return data
 
     def get_settings_restricted_paths(self):
-        return {}
+        return {"never": [["credentials"]]}
 
     def on_settings_save(self, data):
         # ~~ plugin settings
