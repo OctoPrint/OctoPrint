@@ -134,7 +134,26 @@
         Are you sure you want to visualize this file nevertheless?
     </p>{% endtrans %}
 
-    <button class="btn btn-warning btn-block" data-bind="click: approveLargeFile">
-        {{ _('Yes, please visualize %(name)s regardless of its size', name='<span data-bind="text: selectedFile.name"></span>') }}
-    </button>
+    <p>
+        <button class="btn btn-warning btn-block" data-bind="click: approveLargeFile">
+            {{ _('Yes, please visualize %(name)s regardless of its size', name='<span data-bind="text: selectedFile.name"></span>') }}
+        </button>
+    <p>
+
+    <div data-bind="ifnot: ((settings.settings.plugins.gcodeviewer.alwaysCompress()) ||
+	((settings.settings.plugins.gcodeviewer.compressionSizeThreshold() > 0) &&
+        (settings.settings.plugins.gcodeviewer.compressionSizeThreshold() <= selectedFile.size())))">
+        {% trans %}<p>
+            You may want to turn on in-memory compression to keep the memory usage of this page to a reasonable
+            level. You can change the main settings for compression in the plugin settings or you can force
+            compression for just this file here. It may also help if this file would normally make your browser
+            unresponsive or crash. Loading the file will become considerably slower.
+        </p>{% endtrans %}
+
+        <p>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: reader_forceCompression">{{ _('Force compression') }}
+            </label>
+        <p>
+    </div>
 </div>

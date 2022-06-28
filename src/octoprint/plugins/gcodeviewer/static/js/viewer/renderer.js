@@ -99,6 +99,32 @@ GCODE.renderer = (function () {
     var deg270 = Math.PI * 1.5;
     var deg360 = Math.PI * 2.0;
 
+    var layerCache = [];
+
+    var decompress = function (data) {
+        if (!(data instanceof Uint8Array)) return data;
+
+        return JSON.parse(pako.inflate(data, {to: "string"}));
+    };
+
+    var getLayer = function (layer) {
+        if (!model[layer]) return undefined;
+        if (!layerCache[layer]) layerCache[layer] = decompress(model[layer]);
+
+        return layerCache[layer];
+    };
+
+    var cleanCache = function (layer) {
+        var newCache = [];
+        for (var l in layerCache) {
+            if (l == layer || l == layer + 1) newCache[l] = layerCache[l];
+            if (l == layer - 1 && renderOptions["showPreviousLayer"])
+                newCache[l] = layerCache[l];
+        }
+
+        layerCache = newCache;
+    };
+
     function notifyIfViewportChanged() {
         if (viewportChanged) {
             if (renderOptions["onViewportChange"]) {
@@ -162,13 +188,15 @@ GCODE.renderer = (function () {
             } else {
                 console.log("Got request to render non-existent layer");
             }
+
+            cleanCache(layerNumStore);
         }
     };
 
     function getLayerBounds(layer) {
         if (!model || !model[layer]) return;
 
-        var cmds = model[layer];
+        var cmds = getLayer(layer);
         var firstExtrusion;
         var i;
 
@@ -858,7 +886,7 @@ GCODE.renderer = (function () {
 
         if (!model || !model[layerNum]) return;
 
-        var cmds = model[layerNum];
+        var cmds = getLayer(layerNum);
         var x, y;
 
         //~~ find our initial prevX/prevY tuple
@@ -875,7 +903,7 @@ GCODE.renderer = (function () {
             // previous layer exists, use last x/y as prevX/prevY
             prevX = undefined;
             prevY = undefined;
-            var prevModelLayer = model[layerNum - 1];
+            var prevModelLayer = getLayer(layerNum - 1);
             for (i = prevModelLayer.length - 1; i >= 0; i--) {
                 if (prevX === undefined && prevModelLayer[i].x !== undefined) {
                     prevX = prevModelLayer[i].x;
@@ -1347,10 +1375,13 @@ GCODE.renderer = (function () {
         },
         getLayerNumSegments: function (layer) {
             if (model) {
-                return model[layer] ? model[layer].length : 1;
+                return model[layer] ? getLayer(layer).length : 1;
             } else {
                 return 1;
             }
+        },
+        getLayer: function (layer) {
+            return getLayer(layer);
         },
         clear: function () {
             offsetModelX = 0;
@@ -1362,6 +1393,7 @@ GCODE.renderer = (function () {
             speeds = [];
             speedsByLayer = {};
             modelInfo = undefined;
+            layerCache = [];
 
             this.doRender([], 0);
         },
@@ -1379,7 +1411,7 @@ GCODE.renderer = (function () {
                 speeds = modelInfo.speeds;
                 speedsByLayer = modelInfo.speedsByLayer;
                 if (model[layerNum]) {
-                    toProgress = model[layerNum].length;
+                    toProgress = getLayer(layerNum).length;
                 }
             }
 
@@ -1401,7 +1433,7 @@ GCODE.renderer = (function () {
             if (!model || !model[layerNum]) {
                 return "-1";
             }
-            var cmds = model[layerNum];
+            var cmds = getLayer(layerNum);
             for (var i = 0; i < cmds.length; i++) {
                 if (cmds[i].prevZ !== undefined) return cmds[i].prevZ;
             }

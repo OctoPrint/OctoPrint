@@ -7,7 +7,6 @@
 GCODE.gCodeReader = (function () {
     // ***** PRIVATE ******
     var gcode, lines;
-    var model = [];
     var max = {x: undefined, y: undefined, z: undefined};
     var min = {x: undefined, y: undefined, z: undefined};
     var modelSize = {x: undefined, y: undefined, z: undefined};
@@ -39,11 +38,31 @@ GCODE.gCodeReader = (function () {
         },
         ignoreOutsideBed: false,
         g90InfluencesExtruder: false,
-        bedZ: 0
+        bedZ: 0,
+        alwaysCompress: false,
+        compressionSizeThreshold: 0,
+        forceCompression: false
     };
 
+    // This is the data as received from the worker.
+    // This is preserved so the user can turn on or off
+    // the "purgeEmptyLayers" option without forcing
+    // a new download and reparsing of the gcode data
+    // by the worker.
+    var model = [];
+    var emptyLayers = [];
+    var percentageByLayer = [];
+
+    // This is the data after being processed here in the
+    // reader. It has empty indexes removed and
+    // any layers without extrusion when the "purgeEmptyLayers"
+    // option is set.
+    // This is the data that is passed to the renderer.
     var rendererModel = undefined;
+    var rendererEmptyLayers = undefined;
+    var rendererPercentageByLayer = undefined;
     var layerPercentageLookup = [];
+
     var cachedLayer = undefined;
     var cachedCmd = undefined;
 
@@ -81,17 +100,17 @@ GCODE.gCodeReader = (function () {
         }
 
         function searchInCmds(layer, lower, upper, key) {
+            var cmds = GCODE.renderer.getLayer(layer);
             while (lower < upper) {
                 var middle = Math.floor((lower + upper) / 2);
 
                 if (
-                    rendererModel[layer][middle].percentage == key ||
-                    (rendererModel[layer][middle].percentage <= key &&
-                        rendererModel[layer][middle + 1].percentage > key)
+                    cmds[middle].percentage == key ||
+                    (cmds[middle].percentage <= key && cmds[middle + 1].percentage > key)
                 )
                     return middle;
 
-                if (rendererModel[layer][middle].percentage > key) {
+                if (cmds[middle].percentage > key) {
                     upper = middle - 1;
                 } else {
                     lower = middle + 1;
@@ -108,7 +127,7 @@ GCODE.gCodeReader = (function () {
         if (key == null) return {layer: cachedLayer, cmd: cachedCmd};
 
         var layer = searchInLayers(0, rendererModel.length - 1, key);
-        var cmd = searchInCmds(layer, 0, rendererModel[layer].length - 1, key);
+        var cmd = searchInCmds(layer, 0, GCODE.renderer.getLayer(layer).length - 1, key);
 
         // remember last position
         cachedLayer = layer;
@@ -117,52 +136,51 @@ GCODE.gCodeReader = (function () {
         return {layer: layer, cmd: cmd};
     };
 
-    var sanitizeModel = function (m) {
+    var cleanModel = function (m) {
         if (!m) return [];
-        return _.filter(m, function (layer) {
-            return !!layer;
-        });
-    };
 
-    var purgeEmptyLayers = function (m) {
-        return _.filter(m, function (layer) {
-            return (
-                !!layer &&
-                layer.length > 0 &&
-                _.find(layer, function (cmd) {
-                    return cmd && cmd.extrude;
-                }) !== undefined
-            );
-        });
+        var result = [];
+        rendererEmptyLayers = [];
+        rendererPercentageByLayer = [];
+        for (var i = 0; i < m.length; i++) {
+            // remove any empty indexes that might be in the model.
+            if (!m[i]) continue;
+            // if the purgeEmptyLayers option is set, remove any layer
+            // with commands but without extrusion.
+            if (gCodeOptions["purgeEmptyLayers"] && emptyLayers[i]) continue;
+
+            result.push(m[i]);
+            rendererPercentageByLayer.push(percentageByLayer[i]);
+            if (emptyLayers[i]) rendererEmptyLayers[result.length - 1] = true;
+        }
+        return result;
     };
 
     var rebuildLayerPercentageLookup = function (m) {
         var result = [];
-
         if (m && m.length > 0) {
             for (var i = 0; i < m.length - 1; i++) {
                 // start is first command of current layer
-                var start = m[i].length ? m[i][0].percentage : -1;
+                var start =
+                    rendererPercentageByLayer[i] !== undefined
+                        ? rendererPercentageByLayer[i]
+                        : -1;
 
                 var end = -1;
                 for (var j = i + 1; j < m.length; j++) {
                     // end is percentage of first command that follows our start, might
                     // be later layers if the next layer is empty!
-                    if (m[j].length) {
-                        end = m[j][0].percentage;
+                    if (!rendererEmptyLayers[j]) {
+                        end = rendererPercentageByLayer[j];
                         break;
                     }
                 }
-
                 result[i] = [start, end];
             }
 
             // final start-end-pair is start percentage of last layer and 100%
-            result[m.length - 1] = m[m.length - 1].length
-                ? [m[m.length - 1][0].percentage, 100]
-                : [-1, -1];
+            result[result.length] = [rendererPercentageByLayer[m.length - 1], 100];
         }
-
         layerPercentageLookup = result;
     };
 
@@ -182,6 +200,8 @@ GCODE.gCodeReader = (function () {
                 maxZ: undefined
             };
             rendererModel = undefined;
+            rendererEmptyLayers = undefined;
+            rendererPercentageByLayer = undefined;
             layerPercentageLookup = undefined;
             cachedLayer = undefined;
             cachedCmd = undefined;
@@ -209,6 +229,12 @@ GCODE.gCodeReader = (function () {
             reader.target.result = null;
             prepareGCode(totalSize);
 
+            var mustCompress =
+                gCodeOptions["forceCompression"] ||
+                gCodeOptions["alwaysCompress"] ||
+                (gCodeOptions["compressionSizeThreshold"] > 0 &&
+                    gCodeOptions["compressionSizeThreshold"] <= totalSize);
+
             GCODE.ui.worker.postMessage({
                 cmd: "parseGCode",
                 msg: {
@@ -219,7 +245,8 @@ GCODE.gCodeReader = (function () {
                         bed: gCodeOptions["bed"],
                         ignoreOutsideBed: gCodeOptions["ignoreOutsideBed"],
                         g90InfluencesExtruder: gCodeOptions["g90InfluencesExtruder"],
-                        bedZ: gCodeOptions["bedZ"]
+                        bedZ: gCodeOptions["bedZ"],
+                        compress: mustCompress
                     }
                 }
             });
@@ -238,14 +265,11 @@ GCODE.gCodeReader = (function () {
         },
 
         passDataToRenderer: function () {
-            var m = sanitizeModel(model);
-            if (gCodeOptions["purgeEmptyLayers"]) m = purgeEmptyLayers(m);
+            rendererModel = cleanModel(model);
+            rebuildLayerPercentageLookup(rendererModel);
 
-            rendererModel = m;
-            rebuildLayerPercentageLookup(m);
-
-            GCODE.renderer.doRender(m, 0);
-            return m;
+            GCODE.renderer.doRender(rendererModel, 0);
+            return rendererModel;
         },
 
         processLayersFromWorker: function (msg) {
@@ -265,6 +289,8 @@ GCODE.gCodeReader = (function () {
             speedsByLayer = msg.speedsByLayer;
             printTime = msg.printTime;
             printTimeByLayer = msg.printTimeByLayer;
+            emptyLayers = msg.emptyLayers;
+            percentageByLayer = msg.percentageByLayer;
         },
 
         getLayerFilament: function (z) {
@@ -291,8 +317,8 @@ GCODE.gCodeReader = (function () {
 
         getGCodeLines: function (layer, fromSegments, toSegments) {
             var result = {
-                first: model[layer][fromSegments].gcodeLine,
-                last: model[layer][toSegments].gcodeLine
+                first: GCODE.renderer.getLayer(layer)[fromSegments].gcodeLine,
+                last: GCODE.renderer.getLayer(layer)[toSegments].gcodeLine
             };
             return result;
         },
