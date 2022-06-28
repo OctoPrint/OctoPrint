@@ -139,7 +139,10 @@ jobs:
           browser: chrome
           start: "octoprint -b ${{ github.workspace }}/e2econfig serve --host 127.0.0.1 --port 5000"
           wait-on: "http://127.0.0.1:5000/online.txt"
-          env: deploysentinel_key={{ secrets.DEPLOYSENTINEL_APIKEY }}
+        env:
+          CYPRESS_DEPLOYSENTINEL_ENABLED: "true"
+          CYPRESS_DEPLOYSENTINEL_UPLOAD_ON_PASSES: "true"
+          CYPRESS_DEPLOYSENTINEL_KEY: ${{ secrets.DEPLOYSENTINEL_APIKEY }}
 
       - name: ⬆ Upload screenshots
         uses: actions/upload-artifact@v1
