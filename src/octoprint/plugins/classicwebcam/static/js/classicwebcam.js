@@ -17,6 +17,7 @@ $(function () {
         self.webcamElementWebrtc = null;
 
         // TODO: This is not supposed to be required....
+        // https://discord.com/channels/704958479194128507/705047010641838211/990027509376634910
         window.setTimeout(function () {
             ko.cleanNode(document.getElementById("classic_webcam_container"));
             ko.applyBindings(self, document.getElementById("classic_webcam_container"));
@@ -98,8 +99,7 @@ $(function () {
                 return;
             }
 
-            var timeout =
-                self.settings.settings.plugins.classicwebcam.streamTimeout() || 5;
+            var timeout = self.settings.settings.plugins.classicwebcam.streamTimeout || 5;
             self.webcamDisableTimeout = setTimeout(function () {
                 log.debug("Unloading webcam stream");
                 $("#webcam_image").attr("src", "");
@@ -275,7 +275,7 @@ $(function () {
                 self.webRTCPeerConnection = startWebRTC(
                     video,
                     self.streamUrlEscaped(),
-                    self.settings.settings.plugins.classicwebcam.settings.plugins.classicwebcam.streamWebrtcIceServers()
+                    self.settings.settings.plugins.classicwebcam.streamWebrtcIceServers()
                 );
             }
 
@@ -364,7 +364,7 @@ $(function () {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: ClassicWebcamViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        dependencies: ["loginStateViewModel", "settingsViewModel", "loginStateViewModel"],
         elements: ["#classic_webcam_container"]
     });
 });
