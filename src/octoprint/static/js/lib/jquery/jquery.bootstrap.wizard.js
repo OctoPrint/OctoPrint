@@ -270,7 +270,7 @@ var bootstrapWizardCreate = function(element, options) {
 
 		// remove the existing handlers
 		$('a[data-toggle="tab"]', $navigation).off('click', innerTabClick);
-		$('a[data-toggle="tab"]', $navigation).off('show show.bs.tab', innerTabShown);
+		$('a[data-toggle="tab"]', $navigation).off('show', innerTabShown);
 
 		// reset elements based on current state of the DOM
 		$navigation = element.find('ul:first', element);
@@ -278,7 +278,7 @@ var bootstrapWizardCreate = function(element, options) {
 
 		// re-add handlers
 		$('a[data-toggle="tab"]', $navigation).on('click', innerTabClick);
-		$('a[data-toggle="tab"]', $navigation).on('show show.bs.tab', innerTabShown);
+		$('a[data-toggle="tab"]', $navigation).on('show', innerTabShown);
 
 		obj.fixNavigationButtons();
 	};
@@ -303,7 +303,8 @@ var bootstrapWizardCreate = function(element, options) {
 	$('a[data-toggle="tab"]', $navigation).on('click', innerTabClick);
 
 	// attach to both show and show.bs.tab to support Bootstrap versions 2.3.2 and 3.0.0
-	$('a[data-toggle="tab"]', $navigation).on('show show.bs.tab', innerTabShown);
+	// Note: removing show.bs.tab in the listener stops to trigger twice the method innerTabShown
+	$('a[data-toggle="tab"]', $navigation).on('show', innerTabShown);
 };
 $.fn.bootstrapWizard = function(options) {
 	//expose methods
