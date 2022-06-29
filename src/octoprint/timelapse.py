@@ -33,7 +33,7 @@ current = None
 current_render_job = None
 
 # filename formats
-_capture_format = "{prefix}-%d.jpg"
+_capture_format = "{prefix}-{number}.jpg"
 _capture_glob = "{prefix}-*.jpg"
 _output_format = "{prefix}{postfix}.{extension}"
 
@@ -596,7 +596,7 @@ class Timelapse:
         return None
 
     def start_timelapse(self, gcode_file):
-        self._logger.debug("Starting timelapse for %s" % gcode_file)
+        self._logger.debug(f"Starting timelapse for {gcode_file}")
 
         self._image_number = 0
         self._capture_errors = 0
@@ -604,7 +604,7 @@ class Timelapse:
         self._in_timelapse = True
         self._gcode_file = os.path.basename(gcode_file)
         self._file_prefix = "{}_{}".format(
-            os.path.splitext(self._gcode_file)[0].replace("%", "%%"),
+            os.path.splitext(self._gcode_file)[0],
             time.strftime("%Y%m%d%H%M%S"),
         )
 
@@ -702,7 +702,9 @@ class Timelapse:
 
             filename = os.path.join(
                 self._capture_dir,
-                _capture_format.format(prefix=self._file_prefix) % self._image_number,
+                _capture_format.format(
+                    prefix=self._file_prefix, number=self._image_number
+                ),
             )
             self._image_number += 1
 
@@ -800,7 +802,9 @@ class Timelapse:
         with self._capture_mutex:
             filename = os.path.join(
                 self._capture_dir,
-                _capture_format.format(prefix=self._file_prefix) % self._image_number,
+                _capture_format.format(
+                    prefix=self._file_prefix, number=self._image_number
+                ),
             )
             self._image_number += 1
 
@@ -808,7 +812,9 @@ class Timelapse:
             for _ in range(self._post_roll * self._fps):
                 newFile = os.path.join(
                     self._capture_dir,
-                    _capture_format.format(prefix=self._file_prefix) % self._image_number,
+                    _capture_format.format(
+                        prefix=self._file_prefix, number=self._image_number
+                    ),
                 )
                 self._image_number += 1
                 shutil.copyfile(filename, newFile)
@@ -997,14 +1003,27 @@ class TimelapseRenderJob:
         else:
             extension = "mp4"
 
+        # input pattern for ffmpeg
         input = os.path.join(
+            self._capture_dir,
+            self._capture_format.format(
+                prefix=self._prefix.replace(
+                    "%", "%%"
+                ),  # ffmpeg, and ONLY that, needs % replaced
+                postfix=self._postfix if self._postfix is not None else "",
+                number="%d",
+            ),
+        )
+        # pattern for checking if snapshots were made at all
+        snapshot = os.path.join(
             self._capture_dir,
             self._capture_format.format(
                 prefix=self._prefix,
                 postfix=self._postfix if self._postfix is not None else "",
+                number="{number}",
             ),
         )
-
+        # output file name
         output_name = self._output_format.format(
             prefix=self._prefix,
             postfix=self._postfix if self._postfix is not None else "",
@@ -1014,7 +1033,7 @@ class TimelapseRenderJob:
         output = os.path.join(self._output_dir, output_name)
 
         for i in range(4):
-            if os.path.exists(input % i):
+            if os.path.exists(snapshot.format(number=i)):
                 break
         else:
             self._logger.warning("Cannot create a movie, no frames captured")
