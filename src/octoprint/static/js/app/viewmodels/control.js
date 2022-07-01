@@ -48,6 +48,7 @@ $(function () {
         self.webRTCPeerConnection = null;
         self.webcamElementHls = null;
         self.webcamElementWebrtc = null;
+        self.wakeLock = null;
 
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
@@ -553,6 +554,8 @@ $(function () {
                 $("#webcam_image").attr("src", "");
                 self.webcamLoaded(false);
             }, timeout * 1000);
+
+            self._releaseWakeLock();
         };
 
         self._enableWebcam = function () {
@@ -583,6 +586,8 @@ $(function () {
             } else {
                 throw "Unknown stream type " + streamType;
             }
+
+            self._requestWakeLock();
         };
 
         self.onWebcamLoaded = function () {
@@ -894,6 +899,24 @@ $(function () {
                 unrotationContainer.style.paddingBottom = 0;
                 unrotationTarget.style.height = null;
                 unrotationTarget.style.width = null;
+            }
+        };
+
+        self._requestWakeLock = function () {
+            try {
+                navigator.wakeLock.request("screen").then(function (res) {
+                    self.wakeLock = res;
+                });
+            } catch (err) {
+                // wake lock denied or not supported
+                console.debug("Failed to aquire wakelock");
+            }
+        };
+
+        self._releaseWakeLock = function () {
+            if (self.wakeLock) {
+                self.wakeLock.release();
+                self.wakeLock = null;
             }
         };
     }
