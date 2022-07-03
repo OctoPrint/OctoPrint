@@ -50,7 +50,7 @@ class MjpegWebcamPlugin(
             stream="",
             streamTimeout=5,
             streamRatio="4:3",
-            streamWebrtcIceServers="",
+            streamWebrtcIceServers="stun:stun.l.google.com:19302",
             snapshot="",
             cacheBuster=False,
         )
@@ -96,7 +96,11 @@ class MjpegWebcamPlugin(
 
                 self._settings.set(
                     ["streamWebrtcIceServers"],
-                    config.get("streamWebrtcIceServers", []),
+                    ",".join(
+                        config.get(
+                            "streamWebrtcIceServers", ["stun:stun.l.google.com:19302"]
+                        )
+                    ),
                     force=True,
                 )
                 self._settings.global_remove(["webcam", "streamWebrtcIceServers"])
