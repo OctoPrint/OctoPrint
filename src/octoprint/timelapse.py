@@ -1289,27 +1289,3 @@ class TimelapseRenderJob:
         method = getattr(self, name, None)
         if method is not None and callable(method):
             method(*args, **kwargs)
-
-
-class SnapshotConfiguration:
-    """
-    A configuration describing how to retrieve and process snapshots.
-
-    Arguments:
-        name (str): Identifier of this snapshot configuration.
-        display_name (str): Displayable name for this snapshot configuration.
-        url (str): The URL to get the snapshot from.
-        rotate_90 (bool): Whether the snpashot needs to be rotated by 90deg counter clockwise
-        flip_h (bool): Whether the snpashot needs to be flipped horizontally
-        flip_v (bool): Whether the snpashot needs to be flipped veritcally
-        timeout (int): The timeout that should be used to request the snapshot
-    """
-
-    def __init__(self, name, display_name, url, rotate_90, flip_h, flip_v, timeout):
-        self.name = name
-        self.display_name = display_name
-        self.url = url
-        self.rotate_90 = rotate_90
-        self.flip_h = flip_h
-        self.flip_v = flip_v
-        self.timeout = timeout

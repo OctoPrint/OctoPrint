@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms
 from flask_babel import gettext
 
 import octoprint.plugin
+from octoprint.webcams import LegacyWebcamConfiguration, WebcamConfiguration
 
 
 class MjpegWebcamPlugin(
@@ -40,6 +41,38 @@ class MjpegWebcamPlugin(
                 "custom_bindings": False,
                 "suffix": "_dummy",
             },
+        ]
+
+    def get_webcam_configurations(self):
+        return [
+            WebcamConfiguration(
+                name="classic",
+                display_name="Classic Webcam",
+                snapshot=self._settings.get(["snapshot"]),
+                flip_h=self._settings.get(["flipH"]),
+                flip_v=self._settings.get(["flipV"]),
+                rotate_90=self._settings.get(["rotate90"]),
+                legacy=LegacyWebcamConfiguration(
+                    snapshot=self._settings.get(["snapshot"]),
+                    flip_h=self._settings.get(["flipH"]),
+                    flip_v=self._settings.get(["flipV"]),
+                    rotate_90=self._settings.get(["rotate90"]),
+                    stream=self._settings.get(["stream"]),
+                    stream_timeout=self._settings.get(["streamTimeout"]),
+                    stream_ratio=self._settings.get(["streamRatio"]),
+                    stream_webrtc_ice_servers=self._settings.get(
+                        ["streamWebrtcIceServers"]
+                    ),
+                    cache_buster=self._settings.get(["cacheBuster"]),
+                ),
+                attachments=dict(
+                    stream=self._settings.get(["stream"]),
+                    streamTimeout=self._settings.get(["streamTimeout"]),
+                    streamRatio=self._settings.get(["streamRatio"]),
+                    streamWebrtcIceServers=self._settings.get(["streamWebrtcIceServers"]),
+                    cacheBuster=self._settings.get(["cacheBuster"]),
+                ),
+            )
         ]
 
     def get_settings_defaults(self):
@@ -124,6 +157,3 @@ __plugin_disabling_discouraged__ = gettext(
 __plugin_license__ = "AGPLv3"
 __plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = MjpegWebcamPlugin()
-# __plugin_hooks__ = {
-# 	"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
-# }

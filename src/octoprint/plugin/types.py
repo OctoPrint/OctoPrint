@@ -2244,12 +2244,12 @@ class WebcamPlugin(OctoPrintPlugin):
     The ``WebcamPlugin`` can be used to provide a webcam visible on the frontend and used for snapshots/timelapses.
     """
 
-    def get_snapshot_configurations(self):
+    def get_webcam_configurations(self):
         """
         Used to retrive a list of snpashot available configurations
 
         Returns:
-            A list of :class:`~octoprint.SnapshotConfiguration`: The available snapshot configurations, can be empty if none available.
+            A list of :class:`~octoprint.WebcamConfiguration`: The available webcam configurations, can be empty if none available.
         """
 
         pass

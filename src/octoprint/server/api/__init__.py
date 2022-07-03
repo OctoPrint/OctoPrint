@@ -58,6 +58,7 @@ from . import slicing as api_slicing  # noqa: F401,E402
 from . import system as api_system  # noqa: F401,E402
 from . import timelapse as api_timelapse  # noqa: F401,E402
 from . import users as api_users  # noqa: F401,E402
+from . import webcams as api_webcams  # noqa: F401,E402
 
 VERSION = "0.1"
 
