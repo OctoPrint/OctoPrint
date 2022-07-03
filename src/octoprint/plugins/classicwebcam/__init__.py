@@ -14,7 +14,7 @@ class MjpegWebcamPlugin(
 ):
     def get_assets(self):
         return {
-            "js": ["js/classicwebcam.js"],
+            "js": ["js/classicwebcam.js", "js/classicwebcam_settings.js"],
             "less": ["less/classicwebcam.less"],
             "css": ["css/classicwebcam.css"],
         }
@@ -24,7 +24,7 @@ class MjpegWebcamPlugin(
             {
                 "type": "settings",
                 "template": "classicwebcam_settings.jinja2",
-                "custom_bindings": False,
+                "custom_bindings": True,
             },
             {
                 "type": "webcam",
@@ -41,6 +41,19 @@ class MjpegWebcamPlugin(
                 "suffix": "_dummy",
             },
         ]
+
+    def get_settings_defaults(self):
+        return dict(
+            flipH=False,
+            flipV=False,
+            rotate90=False,
+            stream="",
+            streamTimeout=5,
+            streamRatio="4:3",
+            streamWebrtcIceServers="",
+            snapshot="",
+            cacheBuster=False,
+        )
 
     def get_settings_version(self):
         return 1

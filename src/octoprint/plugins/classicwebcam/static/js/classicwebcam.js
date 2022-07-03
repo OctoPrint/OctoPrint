@@ -24,7 +24,7 @@ $(function () {
         }, 1000);
 
         self.webcamRatioClass = ko.pureComputed(function () {
-            if (self.settings.settings.plugins.classicwebcam.streamRatio() == "4:3") {
+            if (self.settings.streamRatio() == "4:3") {
                 return "ratio43";
             } else {
                 return "ratio169";
@@ -35,14 +35,14 @@ $(function () {
             // Subscribe to rotation event to ensure we update calculations.
             // We need to wait for the CSS to be updated by KO, thus we use a timeout to
             // ensure our calculations run after the CSS was updated
-            self.settings.settings.plugins.classicwebcam.rotate90.subscribe(function () {
+            self.settings.rotate90.subscribe(function () {
                 window.setTimeout(function () {
                     self._updateVideoTagWebcamLayout();
                 }, 1);
             });
 
             self.streamUrlEscaped = ko.pureComputed(function () {
-                return encodeURI(self.settings.settings.plugins.classicwebcam.stream());
+                return encodeURI(self.settings.streamUrl());
             });
 
             self.webcamStreamType = ko.pureComputed(function () {
@@ -99,7 +99,7 @@ $(function () {
                 return;
             }
 
-            var timeout = self.settings.settings.plugins.classicwebcam.streamTimeout || 5;
+            var timeout = self.settings.streamTimeout || 5;
             self.webcamDisableTimeout = setTimeout(function () {
                 log.debug("Unloading webcam stream");
                 $("#webcam_image").attr("src", "");
@@ -120,7 +120,7 @@ $(function () {
             }
 
             // IF disabled then we dont need to do anything
-            if (self.settings.webcam_webcamEnabled() == false) {
+            if (self.settings.webcamEnabled() == false) {
                 console.log("Webcam not enabled");
                 return;
             }
@@ -200,7 +200,7 @@ $(function () {
             var newSrc = self.streamUrlEscaped();
 
             if (currentSrc != newSrc) {
-                if (self.settings.settings.plugins.classicwebcam.cacheBuster()) {
+                if (self.settings.cacheBuster()) {
                     if (newSrc.lastIndexOf("?") > -1) {
                         newSrc += "&";
                     } else {
@@ -275,7 +275,7 @@ $(function () {
                 self.webRTCPeerConnection = startWebRTC(
                     video,
                     self.streamUrlEscaped(),
-                    self.settings.settings.plugins.classicwebcam.streamWebrtcIceServers()
+                    self.settings.streamWebrtcIceServers()
                 );
             }
 
@@ -364,7 +364,11 @@ $(function () {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: ClassicWebcamViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel", "loginStateViewModel"],
+        dependencies: [
+            "loginStateViewModel",
+            "classicWebcamSettingsViewModel",
+            "loginStateViewModel"
+        ],
         elements: ["#classic_webcam_container"]
     });
 });
