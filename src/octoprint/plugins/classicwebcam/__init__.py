@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms
 from flask_babel import gettext
 
 import octoprint.plugin
-from octoprint.webcams import LegacyWebcamConfiguration, WebcamConfiguration
+from octoprint.webcams import CompatWebcamConfiguration, WebcamConfiguration
 
 
 class MjpegWebcamPlugin(
@@ -52,18 +52,14 @@ class MjpegWebcamPlugin(
                 flip_h=self._settings.get(["flipH"]),
                 flip_v=self._settings.get(["flipV"]),
                 rotate_90=self._settings.get(["rotate90"]),
-                legacy=LegacyWebcamConfiguration(
-                    snapshot=self._settings.get(["snapshot"]),
-                    flip_h=self._settings.get(["flipH"]),
-                    flip_v=self._settings.get(["flipV"]),
-                    rotate_90=self._settings.get(["rotate90"]),
+                compat=CompatWebcamConfiguration(
                     stream=self._settings.get(["stream"]),
                     stream_timeout=self._settings.get(["streamTimeout"]),
                     stream_ratio=self._settings.get(["streamRatio"]),
+                    cache_buster=self._settings.get(["cacheBuster"]),
                     stream_webrtc_ice_servers=self._settings.get(
                         ["streamWebrtcIceServers"]
                     ),
-                    cache_buster=self._settings.get(["cacheBuster"]),
                 ),
                 attachments=dict(
                     stream=self._settings.get(["stream"]),

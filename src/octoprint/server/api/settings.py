@@ -15,6 +15,12 @@ from octoprint.server import pluginManager, printer, userManager
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.settings import settings, valid_boolean_trues
+from octoprint.webcams import (
+    CompatWebcamConfiguration,
+    get_all_webcams,
+    webcams_to_dict,
+    webcams_to_list,
+)
 
 # ~~ settings
 
@@ -94,6 +100,13 @@ def getSettings():
     s = settings()
 
     connectionOptions = printer.__class__.get_connection_options()
+    webcams = get_all_webcams()
+    webcamsDict = webcams_to_dict(webcams)
+    webcamsList = webcams_to_list(webcams)
+    defaultWebcam = webcamsList[0] if len(webcamsList) > 0 else None
+    compatWebcam = (
+        defaultWebcam.compat if defaultWebcam is not None else CompatWebcamConfiguration()
+    ) or CompatWebcamConfiguration()
 
     # NOTE: Remember to adjust the docs of the data model on the Settings API if anything
     # is changed, added or removed here
@@ -117,11 +130,11 @@ def getSettings():
         "webcam": {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
             "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
-            "streamUrl": s.get(["webcam", "stream"]),
-            "streamRatio": s.get(["webcam", "streamRatio"]),
-            "streamTimeout": s.getInt(["webcam", "streamTimeout"]),
-            "streamWebrtcIceServers": s.get(["webcam", "streamWebrtcIceServers"]),
-            "snapshotUrl": s.get(["webcam", "snapshot"]),
+            "streamUrl": compatWebcam.stream,
+            "streamRatio": compatWebcam.stream_ratio,
+            "streamTimeout": compatWebcam.stream_timeout,
+            "streamWebrtcIceServers": compatWebcam.stream_webrtc_ice_servers,
+            "snapshotUrl": defaultWebcam.snapshot,
             "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
             "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
             "ffmpegPath": s.get(["webcam", "ffmpeg"]),
@@ -130,10 +143,12 @@ def getSettings():
             "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
             "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
             "watermark": s.getBoolean(["webcam", "watermark"]),
-            "flipH": s.getBoolean(["webcam", "flipH"]),
-            "flipV": s.getBoolean(["webcam", "flipV"]),
-            "rotate90": s.getBoolean(["webcam", "rotate90"]),
-            "cacheBuster": s.getBoolean(["webcam", "cacheBuster"]),
+            "flipH": defaultWebcam.flip_h,
+            "flipV": defaultWebcam.flip_v,
+            "rotate90": defaultWebcam.rotate_90,
+            "cacheBuster": compatWebcam.cache_buster,
+            "defaultWebcam": defaultWebcam.name if defaultWebcam is not None else None,
+            "webcams": webcamsDict,
         },
         "feature": {
             "temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
