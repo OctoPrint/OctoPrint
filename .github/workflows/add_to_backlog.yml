@@ -1,0 +1,20 @@
+name: Add issues/PRs to backlog automatically
+
+on:
+  issues:
+    types:
+      - opened
+      - transferred
+  pull_request_target:
+    types:
+      - opened
+
+jobs:
+  add-to-project:
+    name: Add issue or PR to OctoPrint Backlog project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@main
+        with:
+          project-url: https://github.com/orgs/OctoPrint/projects/6
+          github-token: ${{ secrets.BACKLOG_PROJECT_ACCESS }}

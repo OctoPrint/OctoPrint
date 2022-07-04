@@ -17,6 +17,7 @@ class GcodeviewerPlugin(
             "js/viewer/ui.js",
             "js/viewer/reader.js",
             "js/viewer/renderer.js",
+            "js/viewer/pako.js",
         ]
 
         return {
@@ -47,6 +48,8 @@ class GcodeviewerPlugin(
             "mobileSizeThreshold": 2 * 1024 * 1024,  # 2MB
             "sizeThreshold": 20 * 1024 * 1024,  # 20MB
             "skipUntilThis": None,
+            "alwaysCompress": False,
+            "compressionSizeThreshold": 200 * 1024 * 1024,
         }
 
     def get_settings_version(self):
