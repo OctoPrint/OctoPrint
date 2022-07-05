@@ -4,6 +4,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import collections
 import json
+import logging
 import math
 import os
 import queue
@@ -697,9 +698,17 @@ class VirtualPrinter:
         # we'll just use this to echo a message, to allow playing around with pause triggers
         if self._echoOnM117:
             try:
-                self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
+                result = re.search(r"M117\s+(.*)", data).group(1)
+                self._send(f"echo:{result}")
             except AttributeError:
                 self._send("echo:")
+
+    def _gcode_M118(self, data: str) -> None:
+        try:
+            result = re.search(r"M118\s+(.*)", data).group(1)
+            self._send(f"{result}")
+        except Exception:
+            logging.debug("Error sending back echo command M118")
 
     def _gcode_M154(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
