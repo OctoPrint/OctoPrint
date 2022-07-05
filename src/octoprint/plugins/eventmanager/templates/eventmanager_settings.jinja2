@@ -12,7 +12,7 @@
 <div data-bind="foreach: settingsViewModel.settings.plugins.eventmanager.subscriptions" class="row-fluid">
     <div class="row-fluid">
         <div class="span4" data-bind="text: event"></div>
-        <div class="span6" data-bind="text: command"></div>
+        <div class="span6" data-bind="attr: {title: command}, text: custom_name"></div>
         <div class="span2 btn-group">
             <button class="btn btn-mini" data-bind="click: $root.editEvent"><i class="fa fa-pencil"></i></button>
             <button class="btn btn-mini btn-danger" data-bind="click: $root.removeEvent"><i class="fa fa-trash-alt"></i></button>
@@ -30,6 +30,13 @@
             <label class="control-label">{{ _('Event') }}</label>
             <div class="controls">
                 <select class="input-block-level" data-bind="value: event, options: $root.settingsViewModel.settings.plugins.eventmanager.availableEvents().sort(), optionsCaption: 'Select Event', valueAllowUnset: true"></select>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label">{{ _('Custom Name') }}</label>
+            <div class="controls">
+                <input type="text" class="input-block-level" data-bind="value: custom_name" />
             </div>
         </div>
         <div class="control-group">

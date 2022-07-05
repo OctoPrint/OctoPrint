@@ -17,7 +17,16 @@ class EventManagerPlugin(
         }
         events = self._settings.global_get(["events"])
         if events:
-            my_settings["subscriptions"] = events.get("subscriptions", [])
+            my_settings["subscriptions"] = sorted(
+                events.get("subscriptions", []), key=(lambda x: x["event"])
+            )
+            # Add retro compatiblity for old version which miss the parameter in the existing settings
+            for index, _value in enumerate(my_settings["subscriptions"]):
+                if "custom_name" not in my_settings["subscriptions"][index]:
+                    my_settings["subscriptions"][index]["custom_name"] = my_settings[
+                        "subscriptions"
+                    ][index]["event"]
+
         return my_settings
 
     def on_settings_save(self, data):
