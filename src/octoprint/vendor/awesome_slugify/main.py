@@ -1,7 +1,5 @@
 # coding=utf8
 
-import sys
-
 from unidecode import unidecode
 import regex as re
 
@@ -13,10 +11,7 @@ import regex as re
 # re.VERSION1 - New enhanced behaviour with nested sets and set operations
 
 
-if sys.version_info[0] == 2:
-    str_type = unicode  # Python 2
-else:
-    str_type = str  # Python 3
+str_type = str  # Python 3
 
 
 def join_words(words, separator, max_length=None):

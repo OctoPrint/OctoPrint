@@ -1,3 +1,4 @@
+from __future__ import annotations
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "The MIT License <http://opensource.org/licenses/MIT>"
 __copyright__ = "Copyright (C) 2015 Gina Häußge - Released under terms of the MIT License"
@@ -72,8 +73,7 @@ class CodeBlockExt(CodeBlock):
 
     option_spec = _merge_dict(CodeBlock.option_spec, {"whitespace": directives.flag})
 
-    def run(self):
-        # type: () -> List[nodes.Node]
+    def run(self) -> List[nodes.Node]:
         # get result from parent implementation
         code_block = CodeBlock.run(self)
 

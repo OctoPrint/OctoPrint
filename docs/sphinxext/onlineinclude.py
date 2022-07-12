@@ -1,3 +1,4 @@
+from __future__ import annotations
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "The MIT License <http://opensource.org/licenses/MIT>"
 __copyright__ = "Copyright (C) 2015 Gina Häußge - Released under terms of the MIT License"
@@ -26,8 +27,7 @@ cache = {}
 
 
 class OnlineIncludeReader(LiteralIncludeReader):
-    def read_file(self, filename, location=None):
-        # type: (unicode, Any) -> List[unicode]
+    def read_file(self, filename: unicode, location: Any = None) -> List[unicode]:
 
         global cache
         try:
@@ -53,8 +53,7 @@ class OnlineIncludeReader(LiteralIncludeReader):
 
 
 class OnlineIncludeDirective(LiteralInclude):
-    def run(self):
-        # type: () -> List[nodes.Node]
+    def run(self) -> List[nodes.Node]:
         document = self.state.document
         if not document.settings.file_insertion_enabled:
             return [
