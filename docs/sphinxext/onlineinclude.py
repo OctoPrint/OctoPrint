@@ -19,15 +19,13 @@ from sphinx.directives.code import (
 )
 from sphinx.util.nodes import set_source_info
 
-if False:
-    # For type annotation
-    from typing import Any, List  # NOQA
+from typing import Any
 
 cache = {}
 
 
 class OnlineIncludeReader(LiteralIncludeReader):
-    def read_file(self, filename: unicode, location: Any = None) -> List[unicode]:
+    def read_file(self, filename: str, location: Any = None) -> list[str]:
 
         global cache
         try:
@@ -53,7 +51,7 @@ class OnlineIncludeReader(LiteralIncludeReader):
 
 
 class OnlineIncludeDirective(LiteralInclude):
-    def run(self) -> List[nodes.Node]:
+    def run(self) -> list[nodes.Node]:
         document = self.state.document
         if not document.settings.file_insertion_enabled:
             return [

@@ -18,9 +18,7 @@ from pygments.filters import VisibleWhitespaceFilter, ErrorToken
 from pygments.lexers.python import PythonConsoleLexer
 from pygments.util import ClassNotFound
 
-if False:
-    # For type annotation
-    from typing import Any, Dict, List, Tuple  # NOQA
+from typing import Any
 
 
 def _merge_dict(a, b):
@@ -73,7 +71,7 @@ class CodeBlockExt(CodeBlock):
 
     option_spec = _merge_dict(CodeBlock.option_spec, {"whitespace": directives.flag})
 
-    def run(self) -> List[nodes.Node]:
+    def run(self) -> list[nodes.Node]:
         # get result from parent implementation
         code_block = CodeBlock.run(self)
 
