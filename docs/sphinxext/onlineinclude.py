@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "The MIT License <http://opensource.org/licenses/MIT>"
 __copyright__ = "Copyright (C) 2015 Gina Häußge - Released under terms of the MIT License"
@@ -46,8 +43,8 @@ class OnlineIncludeReader(LiteralIncludeReader):
                 lines = [line.expandtabs(self.options["tab-width"]) for line in lines]
 
             return lines
-        except (IOError, OSError):
-            raise IOError("Include file %r not found or reading it failed" % filename)
+        except OSError:
+            raise OSError("Include file %r not found or reading it failed" % filename)
         except UnicodeError:
             raise UnicodeError(
                 "Encoding %r used for reading included file %r seems to "
