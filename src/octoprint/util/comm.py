@@ -751,6 +751,11 @@ class MachineCom:
         self._sdFileToSelectUser = None
         self._ignore_select = False
         self._manualStreaming = False
+        
+        # Capability report tracking
+        self._first_cap_report_pending = False
+        self._first_cap_report_started = False
+        self._m20_pending_cap_report = False
 
         self.last_temperature = TemperatureRecord()
         self.pause_temperature = TemperatureRecord()
@@ -2003,6 +2008,11 @@ class MachineCom:
         if not self.isOperational() or self.isBusy():
             return
 
+        if self._first_cap_report_pending:
+            self._m20_pending_cap_report = True
+            self._logger.info("Deferring sd file refresh until capability report done")
+            return
+
         if tags is None:
             tags = set()
 
@@ -2581,6 +2591,23 @@ class MachineCom:
                 ):
                     continue
 
+                # track the start and end of the first capability reporting (from M115)
+                if self._first_cap_report_pending:
+                    # capability report in progress
+                    if lower_line.startswith("cap:"):
+                        self._first_cap_report_started = True
+
+                    # capability report done
+                    elif self._first_cap_report_started:
+                        self._first_cap_report_pending = False
+                        self._first_cap_report_started = False
+
+                        # refresh sd files now if it was deferred while waiting for report
+                        if self._m20_pending_cap_report:
+                            self._m20_pending_cap_report = False
+                            self._logger.info("Performing deferred sd file refresh")
+                            self.refreshSdFiles()
+
                 ##~~ position report processing
                 if "X:" in line and "Y:" in line and "Z:" in line:
                     parsed = parse_position_line(line)
@@ -2729,6 +2756,12 @@ class MachineCom:
                             ):
                                 self._logger.info(
                                     "Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first"
+                                )
+                            elif (
+                                capability == self.CAPABILITY_EXTENDED_M20 and enabled
+                            ):
+                                self._logger.info(
+                                    "Firmware states that it supports long filenames"
                                 )
 
                         # notify plugins
@@ -3627,13 +3660,11 @@ class MachineCom:
                 "trigger:comm.on_connected",
             },
         )
+        self._first_cap_report_pending = True
+        self._first_cap_report_started = False
 
         if self._sdAvailable:
-            self.refreshSdFiles(
-                tags={
-                    "trigger:comm.on_connected",
-                }
-            )
+            self.refreshSdFiles(tags={"trigger:comm.on_connected"})
         else:
             self.initSdCard(tags={"trigger:comm.on_connected"})
 
