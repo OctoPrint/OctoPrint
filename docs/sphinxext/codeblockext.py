@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import annotations
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "The MIT License <http://opensource.org/licenses/MIT>"
@@ -20,9 +19,7 @@ from pygments.filters import VisibleWhitespaceFilter, ErrorToken
 from pygments.lexers.python import PythonConsoleLexer
 from pygments.util import ClassNotFound
 
-if False:
-    # For type annotation
-    from typing import Any, Dict, List, Tuple  # NOQA
+from typing import Any
 
 
 def _merge_dict(a, b):
@@ -75,8 +72,7 @@ class CodeBlockExt(CodeBlock):
 
     option_spec = _merge_dict(CodeBlock.option_spec, {"whitespace": directives.flag})
 
-    def run(self):
-        # type: () -> List[nodes.Node]
+    def run(self) -> list[nodes.Node]:
         # get result from parent implementation
         code_block = CodeBlock.run(self)
 
