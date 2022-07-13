@@ -38,9 +38,7 @@ def _git(args, cwd, hide_stderr=False):
     else:
         return None, None
 
-    stdout = p.communicate()[0].strip()
-    if sys.version_info >= (3, 0):
-        stdout = stdout.decode()
+    stdout = p.communicate()[0].strip().decode()
 
     if p.returncode != 0:
         return p.returncode, None
