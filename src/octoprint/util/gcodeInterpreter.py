@@ -587,8 +587,13 @@ class gcode:
                 else:
                     e = 0
 
+                # calculate 3d arc length
+                arcLengthXYZ = math.sqrt(
+                    (oldPos.z - pos.z) ** 2 + ((endAngle - startAngle) * r) ** 2
+                )
+
                 # move time in x, y, z, will be 0 if no movement happened
-                moveTimeXYZ = abs((oldPos - pos).length / feedrate)
+                moveTimeXYZ = abs(arcLengthXYZ / feedrate)
 
                 # time needed for extruding, will be 0 if no extrusion happened
                 extrudeTime = abs(e / feedrate)
