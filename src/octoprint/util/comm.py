@@ -751,7 +751,7 @@ class MachineCom:
         self._sdFileToSelectUser = None
         self._ignore_select = False
         self._manualStreaming = False
-        
+
         # Capability report tracking
         self._first_cap_report_pending = False
         self._first_cap_report_started = False
@@ -2757,9 +2757,7 @@ class MachineCom:
                                 self._logger.info(
                                     "Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first"
                                 )
-                            elif (
-                                capability == self.CAPABILITY_EXTENDED_M20 and enabled
-                            ):
+                            elif capability == self.CAPABILITY_EXTENDED_M20 and enabled:
                                 self._logger.info(
                                     "Firmware states that it supports long filenames"
                                 )
