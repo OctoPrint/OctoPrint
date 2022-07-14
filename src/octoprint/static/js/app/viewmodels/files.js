@@ -1116,6 +1116,11 @@ $(function () {
                 return true;
             }
 
+            var travelArea = data["gcodeAnalysis"]["travelArea"];
+            if (!travelArea) {
+                return true;
+            }
+
             var printerProfile = self.printerProfiles.currentProfileData();
             if (!printerProfile) {
                 return true;
@@ -1154,46 +1159,65 @@ $(function () {
                 }
             }
 
-            // model not within bounds, we need to prepare a warning
-            var warning =
-                "<p>" +
-                _.sprintf(
-                    gettext(
-                        "Object in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."
-                    ),
-                    {name: _.escape(data.name)}
-                ) +
-                "</p>";
             var info = "";
+            var objectFits = true;
+            var travelFits = true;
 
-            var formatData = {
-                profile: boundaries,
-                object: printingArea
-            };
+            function _area_exceeds_boundaries(ax, area) {
+                return (
+                    area["min" + ax] < boundaries["min" + ax] ||
+                    area["max" + ax] > boundaries["max" + ax]
+                );
+            }
 
-            // find exceeded dimensions
-            if (
-                printingArea["minX"] < boundaries["minX"] ||
-                printingArea["maxX"] > boundaries["maxX"]
-            ) {
+            // check if printing area exceeds boundaries
+            if (_area_exceeds_boundaries("X", printingArea)) {
                 info += gettext("Object exceeds print volume in width.<br>");
+                objectFits = false;
             }
-            if (
-                printingArea["minY"] < boundaries["minY"] ||
-                printingArea["maxY"] > boundaries["maxY"]
-            ) {
+            if (_area_exceeds_boundaries("Y", printingArea)) {
                 info += gettext("Object exceeds print volume in depth.<br>");
+                objectFits = false;
             }
-            if (
-                printingArea["minZ"] < boundaries["minZ"] ||
-                printingArea["maxZ"] > boundaries["maxZ"]
-            ) {
+            if (_area_exceeds_boundaries("Z", printingArea)) {
                 info += gettext("Object exceeds print volume in height.<br>");
+                objectFits = false;
             }
 
-            //warn user
-            if (info !== "") {
+            // check if travel area exceeds boundaries
+            if (_area_exceeds_boundaries("X", travelArea)) {
+                info += gettext("Travel exceeds print volume in width.<br>");
+                travelFits = false;
+            }
+            if (_area_exceeds_boundaries("Y", travelArea)) {
+                info += gettext("Travel exceeds print volume in depth.<br>");
+                travelFits = false;
+            }
+            if (_area_exceeds_boundaries("Z", travelArea)) {
+                info += gettext("Travel exceeds print volume in height.<br>");
+                travelFits = false;
+            }
+
+            if (travelFits && objectFits) {
+                return true;
+            } else {
+                // model not within bounds, we need to prepare a warning
                 if (notify) {
+                    var formatData = {
+                        name: _.escape(data.name),
+                        profile: boundaries,
+                        object: printingArea,
+                        travel: travelArea,
+                        culprit: !objectFits ? "Object" : "Travel area"
+                    };
+
+                    info += _.sprintf(
+                        gettext(
+                            "Travel area: (%(travel.minX).2f, %(travel.minY).2f, %(travel.minZ).2f) &times; (%(travel.maxX).2f, %(travel.maxY).2f, %(travel.maxZ).2f)"
+                        ),
+                        formatData
+                    );
+                    info += "<br>";
                     info += _.sprintf(
                         gettext(
                             "Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"
@@ -1208,21 +1232,34 @@ $(function () {
                         formatData
                     );
 
+                    // prepare a warning message
+                    var warning =
+                        "<p>" +
+                        _.sprintf(
+                            gettext(
+                                "%(culprit)s in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."
+                            ),
+                            formatData
+                        ) +
+                        "</p>";
+
                     warning += pnotifyAdditionalInfo(info);
 
                     warning +=
                         '<p><small>You can disable this check via Settings &gt; Features &gt; "Enable model size detection [...]"</small></p>';
 
+                    //warn user
                     new PNotify({
-                        title: gettext("Object doesn't fit print volume"),
+                        title: _.sprintf(
+                            gettext("%(culprit)s exceeds print volume"),
+                            formatData
+                        ),
                         text: warning,
                         type: "warning",
                         hide: false
                     });
                 }
                 return false;
-            } else {
-                return true;
             }
         };
 

@@ -485,6 +485,34 @@ GCODE analysis information
      - 0..1
      - Float
      - The minimum Z coordinate of the printed model, in mm
+   * - ``travelArea``
+     - 0..1
+     - Object
+     - Information regarding the size of the travel area
+   * - ``travelArea.maxX``
+     - 0..1
+     - Float
+     - The maximum X coordinate of all moves, in mm
+   * - ``travelArea.maxY``
+     - 0..1
+     - Float
+     - The maximum Y coordinate of all moves, in mm
+   * - ``travelArea.maxZ``
+     - 0..1
+     - Float
+     - The maximum Z coordinate of all moves, in mm
+   * - ``travelArea.minX``
+     - 0..1
+     - Float
+     - The minimum X coordinate of all moves, in mm
+   * - ``travelArea.minY``
+     - 0..1
+     - Float
+     - The minimum Y coordinate of all moves, in mm
+   * - ``travelArea.minZ``
+     - 0..1
+     - Float
+     - The minimum Z coordinate of all moves, in mm
 
 
 .. _sec-api-datamodel-files-ref:

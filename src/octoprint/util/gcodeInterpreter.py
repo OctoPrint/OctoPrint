@@ -217,7 +217,8 @@ class gcode:
         self._abort = False
         self._reenqueue = True
         self._filamentDiameter = 0
-        self._minMax = MinMax3D()
+        self._print_minMax = MinMax3D()
+        self._travel_minMax = MinMax3D()
         self._progress_callback = progress_callback
 
         self._incl_layers = incl_layers
@@ -247,21 +248,35 @@ class gcode:
         if self._current_layer:
             self._current_layer["commands"] += 1
 
+    def _get_minMax_dimensions(self, minMax):
+        size = minMax.size
+        return {"width": size.x, "depth": size.y, "height": size.z}
+
+    def _get_minMax_area(self, minMax):
+        return {
+            "minX": None if math.isinf(minMax.min.x) else minMax.min.x,
+            "minY": None if math.isinf(minMax.min.y) else minMax.min.y,
+            "minZ": None if math.isinf(minMax.min.z) else minMax.min.z,
+            "maxX": None if math.isinf(minMax.max.x) else minMax.max.x,
+            "maxY": None if math.isinf(minMax.max.y) else minMax.max.y,
+            "maxZ": None if math.isinf(minMax.max.z) else minMax.max.z,
+        }
+
     @property
     def dimensions(self):
-        size = self._minMax.size
-        return {"width": size.x, "depth": size.y, "height": size.z}
+        return self._get_minMax_dimensions(self._print_minMax)
+
+    @property
+    def travel_dimensions(self):
+        return self._get_minMax_dimensions(self._travel_minMax)
 
     @property
     def printing_area(self):
-        return {
-            "minX": None if math.isinf(self._minMax.min.x) else self._minMax.min.x,
-            "minY": None if math.isinf(self._minMax.min.y) else self._minMax.min.y,
-            "minZ": None if math.isinf(self._minMax.min.z) else self._minMax.min.z,
-            "maxX": None if math.isinf(self._minMax.max.x) else self._minMax.max.x,
-            "maxY": None if math.isinf(self._minMax.max.y) else self._minMax.max.y,
-            "maxZ": None if math.isinf(self._minMax.max.z) else self._minMax.max.z,
-        }
+        return self._get_minMax_area(self._print_minMax)
+
+    @property
+    def travel_area(self):
+        return self._get_minMax_area(self._travel_minMax)
 
     @property
     def layers(self):
@@ -291,7 +306,8 @@ class gcode:
         g90_extruder=False,
         bed_z=0.0,
     ):
-        self._minMax.min.z = bed_z
+        self._print_minMax.min.z = bed_z
+        self._travel_minMax.min.z = bed_z
         if os.path.isfile(filename):
             self.filename = filename
             self._fileSize = os.stat(filename).st_size
@@ -463,12 +479,6 @@ class gcode:
                     else:
                         e -= currentE[currentExtruder]
 
-                    # If move with extrusion, calculate new min/max coordinates of model
-                    if e > 0 and move:
-                        # extrusion and move -> oldPos & pos relevant for print area & dimensions
-                        self._minMax.record(oldPos)
-                        self._minMax.record(pos)
-
                     totalExtrusion[currentExtruder] += e
                     currentE[currentExtruder] += e
                     maxExtrusion[currentExtruder] = max(
@@ -483,6 +493,15 @@ class gcode:
                             maxExtrusion[i] = max(maxExtrusion[i], totalExtrusion[i])
                 else:
                     e = 0
+
+                # If move, calculate new min/max coordinates
+                if move:
+                    # store as print move if extrusion is > 0
+                    if e > 0:
+                        self._print_minMax.record(oldPos)
+                        self._print_minMax.record(pos)
+                    self._travel_minMax.record(oldPos)
+                    self._travel_minMax.record(pos)
 
                 # move time in x, y, z, will be 0 if no movement happened
                 moveTimeXYZ = abs((oldPos - pos).length / feedrate)
@@ -563,15 +582,6 @@ class gcode:
                     else:
                         e -= currentE[currentExtruder]
 
-                    # If move with extrusion, calculate new min/max coordinates of model
-                    if e > 0 and move:
-                        # extrusion and move -> oldPos & pos relevant for print area & dimensions
-                        self._minMax.record(oldPos)
-                        self._minMax.record(pos)
-                        self._addArcMinMax(
-                            self._minMax, startAngle, endAngle, centerArc, r
-                        )
-
                     totalExtrusion[currentExtruder] += e
                     currentE[currentExtruder] += e
                     maxExtrusion[currentExtruder] = max(
@@ -586,6 +596,21 @@ class gcode:
                             maxExtrusion[i] = max(maxExtrusion[i], totalExtrusion[i])
                 else:
                     e = 0
+
+                # If move, calculate new min/max coordinates
+                if move:
+                    # store as print move if extrusion is > 0
+                    if e > 0:
+                        self._print_minMax.record(oldPos)
+                        self._print_minMax.record(pos)
+                        self._addArcMinMax(
+                            self._print_minMax, startAngle, endAngle, centerArc, r
+                        )
+                    self._travel_minMax.record(oldPos)
+                    self._travel_minMax.record(pos)
+                    self._addArcMinMax(
+                        self._travel_minMax, startAngle, endAngle, centerArc, r
+                    )
 
                 # move time in x, y, z, will be 0 if no movement happened
                 moveTimeXYZ = abs((oldPos - pos).length / feedrate)
@@ -799,6 +824,8 @@ class gcode:
             "extrusion_volume": self.extrusionVolume,
             "dimensions": self.dimensions,
             "printing_area": self.printing_area,
+            "travel_dimensions": self.travel_dimensions,
+            "travel_area": self.travel_area,
         }
         if self._incl_layers:
             result["layers"] = self.layers

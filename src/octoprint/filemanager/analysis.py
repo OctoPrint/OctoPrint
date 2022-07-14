@@ -27,7 +27,16 @@ EMPTY_RESULT = {
         "minZ": 0,
         "maxZ": 0,
     },
+    "travelArea": {
+        "minX": 0,
+        "maxX": 0,
+        "minY": 0,
+        "maxY": 0,
+        "minZ": 0,
+        "maxZ": 0,
+    },
     "dimensions": {"width": 0, "height": 0, "depth": 0},
+    "travelDimensions": {"width": 0, "height": 0, "depth": 0},
     "filament": {},
 }
 
@@ -406,7 +415,14 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
         if self._current.analysis and all(
             map(
                 lambda x: x in self._current.analysis,
-                ("printingArea", "dimensions", "estimatedPrintTime", "filament"),
+                (
+                    "printingArea",
+                    "dimensions",
+                    "travelArea",
+                    "travelDimensions",
+                    "estimatedPrintTime",
+                    "filament",
+                ),
             )
         ):
             return self._current.analysis
@@ -499,6 +515,8 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 
                 result["printingArea"] = analysis["printing_area"]
                 result["dimensions"] = analysis["dimensions"]
+                result["travelArea"] = analysis["travel_area"]
+                result["travelDimensions"] = analysis["travel_dimensions"]
                 if analysis["total_time"]:
                     result["estimatedPrintTime"] = analysis["total_time"] * 60
                 if analysis["extrusion_length"]:
