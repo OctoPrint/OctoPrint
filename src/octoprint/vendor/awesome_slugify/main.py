@@ -1,3 +1,7 @@
+# coding=utf8
+
+import sys
+
 from unidecode import unidecode
 import regex as re
 
@@ -7,6 +11,12 @@ import regex as re
 # Use regex.VERSION1 regex flag.
 
 # re.VERSION1 - New enhanced behaviour with nested sets and set operations
+
+
+if sys.version_info[0] == 2:
+    str_type = unicode  # Python 2
+else:
+    str_type = str  # Python 3
 
 
 def join_words(words, separator, max_length=None):
@@ -153,7 +163,7 @@ class Slugify(object):
         max_length = kwargs.get('max_length', self.max_length)
         separator = kwargs.get('separator', self.separator)
 
-        if not isinstance(text, str):
+        if not isinstance(text, str_type):
             text = text.decode('utf8', 'ignore')
 
         if kwargs.get('fold_abbrs', self.fold_abbrs):

@@ -77,7 +77,7 @@ def to_unicode(
     s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
 ) -> str:
     """
-    Make sure ``s_or_u`` is a string (str) or bytes.
+    Make sure ``s_or_u`` is a string (str).
 
     Arguments:
         s_or_u (str or bytes): The value to convert
