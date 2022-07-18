@@ -755,7 +755,7 @@ class MachineCom:
         # Capability report tracking
         self._first_cap_report_pending = False
         self._first_cap_report_started = False
-        self._m20_pending_cap_report = False
+        self._refresh_sd_files_after_cap_report = False
 
         self.last_temperature = TemperatureRecord()
         self.pause_temperature = TemperatureRecord()
@@ -2008,9 +2008,14 @@ class MachineCom:
         if not self.isOperational() or self.isBusy():
             return
 
-        if self._first_cap_report_pending:
-            self._m20_pending_cap_report = True
-            self._logger.info("Deferring sd file refresh until capability report done")
+        if (
+            settings().get(["serial", "waitToLoadSdFileList"])
+            and self._first_cap_report_pending
+        ):
+            self._refresh_sd_files_after_cap_report = True
+            self._logger.info(
+                "Deferring sd file refresh until capability report is processed"
+            )
             return
 
         if tags is None:
@@ -2591,8 +2596,12 @@ class MachineCom:
                 ):
                     continue
 
-                # track the start and end of the first capability reporting (from M115)
-                if self._first_cap_report_pending:
+                # track the start and end of the first firmware capability reporting (from M115) so the sd card
+                # file list can be loaded afterwards for some printers
+                if (
+                    settings().get(["serial", "waitToLoadSdFileList"])
+                    and self._first_cap_report_pending
+                ):
                     # capability report in progress
                     if lower_line.startswith("cap:"):
                         self._first_cap_report_started = True
@@ -2603,8 +2612,8 @@ class MachineCom:
                         self._first_cap_report_started = False
 
                         # refresh sd files now if it was deferred while waiting for report
-                        if self._m20_pending_cap_report:
-                            self._m20_pending_cap_report = False
+                        if self._refresh_sd_files_after_cap_report:
+                            self._refresh_sd_files_after_cap_report = False
                             self._logger.info("Performing deferred sd file refresh")
                             self.refreshSdFiles()
 
@@ -3658,8 +3667,9 @@ class MachineCom:
                 "trigger:comm.on_connected",
             },
         )
-        self._first_cap_report_pending = True
-        self._first_cap_report_started = False
+        if settings().get(["serial", "waitToLoadSdFileList"]):
+            self._first_cap_report_pending = True
+            self._first_cap_report_started = False
 
         if self._sdAvailable:
             self.refreshSdFiles(tags={"trigger:comm.on_connected"})
