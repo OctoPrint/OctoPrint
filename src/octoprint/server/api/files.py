@@ -18,6 +18,7 @@ import octoprint.slicing
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 from octoprint.filemanager.destinations import FileDestinations
+from octoprint.filemanager.storage import StorageError
 from octoprint.server import (
     NO_CONTENT,
     current_user,
@@ -1235,7 +1236,10 @@ def deleteGcodeFile(filename, target):
         if target == FileDestinations.SDCARD:
             printer.delete_sd_file(filename, tags={"source:api", "api:files.sd"})
         else:
-            fileManager.remove_file(target, filename)
+            try:
+                fileManager.remove_file(target, filename)
+            except StorageError as ex:
+                _abortWithStorageError(ex)
 
     elif _verifyFolderExists(target, filename):
         if _isBusy(target, filename):
@@ -1254,9 +1258,21 @@ def deleteGcodeFile(filename, target):
             printer.unselect_file()
 
         # delete it
-        fileManager.remove_folder(target, filename, recursive=True)
+        try:
+            fileManager.remove_folder(target, filename, recursive=True)
+        except StorageError as ex:
+            _abortWithStorageError(ex)
 
     return NO_CONTENT
+
+
+def _abortWithStorageError(ex):
+    logging.getLogger(__name__).error(f"{ex.message}: {ex.code}", exc_info=ex.cause)
+    if ex.code == StorageError.UNKNOWN:
+        description = str(ex.cause).split(":")[0]
+    else:
+        description = ex.message
+    abort(500, description=description)
 
 
 def _getCurrentFile():
