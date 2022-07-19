@@ -888,8 +888,27 @@ $(function () {
                             deferred.reject();
                         });
                 })
-                .fail(function () {
+                .fail(function (data) {
                     deferred.reject();
+
+                    // Notify user
+                    var error =
+                        "<p>" +
+                        gettext(
+                            "Could not remove entry. Please check octoprint.log for possible reasons."
+                        ) +
+                        "</p>";
+                    if (data.responseJSON && data.responseJSON.error) {
+                        error += pnotifyAdditionalInfo(
+                            "<pre>" + _.escape(data.responseJSON.error) + "</pre>"
+                        );
+                    }
+                    new PNotify({
+                        title: gettext("Failed to remove entry"),
+                        text: error,
+                        type: "error",
+                        hide: false
+                    });
                 });
 
             return deferred.promise().always(function () {
