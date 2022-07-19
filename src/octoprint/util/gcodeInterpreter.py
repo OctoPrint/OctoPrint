@@ -547,7 +547,7 @@ class gcode:
                 startAngle = math.atan2(oldPos.y - centerArc.y, oldPos.x - centerArc.x)
                 endAngle = math.atan2(pos.y - centerArc.y, pos.x - centerArc.x)
 
-                if gcode == "G2":
+                if gcode in ("G2", "G02"):
                     startAngle, endAngle = endAngle, startAngle
                 if startAngle < 0:
                     startAngle += math.pi * 2
