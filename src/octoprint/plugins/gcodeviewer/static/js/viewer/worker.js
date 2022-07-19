@@ -480,8 +480,8 @@ var doParse = function () {
                         center_j = Number(args[j].slice(1));
                         break;
                     case "g":
-                        if (args[j].charAt(1).toLowerCase() === "2") direction = -1;
-                        if (args[j].charAt(1).toLowerCase() === "3") direction = 1;
+                        if (/^(?:G2|G02)(\.\d+)?\s/i.test(line)) direction = -1;
+                        else if (/^(?:G3|G03)(\.\d+)?\s/i.test(line)) direction = 1;
                         break;
                 }
             }
