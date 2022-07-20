@@ -2404,25 +2404,25 @@ class MachineCom:
                                 level=logging.INFO,
                             )
                             self.refreshSdFiles()
-                        else:
-                            for name, hook in self._printer_action_hooks.items():
-                                try:
-                                    hook(
-                                        self,
-                                        line,
-                                        action_command,
-                                        name=action_name,
-                                        params=action_params,
-                                    )
-                                except Exception:
-                                    self._logger.exception(
-                                        "Error while calling hook from plugin "
-                                        "{} with action command {}".format(
-                                            name, action_command
-                                        ),
-                                        extra={"plugin": name},
-                                    )
-                                    continue
+
+                        for name, hook in self._printer_action_hooks.items():
+                            try:
+                                hook(
+                                    self,
+                                    line,
+                                    action_command,
+                                    name=action_name,
+                                    params=action_params,
+                                )
+                            except Exception:
+                                self._logger.exception(
+                                    "Error while calling hook from plugin "
+                                    "{} with action command {}".format(
+                                        name, action_command
+                                    ),
+                                    extra={"plugin": name},
+                                )
+                                continue
 
                     if self._state not in (
                         self.STATE_CONNECTING,
