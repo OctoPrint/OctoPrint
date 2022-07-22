@@ -661,11 +661,8 @@ def uploadGcodeFile(target):
                 allow_overwrite=True,
                 display=canonFilename,
             )
-        except octoprint.filemanager.storage.StorageError as e:
-            if e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
-                abort(415, description="Could not upload file, invalid type")
-            else:
-                abort(500, description="Could not upload file")
+        except (OSError, StorageError) as e:
+            _abortWithException(e)
         else:
             filename = fileProcessingFinished(
                 added_file,
@@ -777,11 +774,8 @@ def uploadGcodeFile(target):
             added_folder = fileManager.add_folder(
                 target, futureFullPath, display=canonName
             )
-        except octoprint.filemanager.storage.StorageError as e:
-            if e.code == octoprint.filemanager.storage.StorageError.INVALID_DIRECTORY:
-                abort(400, description="Could not create folder, invalid directory")
-            else:
-                abort(500, description="Could not create folder")
+        except (OSError, StorageError) as e:
+            _abortWithException(e)
 
         location = url_for(
             ".readGcodeFile",
@@ -1238,8 +1232,8 @@ def deleteGcodeFile(filename, target):
         else:
             try:
                 fileManager.remove_file(target, filename)
-            except StorageError as ex:
-                _abortWithStorageError(ex)
+            except (OSError, StorageError) as e:
+                _abortWithException(e)
 
     elif _verifyFolderExists(target, filename):
         if _isBusy(target, filename):
@@ -1260,19 +1254,40 @@ def deleteGcodeFile(filename, target):
         # delete it
         try:
             fileManager.remove_folder(target, filename, recursive=True)
-        except StorageError as ex:
-            _abortWithStorageError(ex)
+        except (OSError, StorageError) as e:
+            _abortWithException(e)
 
     return NO_CONTENT
 
 
-def _abortWithStorageError(ex):
-    logging.getLogger(__name__).error(f"{ex.message}: {ex.code}", exc_info=ex.cause)
-    if ex.code == StorageError.UNKNOWN:
-        description = str(ex.cause).split(":")[0]
+def _abortWithException(error):
+    if type(error) is StorageError:
+        logging.getLogger(__name__).error(
+            f"{error.message}: {error.code}", exc_info=error.cause
+        )
+        if error.code == StorageError.INVALID_DIRECTORY:
+            abort(400, description="Could not create folder, invalid directory")
+        elif error.code == StorageError.INVALID_FILE:
+            abort(415, description="Could not upload file, invalid type")
+        elif error.code == StorageError.INVALID_SOURCE:
+            abort(404, description="Source path does not exist, invalid source")
+        elif error.code == StorageError.INVALID_DESTINATION:
+            abort(400, description="Destination is invalid")
+        elif error.code == StorageError.DOES_NOT_EXIST:
+            abort(404, description="Does not exit")
+        elif error.code == StorageError.ALREADY_EXISTS:
+            abort(409, description="File or folder already exists")
+        elif error.code == StorageError.SOURCE_EQUALS_DESTINATION:
+            abort(400, description="Source and destination are the same folder")
+        elif error.code == StorageError.NOT_EMPTY:
+            abort(409, description="Folder is not empty")
+        elif error.code == StorageError.UNKNOWN:
+            abort(500, description=str(error.cause).split(":")[0])
+        else:
+            abort(500, description=error.message)
     else:
-        description = ex.message
-    abort(500, description=description)
+        logging.getLogger(__name__).exception(error)
+        abort(500, description=str(error).split(":")[0])
 
 
 def _getCurrentFile():

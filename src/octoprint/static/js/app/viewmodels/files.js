@@ -1779,9 +1779,9 @@ $(function () {
             }
             error += "</p>";
 
-            if (data.jqXHR.responseText) {
+            if (data.jqXHR.responseJSON && data.jqXHR.responseJSON.error) {
                 error += pnotifyAdditionalInfo(
-                    "<pre>" + _.escape(data.jqXHR.responseText) + "</pre>"
+                    "<pre>" + _.escape(data.jqXHR.responseJSON.error) + "</pre>"
                 );
             }
             new PNotify({
