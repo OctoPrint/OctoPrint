@@ -7,8 +7,8 @@ Wants=network-online.target
 Environment="LC_ALL=C.UTF-8"
 Environment="LANG=C.UTF-8"
 Type=exec
-User=pi
-ExecStart=/home/pi/OctoPrint/venv/bin/octoprint
+User=ebrima
+ExecStart=/home/ebrima/OctoPrint/venv/bin/octoprint
 
 [Install]
 WantedBy=multi-user.target
