@@ -63,8 +63,8 @@
             <div class="pull-right">
                 <button class="btn btn-small" data-bind="click: $root.showRepository"><i class="fas fa-plus"></i> {{ _('Get More') }}</button>
                 <a class="btn btn-small" href="{{ url_for('index') }}plugin/pluginmanager/export"><i class="fas fa-download"></i> {{ _('Export') }}</a>
-                <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
-                <a class="btn btn-small" data-toggle="collapse" href="#pluginmanager_info" title="{{ _('Info') }}"><i class="fas fa-lg fa-info-circle text-info" data-bind="css: {'text-error': noticeCount() > 0, 'text-info': noticeCount() <=0 }"></i></a>
+                <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}" aria-label="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
+                <a class="btn btn-small" data-toggle="collapse" href="#pluginmanager_info" title="{{ _('Info') }}" aria-label="{{ _('Info') }}"><i class="fas fa-lg fa-info-circle text-info" data-bind="css: {'text-error': noticeCount() > 0, 'text-info': noticeCount() <=0 }"></i></a>
             </div>
             <div id="pluginmanager_info" class="collapse" data-bind="css: {'in': noticeCount() > 0}">
                 <div class="muted" data-bind="visible: pipAvailable()">
@@ -118,14 +118,14 @@
                         </ul>
                     </div>
                     <div class="btn-group">
-                        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('bundled'); plugins.removeFilter('3rdparty'); }, css: {active: !_.contains(plugins.currentFilters(), 'bundled') && !_.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show both bundled and third-party plugins')|edq }}">All</button>
-                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('bundled') }, css: {active: _.contains(plugins.currentFilters(), 'bundled')}" title="{{ _('Show only bundled plugins')|edq }}">{{ _('Bundled') }}</button>
-                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('3rdparty') }, css: {active: _.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show only third-party plugins')|edq }}">{{ _('3rd party') }}</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('bundled'); plugins.removeFilter('3rdparty'); }, css: {active: !_.contains(plugins.currentFilters(), 'bundled') && !_.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show both bundled and third-party plugins')|edq }}" aria-label="{{ _('Show both bundled and third-party plugins')|edq }}">All</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('bundled') }, css: {active: _.contains(plugins.currentFilters(), 'bundled')}" title="{{ _('Show only bundled plugins')|edq }}" aria-label="{{ _('Show only bundled plugins')|edq }}">{{ _('Bundled') }}</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('3rdparty') }, css: {active: _.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show only third-party plugins')|edq }}" aria-label="{{ _('Show only third-party plugins')|edq }}">{{ _('3rd party') }}</button>
                     </div>
                     <div class="btn-group">
-                        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('enabled'); plugins.removeFilter('disabled'); }, css: {active: !_.contains(plugins.currentFilters(), 'enabled') && !_.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show both enabled and disabled plugins')|edq }}">All</button>
-                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('enabled') }, css: {active: _.contains(plugins.currentFilters(), 'enabled')}" title="{{ _('Show only enabled plugins')|edq }}">{{ _('Enabled') }}</button>
-                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('disabled') }, css: {active: _.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show only disabled plugins')|edq }}">{{ _('Disabled') }}</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('enabled'); plugins.removeFilter('disabled'); }, css: {active: !_.contains(plugins.currentFilters(), 'enabled') && !_.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show both enabled and disabled plugins')|edq }}" aria-label="{{ _('Show both enabled and disabled plugins')|edq }}">All</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('enabled') }, css: {active: _.contains(plugins.currentFilters(), 'enabled')}" title="{{ _('Show only enabled plugins')|edq }}" aria-label="{{ _('Show only enabled plugins')|edq }}">{{ _('Enabled') }}</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('disabled') }, css: {active: _.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show only disabled plugins')|edq }}" aria-label="{{ _('Show only disabled plugins')|edq }}">{{ _('Disabled') }}</button>
                     </div>
                 </div>
             </div>
@@ -143,7 +143,7 @@
                 <tbody data-bind="foreach: plugins.paginatedItems">
                 <tr>
                     <td class="settings_plugin_plugin_manager_plugins_checkbox">
-                        <input type="checkbox" data-bind="value: key, checked: $root.selectedPlugins, enable: $root.enableBulk($data)" title="{{ _('Bundled and incompatible plugins do not support bulk operations') | edq }}">
+                        <input type="checkbox" data-bind="value: key, checked: $root.selectedPlugins, enable: $root.enableBulk($data)" title="{{ _('Bundled and incompatible plugins do not support bulk operations') | edq }}" aria-label="{{ _('Bundled and incompatible plugins do not support bulk operations') | edq }}">
                     </td>
                     <td class="settings_plugin_plugin_manager_plugins_name">
                         <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint')|edq }}" class="fas fa-th-large" data-bind="visible: bundled"></i> <i class="fas fa-lock" title="{{ _('Cannot be uninstalled through OctoPrint')|edq }}" data-bind="visible: !managable"></i> <i class="fas fa-bolt" title="{{ _('Incompatible to OctoPrint or the underlying Python environment')|edq }}" data-bind="visible: incompatible"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect')|edq }}" class="fas fa-sync" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install')|edq }}" class="fas fa-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall')|edq }}" class="fas fa-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode')|edq }}" class="fas fa-medkit" data-bind="visible: safe_mode_victim"></i> <i class="fas fa-exclamation-triangle" title="{{ _('There are notices available regarding this plugin')|edq }}" data-bind="visible: notifications && notifications.length"></i> <i class="fas fa-ban" title="{{ _('This plugin is blacklisted')|edq }}" data-bind="visible: blacklisted"></i></div>
@@ -160,7 +160,7 @@
                         </div>
                     </td>
                     <td class="settings_plugin_plugin_manager_plugins_actions">
-                        <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fas fa-eraser" title="{{ _('Cleanup Plugin Data')|edq }}" data-bind="css: {disabled: !$root.enableCleanup($data)}, enable: $root.enableCleanup($data), click: function() { $root.cleanupPlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="far fa-trash-alt" title="{{ _('Uninstall Plugin')|edq }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
+                        <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fas fa-eraser" title="{{ _('Cleanup Plugin Data')|edq }}" aria-label="{{ _('Cleanup Plugin Data')|edq }}" data-bind="css: {disabled: !$root.enableCleanup($data)}, enable: $root.enableCleanup($data), click: function() { $root.cleanupPlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="far fa-trash-alt" title="{{ _('Uninstall Plugin')|edq }}" aria-label="{{ _('Uninstall Plugin')|edq }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
                     </td>
                 </tr>
                 </tbody>
@@ -170,7 +170,7 @@
     </div>
     <div class="tab-pane" id="settings_plugin_pluginmanager_cleanup">
         <div class="pull-right">
-            <button class="btn btn-small" data-bind="click: function() { $root.requestOrphanData({refresh: true}) }" title="{{ _('Refresh')|edq }}"><i class="fas fa-sync"></i></button>
+            <button class="btn btn-small" data-bind="click: function() { $root.requestOrphanData({refresh: true}) }" title="{{ _('Refresh')|edq }}" aria-label="{{ _('Refresh')|edq }}"><i class="fas fa-sync"></i></button>
         </div>
 
         <h3>{{ _('Cleanup') }}</h3>
@@ -190,7 +190,7 @@
                             <span data-bind="text: identifier"></span>
                         </td>
                         <td class="settings_plugin_plugin_manager_orphans_actions">
-                            <a href="javascript:void(0)" class="fas fa-eraser" title="{{ _('Cleanup Plugin Data')|edq }}" data-bind="click: function() { $root.cleanupPlugin($data.identifier) }"></a>
+                            <a href="javascript:void(0)" class="fas fa-eraser" title="{{ _('Cleanup Plugin Data')|edq }}" aria-label="{{ _('Cleanup Plugin Data')|edq }}" data-bind="click: function() { $root.cleanupPlugin($data.identifier) }"></a>
                         </td>
                     </tr>
                     </tbody>
