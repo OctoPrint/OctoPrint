@@ -29,7 +29,7 @@ class DevelWebassetsConfig(BaseModel):
 
 class DevelCacheConfig(BaseModel):
     enabled: bool = True
-    """Whether to enable caching. Defaults to true. Setting it to false will cause the UI to alway be fully rerendered on request to `/` on the server."""
+    """Whether to enable caching. Defaults to true. Setting it to false will cause the UI to always be fully rerendered on request to `/` on the server."""
 
     preemptive: bool = True
     """Whether to enable the preemptive cache."""
