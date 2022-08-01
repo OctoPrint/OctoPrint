@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 #
 # OctoPrint documentation build configuration file, created by
 # sphinx-quickstart on Mon Dec 02 17:08:50 2013.

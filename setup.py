@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 ### NOTE #################################################################################
 # This file has to stay format compatible to Python 2, or pip under Python 2 will
 # not be able to detect that OctoPrint requires Python 3 but instead fail with a
@@ -114,9 +112,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 
 def read_file_contents(path):
-    import io
-
-    with io.open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return f.read()
 
 
