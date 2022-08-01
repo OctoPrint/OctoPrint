@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function, unicode_literals
+
 ### NOTE #################################################################################
 # This file has to stay format compatible to Python 2, or pip under Python 2 will
 # not be able to detect that OctoPrint requires Python 3 but instead fail with a
