@@ -712,6 +712,13 @@ class SoftwareUpdatePlugin(
     def on_settings_load(self):
         # ensure we don't persist check configs we receive on the API
         data = dict(octoprint.plugin.SettingsPlugin.on_settings_load(self))
+
+        # set credentials flag
+        credentials = self._settings.get(["credentials"])
+        data["credentials"] = {}
+        for key, value in credentials.items():
+            data["credentials"][f"{key}_set"] = bool(value)
+
         if "checks" in data:
             del data["checks"]
 
