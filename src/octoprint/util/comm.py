@@ -727,6 +727,9 @@ class MachineCom:
             "capabilities": self._pluginManager.get_hooks(
                 "octoprint.comm.protocol.firmware.capabilities"
             ),
+            "after_report": self._pluginManager.get_hooks(
+                "octoprint.comm.protocol.firmware.after_report"
+            ),
         }
 
         self._printer_action_hooks = self._pluginManager.get_hooks(
@@ -2602,6 +2605,18 @@ class MachineCom:
                         # sd list was deferred, refresh it now
                         self._logger.debug("Performing deferred sd file refresh")
                         self.refreshSdFiles()
+
+                    # notify plugins
+                    for name, hook in self._firmware_info_hooks["after_report"].items():
+                        try:
+                            hook(self, copy.copy(self._firmware_capabilities))
+                        except Exception:
+                            self._logger.exception(
+                                "Error processing firmware reported hook {}:".format(
+                                    name
+                                ),
+                                extra={"plugin": name},
+                            )
 
                 ##~~ position report processing
                 if "X:" in line and "Y:" in line and "Z:" in line:
