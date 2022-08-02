@@ -361,7 +361,7 @@ var gCodeLineGenerator = async function* (fileURL) {
     let startIndex = 0;
     let result;
 
-    // now continue until all the downloaded dat is processed.
+    // now continue until all the downloaded data is processed.
     for (;;) {
         // cut at a new line
         let result = re.exec(chunk);
