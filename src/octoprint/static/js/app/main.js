@@ -444,7 +444,7 @@ $(function () {
                 };
             }
 
-            // make sure we have at least a function
+            // make sure we have atleast a function
             if (!_.isFunction(viewModel.construct)) {
                 log.error("No function to instantiate with", viewModel);
                 continue;
