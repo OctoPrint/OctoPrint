@@ -621,8 +621,11 @@ class MachineCom:
 
         self._firmware_detection = settings().getBoolean(["serial", "firmwareDetection"])
         self._firmware_info_received = False
+        self._firmware_capabilities_received = False
         self._firmware_info = {}
         self._firmware_capabilities = {}
+
+        self._defer_sd_refresh = settings().getBoolean(["serial", "waitToLoadSdFileList"])
 
         self._temperature_autoreporting = False
         self._sdstatus_autoreporting = False
@@ -751,11 +754,6 @@ class MachineCom:
         self._sdFileToSelectUser = None
         self._ignore_select = False
         self._manualStreaming = False
-
-        # Capability report tracking
-        self._first_cap_report_pending = False
-        self._first_cap_report_started = False
-        self._refresh_sd_files_after_cap_report = False
 
         self.last_temperature = TemperatureRecord()
         self.pause_temperature = TemperatureRecord()
@@ -2008,12 +2006,8 @@ class MachineCom:
         if not self.isOperational() or self.isBusy():
             return
 
-        if (
-            settings().get(["serial", "waitToLoadSdFileList"])
-            and self._first_cap_report_pending
-        ):
-            self._refresh_sd_files_after_cap_report = True
-            self._logger.info(
+        if self._defer_sd_refresh and not self._firmware_capabilities_received:
+            self._logger.debug(
                 "Deferring sd file refresh until capability report is processed"
             )
             return
@@ -2596,26 +2590,18 @@ class MachineCom:
                 ):
                     continue
 
-                # track the start and end of the first firmware capability reporting (from M115) so the sd card
-                # file list can be loaded afterwards for some printers
+                # wait for the end of the firmware capability report (M115) then notify plugins and refresh sd list if deferred
                 if (
-                    settings().get(["serial", "waitToLoadSdFileList"])
-                    and self._first_cap_report_pending
+                    self._firmware_capabilities
+                    and not self._firmware_capabilities_received
+                    and not lower_line.startswith("cap:")
                 ):
-                    # capability report in progress
-                    if lower_line.startswith("cap:"):
-                        self._first_cap_report_started = True
+                    self._firmware_capabilities_received = True
 
-                    # capability report done
-                    elif self._first_cap_report_started:
-                        self._first_cap_report_pending = False
-                        self._first_cap_report_started = False
-
-                        # refresh sd files now if it was deferred while waiting for report
-                        if self._refresh_sd_files_after_cap_report:
-                            self._refresh_sd_files_after_cap_report = False
-                            self._logger.info("Performing deferred sd file refresh")
-                            self.refreshSdFiles()
+                    if self._defer_sd_refresh:
+                        # sd list was deferred, refresh it now
+                        self._logger.debug("Performing deferred sd file refresh")
+                        self.refreshSdFiles()
 
                 ##~~ position report processing
                 if "X:" in line and "Y:" in line and "Z:" in line:
@@ -3667,9 +3653,6 @@ class MachineCom:
                 "trigger:comm.on_connected",
             },
         )
-        if settings().get(["serial", "waitToLoadSdFileList"]):
-            self._first_cap_report_pending = True
-            self._first_cap_report_started = False
 
         if self._sdAvailable:
             self.refreshSdFiles(tags={"trigger:comm.on_connected"})
