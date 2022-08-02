@@ -2426,11 +2426,11 @@ class SoftwareUpdatePlugin(
                     )
 
             if check.get("update_script", None):
-                # we force an exact version & python unequality check, to be able to downgrade
+                # we force an exact version & python inequality check, to be able to downgrade
                 result["force_exact_version"] = True
                 result["release_compare"] = "python_unequal"
             elif check.get("pip", None):
-                # we force python unequality check for pip installs, to be able to downgrade
+                # we force python inequality check for pip installs, to be able to downgrade
                 result["release_compare"] = "python_unequal"
 
         if result.get("pip", None):
