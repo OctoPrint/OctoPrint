@@ -14,6 +14,6 @@ jobs:
       - uses: sobolevn/misspell-fixer-action@master
       - uses: peter-evans/create-pull-request@v2.4.4
         env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: "true"
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
