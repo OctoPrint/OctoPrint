@@ -77,7 +77,7 @@ def to_unicode(
     s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
 ) -> str:
     """
-    Make sure ``s_or_u`` is a unicode string (str).
+    Make sure ``s_or_u`` is a string (str).
 
     Arguments:
         s_or_u (str or bytes): The value to convert
@@ -202,7 +202,6 @@ def warning_factory(warning_type):
                 "__dict__",
                 "__doc__",
                 "__str__",
-                "__unicode__",
                 "__repr__",
                 "__getattribute__",
                 "__setattr__",
@@ -1611,7 +1610,7 @@ class CaseInsensitiveSet(Set):
     """
     Basic case insensitive set
 
-    Any str or unicode values will be stored and compared in lower case. Other value types are left as-is.
+    Any str values will be stored and compared in lower case. Other value types are left as-is.
     """
 
     def __init__(self, *args):

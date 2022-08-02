@@ -166,6 +166,8 @@ date of first contribution):
   * [Nicu Surdu](https://github.com/surdu)
   * [Zack Lewis](https://github.com/lima3w)
   * [Billy Richardson](https://github.com/richardsondev)
+  * [Christian Bianchini](https://github.com/max246)
+  * [Kestin Goforth](https://github.com/kforth)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
