@@ -2,7 +2,9 @@ name: Automatically fix typos
 on:
   push:
     branches:
-      - master
+      - maintenance
+      - devel
+      - staging/bugfix
 
 jobs:
   build:
