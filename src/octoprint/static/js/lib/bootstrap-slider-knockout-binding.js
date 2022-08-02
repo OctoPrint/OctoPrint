@@ -8,7 +8,7 @@ ko.bindingHandlers.slider = {
 	init: function (element, valueAccessor, allBindings, viewModel, bindingContext) {
 		var params = valueAccessor();
 
-		// Check whether the value observable is either placed directly or in the paramaters object.
+		// Check whether the value observable is either placed directly or in the parameters object.
 		if (!(ko.isObservable(params) || params['value']))
 			throw "You need to define an observable value for the sliderValue. Either pass the observable directly or as the 'value' field in the parameters.";
 

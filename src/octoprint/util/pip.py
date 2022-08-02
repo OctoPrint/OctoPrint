@@ -83,7 +83,7 @@ def is_python_mismatch(lines):
 
 def is_egg_problem(lines):
     """
-    Returns whether the given output lines indicates an occurence of the "egg-problem".
+    Returns whether the given output lines indicates an occurrence of the "egg-problem".
 
     If something (target or dependency of target) was installed as an egg at an earlier
     date (e.g. thanks to just running python setup.py install), pip install will throw an
