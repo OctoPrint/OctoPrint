@@ -194,6 +194,22 @@ class MinMax3D:
             setattr(result, c, value)
         return result
 
+    @property
+    def dimensions(self):
+        size = self.size
+        return {"width": size.x, "depth": size.y, "height": size.z}
+
+    @property
+    def area(self):
+        return {
+            "minX": None if math.isinf(self.min.x) else self.min.x,
+            "minY": None if math.isinf(self.min.y) else self.min.y,
+            "minZ": None if math.isinf(self.min.z) else self.min.z,
+            "maxX": None if math.isinf(self.max.x) else self.max.x,
+            "maxY": None if math.isinf(self.max.y) else self.max.y,
+            "maxZ": None if math.isinf(self.max.z) else self.max.z,
+        }
+
 
 class AnalysisAborted(Exception):
     def __init__(self, reenqueue=True, *args, **kwargs):
@@ -248,35 +264,21 @@ class gcode:
         if self._current_layer:
             self._current_layer["commands"] += 1
 
-    def _get_minMax_dimensions(self, minMax):
-        size = minMax.size
-        return {"width": size.x, "depth": size.y, "height": size.z}
-
-    def _get_minMax_area(self, minMax):
-        return {
-            "minX": None if math.isinf(minMax.min.x) else minMax.min.x,
-            "minY": None if math.isinf(minMax.min.y) else minMax.min.y,
-            "minZ": None if math.isinf(minMax.min.z) else minMax.min.z,
-            "maxX": None if math.isinf(minMax.max.x) else minMax.max.x,
-            "maxY": None if math.isinf(minMax.max.y) else minMax.max.y,
-            "maxZ": None if math.isinf(minMax.max.z) else minMax.max.z,
-        }
-
     @property
     def dimensions(self):
-        return self._get_minMax_dimensions(self._print_minMax)
+        return self._print_minMax.dimensions
 
     @property
     def travel_dimensions(self):
-        return self._get_minMax_dimensions(self._travel_minMax)
+        return self._travel_minMax.dimensions
 
     @property
     def printing_area(self):
-        return self._get_minMax_area(self._print_minMax)
+        return self._print_minMax.area
 
     @property
     def travel_area(self):
-        return self._get_minMax_area(self._travel_minMax)
+        return self._travel_minMax.area
 
     @property
     def layers(self):
@@ -306,8 +308,7 @@ class gcode:
         g90_extruder=False,
         bed_z=0.0,
     ):
-        self._print_minMax.min.z = bed_z
-        self._travel_minMax.min.z = bed_z
+        self._print_minMax.min.z = self._travel_minMax.min.z = bed_z
         if os.path.isfile(filename):
             self.filename = filename
             self._fileSize = os.stat(filename).st_size
@@ -496,12 +497,12 @@ class gcode:
 
                 # If move, calculate new min/max coordinates
                 if move:
-                    # store as print move if extrusion is > 0
-                    if e > 0:
-                        self._print_minMax.record(oldPos)
-                        self._print_minMax.record(pos)
                     self._travel_minMax.record(oldPos)
                     self._travel_minMax.record(pos)
+                    if e > 0:
+                        # store as print move if extrusion is > 0
+                        self._print_minMax.record(oldPos)
+                        self._print_minMax.record(pos)
 
                 # move time in x, y, z, will be 0 if no movement happened
                 moveTimeXYZ = abs((oldPos - pos).length / feedrate)
@@ -599,18 +600,18 @@ class gcode:
 
                 # If move, calculate new min/max coordinates
                 if move:
-                    # store as print move if extrusion is > 0
-                    if e > 0:
-                        self._print_minMax.record(oldPos)
-                        self._print_minMax.record(pos)
-                        self._addArcMinMax(
-                            self._print_minMax, startAngle, endAngle, centerArc, r
-                        )
                     self._travel_minMax.record(oldPos)
                     self._travel_minMax.record(pos)
                     self._addArcMinMax(
                         self._travel_minMax, startAngle, endAngle, centerArc, r
                     )
+                    if e > 0:
+                        # store as print move if extrusion is > 0
+                        self._print_minMax.record(oldPos)
+                        self._print_minMax.record(pos)
+                        self._addArcMinMax(
+                            self._print_minMax, startAngle, endAngle, centerArc, r
+                        )
 
                 # move time in x, y, z, will be 0 if no movement happened
                 moveTimeXYZ = abs((oldPos - pos).length / feedrate)

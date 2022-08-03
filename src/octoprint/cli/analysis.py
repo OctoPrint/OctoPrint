@@ -13,10 +13,7 @@ click.disable_unicode_literals_warning = True
 
 
 dimensions = ("depth", "height", "width")
-printing_area = ("maxX", "maxY", "maxZ", "minX", "minY", "minZ")
-
-travel_dimensions = ("depth", "height", "width")
-travel_area = ("maxX", "maxY", "maxZ", "minX", "minY", "minZ")
+area = ("maxX", "maxY", "maxZ", "minX", "minY", "minZ")
 
 
 def empty_result(result):
@@ -41,7 +38,7 @@ def validate_result(result):
         return False
 
     if "travel_dimensions" not in result or not validate_dict(
-        result["travel_dimensions"], travel_dimensions
+        result["travel_dimensions"], dimensions
     ):
         return False
 
@@ -51,14 +48,10 @@ def validate_result(result):
     if "extrusion_volume" not in result or not validate_list(result["extrusion_volume"]):
         return False
 
-    if "printing_area" not in result or not validate_dict(
-        result["printing_area"], printing_area
-    ):
+    if "printing_area" not in result or not validate_dict(result["printing_area"], area):
         return False
 
-    if "travel_area" not in result or not validate_dict(
-        result["travel_area"], travel_area
-    ):
+    if "travel_area" not in result or not validate_dict(result["travel_area"], area):
         return False
 
     if "total_time" not in result or invalid_float(result["total_time"]):
