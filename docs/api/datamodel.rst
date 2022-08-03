@@ -488,7 +488,7 @@ GCODE analysis information
    * - ``travelArea``
      - 0..1
      - Object
-     - Information regarding the size of the travel area
+     - Information regarding the bounding box of all moves
    * - ``travelArea.maxX``
      - 0..1
      - Float
@@ -513,6 +513,22 @@ GCODE analysis information
      - 0..1
      - Float
      - The minimum Z coordinate of all moves, in mm
+   * - ``travelDimensions``
+     - 0..1
+     - Object
+     - Information regarding the size of the travel area
+   * - ``travelDimensions.depth``
+     - 0..1
+     - Float
+     - The depth of the travel area, in mm
+   * - ``travelDimensions.height``
+     - 0..1
+     - Float
+     - The height of the travel area, in mm
+   * - ``travelDimensions.width``
+     - 0..1
+     - Float
+     - The width of the travel area, in mm
 
 
 .. _sec-api-datamodel-files-ref:
