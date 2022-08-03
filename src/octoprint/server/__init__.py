@@ -1487,19 +1487,19 @@ class Server:
             return html_header_regex.sub(repl, s)
 
         markdown_header_regex = re.compile(
-            r"^(?P<hashs>#+)\s+(?P<content>.*)$", flags=re.MULTILINE
+            r"^(?P<hashes>#+)\s+(?P<content>.*)$", flags=re.MULTILINE
         )
 
         def offset_markdown_headers(s, offset):
             def repl(match):
-                number = len(match.group("hashs"))
+                number = len(match.group("hashes"))
                 number += offset
                 if number > 6:
                     number = 6
                 elif number < 1:
                     number = 1
-                return "{hashs} {content}".format(
-                    hashs="#" * number, content=match.group("content")
+                return "{hashes} {content}".format(
+                    hashes="#" * number, content=match.group("content")
                 )
 
             return markdown_header_regex.sub(repl, s)

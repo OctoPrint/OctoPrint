@@ -41,7 +41,7 @@ var percentageByLayer = [];
 
 var mustCompress = false;
 
-importScripts("pako.js");
+importScripts("../lib/pako.js");
 
 var compress = function (data) {
     if (!mustCompress) return data;
@@ -480,8 +480,10 @@ var doParse = function () {
                         center_j = Number(args[j].slice(1));
                         break;
                     case "g":
-                        if (args[j].charAt(1).toLowerCase() === "2") direction = -1;
-                        if (args[j].charAt(1).toLowerCase() === "3") direction = 1;
+                        if (args[j].charAt(1) === "2" || args[j].charAt(2) === "2")
+                            direction = -1;
+                        else if (args[j].charAt(1) === "3" || args[j].charAt(2) === "3")
+                            direction = 1;
                         break;
                 }
             }

@@ -25,6 +25,7 @@ import logging
 import os
 import re
 import sys
+import threading
 import time
 from collections import ChainMap
 from collections.abc import KeysView
@@ -486,6 +487,8 @@ class Settings:
         self._last_effective_hash = None
         self._mtime = None
 
+        self._lock = threading.RLock()
+
         self._get_preprocessors = {"controls": self._process_custom_controls}
         self._set_preprocessors = {}
 
@@ -716,9 +719,10 @@ class Settings:
         self._last_effective_hash = None
 
     def _mark_dirty(self):
-        self._dirty = True
-        self._dirty_time = time.time()
-        self._forget_hashes()
+        with self._lock:
+            self._dirty = True
+            self._dirty_time = time.time()
+            self._forget_hashes()
 
     @property
     def effective(self):
@@ -1465,36 +1469,37 @@ class Settings:
         return backup
 
     def save(self, force=False, trigger_event=False):
-        if not self._dirty and not force:
-            return False
+        with self._lock:
+            if not self._dirty and not force:
+                return False
 
-        try:
-            with atomic_write(
-                self._configfile,
-                mode="wt",
-                prefix="octoprint-config-",
-                suffix=".yaml",
-                permissions=0o600,
-                max_permissions=0o666,
-            ) as configFile:
-                yaml.save_to_file(self._map.top_map, file=configFile)
-                self._dirty = False
-        except Exception:
-            self._logger.exception("Error while saving config.yaml!")
-            raise
-        else:
-            from octoprint.events import Events, eventManager
+            try:
+                with atomic_write(
+                    self._configfile,
+                    mode="wt",
+                    prefix="octoprint-config-",
+                    suffix=".yaml",
+                    permissions=0o600,
+                    max_permissions=0o666,
+                ) as configFile:
+                    yaml.save_to_file(self._map.top_map, file=configFile)
+                    self._dirty = False
+            except Exception:
+                self._logger.exception("Error while saving config.yaml!")
+                raise
+            else:
+                from octoprint.events import Events, eventManager
 
-            self.load()
+                self.load()
 
-            if trigger_event:
-                payload = {
-                    "config_hash": self.config_hash,
-                    "effective_hash": self.effective_hash,
-                }
-                eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
+                if trigger_event:
+                    payload = {
+                        "config_hash": self.config_hash,
+                        "effective_hash": self.effective_hash,
+                    }
+                    eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
 
-            return True
+                return True
 
     ##~~ Internal getter
 
@@ -1769,8 +1774,9 @@ class Settings:
         chain = self._map.with_config_defaults(config=config, defaults=defaults)
 
         try:
-            chain.del_by_path(path)
-            self._mark_dirty()
+            with self._lock:
+                chain.del_by_path(path)
+                self._mark_dirty()
         except KeyError:
             if error_on_path:
                 raise NoSuchSettingsPath()
@@ -1824,24 +1830,25 @@ class Settings:
                 raise NoSuchSettingsPath()
             default_value = None
 
-        in_local = chain.has_path(path, only_local=True)
-        in_defaults = chain.has_path(path, only_defaults=True)
+        with self._lock:
+            in_local = chain.has_path(path, only_local=True)
+            in_defaults = chain.has_path(path, only_defaults=True)
 
-        if not force and in_defaults and in_local and default_value == value:
-            try:
-                chain.del_by_path(path)
+            if not force and in_defaults and in_local and default_value == value:
+                try:
+                    chain.del_by_path(path)
+                    self._mark_dirty()
+                except KeyError:
+                    if error_on_path:
+                        raise NoSuchSettingsPath()
+                    pass
+            elif (
+                force
+                or (not in_local and in_defaults and default_value != value)
+                or (in_local and current != value)
+            ):
+                chain.set_by_path(path, value)
                 self._mark_dirty()
-            except KeyError:
-                if error_on_path:
-                    raise NoSuchSettingsPath()
-                pass
-        elif (
-            force
-            or (not in_local and in_defaults and default_value != value)
-            or (in_local and current != value)
-        ):
-            chain.set_by_path(path, value)
-            self._mark_dirty()
 
         # we've changed the interface to no longer mutate the passed in config, so we
         # must manually do that here

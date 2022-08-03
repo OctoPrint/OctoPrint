@@ -870,4 +870,3 @@ PrinterProfileModified
      * ``identifier``: the identifier of the modified printer profile
 
    .. versionadded:: 1.3.12
-

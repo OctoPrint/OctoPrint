@@ -64,18 +64,18 @@ plugin.
 Version management after the official plugin repository release
 ---------------------------------------------------------------
 
-Once your plugin is available in the official plugin repository, you probably want to create and distribute new versions. 
-For "beta" users you can use the manual file distribution method, or a more elegant release channels (see below). 
-After you finalized a new plugin version, don't forget to actually update the version in the ``setup.py``, 
-and `submit a new release on github <https://docs.github.com/en/free-pro-team@latest/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release>`_. 
+Once your plugin is available in the official plugin repository, you probably want to create and distribute new versions.
+For "beta" users you can use the manual file distribution method, or a more elegant release channels (see below).
+After you finalized a new plugin version, don't forget to actually update the version in the ``setup.py``,
+and `submit a new release on github <https://docs.github.com/en/free-pro-team@latest/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release>`_.
 
-After you published the new release, you can verify it on your installed octoprint, 
-with force checking the updates under the advanced options (in the software updates menu in the settings). 
+After you published the new release, you can verify it on your installed octoprint,
+with force checking the updates under the advanced options (in the software updates menu in the settings).
 The new versions will appear to the plugin users in the next 24 hours (it depends on their cache refreshes).
 
-The `Software Update Plugin <https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html#>`_ has options to define multiple release channels, 
+The `Software Update Plugin <https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html#>`_ has options to define multiple release channels,
 and you can let the users decide if they want to test your pre-releases or not.
-This can be achieved with defining ``stable_branch`` and ``prerelease_branches`` in the ``get_update_information`` function, 
+This can be achieved with defining ``stable_branch`` and ``prerelease_branches`` in the ``get_update_information`` function,
 and creating github releases to the newly configured branches too.
-For more information you can check the `Software Update Plugin documentation <https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html#version-checks>`_ 
+For more information you can check the `Software Update Plugin documentation <https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html#version-checks>`_
 or read a more step-by-step writeup `here <https://github.com/cp2004/OctoPrint-Knowledge/blob/main/release-channels.md>`_.

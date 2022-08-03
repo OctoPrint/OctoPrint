@@ -473,7 +473,7 @@ class PipCaller(CommandlineCaller):
 
             if not output.startswith("pip"):
                 self._logger.warning(
-                    "pip command returned unparseable output, can't determine version: {}".format(
+                    "pip command returned unparsable output, can't determine version: {}".format(
                         output
                     )
                 )
@@ -481,7 +481,7 @@ class PipCaller(CommandlineCaller):
             split_output = list(map(lambda x: x.strip(), output.split()))
             if len(split_output) < 2:
                 self._logger.warning(
-                    "pip command returned unparseable output, can't determine version: {}".format(
+                    "pip command returned unparsable output, can't determine version: {}".format(
                         output
                     )
                 )
