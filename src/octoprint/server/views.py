@@ -151,9 +151,9 @@ def _valid_status_for_cache(status_code):
     return 200 <= status_code < 400
 
 
-def _add_additional_assets(hook):
+def _add_additional_assets(hook_name):
     result = []
-    for name, hook in pluginManager.get_hooks(hook).items():
+    for name, hook in pluginManager.get_hooks(hook_name).items():
         try:
             assets = hook()
             if isinstance(assets, (tuple, list)):

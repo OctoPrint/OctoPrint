@@ -547,7 +547,7 @@ class gcode:
                 startAngle = math.atan2(oldPos.y - centerArc.y, oldPos.x - centerArc.x)
                 endAngle = math.atan2(pos.y - centerArc.y, pos.x - centerArc.x)
 
-                if gcode == "G2":
+                if gcode in ("G2", "G02"):
                     startAngle, endAngle = endAngle, startAngle
                 if startAngle < 0:
                     startAngle += math.pi * 2
@@ -587,8 +587,13 @@ class gcode:
                 else:
                     e = 0
 
+                # calculate 3d arc length
+                arcLengthXYZ = math.sqrt(
+                    (oldPos.z - pos.z) ** 2 + ((endAngle - startAngle) * r) ** 2
+                )
+
                 # move time in x, y, z, will be 0 if no movement happened
-                moveTimeXYZ = abs((oldPos - pos).length / feedrate)
+                moveTimeXYZ = abs(arcLengthXYZ / feedrate)
 
                 # time needed for extruding, will be 0 if no extrusion happened
                 extrudeTime = abs(e / feedrate)
@@ -678,10 +683,17 @@ class gcode:
                 f = getCodeFloat(line, "F")
                 if s is not None and f is not None:
                     if gcode == "M207":
-                        fwretractTime = s / f
+                        # Ensure division is valid
+                        if f > 0:
+                            fwretractTime = s / f
+                        else:
+                            fwretractTime = 0
                         fwretractDist = s
                     else:
-                        fwrecoverTime = (fwretractDist + s) / f
+                        if f > 0:
+                            fwrecoverTime = (fwretractDist + s) / f
+                        else:
+                            fwrecoverTime = 0
             elif gcode == "M605":  # Duplication/Mirroring mode
                 s = getCodeInt(line, "S")
                 if s in [2, 4, 5, 6]:

@@ -28,6 +28,7 @@
   * [md5.js](https://blueimp.github.io/JavaScript-MD5/): MIT
   * [Modernizr](http://modernizr.com): MIT
   * [Moment.js](http://momentjs.com/): MIT
+  * [Pako](https://github.com/nodeca/pako): MIT
   * [PNotify](http://sciactive.com/pnotify/): GPL, LGPL, MPL (triple licensed)
   * [pusher.color.js](http://cache.preserve.io/5g18q0pw/index.html) (original link dead): MIT
   * [SockJS](https://github.com/sockjs/sockjs-client): MIT

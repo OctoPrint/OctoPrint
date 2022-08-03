@@ -26,7 +26,6 @@ merged into one big asset map (differing between javascripts and stylesheets of 
 rendition of the UI.
 
 .. code-block:: python
-   :linenos:
 
    asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
    for name, implementation in asset_plugins.items():
@@ -79,7 +78,6 @@ and ``plugin_d`` don't override :meth:`~octoprint.plugin.core.SortablePlugin.get
 ``plugin_b`` and ``plugin_c`` both return ``1`` for the sorting context ``StartupPlugin.on_startup``, ``None`` otherwise:
 
 .. code-block:: python
-   :linenos:
    :caption: plugin_a.py
 
    import octoprint.plugin
@@ -95,7 +93,6 @@ and ``plugin_d`` don't override :meth:`~octoprint.plugin.core.SortablePlugin.get
    __plugin_implementation__ = PluginA()
 
 .. code-block:: python
-   :linenos:
    :caption: plugin_b.py
 
    import octoprint.plugin
@@ -116,7 +113,6 @@ and ``plugin_d`` don't override :meth:`~octoprint.plugin.core.SortablePlugin.get
    __plugin_implementation__ = PluginB()
 
 .. code-block:: python
-   :linenos:
    :caption: plugin_c.py
 
    import octoprint.plugin
@@ -138,7 +134,6 @@ and ``plugin_d`` don't override :meth:`~octoprint.plugin.core.SortablePlugin.get
    __plugin_implementation__ = PluginC()
 
 .. code-block:: python
-   :linenos:
    :caption: plugin_d.py
 
    # in this example this is bundled with OctoPrint

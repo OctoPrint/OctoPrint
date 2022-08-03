@@ -265,7 +265,7 @@ class ReverseProxiedEnvironment:
 
         # sensible defaults
         if header_prefix is None:
-            header_prefix = ["x-script-name"]
+            header_prefix = ["x-script-name", "x-forwarded-prefix"]
         if header_scheme is None:
             header_scheme = ["x-forwarded-proto", "x-scheme"]
         if header_host is None:

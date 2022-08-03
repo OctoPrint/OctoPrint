@@ -42,7 +42,7 @@ core_deps = [
     "filetype>=1.0.7,<2",
     "Flask-Assets>=2.0,<3",
     "Flask-Babel>=2.0,<3",
-    "Flask-Login>=0.5,<0.6",  # flask-login doesn't use semver & breaks stuff on minor version increases
+    "Flask-Login>=0.6,<0.7",  # breaking changes can happen on minor version increases
     "flask>=2,<3",
     "frozendict>=2.0,<3",
     "future>=0.18.2,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
@@ -62,10 +62,12 @@ core_deps = [
     "tornado>=6.0.4,<7",
     "watchdog>=1,<2",
     "websocket-client>=1.2.1,<2",
-    "werkzeug>=2.0,<2.1",  # breaking changes can happen on minor version increases, flask-login 0.5 is incompatible with 2.1
-    "wrapt>=1.13.3,<1.14",
+    "werkzeug>=2.1,<2.2",  # breaking changes can happen on minor version increases
+    "wrapt>=1.14,<1.15",
     "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
     "zipstream-ng>=1.3.4,<2.0.0",
+    "pydantic>=1.9.1,<2",
+    "pydantic-settings>=0.2.5,<1",  # TODO: replace with vendored with_attrs_docs
 ]
 vendored_deps = [
     "blinker>=1.4,<2",  # dependency of flask_principal
@@ -97,11 +99,11 @@ EXTRA_REQUIRES = {
     "plugins": ["cookiecutter>=1.7.2,<1.8"],
     # Dependencies for building the documentation
     "docs": [
-        "readthedocs-sphinx-ext",
-        "sphinx_rtd_theme",
-        "sphinx>=3,<4",
-        "sphinxcontrib-httpdomain",
-        "sphinxcontrib-mermaid",
+        "readthedocs-sphinx-ext>=2.1.5,<3",
+        "sphinx_rtd_theme>=1,<2",
+        "sphinx>=4,<5",
+        "sphinxcontrib-httpdomain>=1.8.0,<2",
+        "sphinxcontrib-mermaid>=0.7.1,<0.8",
     ],
 }
 

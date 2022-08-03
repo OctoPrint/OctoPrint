@@ -712,6 +712,13 @@ class SoftwareUpdatePlugin(
     def on_settings_load(self):
         # ensure we don't persist check configs we receive on the API
         data = dict(octoprint.plugin.SettingsPlugin.on_settings_load(self))
+
+        # set credentials flag
+        credentials = self._settings.get(["credentials"])
+        data["credentials"] = {}
+        for key, value in credentials.items():
+            data["credentials"][f"{key}_set"] = bool(value)
+
         if "checks" in data:
             del data["checks"]
 
@@ -773,7 +780,9 @@ class SoftwareUpdatePlugin(
     def on_settings_save(self, data):
         # ~~ plugin settings
 
-        for key in self.get_settings_defaults():
+        defaults = self.get_settings_defaults()
+
+        for key in defaults:
             if key in (
                 "checks",
                 "cache_ttl",
@@ -783,6 +792,7 @@ class SoftwareUpdatePlugin(
                 "octoprint_checkout_folder",
                 "octoprint_type",
                 "octoprint_release_channel",
+                "credentials",
             ):
                 continue
             if key in data:
@@ -911,6 +921,14 @@ class SoftwareUpdatePlugin(
 
         if update_pip_check_config:
             self._invalidate_version_cache("pip")
+
+        # ~~ credentials
+
+        if "credentials" in data:
+            credentials = data["credentials"]
+            for key in defaults["credentials"]:
+                if key in credentials:
+                    self._settings.set(["credentials", key], credentials[key])
 
     def get_settings_version(self):
         return 9
@@ -2408,11 +2426,11 @@ class SoftwareUpdatePlugin(
                     )
 
             if check.get("update_script", None):
-                # we force an exact version & python unequality check, to be able to downgrade
+                # we force an exact version & python inequality check, to be able to downgrade
                 result["force_exact_version"] = True
                 result["release_compare"] = "python_unequal"
             elif check.get("pip", None):
-                # we force python unequality check for pip installs, to be able to downgrade
+                # we force python inequality check for pip installs, to be able to downgrade
                 result["release_compare"] = "python_unequal"
 
         if result.get("pip", None):

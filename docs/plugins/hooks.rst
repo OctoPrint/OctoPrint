@@ -26,7 +26,6 @@ lines to OctoPrint's :ref:`GCODE scripts <sec-features-gcode_scripts>`, either a
 or as ``postfix`` (after the existing lines).
 
 .. code-block:: python
-   :linenos:
 
    self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
 
@@ -75,7 +74,6 @@ property instead, manually instantiate your implementation instance and then add
 ``__plugin_hooks__`` property and itself to the ``__plugin_implementation__`` property. See the following example.
 
 .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
-   :linenos:
    :tab-width: 4
    :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`__
    :name: sec-plugin-concepts-hooks-example
@@ -95,7 +93,6 @@ An example should help clear this up. Let's assume we have the following plugin 
 hook called ``octoprint.plugin.ordertest.callback``:
 
 .. code-block:: python
-   :linenos:
    :caption: ordertest.py
 
    import octoprint.plugin
@@ -120,7 +117,6 @@ hook called ``octoprint.plugin.ordertest.callback``:
 And these three plugins defining handlers for that hook:
 
 .. code-block:: python
-   :linenos:
    :caption: oneorderedhook.py
 
    import logging
@@ -135,7 +131,6 @@ And these three plugins defining handlers for that hook:
     }
 
 .. code-block:: python
-   :linenos:
    :caption: anotherorderedhook.py
 
    import logging
@@ -150,7 +145,6 @@ And these three plugins defining handlers for that hook:
    }
 
 .. code-block:: python
-   :linenos:
    :caption: yetanotherhook.py
 
    import logging
@@ -237,7 +231,7 @@ octoprint.access.permissions
    .. code-block:: python
 
       from octoprint.access import ADMIN_GROUP
-      
+
       def get_additional_permissions(*args, **kwargs):
           return [
               dict(key="ADMIN",
@@ -316,7 +310,6 @@ octoprint.accesscontrol.keyvalidator
    and merely provided for educational purposes):
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_keyvalidator.py
-      :linenos:
       :tab-width: 4
       :caption: `custom_keyvalidator.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_keyvalidator.py>`_
 
@@ -350,7 +343,6 @@ octoprint.cli.commands
    OctoPrint:
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_cli_command.py
-      :linenos:
       :tab-width: 4
       :caption: `custom_cli_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_cli_command.py>`_
 
@@ -543,7 +535,6 @@ octoprint.comm.protocol.action
    Logs if the ``custom`` action (``// action:custom``) is received from the printer's firmware.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
-      :linenos:
       :tab-width: 4
       :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`__
 
@@ -594,7 +585,6 @@ This describes actually two hooks:
    different name).
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_atcommand.py
-      :linenos:
       :tab-width: 4
       :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_atcommand.py>`__
 
@@ -749,7 +739,6 @@ This actually describes four hooks:
    parameter) upon queuing and logs all sent ``M106``.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/rewrite_m107.py
-      :linenos:
       :tab-width: 4
       :caption: `rewrite_m107.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/rewrite_m107.py>`_
 
@@ -792,7 +781,6 @@ octoprint.comm.protocol.gcode.received
    Looks for the response of an ``M115``, which contains information about the ``MACHINE_TYPE``, among other things.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/read_m115_response.py
-      :linenos:
       :tab-width: 4
       :caption: `read_m115_response.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/read_m115_response.py>`_
 
@@ -831,7 +819,6 @@ octoprint.comm.protocol.gcode.error
    plugin.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/comm_error_handler_test.py
-      :linenos:
       :tab-width: 4
       :caption: `comm_error_handler_test.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/comm_error_handler_test.py>`_
 
@@ -868,7 +855,6 @@ octoprint.comm.protocol.scripts
    Appends an ``M117 OctoPrint connected`` to the configured ``afterPrinterConnected`` GCODE script.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/message_on_connect.py
-      :linenos:
       :tab-width: 4
       :caption: `message_on_connect.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/message_on_connect.py>`_
 
@@ -877,7 +863,6 @@ octoprint.comm.protocol.scripts
    Provides the variable ``myvariable`` to the configured ``beforePrintStarted`` GCODE script.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/gcode_script_variables.py
-      :linenos:
       :tab-width: 4
       :caption: `gcode_script_variables.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/gcode_script_variables.py>`_
 
@@ -918,7 +903,6 @@ octoprint.comm.protocol.temperatures.received
    The following example shows how to filter out actual temperatures that are outside a sane range of 1°C to 300°C.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/sanitize_temperatures.py
-      :linenos:
       :tab-width: 4
       :caption: `sanitize_temperatures.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/sanitize_temperatures.py>`_
 
@@ -984,7 +968,6 @@ octoprint.comm.transport.serial.factory
    or ``AUTO``.
 
    .. code-block:: python
-      :linenos:
 
       def default(comm_instance, port, baudrate, connection_timeout):
           if port is None or port == 'AUTO':
@@ -1043,7 +1026,6 @@ octoprint.events.register_custom_events
    and ``octoprint.events.Events.PLUGIN_MYPLUGIN_MY_OTHER_CUSTOM_EVENT`` with value ``plugin_myplugin_my_other_custom_event``.
 
    .. code-block:: python
-      :linenos:
 
       def register_custom_events(*args, **kwargs):
           return ["my_custom_event", "my_other_custom_event"]
@@ -1078,7 +1060,6 @@ octoprint.filemanager.analysis.factory
    The following handler would replace the existing analysis queue for ``gcode`` files with a custom implementation:
 
    .. code-block:: python
-      :linenos:
 
       from octoprint.filemanager.analysis import AbstractAnalysisQueue
 
@@ -1111,7 +1092,6 @@ octoprint.filemanager.extension_tree
    and ``s3g``:
 
    .. code-block:: python
-      :linenos:
 
       def support_x3g_machinecode(*args, **kwargs):
           return dict(
@@ -1152,7 +1132,6 @@ octoprint.filemanager.preprocessor
    The following plugin example strips all comments from uploaded/generated GCODE files ending on the name postfix ``_strip``.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/strip_all_comments.py
-      :linenos:
       :tab-width: 4
       :caption: `strip_all_comments.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/strip_all_comments.py>`_
 
@@ -1454,7 +1433,7 @@ octoprint.server.http.access_validator
 
    Allows adding additional access validators to the default tornado routers.
 
-   Your plugin might need to this to restrict acccess to downloads and webcam snapshots further.
+   Your plugin might need to this to restrict access to downloads and webcam snapshots further.
 
    .. important::
 
@@ -1496,7 +1475,6 @@ octoprint.server.http.bodysize
    size (as multipart request with the file upload residing in request parameter ``file``) and observe the behaviour.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/increase_bodysize.py
-      :linenos:
       :tab-width: 4
       :caption: `increase_bodysize.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/increase_bodysize.py>`_
 
@@ -1556,7 +1534,6 @@ octoprint.server.http.routes
    in the webserver which roughly replicate the functionality of ``/downloads/files/local`` and ``/downloads/camera/current``.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/add_tornado_route.py
-      :linenos:
       :tab-width: 4
       :caption: `add_tornado_route.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/add_tornado_route.py>`_
 
@@ -1846,24 +1823,20 @@ octoprint.ui.web.templatetypes
    First the provider:
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_template_provider/__init__.py
-      :linenos:
       :tab-width: 4
       :caption: `custom_template_provider/__init__.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_template_provider/__init__.py>`_
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_template_provider/templates/custom_template_provider_settings.jinja2
-      :linenos:
       :tab-width: 4
       :caption: `custom_template_provider/templates/custom_template_provider_settings.jinja2 <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_template_provider/templates/custom_template_provider_settings.jinja2>`_
 
    Then the consumer:
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_template_consumer/__init__.py
-      :linenos:
       :tab-width: 4
       :caption: `custom_template_consumer/__init__.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_template_consumer/__init__.py>`_
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_template_consumer/templates/custom_template_consumer_awesometemplate.jinja2
-      :linenos:
       :tab-width: 4
       :caption: `custom_template_consumer/templates/custom_template_consumer_awesometemplate.jinja2 <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_template_consumer/templates/custom_template_consumer_awesometemplate.jinja2>`_
 

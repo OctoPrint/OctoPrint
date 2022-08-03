@@ -10,9 +10,23 @@
         <div id="qunit-fixture"></div>
         <script src="lib/qunit-1.18.0.js"></script>
         <script src="lib/qunit-parameterize.js"></script>
+        <script src="../../../src/octoprint/static/js/lib/moment-with-locales.min.js"></script>
+        <script src="../../../src/octoprint/static/js/lib/babel.js"></script>
         <script src="../../../src/octoprint/static/js/lib/lodash.min.js"></script>
         <script src="../../../src/octoprint/static/js/lib/sprintf.min.js"></script>
         <script src="../../../src/octoprint/static/js/app/helpers.js"></script>
+
+        <script>
+            var catalog = {
+                messages: undefined,
+                plural_expr: undefined,
+                locale: undefined,
+                domain: undefined
+            };
+
+            babel.Translations.load(catalog).install();
+        </script>
+
         <script src="test-helpers.js"></script>
     </body>
 </html>

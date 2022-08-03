@@ -1,14 +1,3 @@
-/* override table width restrictions */
-.wy-table-responsive table td, .wy-table-responsive table th {
-    /* !important prevents the common CSS stylesheets from
-       overriding this as on RTD they are loaded after this stylesheet */
-    white-space: normal !important;
-}
-
-.wy-table-responsive {
-    overflow: visible !important;
-}
-
 /* style headlink for code block captions like other headlinks */
 .code-block-caption .headerlink {
     display: none;
@@ -40,21 +29,5 @@
 .rst-content .highlight>pre,
 .rst-content .linenodiv>pre {
     line-height: 1.5;
-}
-
-/* make code tags non-red again */
-code,
-.rst-content tt {
-    color: #000 !important;
-}
-
-a code,
-.rst-content a tt {
-    color: #2980B9 !important;
-}
-
-a:visited code,
-.rst-content a:visited tt {
-    color: #9B59B6 !important;
 }
 

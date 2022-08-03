@@ -36,6 +36,22 @@ var layerHeight = 0;
 var layerCnt = 0;
 var speeds = {extrude: [], retract: [], move: []};
 var speedsByLayer = {extrude: {}, retract: {}, move: {}};
+var emptyLayers = [];
+var percentageByLayer = [];
+
+var mustCompress = false;
+
+importScripts("pako.js");
+
+var compress = function (data) {
+    if (!mustCompress) return data;
+
+    return pako.deflate(JSON.stringify(data));
+};
+
+var decompress = function (data) {
+    return JSON.parse(pako.inflate(data, {to: "string"}));
+};
 
 var sendLayersToParent = function (layers, progress) {
     var l = [];
@@ -46,6 +62,7 @@ var sendLayersToParent = function (layers, progress) {
     var m = [];
     for (var i = 0; i < l.length; i++) {
         if (!model[l[i]]) continue;
+        if (!(model[l[i]] instanceof Uint8Array)) model[l[i]] = compress(model[l[i]]);
         m[l[i]] = model[l[i]];
     }
 
@@ -85,7 +102,9 @@ var sendAnalyzeDone = function () {
             layerTotal: model.length,
             speeds: speeds,
             speedsByLayer: speedsByLayer,
-            printTimeByLayer: printTimeByLayer
+            printTimeByLayer: printTimeByLayer,
+            percentageByLayer: percentageByLayer,
+            emptyLayers: emptyLayers
         }
     });
 };
@@ -97,8 +116,10 @@ var purgeLayers = function () {
         if (!model[i]) {
             purge = true;
         } else {
-            for (var j = 0; j < model[i].length; j++) {
-                if (model[i][j].extrude) purge = false;
+            var cmds = model[i];
+            if (cmds instanceof Uint8Array) cmds = decompress(cmds);
+            for (var j = 0; j < cmds.length; j++) {
+                if (cmds[j].extrude) purge = false;
             }
         }
         if (!purge) {
@@ -155,7 +176,13 @@ var analyzeModel = function () {
     for (var i = 0; i < model.length; i++) {
         var cmds = model[i];
         if (!cmds) continue;
+        if (cmds instanceof Uint8Array) cmds = decompress(cmds);
 
+        if (cmds.length > 0) {
+            percentageByLayer[i] = cmds[0].percentage;
+        }
+
+        var layerExtrude = false;
         for (var j = 0; j < cmds.length; j++) {
             var tool = cmds[j].tool;
 
@@ -288,7 +315,16 @@ var analyzeModel = function () {
             if (speedsByLayer[type][cmds[j].prevZ].indexOf(cmds[j].speed) === -1) {
                 speedsByLayer[type][cmds[j].prevZ][speedIndex] = cmds[j].speed;
             }
+
+            if (extrude) {
+                layerExtrude = true;
+            }
         }
+
+        if (!layerExtrude) {
+            emptyLayers[i] = true;
+        }
+
         sendSizeProgress((i / model.length) * 100);
     }
     purgeLayers();
@@ -444,8 +480,10 @@ var doParse = function () {
                         center_j = Number(args[j].slice(1));
                         break;
                     case "g":
-                        if (args[j].charAt(1).toLowerCase() === "2") direction = -1;
-                        if (args[j].charAt(1).toLowerCase() === "3") direction = 1;
+                        if (args[j].charAt(1) === "2" || args[j].charAt(2) === "2")
+                            direction = -1;
+                        else if (args[j].charAt(1) === "3" || args[j].charAt(2) === "3")
+                            direction = 1;
                         break;
                 }
             }
@@ -610,6 +648,9 @@ var doParse = function () {
 
         if (addToModel) {
             if (!model[layer]) model[layer] = [];
+            if (model[layer] instanceof Uint8Array)
+                model[layer] = decompress(model[layer]);
+
             var command = {
                 x: x,
                 y: y,
@@ -645,11 +686,17 @@ var doParse = function () {
                     // there's something to be checked in the Z-lift cache
                     if (prevZ < maxLiftZ) {
                         zLiftMoves.forEach(function (zLiftMove) {
+                            if (model[zLiftMove.layer] instanceof Uint8Array)
+                                model[zLiftMove.layer] = decompress(
+                                    model[zLiftMove.layer]
+                                );
                             // move command from move layer...
                             model[zLiftMove.layer].splice(
                                 model[layer].indexOf(zLiftMove.command),
                                 1
                             );
+                            if (model[zLiftLayer] instanceof Uint8Array)
+                                model[zLiftLayer] = decompress(model[zLiftLayer]);
                             // ... to z-lift layer
                             model[zLiftLayer].push(zLiftMove.command);
                         });
@@ -732,6 +779,7 @@ var parseGCode = function (message) {
     ignoreOutsideBed = message.options.ignoreOutsideBed;
     g90InfluencesExtruder = message.options.g90InfluencesExtruder;
     boundingBox.minZ = min.z = message.options.bedZ;
+    mustCompress = message.options.compress;
 
     doParse();
     gcode = [];

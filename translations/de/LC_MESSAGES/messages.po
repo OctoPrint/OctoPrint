@@ -3314,7 +3314,7 @@ msgstr "Jetzt aktualisieren"
 
 #: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:616
 msgid "Everything is up-to-date"
-msgstr "Alles ist auf dem neusten Stand"
+msgstr "Alles ist auf dem neuesten Stand"
 
 #: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:655
 msgid "No internet connection"

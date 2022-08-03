@@ -329,10 +329,6 @@ Visual Studio Code (vscode)
          {
              "python.defaultInterpreterPath": "venv/bin/python",
              "python.formatting.provider": "black",
-             "python.formatting.blackArgs": [
-                 "--config",
-                 "black.toml"
-             ],
              "editor.formatOnSave": true,
              "python.sortImports.args": [
                  "--profile=black",

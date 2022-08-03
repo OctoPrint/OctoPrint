@@ -84,6 +84,8 @@ All GCODE scripts have access to the following template variables through the te
     to the corresponding temperature in degrees Celsius. Note that not all tools your printer has must necessarily be
     present here, neither must the heated bed - it depends on whether OctoPrint has values for a tool or the bed. Also
     note that ``actual`` and ``target`` might be ``None``.
+  * ``last_fanspeed``: Last fan speed set. It contains the value taken from command (M106 and M107) sent through OctoPrint.
+    The value might be ``None`` if no fan speed has been set.
   * ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
     and ``script.name`` respectively.
   * ``plugins``: An object containing variables provided by plugins (e.g ``plugins.myplugin.myvariable``)
@@ -99,6 +101,7 @@ There are a few additional template variables available for the following specif
       "Log position on pause" under Settings > Serial > Advanced options!
     * ``pause_temperature``: Last known temperature values when the print was paused. See ``last_temperature`` above
       for the structure to expect here.
+    * ``pause_fanspeed``: Last known fan speed value when the print was paused. See ``last_fanspeed`` above for the structure to expect here.
 
   * ``afterPrintCancelled``
 
@@ -109,6 +112,7 @@ There are a few additional template variables available for the following specif
       "Log position on cancel" under Settings > Serial > Advanced options!
     * ``cancel_temperature``: Last known temperature values when the print was cancelled. See ``last_temperature`` above
       for the structure to expect here.
+    * ``cancel_fanspeed``: Last known fan speed value when the print was cancelled. See ``last_fanspeed`` above for the structure to expect here.
 
   * ``beforeToolChange`` and ``afterToolChange``
 

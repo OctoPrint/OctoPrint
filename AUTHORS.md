@@ -165,6 +165,9 @@ date of first contribution):
   * [Johan Verrept](https://github.com/JoveToo)
   * [Nicu Surdu](https://github.com/surdu)
   * [Zack Lewis](https://github.com/lima3w)
+  * [Billy Richardson](https://github.com/richardsondev)
+  * [Christian Bianchini](https://github.com/max246)
+  * [Kestin Goforth](https://github.com/kforth)
   * [Sara Tavares](https://github.com/stavares843)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by

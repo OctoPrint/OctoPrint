@@ -728,9 +728,12 @@ $(function () {
                     // z home
                     button = $("#control-zhome");
                     break;
-                default:
+                case 9: // prevent tab key from removing focus from webcam
                     event.preventDefault();
                     return false;
+                default:
+                    // don't prevent other keys
+                    return true;
             }
 
             if (button === undefined) {
@@ -865,7 +868,7 @@ $(function () {
             // If we found the rotation container, the view is rotated 90 degrees. This
             // means we need to manually calculate the player dimensions and apply them
             // to the rotation target where height = width and width = height (to
-            // accomodate the rotation). The target is centered in the container and
+            // accommodate the rotation). The target is centered in the container and
             // rotated around its center, so after we manually resized the container
             // everything will layout nicely.
             if (rotationContainer && player.videoWidth && player.videoHeight) {
