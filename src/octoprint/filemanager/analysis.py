@@ -399,6 +399,28 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
          * Depth of the printed model along the Y axis, in mm
        - * ``dimensions.height``
          * Height of the printed model along the Z axis, in mm
+       - * ``travelArea``
+         * Bounding box of all machine movements (minimum and maximum coordinates)
+       - * ``travelArea.minX``
+         * Minimum X coordinate of the machine movement
+       - * ``travelArea.maxX``
+         * Maximum X coordinate of the machine movement
+       - * ``travelArea.minY``
+         * Minimum Y coordinate of the machine movement
+       - * ``travelArea.maxY``
+         * Maximum Y coordinate of the machine movement
+       - * ``travelArea.minZ``
+         * Minimum Z coordinate of the machine movement
+       - * ``travelArea.maxZ``
+         * Maximum Z coordinate of the machine movement
+       - * ``travelDimensions``
+         * Dimensions of the travel area in X, Y, Z
+       - * ``travelDimensions.width``
+         * Width of the travel area along the X axis, in mm
+       - * ``travelDimensions.depth``
+         * Depth of the travel area along the Y axis, in mm
+       - * ``travelDimensions.height``
+         * Height of the travel area along the Z axis, in mm
     """
 
     def __init__(self, finished_callback):
