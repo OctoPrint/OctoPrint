@@ -30,7 +30,7 @@ Delete a timelapse
 .. http:delete:: /api/timelapse/(string:name)
 
    Delete the timelapse ``name``.
-   
+
    Returns a :ref:`timelapse list <sec-api-timelapse-datamodel-list>` in the
    response body with the updated information.
 
@@ -283,4 +283,3 @@ For timelapse type ``timed``.
      - 1
      - int
      - Seconds between individual shots
-

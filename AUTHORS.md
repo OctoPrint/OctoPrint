@@ -167,6 +167,7 @@ date of first contribution):
   * [Zack Lewis](https://github.com/lima3w)
   * [Billy Richardson](https://github.com/richardsondev)
   * [Christian Bianchini](https://github.com/max246)
+  * [Kestin Goforth](https://github.com/kforth)
   * [Dawid Pieper](https://github.com/dawidpieper)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by

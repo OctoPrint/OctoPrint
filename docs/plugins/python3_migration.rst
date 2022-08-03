@@ -373,5 +373,3 @@ Further reading
    `Migrating plugins to Python 2 & 3 compatibility - experiences? <https://community.octoprint.org/t/migrating-plugins-to-python-2-3-compatibility-experiences/16294?u=foosel>`__
       Forum topic collecting experiences by plugin developers in migrating their plugins to achieve Python 2 & 3
       compatibility.
-
-

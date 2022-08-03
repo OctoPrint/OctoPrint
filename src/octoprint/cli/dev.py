@@ -262,55 +262,38 @@ class OctoPrintDevelCommands(click.MultiCommand):
             "--list", "list_files", is_flag=True, help="List all available files and exit"
         )
         def command(files, all_files, list_files):
-            import os.path
             import shutil
+            from pathlib import Path
 
-            available_files = {
-                "core": {
-                    "source": "static/less/octoprint.less",
-                    "output": "static/css/octoprint.css",
-                },
-                "login": {
-                    "source": "static/less/login.less",
-                    "output": "static/css/login.css",
-                },
-                "recovery": {
-                    "source": "static/less/recovery.less",
-                    "output": "static/css/recovery.css",
-                },
-                "plugin_announcements": {
-                    "source": "plugins/announcements/static/less/announcements.less",
-                    "output": "plugins/announcements/static/css/announcements.css",
-                },
-                "plugin_appkeys_core": {
-                    "source": "plugins/appkeys/static/less/appkeys.less",
-                    "output": "plugins/appkeys/static/css/appkeys.css",
-                },
-                "plugin_appkeys_authdialog": {
-                    "source": "plugins/appkeys/static/less/authdialog.less",
-                    "output": "plugins/appkeys/static/css/authdialog.css",
-                },
-                "plugin_backup": {
-                    "source": "plugins/backup/static/less/backup.less",
-                    "output": "plugins/backup/static/css/backup.css",
-                },
-                "plugin_gcodeviewer": {
-                    "source": "plugins/gcodeviewer/static/less/gcodeviewer.less",
-                    "output": "plugins/gcodeviewer/static/css/gcodeviewer.css",
-                },
-                "plugin_logging": {
-                    "source": "plugins/logging/static/less/logging.less",
-                    "output": "plugins/logging/static/css/logging.css",
-                },
-                "plugin_pluginmanager": {
-                    "source": "plugins/pluginmanager/static/less/pluginmanager.less",
-                    "output": "plugins/pluginmanager/static/css/pluginmanager.css",
-                },
-                "plugin_softwareupdate": {
-                    "source": "plugins/softwareupdate/static/less/softwareupdate.less",
-                    "output": "plugins/softwareupdate/static/css/softwareupdate.css",
-                },
-            }
+            # src/octoprint
+            octoprint_base = Path(__file__).parent.parent
+
+            available_files = {}
+            for less_file in Path(octoprint_base, "static", "less").glob("*.less"):
+                # Check corresponding css file exists
+                # Less files can be imported, not all need building
+                css_file = Path(less_file.parent.parent, "css", f"{less_file.stem}.css")
+                if css_file.exists():
+                    available_files[less_file.stem] = {
+                        "source": str(less_file),
+                        "output": str(css_file),
+                    }
+
+            path_to_plugins = Path(octoprint_base, "plugins")
+            for plugin in Path(path_to_plugins).iterdir():
+                for less_file in Path(plugin, "static", "less").glob("*.less"):
+                    name = f"plugin_{plugin.name}"
+                    if less_file.stem != plugin.name:
+                        name += f"_{less_file.stem}"
+                    # Check there is a corresponding CSS file first
+                    css_file = Path(
+                        less_file.parent.parent, "css", f"{less_file.stem}.css"
+                    )
+                    if css_file.exists():
+                        available_files[name] = {
+                            "source": str(less_file),
+                            "output": str(css_file),
+                        }
 
             if list_files:
                 click.echo("Available files to build:")
@@ -329,7 +312,6 @@ class OctoPrintDevelCommands(click.MultiCommand):
 
             # Check that lessc is installed
             less = shutil.which("lessc")
-
             if not less:
                 click.echo(
                     "lessc is not installed/not available, please install it first"
@@ -339,26 +321,19 @@ class OctoPrintDevelCommands(click.MultiCommand):
                 )
                 sys.exit(1)
 
-            # Find the folder of the `octoprint` package
-            # Two folders up from this file
-            octoprint = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-            for file in files:
-                if file not in available_files.keys():
-                    click.echo(f"Unknown file {file}")
+            for less_file in files:
+                if less_file not in available_files.keys():
+                    click.echo(f"Unknown file {less_file}")
                     sys.exit(1)
-
-                source_path = os.path.join(octoprint, available_files[file]["source"])
-                output_path = os.path.join(octoprint, available_files[file]["output"])
-
-                # Check the target file exists
-                if not os.path.exists(source_path):
-                    click.echo(f"Target file {source_path} does not exist")
-                    continue
 
                 # Build command line, with necessary options
                 # TODO -x is deprecated, find replacement?
-                less_command = [less, "-x", source_path, output_path]
+                less_command = [
+                    less,
+                    "-x",
+                    available_files[less_file]["source"],
+                    available_files[less_file]["output"],
+                ]
 
                 self.command_caller.call(less_command)
 
