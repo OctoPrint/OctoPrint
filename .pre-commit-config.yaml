@@ -1,4 +1,4 @@
-exclude: ^(src/octoprint/vendor/|src/octoprint/static/js/lib|src/octoprint/static/vendor|tests/static/js/lib|tests/util/_files|docs/|scripts/|translations/|.*\.css|.*\.svg)
+exclude: ^(src/octoprint/vendor/|src/octoprint/static/js/lib|src/octoprint/static/vendor|tests/static/js/lib|tests/util/_files|scripts/|translations/|.*\.css|.*\.svg)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.1.0
@@ -54,6 +54,7 @@ repos:
       - id: flake8
         additional_dependencies:
           - flake8-bugbear==22.3.20
+        exclude: ^(docs/)
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v2.5.1
     hooks:

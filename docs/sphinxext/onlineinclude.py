@@ -6,21 +6,20 @@ __copyright__ = "Copyright (C) 2015 Gina Häußge - Released under terms of the 
 
 
 import codecs
-import requests
 from contextlib import closing
+from typing import Any
 
+import requests
 from sphinx.directives.code import (
-    LiteralIncludeReader,
     LiteralInclude,
+    LiteralIncludeReader,
+    container_wrapper,
     dedent_lines,
+    logger,
     nodes,
     parselinenos,
-    logger,
-    container_wrapper,
 )
 from sphinx.util.nodes import set_source_info
-
-from typing import Any
 
 cache = {}
 
@@ -42,8 +41,8 @@ class OnlineIncludeReader(LiteralIncludeReader):
                 lines = [line.expandtabs(self.options["tab-width"]) for line in lines]
 
             return lines
-        except (IOError, OSError):
-            raise IOError("Include file %r not found or reading it failed" % filename)
+        except OSError:
+            raise OSError("Include file %r not found or reading it failed" % filename)
         except UnicodeError:
             raise UnicodeError(
                 "Encoding %r used for reading included file %r seems to "
