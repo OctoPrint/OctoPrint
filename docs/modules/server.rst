@@ -37,6 +37,3 @@ octoprint.server.util.tornado
 
 .. automodule:: octoprint.server.util.tornado
    :members:
-
-
-

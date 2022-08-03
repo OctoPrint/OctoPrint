@@ -53,4 +53,3 @@ An overview of these properties follows.
 
    :ref:`Available Mixins <sec-plugins-mixins-available>`
        Some mixin types trigger the injection of additional properties.
-

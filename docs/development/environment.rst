@@ -405,5 +405,3 @@ Visual Studio Code (vscode)
   * Saving a file will run an auto formatter and import sort
 
   * ``Ctrl+Shift+B`` can be used to run the ``build docs`` task to rebuild the documentation
-
-

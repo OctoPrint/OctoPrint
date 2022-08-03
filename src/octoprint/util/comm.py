@@ -2798,11 +2798,6 @@ class MachineCom:
                                 supportRepetierTargetTemp = True
                                 disable_external_heatup_detection = True
 
-                                sd_always_available = self._sdAlwaysAvailable
-                                self._sdAlwaysAvailable = True
-                                if not sd_always_available and not self._sdAvailable:
-                                    self.initSdCard()
-
                             elif "reprapfirmware" in firmware_name.lower():
                                 self._logger.info(
                                     "Detected RepRapFirmware, enabling relevant features for issue free communication"
@@ -2928,11 +2923,15 @@ class MachineCom:
                         "SD init fail" in line
                         or "volume.init failed" in line
                         or "openRoot failed" in line
+                        or "SD Card unmounted" in line
+                        or "SD card released" in line
                     ):
                         self._sdAvailable = False
                         self._sdFiles = []
                         self._callback.on_comm_sd_state_change(self._sdAvailable)
-                    elif "SD card ok" in line and not self._sdAvailable:
+                    elif (
+                        "SD card ok" in line or "Card successfully initialized" in line
+                    ) and not self._sdAvailable:
                         self._sdAvailable = True
                         self.refreshSdFiles()
                         self._callback.on_comm_sd_state_change(self._sdAvailable)

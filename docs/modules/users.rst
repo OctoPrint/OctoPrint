@@ -5,5 +5,3 @@ octoprint.access.users
 
 .. automodule:: octoprint.access.users
    :members:
-
-

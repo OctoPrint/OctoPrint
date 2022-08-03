@@ -908,4 +908,3 @@ Upload response
      - (File only) Whether the file that was just uploaded was started to print (``true``) or not (``false``). If this
        is ``false`` but was requested to be ``true`` in the upload request, the user lacked permissions, the printer was not
        operational or already printing and thus the request could not be fulfilled.
-

@@ -1,28 +1,21 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
+from __future__ import annotations
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "The MIT License <http://opensource.org/licenses/MIT>"
 __copyright__ = "Copyright (C) 2015 Gina Häußge - Released under terms of the MIT License"
 
-from sphinx.directives.code import CodeBlock
+from typing import Any
 
 import sphinx.highlighting
-from sphinx.ext import doctest
-
 from docutils import nodes
 from docutils.parsers.rst import directives
-
-from six import text_type
-
 from pygments import highlight
-from pygments.filters import VisibleWhitespaceFilter, ErrorToken
+from pygments.filters import ErrorToken, VisibleWhitespaceFilter
 from pygments.lexers.python import PythonConsoleLexer
 from pygments.util import ClassNotFound
-
-if False:
-    # For type annotation
-    from typing import Any, Dict, List, Tuple  # NOQA
+from six import text_type
+from sphinx.directives.code import CodeBlock
+from sphinx.ext import doctest
 
 
 def _merge_dict(a, b):
@@ -75,8 +68,7 @@ class CodeBlockExt(CodeBlock):
 
     option_spec = _merge_dict(CodeBlock.option_spec, {"whitespace": directives.flag})
 
-    def run(self):
-        # type: () -> List[nodes.Node]
+    def run(self) -> list[nodes.Node]:
         # get result from parent implementation
         code_block = CodeBlock.run(self)
 
@@ -110,7 +102,7 @@ class CodeBlockExt(CodeBlock):
         return literal
 
 
-class PygmentsBridgeExt(object):
+class PygmentsBridgeExt:
     """
     Wrapper for :class:`PygmentsBridge`, delegates everything to the wrapped ``bridge`` but :method:`highlight_block`,
     which calls the parent implementation for lexer selection, then
@@ -136,7 +128,7 @@ class PygmentsBridgeExt(object):
         # For this we define a context manager that will allow us to wrap a lexer and modify its filters on the fly to
         # include the whitespace filter.
 
-        class whitespace(object):
+        class whitespace:
             def __init__(self, lexer):
                 self._lexer = lexer
                 self._orig_filters = lexer.filters
@@ -165,7 +157,7 @@ class PygmentsBridgeExt(object):
         # implementation of sphinx.highlighting.PygmentsBridge, released under the Simplified BSD License, the copyright
         # lies with the respective authors.
 
-        if not isinstance(source, text_type):
+        if not isinstance(source, str):
             source = source.decode()
 
         # find out which lexer to use
@@ -206,7 +198,7 @@ class PygmentsBridgeExt(object):
                 else:
                     lexer.add_filter("raiseonerror")
 
-        if not isinstance(source, text_type):
+        if not isinstance(source, str):
             source = source.decode()
 
         # trim doctest options if wanted
@@ -232,7 +224,7 @@ class PygmentsBridgeExt(object):
         return hlsource
 
 
-class whitespace_highlighter(object):
+class whitespace_highlighter:
     """
     Context manager for adapting the used highlighter on a translator for a given node's whitespace properties.
     """
