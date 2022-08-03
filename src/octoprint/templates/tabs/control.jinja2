@@ -68,28 +68,28 @@
     <div id="control-jog-xy" class="jog-panel">
         <h1>X/Y</h1>
         <div>
-            <button id="control-yinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',1) }"><i class="fas fa-arrow-up"></i></button>
+            <button id="control-yinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',1) }" aria-label="{{ _('Move front')|edq }}"><i class="fas fa-arrow-up"></i></button>
         </div>
         <div>
-            <button id="control-xdec" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',-1) }"><i class="fas fa-arrow-left"></i></button>
-            <button id="control-xyhome" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() , click: function() { $root.sendHomeCommand(['x', 'y']) }"><i class="fas fa-home"></i></button>
-            <button id="control-xinc" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',1) }"><i class="fas fa-arrow-right"></i></button>
+            <button id="control-xdec" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',-1) }" aria-label="{{ _('Move left')|edq }}"><i class="fas fa-arrow-left"></i></button>
+            <button id="control-xyhome" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() , click: function() { $root.sendHomeCommand(['x', 'y']) }" aria-label="{{ _('Home')|edq }}"><i class="fas fa-home"></i></button>
+            <button id="control-xinc" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',1) }" aria-label="{{ _('Move right')|edq }}"><i class="fas fa-arrow-right"></i></button>
         </div>
         <div>
-            <button id="control-ydec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',-1) }"><i class="fas fa-arrow-down"></i></button>
+            <button id="control-ydec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',-1) }" aria-label="{{ _('Move back')|edq }}"><i class="fas fa-arrow-down"></i></button>
         </div>
     </div>
     <!-- Z jogging control panel -->
     <div id="control-jog-z" class="jog-panel">
         <h1>Z</h1>
         <div>
-            <button id="control-zinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',1) }"><i class="fas fa-arrow-up"></i></button>
+            <button id="control-zinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',1) }" aria-label="{{ _('Move up')|edq }}"><i class="fas fa-arrow-up"></i></button>
         </div>
         <div>
-            <button id="control-zhome" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand(['z']) }"><i class="fas fa-home"></i></button>
+            <button id="control-zhome" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand(['z']) }" aria-label="{{ _('Home')|edq }}"><i class="fas fa-home"></i></button>
         </div>
         <div>
-            <button id="control-zdec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',-1) }"><i class="fas fa-arrow-down"></i></button>
+            <button id="control-zdec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',-1) }" aria-label="{{ _('Move down')|edq }}"><i class="fas fa-arrow-down"></i></button>
         </div>
     </div>
 
