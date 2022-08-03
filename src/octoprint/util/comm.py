@@ -2416,25 +2416,25 @@ class MachineCom:
                                 level=logging.INFO,
                             )
                             self.refreshSdFiles()
-                        else:
-                            for name, hook in self._printer_action_hooks.items():
-                                try:
-                                    hook(
-                                        self,
-                                        line,
-                                        action_command,
-                                        name=action_name,
-                                        params=action_params,
-                                    )
-                                except Exception:
-                                    self._logger.exception(
-                                        "Error while calling hook from plugin "
-                                        "{} with action command {}".format(
-                                            name, action_command
-                                        ),
-                                        extra={"plugin": name},
-                                    )
-                                    continue
+
+                        for name, hook in self._printer_action_hooks.items():
+                            try:
+                                hook(
+                                    self,
+                                    line,
+                                    action_command,
+                                    name=action_name,
+                                    params=action_params,
+                                )
+                            except Exception:
+                                self._logger.exception(
+                                    "Error while calling hook from plugin "
+                                    "{} with action command {}".format(
+                                        name, action_command
+                                    ),
+                                    extra={"plugin": name},
+                                )
+                                continue
 
                     if self._state not in (
                         self.STATE_CONNECTING,
@@ -2839,11 +2839,6 @@ class MachineCom:
                                 supportRepetierTargetTemp = True
                                 disable_external_heatup_detection = True
 
-                                sd_always_available = self._sdAlwaysAvailable
-                                self._sdAlwaysAvailable = True
-                                if not sd_always_available and not self._sdAvailable:
-                                    self.initSdCard()
-
                             elif "reprapfirmware" in firmware_name.lower():
                                 self._logger.info(
                                     "Detected RepRapFirmware, enabling relevant features for issue free communication"
@@ -2969,11 +2964,15 @@ class MachineCom:
                         "SD init fail" in line
                         or "volume.init failed" in line
                         or "openRoot failed" in line
+                        or "SD Card unmounted" in line
+                        or "SD card released" in line
                     ):
                         self._sdAvailable = False
                         self._sdFiles = []
                         self._callback.on_comm_sd_state_change(self._sdAvailable)
-                    elif "SD card ok" in line and not self._sdAvailable:
+                    elif (
+                        "SD card ok" in line or "Card successfully initialized" in line
+                    ) and not self._sdAvailable:
                         self._sdAvailable = True
                         self.refreshSdFiles()
                         self._callback.on_comm_sd_state_change(self._sdAvailable)

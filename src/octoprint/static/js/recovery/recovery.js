@@ -54,7 +54,7 @@ $(function () {
         self.backups = ko.observableArray([]);
         self.excludeFromBackup = ko.observableArray([]);
         self.backupMaxUploadSize = ko.observable();
-        self.backupIsAboveUploadSize = function (data) {
+        self.backupIsAboveUploadSize = (data) => {
             return data.size > self.backupMaxUploadSize();
         };
 
@@ -64,8 +64,8 @@ $(function () {
         self.workLoglines = ko.observableArray([]);
         self.workTitle = ko.observable("");
 
-        self.request = function () {
-            OctoPrint.browser.passiveLogin().done(function (resp) {
+        self.request = () => {
+            OctoPrint.browser.passiveLogin().done((resp) => {
                 self.username(resp.name);
                 self.permitted(_.includes(resp.needs.role, "admin"));
                 self.known(true);
@@ -73,13 +73,13 @@ $(function () {
                 OctoPrint.socket.sendAuth(resp.name, resp.session);
             });
 
-            OctoPrint.system.getCommandsForSource("core").done(function (resp) {
+            OctoPrint.system.getCommandsForSource("core").done((resp) => {
                 self.systemCommands(resp);
             });
 
-            OctoPrint.system.getInfo().done(function (resp) {
+            OctoPrint.system.getInfo().done((resp) => {
                 var systeminfo = [];
-                _.forOwn(resp.systeminfo, function (value, key) {
+                _.forOwn(resp.systeminfo, (value, key) => {
                     systeminfo.push({key: key, value: value});
                 });
                 self.systemInfo(systeminfo);
@@ -87,25 +87,23 @@ $(function () {
 
             OctoPrint.printer
                 .getFullState()
-                .done(function (resp) {
+                .done((resp) => {
                     self.printerConnected(true);
                     self.jobInProgress(resp.state.flags.printing);
                 })
-                .fail(function (xhr) {
+                .fail((xhr) => {
                     self.printerConnected(false);
                     self.jobInProgress(false);
                 });
 
             if (OctoPrint.plugins.backup) {
-                OctoPrint.plugins.backup.get().done(function (resp) {
+                OctoPrint.plugins.backup.get().done((resp) => {
                     self.backupSupported(true);
                     self.restoreSupported(resp.restore_supported);
                     self.backupMaxUploadSize(resp.max_upload_size);
 
                     var backups = resp.backups;
-                    backups.sort(function (a, b) {
-                        return b.date - a.date;
-                    });
+                    backups.sort((a, b) => b.date - a.date);
                     self.backups(backups);
                 });
             } else {
@@ -115,15 +113,15 @@ $(function () {
             }
         };
 
-        self.executeSystemCommand = function (command) {
-            var process = function () {
+        self.executeSystemCommand = (command) => {
+            var process = () => {
                 OctoPrint.system.executeCommand(command.source, command.action);
             };
 
             if (command.confirm) {
                 showConfirmationDialog({
                     message: command.confirm,
-                    onproceed: function () {
+                    onproceed: () => {
                         process();
                     }
                 });
@@ -132,22 +130,22 @@ $(function () {
             }
         };
 
-        self.copySystemInfo = function () {
+        self.copySystemInfo = () => {
             var text = "";
-            _.each(self.systemInfo(), function (entry) {
+            _.each(self.systemInfo(), (entry) => {
                 text += entry.key + ": " + entry.value + "\r\n";
             });
             copyToClipboard(text);
         };
 
         self.cancelPrint = function () {
-            OctoPrint.job.cancel().done(function () {
+            OctoPrint.job.cancel().done(() => {
                 self.request();
             });
         };
 
         self.disconnectPrinter = function () {
-            OctoPrint.connection.disconnect().done(function () {
+            OctoPrint.connection.disconnect().done(() => {
                 self.request();
             });
         };
@@ -160,15 +158,15 @@ $(function () {
 
             if (!self.backupSupported()) return;
             var excluded = self.excludeFromBackup();
-            OctoPrint.plugins.backup.createBackup(excluded).done(function () {
+            OctoPrint.plugins.backup.createBackup(excluded).done(() => {
                 self.excludeFromBackup([]);
             });
         };
 
-        self.restoreBackup = function (backup) {
+        self.restoreBackup = (backup) => {
             if (!self.restoreSupported()) return;
 
-            var perform = function () {
+            var perform = () => {
                 self.workInProgress(true);
                 self.workTitle(gettext("Restoring backup..."));
                 self.workLoglines.removeAll();
@@ -192,26 +190,26 @@ $(function () {
             );
         };
 
-        self.logout = function () {
-            OctoPrint.browser.logout().done(function () {
+        self.logout = () => {
+            OctoPrint.browser.logout().done(() => {
                 window.location.href = LOGIN_URL;
             });
         };
 
-        self.reconnect = function () {
+        self.reconnect = () => {
             OctoPrint.socket.reconnect();
         };
 
-        self.onSocketConnected = function () {
+        self.onSocketConnected = () => {
             self.connected(true);
             self.request();
         };
 
-        self.onSocketDisconnected = function () {
+        self.onSocketDisconnected = () => {
             self.connected(false);
         };
 
-        self.onSocketMessage = function (event, data) {
+        self.onSocketMessage = (event, data) => {
             console.log("onSocketMessage", event, data);
             if (event === "plugin" && data.plugin === "backup") {
                 switch (data.data.type) {
@@ -302,15 +300,15 @@ $(function () {
 
     var viewModel = new RecoveryViewModel();
 
-    OctoPrint.socket.onConnected = function () {
+    OctoPrint.socket.onConnected = () => {
         viewModel.onSocketConnected();
     };
 
-    OctoPrint.socket.onDisconnected = function () {
+    OctoPrint.socket.onDisconnected = () => {
         viewModel.onSocketDisconnected();
     };
 
-    OctoPrint.socket.onMessage("*", function (data) {
+    OctoPrint.socket.onMessage("*", (data) => {
         viewModel.onSocketMessage(data.event, data.data);
     });
 

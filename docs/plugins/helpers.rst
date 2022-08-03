@@ -71,4 +71,3 @@ them as (hopefully) documented.
            browsing_enabled=True,
            growl_instances=growl_instances
        ))
-

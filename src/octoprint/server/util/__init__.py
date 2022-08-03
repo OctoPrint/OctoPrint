@@ -6,7 +6,7 @@ import base64
 import logging
 import sys
 
-PY3 = sys.version_info[0] == 3  # should now always be true, kept for plugins
+PY3 = sys.version_info >= (3, 0)  # should now always be True, kept for plugins
 
 import flask as _flask
 import flask_login

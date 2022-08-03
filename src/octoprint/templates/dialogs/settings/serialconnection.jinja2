@@ -303,13 +303,6 @@
                     <div class="control-group">
                         <div class="controls">
                             <label class="checkbox">
-                                <input type="checkbox" data-bind="checked: serial_sdAlwaysAvailable" id="settings-serialSdAlwaysAvailable"> {{ _('Always assume SD card is present') }} <span class="label">{{ _('Repetier') }}</span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <div class="controls">
-                            <label class="checkbox">
                                 <input type="checkbox" data-bind="checked: serial_disableSdPrintingDetection" id="settings-disableSdPrintingDetection"> {{ _('Disable SD printing detection') }} <span class="label">{{ _('Ultimaker 2/2+') }}</span>
                             </label>
                         </div>
@@ -372,7 +365,7 @@
                             </label>
                         </div>
                     </div>
-            </div>
+                </div>
                 <div>
                     <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serial_protocol_firmware .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
                     <div class="hide">
@@ -423,6 +416,13 @@
                                 <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: serial_triggerOkForM29" id="settings-serialTriggerOkForM29"> {{ _('Simulate <code>ok</code> for <code>M29</code>') }}
                                     <span class="help-block">{{ _('Most Marlin forks that were derived from Marlin versions &lt; v1.1.0 do not send an acknowledging <code>ok</code> for a <code>M29</code>. Check this if you run into communication stalls following streaming of a file to your printer\'s SD.') }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_sdAlwaysAvailable" id="settings-serialSdAlwaysAvailable"> {{ _('Always assume SD card is present') }}
                                 </label>
                             </div>
                         </div>
