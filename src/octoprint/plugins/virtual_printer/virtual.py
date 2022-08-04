@@ -1380,16 +1380,14 @@ class VirtualPrinter:
                 self._logger.exception("While handling %r", data)
 
     def _listSd(self, incl_long=False):
+        line = "{dosname}"
         if self._settings.get_boolean(["sdFiles", "size"]):
+            line += " {size}"
             if self._settings.get_boolean(["sdFiles", "longname"]) or incl_long:
                 if self._settings.get_boolean(["sdFiles", "longname_quoted"]):
-                    line = '{dosname} {size} "{name}"'
+                    line += ' "{name}"'
                 else:
-                    line = "{dosname} {size} {name}"
-            else:
-                line = "{dosname} {size}"
-        else:
-            line = "{dosname}"
+                    line += " {name}"
 
         files = self._mappedSdList()
         items = map(lambda x: line.format(**x), files.values())
