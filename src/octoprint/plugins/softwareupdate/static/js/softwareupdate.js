@@ -66,6 +66,7 @@ $(function () {
         self.config_minimumFreeStorage = ko.observable();
         self.config_githubToken = ko.observable();
         self.config_githubTokenSet = ko.observable(false);
+        self.config_githubTokenClearCheck = ko.observable(false);
 
         self.error_checkoutFolder = ko.pureComputed(function () {
             return (
@@ -246,6 +247,7 @@ $(function () {
             target.prepend('<i class="fa fa-spinner fa-spin"></i> ');
 
             var githubToken = self.config_githubToken();
+            var githubTokenClear = self.config_githubTokenClearCheck();
 
             var data = {
                 plugins: {
@@ -262,8 +264,10 @@ $(function () {
                     }
                 }
             };
-            if (githubToken) {
-                data.plugins.softwareupdate.credentials = {github: githubToken};
+            if (githubToken || githubTokenClear) {
+                data.plugins.softwareupdate.credentials = {
+                    github: !githubTokenClear ? githubToken : undefined
+                };
             }
             self.settings.saveData(data, {
                 success: function () {
@@ -274,6 +278,7 @@ $(function () {
                 complete: function () {
                     $("i.fa-spinner", target).remove();
                     self.config_githubToken("");
+                    self.config_githubTokenClearCheck(false);
                 },
                 sending: true
             });
