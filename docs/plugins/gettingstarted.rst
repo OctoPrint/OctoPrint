@@ -403,8 +403,8 @@ Remember that Wikipedia link we added to our little link in the navigation bar? 
 what if we want to allow our users to adjust that according to their wishes, e.g. to link to the German language node
 about "Hello World" programs instead?
 
-To allow your users to customized the behaviour of your plugin you'll need to implement the :class:`~octoprint.plugin.SettingsPlugin`
-mixin and override it's :func:`~octoprint.plugin.SettingsPlugin.get_settings_defaults` method. We'll save the URL to
+To allow your users to customize the behaviour of your plugin you'll need to implement the :class:`~octoprint.plugin.SettingsPlugin`
+mixin and override its :func:`~octoprint.plugin.SettingsPlugin.get_settings_defaults` method. We'll save the URL to
 inject into the link under the key ``url`` in our plugin's settings and set it to the old value by default. We'll therefore
 return just a single key in our default settings dictionary. To be able to quickly see if we've done that right we'll
 extend our little startup message to also log the current setting to the console. We can access that via ``self._settings``,

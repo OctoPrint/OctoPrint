@@ -825,7 +825,7 @@ var setOption = function (options) {
 
 onmessage = function (e) {
     var data = e.data;
-    // for some reason firefox doesn't garbage collect when something inside closures is deleted, so we delete and recreate whole object eaech time
+    // for some reason firefox doesn't garbage collect when something inside closures is deleted, so we delete and recreate whole object each time
     switch (data.cmd) {
         case "parseGCode":
             parseGCode(data.msg);
