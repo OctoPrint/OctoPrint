@@ -546,13 +546,17 @@ class gcode:
                 centerArc = Vector3D(oldPos.x + i, oldPos.y + j, oldPos.z)
                 startAngle = math.atan2(oldPos.y - centerArc.y, oldPos.x - centerArc.x)
                 endAngle = math.atan2(pos.y - centerArc.y, pos.x - centerArc.x)
+                arcAngle = endAngle - startAngle
 
                 if gcode in ("G2", "G02"):
                     startAngle, endAngle = endAngle, startAngle
+                    arcAngle = -arcAngle
                 if startAngle < 0:
                     startAngle += math.pi * 2
                 if endAngle < 0:
                     endAngle += math.pi * 2
+                if arcAngle < 0:
+                    arcAngle += math.pi * 2
 
                 # from now on we only think in counter-clockwise direction
 
@@ -588,9 +592,7 @@ class gcode:
                     e = 0
 
                 # calculate 3d arc length
-                arcLengthXYZ = math.sqrt(
-                    (oldPos.z - pos.z) ** 2 + ((endAngle - startAngle) * r) ** 2
-                )
+                arcLengthXYZ = math.sqrt((oldPos.z - pos.z) ** 2 + (arcAngle * r) ** 2)
 
                 # move time in x, y, z, will be 0 if no movement happened
                 moveTimeXYZ = abs(arcLengthXYZ / feedrate)
