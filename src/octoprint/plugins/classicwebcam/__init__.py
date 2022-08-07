@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms
 from flask_babel import gettext
 
 import octoprint.plugin
-from octoprint.webcams import CompatWebcamConfiguration, WebcamConfiguration
+from octoprint.schema.config.webcam import Webcam, WebcamCompatibility
 
 
 class MjpegWebcamPlugin(
@@ -45,30 +45,32 @@ class MjpegWebcamPlugin(
 
     def get_webcam_configurations(self):
         return [
-            WebcamConfiguration(
+            Webcam(
                 name="classic",
-                display_name="Classic Webcam",
+                displayName="Classic Webcam",
                 snapshot=self._settings.get(["snapshot"]),
-                flip_h=self._settings.get(["flipH"]),
-                flip_v=self._settings.get(["flipV"]),
-                rotate_90=self._settings.get(["rotate90"]),
-                compat=CompatWebcamConfiguration(
+                flipH=self._settings.get(["flipH"]),
+                flipV=self._settings.get(["flipV"]),
+                rotate90=self._settings.get(["rotate90"]),
+                compat=WebcamCompatibility(
                     stream=self._settings.get(["stream"]),
-                    stream_timeout=self._settings.get(["streamTimeout"]),
-                    stream_ratio=self._settings.get(["streamRatio"]),
-                    cache_buster=self._settings.get(["cacheBuster"]),
-                    stream_webrtc_ice_servers=self._settings.get(
-                        ["streamWebrtcIceServers"]
-                    ),
+                    streamTimeout=self._settings.get(["streamTimeout"]),
+                    streamRatio=self._settings.get(["streamRatio"]),
+                    cacheBuster=self._settings.get(["cacheBuster"]),
+                    streamWebrtcIceServers=self._settings.get(["streamWebrtcIceServers"]),
                 ),
-                attachments=dict(
+                extras=dict(
                     stream=self._settings.get(["stream"]),
                     streamTimeout=self._settings.get(["streamTimeout"]),
                     streamRatio=self._settings.get(["streamRatio"]),
                     streamWebrtcIceServers=self._settings.get(["streamWebrtcIceServers"]),
                     cacheBuster=self._settings.get(["cacheBuster"]),
                 ),
-            )
+            ),
+            Webcam(
+                name="dummy",
+                displayName="Dummy Webcam",
+            ),
         ]
 
     def get_settings_defaults(self):

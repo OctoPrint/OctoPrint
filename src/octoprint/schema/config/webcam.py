@@ -2,7 +2,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 from pydantic_settings import with_attrs_docs
@@ -54,19 +54,11 @@ class WebcamConfig(BaseModel):
     timelapseEnabled: bool = True
     """Use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer. Timelapse support will be disabled if not set."""
 
-    stream: Optional[str] = None
-
-    streamRatio: RatioEnum = "16:9"
-
-    streamTimeout: int = 5
-
-    streamWebrtcIceServers: List[str] = ["stun:stun.l.google.com:19302"]
-
-    snapshot: Optional[str] = None
-
     snapshotTimeout: int = 5
+    """The timeout when retrieving snapshots"""
 
     snapshotSslValidation: bool = True
+    """Whether to validate SSL certificates when retrieving a snapshot"""
 
     ffmpeg: Optional[str] = None
     """Path to ffmpeg binary to use for creating timelapse recordings. Timelapse support will be disabled if not set."""
@@ -83,15 +75,6 @@ class WebcamConfig(BaseModel):
     watermark: bool = True
     """Whether to include a "created with OctoPrint" watermark in the generated timelapse recordings."""
 
-    flipH: bool = False
-    """Whether to flip the webcam horizontally."""
-
-    flipV: bool = False
-    """Whether to flip the webcam vertically."""
-
-    rotate90: bool = False
-    """Whether to rotate the webcam 90° counter clockwise."""
-
     ffmpegCommandline: str = '{ffmpeg} -framerate {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b:v {bitrate} -f {containerformat} -y {filters} "{output}"'
 
     ffmpegThumbnailCommandline: str = (
@@ -104,4 +87,52 @@ class WebcamConfig(BaseModel):
     cleanTmpAfterDays: int = 7
     """After how many days unrendered timelapses will be deleted."""
 
+    defaultWebcam: str = "classic"
+    """The name of the default webcam"""
+
+
+@with_attrs_docs
+class WebcamCompatibility(BaseModel):
+
+    streamTimeout: int = 5
+    """The timeout of the stream in seconds"""
+
+    streamRatio: RatioEnum = "16:9"
+    """The stream's native aspect ratio"""
+
+    streamWebrtcIceServers: str = "stun:stun.l.google.com:19302"
+    """The WebRTC STUN and TURN servers, comma separated"""
+
     cacheBuster: bool = False
+    """Whether the the URL should be randomized to bust caches"""
+
+    stream: str
+    """The URL to get an MJPEG stream from"""
+
+
+@with_attrs_docs
+class Webcam(BaseModel):
+
+    name: str
+    """Identifier of this webcam"""
+
+    displayName: str
+    """Displayable name for this webcam"""
+
+    snapshot: str = None
+    """The URL to get the snapshot from"""
+
+    flipH: bool = False
+    """Whether to flip the webcam horizontally."""
+
+    flipV: bool = False
+    """Whether to flip the webcam vertically."""
+
+    rotate90: bool = False
+    """Whether to rotate the webcam 90° counter clockwise."""
+
+    extras: dict = None
+    """Unstructured data describing this webcam"""
+
+    compat: WebcamCompatibility = None
+    """A compatibility configuration to allow older clients to make use of this webcam"""

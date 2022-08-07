@@ -157,6 +157,8 @@ $(function () {
         self.webcam_ffmpegThreads = ko.observable(undefined);
         self.webcam_ffmpegVideoCodec = ko.observable(undefined);
         self.webcam_watermark = ko.observable(undefined);
+        self.webcam_webcams = ko.observableArray([]);
+        self.webcam_defaultWebcam = ko.observable(undefined);
 
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_sdSupport = ko.observable(undefined);
@@ -1003,15 +1005,6 @@ $(function () {
                         });
                         return result;
                     }
-                },
-                webcam: {
-                    streamWebrtcIceServers: function () {
-                        // return splitTextToArray(
-                        //     self.webcam_streamWebrtcIceServers(),
-                        //     ",",
-                        //     true
-                        // );
-                    }
                 }
             };
 
@@ -1172,11 +1165,6 @@ $(function () {
                     profiles: function (value) {
                         self.temperature_profiles($.extend(true, [], value));
                     }
-                },
-                webcam: {
-                    // streamWebrtcIceServers: function (value) {
-                    //     self.webcam_streamWebrtcIceServers(value.join(", "));
-                    // }
                 }
             };
 

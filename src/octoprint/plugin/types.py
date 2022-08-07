@@ -2241,15 +2241,15 @@ class ProgressPlugin(OctoPrintPlugin):
 
 class WebcamPlugin(OctoPrintPlugin):
     """
-    The ``WebcamPlugin`` can be used to provide a webcam visible on the frontend and used for snapshots/timelapses.
+    The ``WebcamPlugin`` can be used to provide one or more webcams visible on the frontend and used for snapshots/timelapses.
     """
 
     def get_webcam_configurations(self):
         """
-        Used to retrive a list of snpashot available configurations
+        Used to retrieve a list of available webcams
 
         Returns:
-            A list of :class:`~octoprint.WebcamConfiguration`: The available webcam configurations, can be empty if none available.
+            A list of :class:`~octoprint.schema.config.webcam.Webcam`: The available webcams, can be empty if none available.
         """
 
         pass

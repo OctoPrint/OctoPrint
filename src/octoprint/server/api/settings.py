@@ -15,12 +15,7 @@ from octoprint.server import pluginManager, printer, userManager
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.settings import settings, valid_boolean_trues
-from octoprint.webcams import (
-    CompatWebcamConfiguration,
-    get_all_webcams,
-    webcams_to_dict,
-    webcams_to_list,
-)
+from octoprint.webcams import get_all_webcams, webcams_to_dicts, webcams_to_list
 
 # ~~ settings
 
@@ -331,22 +326,25 @@ def getSettings():
 
     if Permissions.WEBCAM.can() is True:
         webcams = get_all_webcams()
-        webcamsDict = webcams_to_dict(webcams)
+        webcamsDict = webcams_to_dicts(webcams)
         webcamsList = webcams_to_list(webcams)
-        defaultWebcam = webcamsList[0] if len(webcamsList) > 0 else None
-        compatWebcam = (
-            defaultWebcam.compat
-            if defaultWebcam is not None
-            else CompatWebcamConfiguration()
-        ) or CompatWebcamConfiguration()
+        defaultWebcamName = s.get(["webcam", "defaultWebcam"])
+        defaultWebcam = next(
+            (w for w in webcamsList if w.name == defaultWebcamName), None
+        )
+        compatWebcam = defaultWebcam.compat if defaultWebcam is not None else None
         data["webcam"] = {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
             "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
-            "streamUrl": compatWebcam.stream,
-            "streamRatio": compatWebcam.stream_ratio,
-            "streamTimeout": compatWebcam.stream_timeout,
-            "streamWebrtcIceServers": compatWebcam.stream_webrtc_ice_servers,
-            "snapshotUrl": defaultWebcam.snapshot,
+            "streamUrl": compatWebcam.stream if compatWebcam is not None else None,
+            "streamRatio": compatWebcam.streamRatio if compatWebcam is not None else None,
+            "streamTimeout": compatWebcam.streamTimeout
+            if compatWebcam is not None
+            else None,
+            "streamWebrtcIceServers": compatWebcam.streamWebrtcIceServers
+            if compatWebcam is not None
+            else None,
+            "snapshotUrl": defaultWebcam.snapshot if defaultWebcam is not None else None,
             "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
             "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
             "ffmpegPath": s.get(["webcam", "ffmpeg"]),
@@ -355,11 +353,11 @@ def getSettings():
             "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
             "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
             "watermark": s.getBoolean(["webcam", "watermark"]),
-            "flipH": defaultWebcam.flip_h,
-            "flipV": defaultWebcam.flip_v,
-            "rotate90": defaultWebcam.rotate_90,
-            "cacheBuster": compatWebcam.cache_buster,
-            "defaultWebcam": defaultWebcam.name if defaultWebcam is not None else None,
+            "flipH": defaultWebcam.flipH if defaultWebcam is not None else None,
+            "flipV": defaultWebcam.flipV if defaultWebcam is not None else None,
+            "rotate90": defaultWebcam.rotate90 if defaultWebcam is not None else None,
+            "cacheBuster": compatWebcam.cacheBuster if compatWebcam is not None else None,
+            "defaultWebcam": defaultWebcamName,
             "webcams": webcamsDict,
         }
 
@@ -563,24 +561,24 @@ def _saveSettings(data):
             s.setBoolean(
                 ["webcam", "timelapseEnabled"], data["webcam"]["timelapseEnabled"]
             )
-        if "streamUrl" in data["webcam"]:
-            s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
-        if "streamRatio" in data["webcam"] and data["webcam"]["streamRatio"] in (
-            "16:9",
-            "4:3",
-        ):
-            s.set(["webcam", "streamRatio"], data["webcam"]["streamRatio"])
-        if "streamTimeout" in data["webcam"]:
-            s.setInt(["webcam", "streamTimeout"], data["webcam"]["streamTimeout"])
-        if "streamWebrtcIceServers" in data["webcam"] and isinstance(
-            data["webcam"]["streamWebrtcIceServers"], (list, tuple)
-        ):
-            s.set(
-                ["webcam", "streamWebrtcIceServers"],
-                data["webcam"]["streamWebrtcIceServers"],
-            )
-        if "snapshotUrl" in data["webcam"]:
-            s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
+        # if "streamUrl" in data["webcam"]:
+        #     s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
+        # if "streamRatio" in data["webcam"] and data["webcam"]["streamRatio"] in (
+        #     "16:9",
+        #     "4:3",
+        # ):
+        #     s.set(["webcam", "streamRatio"], data["webcam"]["streamRatio"])
+        # if "streamTimeout" in data["webcam"]:
+        #     s.setInt(["webcam", "streamTimeout"], data["webcam"]["streamTimeout"])
+        # if "streamWebrtcIceServers" in data["webcam"] and isinstance(
+        #     data["webcam"]["streamWebrtcIceServers"], (list, tuple)
+        # ):
+        #     s.set(
+        #         ["webcam", "streamWebrtcIceServers"],
+        #         data["webcam"]["streamWebrtcIceServers"],
+        #     )
+        # if "snapshotUrl" in data["webcam"]:
+        #     s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
         if "snapshotTimeout" in data["webcam"]:
             s.setInt(["webcam", "snapshotTimeout"], data["webcam"]["snapshotTimeout"])
         if "snapshotSslValidation" in data["webcam"]:
@@ -633,14 +631,16 @@ def _saveSettings(data):
             s.set(["webcam", "ffmpegVideoCodec"], data["webcam"]["ffmpegVideoCodec"])
         if "watermark" in data["webcam"]:
             s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
-        if "flipH" in data["webcam"]:
-            s.setBoolean(["webcam", "flipH"], data["webcam"]["flipH"])
-        if "flipV" in data["webcam"]:
-            s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
-        if "rotate90" in data["webcam"]:
-            s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
-        if "cacheBuster" in data["webcam"]:
-            s.setBoolean(["webcam", "cacheBuster"], data["webcam"]["cacheBuster"])
+        if "defaultWebcam" in data["webcam"]:
+            s.set(["webcam", "defaultWebcam"], data["webcam"]["defaultWebcam"])
+        # if "flipH" in data["webcam"]:
+        #     s.setBoolean(["webcam", "flipH"], data["webcam"]["flipH"])
+        # if "flipV" in data["webcam"]:
+        #     s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
+        # if "rotate90" in data["webcam"]:
+        #     s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
+        # if "cacheBuster" in data["webcam"]:
+        #     s.setBoolean(["webcam", "cacheBuster"], data["webcam"]["cacheBuster"])
 
     if "feature" in data:
         if "temperatureGraph" in data["feature"]:
