@@ -402,7 +402,7 @@ $(function () {
         };
 
         self._otherRequestInProgress = undefined;
-        self._focus = undefined;
+        self._filesToFocus = [];
         self._switchToPath = undefined;
         self.requestData = function (params) {
             if (!self.loginState.hasPermission(self.access.permissions.FILES_LIST)) {
@@ -435,7 +435,7 @@ $(function () {
                 }
             }
 
-            self._focus = self._focus || focus;
+            self._filesToFocus = self._filesToFocus || focus;
             self._switchToPath = self._switchToPath || switchToPath;
 
             if (self._otherRequestInProgress !== undefined) {
@@ -446,7 +446,7 @@ $(function () {
                 .list(true, force)
                 .done(function (response) {
                     self.fromResponse(response, {
-                        focus: self._focus,
+                        focus: self._filesToFocus,
                         switchToPath: self._switchToPath
                     });
                 })
@@ -456,13 +456,13 @@ $(function () {
                 })
                 .always(function () {
                     self._otherRequestInProgress = undefined;
-                    self._focus = undefined;
+                    self._filesToFocus = [];
                     self._switchToPath = undefined;
                 }));
         };
 
         self.fromResponse = function (response, params) {
-            var focus = undefined;
+            var focus = [];
             var switchToPath;
 
             if (_.isObject(params)) {
@@ -470,7 +470,7 @@ $(function () {
                 switchToPath = params.switchToPath || undefined;
             } else if (arguments.length > 1) {
                 log.warn(
-                    "FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead."
+                    "FilesViewModel.fromResponse called with old argument list. That is deprecated, please use parameter object instead."
                 );
                 if (arguments.length > 2) {
                     focus = {location: arguments[2], path: arguments[1]};
@@ -530,27 +530,29 @@ $(function () {
                 self.changeFolderByPath(switchToPath);
             }
 
-            if (focus) {
-                // got a file to scroll to
-                var entryElement = self.getEntryElement({
-                    path: focus.path,
-                    origin: focus.location
-                });
-                if (entryElement) {
-                    // scroll to uploaded element
-                    self.listElement.scrollTop(entryElement.offsetTop);
+            if (focus.length) {
+                _.each(focus, function (focusItem, index) {
+                    // got a file to scroll to
+                    var entryElement = self.getEntryElement({
+                        path: focusItem.path,
+                        origin: focusItem.location
+                    });
+                    if (entryElement) {
+                        // scroll to uploaded element
+                        self.listElement.scrollTop(entryElement.offsetTop); // TODO - maybe scroll to just one file? Top in list? First selected?
 
-                    // highlight uploaded element
-                    var element = $(entryElement);
-                    element.on(
-                        "webkitAnimationEnd oanimationend msAnimationEnd animationend",
-                        function (e) {
-                            // remove highlight class again
-                            element.removeClass("highlight");
-                        }
-                    );
-                    element.addClass("highlight");
-                }
+                        // highlight uploaded element
+                        var element = $(entryElement);
+                        element.on(
+                            "webkitAnimationEnd oanimationend msAnimationEnd animationend",
+                            function (e) {
+                                // remove highlight class again
+                                element.removeClass("highlight");
+                            }
+                        );
+                        element.addClass("highlight");
+                    }
+                });
             }
 
             if (response.free !== undefined) {
@@ -1562,18 +1564,22 @@ $(function () {
 
             if (button === undefined) return;
 
-            button.fileupload({
-                url: url,
-                dataType: "json",
-                dropZone: enable ? drop : null,
-                drop: function (e, data) {},
-                add: self._handleUploadAdd,
-                submit: self._handleUploadStart,
-                done: self._handleUploadDone,
-                fail: self._handleUploadFail,
-                always: self._handleUploadAlways,
-                progressall: self._handleUploadProgress
-            });
+            button
+                .fileupload({
+                    url: url,
+                    dataType: "json",
+                    dropZone: enable ? drop : null,
+                    sequentialUploads: true, // TODO what difference does this make?
+                    drop: function (e, data) {},
+                    add: self._handleUploadAdd,
+                    submit: self._handleUploadStart,
+                    done: self._handleUploadDone,
+                    fail: self._handleUploadFail,
+                    progressall: self._handleUploadProgress
+                })
+                .on("fileuploadstop", function (e, data) {
+                    self._handleUploadStop(e, data);
+                });
         };
 
         self._enableDragNDrop = function (enable) {
@@ -1720,26 +1726,43 @@ $(function () {
         };
 
         self._handleUploadDone = function (e, data) {
-            self._setProgressBar(100, gettext("Refreshing list ..."), true);
-
             var focus = undefined;
             if (data.result.files.hasOwnProperty("sdcard")) {
                 focus = {location: "sdcard", path: data.result.files.sdcard.path};
             } else if (data.result.files.hasOwnProperty("local")) {
                 focus = {location: "local", path: data.result.files.local.path};
             }
-            self.requestData({focus: focus}).done(function () {
-                if (data.result.done) {
-                    self._setProgressBar(0, "", false);
-                }
-            });
+
+            if (focus) {
+                self._filesToFocus.push(focus);
+            }
 
             if (focus && _.endsWith(focus.path.toLowerCase(), ".stl")) {
                 self.slicing.show(focus.location, focus.path);
             }
         };
 
+        self._handleUploadStop = function (e, data) {
+            // This is called when all selected files have finished uploading - success or failure as far as I can tell TODO verify
+            // TODO - handle an upload failure - if a file failed, it might be strange to refresh the list
+            console.log("Upload stopped (complete)");
+            self._setProgressBar(100, gettext("Refreshing list ..."), true);
+
+            var reset = function () {
+                self.ignoreUpdatedFilesEvent = false;
+                self._setProgressBar(0, "", false);
+            };
+
+            // TODO conditionally refresh, as long as at least one file has uploaded successfully?
+            self.requestData({focus: self._filesToFocus}).always(function () {
+                reset();
+            });
+
+            // TODO If we don't refresh the file list, we should reset
+        };
+
         self._handleUploadFail = function (e, data) {
+            // TODO handle failure for multiple uploads - maybe mention filename in error so you know which one failed
             var extensions = _.map(SUPPORTED_EXTENSIONS, function (extension) {
                 return extension.toLowerCase();
             }).sort();
@@ -1790,11 +1813,6 @@ $(function () {
                 type: "error",
                 hide: false
             });
-            self._setProgressBar(0, "", false);
-        };
-
-        self._handleUploadAlways = function (e, data) {
-            self.ignoreUpdatedFilesEvent = false;
         };
 
         self._handleUploadProgress = function (e, data) {
