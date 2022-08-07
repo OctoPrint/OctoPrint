@@ -1,6 +1,5 @@
 {% if enableWebcam %}
-    <!-- ko if: loginState.hasPermissionKo(access.permissions.WEBCAM) -->
-    <div id="webcam_plugins_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
+    <div id="webcam_plugins_container" tabindex="0" data-bind="visible: loginState.hasPermissionKo(access.permissions.WEBCAM), event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
         <div class="tabbable row-fluid">
             {% set ns = namespace(mark_active = True) %}
 
@@ -54,7 +53,6 @@
     <div data-bind="visible: keycontrolPossible() && loginState.hasPermissionKo(access.permissions.WEBCAM)() && loginState.hasPermissionKo(access.permissions.CONTROL)()">
         <small class="muted">{{ _("Hint: If you move your mouse over the picture, you enter keyboard control mode.") }}</small>
     </div>
-    <!-- /ko -->
 {% endif %}
 
 <div class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">

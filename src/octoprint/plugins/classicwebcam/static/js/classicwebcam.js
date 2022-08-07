@@ -16,12 +16,12 @@ $(function () {
         self.webcamElementHls = null;
         self.webcamElementWebrtc = null;
 
-        // TODO: This is not supposed to be required....
-        // https://discord.com/channels/704958479194128507/705047010641838211/990027509376634910
-        window.setTimeout(function () {
-            ko.cleanNode(document.getElementById("classic_webcam_container"));
-            ko.applyBindings(self, document.getElementById("classic_webcam_container"));
-        }, 1000);
+        // // TODO: This is not supposed to be required....
+        // // https://discord.com/channels/704958479194128507/705047010641838211/990027509376634910
+        // window.setTimeout(function () {
+        //     ko.cleanNode(document.getElementById("classic_webcam_container"));
+        //     ko.applyBindings(self, document.getElementById("classic_webcam_container"));
+        // }, 1000);
 
         self.webcamRatioClass = ko.pureComputed(function () {
             if (self.settings.streamRatio() == "4:3") {
