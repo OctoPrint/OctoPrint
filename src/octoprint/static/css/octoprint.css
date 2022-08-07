@@ -2002,31 +2002,36 @@ ul.dropdown-menu li a {
   opacity: 1;
 }
 #webcam_plugins_container .nav {
-  padding: 3px;
   position: absolute;
-  left: 0px;
-  top: 0px;
-  right: 0px;
+  padding: 5px;
+  right: 5px;
+  top: 5px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.5);
   opacity: 0;
   transition: opacity 0.3s, visibility 0.3s;
 }
-#webcam_plugins_container .dropdown-toggle {
-  background: rgba(0, 0, 0, 0.5);
+#webcam_plugins_container .nav .nav-item a {
+  text-align: end;
+  padding: 5px;
+  border-radius: 5px;
   color: white;
 }
-#webcam_plugins_container .dropdown-toggle i::before {
-  content: "\f03d";
+#webcam_plugins_container .nav .nav-item a:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
 }
-#webcam_plugins_container .dropdown-toggle .caret {
-  border-bottom-color: white;
-  border-top-color: white;
+#webcam_plugins_container .nav .active {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 5px;
+  color: white;
 }
 #webcam_plugins_container .keycontrol_overlay {
   position: absolute;
   left: 5px;
   right: 5px;
   bottom: 5px;
-  border-radius: 4px;
+  border-radius: 5px;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.5);
   font-size: 85%;

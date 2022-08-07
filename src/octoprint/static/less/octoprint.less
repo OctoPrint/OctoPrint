@@ -674,6 +674,10 @@ ul.dropdown-menu li a {
 
 /** Webcam */
 #webcam_plugins_container {
+  @overlay-color: rgba(0, 0, 0, 0.5);
+  @side-padding: 5px;
+  @border-radius: 5px;
+
   position: relative;
   border-radius: 5px;
   margin-top: 6px;
@@ -691,37 +695,42 @@ ul.dropdown-menu li a {
   }
 
   .nav {
-    padding: 3px;
     position: absolute;
-    left: 0px;
-    top: 0px;
-    right: 0px;
+    padding: @side-padding;
+    right: @side-padding;
+    top: @side-padding;
+    border-radius: @border-radius;
+    background: @overlay-color;
     opacity: 0;
     transition: opacity 0.3s, visibility 0.3s;
-  }
 
-  .dropdown-toggle {
-    background: rgba(0, 0, 0, 0.5);
-    color: white;
+    .nav-item a {
+      text-align: end;
+      padding: @side-padding;
+      border-radius: @border-radius;
+      color: white;
 
-    i::before {
-      content: "\f03d";
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
     }
 
-    .caret {
-      border-bottom-color: white;
-      border-top-color: white;
+    .active {
+      background-color: rgba(255, 255, 255, 0.2);
+      border-radius: @border-radius;
+      color: white;
     }
   }
 
   .keycontrol_overlay {
     position: absolute;
-    left: 5px;
-    right: 5px;
-    bottom: 5px;
-    border-radius: 4px;
+    left: @side-padding;
+    right: @side-padding;
+    bottom: @side-padding;
+    border-radius: @border-radius;
     overflow: hidden;
-    background: rgba(0, 0, 0, 0.5);
+    background: @overlay-color;
     font-size: 85%;
     color: white;
     padding: 0;

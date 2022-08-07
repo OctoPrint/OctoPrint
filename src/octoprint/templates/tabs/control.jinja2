@@ -21,12 +21,13 @@
             </div>
         </div>
 
-        <ul class="nav nav-pills">
+
+          <ul class="nav justify-content-end">
             {% for key in templates.webcam.order %}
                 {% set entry, data = templates.webcam.entries[key] %}
                 <li id="{{ data._div }}_link"
                     {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                    class="nav-link {% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %}">
+                    class="nav-item {% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %}">
                     <a class="nav-link" href="#{{ data._div }}" data-toggle="tab">{{ entry|e }}</a>
                 </li>
             {% endfor %}
