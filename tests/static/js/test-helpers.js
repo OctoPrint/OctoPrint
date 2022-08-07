@@ -992,27 +992,27 @@ QUnit.cases(
             },
             {
                 title: "Text",
-                input: "text",
+                input: "abcd",
                 sep: undefined,
                 stripEmpty: false,
                 filter: undefined,
-                expected: ["text"]
+                expected: ["abcd"]
             },
             {
                 title: "TextSeparator",
-                input: "te#xt",
+                input: "ab#cd",
                 sep: "#",
                 stripEmpty: false,
                 filter: undefined,
-                expected: ["te", "xt"]
+                expected: ["ab", "cd"]
             },
             {
                 title: "TrimmedText",
-                input: "te # xt",
+                input: "ab # cd",
                 sep: "#",
                 stripEmpty: false,
                 filter: undefined,
-                expected: ["te", "xt"]
+                expected: ["ab", "cd"]
             }
         ];
 

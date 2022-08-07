@@ -65,6 +65,7 @@ $(function () {
         self.config_pipEnableCheck = ko.observable();
         self.config_minimumFreeStorage = ko.observable();
         self.config_githubToken = ko.observable();
+        self.config_githubTokenSet = ko.observable(false);
 
         self.error_checkoutFolder = ko.pureComputed(function () {
             return (
@@ -333,6 +334,10 @@ $(function () {
 
             self.config_minimumFreeStorage(
                 self.settings.settings.plugins.softwareupdate.minimum_free_storage()
+            );
+
+            self.config_githubTokenSet(
+                self.settings.settings.plugins.softwareupdate.credentials.github_set()
             );
         };
 

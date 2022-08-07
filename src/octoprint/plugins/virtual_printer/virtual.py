@@ -1778,7 +1778,7 @@ class VirtualPrinter:
         filename = filename
         if filename.startswith("/"):
             filename = filename[1:]
-        file = os.path.join(self._virtualSd, filename).lower()
+        file = os.path.join(self._virtualSd, filename.lower())
         if os.path.exists(file):
             if os.path.isfile(file):
                 os.remove(file)

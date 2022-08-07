@@ -77,13 +77,13 @@
     <div class="tab-pane active" id="settings_plugin_softwareupdate_updates">
         <div class="pull-right">
             <div class="btn-group">
-                <button class="btn btn-primary" data-bind="click: function() { $root.cancelQueued(); }, enable: enableCancelQueued, css: {disabled: !enableCancelQueued}, visible: enableCancelQueued" title="{{ _('Cancel all queued updates') | edq }}" style="display: none;"><i class="fas fa-spinner fa-spin" data-bind="visible: cancelInProgress"></i> {{ _('Cancel Queued') }}</button>
+                <button class="btn btn-primary" data-bind="click: function() { $root.cancelQueued(); }, enable: enableCancelQueued, css: {disabled: !enableCancelQueued}, visible: enableCancelQueued" title="{{ _('Cancel all queued updates') | edq }}" aria-label="{{ _('Cancel all queued updates') | edq }}" style="display: none;"><i class="fas fa-spinner fa-spin" data-bind="visible: cancelInProgress"></i> {{ _('Cancel Queued') }}</button>
             </div>
             <div class="btn-group">
-                <button class="btn btn-primary" data-bind="click: function() { $root.updateEnabled(); }, enable: enableUpdateEnabled, css: {disabled: !enableUpdateEnabled}" title="{{ _('Update all enabled') | edq }}"><i class="fas fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
+                <button class="btn btn-primary" data-bind="click: function() { $root.updateEnabled(); }, enable: enableUpdateEnabled, css: {disabled: !enableUpdateEnabled}" title="{{ _('Update all enabled') | edq }}" aria-label="{{ _('Update all enabled') | edq }}"><i class="fas fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
                 <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
                 <ul class="dropdown-menu">
-                    <li><a href="javascript:void(0)" data-bind="click: function() { $root.updateAll(); }, enable: enableUpdateAll, css: {disabled: !enableUpdateAll}" title="{{ _('Update all muted & enabled') | edq }}">{{ _('Update all available') }}</a></li>
+                    <li><a href="javascript:void(0)" data-bind="click: function() { $root.updateAll(); }, enable: enableUpdateAll, css: {disabled: !enableUpdateAll}" title="{{ _('Update all muted & enabled') | edq }}" aria-label="{{ _('Update all muted & enabled') | edq }}">{{ _('Update all available') }}</a></li>
                 </ul>
             </div>
             <div class="btn-group">
@@ -93,7 +93,7 @@
                     <li><a href="javascript:void(0)" data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}">{{ _('Force check for updates') }}</a></li>
                 </ul>
             </div>
-            <button class="btn" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
+            <button class="btn" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}" aria-label="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
         </div>
 
         <h3>{{ _('Current versions') }}</h3>

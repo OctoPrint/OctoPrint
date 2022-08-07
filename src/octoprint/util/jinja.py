@@ -85,13 +85,13 @@ class SelectedFilesLoader(BaseLoader):
 
         mtime = os.path.getmtime(path)
 
-        def uptodate():
+        def up_to_date():
             try:
                 return os.path.getmtime(path) == mtime
             except OSError:
                 return False
 
-        return contents, path, uptodate
+        return contents, path, up_to_date
 
     def list_templates(self):
         return self.files.keys()
@@ -136,11 +136,11 @@ class WarningLoader(BaseLoader):
         import logging
 
         try:
-            contents, filename, uptodate = self.loader.get_source(environment, template)
+            contents, filename, up_to_date = self.loader.get_source(environment, template)
             logging.getLogger(__name__).warning(
                 self.warning_message.format(template=template, filename=filename)
             )
-            return contents, filename, uptodate
+            return contents, filename, up_to_date
         except TemplateNotFound:
             raise
 

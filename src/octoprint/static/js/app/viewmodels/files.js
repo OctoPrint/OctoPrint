@@ -888,8 +888,27 @@ $(function () {
                             deferred.reject();
                         });
                 })
-                .fail(function () {
+                .fail(function (data) {
                     deferred.reject();
+
+                    // Notify user
+                    var error =
+                        "<p>" +
+                        gettext(
+                            "Could not remove entry. Please check octoprint.log for possible reasons."
+                        ) +
+                        "</p>";
+                    if (data.responseJSON && data.responseJSON.error) {
+                        error += pnotifyAdditionalInfo(
+                            "<pre>" + _.escape(data.responseJSON.error) + "</pre>"
+                        );
+                    }
+                    new PNotify({
+                        title: gettext("Failed to remove entry"),
+                        text: error,
+                        type: "error",
+                        hide: false
+                    });
                 });
 
             return deferred.promise().always(function () {
@@ -1584,6 +1603,7 @@ $(function () {
         self._handleUploadAdd = function (e, data) {
             var file = data.files[0];
             var path = self.currentPath();
+            var fileSizeTooBig = file.size > self.freeSpace();
 
             var formData = {};
             if (path !== "") {
@@ -1600,10 +1620,13 @@ $(function () {
                                     name: file.name
                                 })
                             );
+                            $("p, form", self.uploadExistsDialog).toggle(!fileSizeTooBig);
+                            $("span", self.uploadExistsDialog).toggle(fileSizeTooBig);
                             $("input", self.uploadExistsDialog)
                                 .val("")
                                 .prop("placeholder", response.suggestion);
                             $("a.upload-rename", self.uploadExistsDialog)
+                                .toggle(!fileSizeTooBig)
                                 .prop("disabled", false)
                                 .off("click")
                                 .on("click", function () {
@@ -1659,8 +1682,35 @@ $(function () {
                         }
                     });
             } else {
-                data.formData = formData;
-                data.submit();
+                if (fileSizeTooBig) {
+                    var error =
+                        "<p>" +
+                        gettext(
+                            "Could not upload the file. There is not enough disk space remaining."
+                        ) +
+                        "</p>";
+
+                    error +=
+                        "<pre>" +
+                        _.sprintf(gettext("Free Space: %(freespace)s"), {
+                            freespace: self.freeSpaceString()
+                        }) +
+                        "<br>" +
+                        _.sprintf(gettext("File Size: %(filesize)s"), {
+                            filesize: formatSize(file.size)
+                        }) +
+                        "</pre>";
+
+                    new PNotify({
+                        title: "Upload failed",
+                        text: error,
+                        type: "error",
+                        hide: false
+                    });
+                } else {
+                    data.formData = formData;
+                    data.submit();
+                }
             }
         };
 
@@ -1729,9 +1779,9 @@ $(function () {
             }
             error += "</p>";
 
-            if (data.jqXHR.responseText) {
+            if (data.jqXHR.responseJSON && data.jqXHR.responseJSON.error) {
                 error += pnotifyAdditionalInfo(
-                    "<pre>" + _.escape(data.jqXHR.responseText) + "</pre>"
+                    "<pre>" + _.escape(data.jqXHR.responseJSON.error) + "</pre>"
                 );
             }
             new PNotify({
