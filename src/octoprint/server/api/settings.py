@@ -100,13 +100,6 @@ def getSettings():
     s = settings()
 
     connectionOptions = printer.__class__.get_connection_options()
-    webcams = get_all_webcams()
-    webcamsDict = webcams_to_dict(webcams)
-    webcamsList = webcams_to_list(webcams)
-    defaultWebcam = webcamsList[0] if len(webcamsList) > 0 else None
-    compatWebcam = (
-        defaultWebcam.compat if defaultWebcam is not None else CompatWebcamConfiguration()
-    ) or CompatWebcamConfiguration()
 
     # NOTE: Remember to adjust the docs of the data model on the Settings API if anything
     # is changed, added or removed here
@@ -126,29 +119,6 @@ def getSettings():
             "fuzzyTimes": s.getBoolean(["appearance", "fuzzyTimes"]),
             "closeModalsWithClick": s.getBoolean(["appearance", "closeModalsWithClick"]),
             "showInternalFilename": s.getBoolean(["appearance", "showInternalFilename"]),
-        },
-        "webcam": {
-            "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
-            "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
-            "streamUrl": compatWebcam.stream,
-            "streamRatio": compatWebcam.stream_ratio,
-            "streamTimeout": compatWebcam.stream_timeout,
-            "streamWebrtcIceServers": compatWebcam.stream_webrtc_ice_servers,
-            "snapshotUrl": defaultWebcam.snapshot,
-            "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
-            "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
-            "ffmpegPath": s.get(["webcam", "ffmpeg"]),
-            "ffmpegCommandline": s.get(["webcam", "ffmpegCommandline"]),
-            "bitrate": s.get(["webcam", "bitrate"]),
-            "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
-            "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
-            "watermark": s.getBoolean(["webcam", "watermark"]),
-            "flipH": defaultWebcam.flip_h,
-            "flipV": defaultWebcam.flip_v,
-            "rotate90": defaultWebcam.rotate_90,
-            "cacheBuster": compatWebcam.cache_buster,
-            "defaultWebcam": defaultWebcam.name if defaultWebcam is not None else None,
-            "webcams": webcamsDict,
         },
         "feature": {
             "temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
@@ -358,6 +328,40 @@ def getSettings():
     plugin_settings = _get_plugin_settings()
     if len(plugin_settings):
         data["plugins"] = plugin_settings
+
+    if Permissions.WEBCAM.can() is True:
+        webcams = get_all_webcams()
+        webcamsDict = webcams_to_dict(webcams)
+        webcamsList = webcams_to_list(webcams)
+        defaultWebcam = webcamsList[0] if len(webcamsList) > 0 else None
+        compatWebcam = (
+            defaultWebcam.compat
+            if defaultWebcam is not None
+            else CompatWebcamConfiguration()
+        ) or CompatWebcamConfiguration()
+        data["webcam"] = {
+            "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
+            "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
+            "streamUrl": compatWebcam.stream,
+            "streamRatio": compatWebcam.stream_ratio,
+            "streamTimeout": compatWebcam.stream_timeout,
+            "streamWebrtcIceServers": compatWebcam.stream_webrtc_ice_servers,
+            "snapshotUrl": defaultWebcam.snapshot,
+            "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
+            "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
+            "ffmpegPath": s.get(["webcam", "ffmpeg"]),
+            "ffmpegCommandline": s.get(["webcam", "ffmpegCommandline"]),
+            "bitrate": s.get(["webcam", "bitrate"]),
+            "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
+            "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
+            "watermark": s.getBoolean(["webcam", "watermark"]),
+            "flipH": defaultWebcam.flip_h,
+            "flipV": defaultWebcam.flip_v,
+            "rotate90": defaultWebcam.rotate_90,
+            "cacheBuster": compatWebcam.cache_buster,
+            "defaultWebcam": defaultWebcam.name if defaultWebcam is not None else None,
+            "webcams": webcamsDict,
+        }
 
     return jsonify(data)
 
