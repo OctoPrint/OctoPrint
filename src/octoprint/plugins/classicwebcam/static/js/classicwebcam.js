@@ -4,6 +4,7 @@ $(function () {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
+        self.webcamStreamVisible = false;
 
         self.webcamDisableTimeout = undefined;
         self.webcamLoaded = ko.observable(false);
@@ -15,13 +16,6 @@ $(function () {
         self.webRTCPeerConnection = null;
         self.webcamElementHls = null;
         self.webcamElementWebrtc = null;
-
-        // // TODO: This is not supposed to be required....
-        // // https://discord.com/channels/704958479194128507/705047010641838211/990027509376634910
-        // window.setTimeout(function () {
-        //     ko.cleanNode(document.getElementById("classic_webcam_container"));
-        //     ko.applyBindings(self, document.getElementById("classic_webcam_container"));
-        // }, 1000);
 
         self.webcamRatioClass = ko.pureComputed(function () {
             if (self.settings.streamRatio() == "4:3") {
@@ -60,10 +54,37 @@ $(function () {
             });
         };
 
+        self.onAfterBinding = function () {
+            // We are using the IntersectionObserver API to determine whether the webcam is visible or not.
+            // The webcam will not intersect with the control tab if the control tab is invisible because another tab
+            // is selected or if the webcam isn't shown because another webcam is active.
+            //
+            // Whenever the webacam is not visible we will disable it and enable it once it's visible again. We also save
+            // the current status to reuse it for other events, e.g. to know whether we need to enable the webcam once the
+            // browser tab is reselected.
+            var target = document.getElementById("classic_webcam_container");
+            var options = {
+                root: document.querySelector("#control"),
+                rootMargin: "0px",
+                threshold: 1.0
+            };
+            var callback = function (entries) {
+                self.webcamStreamVisible = entries[0].isIntersecting;
+                if (self.webcamStreamVisible) {
+                    self._enableWebcam();
+                } else {
+                    self._disableWebcam();
+                }
+            };
+
+            var observer = new IntersectionObserver(callback, options);
+            observer.observe(target);
+        };
+
         self.onEventSettingsUpdated = function (payload) {
             // the webcam url might have changed, make sure we replace it now if the
             // tab is focused
-            self._enableWebcam();
+            self._enableWebcamIfVisible();
         };
 
         self._getActiveWebcamVideoElement = function () {
@@ -99,12 +120,18 @@ $(function () {
                 return;
             }
 
-            var timeout = self.settings.streamTimeout || 5;
+            var timeout = self.settings.streamTimeout() || 5;
             self.webcamDisableTimeout = setTimeout(function () {
-                log.debug("Unloading webcam stream");
+                log.debug("Unloading webcam stream after", timeout, "seconds");
                 $("#webcam_image").attr("src", "");
                 self.webcamLoaded(false);
             }, timeout * 1000);
+        };
+
+        self._enableWebcamIfVisible = function () {
+            if (self.webcamStreamVisible) {
+                self._enableWebcam();
+            }
         };
 
         self._enableWebcam = function () {
@@ -152,17 +179,9 @@ $(function () {
             self.webcamError(true);
         };
 
-        self.onTabChange = function (current, previous) {
-            if (current == "#control") {
-                self._enableWebcam();
-            } else if (previous == "#control") {
-                self._disableWebcam();
-            }
-        };
-
-        self.onBrowserTabVisibilityChange = function (status) {
-            if (status) {
-                self._enableWebcam();
+        self.onBrowserTabVisibilityChange = function (tabVisible) {
+            if (tabVisible) {
+                self._enableWebcamIfVisible();
             } else {
                 self._disableWebcam();
             }
@@ -174,10 +193,6 @@ $(function () {
                 function () {
                     self.syncWebcamElements();
                 };
-
-        self.onAllBound = function (allViewModels) {
-            self._enableWebcam();
-        };
 
         self.syncWebcamElements = function () {
             self.webcamElementHls = document.getElementById("webcam_hls");
