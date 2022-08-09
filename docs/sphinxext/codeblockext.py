@@ -4,22 +4,18 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "The MIT License <http://opensource.org/licenses/MIT>"
 __copyright__ = "Copyright (C) 2015 Gina Häußge - Released under terms of the MIT License"
 
-from sphinx.directives.code import CodeBlock
+from typing import Any
 
 import sphinx.highlighting
-from sphinx.ext import doctest
-
 from docutils import nodes
 from docutils.parsers.rst import directives
-
-from six import text_type
-
 from pygments import highlight
-from pygments.filters import VisibleWhitespaceFilter, ErrorToken
+from pygments.filters import ErrorToken, VisibleWhitespaceFilter
 from pygments.lexers.python import PythonConsoleLexer
 from pygments.util import ClassNotFound
-
-from typing import Any
+from six import text_type
+from sphinx.directives.code import CodeBlock
+from sphinx.ext import doctest
 
 
 def _merge_dict(a, b):
@@ -161,7 +157,7 @@ class PygmentsBridgeExt:
         # implementation of sphinx.highlighting.PygmentsBridge, released under the Simplified BSD License, the copyright
         # lies with the respective authors.
 
-        if not isinstance(source, text_type):
+        if not isinstance(source, str):
             source = source.decode()
 
         # find out which lexer to use
@@ -202,7 +198,7 @@ class PygmentsBridgeExt:
                 else:
                     lexer.add_filter("raiseonerror")
 
-        if not isinstance(source, text_type):
+        if not isinstance(source, str):
             source = source.decode()
 
         # trim doctest options if wanted

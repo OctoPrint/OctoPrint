@@ -644,4 +644,3 @@ Profile
      - Tuple of (x, y) values describing the offsets of the other extruders relative to the first extruder. E.g. for a
        printer with two extruders, if the second extruder is offset by 20mm in the X and 25mm in the Y direction, this
        array will read ``[ [0.0, 0.0], [20.0, 25.0] ]``
-

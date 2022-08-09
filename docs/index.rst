@@ -40,4 +40,3 @@ Contents
    plugins/index.rst
    modules/index.rst
    jsclientlib/index.rst
-
