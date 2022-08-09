@@ -57,6 +57,7 @@ When the virtual environment is activated you can then:
   * run the test suite from the checked out source folder via ``pytest``
   * trigger the pre-commit check suite manually from the checked out source folder via
     ``pre-commit run --hook-stage manual --all-files``
+  * rebuild ``.css`` files from ``.less`` sources. See ``octoprint dev css:build --help``
   * build the documentation running ``sphinx-build -b html . _build`` in the ``docs``
     folder -- the documentation will be available in the newly created ``_build``
     directory. You can simply browse it locally by opening ``index.html``
