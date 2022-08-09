@@ -8,7 +8,6 @@ import logging
 import os
 import re
 from collections import defaultdict
-from urllib.parse import urlparse
 
 from flask import (
     Response,
@@ -39,7 +38,11 @@ from octoprint.server import (  # noqa: F401
     preemptiveCache,
     userManager,
 )
-from octoprint.server.util import has_permissions, require_login_with
+from octoprint.server.util import (
+    has_permissions,
+    require_login_with,
+    validate_local_redirect,
+)
 from octoprint.settings import settings
 from octoprint.util import sv, to_bytes, to_unicode
 from octoprint.util.version import get_python_version_string
@@ -173,9 +176,9 @@ def login():
 
     default_redirect_url = request.script_root + url_for("index")
     redirect_url = request.args.get("redirect", default_redirect_url)
+    allowed_paths = [url_for("index"), url_for("recovery")]
 
-    parsed = urlparse(redirect_url)  # check if redirect url is valid
-    if parsed.scheme != "" or parsed.netloc != "":
+    if not validate_local_redirect(redirect_url, allowed_paths):
         _logger.warning(
             f"Got an invalid redirect URL with the login attempt, misconfiguration or attack attempt: {redirect_url}"
         )
