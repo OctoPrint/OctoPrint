@@ -1170,31 +1170,38 @@ $(function () {
                 );
             }
 
+            function _exceed_warning(culprit, dimension) {
+                return _.sprintf(
+                    gettext("%(culprit)s exceeds print volume in %(dimension)s.<br>"),
+                    {culprit: culprit, dimension: dimension}
+                );
+            }
+
             // check if printing area exceeds boundaries
             if (_area_exceeds_boundaries("X", printingArea)) {
-                info += gettext("Object exceeds print volume in width.<br>");
+                info += _exceed_warning(gettext("Object"), gettext("width"));
                 objectFits = false;
             }
             if (_area_exceeds_boundaries("Y", printingArea)) {
-                info += gettext("Object exceeds print volume in depth.<br>");
+                info += _exceed_warning(gettext("Object"), gettext("depth"));
                 objectFits = false;
             }
             if (_area_exceeds_boundaries("Z", printingArea)) {
-                info += gettext("Object exceeds print volume in height.<br>");
+                info += _exceed_warning(gettext("Object"), gettext("height"));
                 objectFits = false;
             }
 
             // check if travel area exceeds boundaries
             if (_area_exceeds_boundaries("X", travelArea)) {
-                info += gettext("Travel exceeds print volume in width.<br>");
+                info += _exceed_warning(gettext("Travel"), gettext("width"));
                 travelFits = false;
             }
             if (_area_exceeds_boundaries("Y", travelArea)) {
-                info += gettext("Travel exceeds print volume in depth.<br>");
+                info += _exceed_warning(gettext("Travel"), gettext("depth"));
                 travelFits = false;
             }
             if (_area_exceeds_boundaries("Z", travelArea)) {
-                info += gettext("Travel exceeds print volume in height.<br>");
+                info += _exceed_warning(gettext("Travel"), gettext("height"));
                 travelFits = false;
             }
 

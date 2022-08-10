@@ -612,7 +612,7 @@ class gcode:
                         self._addArcMinMax(
                             self._print_minMax, startAngle, endAngle, centerArc, r
                         )
-                        
+
                 # calculate 3d arc length
                 arcLengthXYZ = math.sqrt(
                     (oldPos.z - pos.z) ** 2 + ((endAngle - startAngle) * r) ** 2
