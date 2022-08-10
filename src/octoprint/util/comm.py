@@ -727,8 +727,8 @@ class MachineCom:
             "capabilities": self._pluginManager.get_hooks(
                 "octoprint.comm.protocol.firmware.capabilities"
             ),
-            "after_report": self._pluginManager.get_hooks(
-                "octoprint.comm.protocol.firmware.after_report"
+            "capability_report": self._pluginManager.get_hooks(
+                "octoprint.comm.protocol.firmware.capability_report"
             ),
         }
 
@@ -2607,7 +2607,9 @@ class MachineCom:
                         self.refreshSdFiles()
 
                     # notify plugins
-                    for name, hook in self._firmware_info_hooks["after_report"].items():
+                    for name, hook in self._firmware_info_hooks[
+                        "capability_report"
+                    ].items():
                         try:
                             hook(self, copy.copy(self._firmware_capabilities))
                         except Exception:

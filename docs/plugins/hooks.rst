@@ -509,17 +509,17 @@ octoprint.comm.protocol.firmware.capabilities
 
 .. _sec-plugins-hook-comm-protocol-action:
 
-octoprint.comm.protocol.firmware.after_report
+octoprint.comm.protocol.firmware.capability_report
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: firmware_after_report_hook(comm_instance, firmware_capabilities, *args, **kwargs)
+.. py:function:: firmware_capability_report_hook(comm_instance, firmware_capabilities, *args, **kwargs)
 
    .. versionadded:: 1.9.0
 
    Be notified when all capability report entries are received from the printer.
 
    Hook handlers may use this to react to the end of the custom firmware capability report. OctoPrint parses the received
-   capability lines and provides a dictionary of all reported capabilties and whether they're enabled to the handler.
+   capability lines and provides a dictionary of all reported capabilities and whether they're enabled to the handler.
 
    .. warning::
 
