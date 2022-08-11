@@ -209,5 +209,5 @@ its source repository under ``src/octoprint/plugins/backup``.
 .. [#2] Note that only those plugins that are available on `OctoPrint's official plugin repository <https://plugins.octoprint.org>`_
         can be automatically restored. If you have plugins installed that are not available on there you'll get their
         names and - if available - homepage URL displayed after restore in order to be able to manually reinstall them.
-.. [#3] Note that restore process will install latest possible version of plugins instead of version that was installed at backup
+.. [#3] Note that the restore process will install the latest possible versions of the plugins instead of the version that was installed at backup
    creation time.
