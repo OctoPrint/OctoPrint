@@ -861,13 +861,13 @@ $(function () {
                     var icon = $("i.fa-trash-alt", element);
                     if (icon.length) {
                         activateSpinner = function () {
-                            icon.removeClass("fa-trash-alt").addClass(
-                                "fa-spinner fa-spin"
+                            icon.removeClass("far fa-trash-alt").addClass(
+                                "fas fa-spinner fa-spin"
                             );
                         };
                         finishSpinner = function () {
-                            icon.removeClass("fa-spinner fa-spin").addClass(
-                                "fa-trash-alt"
+                            icon.removeClass("fas fa-spinner fa-spin").addClass(
+                                "far fa-trash-alt"
                             );
                         };
                     }
