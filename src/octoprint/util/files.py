@@ -2,6 +2,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2021 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import itertools
+import logging
 import os.path
 import re
 
@@ -270,3 +271,47 @@ def silent_remove(file):
         os.remove(file)
     except OSError:
         pass
+
+
+def search_through_file(path, term, regex=False):
+    if regex:
+        pattern = term
+    else:
+        pattern = re.escape(term)
+    compiled = re.compile(pattern)
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        try:
+            # try native grep
+            import sarge
+
+            result = sarge.capture_stderr(["grep", "-q", "-E", pattern, path])
+            if result.stderr.text:
+                logger.warning(
+                    "Error raised by native grep, falling back to python "
+                    "implementation: {}".format(result.stderr.text.strip())
+                )
+                return search_through_file_python(path, term, compiled)
+            return result.returncode == 0
+        except ValueError as exc:
+            if "Command not found" in str(exc):
+                return search_through_file_python(path, term, compiled)
+            else:
+                raise
+    except Exception:
+        logger.exception(
+            "Something unexpectedly went wrong while trying to "
+            "search for {} in {} via grep".format(term, path)
+        )
+
+    return False
+
+
+def search_through_file_python(path, term, compiled):
+    with open(path, encoding="utf8", errors="replace") as f:
+        for line in f:
+            if term in line or compiled.match(term):
+                return True
+    return False
