@@ -70,3 +70,9 @@ export const ensure_file_unknown = (location, name) => {
         failOnStatusCode: false
     });
 };
+
+export const get_cookie_name = (cookie) => {
+    const url = new URL(Cypress.config("baseUrl"));
+    const port = url.port || (url.protocol === "https:" ? 443 : 80);
+    return `${cookie}_P${port}`;
+};
