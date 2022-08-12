@@ -1,16 +1,20 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2021 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import datetime
 import os
 import re
 import unittest
 
+import pytest
 from ddt import data, ddt, unpack
 
 from octoprint.util.files import (
+    m20_timestamp_to_unix_timestamp,
     sanitize_filename,
     search_through_file,
     search_through_file_python,
+    unix_timestamp_to_m20_timestamp,
 )
 
 
@@ -66,3 +70,23 @@ class FilesUtilTest(unittest.TestCase):
         )
         actual = search_through_file_python(path, term, compiled)
         self.assertEqual(actual, expected)
+
+
+# based on https://github.com/nathanhi/pyfatfs/blob/master/tests/test_DosDateTime.py
+m20_timestamp_tests = [
+    (int("0x21", 16) << 16, datetime.datetime(1980, 1, 1).timestamp()),
+    (int("0xff9f", 16) << 16, datetime.datetime(2107, 12, 31).timestamp()),
+    (int("0x21bf7d", 16), datetime.datetime(1980, 1, 1, 23, 59, 58).timestamp()),
+    (int("0x549088aa", 16), datetime.datetime(2022, 4, 16, 17, 5, 20).timestamp()),
+    (int("0x28210800", 16), datetime.datetime(2000, 1, 1, 1, 0).timestamp()),
+]
+
+
+@pytest.mark.parametrize("val,expected", m20_timestamp_tests)
+def test_m20_timestamp_to_unix_timestamp(val, expected):
+    assert m20_timestamp_to_unix_timestamp(val) == expected
+
+
+@pytest.mark.parametrize("expected,val", m20_timestamp_tests)
+def test_unix_timestamp_to_m20_timestamp(expected, val):
+    assert unix_timestamp_to_m20_timestamp(val) == expected

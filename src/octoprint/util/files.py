@@ -1,6 +1,7 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2021 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import datetime
 import itertools
 import logging
 import os.path
@@ -315,3 +316,59 @@ def search_through_file_python(path, term, compiled):
             if term in line or compiled.match(term):
                 return True
     return False
+
+
+def unix_timestamp_to_m20_timestamp(unix_timestamp):
+    """
+    Converts unix timestamp to "M20 T" format
+    which embeds date and time into 32bit int.
+    Upper 16 bit contain date, lower 16 bit contain time.
+
+    https://reprap.org/wiki/G-code#M20:_List_SD_card
+
+    Format derived from FAT filesystem timestamps:
+    https://wiki.osdev.org/FAT
+
+    Arguments:
+        unix_timestamp (int): Unix timestamp in seconds
+    Returns:
+        int: M20 T timestamp
+    """
+
+    dt = datetime.datetime.fromtimestamp(unix_timestamp)
+    m20_date = dt.year - 1980 << 9 | dt.month << 5 | dt.day
+    m20_time = dt.hour << 11 | dt.minute << 5
+    m20_time |= (dt.second - (dt.second % 2)) // 2
+    return m20_date << 16 | m20_time
+
+
+def m20_timestamp_to_unix_timestamp(timestamp):
+    """
+    Converts "M20 T" timestamp to unix timestamp.
+    Upper 16 bit contain date, lower 16 bit contain time.
+
+    https://reprap.org/wiki/G-code#M20:_List_SD_card
+
+    Format derived from FAT filesystem timestamps:
+    https://wiki.osdev.org/FAT
+
+    Arguments:
+        timestamp (int): M20 T timestamp
+    Returns:
+        int: Unix timestamp in seconds
+    """
+
+    dt = timestamp >> 16
+    day = dt & (1 << 5) - 1
+    month = (dt >> 5) & ((1 << 4) - 1)
+    year = ((dt >> 9) & (1 << 7) - 1) + 1980
+    d = datetime.date(year, month, day)
+
+    tm = timestamp & (2**16 - 1)
+    second = (tm & (1 << 5) - 1) * 2
+    minute = (tm >> 5) & ((1 << 6) - 1)
+    hour = (tm >> 11) & ((1 << 5) - 1)
+    t = datetime.time(hour, minute, second)
+
+    combined_dt = datetime.datetime.combine(d, t)
+    return int(combined_dt.timestamp())

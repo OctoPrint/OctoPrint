@@ -910,7 +910,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         return list(
             map(
-                lambda x: {"name": x[0][1:], "size": x[1], "display": x[2]},
+                lambda x: {"name": x[0][1:], "size": x[1], "display": x[2], "date": x[3]},
                 self._comm.getSdFiles(),
             )
         )
