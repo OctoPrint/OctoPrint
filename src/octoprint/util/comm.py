@@ -6253,15 +6253,11 @@ def canonicalize_temperatures(parsed, current):
 
 
 def _validate_m20_timestamp(timestamp):
-    # Only hex in 0xABC format is valid
-    if not timestamp.startswith("0x"):
-        return False
     try:
-        int(timestamp, 16)
-        return True
+        m20_timestamp_to_unix_timestamp(timestamp)
     except ValueError:
-        pass
-    return False
+        return False
+    return True
 
 
 def parse_file_list_line(line):
@@ -6304,7 +6300,7 @@ def parse_file_list_line(line):
             if timestamp is not None:
                 # size was valid and we have timestamp, so try to use it
                 try:
-                    timestamp = m20_timestamp_to_unix_timestamp(int(timestamp, 16))
+                    timestamp = m20_timestamp_to_unix_timestamp(timestamp)
                 except ValueError:
                     timestamp = None
 

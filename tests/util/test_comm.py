@@ -295,9 +295,9 @@ class TestCommErrorHandling(unittest.TestCase):
     [
         ("aaa", False),
         ("1234", False),
-        ("0x0", True),
-        ("0x34234", True),
+        ("0x21bf7d", True),
         ("0xghijk", False),
+        ("0x28210800", True),
     ],
 )
 def test__validate_m20_timestamp(val, expected):
@@ -326,7 +326,7 @@ def test__validate_m20_timestamp(val, expected):
             (
                 "name.gco",
                 3424324,
-                m20_timestamp_to_unix_timestamp(int("0x21bf7d", 16)),
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
                 None,
             ),
         ),
@@ -339,7 +339,7 @@ def test__validate_m20_timestamp(val, expected):
             (
                 "longname.gcode",
                 3424324,
-                m20_timestamp_to_unix_timestamp(int("0x21bf7d", 16)),
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
                 None,
             ),
         ),
@@ -352,7 +352,7 @@ def test__validate_m20_timestamp(val, expected):
             (
                 "name.gco",
                 32424,
-                m20_timestamp_to_unix_timestamp(int("0x21bf7d", 16)),
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
                 "long name without quoting",
             ),
         ),
@@ -361,7 +361,7 @@ def test__validate_m20_timestamp(val, expected):
             (
                 "name.gco",
                 32424,
-                m20_timestamp_to_unix_timestamp(int("0x21bf7d", 16)),
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
                 "long   name   without   quoting",
             ),
         ),
@@ -370,7 +370,7 @@ def test__validate_m20_timestamp(val, expected):
             (
                 "name.gco",
                 32424,
-                m20_timestamp_to_unix_timestamp(int("0x21bf7d", 16)),
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
                 "long name with quoting",
             ),
         ),
@@ -379,7 +379,7 @@ def test__validate_m20_timestamp(val, expected):
             (
                 "name.gco",
                 32424,
-                m20_timestamp_to_unix_timestamp(int("0x21bf7d", 16)),
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
                 "long   name   with   quoting",
             ),
         ),

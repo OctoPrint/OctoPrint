@@ -1417,7 +1417,7 @@ class VirtualPrinter:
                 "path": entry.path,
                 "dosname": dosname,
                 "size": entry.stat().st_size,
-                "timestamp": hex(unix_timestamp_to_m20_timestamp(entry.stat().st_mtime)),
+                "timestamp": unix_timestamp_to_m20_timestamp(entry.stat().st_mtime),
             }
         return result
 

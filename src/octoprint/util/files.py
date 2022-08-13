@@ -332,14 +332,14 @@ def unix_timestamp_to_m20_timestamp(unix_timestamp):
     Arguments:
         unix_timestamp (int): Unix timestamp in seconds
     Returns:
-        int: M20 T timestamp
+        string: M20 T timestamp as hex string
     """
 
     dt = datetime.datetime.fromtimestamp(unix_timestamp)
     m20_date = dt.year - 1980 << 9 | dt.month << 5 | dt.day
     m20_time = dt.hour << 11 | dt.minute << 5
     m20_time |= (dt.second - (dt.second % 2)) // 2
-    return m20_date << 16 | m20_time
+    return hex(m20_date << 16 | m20_time)
 
 
 def m20_timestamp_to_unix_timestamp(timestamp):
@@ -353,11 +353,17 @@ def m20_timestamp_to_unix_timestamp(timestamp):
     https://wiki.osdev.org/FAT
 
     Arguments:
-        timestamp (int): M20 T timestamp
+        timestamp (string): M20 T timestamp as hex string
     Returns:
         int: Unix timestamp in seconds
     """
 
+    # Only hex in 0xABC format is valid while int() accepts
+    # hex without 0x prefix, too.
+    if not timestamp.startswith("0x"):
+        raise ValueError("Invalid M20 T timestamp format")
+
+    timestamp = int(timestamp, 16)
     dt = timestamp >> 16
     day = dt & (1 << 5) - 1
     month = (dt >> 5) & ((1 << 4) - 1)

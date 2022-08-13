@@ -74,11 +74,11 @@ class FilesUtilTest(unittest.TestCase):
 
 # based on https://github.com/nathanhi/pyfatfs/blob/master/tests/test_DosDateTime.py
 m20_timestamp_tests = [
-    (int("0x21", 16) << 16, datetime.datetime(1980, 1, 1).timestamp()),
-    (int("0xff9f", 16) << 16, datetime.datetime(2107, 12, 31).timestamp()),
-    (int("0x21bf7d", 16), datetime.datetime(1980, 1, 1, 23, 59, 58).timestamp()),
-    (int("0x549088aa", 16), datetime.datetime(2022, 4, 16, 17, 5, 20).timestamp()),
-    (int("0x28210800", 16), datetime.datetime(2000, 1, 1, 1, 0).timestamp()),
+    ("0x210000", datetime.datetime(1980, 1, 1).timestamp()),
+    ("0xff9f0000", datetime.datetime(2107, 12, 31).timestamp()),
+    ("0x21bf7d", datetime.datetime(1980, 1, 1, 23, 59, 58).timestamp()),
+    ("0x549088aa", datetime.datetime(2022, 4, 16, 17, 5, 20).timestamp()),
+    ("0x28210800", datetime.datetime(2000, 1, 1, 1, 0).timestamp()),
 ]
 
 
