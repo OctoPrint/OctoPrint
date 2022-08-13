@@ -2442,55 +2442,9 @@ class MachineCom:
                 line, lower_line = convert_line(line)
 
                 ##~~ SD file list
-                longname = None
-                size = None
-                timestamp = None
                 # if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
                 if self._sdEnabled and self._sdFileList and "End file list" not in line:
-                    preprocessed_line = line
-                    fileinfo = preprocessed_line.split(None, 3)
-                    if len(fileinfo) == 4:
-                        # name, size, timestamp, long name or name, size, long name with spaces
-                        filename, size, timestamp, longname = fileinfo
-                        if not timestamp.startswith("0x"):
-                            # longname with spaces. Split line again with twice split limit to get longname right in case
-                            # of multiple whitespace characters in it.
-                            filename, size, longname = preprocessed_line.split(None, 2)
-                            timestamp = None
-                    elif len(fileinfo) == 3:
-                        # name, size, long name or name, size, timestamp
-                        filename, size, third = fileinfo
-                        if third.startswith("0x"):
-                            timestamp = third
-                        else:
-                            longname = third
-                    elif len(fileinfo) == 2:
-                        # name, size
-                        filename, size = fileinfo
-                    else:
-                        # name
-                        filename = preprocessed_line
-
-                    if size is not None:
-                        try:
-                            size = int(size)
-                        except ValueError:
-                            # whatever that was, it was not an integer, so we'll just use the whole line as filename and set size/timestamp to None
-                            filename = preprocessed_line
-                            size = None
-                            timestamp = None
-                        else:
-                            if timestamp is not None:
-                                # size was valid and we have timestamp, so try to use it
-                                try:
-                                    timestamp = m20_timestamp_to_unix_timestamp(
-                                        int(timestamp, 16)
-                                    )
-                                except ValueError:
-                                    self._logger.warning(
-                                        f"Got unrecognized M20 T timestamp ({timestamp!r}). Ignoring."
-                                    )
-                                    timestamp = None
+                    (filename, size, timestamp, longname) = parse_file_list_line(line)
 
                     if valid_file_type(filename, "machinecode"):
                         if filter_non_ascii(filename):
@@ -2515,9 +2469,6 @@ class MachineCom:
                                 filename = filename.lower()
                             self._sdFiles.append((filename, size, timestamp))
                             if longname is not None:
-                                if longname[0] == '"' and longname[-1] == '"':
-                                    # apparently some firmwares enclose the long name in quotes...
-                                    longname = longname[1:-1]
                                 self._sdFilesMap[filename] = longname
                         continue
 
@@ -6299,6 +6250,70 @@ def canonicalize_temperatures(parsed, current):
         del result["T"]
 
     return result
+
+
+def _validate_m20_timestamp(timestamp):
+    # Only hex in 0xABC format is valid
+    if not timestamp.startswith("0x"):
+        return False
+    try:
+        int(timestamp, 16)
+        return True
+    except ValueError:
+        pass
+    return False
+
+
+def parse_file_list_line(line):
+    longname = None
+    size = None
+    timestamp = None
+    fileinfo = line.split(None, 3)
+    if len(fileinfo) == 4:
+        # name, size, timestamp, long name or name, size, long name with spaces
+        filename, size, timestamp, longname = fileinfo
+        if not _validate_m20_timestamp(timestamp):
+            # longname with spaces. Split line again with twice split limit to get longname right in case
+            # of multiple whitespace characters in it.
+            filename, size, longname = line.split(None, 2)
+            timestamp = None
+    elif len(fileinfo) == 3:
+        # name, size, long name or name, size, timestamp
+        filename, size, third = fileinfo
+        if _validate_m20_timestamp(third):
+            timestamp = third
+        else:
+            longname = third
+    elif len(fileinfo) == 2:
+        # name, size
+        filename, size = fileinfo
+    else:
+        # name
+        filename = line
+
+    if size is not None:
+        try:
+            size = int(size)
+        except ValueError:
+            # whatever that was, it was not an integer, so we'll just use the whole line as filename and set size/timestamp/longname to None
+            filename = line
+            size = None
+            timestamp = None
+            longname = None
+        else:
+            if timestamp is not None:
+                # size was valid and we have timestamp, so try to use it
+                try:
+                    timestamp = m20_timestamp_to_unix_timestamp(int(timestamp, 16))
+                except ValueError:
+                    timestamp = None
+
+    if longname is not None:
+        if longname[0] == '"' and longname[-1] == '"':
+            # apparently some firmwares enclose the long name in quotes...
+            longname = longname[1:-1]
+
+    return (filename, size, timestamp, longname)
 
 
 def parse_temperature_line(line, current):
