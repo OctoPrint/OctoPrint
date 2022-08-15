@@ -43,6 +43,7 @@ core_deps = [
     "Flask-Assets>=2.0,<3",
     "Flask-Babel>=2.0,<3",
     "Flask-Login>=0.6,<0.7",  # breaking changes can happen on minor version increases
+    "Flask-Limiter>=2.6,<3",
     "flask>=2.2,<2.3",  # breaking changes can happen on minor version increases (with deprecation warnings)
     "frozendict>=2.0,<3",
     "future>=0.18.2,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins

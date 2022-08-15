@@ -281,6 +281,11 @@ def serverStatus():
 
 
 @api.route("/login", methods=["POST"])
+@octoprint.server.limiter.limit(
+    "3/minute;5/10 minutes;10/hour",
+    deduct_when=lambda response: response.status_code == 403,
+    error_message="You have made too many failed login attempts. Please try again later.",
+)
 def login():
     data = request.get_json()
     if not data:

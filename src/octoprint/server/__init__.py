@@ -70,6 +70,7 @@ app = Flask("octoprint")
 
 assets = None
 babel = None
+limiter = None
 debug = False
 safe_mode = False
 
@@ -1338,6 +1339,8 @@ class Server:
         timer.start()
 
     def _setup_app(self, app):
+        global limiter
+
         from octoprint.server.util.flask import (
             OctoPrintFlaskRequest,
             OctoPrintFlaskResponse,
@@ -1432,6 +1435,13 @@ class Server:
         from octoprint.util.jinja import MarkdownFilter
 
         MarkdownFilter(app)
+
+        from flask_limiter import Limiter
+        from flask_limiter.util import get_remote_address
+
+        app.config["RATELIMIT_STRATEGY"] = "fixed-window-elastic-expiry"
+
+        limiter = Limiter(app, key_func=get_remote_address)
 
     def _setup_i18n(self, app):
         global babel
