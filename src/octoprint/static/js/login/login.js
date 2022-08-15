@@ -11,7 +11,8 @@ $(function () {
     };
 
     var overlayElement = $("#login-overlay");
-    var errorElement = $("#login-error");
+    var errorCredentialsElement = $("#login-error-credentials");
+    var errorRateElement = $("#login-error-rate");
     var offlineElement = $("#login-offline");
     var buttonElement = $("#login-button");
     var reconnectElement = $("#login-reconnect");
@@ -28,7 +29,8 @@ $(function () {
         var remember = rememberElement.prop("checked");
 
         overlayElement.addClass("in");
-        errorElement.removeClass("in");
+        errorCredentialsElement.removeClass("in");
+        errorRateElement.removeClass("in");
 
         OctoPrint.browser
             .login(username, password, remember)
@@ -47,7 +49,11 @@ $(function () {
                 }
 
                 overlayElement.removeClass("in");
-                errorElement.addClass("in");
+                if (xhr.status === 429) {
+                    errorRateElement.addClass("in");
+                } else {
+                    errorCredentialsElement.addClass("in");
+                }
             });
 
         return false;
