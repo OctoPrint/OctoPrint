@@ -331,6 +331,8 @@ def _getFileList(
                 }
                 if f["size"] is not None:
                     file.update({"size": f["size"]})
+                if f["date"] is not None:
+                    file.update({"date": f["date"]})
                 files.append(file)
     else:
         filter_func = None
