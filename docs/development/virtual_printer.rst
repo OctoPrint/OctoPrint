@@ -118,6 +118,12 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
          # False: <filename>
          size: true
 
+         # Whether M20 responses will include timestamp or not (only if size = true as well)
+         #
+         # True: <filename> <filesize in bytes> <timestamp as hex>
+         # False: <filename> <filesize in bytes>
+         timestamp: false
+
          # Whether M20 responses will include longname or not (only if size = true as well)
          #
          # True:  <filename> <filesize in bytes> <longname>
