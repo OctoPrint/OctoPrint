@@ -40,6 +40,7 @@ from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from werkzeug.exceptions import HTTPException
 
+import octoprint.filemanager
 import octoprint.util
 import octoprint.util.net
 from octoprint.server import util
@@ -746,6 +747,15 @@ class Server:
             )
         }
 
+        only_known_types_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                lambda path: octoprint.filemanager.valid_file_type(
+                    os.path.basename(path)
+                ),
+                status_code=404,
+            )
+        }
+
         valid_timelapse = lambda path: not octoprint.util.is_hidden_path(path) and (
             octoprint.timelapse.valid_timelapse(path)
             or octoprint.timelapse.valid_timelapse_thumbnail(path)
@@ -840,6 +850,7 @@ class Server:
                     download_permission_validator,
                     download_handler_kwargs,
                     no_hidden_files_validator,
+                    only_known_types_validator,
                     additional_mime_types,
                 ),
             ),
