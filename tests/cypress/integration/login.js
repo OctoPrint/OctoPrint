@@ -3,7 +3,8 @@ import {
     await_coreui,
     await_loginui,
     login,
-    get_cookie_name
+    get_cookie_name,
+    get_full_url
 } from "../util/util";
 
 context("Login tests", () => {
@@ -19,7 +20,7 @@ context("Login tests", () => {
             cy.visit("/?l10n=en");
             await_loginui();
             cy.location().should((loc) => {
-                expect(loc.pathname).to.eq("/login/");
+                expect(loc.pathname).to.eq(get_full_url("/login/"));
             });
         });
 
@@ -77,7 +78,7 @@ context("Login tests", () => {
 
             await_loginui();
             cy.location().should((loc) => {
-                expect(loc.pathname).to.eq("/login/");
+                expect(loc.pathname).to.eq(get_full_url("/login/"));
             });
         });
     });
@@ -87,7 +88,7 @@ context("Login tests", () => {
             cy.visit("/?l10n=en");
             await_loginui();
             cy.location().should((loc) => {
-                expect(loc.pathname).to.eq("/login/");
+                expect(loc.pathname).to.eq(get_full_url("/login/"));
             });
         });
 
