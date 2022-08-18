@@ -38,7 +38,7 @@ $(function () {
                 ignoreDisconnect = true;
                 window.location.href = REDIRECT_URL;
             })
-            .fail(function () {
+            .fail(function (xhr) {
                 usernameElement.val(USER_ID);
                 passwordElement.val("");
 
