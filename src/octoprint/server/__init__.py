@@ -1344,7 +1344,7 @@ class Server:
         from octoprint.server.util.flask import (
             OctoPrintFlaskRequest,
             OctoPrintFlaskResponse,
-            OctoPrintJsonEncoder,
+            OctoPrintJsonProvider,
             OctoPrintSessionInterface,
             PrefixAwareJinjaEnvironment,
             ReverseProxiedEnvironment,
@@ -1361,7 +1361,7 @@ class Server:
         app.debug = self._debug
 
         # setup octoprint's flask json serialization/deserialization
-        app.json_encoder = OctoPrintJsonEncoder
+        app.json = OctoPrintJsonProvider(app)
 
         s = settings()
 
@@ -1957,6 +1957,7 @@ class Server:
 
         from octoprint.server.util.webassets import MemoryManifest  # noqa: F401
 
+        util.flask.fix_webassets_convert_item_to_flask_url()
         util.flask.fix_webassets_filtertool()
 
         base_folder = self._settings.getBaseFolder("generated")
