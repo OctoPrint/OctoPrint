@@ -157,6 +157,8 @@ $(function () {
         self.webcam_snapshotUrl = ko.observable(undefined);
         self.webcam_snapshotTimeout = ko.observable(undefined);
         self.webcam_snapshotSslValidation = ko.observable(undefined);
+		self.webcam_snapshotAuthUser = ko.observable(undefined);
+		self.webcam_snapshotAuthPass = ko.observable(undefined);
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_ffmpegCommandline = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);

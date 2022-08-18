@@ -15,6 +15,7 @@ import threading
 import time
 
 import requests
+from requests.auth import HTTPDigestAuth
 import sarge
 
 import octoprint.plugin
@@ -503,7 +504,10 @@ class Timelapse:
         self._snapshot_validate_ssl = settings().getBoolean(
             ["webcam", "snapshotSslValidation"]
         )
-
+        
+        self._snapshot_auth_user = settings().get(["webcam", "snapshotAuthUser"])
+        self._snapshot_auth_pass = settings().get(["webcam", "snapshotAuthPass"])
+        
         self._fps = fps
 
         self._pluginManager = octoprint.plugin.plugin_manager()
@@ -758,6 +762,7 @@ class Timelapse:
                 stream=True,
                 timeout=self._snapshot_timeout,
                 verify=self._snapshot_validate_ssl,
+                auth=HTTPDigestAuth(self._snapshot_auth_user,self._snapshot_auth_pass)
             )
             r.raise_for_status()
 

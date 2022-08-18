@@ -1,0 +1,13 @@
+<div class="control-group" title="{{ _('Authentication for snapshop URL')|edq }}">
+    <label class="control-label" for="settings-webcamSnapshotAuth">{{ _('Snapshot Auth') }}</label>
+    <div class="controls">
+        <div class="input-append">
+		<label> Username: </label>
+            <input type="text" class="input-block-level" data-bind="value: webcam_snapshotAuthUser, valueUpdate: 'afterkeydown'" id="settings-webcamSnapshotAuthUser">
+        </div>
+		<div class="input-append">
+			<label> Password: </label>
+			<input type="text" class="input-block-level" data-bind="value: webcam_snapshotAuthPass, valueUpdate: 'afterkeydown'" id="settings-webcamSnapshotAuthPass">
+        </div>
+    </div>
+</div>

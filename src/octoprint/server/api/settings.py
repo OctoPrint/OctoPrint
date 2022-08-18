@@ -124,6 +124,8 @@ def getSettings():
             "snapshotUrl": s.get(["webcam", "snapshot"]),
             "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
             "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
+            "snapshotAuthUser": s.get(["webcam", "snapshotAuthUser"]),
+            "snapshotAuthPass": s.get(["webcam", "snapshotAuthPass"]),
             "ffmpegPath": s.get(["webcam", "ffmpeg"]),
             "ffmpegCommandline": s.get(["webcam", "ffmpegCommandline"]),
             "bitrate": s.get(["webcam", "bitrate"]),
@@ -569,6 +571,10 @@ def _saveSettings(data):
                 ["webcam", "snapshotSslValidation"],
                 data["webcam"]["snapshotSslValidation"],
             )
+        if "snapshotAuthUser" in data["webcam"]:
+            s.set(["webcam", "snapshotAuthUser"], data["webcam"]["snapshotAuthUser"])
+        if "snapshotAuthPass" in data["webcam"]:
+            s.set(["webcam", "snapshotAuthPass"], data["webcam"]["snapshotAuthPass"])
         if "ffmpegPath" in data["webcam"]:
             s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
         if "ffmpegCommandline" in data["webcam"]:
