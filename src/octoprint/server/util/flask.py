@@ -704,6 +704,24 @@ def passive_login():
     return flask.jsonify(response)
 
 
+# ~~ rate limiting helper
+
+
+def limit(*args, **kwargs):
+    if octoprint.server.limiter:
+        return octoprint.server.limiter.limit(*args, **kwargs)
+    else:
+
+        def decorator(f):
+            @functools.wraps(f)
+            def decorated_function(*args, **kwargs):
+                return f(*args, **kwargs)
+
+            return decorated_function
+
+        return decorator
+
+
 # ~~ cache decorator for cacheable views
 
 
