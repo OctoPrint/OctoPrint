@@ -14,6 +14,7 @@ from typing import Union
 
 import flask
 import flask.json
+import flask.json.provider
 import flask.sessions
 import flask.templating
 import flask_assets
@@ -45,7 +46,6 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
     import flask_babel
     from babel import Locale, support
-    from flask import _request_ctx_stack
 
     if additional_folders is None:
         additional_folders = []
@@ -92,10 +92,9 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
         object if used outside of the request or if a translation cannot be
         found.
         """
-        ctx = _request_ctx_stack.top
-        if ctx is None:
+        if flask.g is None:
             return None
-        translations = getattr(ctx, "babel_translations", None)
+        translations = getattr(flask.g, "babel_translations", None)
         if translations is None:
             locale = flask_babel.get_locale()
             translations = support.Translations()
@@ -138,7 +137,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
                 # core translations
                 dirs = additional_folders + [
-                    os.path.join(ctx.app.root_path, "translations")
+                    os.path.join(flask.current_app.root_path, "translations")
                 ]
                 for dirname in dirs:
                     core_translations = support.Translations.load(dirname, [locale])
@@ -152,7 +151,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                     logger.debug(f"No translations for locale {locale} in core folders")
                 translations = translations.merge(core_translations)
 
-            ctx.babel_translations = translations
+            flask.g.babel_translations = translations
         return translations
 
     flask_babel.Babel.list_translations = fixed_list_translations
@@ -195,6 +194,42 @@ def fix_webassets_filtertool():
             return MemoryHunk("")
 
     FilterTool._wrap_cache = fixed_wrap_cache
+
+
+def fix_webassets_convert_item_to_flask_url():
+    import flask_assets
+
+    def fixed_convert_item_to_flask_url(self, ctx, item, filepath=None):
+        from flask import url_for
+
+        directory, rel_path, endpoint = self.split_prefix(ctx, item)
+
+        if filepath is not None:
+            filename = filepath[len(directory) + 1 :]
+        else:
+            filename = rel_path
+
+        flask_ctx = None
+        if not flask.has_request_context():  # fixed, was _request_ctx.top
+            flask_ctx = ctx.environment._app.test_request_context()
+            flask_ctx.push()
+        try:
+            url = url_for(endpoint, filename=filename)
+            # In some cases, url will be an absolute url with a scheme and hostname.
+            # (for example, when using werkzeug's host matching).
+            # In general, url_for() will return a http url. During assets build, we
+            # we don't know yet if the assets will be served over http, https or both.
+            # Let's use // instead. url_for takes a _scheme argument, but only together
+            # with external=True, which we do not want to force every time. Further,
+            # this _scheme argument is not able to render // - it always forces a colon.
+            if url and url.startswith("http:"):
+                url = url[5:]
+            return url
+        finally:
+            if flask_ctx:
+                flask_ctx.pop()
+
+    flask_assets.FlaskResolver.convert_item_to_flask_url = fixed_convert_item_to_flask_url
 
 
 def fix_flask_jsonify():
@@ -667,6 +702,24 @@ def passive_login():
     if flask.session.get("login_mechanism") is not None:
         response["_login_mechanism"] = flask.session.get("login_mechanism")
     return flask.jsonify(response)
+
+
+# ~~ rate limiting helper
+
+
+def limit(*args, **kwargs):
+    if octoprint.server.limiter:
+        return octoprint.server.limiter.limit(*args, **kwargs)
+    else:
+
+        def decorator(f):
+            @functools.wraps(f)
+            def decorated_function(*args, **kwargs):
+                return f(*args, **kwargs)
+
+            return decorated_function
+
+        return decorator
 
 
 # ~~ cache decorator for cacheable views
@@ -1811,9 +1864,10 @@ def collect_plugin_assets(preferred_stylesheet="css"):
 ##~~ JSON encoding
 
 
-class OctoPrintJsonEncoder(flask.json.JSONEncoder):
-    def default(self, obj):
+class OctoPrintJsonProvider(flask.json.provider.DefaultJSONProvider):
+    @staticmethod
+    def default(object_):
         try:
-            return JsonEncoding.encode(obj)
+            return JsonEncoding.encode(object_)
         except TypeError:
-            return flask.json.JSONEncoder.default(self, obj)
+            return flask.json.provider.DefaultJSONProvider.default(object_)
