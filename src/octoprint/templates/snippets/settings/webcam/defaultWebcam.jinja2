@@ -14,11 +14,27 @@
                 <table class="help-inline" style="padding-top: 10px">
                     <tr>
                         <td><b>{{ _('Snpashot URL')}}&nbsp;</b></td>
-                        <td data-bind="text: snapshot || 'Not provided'"></td>
+                        <td>
+                            <!-- ko if: snapshot -->
+                                <span data-bind="text: snapshot"></span>&nbsp;
+                                <a data-bind="attr: { href: snapshot }" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a>
+                            <!-- /ko -->
+                            <!-- ko ifnot: snapshot -->
+                                <span>{{ _('Not provided')}}</span>
+                            <!-- /ko -->
+                        </td>
                     </tr>
                     <tr>
                         <td><b>{{ _('MJPEG stream')}}&nbsp;</b></td>
-                        <td data-bind="text: (compat != null ? compat.stream : null) || 'Not provided'"></td>
+                        <td>
+                            <!-- ko if: compat != null && compat.stream -->
+                                <span data-bind="text: compat.stream"></span>&nbsp;
+                                <a data-bind="attr: { href: compat.stream }" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a>
+                            <!-- /ko -->
+                            <!-- ko ifnot: compat != null && compat.stream -->
+                                <span>{{ _('Not provided')}}</span>
+                            <!-- /ko -->
+                        </td>
                     </tr>
                 </table>
             <!-- /ko -->

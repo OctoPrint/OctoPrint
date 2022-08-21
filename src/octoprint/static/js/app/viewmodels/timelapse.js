@@ -21,6 +21,13 @@ $(function () {
         self.timelapseFps = ko.observable(self.defaultFps);
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
+        self.snapshotUrl = ko.pureComputed(function () {
+            var defaultWebcamName = self.settings.webcam_defaultWebcam();
+            var defaultWebcam = self.settings.webcam_webcams().find(function (w) {
+                return defaultWebcamName == w.name;
+            });
+            return defaultWebcam.snapshot;
+        });
 
         self.renderProgress = ko.observable();
         self.renderTarget = ko.observable();

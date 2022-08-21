@@ -499,7 +499,7 @@ class Timelapse:
 
         self._capture_dir = settings().getBaseFolder("timelapse_tmp")
         self._movie_dir = settings().getBaseFolder("timelapse")
-        self._snapshot_url = settings().get(["webcam", "snapshot"])
+        self._snapshot_url = get_default_webcam().snapshot
         self._snapshot_timeout = settings().getInt(["webcam", "snapshotTimeout"])
         self._snapshot_validate_ssl = settings().getBoolean(
             ["webcam", "snapshotSslValidation"]
