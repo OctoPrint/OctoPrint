@@ -421,3 +421,23 @@ def require_login(*permissions):
             )
 
     return None
+
+
+def validate_local_redirect(url, allowed_paths):
+    """Validates the given local redirect URL against the given allowed paths.
+
+    An `url` is valid for a local redirect if it has neither scheme nor netloc defined,
+    and its path is one of the given allowed paths.
+
+    Args:
+        url (str): URL to validate
+        allowed_paths (List[str]): List of allowed paths, only paths contained
+            will be considered valid.
+
+    Returns:
+        bool: Whether the `url` passed validation or not.
+    """
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url)
+    return parsed.scheme == "" and parsed.netloc == "" and parsed.path in allowed_paths

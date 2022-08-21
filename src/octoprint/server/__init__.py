@@ -70,6 +70,7 @@ app = Flask("octoprint")
 
 assets = None
 babel = None
+limiter = None
 debug = False
 safe_mode = False
 
@@ -1338,10 +1339,12 @@ class Server:
         timer.start()
 
     def _setup_app(self, app):
+        global limiter
+
         from octoprint.server.util.flask import (
             OctoPrintFlaskRequest,
             OctoPrintFlaskResponse,
-            OctoPrintJsonEncoder,
+            OctoPrintJsonProvider,
             OctoPrintSessionInterface,
             PrefixAwareJinjaEnvironment,
             ReverseProxiedEnvironment,
@@ -1358,7 +1361,7 @@ class Server:
         app.debug = self._debug
 
         # setup octoprint's flask json serialization/deserialization
-        app.json_encoder = OctoPrintJsonEncoder
+        app.json = OctoPrintJsonProvider(app)
 
         s = settings()
 
@@ -1432,6 +1435,13 @@ class Server:
         from octoprint.util.jinja import MarkdownFilter
 
         MarkdownFilter(app)
+
+        from flask_limiter import Limiter
+        from flask_limiter.util import get_remote_address
+
+        app.config["RATELIMIT_STRATEGY"] = "fixed-window-elastic-expiry"
+
+        limiter = Limiter(app, key_func=get_remote_address)
 
     def _setup_i18n(self, app):
         global babel
@@ -1947,6 +1957,7 @@ class Server:
 
         from octoprint.server.util.webassets import MemoryManifest  # noqa: F401
 
+        util.flask.fix_webassets_convert_item_to_flask_url()
         util.flask.fix_webassets_filtertool()
 
         base_folder = self._settings.getBaseFolder("generated")

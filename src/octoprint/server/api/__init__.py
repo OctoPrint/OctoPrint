@@ -35,6 +35,7 @@ from octoprint.server.util import (
 from octoprint.server.util.flask import (
     get_json_command_from_request,
     get_remote_address,
+    limit,
     no_firstrun_access,
     passive_login,
 )
@@ -281,6 +282,11 @@ def serverStatus():
 
 
 @api.route("/login", methods=["POST"])
+@limit(
+    "3/minute;5/10 minutes;10/hour",
+    deduct_when=lambda response: response.status_code == 403,
+    error_message="You have made too many failed login attempts. Please try again later.",
+)
 def login():
     data = request.get_json()
     if not data:
