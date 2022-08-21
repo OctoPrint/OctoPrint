@@ -34,13 +34,6 @@ class MjpegWebcamPlugin(
                 "custom_bindings": True,
                 "suffix": "_real",
             },
-            {
-                "type": "webcam",
-                "name": "Dummy Webcam",
-                "template": "classicwebcam_webcam_2.jinja2",
-                "custom_bindings": False,
-                "suffix": "_dummy",
-            },
         ]
 
     def get_webcam_configurations(self):
@@ -66,10 +59,6 @@ class MjpegWebcamPlugin(
                     streamWebrtcIceServers=self._settings.get(["streamWebrtcIceServers"]),
                     cacheBuster=self._settings.get(["cacheBuster"]),
                 ),
-            ),
-            Webcam(
-                name="dummy",
-                displayName="Dummy Webcam",
             ),
         ]
 
