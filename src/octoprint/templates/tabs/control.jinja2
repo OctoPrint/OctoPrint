@@ -23,7 +23,8 @@
         </div>
 
 
-          <ul class="nav justify-content-end">
+        {% if templates.webcam.order|length > 1 %}
+        <ul class="nav justify-content-end">
             {% for key in templates.webcam.order %}
                 {% set entry, data = templates.webcam.entries[key] %}
                 <li id="{{ data._div }}_link"
@@ -33,6 +34,7 @@
                 </li>
             {% endfor %}
         </ul>
+        {% endif %}
 
         <div class="keycontrol_overlay" data-bind="visible: showKeycontrols">
             <div class="keycontrol_overlay_heading">{{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i class="fas" data-bind="css: { 'fa-chevron-down': !keycontrolHelpActive(), 'fa-chevron-up': keycontrolHelpActive() }"></i></a></div>
