@@ -404,7 +404,8 @@ def configure_timelapse(config=None, persist=False):
     if current is not None:
         current.unload()
 
-    snapshot_url = get_default_webcam().snapshot
+    default_webcam = get_default_webcam()
+    snapshot_url = default_webcam.snapshot if default_webcam is not None else None
     ffmpeg_path = settings().get(["webcam", "ffmpeg"])
     timelapse_enabled = settings().getBoolean(["webcam", "timelapseEnabled"])
     timelapse_precondition = (
