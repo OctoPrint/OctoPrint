@@ -1,7 +1,8 @@
 {% if enableWebcam %}
     <div id="webcam_plugins_container" tabindex="0" data-bind="visible: loginState.hasPermissionKo(access.permissions.WEBCAM), event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
         <div class="tabbable row-fluid">
-            {% set ns = namespace(mark_active = True) %}
+            {% set nsContent = namespace(mark_active = True) %}
+            {% set nsTab = namespace(mark_active = True) %}
 
             <div class="tab-content">
             {% for key in templates.webcam.order %}
@@ -10,7 +11,7 @@
                     {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                     <div id="{{ data._div }}"
                             {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                            class="tab-pane {% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %} {% if classes_content in data %}{{ data.classes_content|join(' ') }}{% elif classes in data %}{{ data.classes|join(' ') }}{% endif %}"
+                            class="tab-pane {% if nsContent.mark_active %}active{% set nsContent.mark_active = False %}{% endif %} {% if classes_content in data %}{{ data.classes_content|join(' ') }}{% elif classes in data %}{{ data.classes|join(' ') }}{% endif %}"
                             {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif styles in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                             >
                         {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template ignore missing %}{% endtry %}
@@ -27,7 +28,7 @@
                 {% set entry, data = templates.webcam.entries[key] %}
                 <li id="{{ data._div }}_link"
                     {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                    class="nav-item {% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %}">
+                    class="nav-item {% if nsTab.mark_active %}active{% set nsTab.mark_active = False %}{% endif %}">
                     <a class="nav-link" href="#{{ data._div }}" data-toggle="tab">{{ entry|e }}</a>
                 </li>
             {% endfor %}

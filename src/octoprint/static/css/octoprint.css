@@ -2014,6 +2014,8 @@ ul.dropdown-menu li a {
 #webcam_plugins_container .nav .nav-item a {
   text-align: end;
   padding: 5px;
+  margin-top: 1px;
+  margin-bottom: 1px;
   border-radius: 5px;
   color: white;
 }
@@ -2082,6 +2084,7 @@ ul.dropdown-menu li a {
   text-overflow: ellipsis;
   word-break: break-all;
   margin-right: 30px;
+  white-space: pre-wrap;
 }
 #files .gcode_files .entry .internal,
 #files .gcode_files .entry .uploaded,
