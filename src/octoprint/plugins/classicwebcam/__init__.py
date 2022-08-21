@@ -37,27 +37,42 @@ class MjpegWebcamPlugin(
         ]
 
     def get_webcam_configurations(self):
+        streamRatio = self._settings.get(["streamRatio"])
+        streamRatio = streamRatio if streamRatio is not None else "16:9"
+        webRtcServers = self._settings.get(["streamWebrtcIceServers"])
+        cacheBuster = self._settings.get(["cacheBuster"]) is True
+        stream = self._settings.get(["stream"])
+        snapshot = self._settings.get(["snapshot"])
+        flipH = self._settings.get(["flipH"]) is True
+        flipV = self._settings.get(["flipH"]) is True
+        rotate90 = self._settings.get(["flipH"]) is True
+
+        try:
+            streamTimeout = int(self._settings.get(["streamTimeout"]))
+        except ValueError:
+            streamTimeout = 5
+
         return [
             Webcam(
                 name="classic",
                 displayName="Classic Webcam",
-                snapshot=self._settings.get(["snapshot"]),
-                flipH=self._settings.get(["flipH"]),
-                flipV=self._settings.get(["flipV"]),
-                rotate90=self._settings.get(["rotate90"]),
+                snapshot=snapshot,
+                flipH=flipH,
+                flipV=flipV,
+                rotate90=rotate90,
                 compat=WebcamCompatibility(
-                    stream=self._settings.get(["stream"]),
-                    streamTimeout=self._settings.get(["streamTimeout"]),
-                    streamRatio=self._settings.get(["streamRatio"]),
-                    cacheBuster=self._settings.get(["cacheBuster"]),
-                    streamWebrtcIceServers=self._settings.get(["streamWebrtcIceServers"]),
+                    stream=stream,
+                    streamTimeout=streamTimeout,
+                    streamRatio=streamRatio,
+                    cacheBuster=cacheBuster,
+                    streamWebrtcIceServers=webRtcServers,
                 ),
                 extras=dict(
-                    stream=self._settings.get(["stream"]),
-                    streamTimeout=self._settings.get(["streamTimeout"]),
-                    streamRatio=self._settings.get(["streamRatio"]),
-                    streamWebrtcIceServers=self._settings.get(["streamWebrtcIceServers"]),
-                    cacheBuster=self._settings.get(["cacheBuster"]),
+                    stream=stream,
+                    streamTimeout=streamTimeout,
+                    streamRatio=streamRatio,
+                    streamWebrtcIceServers=webRtcServers,
+                    cacheBuster=cacheBuster,
                 ),
             ),
         ]
@@ -69,7 +84,7 @@ class MjpegWebcamPlugin(
             rotate90=False,
             stream="",
             streamTimeout=5,
-            streamRatio="4:3",
+            streamRatio="16:9",
             streamWebrtcIceServers="stun:stun.l.google.com:19302",
             snapshot="",
             cacheBuster=False,
