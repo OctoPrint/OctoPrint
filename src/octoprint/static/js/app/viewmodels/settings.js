@@ -157,8 +157,8 @@ $(function () {
         self.webcam_ffmpegThreads = ko.observable(undefined);
         self.webcam_ffmpegVideoCodec = ko.observable(undefined);
         self.webcam_watermark = ko.observable(undefined);
-        self.webcam_webcams = ko.observableArray([]);
         self.webcam_defaultWebcam = ko.observable(undefined);
+        self.webcam_webcams = ko.observableArray([]);
 
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_sdSupport = ko.observable(undefined);
