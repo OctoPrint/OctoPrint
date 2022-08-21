@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms
 from flask_babel import gettext
 
 import octoprint.plugin
-from octoprint.schema.config.webcam import Webcam, WebcamCompatibility
+from octoprint.schema.config.webcam import RatioEnum, Webcam, WebcamCompatibility
 
 
 class MjpegWebcamPlugin(
@@ -38,7 +38,10 @@ class MjpegWebcamPlugin(
 
     def get_webcam_configurations(self):
         streamRatio = self._settings.get(["streamRatio"])
-        streamRatio = streamRatio if streamRatio is not None else "16:9"
+        if streamRatio == "4:3":
+            streamRatio = RatioEnum.four_three
+        else:
+            streamRatio = RatioEnum.sixteen_nine
         webRtcServers = self._settings.get(["streamWebrtcIceServers"])
         cacheBuster = self._settings.get(["cacheBuster"]) is True
         stream = self._settings.get(["stream"])
@@ -120,7 +123,7 @@ class MjpegWebcamPlugin(
                 self._settings.global_remove(["webcam", "stream"])
 
                 self._settings.set_int(
-                    ["streamTimeout"], config.get("streamTimeout", ""), force=True
+                    ["streamTimeout"], config.get("streamTimeout", 5), force=True
                 )
                 self._settings.global_remove(["webcam", "streamTimeout"])
 
