@@ -97,7 +97,7 @@ class WebcamCompatibility(BaseModel):
     streamTimeout: int = 5
     """The timeout of the stream in seconds"""
 
-    streamRatio: RatioEnum = "16:9"
+    streamRatio: RatioEnum = RatioEnum.sixteen_nine
     """The stream's native aspect ratio"""
 
     streamWebrtcIceServers: str = "stun:stun.l.google.com:19302"
