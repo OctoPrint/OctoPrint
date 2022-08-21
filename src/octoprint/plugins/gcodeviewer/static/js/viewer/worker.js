@@ -42,7 +42,7 @@ var percentageByLayer = [];
 var mustCompress = false;
 var skipuntil = null;
 
-importScripts("pako.js");
+importScripts("../lib/pako.js");
 
 var compress = function (data) {
     if (!mustCompress) return data;

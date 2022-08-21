@@ -118,6 +118,12 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
          # False: <filename>
          size: true
 
+         # Whether M20 responses will include timestamp or not (only if size = true as well)
+         #
+         # True: <filename> <filesize in bytes> <timestamp as hex>
+         # False: <filename> <filesize in bytes>
+         timestamp: false
+
          # Whether M20 responses will include longname or not (only if size = true as well)
          #
          # True:  <filename> <filesize in bytes> <longname>
@@ -200,29 +206,29 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
 
        # Simulated ambient temperature in °C
        ambientTemperature: 21.3
-       
+
        # Response to M105 when there is a target
        # Placeholders:
        # - heater: The heater id (eg. T0, T1, B)
        # - actual: The actual temperature of the heater
        # - target: The target temperature of heater
        m105TargetFormatString: {heater}:{actual:.2f}/ {target:.2f}
-       
+
        # Response to M105 when there is no target
        # Placeholders:
        # - heater: The heater id (eg. T0, T1, B)
        # - actual: The actual temperature of the heater
        m105NoTargetFormatString: {heater}:{actual:.2f}
-       
+
        # Enable virtual EEPROM
        # If enabled, a file `eeprom.json` will be created in the plugin data folder
        # to enable settings persistence across connections. Enables M500/1/2/4 commands
        # And a selection of other settings commands. Responses modeled on Marlin 2.0
        enable_eeprom: true
-       
+
        # Support M503
        support_m503: true
-       
+
        # Resend ratio to simulate noise on the line
        resend_ratio: 0
 

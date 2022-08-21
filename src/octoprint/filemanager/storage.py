@@ -740,7 +740,7 @@ class LocalFileStorage(StorageInterface):
         ):
             raise StorageError(
                 f"{destination_name} does already exist in {destination_path}",
-                code=StorageError.INVALID_DESTINATION,
+                code=StorageError.ALREADY_EXISTS,
             )
 
         source_meta = self._get_metadata_entry(source_path, source_name)

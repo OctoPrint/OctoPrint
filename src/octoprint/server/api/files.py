@@ -18,6 +18,7 @@ import octoprint.slicing
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 from octoprint.filemanager.destinations import FileDestinations
+from octoprint.filemanager.storage import StorageError
 from octoprint.server import (
     NO_CONTENT,
     current_user,
@@ -330,6 +331,8 @@ def _getFileList(
                 }
                 if f["size"] is not None:
                     file.update({"size": f["size"]})
+                if f["date"] is not None:
+                    file.update({"date": f["date"]})
                 files.append(file)
     else:
         filter_func = None
@@ -660,11 +663,8 @@ def uploadGcodeFile(target):
                 allow_overwrite=True,
                 display=canonFilename,
             )
-        except octoprint.filemanager.storage.StorageError as e:
-            if e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
-                abort(415, description="Could not upload file, invalid type")
-            else:
-                abort(500, description="Could not upload file")
+        except (OSError, StorageError) as e:
+            _abortWithException(e)
         else:
             filename = fileProcessingFinished(
                 added_file,
@@ -776,11 +776,8 @@ def uploadGcodeFile(target):
             added_folder = fileManager.add_folder(
                 target, futureFullPath, display=canonName
             )
-        except octoprint.filemanager.storage.StorageError as e:
-            if e.code == octoprint.filemanager.storage.StorageError.INVALID_DIRECTORY:
-                abort(400, description="Could not create folder, invalid directory")
-            else:
-                abort(500, description="Could not create folder")
+        except (OSError, StorageError) as e:
+            _abortWithException(e)
 
         location = url_for(
             ".readGcodeFile",
@@ -1235,7 +1232,10 @@ def deleteGcodeFile(filename, target):
         if target == FileDestinations.SDCARD:
             printer.delete_sd_file(filename, tags={"source:api", "api:files.sd"})
         else:
-            fileManager.remove_file(target, filename)
+            try:
+                fileManager.remove_file(target, filename)
+            except (OSError, StorageError) as e:
+                _abortWithException(e)
 
     elif _verifyFolderExists(target, filename):
         if _isBusy(target, filename):
@@ -1254,9 +1254,42 @@ def deleteGcodeFile(filename, target):
             printer.unselect_file()
 
         # delete it
-        fileManager.remove_folder(target, filename, recursive=True)
+        try:
+            fileManager.remove_folder(target, filename, recursive=True)
+        except (OSError, StorageError) as e:
+            _abortWithException(e)
 
     return NO_CONTENT
+
+
+def _abortWithException(error):
+    if type(error) is StorageError:
+        logging.getLogger(__name__).error(
+            f"{error.message}: {error.code}", exc_info=error.cause
+        )
+        if error.code == StorageError.INVALID_DIRECTORY:
+            abort(400, description="Could not create folder, invalid directory")
+        elif error.code == StorageError.INVALID_FILE:
+            abort(415, description="Could not upload file, invalid type")
+        elif error.code == StorageError.INVALID_SOURCE:
+            abort(404, description="Source path does not exist, invalid source")
+        elif error.code == StorageError.INVALID_DESTINATION:
+            abort(400, description="Destination is invalid")
+        elif error.code == StorageError.DOES_NOT_EXIST:
+            abort(404, description="Does not exit")
+        elif error.code == StorageError.ALREADY_EXISTS:
+            abort(409, description="File or folder already exists")
+        elif error.code == StorageError.SOURCE_EQUALS_DESTINATION:
+            abort(400, description="Source and destination are the same folder")
+        elif error.code == StorageError.NOT_EMPTY:
+            abort(409, description="Folder is not empty")
+        elif error.code == StorageError.UNKNOWN:
+            abort(500, description=str(error.cause).split(":")[0])
+        else:
+            abort(500, description=error.message)
+    else:
+        logging.getLogger(__name__).exception(error)
+        abort(500, description=str(error).split(":")[0])
 
 
 def _getCurrentFile():

@@ -15,6 +15,7 @@ from serial import SerialTimeoutException
 
 from octoprint.plugin import plugin_manager
 from octoprint.util import RepeatedTimer, get_dos_filename, to_bytes, to_unicode
+from octoprint.util.files import unix_timestamp_to_m20_timestamp
 
 
 # noinspection PyBroadException
@@ -126,6 +127,7 @@ class VirtualPrinter:
 
         self._writingToSd = False
         self._writingToSdHandle = None
+        self._writingToSdFile = None
         self._newSdFilePos = None
 
         self._heatingUp = False
@@ -256,6 +258,7 @@ class VirtualPrinter:
                     pass
             self._writingToSd = False
             self._writingToSdHandle = None
+            self._writingToSdFile = None
             self._newSdFilePos = None
 
             self._heatingUp = False
@@ -592,7 +595,7 @@ class VirtualPrinter:
     # noinspection PyUnusedLocal
     def _gcode_M20(self, data: str) -> None:
         if self._sdCardReady:
-            self._listSd(incl_long="L" in data)
+            self._listSd(incl_long="L" in data, incl_timestamp="T" in data)
 
     # noinspection PyUnusedLocal
     def _gcode_M21(self, data: str) -> None:
@@ -1379,17 +1382,17 @@ class VirtualPrinter:
             except Exception:
                 self._logger.exception("While handling %r", data)
 
-    def _listSd(self, incl_long=False):
+    def _listSd(self, incl_long=False, incl_timestamp=False):
+        line = "{dosname}"
         if self._settings.get_boolean(["sdFiles", "size"]):
+            line += " {size}"
+            if self._settings.get_boolean(["sdFiles", "timestamp"]) or incl_timestamp:
+                line += " {timestamp}"
             if self._settings.get_boolean(["sdFiles", "longname"]) or incl_long:
                 if self._settings.get_boolean(["sdFiles", "longname_quoted"]):
-                    line = '{dosname} {size} "{name}"'
+                    line += ' "{name}"'
                 else:
-                    line = "{dosname} {size} {name}"
-            else:
-                line = "{dosname} {size}"
-        else:
-            line = "{dosname}"
+                    line += " {name}"
 
         files = self._mappedSdList()
         items = map(lambda x: line.format(**x), files.values())
@@ -1414,6 +1417,7 @@ class VirtualPrinter:
                 "path": entry.path,
                 "dosname": dosname,
                 "size": entry.stat().st_size,
+                "timestamp": unix_timestamp_to_m20_timestamp(entry.stat().st_mtime),
             }
         return result
 
@@ -1778,7 +1782,7 @@ class VirtualPrinter:
         filename = filename
         if filename.startswith("/"):
             filename = filename[1:]
-        file = os.path.join(self._virtualSd, filename).lower()
+        file = os.path.join(self._virtualSd, filename.lower())
         if os.path.exists(file):
             if os.path.isfile(file):
                 os.remove(file)
@@ -1791,6 +1795,7 @@ class VirtualPrinter:
         except Exception:
             self._send("error writing to file")
         self._writingToSdHandle = handle
+        self._writingToSdFile = file
         self._writingToSd = True
         self._selectedSdFile = file
         self._send("Writing to file: %s" % filename)
@@ -1804,6 +1809,12 @@ class VirtualPrinter:
             self._writingToSdHandle = None
         self._writingToSd = False
         self._selectedSdFile = None
+        # Most printers don't have RTC and set some ancient date
+        # by default. Emulate that using 2000-01-01 01:00:00
+        # (taken from prusa firmware behaviour)
+        st = os.stat(self._writingToSdFile)
+        os.utime(self._writingToSdFile, (st.st_atime, 946684800))
+        self._writingToSdFile = None
         self._send("Done saving file")
 
     def _sdPrintingWorker(self):

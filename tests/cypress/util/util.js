@@ -1,12 +1,16 @@
 export const prepare_server = () => {
-    cy.intercept("POST", "/api/login").as("login");
-    cy.intercept("POST", "/api/logout").as("logout");
-    cy.intercept("GET", "/api/settings").as("settings");
-    cy.intercept("GET", "/api/files?recursive=true").as("files");
-    cy.intercept("GET", "/plugin/softwareupdate/check").as("softwareupdate");
-    cy.intercept("GET", "/plugin/pluginmanager/plugins").as("pluginmanager");
-    cy.intercept("POST", "/api/connection").as("connectionCommand");
-    cy.intercept("GET", "/api/connection").as("connectionDetails");
+    cy.intercept("POST", get_full_url("/api/login")).as("login");
+    cy.intercept("POST", get_full_url("/api/logout")).as("logout");
+    cy.intercept("GET", get_full_url("/api/settings")).as("settings");
+    cy.intercept("GET", get_full_url("/api/files?recursive=true")).as("files");
+    cy.intercept("GET", get_full_url("/plugin/softwareupdate/check")).as(
+        "softwareupdate"
+    );
+    cy.intercept("GET", get_full_url("/plugin/pluginmanager/plugins")).as(
+        "pluginmanager"
+    );
+    cy.intercept("POST", get_full_url("/api/connection")).as("connectionCommand");
+    cy.intercept("GET", get_full_url("/api/connection")).as("connectionDetails");
 };
 
 export const await_loginui = () => {
@@ -24,7 +28,7 @@ export const await_coreui = () => {
 export const login = (username, password) => {
     cy.request({
         method: "POST",
-        url: "/api/login",
+        url: get_full_url("/api/login"),
         body: {
             user: username,
             pass: password
@@ -35,7 +39,7 @@ export const login = (username, password) => {
 export const logout = () => {
     cy.request({
         method: "POST",
-        url: "/api/logout"
+        url: get_full_url("/api/logout")
     });
 };
 
@@ -44,7 +48,7 @@ export const connect = (port, baudrate) => {
     baudrate = baudrate || 0;
     cy.request({
         method: "POST",
-        url: "/api/connection",
+        url: get_full_url("/api/connection"),
         body: {
             command: "connect",
             port: port,
@@ -56,7 +60,7 @@ export const connect = (port, baudrate) => {
 export const disconnect = () => {
     cy.request({
         method: "POST",
-        url: "/api/connection",
+        url: get_full_url("/api/connection"),
         body: {
             command: "disconnect"
         }
@@ -66,7 +70,40 @@ export const disconnect = () => {
 export const ensure_file_unknown = (location, name) => {
     cy.request({
         method: "DELETE",
-        url: `/api/files/${location}/${name}`,
+        url: get_full_url(`/api/files/${location}/${name}`),
         failOnStatusCode: false
     });
+};
+
+export const get_cookie_name = (cookie) => {
+    const url = new URL(Cypress.config("baseUrl"));
+    const port = url.port || (url.protocol === "https:" ? 443 : 80);
+    if (url.pathname && url.pathname !== "/") {
+        let path = url.pathname;
+        if (path.endsWith("/")) {
+            path = path.substring(0, path.length - 1);
+        }
+        return `${cookie}_P${port}_R${path.replace(/\//, "|")}`;
+    } else {
+        return `${cookie}_P${port}`;
+    }
+};
+
+export const get_full_url = (url) => {
+    const parsed = new URL(Cypress.config("baseUrl"));
+
+    let path = "";
+    if (parsed.pathname) {
+        path = parsed.pathname;
+    }
+    if (path.endsWith("/")) {
+        path = path.substring(0, path.length - 1);
+    }
+
+    let url2 = url;
+    if (url2.startsWith("/")) {
+        url2 = url2.substring(1);
+    }
+
+    return path + "/" + url2;
 };

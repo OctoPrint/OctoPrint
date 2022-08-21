@@ -292,7 +292,7 @@ class LocalStorageTest(unittest.TestCase):
             getattr(self.storage, operation)("bp_case.stl", "test/crazyradio.stl")
             self.fail("Expected an exception")
         except StorageError as e:
-            self.assertEqual(e.code, StorageError.INVALID_DESTINATION)
+            self.assertEqual(e.code, StorageError.ALREADY_EXISTS)
 
     def test_add_folder(self):
         self._add_and_verify_folder("test", "test")
@@ -481,7 +481,7 @@ class LocalStorageTest(unittest.TestCase):
             getattr(self.storage, operation)("source", "destination/copied")
             self.fail("Expected an exception")
         except StorageError as e:
-            self.assertEqual(e.code, StorageError.INVALID_DESTINATION)
+            self.assertEqual(e.code, StorageError.ALREADY_EXISTS)
 
     def test_list(self):
         bp_case_stl = self._add_and_verify_file(

@@ -7,7 +7,8 @@ Backup Plugin
 
 The OctoPrint Backup Plugin comes bundled with OctoPrint (starting with 1.3.10).
 
-It allows the creation and restoration [#1]_ of backups of OctoPrint's settings, data and installed plugins [#2]_.
+It allows the creation and restoration [#1]_ of backups of OctoPrint's settings, data and installed plugins [#2]_
+(but doesn't restore the same plugins versions [#3]_).
 
 This allows easy migration
 to newly setup instances as well as making regular backups to prevent data loss.
@@ -208,3 +209,5 @@ its source repository under ``src/octoprint/plugins/backup``.
 .. [#2] Note that only those plugins that are available on `OctoPrint's official plugin repository <https://plugins.octoprint.org>`_
         can be automatically restored. If you have plugins installed that are not available on there you'll get their
         names and - if available - homepage URL displayed after restore in order to be able to manually reinstall them.
+.. [#3] Note that the restore process will install the latest possible versions of the plugins instead of the version that was installed at backup
+   creation time.

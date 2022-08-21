@@ -30,7 +30,7 @@
 
    .. code-block:: javascript
 
-      OctoPrint.util.testPath("/som/path/to/a/file")
+      OctoPrint.util.testPath("/some/path/to/a/file")
           .done(function(response) {
               if (response.result) {
                   // check passed
@@ -45,7 +45,7 @@
 
    .. code-block:: javascript
 
-      OctoPrint.util.testPath("/som/path/to/a/file", {"check_type": "file", "check_access": ["r", "x"]})
+      OctoPrint.util.testPath("/some/path/to/a/file", {"check_type": "file", "check_access": ["r", "x"]})
           .done(function(response) {
               if (response.result) {
                   // check passed
