@@ -557,24 +557,6 @@ def _saveSettings(data):
             s.setBoolean(
                 ["webcam", "timelapseEnabled"], data["webcam"]["timelapseEnabled"]
             )
-        # if "streamUrl" in data["webcam"]:
-        #     s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
-        # if "streamRatio" in data["webcam"] and data["webcam"]["streamRatio"] in (
-        #     "16:9",
-        #     "4:3",
-        # ):
-        #     s.set(["webcam", "streamRatio"], data["webcam"]["streamRatio"])
-        # if "streamTimeout" in data["webcam"]:
-        #     s.setInt(["webcam", "streamTimeout"], data["webcam"]["streamTimeout"])
-        # if "streamWebrtcIceServers" in data["webcam"] and isinstance(
-        #     data["webcam"]["streamWebrtcIceServers"], (list, tuple)
-        # ):
-        #     s.set(
-        #         ["webcam", "streamWebrtcIceServers"],
-        #         data["webcam"]["streamWebrtcIceServers"],
-        #     )
-        # if "snapshotUrl" in data["webcam"]:
-        #     s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
         if "snapshotTimeout" in data["webcam"]:
             s.setInt(["webcam", "snapshotTimeout"], data["webcam"]["snapshotTimeout"])
         if "snapshotSslValidation" in data["webcam"]:
@@ -629,14 +611,6 @@ def _saveSettings(data):
             s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
         if "defaultWebcam" in data["webcam"]:
             s.set(["webcam", "defaultWebcam"], data["webcam"]["defaultWebcam"])
-        # if "flipH" in data["webcam"]:
-        #     s.setBoolean(["webcam", "flipH"], data["webcam"]["flipH"])
-        # if "flipV" in data["webcam"]:
-        #     s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
-        # if "rotate90" in data["webcam"]:
-        #     s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
-        # if "cacheBuster" in data["webcam"]:
-        #     s.setBoolean(["webcam", "cacheBuster"], data["webcam"]["cacheBuster"])
 
     if "feature" in data:
         if "temperatureGraph" in data["feature"]:
