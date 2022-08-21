@@ -25,6 +25,7 @@ from octoprint.settings import settings
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import sv
 from octoprint.util.commandline import CommandlineCaller
+from octoprint.webcams import get_default_webcam
 
 # currently configured timelapse
 current = None
@@ -403,7 +404,7 @@ def configure_timelapse(config=None, persist=False):
     if current is not None:
         current.unload()
 
-    snapshot_url = settings().get(["webcam", "snapshot"])
+    snapshot_url = get_default_webcam().snapshot
     ffmpeg_path = settings().get(["webcam", "ffmpeg"])
     timelapse_enabled = settings().getBoolean(["webcam", "timelapseEnabled"])
     timelapse_precondition = (

@@ -15,7 +15,7 @@ from octoprint.server import pluginManager, printer, userManager
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.settings import settings, valid_boolean_trues
-from octoprint.webcams import get_all_webcams, webcams_to_dicts, webcams_to_list
+from octoprint.webcams import get_default_webcam, get_webcams_as_dicts
 
 # ~~ settings
 
@@ -325,13 +325,9 @@ def getSettings():
         data["plugins"] = plugin_settings
 
     if Permissions.WEBCAM.can() is True:
-        webcams = get_all_webcams()
-        webcamsDict = webcams_to_dicts(webcams)
-        webcamsList = webcams_to_list(webcams)
-        defaultWebcamName = s.get(["webcam", "defaultWebcam"])
-        defaultWebcam = next(
-            (w for w in webcamsList if w.name == defaultWebcamName), None
-        )
+        webcamsDict = get_webcams_as_dicts()
+        defaultWebcam = get_default_webcam()
+
         compatWebcam = defaultWebcam.compat if defaultWebcam is not None else None
         data["webcam"] = {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
@@ -357,7 +353,7 @@ def getSettings():
             "flipV": defaultWebcam.flipV if defaultWebcam is not None else None,
             "rotate90": defaultWebcam.rotate90 if defaultWebcam is not None else None,
             "cacheBuster": compatWebcam.cacheBuster if compatWebcam is not None else None,
-            "defaultWebcam": defaultWebcamName,
+            "defaultWebcam": defaultWebcam.name if defaultWebcam is not None else None,
             "webcams": webcamsDict,
         }
 

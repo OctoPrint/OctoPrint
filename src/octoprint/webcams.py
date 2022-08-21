@@ -2,9 +2,10 @@ import logging
 
 import octoprint.plugin
 from octoprint.schema.config.webcam import Webcam
+from octoprint.settings import settings
 
 
-def get_all_webcams():
+def get_webcams():
     webcams = dict()
 
     def success_callback(name, _, result):
@@ -41,7 +42,15 @@ def get_all_webcams():
     return webcams
 
 
-def webcams_to_dicts(allWebcams):
+def get_default_webcam():
+    webcamsList = get_webcams_as_list()
+    s = settings()
+    defaultWebcamName = s.get(["webcam", "defaultWebcam"])
+    return next((w for w in webcamsList if w.name == defaultWebcamName), None)
+
+
+def get_webcams_as_dicts():
+    allWebcams = get_webcams()
     webcams = []
 
     for plugin in allWebcams:
@@ -53,8 +62,10 @@ def webcams_to_dicts(allWebcams):
     return webcams
 
 
-def webcams_to_list(allWebcams):
+def get_webcams_as_list():
+    allWebcams = get_webcams()
     webcams = []
+
     for plugin in allWebcams:
         for webcam in allWebcams[plugin]:
             webcams.append(webcam)
