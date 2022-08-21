@@ -46,7 +46,10 @@ def get_default_webcam():
     webcamsList = get_webcams_as_list()
     s = settings()
     defaultWebcamName = s.get(["webcam", "defaultWebcam"])
-    return next((w for w in webcamsList if w.name == defaultWebcamName), None)
+    if defaultWebcamName is not None:
+        return next((w for w in webcamsList if w.name == defaultWebcamName), None)
+    else:
+        webcamsList[0] if len(webcamsList) > 0 else None
 
 
 def get_webcams_as_dicts():
