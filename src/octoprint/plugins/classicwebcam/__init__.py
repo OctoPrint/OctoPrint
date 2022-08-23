@@ -43,12 +43,12 @@ class MjpegWebcamPlugin(
         else:
             streamRatio = RatioEnum.sixteen_nine
         webRtcServers = self._settings.get(["streamWebrtcIceServers"])
-        cacheBuster = self._settings.get(["cacheBuster"]) is True
+        cacheBuster = self._settings.get_boolean(["cacheBuster"]) is True
         stream = self._settings.get(["stream"])
         snapshot = self._settings.get(["snapshot"])
-        flipH = self._settings.get(["flipH"]) is True
-        flipV = self._settings.get(["flipH"]) is True
-        rotate90 = self._settings.get(["flipH"]) is True
+        flipH = self._settings.get_boolean(["flipH"]) is True
+        flipV = self._settings.get_boolean(["flipV"]) is True
+        rotate90 = self._settings.get_boolean(["rotate90"]) is True
 
         try:
             streamTimeout = int(self._settings.get(["streamTimeout"]))

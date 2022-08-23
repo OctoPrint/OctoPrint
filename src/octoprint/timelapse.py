@@ -498,9 +498,13 @@ class Timelapse:
         self._post_roll = post_roll
         self._on_post_roll_done = None
 
+        defaultWebcam = get_default_webcam()
+        if defaultWebcam is None:
+            raise Exception("Invalid webcam configuration, missing defaultWebcam")
+
         self._capture_dir = settings().getBaseFolder("timelapse_tmp")
         self._movie_dir = settings().getBaseFolder("timelapse")
-        self._snapshot_url = get_default_webcam().snapshot
+        self._snapshot_url = defaultWebcam.snapshot
         self._snapshot_timeout = settings().getInt(["webcam", "snapshotTimeout"])
         self._snapshot_validate_ssl = settings().getBoolean(
             ["webcam", "snapshotSslValidation"]
