@@ -405,7 +405,7 @@ def configure_timelapse(config=None, persist=False):
         current.unload()
 
     default_webcam = get_default_webcam()
-    snapshot_url = default_webcam.snapshot if default_webcam is not None else None
+    snapshot_url = default_webcam.webcam.snapshot if default_webcam is not None else None
     ffmpeg_path = settings().get(["webcam", "ffmpeg"])
     timelapse_enabled = settings().getBoolean(["webcam", "timelapseEnabled"])
     timelapse_precondition = (
@@ -504,7 +504,7 @@ class Timelapse:
 
         self._capture_dir = settings().getBaseFolder("timelapse_tmp")
         self._movie_dir = settings().getBaseFolder("timelapse")
-        self._snapshot_url = defaultWebcam.snapshot
+        self._snapshot_url = defaultWebcam.webcam.snapshot
         self._snapshot_timeout = settings().getInt(["webcam", "snapshotTimeout"])
         self._snapshot_validate_ssl = settings().getBoolean(
             ["webcam", "snapshotSslValidation"]

@@ -11,16 +11,17 @@ def get_webcams():
     def success_callback(name, _, result):
         nonlocal webcams
         if type(result) is list:
-            confirmedWebcams = []
             for webcam in result:
-                if type(webcam) is Webcam:
-                    confirmedWebcams.append(webcam)
-                else:
+                if type(webcam) is not Webcam:
                     logging.getLogger(name).error(
                         "Received object in list from `get_webcam_configurations` that is not a instance of Webcam"
                     )
-
-            webcams[name] = confirmedWebcams
+                elif webcam.name in webcams:
+                    logging.getLogger(name).error(
+                        f"Webcam name {webcam.name} is already used but must be unique"
+                    )
+                else:
+                    webcams[webcam.name] = ProvidedWebcam(webcam, name)
         elif result is None:
             return
         else:
@@ -43,34 +44,39 @@ def get_webcams():
 
 
 def get_default_webcam():
-    webcamsList = get_webcams_as_list()
+    webcams = get_webcams()
+    webcamsList = list(webcams.values())
     s = settings()
     defaultWebcamName = s.get(["webcam", "defaultWebcam"])
-    if defaultWebcamName is not None:
-        return next((w for w in webcamsList if w.name == defaultWebcamName), None)
+    defaultWebcam = webcams.get(defaultWebcamName)
+    if defaultWebcam is not None:
+        return defaultWebcam
     else:
         webcamsList[0] if len(webcamsList) > 0 else None
 
 
 def get_webcams_as_dicts():
-    allWebcams = get_webcams()
-    webcams = []
+    def toDict(webcam):
+        webcam_dict = webcam.webcam.dict()
+        webcam_dict["provider"] = webcam.provider
+        return webcam_dict
 
-    for plugin in allWebcams:
-        for webcam in allWebcams[plugin]:
-            webcam_dict = webcam.dict()
-            webcam_dict["provider"] = plugin
-            webcams.append(webcam_dict)
-
-    return webcams
+    return list(map(lambda item: toDict(item), get_webcams().values()))
 
 
-def get_webcams_as_list():
-    allWebcams = get_webcams()
-    webcams = []
+class ProvidedWebcam:
+    webcam: Webcam
+    """the webcam configuration"""
 
-    for plugin in allWebcams:
-        for webcam in allWebcams[plugin]:
-            webcams.append(webcam)
+    provider: str
+    """name of the plugin providing this Webcam"""
 
-    return webcams
+    def __init__(self, webcam, provider):
+        self.webcam = webcam
+        self.provider = provider
+
+        if self.webcam is None:
+            raise Exception("Can't create ProvidedWebcam with None webcam")
+
+        if self.provider is None:
+            raise Exception("Can't create ProvidedWebcam with None provider")

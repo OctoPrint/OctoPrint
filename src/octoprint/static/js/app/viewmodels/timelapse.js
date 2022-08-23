@@ -26,7 +26,11 @@ $(function () {
             var defaultWebcam = self.settings.webcam_webcams().find(function (w) {
                 return defaultWebcamName == w.name;
             });
-            return defaultWebcam.snapshot;
+            if (!defaultWebcam) {
+                return "";
+            } else {
+                return defaultWebcam.snapshot;
+            }
         });
 
         self.renderProgress = ko.observable();

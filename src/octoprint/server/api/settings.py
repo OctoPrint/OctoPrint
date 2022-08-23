@@ -328,7 +328,7 @@ def getSettings():
         webcamsDict = get_webcams_as_dicts()
         defaultWebcam = get_default_webcam()
 
-        compatWebcam = defaultWebcam.compat if defaultWebcam is not None else None
+        compatWebcam = defaultWebcam.webcam.compat if defaultWebcam is not None else None
         data["webcam"] = {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
             "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
@@ -340,7 +340,9 @@ def getSettings():
             "streamWebrtcIceServers": compatWebcam.streamWebrtcIceServers
             if compatWebcam is not None
             else None,
-            "snapshotUrl": defaultWebcam.snapshot if defaultWebcam is not None else None,
+            "snapshotUrl": defaultWebcam.webcam.snapshot
+            if defaultWebcam is not None
+            else None,
             "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
             "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
             "ffmpegPath": s.get(["webcam", "ffmpeg"]),
@@ -349,11 +351,15 @@ def getSettings():
             "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
             "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
             "watermark": s.getBoolean(["webcam", "watermark"]),
-            "flipH": defaultWebcam.flipH if defaultWebcam is not None else None,
-            "flipV": defaultWebcam.flipV if defaultWebcam is not None else None,
-            "rotate90": defaultWebcam.rotate90 if defaultWebcam is not None else None,
+            "flipH": defaultWebcam.webcam.flipH if defaultWebcam is not None else None,
+            "flipV": defaultWebcam.webcam.flipV if defaultWebcam is not None else None,
+            "rotate90": defaultWebcam.webcam.rotate90
+            if defaultWebcam is not None
+            else None,
             "cacheBuster": compatWebcam.cacheBuster if compatWebcam is not None else None,
-            "defaultWebcam": defaultWebcam.name if defaultWebcam is not None else None,
+            "defaultWebcam": defaultWebcam.webcam.name
+            if defaultWebcam is not None
+            else None,
             "webcams": webcamsDict,
         }
 
