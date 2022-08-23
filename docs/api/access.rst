@@ -238,16 +238,22 @@ Change a user's password
 
    Changes the password of a user.
 
-   Expects a JSON object with a single property ``password`` as request body.
+   Expects a JSON object with a property ``password`` containing the new password as
+   request body. Without the ``SETTINGS`` permission, an additional property ``current``
+   is also required to be set on the request body, containing the user's current password.
 
-   Requires the ``SETTINGS`` permission or to be logged in as the user.
+   Requires the ``SETTINGS`` permission or to be logged in as the user. Note that ``current``
+   will be evaluated even in presence of the ``SETTINGS`` permission, if set.
 
    :param username: Name of the user to change the password for
    :json password:  The new password to set
+   :json current:   The current password
    :status 200:     No error
-   :status 400:     If the request doesn't contain a ``password`` property or the request
+   :status 400:     If the request doesn't contain a ``password`` property, doesn't
+                    contain a ``current`` property even though required, or the request
                     is otherwise invalid
-   :status 403:     No admin rights and not logged in as the user
+   :status 403:     No admin rights, not logged in as the user or a current password
+                    mismatch
    :status 404:     The user is unknown
 
 .. _sec-api-access-users-settings-get:
