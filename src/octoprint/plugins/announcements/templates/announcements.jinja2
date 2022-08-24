@@ -8,16 +8,37 @@
             <div class="tabbable row-fluid">
                 <div class="span3 scrollable" id="plugin_announcements_dialog_menu">
                     <ul class="nav nav-list" id="plugin_announcements_dialog_tabs">
+                        <li>
+                            <a data-toggle="tab" href="#plugin_announcements_dialog_channel_allunread" target="_blank" data-bind="css: { unread: unread }">{{ _('Unread') }} <span data-bind="visible: unread, text: unreadSuffix"></span></a>
+                        </li>
                         <!-- ko foreach: {data: channels.items, afterAdd: setupTabLink} -->
                         <!-- ko if: $data.enabled || $data.forced -->
                         <li>
-                            <a data-toggle="tab" target="_blank" data-bind="text: $data.channel, attr: {href: '#plugin_announcements_dialog_channel_' + $data.key, title: $data.description}, css: {unread: $data.unread}"></a>
+                            <a data-toggle="tab" target="_blank" data-bind="text: $data.title, attr: {href: '#plugin_announcements_dialog_channel_' + $data.key, title: $data.description}, css: {unread: $data.unread}"></a>
                         </li>
                         <!-- /ko -->
                         <!-- /ko -->
                     </ul>
                 </div>
                 <div class="tab-content span9 scrollable" id="plugin_announcements_dialog_content">
+                    <div class="tab-pane" id="plugin_announcements_dialog_channel_allunread">
+                        <!-- ko if: unread -->
+                        <!-- ko foreach: unreadArticles -->
+                        <article>
+                            <hr data-bind="visible: $index() > 0">
+                            <div class="articleChannel" data-bind="text: $data.channel"></div>
+                            <h3><a data-bind="text: $data.title, attr: {href: $data.link}" target="_blank" rel="noreferrer noopener"></a> <small data-bind="text: formatTimeAgo($data.published), attr: {title: formatDate($data.published)}"></small></h3>
+                            <div class="content" data-bind="html: $data.summary"></div>
+                            <div class="actions">
+                                <span class="articlelink"><small><a data-bind="text: $root.cleanedLink($data), attr: {href: $data.link}" target="_blank" rel="noreferrer noopener"></a></small></span>
+                            </div>
+                        </article>
+                        <!-- /ko -->
+                        <!-- /ko -->
+                        <!-- ko ifnot: unread -->
+                        <p>{{ _('No unread announcements!') }}</p>
+                        <!-- /ko -->
+                    </div>
                     <!-- ko foreach: channels.items -->
                     <!-- ko if: $data.enabled || $data.forced -->
                     <div class="tab-pane" data-bind="attr: {id: 'plugin_announcements_dialog_channel_' + $data.key}">
@@ -40,6 +61,7 @@
         </div>
     </div>
     <div class="modal-footer">
+        <button class="btn pull-left" data-bind="click: markAllRead, css: {enabled: !markingAllAsRead()}"><i class="fas fa-eye" data-bind="hidden: markingAllAsRead"></i><i class="fas fa-spinner fa-spin" data-bind="visible: markingAllAsRead"></i> {{ _('Mark all read') }}</button>
         <button class="btn configurelink" data-bind="click: configureAnnouncements"><i class="fas fa-wrench"></i></button>
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
     </div>

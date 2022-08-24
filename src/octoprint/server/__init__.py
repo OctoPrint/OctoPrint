@@ -2143,6 +2143,7 @@ class Server:
             "vendor/font-awesome-3.2.1/css/font-awesome.min.css",
             "vendor/fontawesome-6.1.1/css/all.min.css",
             "vendor/fontawesome-6.1.1/css/v4-shims.min.css",
+            "vendor/fa5-power-transforms.min.css",
             "css/jquery.fileupload-ui.css",
             "css/pnotify.core.min.css",
             "css/pnotify.buttons.min.css",
