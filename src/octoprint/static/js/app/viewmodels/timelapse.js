@@ -21,15 +21,24 @@ $(function () {
         self.timelapseFps = ko.observable(self.defaultFps);
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
-        self.snapshotUrl = ko.pureComputed(function () {
+        self.snapshotWebcam = ko.pureComputed(function () {
             var defaultWebcamName = self.settings.webcam_defaultWebcam();
-            var defaultWebcam = self.settings.webcam_webcams().find(function (w) {
+            return self.settings.webcam_webcams().find(function (w) {
                 return defaultWebcamName == w.name;
             });
-            if (!defaultWebcam) {
+        });
+        self.canSnapshot = ko.pureComputed(function () {
+            if (!self.snapshotWebcam()) {
+                return false;
+            } else {
+                return self.snapshotWebcam().canSnapshot;
+            }
+        });
+        self.snapshotDisplay = ko.pureComputed(function () {
+            if (!self.snapshotWebcam()) {
                 return "";
             } else {
-                return defaultWebcam.snapshot;
+                return self.snapshotWebcam().snapshotDisplay;
             }
         });
 

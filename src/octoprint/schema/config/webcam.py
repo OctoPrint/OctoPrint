@@ -54,12 +54,6 @@ class WebcamConfig(BaseModel):
     timelapseEnabled: bool = True
     """Use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer. Timelapse support will be disabled if not set."""
 
-    snapshotTimeout: int = 5
-    """The timeout when retrieving snapshots"""
-
-    snapshotSslValidation: bool = True
-    """Whether to validate SSL certificates when retrieving a snapshot"""
-
     ffmpeg: Optional[str] = None
     """Path to ffmpeg binary to use for creating timelapse recordings. Timelapse support will be disabled if not set."""
 
@@ -109,6 +103,15 @@ class WebcamCompatibility(BaseModel):
     stream: str
     """The URL to get an MJPEG stream from"""
 
+    snapshot: str = None
+    """The URL to get the snapshot from"""
+
+    snapshotTimeout: int = 5
+    """The timeout when retrieving snapshots"""
+
+    snapshotSslValidation: bool = True
+    """Whether to validate SSL certificates when retrieving a snapshot"""
+
 
 @with_attrs_docs
 class Webcam(BaseModel):
@@ -119,8 +122,11 @@ class Webcam(BaseModel):
     displayName: str
     """Displayable name for this webcam"""
 
-    snapshot: str = None
-    """The URL to get the snapshot from"""
+    canSnapshot: bool = False
+    """Whether this webcam can take a snapshot."""
+
+    snapshotDisplay: str = None
+    """Human readable information about how a snapshot is captured or a HTTP URL from which the snapshot is loaded (optional, only for user reference)"""
 
     flipH: bool = False
     """Whether to flip the webcam horizontally."""

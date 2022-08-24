@@ -1,6 +1,7 @@
 import logging
 
 import octoprint.plugin
+from octoprint.plugin import plugin_manager
 from octoprint.schema.config.webcam import Webcam
 from octoprint.settings import settings
 
@@ -21,7 +22,10 @@ def get_webcams():
                         f"Webcam name {webcam.name} is already used but must be unique"
                     )
                 else:
-                    webcams[webcam.name] = ProvidedWebcam(webcam, name)
+                    webcams[webcam.name] = ProvidedWebcam(
+                        config=webcam,
+                        providerIdentifier=name,
+                    )
         elif result is None:
             return
         else:
@@ -57,26 +61,35 @@ def get_default_webcam():
 
 def get_webcams_as_dicts():
     def toDict(webcam):
-        webcam_dict = webcam.webcam.dict()
-        webcam_dict["provider"] = webcam.provider
+        webcam_dict = webcam.config.dict()
+        webcam_dict["provider"] = webcam.providerIdentifier
         return webcam_dict
 
     return list(map(lambda item: toDict(item), get_webcams().values()))
 
 
 class ProvidedWebcam:
-    webcam: Webcam
-    """the webcam configuration"""
+    config: Webcam
+    """the ``WebcamConfiguration`` configuration"""
 
-    provider: str
-    """name of the plugin providing this Webcam"""
+    providerIdentifier: str
+    """identifier of the plugin providing this Webcam"""
 
-    def __init__(self, webcam, provider):
-        self.webcam = webcam
-        self.provider = provider
+    providerPlugin: str
+    """plugin instance of the plugin providing this Webcam"""
 
-        if self.webcam is None:
-            raise Exception("Can't create ProvidedWebcam with None webcam")
+    def __init__(self, config, providerIdentifier):
+        self.config = config
+        self.providerIdentifier = providerIdentifier
+        self.providerPlugin = (
+            plugin_manager().get_plugin(providerIdentifier).__plugin_implementation__
+        )
 
-        if self.provider is None:
-            raise Exception("Can't create ProvidedWebcam with None provider")
+        if self.config is None:
+            raise Exception("Can't create ProvidedWebcam with None config")
+
+        if self.providerIdentifier is None:
+            raise Exception("Can't create ProvidedWebcam with None providerIdentifier")
+
+        if self.providerPlugin is None:
+            raise Exception("Can't create ProvidedWebcam with None providerPlugin")

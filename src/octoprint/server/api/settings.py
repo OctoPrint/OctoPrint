@@ -327,8 +327,8 @@ def getSettings():
     if Permissions.WEBCAM.can() is True:
         webcamsDict = get_webcams_as_dicts()
         defaultWebcam = get_default_webcam()
+        compatWebcam = defaultWebcam.config.compat if defaultWebcam is not None else None
 
-        compatWebcam = defaultWebcam.webcam.compat if defaultWebcam is not None else None
         data["webcam"] = {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
             "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
@@ -340,24 +340,26 @@ def getSettings():
             "streamWebrtcIceServers": compatWebcam.streamWebrtcIceServers
             if compatWebcam is not None
             else None,
-            "snapshotUrl": defaultWebcam.webcam.snapshot
-            if defaultWebcam is not None
+            "snapshotUrl": compatWebcam.snapshot if compatWebcam is not None else None,
+            "snapshotTimeout": compatWebcam.snapshotTimeout
+            if compatWebcam is not None
             else None,
-            "snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
-            "snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
+            "snapshotSslValidation": compatWebcam.snapshotSslValidation
+            if compatWebcam is not None
+            else None,
             "ffmpegPath": s.get(["webcam", "ffmpeg"]),
             "ffmpegCommandline": s.get(["webcam", "ffmpegCommandline"]),
             "bitrate": s.get(["webcam", "bitrate"]),
             "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
             "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
             "watermark": s.getBoolean(["webcam", "watermark"]),
-            "flipH": defaultWebcam.webcam.flipH if defaultWebcam is not None else None,
-            "flipV": defaultWebcam.webcam.flipV if defaultWebcam is not None else None,
-            "rotate90": defaultWebcam.webcam.rotate90
+            "flipH": defaultWebcam.config.flipH if defaultWebcam is not None else None,
+            "flipV": defaultWebcam.config.flipV if defaultWebcam is not None else None,
+            "rotate90": defaultWebcam.config.rotate90
             if defaultWebcam is not None
             else None,
             "cacheBuster": compatWebcam.cacheBuster if compatWebcam is not None else None,
-            "defaultWebcam": defaultWebcam.webcam.name
+            "defaultWebcam": defaultWebcam.config.name
             if defaultWebcam is not None
             else None,
             "webcams": webcamsDict,

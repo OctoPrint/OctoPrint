@@ -13,14 +13,19 @@
             <!-- ko if: name == $parent.webcam_defaultWebcam() -->
                 <table class="help-inline" style="padding-top: 10px">
                     <tr>
-                        <td><b>{{ _('Snpashot URL')}}&nbsp;</b></td>
+                        <td><b>{{ _('Snapshot')}}&nbsp;</b></td>
                         <td>
-                            <!-- ko if: snapshot -->
-                                <span data-bind="text: snapshot"></span>&nbsp;
-                                <a data-bind="attr: { href: snapshot }" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a>
+                             <!-- ko if: canSnapshot -->
+                                <!-- ko if: snapshotDisplay -->
+                                    <span data-bind="text: snapshotDisplay"></span>&nbsp;
+                                    <a data-bind="attr: { href: snapshotDisplay }, visible: $parent.validURL(snapshotDisplay)" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a>
+                                <!-- /ko -->
+                                <!-- ko ifnot: snapshotDisplay -->
+                                    <span>{{ _('Supported')}}</span>
+                                <!-- /ko -->
                             <!-- /ko -->
-                            <!-- ko ifnot: snapshot -->
-                                <span>{{ _('Not provided')}}</span>
+                            <!-- ko ifnot: canSnapshot -->
+                                <span>{{ _('Not supported')}}</span>
                             <!-- /ko -->
                         </td>
                     </tr>
@@ -32,7 +37,7 @@
                                 <a data-bind="attr: { href: compat.stream }" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a>
                             <!-- /ko -->
                             <!-- ko ifnot: compat != null && compat.stream -->
-                                <span>{{ _('Not provided')}}</span>
+                                <span>{{ _('Not supported')}}</span>
                             <!-- /ko -->
                         </td>
                     </tr>

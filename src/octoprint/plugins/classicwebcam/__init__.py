@@ -1,18 +1,24 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import threading
+
+import requests
 from flask_babel import gettext
 
 import octoprint.plugin
 from octoprint.schema.config.webcam import RatioEnum, Webcam, WebcamCompatibility
 
 
-class MjpegWebcamPlugin(
+class ClassicWebcamPlugin(
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.WebcamPlugin,
 ):
+    def __init__(self):
+        self._capture_mutex = threading.Lock()
+
     def get_assets(self):
         return {
             "js": ["js/classicwebcam.js", "js/classicwebcam_settings.js"],
@@ -45,30 +51,42 @@ class MjpegWebcamPlugin(
         webRtcServers = self._settings.get(["streamWebrtcIceServers"])
         cacheBuster = self._settings.get_boolean(["cacheBuster"]) is True
         stream = self._settings.get(["stream"])
-        snapshot = self._settings.get(["snapshot"])
+        snapshot = self._get_snapshot_url()
         flipH = self._settings.get_boolean(["flipH"]) is True
         flipV = self._settings.get_boolean(["flipV"]) is True
         rotate90 = self._settings.get_boolean(["rotate90"]) is True
+        snapshotSslValidation = (
+            self._settings.get_boolean(["snapshotSslValidation"]) is True
+        )
 
         try:
             streamTimeout = int(self._settings.get(["streamTimeout"]))
-        except ValueError:
+        except Exception:
             streamTimeout = 5
+
+        try:
+            snapshotTimeout = int(self._settings.get(["snapshotTimeout"]))
+        except Exception:
+            snapshotTimeout = 5
 
         return [
             Webcam(
                 name="classic",
                 displayName="Classic Webcam",
-                snapshot=snapshot,
                 flipH=flipH,
                 flipV=flipV,
                 rotate90=rotate90,
+                snapshotDisplay=snapshot,
+                canSnapshot=self._can_snapshot(),
                 compat=WebcamCompatibility(
                     stream=stream,
                     streamTimeout=streamTimeout,
                     streamRatio=streamRatio,
                     cacheBuster=cacheBuster,
                     streamWebrtcIceServers=webRtcServers,
+                    snapshot=snapshot,
+                    snapshotTimeout=snapshotTimeout,
+                    snapshotSslValidation=snapshotSslValidation,
                 ),
                 extras=dict(
                     stream=stream,
@@ -91,6 +109,8 @@ class MjpegWebcamPlugin(
             streamWebrtcIceServers="stun:stun.l.google.com:19302",
             snapshot="",
             cacheBuster=False,
+            snapshotSslValidation=True,
+            snapshotTimeout=5,
         )
 
     def get_settings_version(self):
@@ -104,34 +124,31 @@ class MjpegWebcamPlugin(
                     "Migrating settings from webcam to plugins.classicwebcam..."
                 )
 
-                self._settings.set_boolean(
-                    ["flipH"], config.get("flipH", False), force=True
-                )
+                # flipH
+                self._settings.set_boolean(["flipH"], config.get("flipH", False))
                 self._settings.global_remove(["webcam", "flipH"])
 
-                self._settings.set_boolean(
-                    ["flipV"], config.get("flipV", False), force=True
-                )
+                # flipV
+                self._settings.set_boolean(["flipV"], config.get("flipV", False))
                 self._settings.global_remove(["webcam", "flipV"])
 
-                self._settings.set_boolean(
-                    ["rotate90"], config.get("rotate90", False), force=True
-                )
+                # rotate90
+                self._settings.set_boolean(["rotate90"], config.get("rotate90", False))
                 self._settings.global_remove(["webcam", "rotate90"])
 
-                self._settings.set(["stream"], config.get("stream", ""), force=True)
+                # stream
+                self._settings.set(["stream"], config.get("stream", ""))
                 self._settings.global_remove(["webcam", "stream"])
 
-                self._settings.set_int(
-                    ["streamTimeout"], config.get("streamTimeout", 5), force=True
-                )
+                # streamTimeout
+                self._settings.set_int(["streamTimeout"], config.get("streamTimeout", 5))
                 self._settings.global_remove(["webcam", "streamTimeout"])
 
-                self._settings.set(
-                    ["streamRatio"], config.get("streamRatio", ""), force=True
-                )
+                # streamRatio
+                self._settings.set(["streamRatio"], config.get("streamRatio", "16:9"))
                 self._settings.global_remove(["webcam", "streamRatio"])
 
+                # streamWebrtcIceServers
                 self._settings.set(
                     ["streamWebrtcIceServers"],
                     ",".join(
@@ -139,17 +156,53 @@ class MjpegWebcamPlugin(
                             "streamWebrtcIceServers", ["stun:stun.l.google.com:19302"]
                         )
                     ),
-                    force=True,
                 )
                 self._settings.global_remove(["webcam", "streamWebrtcIceServers"])
 
-                self._settings.set(["snapshot"], config.get("snapshot", ""), force=True)
+                # snapshot
+                self._settings.set(["snapshot"], config.get("snapshot", ""))
                 self._settings.global_remove(["webcam", "snapshot"])
 
+                # cacheBuster
                 self._settings.set_boolean(
-                    ["cacheBuster"], config.get("cacheBuster", ""), force=True
+                    ["cacheBuster"], config.get("cacheBuster", False)
                 )
                 self._settings.global_remove(["webcam", "cacheBuster"])
+
+                # snapshotTimeout
+                self._settings.set_int(
+                    ["snapshotTimeout"], config.get("snapshotTimeout", 5)
+                )
+                self._settings.global_remove(["webcam", "snapshotTimeout"])
+
+                # snapshotSslValidation
+                self._settings.set_boolean(
+                    ["snapshotSslValidation"], config.get("snapshotSslValidation", True)
+                )
+                self._settings.global_remove(["webcam", "snapshotSslValidation"])
+
+    def _get_snapshot_url(self):
+        return self._settings.get(["snapshot"])
+
+    def _can_snapshot(self):
+        snapshot = self._get_snapshot_url()
+        return snapshot is not None or snapshot.trim() != ""
+
+    def take_snapshot(self, _):
+        snapshot_url = self._get_snapshot_url()
+        if self._can_snapshot(self) is False:
+            raise Exception("Snapshot is not configured")
+
+        with self._capture_mutex:
+            self._logger.debug(f"Capturing image from {snapshot_url}")
+            r = requests.get(
+                snapshot_url,
+                stream=True,
+                timeout=self._settings.get_int(["snapshotTimeout"]),
+                verify=self._settings.get_boolean(["rosnapshotSslValidationtate90"]),
+            )
+            r.raise_for_status()
+            return r.iter_content(chunk_size=1024)
 
 
 __plugin_name__ = gettext("Classic Webcam")
@@ -161,4 +214,4 @@ __plugin_disabling_discouraged__ = gettext(
 )
 __plugin_license__ = "AGPLv3"
 __plugin_pythoncompat__ = ">=3.7,<4"
-__plugin_implementation__ = MjpegWebcamPlugin()
+__plugin_implementation__ = ClassicWebcamPlugin()

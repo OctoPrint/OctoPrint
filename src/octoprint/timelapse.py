@@ -14,7 +14,6 @@ import sys
 import threading
 import time
 
-import requests
 import sarge
 
 import octoprint.plugin
@@ -405,14 +404,13 @@ def configure_timelapse(config=None, persist=False):
         current.unload()
 
     default_webcam = get_default_webcam()
-    snapshot_url = default_webcam.webcam.snapshot if default_webcam is not None else None
+    can_snapshot = (
+        default_webcam.config.canSnapshot if default_webcam is not None else False
+    )
     ffmpeg_path = settings().get(["webcam", "ffmpeg"])
     timelapse_enabled = settings().getBoolean(["webcam", "timelapseEnabled"])
     timelapse_precondition = (
-        snapshot_url is not None
-        and snapshot_url.strip() != ""
-        and ffmpeg_path is not None
-        and ffmpeg_path.strip() != ""
+        can_snapshot is True and ffmpeg_path is not None and ffmpeg_path.strip() != ""
     )
 
     type = config["type"]
@@ -498,17 +496,14 @@ class Timelapse:
         self._post_roll = post_roll
         self._on_post_roll_done = None
 
-        defaultWebcam = get_default_webcam()
-        if defaultWebcam is None:
+        self._webcam = get_default_webcam()
+        if self._webcam is None:
             raise Exception("Invalid webcam configuration, missing defaultWebcam")
+        elif self._webcam.config.canSnapshot is False:
+            raise Exception(f"Webcam {self._webcam.webcam.name} can't take snapshots")
 
         self._capture_dir = settings().getBaseFolder("timelapse_tmp")
         self._movie_dir = settings().getBaseFolder("timelapse")
-        self._snapshot_url = defaultWebcam.webcam.snapshot
-        self._snapshot_timeout = settings().getInt(["webcam", "snapshotTimeout"])
-        self._snapshot_validate_ssl = settings().getBoolean(
-            ["webcam", "snapshotSslValidation"]
-        )
 
         self._fps = fps
 
@@ -758,17 +753,13 @@ class Timelapse:
 
         eventManager().fire(Events.CAPTURE_START, {"file": filename})
         try:
-            self._logger.debug(f"Going to capture {filename} from {self._snapshot_url}")
-            r = requests.get(
-                self._snapshot_url,
-                stream=True,
-                timeout=self._snapshot_timeout,
-                verify=self._snapshot_validate_ssl,
+            self._logger.debug(
+                f"Going to capture {filename} from {self._webcam.config.name} provided by {self._webcam.providerIdentifier}"
             )
-            r.raise_for_status()
+            iter = self._webcam.plugin.take_snapshot(self._webcam)
 
             with open(filename, "wb") as f:
-                for chunk in r.iter_content(chunk_size=1024):
+                for chunk in iter:
                     if chunk:
                         f.write(chunk)
                         f.flush()

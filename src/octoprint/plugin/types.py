@@ -2253,3 +2253,13 @@ class WebcamPlugin(OctoPrintPlugin):
         """
 
         pass
+
+    def take_snapshot(self, webcamName):
+        """
+        Used to take a JPEG snapshot of the webcam. This method may raise an exception, you can expect failures to be handled.
+
+         :param string webcamName: The name of the webcam to take a snapshot of as given by the configurations
+
+        Returns:
+            An iterator over bytes of the JPEG image
+        """
