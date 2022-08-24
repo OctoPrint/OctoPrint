@@ -228,7 +228,7 @@ class PluginManagerPlugin(
                 "name": "List plugins",
                 "description": gettext("Allows to list installed plugins."),
                 "default_groups": [READONLY_GROUP, USER_GROUP, ADMIN_GROUP],
-                "roles": ["manage"],
+                "roles": ["list"],
             },
             {
                 "key": "MANAGE",
