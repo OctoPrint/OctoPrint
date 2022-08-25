@@ -233,26 +233,34 @@ def delete_unrendered_timelapse(name):
 def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=None):
     capture_dir = settings().getBaseFolder("timelapse_tmp")
     output_dir = settings().getBaseFolder("timelapse")
+    watermark = settings().getBoolean(["webcam", "watermark"])
 
     if fps is None:
         fps = settings().getInt(["webcam", "timelapse", "fps"])
     threads = settings().get(["webcam", "ffmpegThreads"])
     videocodec = settings().get(["webcam", "ffmpegVideoCodec"])
-
-    job = TimelapseRenderJob(
-        capture_dir,
-        output_dir,
-        name,
-        postfix=postfix,
-        fps=fps,
-        threads=threads,
-        videocodec=videocodec,
-        on_start=_create_render_start_handler(name, gcode=gcode),
-        on_success=_create_render_success_handler(name, gcode=gcode),
-        on_fail=_create_render_fail_handler(name, gcode=gcode),
-        on_always=_create_render_always_handler(name, gcode=gcode),
-    )
-    job.process()
+    webcam = get_default_webcam()
+    if webcam is None:
+        logging.getLogger(__name__).error("No webcam configured, can't render timelapse")
+    else:
+        job = TimelapseRenderJob(
+            capture_dir,
+            output_dir,
+            name,
+            postfix=postfix,
+            fps=fps,
+            threads=threads,
+            videocodec=videocodec,
+            watermark=watermark,
+            flipH=webcam.config.flipH,
+            flipV=webcam.config.flipV,
+            rotate=webcam.config.rotate90,
+            on_start=_create_render_start_handler(name, gcode=gcode),
+            on_success=_create_render_success_handler(name, gcode=gcode),
+            on_fail=_create_render_fail_handler(name, gcode=gcode),
+            on_always=_create_render_always_handler(name, gcode=gcode),
+        )
+        job.process()
 
 
 def delete_old_unrendered_timelapses():
@@ -955,6 +963,10 @@ class TimelapseRenderJob:
         capture_glob=_capture_glob,
         capture_format=_capture_format,
         output_format=_output_format,
+        flipH=False,
+        flipV=False,
+        rotate=False,
+        watermark=False,
         fps=25,
         threads=1,
         videocodec="mpeg2video",
@@ -977,6 +989,10 @@ class TimelapseRenderJob:
         self._on_success = on_success
         self._on_fail = on_fail
         self._on_always = on_always
+        self._hflip = flipH
+        self._vflip = flipV
+        self._rotate = rotate
+        self._watermark = watermark
 
         self._thread = None
         self._logger = logging.getLogger(__name__)
@@ -1051,12 +1067,8 @@ class TimelapseRenderJob:
             )
             return
 
-        hflip = settings().getBoolean(["webcam", "flipH"])
-        vflip = settings().getBoolean(["webcam", "flipV"])
-        rotate = settings().getBoolean(["webcam", "rotate90"])
-
         watermark = None
-        if settings().getBoolean(["webcam", "watermark"]):
+        if self._watermark:
             watermark = os.path.join(
                 os.path.dirname(__file__), "static", "img", "watermark.png"
             )
@@ -1075,9 +1087,9 @@ class TimelapseRenderJob:
             input,
             temporary,
             self._videocodec,
-            hflip=hflip,
-            vflip=vflip,
-            rotate=rotate,
+            hflip=self._hflip,
+            vflip=self._vflip,
+            rotate=self._rotate,
             watermark=watermark,
         )
         self._logger.debug(f"Executing command: {command_str}")
