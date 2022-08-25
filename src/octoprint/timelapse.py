@@ -725,23 +725,27 @@ class Timelapse:
 
     def _capture_queue_worker(self):
         while self._capture_queue_active:
-            entry = self._capture_queue.get(block=True)
+            try:
+                entry = self._capture_queue.get(block=True)
+                if (
+                    entry["type"] == self.__class__.QUEUE_ENTRY_TYPE_CAPTURE
+                    and "filename" in entry
+                ):
+                    filename = entry["filename"]
+                    onerror = entry.pop("onerror", None)
+                    self._perform_capture(filename, onerror=onerror)
 
-            if (
-                entry["type"] == self.__class__.QUEUE_ENTRY_TYPE_CAPTURE
-                and "filename" in entry
-            ):
-                filename = entry["filename"]
-                onerror = entry.pop("onerror", None)
-                self._perform_capture(filename, onerror=onerror)
-
-            elif (
-                entry["type"] == self.__class__.QUEUE_ENTRY_TYPE_CALLBACK
-                and "callback" in entry
-            ):
-                args = entry.pop("args", [])
-                kwargs = entry.pop("kwargs", {})
-                entry["callback"](*args, **kwargs)
+                elif (
+                    entry["type"] == self.__class__.QUEUE_ENTRY_TYPE_CALLBACK
+                    and "callback" in entry
+                ):
+                    args = entry.pop("args", [])
+                    kwargs = entry.pop("kwargs", {})
+                    entry["callback"](*args, **kwargs)
+            except Exception:
+                self._logger.exception(
+                    "Caught unhandled exception in timelapse queue worker"
+                )
 
     def _perform_capture(self, filename, onerror=None):
         # pre-capture hook
@@ -756,7 +760,7 @@ class Timelapse:
             self._logger.debug(
                 f"Going to capture {filename} from {self._webcam.config.name} provided by {self._webcam.providerIdentifier}"
             )
-            iter = self._webcam.plugin.take_snapshot(self._webcam)
+            iter = self._webcam.providerPlugin.take_snapshot(self._webcam)
 
             with open(filename, "wb") as f:
                 for chunk in iter:
@@ -764,10 +768,12 @@ class Timelapse:
                         f.write(chunk)
                         f.flush()
 
-            self._logger.debug(f"Image {filename} captured from {self._snapshot_url}")
+            self._logger.debug(
+                f"Image {filename} captured from {self._webcam.config.name} provided by {self._webcam.providerIdentifier}"
+            )
         except Exception as e:
             self._logger.exception(
-                f"Could not capture image {filename} from {self._snapshot_url}"
+                f"Could not capture image {filename} from {self._webcam.config.name} provided by {self._webcam.providerIdentifier}"
             )
             self._capture_errors += 1
             err = e
@@ -791,7 +797,13 @@ class Timelapse:
                 onerror()
             eventManager().fire(
                 Events.CAPTURE_FAILED,
-                {"file": filename, "error": str(err), "url": self._snapshot_url},
+                {
+                    "file": filename,
+                    "error": str(err),
+                    "webcamDisplay": self._webcam.config.displayName,
+                    "snapshotDisplay": self._webcam.config.snapshotDisplay,
+                    "webcamProvider": self._webcam.providerIdentifier,
+                },
             )
             return False
 

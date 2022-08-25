@@ -704,13 +704,28 @@ $(function () {
                 gettext(
                     "Failed repeatedly to capture timelapse frame from webcam - is the snapshot URL configured correctly and the camera on?"
                 );
-            html += pnotifyAdditionalInfo(
-                'Snapshot URL: <pre style="overflow: auto">' +
-                    payload.url +
-                    '</pre>Error: <pre style="overflow: auto">' +
-                    payload.error +
-                    "</pre>"
-            );
+
+            var additional = "";
+            if (payload.snapshotDisplay) {
+                additional +=
+                    'Snapshot info: <pre style="overflow: auto">' +
+                    payload.snapshotDisplay +
+                    "</pre>";
+            }
+            if (payload.webcamDisplay) {
+                additional +=
+                    'Webcam: <pre style="overflow: auto">' +
+                    payload.webcamDisplay +
+                    "</pre>";
+            }
+            if (payload.error) {
+                additional +=
+                    'Error: <pre style="overflow: auto">' + payload.error + "</pre>";
+            }
+            if (additional) {
+                html += pnotifyAdditionalInfo(additional);
+            }
+
             new PNotify({
                 title: gettext("Could not capture snapshots"),
                 text: html,
