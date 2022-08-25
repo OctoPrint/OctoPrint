@@ -1564,22 +1564,19 @@ $(function () {
 
             if (button === undefined) return;
 
-            button
-                .fileupload({
-                    url: url,
-                    dataType: "json",
-                    dropZone: enable ? drop : null,
-                    sequentialUploads: true, // TODO what difference does this make?
-                    drop: function (e, data) {},
-                    add: self._handleUploadAdd,
-                    submit: self._handleUploadStart,
-                    done: self._handleUploadDone,
-                    fail: self._handleUploadFail,
-                    progressall: self._handleUploadProgress
-                })
-                .on("fileuploadstop", function (e, data) {
-                    self._handleUploadStop(e, data);
-                });
+            button.fileupload({
+                url: url,
+                dataType: "json",
+                dropZone: enable ? drop : null,
+                sequentialUploads: true,
+                drop: function (e, data) {},
+                add: self._handleUploadAdd,
+                submit: self._handleUploadStart,
+                done: self._handleUploadDone,
+                fail: self._handleUploadFail,
+                stop: self._handleUploadStop,
+                progressall: self._handleUploadProgress
+            });
         };
 
         self._enableDragNDrop = function (enable) {
@@ -1743,32 +1740,31 @@ $(function () {
         };
 
         self._handleUploadStop = function (e, data) {
-            // This is called when all selected files have finished uploading - success or failure as far as I can tell TODO verify
-            // TODO - handle an upload failure - if a file failed, it might be strange to refresh the list
             console.log("Upload stopped (complete)");
-            self._setProgressBar(100, gettext("Refreshing list ..."), true);
 
             var reset = function () {
                 self.ignoreUpdatedFilesEvent = false;
                 self._setProgressBar(0, "", false);
             };
 
-            // TODO conditionally refresh, as long as at least one file has uploaded successfully?
-            self.requestData({focus: self._filesToFocus}).always(function () {
+            if (self._filesToFocus.length > 0) {
+                // Only refresh the list if there were files uploaded successfully
+                self._setProgressBar(100, gettext("Refreshing list ..."), true);
+                self.requestData({focus: self._filesToFocus}).always(function () {
+                    reset();
+                });
+            } else {
                 reset();
-            });
-
-            // TODO If we don't refresh the file list, we should reset
+            }
         };
 
         self._handleUploadFail = function (e, data) {
-            // TODO handle failure for multiple uploads - maybe mention filename in error so you know which one failed
             var extensions = _.map(SUPPORTED_EXTENSIONS, function (extension) {
                 return extension.toLowerCase();
             }).sort();
             extensions = extensions.join(", ");
 
-            var error = "<p>";
+            var error = "<p><pre>" + _.escape(data.files[0].name) + "</pre></p><p>";
             switch (data.jqXHR.status) {
                 case 409:
                     // already printing or otherwise busy
