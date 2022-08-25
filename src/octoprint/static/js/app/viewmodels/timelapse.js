@@ -765,7 +765,7 @@ $(function () {
                     "<p>" +
                     _.sprintf(
                         gettext(
-                            "Rendering of timelapse %(movie_prefix)s is not possible since no frames were captured. Is the snapshot URL configured correctly?"
+                            "Rendering of timelapse %(movie_prefix)s is not possible since no frames were captured. Is the webcam configured correctly?"
                         ),
                         {movie_prefix: _.escape(payload.movie_prefix)}
                     ) +
