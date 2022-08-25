@@ -288,7 +288,7 @@ def serverStatus():
     error_message="You have made too many failed login attempts. Please try again later.",
 )
 def login():
-    data = request.get_json()
+    data = request.get_json(silent=True)
     if not data:
         data = request.values
 
