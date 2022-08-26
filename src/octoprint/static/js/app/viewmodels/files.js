@@ -539,7 +539,10 @@ $(function () {
                     });
                     if (entryElement) {
                         // scroll to uploaded element
-                        self.listElement.scrollTop(entryElement.offsetTop); // TODO - maybe scroll to just one file? Top in list? First selected?
+                        // TODO scroll to item is really not working right now, scrolls to completely wrong file
+                        if (index === focus.length) {
+                            self.listElement.scrollTop(entryElement.offsetTop);
+                        }
 
                         // highlight uploaded element
                         var element = $(entryElement);
