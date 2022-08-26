@@ -17,7 +17,9 @@ $(function () {
         });
 
         self.validUsername = ko.pureComputed(function () {
-            return self.username() && self.username().trim() !== "";
+            return self.username() &&
+                   self.username().trim() !== "" &&
+                   self.username() == self.username().trim();
         });
 
         self.validPassword = ko.pureComputed(function () {
