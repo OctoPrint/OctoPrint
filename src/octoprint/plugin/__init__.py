@@ -19,9 +19,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import os
 
+import octoprint
 from octoprint.plugin.core import Plugin, PluginInfo, PluginManager  # noqa: F401
 from octoprint.plugin.types import *  # noqa: F401,F403 ## used by multiple other modules
-from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin
+from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin, WebcamPlugin
 from octoprint.settings import settings as s
 from octoprint.util import deprecated
 
@@ -397,6 +398,10 @@ class PluginSettings:
     ):
         self.settings = settings
         self.plugin_key = plugin_key
+        instance = plugin_manager().get_plugin(plugin_key).__plugin_implementation__
+        self._is_webcam_plugin = (
+            isinstance(instance, WebcamPlugin) and plugin_key != "classicwebcam"
+        )
 
         if defaults is not None:
             self.defaults = {"plugins": {}}
@@ -480,6 +485,9 @@ class PluginSettings:
         return self.settings.has(path, **kwargs)
 
     def global_remove(self, path, **kwargs):
+        if self._check_compatibility_write_allowed(path) is False:
+            return
+
         return self.settings.remove(path, **kwargs)
 
     def global_get(self, path, **kwargs):
@@ -487,53 +495,97 @@ class PluginSettings:
         Getter for retrieving settings not managed by the plugin itself from the core settings structure. Use this
         to access global settings outside of your plugin.
 
+        Paths that are moved from global settings to the webcam system in 1.9.0 will be populated from the default webcam.
+
         Directly forwards to :func:`octoprint.settings.Settings.get`.
         """
-        return self.settings.get(path, **kwargs)
+        override = self._get_compatibility_override(path=path, type=None)
+        if override is not None:
+            return override
+        else:
+            return self.settings.get(path, **kwargs)
 
     def global_get_int(self, path, **kwargs):
         """
         Like :func:`global_get` but directly forwards to :func:`octoprint.settings.Settings.getInt`.
+
+        Paths that are moved from global settings to the webcam system in 1.9.0 will be populated from the default webcam.
         """
-        return self.settings.getInt(path, **kwargs)
+        override = self._get_compatibility_override(path=path, type=int)
+        if override is not None:
+            return override
+        else:
+            return self.settings.getInt(path, **kwargs)
 
     def global_get_float(self, path, **kwargs):
         """
         Like :func:`global_get` but directly forwards to :func:`octoprint.settings.Settings.getFloat`.
+
+        Paths that are moved from global settings to the webcam system in 1.9.0 will be populated from the default webcam.
         """
-        return self.settings.getFloat(path, **kwargs)
+        override = self._get_compatibility_override(path=path, type=float)
+        if override is not None:
+            return override
+        else:
+            return self.settings.getFloat(path, **kwargs)
 
     def global_get_boolean(self, path, **kwargs):
         """
         Like :func:`global_get` but directly orwards to :func:`octoprint.settings.Settings.getBoolean`.
+
+        Paths that are moved from global settings to the webcam system in 1.9.0 will be populated from the default webcam.
         """
-        return self.settings.getBoolean(path, **kwargs)
+        override = self._get_compatibility_override(path=path, type=bool)
+        if override is not None:
+            return override
+        else:
+            return self.settings.getBoolean(path, **kwargs)
 
     def global_set(self, path, value, **kwargs):
         """
         Setter for modifying settings not managed by the plugin itself on the core settings structure. Use this
         to modify global settings outside of your plugin.
 
+        Setting paths that are moved from global settings in 1.9.0 to the webcam will have no effect.
+
         Directly forwards to :func:`octoprint.settings.Settings.set`.
         """
+        if self._check_compatibility_write_allowed(path) is False:
+            return
+
         self.settings.set(path, value, **kwargs)
 
     def global_set_int(self, path, value, **kwargs):
         """
         Like :func:`global_set` but directly forwards to :func:`octoprint.settings.Settings.setInt`.
+
+        Setting paths that are moved from global settings in 1.9.0 to the webcam will have no effect.
         """
+        if self._check_compatibility_write_allowed(path) is False:
+            return
+
         self.settings.setInt(path, value, **kwargs)
 
     def global_set_float(self, path, value, **kwargs):
         """
         Like :func:`global_set` but directly forwards to :func:`octoprint.settings.Settings.setFloat`.
+
+        Setting paths that are moved from global settings in 1.9.0 to the webcam will have no effect.
         """
+        if self._check_compatibility_write_allowed(path) is False:
+            return
+
         self.settings.setFloat(path, value, **kwargs)
 
     def global_set_boolean(self, path, value, **kwargs):
         """
         Like :func:`global_set` but directly forwards to :func:`octoprint.settings.Settings.setBoolean`.
+
+        Setting paths that are moved from global settings in 1.9.0 to the webcam will have no effect.
         """
+        if self._check_compatibility_write_allowed(path) is False:
+            return
+
         self.settings.setBoolean(path, value, **kwargs)
 
     def global_get_basefolder(self, folder_type, **kwargs):
@@ -628,3 +680,134 @@ class PluginSettings:
                 return _func
 
         return getattr(self.settings, item)
+
+    def _check_compatibility_write_allowed(self, path, value):
+        if path == ["webcam", "snapshot"]:
+            allowed = False
+        else:
+            allowed = True
+
+        if allowed:
+            return True
+        else:
+            logging.getLogger(f"octoprint.plugins.{self.plugin_key}").warning(
+                f"[Deprecation] Prevented write of `{value}` to deprecated settings path {path}. Please use the webcam system introduced with 1.9.0.  Please use the webcam system introduced with 1.9.0, this compatibility layer will be removed in a future release."
+            )
+            return False
+
+    def _get_compatibility_override(self, path, type):
+        # No compatibility overrides for WebcamPlugin
+        if self._is_webcam_plugin is True:
+            return None
+
+        # Only webcam needs overrides
+        if path[0] != "webcam":
+            return None
+
+        # Get default webcam, we need it to get override values
+        default_webcam = octoprint.webcams.get_default_webcam()
+        if default_webcam is None:
+            if path == ["webcam"]:
+                return dict()
+            else:
+                return None
+
+        # Check if path needs override and return value
+        default_webcam = default_webcam.config
+        if path == ["webcam"] and (type is None):
+            override = dict(
+                snapshot=default_webcam.compat.snapshot
+                if default_webcam.compat is not None
+                else None,
+                flipH=default_webcam.flipH,
+                flipV=default_webcam.flipV,
+                rotate90=default_webcam.rotate90,
+                snapshotTimeout=default_webcam.compat.snapshotTimeout
+                if default_webcam.compat is not None
+                else 5,
+                stream=default_webcam.compat.stream
+                if default_webcam.compat is not None
+                else "",
+                streamTimeout=default_webcam.compat.streamTimeout
+                if default_webcam.compat is not None
+                else 5,
+                streamRatio=default_webcam.compat.streamRatio
+                if default_webcam.compat is not None
+                else None,
+                streamWebrtcIceServers=default_webcam.compat.streamWebrtcIceServers
+                if default_webcam.compat is not None
+                else None,
+                snapshotSslValidation=default_webcam.compat.snapshotSslValidation
+                if default_webcam.compat is not None
+                else True,
+                cacheBuster=default_webcam.compat.cacheBuster
+                if default_webcam.compat is not None
+                else True,
+            )
+        if path == ["webcam", "snapshot"] and (type is None or type is str):
+            override = (
+                default_webcam.compat.snapshot
+                if default_webcam.compat is not None
+                else None
+            )
+        elif path == ["webcam", "snapshotTimeout"] and (type is None or type is int):
+            override = (
+                default_webcam.compat.snapshotTimeout
+                if default_webcam.compat is not None
+                else None
+            )
+        elif path == ["webcam", "flipH"] and (type is None or type is bool):
+            override = default_webcam.flipH
+        elif path == ["webcam", "flipV"] and (type is None or type is bool):
+            override = default_webcam.flipV
+        elif path == ["webcam", "rotate90"] and (type is None or type is bool):
+            override = default_webcam.rotate90
+        elif path == ["webcam", "stream"] and (type is None or type is str):
+            override = (
+                default_webcam.compat.stream
+                if default_webcam.compat is not None
+                else None
+            )
+        elif path == ["webcam", "streamTimeout"] and (type is None or type is int):
+            override = (
+                default_webcam.compat.streamTimeout
+                if default_webcam.compat is not None
+                else None
+            )
+        elif path == ["webcam", "streamRatio"] and (type is None or type is str):
+            override = (
+                default_webcam.compat.streamRatio
+                if default_webcam.compat is not None
+                else None
+            )
+        elif path == ["webcam", "streamWebrtcIceServers"] and (
+            type is None or type is str
+        ):
+            override = (
+                default_webcam.compat.streamWebrtcIceServers
+                if default_webcam.compat is not None
+                else None
+            )
+        elif path == ["webcam", "snapshotSslValidation"] and (
+            type is None or type is bool
+        ):
+            override = (
+                default_webcam.compat.snapshotSslValidation
+                if default_webcam.compat is not None
+                else None
+            )
+        elif path == ["webcam", "cacheBuster"] and (type is None or type is bool):
+            override = (
+                default_webcam.compat.cacheBuster
+                if default_webcam.compat is not None
+                else None
+            )
+
+        # Return override
+        if override is None:
+            return None
+        else:
+            logging.getLogger(f"octoprint.plugins.{self.plugin_key}").warning(
+                f"[Deprecation] Detected access to deprecated settings path {path}, returned value is derived from default webcam.  Please use the webcam system introduced with 1.9.0, this compatibility layer will be removed in a future release."
+            )
+            return override
