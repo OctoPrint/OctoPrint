@@ -399,9 +399,7 @@ class PluginSettings:
         self.settings = settings
         self.plugin_key = plugin_key
         instance = plugin_manager().get_plugin(plugin_key).__plugin_implementation__
-        self._is_webcam_plugin = (
-            isinstance(instance, WebcamPlugin) and plugin_key != "classicwebcam"
-        )
+        self._is_webcam_plugin = isinstance(instance, WebcamPlugin)
 
         if defaults is not None:
             self.defaults = {"plugins": {}}
