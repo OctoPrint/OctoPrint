@@ -30,8 +30,16 @@ $(function () {
             [],
             5
         );
+        self.unreadArticles = ko.observableArray([]);
+        self.markingAllAsRead = ko.observable(false);
 
-        self.unread = ko.observable(false);
+        self.unread = ko.observable(0);
+        self.unreadText = ko.pureComputed(() =>
+            self.unread() ? (self.unread() > 9 ? "∞" : "" + self.unread()) : ""
+        );
+        self.unreadSuffix = ko.pureComputed(() =>
+            self.unread() ? "(" + self.unread() + ")" : ""
+        );
         self.hiddenChannels = [];
         self.channelNotifications = {};
 
@@ -109,6 +117,39 @@ $(function () {
             });
         };
 
+        self.markAllRead = function (reload) {
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_ANNOUNCEMENTS_READ
+                )
+            )
+                return;
+
+            reload = !!reload;
+
+            var url = PLUGIN_BASEURL + "announcements/channels";
+
+            var payload = {
+                command: "read"
+            };
+
+            self.markingAllAsRead(true);
+            $.ajax({
+                url: url,
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify(payload),
+                contentType: "application/json; charset=UTF-8",
+                success: function () {
+                    if (reload) {
+                        self.retrieveData();
+                    }
+                }
+            }).always(() => {
+                self.markingAllAsRead(false);
+            });
+        };
+
         self.toggleChannel = function (channel) {
             if (
                 !self.loginState.hasPermission(
@@ -174,14 +215,30 @@ $(function () {
 
             var unread = 0;
             var channels = [];
+            var unreadArticles = [];
             _.each(data.channels, function (value) {
                 value.last = value.data.length ? value.data[0].published : undefined;
                 value.count = value.data.length;
+                value.title =
+                    value.channel + (value.unread ? " (" + value.unread + ")" : "");
                 unread += value.unread;
+                if (value.unread) {
+                    _.each(
+                        _.filter(value.data, (entry) => !entry.read),
+                        (entry) => {
+                            const extended = {...entry};
+                            extended.channel = value.channel;
+                            unreadArticles.push(extended);
+                        }
+                    );
+                }
                 channels.push(value);
             });
             self.channels.updateItems(channels);
             self.unread(unread);
+
+            unreadArticles.sort((a, b) => a.published < b.published);
+            self.unreadArticles(unreadArticles);
 
             self.displayAnnouncements(channels);
 
@@ -275,14 +332,17 @@ $(function () {
                 var priority = value.priority;
                 var items = value.data;
 
+                if (value.priority !== 1) {
+                    // channel not priority and not manually set to popup, ignore
+                    return;
+                }
+
                 if ($.inArray(key, self.hiddenChannels) > -1) {
                     // channel currently ignored
                     return;
                 }
 
-                var newItems = _.filter(items, function (entry) {
-                    return !entry.read;
-                });
+                var newItems = _.filter(items, (entry) => !entry.read);
                 if (newItems.length == 0) {
                     // no new items at all, we don't display anything for this channel
                     return;
@@ -378,7 +438,7 @@ $(function () {
                     }
                 };
 
-                if (priority == 1) {
+                if (priority === 1) {
                     options.type = "error";
                 }
 

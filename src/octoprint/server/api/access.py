@@ -241,7 +241,10 @@ def change_password_for_user(username):
     if (
         current_user is not None
         and not current_user.is_anonymous
-        and (current_user.get_name() == username or current_user.is_admin)
+        and (
+            current_user.get_name() == username
+            or current_user.has_permission(Permissions.SETTINGS)
+        )
     ):
         if "application/json" not in request.headers["Content-Type"]:
             abort(400, description="Expected content-type JSON")
@@ -252,7 +255,14 @@ def change_password_for_user(username):
             abort(400, description="Malformed JSON body in request")
 
         if "password" not in data or not data["password"]:
-            abort(400, description="password is missing")
+            abort(400, description="new password is missing")
+
+        if not current_user.has_permission(Permissions.SETTINGS) or "current" in data:
+            if "current" not in data or not data["current"]:
+                abort(400, description="current password is missing")
+
+            if not userManager.check_password(username, data["current"]):
+                abort(403, description="Invalid current password")
 
         try:
             userManager.change_user_password(username, data["password"])
