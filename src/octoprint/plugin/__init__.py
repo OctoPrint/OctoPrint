@@ -489,7 +489,7 @@ class PluginSettings:
         return self.settings.has(path, **kwargs)
 
     def global_remove(self, path, **kwargs):
-        if self._check_compatibility_write_allowed(path) is False:
+        if self._check_compatibility_write_allowed(path=path, value=None) is False:
             return
 
         return self.settings.remove(path, **kwargs)
@@ -554,7 +554,7 @@ class PluginSettings:
 
         Directly forwards to :func:`octoprint.settings.Settings.set`.
         """
-        if self._check_compatibility_write_allowed(path) is False:
+        if self._check_compatibility_write_allowed(path=path, value=value) is False:
             return
 
         self.settings.set(path, value, **kwargs)
@@ -565,7 +565,7 @@ class PluginSettings:
 
         Setting paths that are moved from global settings in 1.9.0 to the webcam will have no effect.
         """
-        if self._check_compatibility_write_allowed(path) is False:
+        if self._check_compatibility_write_allowed(path=path, value=value) is False:
             return
 
         self.settings.setInt(path, value, **kwargs)
@@ -576,7 +576,7 @@ class PluginSettings:
 
         Setting paths that are moved from global settings in 1.9.0 to the webcam will have no effect.
         """
-        if self._check_compatibility_write_allowed(path) is False:
+        if self._check_compatibility_write_allowed(path=path, value=value) is False:
             return
 
         self.settings.setFloat(path, value, **kwargs)
@@ -587,7 +587,7 @@ class PluginSettings:
 
         Setting paths that are moved from global settings in 1.9.0 to the webcam will have no effect.
         """
-        if self._check_compatibility_write_allowed(path) is False:
+        if self._check_compatibility_write_allowed(path=path, value=value) is False:
             return
 
         self.settings.setBoolean(path, value, **kwargs)
