@@ -398,8 +398,14 @@ class PluginSettings:
     ):
         self.settings = settings
         self.plugin_key = plugin_key
-        instance = plugin_manager().get_plugin(plugin_key).__plugin_implementation__
-        self._is_webcam_plugin = isinstance(instance, WebcamPlugin)
+        try:
+            # This check might fail during Unit tests as the plugin_manager is not initialized.
+            # Assume no plugin is a webcam plugin in this case, which will apply the compatibility layer for the 1.9.0
+            # webcam system for any plugin
+            instance = plugin_manager().get_plugin(plugin_key).__plugin_implementation__
+            self._is_webcam_plugin = isinstance(instance, WebcamPlugin)
+        except Exception:
+            self._is_webcam_plugin = False
 
         if defaults is not None:
             self.defaults = {"plugins": {}}
