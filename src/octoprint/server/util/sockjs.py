@@ -21,9 +21,10 @@ import octoprint.vendor.sockjs.tornado.session
 import octoprint.vendor.sockjs.tornado.util
 from octoprint.access.groups import GroupChangeListener
 from octoprint.access.permissions import Permissions
-from octoprint.access.users import LoginStatusListener
+from octoprint.access.users import LoginStatusListener, SessionUser
 from octoprint.events import Events
 from octoprint.settings import settings
+from octoprint.util import RepeatedTimer
 from octoprint.util.json import dumps as json_dumps
 from octoprint.util.version import get_python_version_string
 
@@ -173,12 +174,23 @@ class PrinterStateConnection(
         self._subscriptions_active = False
         self._subscriptions = {"state": False, "plugins": [], "events": []}
 
+        self._keep_alive = RepeatedTimer(
+            60, self._keep_alive_callback, condition=lambda: self._authed
+        )
+
     @staticmethod
     def _get_remote_address(info):
         forwarded_for = info.headers.get("X-Forwarded-For")
         if forwarded_for is not None:
             return forwarded_for.split(",")[0]
         return info.ip
+
+    def _keep_alive_callback(self):
+        if not self._authed:
+            return
+        if not isinstance(self._user, SessionUser):
+            return
+        self._user.touch()
 
     def __str__(self):
         if self._remoteAddress:
@@ -715,6 +727,8 @@ class PrinterStateConnection(
             )
         )
         self._authed = True
+
+        self._keep_alive.start()
 
         for name, hook in self._authed_hooks.items():
             try:

@@ -130,7 +130,7 @@ from octoprint.server.util import (
     loginFromApiKeyRequestHandler,
     requireLoginRequestHandler,
 )
-from octoprint.server.util.flask import PreemptiveCache
+from octoprint.server.util.flask import PreemptiveCache, validate_session_signature
 from octoprint.settings import settings
 
 VERSION = __version__
@@ -187,12 +187,25 @@ def load_user(id):
     else:
         sessionid = None
 
+    if session and "usersession.signature" in session:
+        sessionsig = session["usersession.signature"]
+    else:
+        sessionsig = ""
+
     if sessionid:
-        user = userManager.find_user(userid=id, session=sessionid)
+        # session["_fresh"] is False if the session comes from a remember me cookie,
+        # True if it came from a use of the login dialog
+        user = userManager.find_user(
+            userid=id, session=sessionid, fresh=session.get("_fresh", False)
+        )
     else:
         user = userManager.find_user(userid=id)
 
-    if user and user.is_active:
+    if (
+        user
+        and user.is_active
+        and (not sessionid or validate_session_signature(sessionsig, id, sessionid))
+    ):
         return user
 
     return None
@@ -1366,7 +1379,9 @@ class Server:
 
         app.config["TEMPLATES_AUTO_RELOAD"] = True
         app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+        app.config["REMEMBER_COOKIE_DURATION"] = 90 * 24 * 60 * 60  # 90 days
         app.config["REMEMBER_COOKIE_HTTPONLY"] = True
+        # REMEMBER_COOKIE_SECURE will be taken care of by our custom cookie handling
 
         # we must not set this before TEMPLATES_AUTO_RELOAD is set to True or that won't take
         app.debug = self._debug

@@ -88,7 +88,7 @@ $(function () {
 
             self.userSettingsDialog.trigger("beforeSave");
 
-            function process() {
+            function saveSettings() {
                 var settings = {
                     interface: {
                         language: self.interface_language()
@@ -110,7 +110,7 @@ $(function () {
                         self.access_currentPassword()
                     )
                     .done(function () {
-                        process();
+                        saveSettings();
                     })
                     .fail(function (xhr) {
                         if (xhr.status === 403) {
@@ -118,7 +118,7 @@ $(function () {
                         }
                     });
             } else {
-                process();
+                saveSettings();
             }
         };
 

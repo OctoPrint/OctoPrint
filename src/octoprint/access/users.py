@@ -127,11 +127,9 @@ class UserManager(GroupChangeListener):
         for session, user in list(self._session_users_by_session.items()):
             if not isinstance(user, SessionUser):
                 continue
-            if user.created + (24 * 60 * 60) < time.monotonic():
+            if user.touched + (15 * 60) < time.monotonic():
                 self._logger.info(
-                    "Cleaning up user session {} for user {}".format(
-                        session, user.get_id()
-                    )
+                    f"Cleaning up user session {session} for user {user.get_id()}"
                 )
                 self.logout_user(user, stale=True)
 
@@ -175,6 +173,9 @@ class UserManager(GroupChangeListener):
             else:
                 # old hash doesn't match either, wrong password
                 return False
+
+    def signature_key_for_user(self, username, salt=None):
+        return self.create_password_hash(username, salt=salt)
 
     def add_user(self, username, password, active, permissions, groups, overwrite=False):
         pass
@@ -227,21 +228,28 @@ class UserManager(GroupChangeListener):
             del self._sessionids_by_userid[username]
 
     def validate_user_session(self, userid, session):
+        self._cleanup_sessions()
+
         if session in self._session_users_by_session:
             user = self._session_users_by_session[session]
             return userid == user.get_id()
 
         return False
 
-    def find_user(self, userid=None, session=None):
+    def find_user(self, userid=None, session=None, fresh=False):
+        self._cleanup_sessions()
+
         if session is not None and session in self._session_users_by_session:
             user = self._session_users_by_session[session]
             if userid is None or userid == user.get_id():
+                user.touch()
                 return user
 
         return None
 
     def find_sessions_for(self, matcher):
+        self._cleanup_sessions()
+
         result = []
         for user in self.get_all_users():
             if matcher(user):
@@ -249,7 +257,9 @@ class UserManager(GroupChangeListener):
                     session_ids = self._sessionids_by_userid[user.get_id()]
                     for session_id in session_ids:
                         try:
-                            result.append(self._session_users_by_session[session_id])
+                            session_user = self._session_users_by_session[session_id]
+                            session_user.touch()
+                            result.append(session_user)
                         except KeyError:
                             # unknown session after all
                             continue
@@ -780,6 +790,14 @@ class FilebasedUserManager(UserManager):
             self._dirty = True
             self._save()
 
+            self._trigger_on_user_modified(user)
+
+    def signature_key_for_user(self, username, salt=None):
+        if username not in self._users:
+            raise UnknownUser(username)
+        user = self._users[username]
+        return UserManager.create_password_hash(username + user._passwordHash, salt=salt)
+
     def change_user_setting(self, username, key, value):
         if username not in self._users:
             raise UnknownUser(username)
@@ -845,10 +863,10 @@ class FilebasedUserManager(UserManager):
         self._dirty = True
         self._save()
 
-    def find_user(self, userid=None, apikey=None, session=None):
+    def find_user(self, userid=None, apikey=None, session=None, fresh=False):
         user = UserManager.find_user(self, userid=userid, session=session)
 
-        if user is not None:
+        if user is not None or (session and fresh):
             return user
 
         if userid is not None:
@@ -1383,8 +1401,7 @@ class SessionUser(wrapt.ObjectProxy):
         wrapt.ObjectProxy.__init__(self, user)
 
         self._self_session = "".join("%02X" % z for z in bytes(uuid.uuid4().bytes))
-        self._self_created = time.monotonic()
-        self._self_touched = time.monotonic()
+        self._self_created = self._self_touched = time.monotonic()
 
     @property
     def session(self):
