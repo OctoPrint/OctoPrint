@@ -539,8 +539,7 @@ $(function () {
                     });
                     if (entryElement) {
                         // scroll to uploaded element
-                        // TODO scroll to item is really not working right now, scrolls to completely wrong file
-                        if (index === focus.length) {
+                        if (index + 1 === focus.length) {
                             self.listElement.scrollTop(entryElement.offsetTop);
                         }
 
