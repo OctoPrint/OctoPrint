@@ -471,6 +471,7 @@ default_settings = {
         "showLoadingAnimation": True,
         "sockJsConnectTimeout": 30,
         "pluginTimings": False,
+        "enableRateLimiter": True,
     },
 }
 """The default settings of the core application."""

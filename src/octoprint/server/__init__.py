@@ -1452,7 +1452,11 @@ class Server:
 
         app.config["RATELIMIT_STRATEGY"] = "fixed-window-elastic-expiry"
 
-        limiter = Limiter(app, key_func=get_remote_address)
+        limiter = Limiter(
+            app,
+            key_func=get_remote_address,
+            enabled=s.getBoolean(["devel", "enableRateLimiter"]),
+        )
 
     def _setup_i18n(self, app):
         global babel
