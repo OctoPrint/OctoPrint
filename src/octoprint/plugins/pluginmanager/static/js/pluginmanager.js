@@ -533,6 +533,107 @@ $(function () {
             }
         };
 
+        self.multiInstallQueue = ko.observableArray([]);
+        self.multiInstallRunning = ko.observable(false);
+        self.multiInstallInitialSize = ko.observable(0);
+
+        self.multiInstallValid = function () {
+            return (
+                self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL
+                ) &&
+                self.enableManagement() &&
+                self.pipAvailable() &&
+                !self.safeMode() &&
+                !self.throttled() &&
+                self.online() &&
+                self.multiInstallQueue().length > 0 &&
+                self.multiInstallQueue().every(self.isCompatible)
+            );
+        };
+
+        self.repoInstallSelectedButtonText = function () {
+            return self.multiInstallQueue().some(self.installed)
+                ? "(Re)install selected"
+                : "Install selected";
+        };
+
+        self.repoInstallSelectedConfirm = function () {
+            if (!self.multiInstallValid()) return;
+
+            if (self.multiInstallQueue().length === 1) {
+                self.installFromRepository(self.multiInstallQueue()[0]);
+                return;
+            }
+
+            var question = "<ul>";
+            self.multiInstallQueue().forEach(function (plugin) {
+                var action = self.installed(plugin)
+                    ? gettext("Reinstall")
+                    : gettext("Install");
+
+                question += _.sprintf(
+                    "<li>%(action)s <em><b>%(name)s@%(version)s</b></em></li>",
+                    {
+                        action: _.escape(action),
+                        name: _.escape(plugin.title),
+                        version: _.escape(plugin.github.latest_release.tag)
+                    }
+                );
+            });
+            question += "</ul>";
+
+            showConfirmationDialog({
+                title: gettext("Confirm installation of multiple plugins"),
+                message: gettext("Please confirm you want to perform these actions:"),
+                question: question,
+                cancel: gettext("Cancel"),
+                proceed: gettext("Install"),
+                proceedClass: "primary",
+                onproceed: self.startMultiInstall
+            });
+        };
+
+        self.startMultiInstall = function () {
+            if (self.multiInstallRunning() || !self.multiInstallValid()) return;
+
+            self.multiInstallRunning(true);
+            self.multiInstallInitialSize(self.multiInstallQueue().length);
+
+            self._markWorking(
+                gettext("Installing multiple plugins"),
+                gettext("Starting installation of multiple plugins...")
+            );
+            self.performMultiInstallJob();
+        };
+
+        self.performMultiInstallJob = function () {
+            if (!self.multiInstallRunning() || self.multiInstallQueue().length === 0)
+                return;
+
+            var plugin = self.multiInstallQueue.pop();
+
+            self.installFromRepository(plugin);
+        };
+
+        self.alertMultiInstallJobDone = function (response) {
+            if (
+                !self.multiInstallRunning() ||
+                response.action != "install" ||
+                !response.result
+            )
+                return;
+
+            if (self.multiInstallQueue().length === 0) {
+                self.installUrl("");
+                self.multiInstallQueue([]);
+                self.multiInstallRunning(false);
+                self._markDone();
+            } else {
+                self.performMultiInstallJob();
+            }
+        };
+
         self.performRepositorySearch = function () {
             var query = self.repositorySearchQuery();
             if (query !== undefined && query.trim() !== "") {
@@ -1108,6 +1209,17 @@ $(function () {
                     {url: _.escape(url), name: _.escape(name)}
                 );
             }
+
+            if (self.multiInstallRunning()) {
+                workTitle =
+                    _.sprintf("[%(index)d/%(total)d] ", {
+                        index:
+                            this.multiInstallInitialSize() -
+                            self.multiInstallQueue().length,
+                        total: this.multiInstallInitialSize()
+                    }) + workTitle;
+            }
+
             self._markWorking(workTitle, workText);
 
             var onSuccess = function (response) {
@@ -1441,7 +1553,20 @@ $(function () {
 
         self._processPluginManagementResult = function (response, action, plugin) {
             if (response.result) {
-                self._markDone();
+                if (self.multiInstallRunning() && action == "install") {
+                    // A MultiInstall job has finished
+                    self.alertMultiInstallJobDone(response);
+                } else if (
+                    self.multiInstallQueue().length === 1 &&
+                    self.multiInstallQueue()[0].id === response.plugin.key
+                ) {
+                    // A normal installation, but was started with the 'Install Selected' button.
+                    self.multiInstallQueue([]);
+                    self._markDone();
+                } else {
+                    // Not connected to MultiInstall
+                    self._markDone();
+                }
             } else {
                 self._markDone(response.reason, response.faq);
             }
@@ -1541,7 +1666,7 @@ $(function () {
                     "</p>";
                 type = "warning";
 
-                if (self.restartCommandSpec) {
+                if (self.restartCommandSpec && !self.multiInstallRunning()) {
                     var restartClicked = false;
                     confirm = {
                         confirm: true,
@@ -1596,20 +1721,22 @@ $(function () {
                     "</p>";
                 type = "warning";
 
-                var refreshClicked = false;
-                confirm = {
-                    confirm: true,
-                    buttons: [
-                        {
-                            text: gettext("Reload now"),
-                            click: function () {
-                                if (refreshClicked) return;
-                                refreshClicked = true;
-                                location.reload(true);
+                if (!self.multiInstallRunning()) {
+                    var refreshClicked = false;
+                    confirm = {
+                        confirm: true,
+                        buttons: [
+                            {
+                                text: gettext("Reload now"),
+                                click: function () {
+                                    if (refreshClicked) return;
+                                    refreshClicked = true;
+                                    location.reload(true);
+                                }
                             }
-                        }
-                    ]
-                };
+                        ]
+                    };
+                }
             } else if (self.logContents.action_reconnect) {
                 text +=
                     "<p>" +

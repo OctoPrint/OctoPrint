@@ -171,6 +171,7 @@ date of first contribution):
   * [Dawid Pieper](https://github.com/dawidpieper)
   * ["arrdem"](https://github.com/arrdem)
   * [Arkadiusz Miśkiewicz](https://github.com/arekm)
+  * ["tempodat"](https://github.com/tempodat)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
