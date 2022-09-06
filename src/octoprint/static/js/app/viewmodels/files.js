@@ -1401,7 +1401,7 @@ $(function () {
             self.uploadProgress.addClass("progress-striped").addClass("active");
             self.uploadProgressBar.css("width", "100%");
             if (payload.progressAvailable) {
-                self.uploadProgressPercentage(percentage);
+                self.uploadProgressPercentage(0);
                 self.uploadProgressText(
                     _.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0})
                 );
