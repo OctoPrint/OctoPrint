@@ -75,11 +75,20 @@ class FilesUtilTest(unittest.TestCase):
 # based on https://github.com/nathanhi/pyfatfs/blob/master/tests/test_DosDateTime.py
 m20_timestamp_tests = [
     ("0x210000", datetime.datetime(1980, 1, 1).timestamp()),
-    ("0xff9f0000", datetime.datetime(2107, 12, 31).timestamp()),
     ("0x21bf7d", datetime.datetime(1980, 1, 1, 23, 59, 58).timestamp()),
     ("0x549088aa", datetime.datetime(2022, 4, 16, 17, 5, 20).timestamp()),
     ("0x28210800", datetime.datetime(2000, 1, 1, 1, 0).timestamp()),
 ]
+
+# 32bit time_t systems will fail with:
+# "OverflowError: timestamp out of range for platform time_t"
+# for this date.
+try:
+    m20_timestamp_tests.append(
+        ("0xff9f0000", datetime.datetime(2107, 12, 31).timestamp())
+    )
+except OverflowError:
+    pass
 
 
 @pytest.mark.parametrize("val,expected", m20_timestamp_tests)
