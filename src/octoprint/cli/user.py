@@ -11,9 +11,9 @@ from octoprint.access.groups import FilebasedGroupManager
 from octoprint.access.users import (
     CorruptUserStorage,
     FilebasedUserManager,
+    InvalidUserName,
     UnknownUser,
     UserAlreadyExists,
-    InvalidUserName,
 )
 from octoprint.cli import get_ctx_obj_option
 from octoprint.util import get_class, sv
