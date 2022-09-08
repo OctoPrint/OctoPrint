@@ -454,12 +454,17 @@ class PrinterStateConnection(
             {
                 "serverTime": time.time(),
                 "temps": temperatures,
-                "logs": self._filter_logs(logs),
-                "messages": messages,
                 "busyFiles": busy_files,
                 "markings": list(self._printer.get_markings()),
             }
         )
+        if self._user.has_permission(Permissions.MONITOR_TERMINAL):
+            data.update(
+                {
+                    "logs": self._filter_logs(logs),
+                    "messages": messages,
+                }
+            )
         self._emit("current", payload=data)
 
     def on_printer_send_initial_data(self, data):
@@ -469,9 +474,13 @@ class PrinterStateConnection(
             return
 
         data_to_send = dict(data)
-        data_to_send["logs"] = self._filter_logs(data_to_send.get("logs", []))
-        data_to_send["messages"] = self._filter_messages(data_to_send.get("messages", []))
+
         data_to_send["serverTime"] = time.time()
+        if self._user.has_permission(Permissions.MONITOR_TERMINAL):
+            data_to_send["logs"] = self._filter_logs(data_to_send.get("logs", []))
+            data_to_send["messages"] = self._filter_messages(
+                data_to_send.get("messages", [])
+            )
         self._emit("history", payload=data_to_send)
 
     def _filter_state_subscription(self, sub, values):
