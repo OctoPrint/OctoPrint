@@ -1000,9 +1000,11 @@ class UserAlreadyExists(Exception):
     def __init__(self, username):
         Exception.__init__(self, "User %s already exists" % username)
 
+
 class InvalidUserName(Exception):
     def __init__(self, username):
         Exception.__init__(self, "User name '%s' is invalid" % username)
+
 
 class UnknownUser(Exception):
     def __init__(self, username):
