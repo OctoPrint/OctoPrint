@@ -607,6 +607,15 @@ def uploadGcodeFile(target):
         ):
             abort(409, description="File already exists and noOverwrite was set")
 
+        if (
+            fileManager.file_exists(FileDestinations.LOCAL, futureFullPathInStorage)
+            and not Permissions.FILES_DELETE.can()
+        ):
+            abort(
+                403,
+                description="File already exists, cannot overwrite due to a lack of permissions",
+            )
+
         reselect = printer.is_current_file(futureFullPathInStorage, sd)
 
         user = current_user.get_name()

@@ -1600,9 +1600,7 @@ $(function () {
                                     name: file.name
                                 })
                             );
-                            $("input", self.uploadExistsDialog)
-                                .val("")
-                                .prop("placeholder", response.suggestion);
+                            $("input", self.uploadExistsDialog).val(response.suggestion);
                             $("a.upload-rename", self.uploadExistsDialog)
                                 .prop("disabled", false)
                                 .off("click")
@@ -1611,7 +1609,6 @@ $(function () {
                                         "input",
                                         self.uploadExistsDialog
                                     ).val();
-                                    if (newName === "") newName = response.suggestion;
 
                                     OctoPrint.files
                                         .exists("local", path, newName)
@@ -1645,13 +1642,22 @@ $(function () {
                                             }
                                         });
                                 });
-                            $("a.upload-overwrite", self.uploadExistsDialog)
-                                .off("click")
-                                .on("click", function () {
-                                    self.uploadExistsDialog.modal("hide");
-                                    data.formData = formData;
-                                    data.submit();
-                                });
+                            if (
+                                self.loginState.hasPermission(
+                                    self.access.permissions.FILES_DELETE
+                                )
+                            ) {
+                                $("a.upload-overwrite", self.uploadExistsDialog)
+                                    .off("click")
+                                    .show()
+                                    .on("click", function () {
+                                        self.uploadExistsDialog.modal("hide");
+                                        data.formData = formData;
+                                        data.submit();
+                                    });
+                            } else {
+                                $("a.upload-overwrite", self.uploadExistsDialog).hide();
+                            }
                             self.uploadExistsDialog.modal("show");
                         } else {
                             data.formData = formData;
