@@ -628,11 +628,11 @@ class FilebasedUserManager(UserManager):
         apikey=None,
         overwrite=False,
     ):
-        if not permissions:
+        if permissions is None:
             permissions = []
         permissions = self._to_permissions(*permissions)
 
-        if not groups:
+        if groups is None:
             groups = self._group_manager.default_groups
         groups = self._to_groups(*groups)
 
