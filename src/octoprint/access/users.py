@@ -629,6 +629,9 @@ class FilebasedUserManager(UserManager):
         if username in self._users and not overwrite:
             raise UserAlreadyExists(username)
 
+        if username != username.trim();
+            raise InvalidUserName(username)
+
         self._users[username] = User(
             username,
             UserManager.create_password_hash(password, settings=self._settings),
@@ -997,6 +1000,9 @@ class UserAlreadyExists(Exception):
     def __init__(self, username):
         Exception.__init__(self, "User %s already exists" % username)
 
+class InvalidUserName(Exception):
+    def __init__(self, username):
+        Exception.__init__(self, "User name '%s' is invalid" % username)
 
 class UnknownUser(Exception):
     def __init__(self, username):

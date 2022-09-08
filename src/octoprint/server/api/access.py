@@ -163,6 +163,8 @@ def add_user():
         userManager.add_user(name, password, active, permissions, groups)
     except users.UserAlreadyExists:
         abort(409)
+    except users.InvalidUserName:
+        abort(409)
     return get_users()
 
 
