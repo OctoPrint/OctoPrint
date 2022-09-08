@@ -12,6 +12,14 @@ $(function () {
 
         self.required = false;
 
+        self.invalidUsername = ko.pureComputed(function () {
+            return (
+                self.username() &&
+                self.username().trim() !== "" &&
+                self.username() !== self.username().trim()
+            );
+        });
+
         self.passwordMismatch = ko.pureComputed(function () {
             return self.password() !== self.confirmedPassword();
         });
@@ -30,7 +38,10 @@ $(function () {
 
         self.validData = ko.pureComputed(function () {
             return (
-                !self.passwordMismatch() && self.validUsername() && self.validPassword()
+                !self.invalidUsername() &&
+                !self.passwordMismatch() &&
+                self.validUsername() &&
+                self.validPassword()
             );
         });
 
