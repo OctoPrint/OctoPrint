@@ -18,6 +18,11 @@ from octoprint.util import atomic_write, deprecated, generate_api_key
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import to_bytes, yaml
 
+try:
+    from passlib.hash import argon2 as passwordhash
+except ImportError:
+    from passlib.hash import pbkdf2_sha256 as passwordhash
+
 
 class UserManager(GroupChangeListener):
     def __init__(self, group_manager, settings=None):
@@ -134,7 +139,11 @@ class UserManager(GroupChangeListener):
                 self.logout_user(user, stale=True)
 
     @staticmethod
-    def create_password_hash(password, salt=None, settings=None):
+    def create_password_hash(password, *args, **kwargs):
+        return passwordhash.hash(password)
+
+    @staticmethod
+    def create_legacy_password_hash(password, salt=None, settings=None):
         if not salt:
             if settings is None:
                 settings = s()
@@ -157,21 +166,20 @@ class UserManager(GroupChangeListener):
         if not user:
             return False
 
-        hash = UserManager.create_password_hash(password, settings=self._settings)
-        if user.check_password(hash):
-            # new hash matches, correct password
+        if user.check_password(password):
+            # password matches hash, correct password
             return True
         else:
-            # new hash doesn't match, but maybe the old one does, so check that!
-            oldHash = UserManager.create_password_hash(
-                password, salt="mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW", settings=self._settings
+            # new hash doesn't match, check legacy hash
+            legacy_hash = UserManager.create_legacy_password_hash(
+                password, settings=self._settings
             )
-            if user.check_password(oldHash):
-                # old hash matches, we migrate the stored password hash to the new one and return True since it's the correct password
+            if user.check_password(legacy_hash, legacy=True):
+                # legacy hash matches, we migrate the stored password hash to the new one and return True since it's the correct password
                 self.change_user_password(username, password)
                 return True
             else:
-                # old hash doesn't match either, wrong password
+                # legacy hash doesn't match either, wrong password
                 return False
 
     def signature_key_for_user(self, username, salt=None):
@@ -348,23 +356,6 @@ class UserManager(GroupChangeListener):
     # ~~ Deprecated methods follow
 
     # TODO: Remove deprecated methods in OctoPrint 1.5.0
-
-    @staticmethod
-    def createPasswordHash(*args, **kwargs):
-        """
-        .. deprecated: 1.4.0
-
-           Replaced by :func:`~UserManager.create_password_hash`
-        """
-        # we can't use the deprecated decorator here since this method is static
-        import warnings
-
-        warnings.warn(
-            "createPasswordHash has been renamed to create_password_hash",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return UserManager.create_password_hash(*args, **kwargs)
 
     @deprecated(
         "changeUserRoles has been replaced by change_user_permissions",
@@ -783,20 +774,22 @@ class FilebasedUserManager(UserManager):
         if username not in self._users:
             raise UnknownUser(username)
 
-        passwordHash = UserManager.create_password_hash(password, settings=self._settings)
         user = self._users[username]
-        if user._passwordHash != passwordHash:
-            user._passwordHash = passwordHash
-            self._dirty = True
-            self._save()
+        user._passwordHash = UserManager.create_password_hash(password)
+        self._dirty = True
+        self._save()
 
-            self._trigger_on_user_modified(user)
+        self._trigger_on_user_modified(user)
 
     def signature_key_for_user(self, username, salt=None):
         if username not in self._users:
             raise UnknownUser(username)
         user = self._users[username]
-        return UserManager.create_password_hash(username + user._passwordHash, salt=salt)
+
+        return hashlib.sha512(
+            to_bytes(username + user._passwordHash, encoding="utf-8", errors="replace")
+            + to_bytes(salt)
+        ).hexdigest()
 
     def change_user_setting(self, username, key, value):
         if username not in self._users:
@@ -1144,8 +1137,14 @@ class User(UserMixin):
             "roles": self._roles,
         }
 
-    def check_password(self, passwordHash):
-        return self._passwordHash == passwordHash
+    def check_password(self, password, legacy=False):
+        if legacy:
+            return self._passwordHash == password
+
+        try:
+            return passwordhash.verify(password, self._passwordHash)
+        except ValueError:
+            return False
 
     def get_id(self):
         return self.get_name()
