@@ -45,6 +45,12 @@ $(function () {
                 passwordMismatch: ko.pureComputed(function () {
                     return self.editor.password() !== self.editor.repeatedPassword();
                 }),
+                invalidUserName: ko.pureComputed(function () {
+                    return (
+                        self.editor.name() &&
+                        self.editor.name() !== self.editor.name().trim()
+                    );
+                }),
                 currentPasswordMismatch: ko.observable(false),
                 apikey: ko.observable(undefined),
                 active: ko.observable(undefined),
@@ -89,6 +95,7 @@ $(function () {
                     return (
                         self.editor.name() &&
                         self.editor.name().trim() &&
+                        !self.editor.invalidUserName() &&
                         (!self.editor.new() ||
                             (self.editor.password() &&
                                 self.editor.password().trim() &&
