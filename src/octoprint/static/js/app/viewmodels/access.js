@@ -45,7 +45,7 @@ $(function () {
                 passwordMismatch: ko.pureComputed(function () {
                     return self.editor.password() !== self.editor.repeatedPassword();
                 }),
-                invalidUserName: ko.pureComputed(function () {
+                invalidUsername: ko.pureComputed(function () {
                     return (
                         self.editor.name() &&
                         self.editor.name() !== self.editor.name().trim()
@@ -95,7 +95,7 @@ $(function () {
                     return (
                         self.editor.name() &&
                         self.editor.name().trim() &&
-                        !self.editor.invalidUserName() &&
+                        !self.editor.invalidUsername() &&
                         (!self.editor.new() ||
                             (self.editor.password() &&
                                 self.editor.password().trim() &&

@@ -630,7 +630,7 @@ class FilebasedUserManager(UserManager):
             raise UserAlreadyExists(username)
 
         if username != username.strip():
-            raise InvalidUserName(username)
+            raise InvalidUsername(username)
 
         self._users[username] = User(
             username,
@@ -1001,9 +1001,9 @@ class UserAlreadyExists(Exception):
         Exception.__init__(self, "User %s already exists" % username)
 
 
-class InvalidUserName(Exception):
+class InvalidUsername(Exception):
     def __init__(self, username):
-        Exception.__init__(self, "User name '%s' is invalid" % username)
+        Exception.__init__(self, "Username '%s' is invalid" % username)
 
 
 class UnknownUser(Exception):
