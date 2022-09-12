@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import hashlib
 import logging
 import os
+import shutil
 import time
 import uuid
 
@@ -143,20 +144,7 @@ class UserManager(GroupChangeListener):
         return passwordhash.hash(password)
 
     @staticmethod
-    def create_legacy_password_hash(password, salt=None, settings=None):
-        if not salt:
-            if settings is None:
-                settings = s()
-            salt = settings.get(["accessControl", "salt"])
-            if salt is None:
-                import string
-                from random import choice
-
-                chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
-                salt = "".join(choice(chars) for _ in range(32))
-                settings.set(["accessControl", "salt"], salt)
-                settings.save()
-
+    def create_legacy_password_hash(password, salt):
         return hashlib.sha512(
             to_bytes(password, encoding="utf-8", errors="replace") + to_bytes(salt)
         ).hexdigest()
@@ -167,13 +155,17 @@ class UserManager(GroupChangeListener):
             return False
 
         if user.check_password(password):
-            # password matches hash, correct password
+            # password matches, correct password
             return True
         else:
             # new hash doesn't match, check legacy hash
-            legacy_hash = UserManager.create_legacy_password_hash(
-                password, settings=self._settings
+            salt = self._settings.get(["accessControl"], asdict=True, merged=True).get(
+                "salt", None
             )
+            if salt is None:
+                return False
+
+            legacy_hash = UserManager.create_legacy_password_hash(password, salt)
             if user.check_password(legacy_hash, legacy=True):
                 # legacy hash matches, we migrate the stored password hash to the new one and return True since it's the correct password
                 self.change_user_password(username, password)
@@ -181,6 +173,9 @@ class UserManager(GroupChangeListener):
             else:
                 # legacy hash doesn't match either, wrong password
                 return False
+
+    def cleanup_legacy_hashes(self):
+        pass
 
     def signature_key_for_user(self, username, salt=None):
         return self.create_password_hash(username, salt=salt)
@@ -490,6 +485,8 @@ class LoginStatusListener:
 
 
 class FilebasedUserManager(UserManager):
+    FILE_VERSION = 2
+
     def __init__(self, group_manager, path=None, settings=None):
         UserManager.__init__(self, group_manager, settings=settings)
 
@@ -520,6 +517,17 @@ class FilebasedUserManager(UserManager):
                     )
                 )
                 raise CorruptUserStorage()
+
+            version = data.pop("_version", 1)
+            if version != self.FILE_VERSION:
+                self._logger.info(
+                    f"Making a backup of the users.yaml file before migrating from version {version} to {self.FILE_VERSION}"
+                )
+                shutil.copy(
+                    self._userfile,
+                    os.path.splitext(self._userfile)[0] + f".v{version}.yaml",
+                )
+                self._dirty = True
 
             for name, attributes in data.items():
                 if not isinstance(attributes, dict):
@@ -568,6 +576,8 @@ class FilebasedUserManager(UserManager):
             if self._dirty:
                 self._save()
 
+            self.cleanup_legacy_hashes()
+
             self._customized = True
         else:
             self._customized = False
@@ -576,7 +586,7 @@ class FilebasedUserManager(UserManager):
         if not self._dirty and not force:
             return
 
-        data = {}
+        data = {"_version": self.FILE_VERSION}
         for name, user in self._users.items():
             if not user or not isinstance(user, User):
                 continue
@@ -780,6 +790,24 @@ class FilebasedUserManager(UserManager):
         self._save()
 
         self._trigger_on_user_modified(user)
+
+    def cleanup_legacy_hashes(self):
+        no_legacy = all(
+            map(
+                lambda u: u._passwordHash.startswith("$argon2id$")
+                or u._passwordHash.startswith("$pbkdf2-"),
+                self._users.values(),
+            )
+        )
+        salt = self._settings.get(["accessControl"], asdict=True, merged=True).get(
+            "salt", None
+        )
+
+        if no_legacy and salt:
+            # no legacy hashs left, kill salt
+            self._settings.backup("cleanup_legacy_hashes")
+            self._settings.remove(["accessControl", "salt"])
+            self._settings.save()
 
     def signature_key_for_user(self, username, salt=None):
         if username not in self._users:
