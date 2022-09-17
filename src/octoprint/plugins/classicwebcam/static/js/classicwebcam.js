@@ -54,36 +54,18 @@ $(function () {
             });
         };
 
-        self.onAfterBinding = function () {
-            // We are using the IntersectionObserver API to determine whether the webcam is visible or not.
-            // The webcam will not intersect with the control tab if the control tab is invisible because another tab
-            // is selected or if the webcam isn't shown because another webcam is active.
-            //
-            // Whenever the webacam is not visible we will disable it and enable it once it's visible again. We also save
-            // the current status to reuse it for other events, e.g. to know whether we need to enable the webcam once the
-            // browser tab is reselected.
-            var target = document.getElementById("classic_webcam_container");
-            var options = {
-                root: document.querySelector("#control"),
-                rootMargin: "0px",
-                threshold: 1.0
-            };
-            var callback = function (entries) {
-                self.webcamStreamVisible = entries[0].isIntersecting;
-                if (self.webcamStreamVisible) {
-                    self._enableWebcam();
-                } else {
-                    self._disableWebcam();
-                }
-            };
-
-            var observer = new IntersectionObserver(callback, options);
-            observer.observe(target);
+        self.onWebcamVisbilityChange = function (visible) {
+            self.webcamStreamVisible = visible;
+            if (self.webcamStreamVisible) {
+                self._enableWebcam();
+            } else {
+                self._disableWebcam();
+            }
         };
 
         self.onEventSettingsUpdated = function (payload) {
             // the webcam url might have changed, make sure we replace it now if the
-            // tab is focused
+            // view is visible
             self._enableWebcamIfVisible();
         };
 
@@ -110,7 +92,7 @@ $(function () {
         };
 
         self._disableWebcam = function () {
-            // only disable webcam stream if tab is out of focus for more than 5s,
+            // only disable webcam stream if element is out of view for more than 5s,
             // otherwise we might cause more load by the constant connection creation
             // than by the actual webcam stream
 
@@ -177,14 +159,6 @@ $(function () {
             log.debug("Webcam stream failed to load/disabled");
             self.webcamLoaded(false);
             self.webcamError(true);
-        };
-
-        self.onBrowserTabVisibilityChange = function (tabVisible) {
-            if (tabVisible) {
-                self._enableWebcamIfVisible();
-            } else {
-                self._disableWebcam();
-            }
         };
 
         self.onUserPermissionsChanged =

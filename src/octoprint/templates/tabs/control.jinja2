@@ -4,7 +4,7 @@
             {% set nsContent = namespace(mark_active = True) %}
             {% set nsTab = namespace(mark_active = True) %}
 
-            <div class="tab-content">
+            <div class="tab-content" id="webcam-group">
             {% for key in templates.webcam.order %}
                 {% set entry, data = templates.webcam.entries[key] %}
                 {% if data is not none %}

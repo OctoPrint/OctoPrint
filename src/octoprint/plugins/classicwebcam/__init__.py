@@ -40,6 +40,13 @@ class ClassicWebcamPlugin(
                 "custom_bindings": True,
                 "suffix": "_real",
             },
+            {
+                "type": "webcam",
+                "name": "Classic Webcam 2",
+                "template": "classicwebcam_webcam_2.jinja2",
+                "custom_bindings": False,
+                "suffix": "_mock",
+            },
         ]
 
     def get_webcam_configurations(self):

@@ -53,6 +53,67 @@ $(function () {
             return self.keycontrolActive() && self.keycontrolPossible();
         });
 
+        self._visibleWebcam = undefined;
+
+        self._dispatchWebcamVisibilityChange = function (target, visible) {
+            var vm = ko.dataFor(target.children[0]);
+            if (vm === self) {
+                console.debug(
+                    `VM for webcam #${target.id} is not bound, skipping visibility update`
+                );
+            } else if (vm === undefined) {
+                console.debug(
+                    `VM for webcam #${target.id} not found, skipping visibility update`
+                );
+            } else if (typeof vm.onWebcamVisbilityChange === "function") {
+                vm.onWebcamVisbilityChange(visible);
+            } else {
+                console.debug(
+                    `VM for webcam #${target.id} does not declare 'onWebcamVisbilityChange(visible)', skipping visibility update (vm=${vm.constructor.name})`
+                );
+            }
+        };
+
+        self.onAfterBinding = function () {
+            // We are using the IntersectionObserver API to determine whether a webcam is visible or not.
+            // A webcam will not intersect with the control tab if the control tab is invisible because another tab
+            // is selected or if the webcam isn't shown because another webcam is active.
+            //
+            // Whenever the webacam changes visibility we will call onWebcamVisbilityChange() which the webcam's
+            //  VM can use to start or stop the stream.
+            document
+                .querySelectorAll("#webcam-group .tab-pane")
+                .forEach(function (target) {
+                    var options = {
+                        root: document.querySelector("#control"),
+                        rootMargin: "0px",
+                        threshold: 1.0
+                    };
+                    var callback = function (entries) {
+                        var visible = entries[0].isIntersecting;
+                        self._dispatchWebcamVisibilityChange(target, visible);
+
+                        // Keep track which webcam is currently visible (if any)
+                        if (visible) {
+                            self._visibleWebcam = target;
+                        } else if (self._visibleWebcam === target && !visible) {
+                            self._visibleWebcam = undefined;
+                        }
+                    };
+
+                    var observer = new IntersectionObserver(callback, options);
+                    observer.observe(target);
+                });
+        };
+
+        self.onBrowserTabVisibilityChange = function (tabVisible) {
+            // We also observe the the browser tab. If any webcam is currently visible, we will update
+            // it with the tab status as well.
+            if (self._visibleWebcam !== undefined) {
+                self._dispatchWebcamVisibilityChange(self._visibleWebcam, tabVisible);
+            }
+        };
+
         self.settings.printerProfiles.currentProfileData.subscribe(function () {
             self._updateExtruderCount();
             self._updateExtrusionAmount();
