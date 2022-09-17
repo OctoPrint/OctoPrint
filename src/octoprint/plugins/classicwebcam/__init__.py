@@ -15,13 +15,20 @@ class ClassicWebcamPlugin(
     octoprint.plugin.TemplatePlugin,
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.WebcamPlugin,
+    octoprint.plugin.WizardPlugin,
 ):
     def __init__(self):
         self._capture_mutex = threading.Lock()
 
+    # ~~ TemplatePlugin API
+
     def get_assets(self):
         return {
-            "js": ["js/classicwebcam.js", "js/classicwebcam_settings.js"],
+            "js": [
+                "js/classicwebcam.js",
+                "js/classicwebcam_settings.js",
+                "js/classicwebcam_wizard.js",
+            ],
             "less": ["less/classicwebcam.less"],
             "css": ["css/classicwebcam.css"],
         }
@@ -47,7 +54,15 @@ class ClassicWebcamPlugin(
                 "custom_bindings": False,
                 "suffix": "_mock",
             },
+            {
+                "type": "wizard",
+                "name": "Classic Webcam Wizard",
+                "template": "classicwebcam_wizard.jinja2",
+                "suffix": "_wizard",
+            },
         ]
+
+    # ~~ WebcamPlugin API
 
     def get_webcam_configurations(self):
         streamRatio = self._settings.get(["streamRatio"])
@@ -57,7 +72,7 @@ class ClassicWebcamPlugin(
             streamRatio = RatioEnum.sixteen_nine
         webRtcServers = self._settings.get(["streamWebrtcIceServers"])
         cacheBuster = self._settings.get_boolean(["cacheBuster"]) is True
-        stream = self._settings.get(["stream"])
+        stream = self._get_stream_url()
         snapshot = self._get_snapshot_url()
         flipH = self._settings.get_boolean(["flipH"]) is True
         flipV = self._settings.get_boolean(["flipV"]) is True
@@ -104,6 +119,34 @@ class ClassicWebcamPlugin(
                 ),
             ),
         ]
+
+    def _get_snapshot_url(self):
+        return self._settings.get(["snapshot"])
+
+    def _get_stream_url(self):
+        return self._settings.get(["stream"])
+
+    def _can_snapshot(self):
+        snapshot = self._get_snapshot_url()
+        return snapshot is not None and snapshot.strip() != ""
+
+    def take_snapshot(self, _):
+        snapshot_url = self._get_snapshot_url()
+        if self._can_snapshot() is False:
+            raise Exception("Snapshot is not configured")
+
+        with self._capture_mutex:
+            self._logger.debug(f"Capturing image from {snapshot_url}")
+            r = requests.get(
+                snapshot_url,
+                stream=True,
+                timeout=self._settings.get_int(["snapshotTimeout"]),
+                verify=self._settings.get_boolean(["rosnapshotSslValidationtate90"]),
+            )
+            r.raise_for_status()
+            return r.iter_content(chunk_size=1024)
+
+    # ~~ SettingsPlugin API
 
     def get_settings_defaults(self):
         return dict(
@@ -188,28 +231,22 @@ class ClassicWebcamPlugin(
                 )
                 self._settings.global_remove(["webcam", "snapshotSslValidation"])
 
-    def _get_snapshot_url(self):
-        return self._settings.get(["snapshot"])
+    # ~~ WizardPlugin API
 
-    def _can_snapshot(self):
-        snapshot = self._get_snapshot_url()
-        return snapshot is not None or snapshot.trim() != ""
+    def is_wizard_required(self):
+        required = (
+            not self._get_stream_url()
+            or not self._get_snapshot_url()
+            or not self._settings.global_get(["webcam", "ffmpegPath"])
+        )
+        firstrun = self._settings.global_get(["server", "firstRun"])
+        return required and firstrun
 
-    def take_snapshot(self, _):
-        snapshot_url = self._get_snapshot_url()
-        if self._can_snapshot() is False:
-            raise Exception("Snapshot is not configured")
+    def get_wizard_details(self):
+        return {"webcam": {"required": self.is_wizard_required()}}
 
-        with self._capture_mutex:
-            self._logger.debug(f"Capturing image from {snapshot_url}")
-            r = requests.get(
-                snapshot_url,
-                stream=True,
-                timeout=self._settings.get_int(["snapshotTimeout"]),
-                verify=self._settings.get_boolean(["rosnapshotSslValidationtate90"]),
-            )
-            r.raise_for_status()
-            return r.iter_content(chunk_size=1024)
+    def get_wizard_version(self):
+        return 11
 
 
 __plugin_name__ = gettext("Classic Webcam")

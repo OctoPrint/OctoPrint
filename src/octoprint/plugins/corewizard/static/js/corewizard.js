@@ -114,17 +114,6 @@ $(function () {
                 response.corewizard.details.webcam &&
                 response.corewizard.details.webcam.required;
         };
-
-        self.onWizardFinish = function () {
-            if (!self.required) return;
-            if (
-                self.settingsViewModel.webcam_streamUrl() ||
-                (self.settingsViewModel.webcam_snapshotUrl() &&
-                    self.settingsViewModel.webcam_ffmpegPath())
-            ) {
-                return "reload";
-            }
-        };
     }
 
     function CoreWizardServerCommandsViewModel(parameters) {
