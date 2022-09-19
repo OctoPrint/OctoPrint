@@ -127,6 +127,7 @@ from octoprint.printer.standard import Printer
 from octoprint.server.util import (
     corsRequestHandler,
     corsResponseHandler,
+    csrfRequestHandler,
     loginFromApiKeyRequestHandler,
     requireLoginRequestHandler,
 )
@@ -1915,6 +1916,16 @@ class Server:
         blueprint.before_request(corsRequestHandler)
         blueprint.before_request(loginFromApiKeyRequestHandler)
         blueprint.after_request(corsResponseHandler)
+
+        if plugin.is_blueprint_csrf_protected():
+            self._logger.debug(
+                f"CSRF Protection for Blueprint of plugin {name} is enabled"
+            )
+            blueprint.before_request(csrfRequestHandler)
+        else:
+            self._logger.warning(
+                f"CSRF Protection for Blueprint of plugin {name} is DISABLED"
+            )
 
         if plugin.is_blueprint_protected():
             blueprint.before_request(requireLoginRequestHandler)

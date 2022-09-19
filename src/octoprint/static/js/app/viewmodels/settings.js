@@ -770,7 +770,6 @@ $(function () {
                 dataType: "json",
                 maxNumberOfFiles: 1,
                 autoUpload: false,
-                headers: OctoPrint.getRequestHeaders(),
                 add: function (e, data) {
                     if (data.files.length == 0) {
                         return false;

@@ -28,6 +28,7 @@ from octoprint.server import NO_CONTENT
 from octoprint.server.util import (
     corsRequestHandler,
     corsResponseHandler,
+    csrfRequestHandler,
     loginFromApiKeyRequestHandler,
     loginFromAuthorizationHeaderRequestHandler,
     noCachingExceptGetResponseHandler,
@@ -68,6 +69,7 @@ api.after_request(noCachingExceptGetResponseHandler)
 api.before_request(corsRequestHandler)
 api.before_request(loginFromAuthorizationHeaderRequestHandler)
 api.before_request(loginFromApiKeyRequestHandler)
+api.before_request(csrfRequestHandler)
 api.after_request(corsResponseHandler)
 
 # ~~ data from plugins

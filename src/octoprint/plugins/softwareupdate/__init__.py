@@ -1453,6 +1453,9 @@ class SoftwareUpdatePlugin(
     def is_blueprint_protected(self):
         return False
 
+    def is_blueprint_csrf_protected(self):
+        return True
+
     # ~~ Asset API
 
     def get_assets(self):

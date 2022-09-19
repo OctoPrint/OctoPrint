@@ -356,6 +356,9 @@ class BackupPlugin(
     def is_blueprint_protected(self):
         return False
 
+    def is_blueprint_csrf_protected(self):
+        return True
+
     ##~~ WizardPlugin
 
     def is_wizard_required(self):

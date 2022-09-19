@@ -228,7 +228,7 @@ default_settings = {
         "preemptiveCache": {"exceptions": [], "until": 7},
         "ipCheck": {"enabled": True, "trustedSubnets": []},
         "allowFraming": False,
-        "cookies": {"secure": False, "samesite": None},
+        "cookies": {"secure": False, "samesite": "strict"},
     },
     "webcam": {
         "webcamEnabled": True,
@@ -471,6 +471,7 @@ default_settings = {
         "sockJsConnectTimeout": 30,
         "pluginTimings": False,
         "enableRateLimiter": True,
+        "enableCsrfProtection": True,
     },
 }
 """The default settings of the core application."""
@@ -891,6 +892,7 @@ class Settings:
                 "logs",
             ]
         )
+        self.warn_about_risky_settings()
 
     def _init_basedir(self, basedir):
         if basedir is not None:
@@ -922,6 +924,16 @@ class Settings:
         # validate uniqueness of folder paths
         if len(folder_map.values()) != len(set(folder_map.values())):
             raise DuplicateFolderPaths(folders)
+
+    def warn_about_risky_settings(self):
+        if not self.getBoolean(["devel", "enableRateLimiter"]):
+            self._logger.warning(
+                "Rate limiting is disabled, this is a security risk. Do not run this in production."
+            )
+        if not self.getBoolean(["devel", "enableCsrfProtection"]):
+            self._logger.warning(
+                "CSRF Protection is disabled, this is a security risk. Do not run this in production."
+            )
 
     def _get_default_folder(self, type):
         folder = default_settings["folder"][type]

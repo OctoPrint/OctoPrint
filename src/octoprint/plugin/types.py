@@ -1352,8 +1352,39 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
        flask.url_for("plugin.myblueprintplugin.myEcho") # will return "/plugin/myblueprintplugin/echo"
 
+    .. warning::
+
+       As of OctoPrint 1.8.3, endpoints provided through a ``BlueprintPlugin`` do **not** automatically fall under
+       OctoPrint's :ref:`CSRF protection <sec-api-general-csrf>`, for reasons of backwards compatibility. There will be a short grace period before this changes. You
+       can and should however already opt into CSRF protection for your endpoints by implementing ``is_blueprint_csrf_protected``
+       and returning ``True`` from it. You can exempt certain endpoints from CSRF protection by decorating them with
+       ``@octoprint.plugin.BlueprintPlugin.csrf_exempt``.
+
+       .. code-block:: python
+
+          class MyPlugin(octoprint.plugin.BlueprintPlugin):
+              @octoprint.plugin.BlueprintPlugin.route("/hello_world", methods=["GET"])
+              def hello_world(self):
+                  # This is a GET request and thus not subject to CSRF protection
+                  return "Hello world!"
+
+              @octoprint.plugin.BlueprintPlugin.route("/hello_you", methods=["POST"])
+              def hello_you(self):
+                  # This is a POST request and thus subject to CSRF protection. It is not exempt.
+                  return "Hello you!"
+
+              @octoprint.plugin.BlueprintPlugin.route("/hello_me", methods=["POST"])
+              @octoprint.plugin.BlueprintPlugin.csrf_exempt()
+              def hello_me(self):
+                  # This is a POST request and thus subject to CSRF protection, but this one is exempt.
+                  return "Hello me!"
+
+              def is_blueprint_csrf_protected(self):
+                  return True
 
     ``BlueprintPlugin`` implements :class:`~octoprint.plugins.core.RestartNeedingPlugin`.
+
+    .. versionchanged:: 1.8.3
     """
 
     @staticmethod
@@ -1372,7 +1403,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         def decorator(f):
             # We attach the decorator parameters directly to the function object, because that's the only place
             # we can access right now.
-            # This neat little trick was adapter from the Flask-Classy project: https://pythonhosted.org/Flask-Classy/
+            # This neat little trick was adapted from the Flask-Classy project: https://pythonhosted.org/Flask-Classy/
             if not hasattr(f, "_blueprint_rules") or f._blueprint_rules is None:
                 f._blueprint_rules = defaultdict(list)
             f._blueprint_rules[f.__name__].append((rule, options))
@@ -1405,6 +1436,27 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
         return decorator
 
+    @staticmethod
+    def csrf_exempt():
+        """
+        A decorator to mark a view method in your BlueprintPlugin as exempt from :ref:`CSRF protection <sec-api-general-csrf>`. This makes sense
+        if you offer an authenticated API for a certain workflow (see e.g. the bundled appkeys plugin) but in most
+        cases should not be needed.
+
+        .. versionadded:: 1.8.3
+        """
+
+        def decorator(f):
+            if (
+                not hasattr(f, "_blueprint_csrf_exempt")
+                or f._blueprint_csrf_exempt is None
+            ):
+                f._blueprint_csrf_exempt = set()
+            f._blueprint_csrf_exempt.add(f.__name__)
+            return f
+
+        return decorator
+
     # noinspection PyProtectedMember
     def get_blueprint(self):
         """
@@ -1422,6 +1474,8 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
         import flask
 
+        from octoprint.server.util.csrf import add_exempt_view
+
         kwargs = self.get_blueprint_kwargs()
         blueprint = flask.Blueprint(self._identifier, self._identifier, **kwargs)
 
@@ -1435,9 +1489,14 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
                 # this attribute was annotated with our @route decorator
                 for blueprint_rule in f._blueprint_rules[member]:
                     rule, options = blueprint_rule
-                    blueprint.add_url_rule(
-                        rule, options.pop("endpoint", f.__name__), view_func=f, **options
-                    )
+                    endpoint = options.pop("endpoint", f.__name__)
+                    blueprint.add_url_rule(rule, endpoint, view_func=f, **options)
+
+                    if (
+                        hasattr(f, "_blueprint_csrf_exempt")
+                        and member in f._blueprint_csrf_exempt
+                    ):
+                        add_exempt_view(f"plugin.{self._identifier}.{endpoint}")
 
             if (
                 hasattr(f, "_blueprint_error_handler")
@@ -1485,6 +1544,29 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         permissions checks explicitly.
         """
         return True
+
+    # noinspection PyMethodMayBeStatic
+    def is_blueprint_csrf_protected(self):
+        """
+        Whether a blueprint's endpoints are :ref:`CSRF protected <sec-api-general-csrf>`. For now, this defaults to ``False`` to leave it up to
+        plugins to decide which endpoints *should* be protected. Long term, this will default to ``True`` and hence
+        enforce protection unless a plugin opts out by returning False here.
+
+        If you do not override this method in your mixin implementation, a warning will be logged to the console
+        to alert you of the requirement to make a decision here and to not rely on the default implementation, due to the
+        forthcoming change in implemented default behaviour.
+
+        .. versionadded:: 1.8.3
+        """
+        self._logger.warning(
+            "The Blueprint of this plugin is relying on the default implementation of "
+            "is_blueprint_csrf_protected (newly added in OctoPrint 1.8.3), which in a future version will "
+            "be switched from False to True for security reasons. Plugin authors should ensure they explicitly "
+            "declare the CSRF protection status in their BlueprintPlugin mixin implementation. "
+            "Recommendation is to enable CSRF protection and exempt views that must not use it with the "
+            "octoprint.plugin.BlueprintPlugin.csrf_exempt decorator."
+        )
+        return False
 
     # noinspection PyMethodMayBeStatic
     def get_blueprint_api_prefixes(self):

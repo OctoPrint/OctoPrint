@@ -291,6 +291,9 @@ class AnnouncementPlugin(
     def is_blueprint_protected(self):
         return False
 
+    def is_blueprint_csrf_protected(self):
+        return True
+
     ##~~ EventHandlerPlugin
 
     def on_event(self, event, payload):
