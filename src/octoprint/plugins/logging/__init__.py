@@ -127,6 +127,9 @@ class LoggingPlugin(
     def is_blueprint_protected(self):
         return False
 
+    def is_blueprint_csrf_protected(self):
+        return True
+
     def _get_usage(self):
         import psutil
 

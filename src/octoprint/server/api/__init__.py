@@ -28,6 +28,7 @@ from octoprint.server import NO_CONTENT
 from octoprint.server.util import (
     corsRequestHandler,
     corsResponseHandler,
+    csrfRequestHandler,
     loginFromApiKeyRequestHandler,
     loginFromAuthorizationHeaderRequestHandler,
     noCachingExceptGetResponseHandler,
@@ -38,6 +39,7 @@ from octoprint.server.util.flask import (
     limit,
     no_firstrun_access,
     passive_login,
+    session_signature,
 )
 from octoprint.settings import settings as s
 from octoprint.settings import valid_boolean_trues
@@ -67,6 +69,7 @@ api.after_request(noCachingExceptGetResponseHandler)
 api.before_request(corsRequestHandler)
 api.before_request(loginFromAuthorizationHeaderRequestHandler)
 api.before_request(loginFromApiKeyRequestHandler)
+api.before_request(csrfRequestHandler)
 api.after_request(corsResponseHandler)
 
 # ~~ data from plugins
@@ -312,6 +315,9 @@ def login():
 
                 user = octoprint.server.userManager.login_user(user)
                 session["usersession.id"] = user.session
+                session["usersession.signature"] = session_signature(
+                    username, user.session
+                )
                 g.user = user
 
                 login_user(user, remember=remember)

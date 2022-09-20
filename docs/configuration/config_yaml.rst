@@ -72,10 +72,6 @@ Use the following settings to enable access control:
      # If a remote user is not found, add them. Use this only if all users from the remote system can use OctoPrint.
      addRemoteUsers: false
 
-     # Secret salt used for password hashing, DO NOT TOUCH. If changed you will no longer be able to log in with your
-     # existing accounts.
-     salt: someSecretSalt
-
 .. _sec-configuration-config_yaml-api:
 
 API

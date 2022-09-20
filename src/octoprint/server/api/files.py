@@ -610,6 +610,15 @@ def uploadGcodeFile(target):
         ):
             abort(409, description="File already exists and noOverwrite was set")
 
+        if (
+            fileManager.file_exists(FileDestinations.LOCAL, futureFullPathInStorage)
+            and not Permissions.FILES_DELETE.can()
+        ):
+            abort(
+                403,
+                description="File already exists, cannot overwrite due to a lack of permissions",
+            )
+
         reselect = printer.is_current_file(futureFullPathInStorage, sd)
 
         user = current_user.get_name()
@@ -1135,42 +1144,55 @@ def gcodeFileCommand(filename, target):
             if not (is_file or is_folder):
                 abort(400, description=f"Neither file nor folder, can't {command}")
 
-            if command == "copy":
-                # destination already there? error...
-                if _verifyFileExists(target, destination) or _verifyFolderExists(
-                    target, destination
-                ):
-                    abort(409, description="File or folder does already exist")
-
-                if is_file:
-                    fileManager.copy_file(target, filename, destination)
-                else:
-                    fileManager.copy_folder(target, filename, destination)
-
-            elif command == "move":
-                with Permissions.FILES_DELETE.require(403):
-                    if _isBusy(target, filename):
-                        abort(
-                            409,
-                            description="Trying to move a file or folder that is currently in use",
-                        )
-
-                    # destination already there AND not ourselves (= display rename)? error...
-                    if (
-                        _verifyFileExists(target, destination)
-                        or _verifyFolderExists(target, destination)
-                    ) and sanitized_destination != filename:
+            try:
+                if command == "copy":
+                    # destination already there? error...
+                    if _verifyFileExists(target, destination) or _verifyFolderExists(
+                        target, destination
+                    ):
                         abort(409, description="File or folder does already exist")
 
-                    # deselect the file if it's currently selected
-                    currentOrigin, currentFilename = _getCurrentFile()
-                    if currentFilename is not None and filename == currentFilename:
-                        printer.unselect_file()
-
                     if is_file:
-                        fileManager.move_file(target, filename, destination)
+                        fileManager.copy_file(target, filename, destination)
                     else:
-                        fileManager.move_folder(target, filename, destination)
+                        fileManager.copy_folder(target, filename, destination)
+
+                elif command == "move":
+                    with Permissions.FILES_DELETE.require(403):
+                        if _isBusy(target, filename):
+                            abort(
+                                409,
+                                description="Trying to move a file or folder that is currently in use",
+                            )
+
+                        # destination already there AND not ourselves (= display rename)? error...
+                        if (
+                            _verifyFileExists(target, destination)
+                            or _verifyFolderExists(target, destination)
+                        ) and sanitized_destination != filename:
+                            abort(409, description="File or folder does already exist")
+
+                        # deselect the file if it's currently selected
+                        currentOrigin, currentFilename = _getCurrentFile()
+                        if currentFilename is not None and filename == currentFilename:
+                            printer.unselect_file()
+
+                        if is_file:
+                            fileManager.move_file(target, filename, destination)
+                        else:
+                            fileManager.move_folder(target, filename, destination)
+
+            except octoprint.filemanager.storage.StorageError as e:
+                if e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
+                    abort(
+                        415,
+                        description=f"Could not {command} {filename} to {destination}, invalid type",
+                    )
+                else:
+                    abort(
+                        500,
+                        description=f"Could not {command} {filename} to {destination}",
+                    )
 
             location = url_for(
                 ".readGcodeFile",

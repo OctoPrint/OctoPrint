@@ -228,7 +228,7 @@ class PluginManagerPlugin(
                 "name": "List plugins",
                 "description": gettext("Allows to list installed plugins."),
                 "default_groups": [READONLY_GROUP, USER_GROUP, ADMIN_GROUP],
-                "roles": ["manage"],
+                "roles": ["list"],
             },
             {
                 "key": "MANAGE",
@@ -608,6 +608,9 @@ class PluginManagerPlugin(
 
     def is_blueprint_protected(self):
         return False
+
+    def is_blueprint_csrf_protected(self):
+        return True
 
     ##~~ EventHandlerPlugin
 

@@ -43,6 +43,7 @@ from octoprint.server.util import (
     require_login_with,
     validate_local_redirect,
 )
+from octoprint.server.util.csrf import add_csrf_cookie
 from octoprint.settings import settings
 from octoprint.util import sv, to_bytes, to_unicode
 from octoprint.util.version import get_python_version_string
@@ -223,7 +224,9 @@ def login():
     except Exception:
         _logger.exception("Error processing theming CSS, ignoring")
 
-    return render_template("login.jinja2", **render_kwargs)
+    resp = make_response(render_template("login.jinja2", **render_kwargs))
+    add_csrf_cookie(resp)
+    return resp
 
 
 @app.route("/recovery")
@@ -254,7 +257,9 @@ def recovery():
     except Exception:
         _logger.exception("Error adding backup upload size info, ignoring")
 
-    return render_template("recovery.jinja2", **render_kwargs)
+    resp = make_response(render_template("recovery.jinja2", **render_kwargs))
+    add_csrf_cookie(resp)
+    return resp
 
 
 @app.route("/cached.gif")
@@ -694,6 +699,8 @@ def index():
 
     if response is None:
         return abort(404)
+
+    add_csrf_cookie(response)
     return response
 
 

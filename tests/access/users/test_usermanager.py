@@ -18,7 +18,6 @@ class UserManagerTest(unittest.TestCase):
         """Test for issue #1891"""
 
         password = "password with ümläutß"
-        salt = "abc"
 
         # should not throw an exception
-        octoprint.access.users.UserManager.create_password_hash(password, salt=salt)
+        octoprint.access.users.UserManager.create_password_hash(password)

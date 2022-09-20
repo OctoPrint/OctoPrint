@@ -202,6 +202,21 @@ $(function () {
 
     //~~ AJAX setup
 
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            // we already do that in the js client lib, but a lot of plugins don't use
+            // that but rather use $.ajax directly, so we need to do it here as well
+            var csrfToken = OctoPrint.getCookie("csrf_token");
+            if (
+                !/^(GET|HEAD|OPTIONS)$/.test(settings.type) &&
+                csrfToken &&
+                !this.crossDomain
+            ) {
+                xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+            }
+        }
+    });
+
     // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
     // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
     $.ajaxPrefilter(function (options, originalOptions, jqXHR) {
@@ -219,7 +234,8 @@ $(function () {
     $.widget("blueimp.fileupload", $.blueimp.fileupload, {
         options: {
             dropZone: null,
-            pasteZone: null
+            pasteZone: null,
+            headers: OctoPrint.getRequestHeaders("POST")
         }
     });
 

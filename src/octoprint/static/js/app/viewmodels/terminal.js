@@ -225,6 +225,8 @@ $(function () {
         };
 
         self._processCurrentLogData = function (data) {
+            if (!data) return;
+
             var length = self.log().length;
             if (length >= self.upperLimit()) {
                 return;
@@ -276,6 +278,8 @@ $(function () {
         };
 
         self._processHistoryLogData = function (data) {
+            if (!data) return;
+
             self.plainLogLines(data);
             self.log(_.map(data, self._toInternalFormat));
             self.updateOutput();

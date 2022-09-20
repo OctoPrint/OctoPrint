@@ -174,7 +174,8 @@ def deleteInstalledLanguagePack(locale, pack):
 def _unpack_uploaded_zipfile(path, target):
     with zipfile.ZipFile(path, "r") as zip:
         # sanity check
-        map(_validate_archive_name, zip.namelist())
+        for info in zip.infolist():
+            _validate_zip_info(info, target)
 
         # unpack everything
         zip.extractall(target)
@@ -183,15 +184,26 @@ def _unpack_uploaded_zipfile(path, target):
 def _unpack_uploaded_tarball(path, target):
     with tarfile.open(path, "r") as tar:
         # sanity check
-        map(_validate_archive_name, tar.getmembers())
+        for info in tar.getmembers():
+            _validate_tar_info(info, target)
 
         # unpack everything
         tar.extractall(target)
 
 
-def _validate_archive_name(name):
-    if name.startswith("/") or ".." in name:
+def _validate_archive_name(name, target):
+    if not os.path.abspath(os.path.join(target, name)).startswith(target + os.path.sep):
         raise InvalidLanguagePack(f"Provided language pack contains invalid name {name}")
+
+
+def _validate_zip_info(info, target):
+    _validate_archive_name(info.filename, target)
+
+
+def _validate_tar_info(info, target):
+    _validate_archive_name(info.name, target)
+    if not (info.isfile() or info.isdir()):
+        raise InvalidLanguagePack("Provided language pack contains invalid file type")
 
 
 class InvalidLanguagePack(Exception):

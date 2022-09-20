@@ -288,8 +288,40 @@ class AnnouncementPlugin(
 
         return NO_CONTENT
 
+    @octoprint.plugin.BlueprintPlugin.route("/channels", methods=["POST"])
+    @no_firstrun_access
+    @Permissions.PLUGIN_ANNOUNCEMENTS_READ.require(403)
+    def channels_command(self):
+        from octoprint.server import NO_CONTENT
+        from octoprint.server.util.flask import get_json_command_from_request
+
+        valid_commands = {"read": []}
+
+        command, _, response = get_json_command_from_request(
+            flask.request, valid_commands=valid_commands
+        )
+        if response is not None:
+            return response
+
+        if command == "read":
+            channel_data = self._fetch_all_channels()
+            for key, entries in channel_data.items():
+                if not entries:
+                    continue
+                last = sorted(
+                    self._to_internal_feed(entries),
+                    key=lambda x: x["published"],
+                    reverse=True,
+                )[0]["published"]
+                self._mark_read_until(key, last)
+
+        return NO_CONTENT
+
     def is_blueprint_protected(self):
         return False
+
+    def is_blueprint_csrf_protected(self):
+        return True
 
     ##~~ EventHandlerPlugin
 

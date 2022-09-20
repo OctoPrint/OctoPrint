@@ -176,17 +176,26 @@
     OctoPrintAccessUsersClient.prototype.changePassword = function (
         name,
         password,
+        oldpw,
         opts
     ) {
+        if (_.isObject(oldpw)) {
+            opts = oldpw;
+            oldpw = undefined;
+        }
+
         if (!name || !password) {
             throw new OctoPrintClient.InvalidArgumentError(
-                "user name and password must be set"
+                "user name and new password must be set"
             );
         }
 
         var data = {
             password: password
         };
+        if (oldpw) {
+            data["current"] = oldpw;
+        }
         return this.base.putJson(this.url(name, "password"), data, opts);
     };
 

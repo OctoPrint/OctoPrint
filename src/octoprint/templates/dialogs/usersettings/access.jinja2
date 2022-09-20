@@ -4,6 +4,13 @@
         <p>
             {{ _('If you do not wish to change your password, just leave the following fields empty.') }}
         </p>
+        <div class="control-group" data-bind="css: {error: access_currentPasswordMismatch()}">
+            <label class="control-label" for="userSettings-access_currentPassword">{{ _('Current Password') }}</label>
+            <div class="controls">
+                <input type="password" class="input-block-level" id="userSettings-access_currentPassword" data-bind="value: access_currentPassword, valueUpdate: 'afterkeydown'" required>
+                <span class="help-inline" data-bind="visible: access_currentPasswordMismatch()">{{ _('Passwords do not match') }}</span>
+            </div>
+        </div>
         <div class="control-group">
             <label class="control-label" for="userSettings-access_password">{{ _('New Password') }}</label>
             <div class="controls">
@@ -17,6 +24,9 @@
                 <span class="help-inline" data-bind="visible: passwordMismatch()">{{ _('Passwords do not match') }}</span>
             </div>
         </div>
+        <p>{% trans %}
+            Please note that you will be <strong>logged out immediately</strong> after changing your password and asked to login again.
+        {% endtrans %}</p>
     </fieldset>
     <fieldset>
         <legend>{{ _('API Key') }}</legend>
