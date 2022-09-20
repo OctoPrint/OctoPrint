@@ -356,6 +356,9 @@ class BackupPlugin(
     def is_blueprint_protected(self):
         return False
 
+    def is_blueprint_csrf_protected(self):
+        return True
+
     ##~~ WizardPlugin
 
     def is_wizard_required(self):
@@ -370,7 +373,7 @@ class BackupPlugin(
 
     def route_hook(self, *args, **kwargs):
         from octoprint.server import app
-        from octoprint.server.util.flask import admin_validator
+        from octoprint.server.util.flask import permission_validator
         from octoprint.server.util.tornado import (
             LargeResponseHandler,
             access_validation_factory,
@@ -386,9 +389,15 @@ class BackupPlugin(
                     "path": self.get_plugin_data_folder(),
                     "as_attachment": True,
                     "path_validation": path_validation_factory(
-                        lambda path: not is_hidden_path(path), status_code=404
+                        lambda path: not is_hidden_path(path)
+                        and self._match_backup_filename(
+                            os.path.basename(path), self._settings
+                        ),
+                        status_code=404,
                     ),
-                    "access_validation": access_validation_factory(app, admin_validator),
+                    "access_validation": access_validation_factory(
+                        app, permission_validator, Permissions.PLUGIN_BACKUP_ACCESS
+                    ),
                 },
             )
         ]
@@ -1359,14 +1368,25 @@ class BackupPlugin(
 
     @classmethod
     def _build_backup_filename(cls, settings):
+        backup_prefix = cls._get_backup_prefix(settings)
+        return "{}-backup-{}.zip".format(
+            backup_prefix, time.strftime(BACKUP_DATE_TIME_FMT)
+        )
+
+    @classmethod
+    def _match_backup_filename(cls, path, settings):
+        import re
+
+        backup_prefix = cls._get_backup_prefix(settings)
+        return re.match(re.escape(backup_prefix) + r"-backup-\d{8}-\d{6}.zip", path)
+
+    @classmethod
+    def _get_backup_prefix(cls, settings):
         if settings.global_get(["appearance", "name"]) == "":
             backup_prefix = "octoprint"
         else:
             backup_prefix = settings.global_get(["appearance", "name"])
-        backup_prefix = sanitize(backup_prefix)
-        return "{}-backup-{}.zip".format(
-            backup_prefix, time.strftime(BACKUP_DATE_TIME_FMT)
-        )
+        return sanitize(backup_prefix)
 
     @classmethod
     def _restore_supported(cls, settings):

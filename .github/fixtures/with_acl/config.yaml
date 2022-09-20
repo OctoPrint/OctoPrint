@@ -1,5 +1,8 @@
 accessControl:
   salt: zXmvzI3uWuTLkSPOEfA2ZLwn3f3sGUNS
+devel:
+  enableRateLimiter: false
+  enableCsrfProtection: false
 plugins:
   virtual_printer:
     enabled: true

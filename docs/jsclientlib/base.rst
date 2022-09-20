@@ -74,15 +74,39 @@
 
    :returns string: The base url to use to access OctoPrint's API.
 
-.. js:function:: OctoPrintClient.getRequestHeaders(additional)
+.. js:function:: OctoPrintClient.getCookie(name)
+
+   .. versionadded:: 1.8.3
+
+   Returns the value of the cookie with name ``name``. The port based cookie suffix and if
+   necessary also the script root based suffix will be automatically applied to the ``name``
+   prior to looking up the value.
+
+   :return string: The value of the cookie, if set & accessible, else an empty string.
+
+.. js:function:: OctoPrintClient.getRequestHeaders(method, additional, opts)
+
+   .. versionchanged:: 1.8.3
 
    Generates a dictionary of HTTP headers to use for API requests against OctoPrint with all
    necessary headers and any additionally provided ones.
 
    At the moment this entails setting the ``X-Api-Key`` header based on the current value of
-   ``OctoPrint.options.apikey`` at a minimum.
+   ``OctoPrint.options.apikey``, if set. Otherwise, for non-cross-domain requests targeting
+   methods other than ``GET``, ``HEAD`` or ``OPTIONS``, the current CSRF token is read from the
+   associated cookie and set as ``X-CSRF-Token``.
 
-   :param object additional: Additional headers to add to the request.
+   .. note::
+
+      Up until OctoPrint 1.8.3, this method's signature consisted only of the ``additional``
+      parameter. It has been changed in a backward compatible way so that calling it with the
+      first parameter being the set of additional headers will still work. This mode of operation
+      is deprecated however and will be removed in a future version.
+      A warning will be logged to the debug console accordingly.
+
+   :param str method: Method of the request for which to set headers
+   :param object additional: Additional headers to add to the request, optional.
+   :param object opts: Additional opts passed to the request, used to read cross domain setting, optional.
    :returns object: HTTP headers to use for requests.
 
 .. js:function:: OctoPrintClient.ajax(method, url, opts)

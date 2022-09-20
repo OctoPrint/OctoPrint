@@ -954,6 +954,12 @@ class LocalFileStorage(StorageInterface):
             source, destination, must_not_equal=True
         )
 
+        if not octoprint.filemanager.valid_file_type(destination_data["name"]):
+            raise StorageError(
+                f"{destination_data['name']} is an unrecognized file type",
+                code=StorageError.INVALID_FILE,
+            )
+
         try:
             shutil.copy2(source_data["fullpath"], destination_data["fullpath"])
         except Exception as e:
@@ -982,6 +988,12 @@ class LocalFileStorage(StorageInterface):
         source_data, destination_data = self._get_source_destination_data(
             source, destination
         )
+
+        if not octoprint.filemanager.valid_file_type(destination_data["name"]):
+            raise StorageError(
+                f"{destination_data['name']} is an unrecognized file type",
+                code=StorageError.INVALID_FILE,
+            )
 
         # only a display rename? Update that and bail early
         if source_data["fullpath"] == destination_data["fullpath"]:

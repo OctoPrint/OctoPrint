@@ -5,11 +5,13 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import functools
+import hashlib
+import hmac
 import logging
 import os
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Union
 
 import flask
@@ -24,6 +26,9 @@ import tornado.web
 import webassets.updater
 import webassets.utils
 from cachelib import BaseCache
+from flask import current_app
+from flask_login import COOKIE_NAME as REMEMBER_COOKIE_NAME
+from flask_login.utils import decode_cookie, encode_cookie
 from werkzeug.local import LocalProxy
 from werkzeug.utils import cached_property
 
@@ -457,6 +462,49 @@ class ReverseProxiedEnvironment:
 # ~~ request and response versions
 
 
+def encode_remember_me_cookie(value):
+    from octoprint.server import userManager
+
+    name = value.split("|")[0]
+    try:
+        remember_key = userManager.signature_key_for_user(
+            name, salt=current_app.config["SECRET_KEY"]
+        )
+        timestamp = datetime.utcnow().timestamp()
+        return encode_cookie(f"{name}|{timestamp}", key=remember_key)
+    except Exception:
+        pass
+
+    return ""
+
+
+def decode_remember_me_cookie(value):
+    from octoprint.server import userManager
+
+    parts = value.split("|")
+    if len(parts) == 3:
+        name, created, _ = parts
+
+        try:
+            # valid signature?
+            signature_key = userManager.signature_key_for_user(
+                name, salt=current_app.config["SECRET_KEY"]
+            )
+            cookie = decode_cookie(value, key=signature_key)
+            if cookie:
+                # still valid?
+                if (
+                    datetime.fromtimestamp(float(created))
+                    + timedelta(seconds=current_app.config["REMEMBER_COOKIE_DURATION"])
+                    > datetime.utcnow()
+                ):
+                    return encode_cookie(name)
+        except Exception:
+            pass
+
+    raise ValueError("Invalid remember me cookie")
+
+
 class OctoPrintFlaskRequest(flask.Request):
     environment_wrapper = staticmethod(lambda x: x)
 
@@ -472,10 +520,23 @@ class OctoPrintFlaskRequest(flask.Request):
         result = {}
         desuffixed = {}
         for key, value in cookies.items():
-            if key.endswith(self.cookie_suffix):
-                desuffixed[key[: -len(self.cookie_suffix)]] = value
-            else:
-                result[key] = value
+
+            def process_value(k, v):
+                if k == current_app.config.get(
+                    "REMEMBER_COOKIE_NAME", REMEMBER_COOKIE_NAME
+                ):
+                    return decode_remember_me_cookie(v)
+                return v
+
+            try:
+                if key.endswith(self.cookie_suffix):
+                    key = key[: -len(self.cookie_suffix)]
+                    desuffixed[key] = process_value(key, value)
+                else:
+                    result[key] = process_value(key, value)
+            except ValueError:
+                # ignore broken cookies
+                pass
 
         result.update(desuffixed)
         return result
@@ -506,7 +567,7 @@ class OctoPrintFlaskRequest(flask.Request):
 
 
 class OctoPrintFlaskResponse(flask.Response):
-    def set_cookie(self, key, *args, **kwargs):
+    def set_cookie(self, key, value="", *args, **kwargs):
         # restrict cookie path to script root
         kwargs["path"] = flask.request.script_root + kwargs.get("path", "/")
 
@@ -525,9 +586,13 @@ class OctoPrintFlaskResponse(flask.Response):
         # set secure if necessary
         kwargs["secure"] = settings().getBoolean(["server", "cookies", "secure"])
 
+        # tie account properties to remember me cookie (e.g. current password hash)
+        if key == current_app.config.get("REMEMBER_COOKIE_NAME", REMEMBER_COOKIE_NAME):
+            value = encode_remember_me_cookie(value)
+
         # add request specific cookie suffix to name
         flask.Response.set_cookie(
-            self, key + flask.request.cookie_suffix, *args, **kwargs
+            self, key + flask.request.cookie_suffix, value=value, *args, **kwargs
         )
 
     def delete_cookie(self, key, path="/", domain=None):
@@ -643,6 +708,9 @@ def passive_login():
         )
         if hasattr(u, "session"):
             flask.session["usersession.id"] = u.session
+            flask.session["usersession.signature"] = session_signature(
+                u.get_id(), u.session
+            )
         flask.g.user = u
 
         eventManager().fire(Events.USER_LOGGED_IN, payload={"username": u.get_id()})
@@ -1871,3 +1939,19 @@ class OctoPrintJsonProvider(flask.json.provider.DefaultJSONProvider):
             return JsonEncoding.encode(object_)
         except TypeError:
             return flask.json.provider.DefaultJSONProvider.default(object_)
+
+
+##~~ Session signing
+
+
+def session_signature(user, session):
+    from octoprint.server import userManager
+
+    key = userManager.signature_key_for_user(user, salt=current_app.config["SECRET_KEY"])
+    return hmac.new(
+        key.encode("utf-8"), session.encode("utf-8"), hashlib.sha512
+    ).hexdigest()
+
+
+def validate_session_signature(sig, user, session):
+    return hmac.compare_digest(sig, session_signature(user, session))

@@ -862,7 +862,7 @@ $(function () {
             access.onUserLoggedIn =
             access.onUserLoggedOut =
                 function (user) {
-                    if (access.loginState.hasPermission(access.permissions.SETTINGS)) {
+                    if (access.loginState.hasPermission(access.permissions.ADMIN)) {
                         access.groups.requestData().done(function () {
                             access.users.requestData();
                         });
