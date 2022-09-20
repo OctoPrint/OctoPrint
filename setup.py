@@ -34,6 +34,7 @@ bundled_plugins = [
     "OctoPrint-PiSupport>=2022.3.28",
 ]
 core_deps = [
+    "argon2_cffi>=21.3.0,<22",
     "cachelib>=0.2,<0.3",
     "Click>=8.0.3,<9",
     "colorlog>=6,<7",
@@ -50,6 +51,7 @@ core_deps = [
     "markdown>=3.2.2,<4",
     "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
     "netifaces>=0.11,<1",
+    "passlib>=1.7.4,<2",
     "pathvalidate>=2.4.1,<3",
     "pkginfo>=1.7.1,<2",
     "psutil>=5.8,<6",

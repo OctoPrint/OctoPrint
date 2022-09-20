@@ -255,8 +255,6 @@ $(function () {
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
-        self.folder_timelapseTmp = ko.observable(undefined);
-        self.folder_logs = ko.observable(undefined);
         self.folder_watched = ko.observable(undefined);
 
         self.scripts_gcode_beforePrintStarted = ko.observable(undefined);
@@ -344,7 +342,7 @@ $(function () {
             self.server_onlineCheckResolutionBroken(false);
         };
 
-        var folderTypes = ["uploads", "timelapse", "timelapseTmp", "logs", "watched"];
+        var folderTypes = ["uploads", "timelapse", "watched"];
 
         var checkForDuplicateFolders = function () {
             _.each(folderTypes, function (folderType) {
@@ -772,7 +770,6 @@ $(function () {
                 dataType: "json",
                 maxNumberOfFiles: 1,
                 autoUpload: false,
-                headers: OctoPrint.getRequestHeaders(),
                 add: function (e, data) {
                     if (data.files.length == 0) {
                         return false;

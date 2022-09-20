@@ -92,7 +92,7 @@
         <div data-bind="visible: languagePacksAvailable()">
             <div id="settings_appearance_managelanguagesdialog_list" data-bind="foreach: translations.paginatedItems">
                 <div class="entry">
-                    <strong><a href="#" class="fas" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.entry', container: '.packs' }"><i class="fas fa-caret-down"></i> <span data-bind="text: $root.languagePackDisplay($data)"></span></a></strong>
+                    <strong><a href="#" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.entry', container: '.packs' }"><i class="fas fa-caret-down"></i> <span data-bind="text: $root.languagePackDisplay($data)"></span></a></strong>
                     <div class="packs">
                         <!-- ko foreach: $data.packs -->
                         <div class="row-fluid">

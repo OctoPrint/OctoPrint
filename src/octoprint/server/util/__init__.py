@@ -148,6 +148,26 @@ def corsResponseHandler(resp):
     return resp
 
 
+def csrfRequestHandler():
+    """
+    ``before_request`` handler for blueprints which checks for CRFS double token on
+    relevant requests & methods.
+    """
+    from octoprint.server.util.csrf import validate_csrf_request
+
+    if settings().getBoolean(["devel", "enableCsrfProtection"]):
+        validate_csrf_request(_flask.request)
+
+
+def csrfResponseHandler(resp):
+    """
+    ``after_request`` handler for updating the CSRF cookie on each response.
+    """
+    from octoprint.server.util.csrf import add_csrf_cookie
+
+    return add_csrf_cookie(resp)
+
+
 def noCachingResponseHandler(resp):
     """
     ``after_request`` handler for blueprints which shall set no caching headers

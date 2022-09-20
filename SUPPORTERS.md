@@ -22,11 +22,8 @@ thanks to everyone who contributed!
   * Creality3D
   * DeltaMaker 3D Printers
   * Dennis Breining
-  * Douglas Floyd
-  * Dr. Frank Wester
   * Ernesto Martinez
   * Franziska Kunsmann
-  * Greg Holloway
   * Hog Duske
   * James Mackay
   * Jeff Green
@@ -69,8 +66,6 @@ thanks to everyone who contributed!
   * Steve Dougherty
   * Steve Thompson
   * TJ Horner
-  * Trent Shumay
   * Ulrich Kempken
-  * Yehuda Katz
 
-and 2209 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2188 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
