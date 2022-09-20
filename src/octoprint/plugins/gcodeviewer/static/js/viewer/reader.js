@@ -220,7 +220,8 @@ GCODE.gCodeReader = (function () {
                 cmd: "downloadAndParseGCode",
                 msg: {
                     path: reader.path,
-                    skipuntil: reader.skipuntil,
+                    localPath: reader.localPath,
+                    skipUntil: reader.skipUntil,
                     options: {
                         firstReport: 5,
                         toolOffsets: gCodeOptions["toolOffsets"],

@@ -515,7 +515,8 @@ $(function () {
                 self.cachedDate = date;
                 var par = {
                     path: OctoPrint.files.downloadPath("local", path),
-                    skipuntil: self.settings.settings.plugins.gcodeviewer.skipUntilThis()
+                    localPath: path,
+                    skipUntil: self.settings.settings.plugins.gcodeviewer.skipUntilThis()
                 };
 
                 GCODE.renderer.clear();

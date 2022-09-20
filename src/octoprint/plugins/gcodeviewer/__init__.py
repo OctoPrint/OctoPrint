@@ -4,12 +4,15 @@ __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms
 from flask_babel import gettext
 
 import octoprint.plugin
+from octoprint.filemanager import FileDestinations
+from octoprint.util.files import search_through_file
 
 
 class GcodeviewerPlugin(
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
     octoprint.plugin.SettingsPlugin,
+    octoprint.plugin.SimpleApiPlugin,
 ):
     def get_assets(self):
         js = [
@@ -69,6 +72,19 @@ class GcodeviewerPlugin(
                 if "sizeThreshold" in config:
                     self._settings.set_int(["sizeThreshold"], config["sizeThreshold"])
                 self._settings.global_remove(["gcodeViewer"])
+
+    def on_api_get(self, request):
+        import flask
+
+        skipUntilThis = self._settings.get(["skipUntilThis"])
+        present = "false"
+        if request.args.get("path") and skipUntilThis:
+            path = self._file_manager.path_on_disk(
+                FileDestinations.LOCAL, request.args.get("path")
+            )
+            if search_through_file(path, skipUntilThis, False):
+                present = "true"
+        return flask.jsonify(result=present)
 
 
 __plugin_name__ = gettext("GCode Viewer")

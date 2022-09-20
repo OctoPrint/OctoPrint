@@ -4,7 +4,10 @@
  * Time: 12:18 PM
  */
 
+// raw path suitable for fetch()
 var path;
+// path relative to Local
+var localPath;
 var firstReport;
 var toolOffsets = [{x: 0, y: 0}];
 var g90InfluencesExtruder = false;
@@ -40,7 +43,8 @@ var emptyLayers = [];
 var percentageByLayer = [];
 
 var mustCompress = false;
-var skipuntil = null;
+var skipUntil = null;
+var skipUntilPresent = false;
 
 importScripts("../lib/pako.js");
 
@@ -375,7 +379,7 @@ var gCodeLineGenerator = async function* (fileURL) {
             // lets read a new chunk
             let remainder = chunk.substr(startIndex);
             ({value: chunk, done: readerDone} = await reader.read());
-            // concatenate with our leftovers from the pervious chunk
+            // concatenate with our leftovers from the previous chunk
             chunk = remainder + (chunk ? utf8Decoder.decode(chunk) : "");
             // reset the indexes
             startIndex = re.lastIndex = 0;
@@ -395,7 +399,7 @@ var gCodeLineGenerator = async function* (fileURL) {
     }
     if (startIndex < chunk.length) {
         // last line didn't end in a newline char
-        currentDownloadLength += chunck.length - startIndex;
+        currentDownloadLength += chunk.length - startIndex;
         // return the data to the caller
         yield [
             chunk.substr(startIndex),
@@ -443,7 +447,20 @@ var doParse = async function () {
     // visualizer doesn't actually have a physical offset ;)
     var activeToolOffset = toolOffsets[0];
 
+    // skipUntil preparations
+    var skipUntilFound = false;
+
     var i, j, args;
+
+    // if skipUntil is set, get skipUntilPresent
+    skipUntilPresent = false;
+    if (skipUntil !== undefined) {
+        result = await fetch("/api/plugin/gcodeviewer?path=" + localPath);
+        if (result.ok) {
+            response = await result.json();
+            skipUntilPresent = response.result == "true";
+        }
+    }
 
     model = [];
     for await (let [line, percentage] of gCodeLineGenerator(path)) {
@@ -454,6 +471,12 @@ var doParse = async function () {
         center_i = undefined;
         center_j = undefined;
         direction = undefined;
+
+        // find the skipUntil if it is present
+        // we do not actually remove the line, it is parsed normally.
+        if (skipUntilPresent && !skipUntilFound && line.startsWith(skipUntil)) {
+            skipUntilFound = true;
+        }
 
         extrude = false;
         line = line.split(/[\(;]/)[0];
@@ -710,7 +733,9 @@ var doParse = async function () {
             zLift = false;
         }
 
-        if (addToModel) {
+        // if skipUntilPresent is true, we will not add anything to
+        // the model until the skipUntil string is found.
+        if (addToModel && (!skipUntilPresent || skipUntilFound)) {
             if (!model[layer]) model[layer] = [];
             if (model[layer] instanceof Uint8Array)
                 model[layer] = decompress(model[layer]);
@@ -836,6 +861,7 @@ var doParse = async function () {
 
 var parseGCode = async function (message) {
     path = message.path;
+    localPath = message.localPath;
     firstReport = message.options.firstReport;
     toolOffsets = message.options.toolOffsets;
     if (!toolOffsets || toolOffsets.length === 0) toolOffsets = [{x: 0, y: 0}];
@@ -844,7 +870,7 @@ var parseGCode = async function (message) {
     g90InfluencesExtruder = message.options.g90InfluencesExtruder;
     boundingBox.minZ = min.z = message.options.bedZ;
     mustCompress = message.options.compress;
-    skipuntil = message.skipuntil;
+    skipUntil = message.skipUntil;
 
     await doParse();
     self.postMessage({
