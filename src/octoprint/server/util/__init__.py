@@ -43,7 +43,7 @@ def loginFromApiKeyRequestHandler():
         if loginUserFromApiKey():
             _flask.g.login_via_apikey = True
     except InvalidApiKeyException:
-        _flask.abort(403)
+        _flask.abort(403, "Invalid API key")
 
 
 def loginFromAuthorizationHeaderRequestHandler():
@@ -54,7 +54,7 @@ def loginFromAuthorizationHeaderRequestHandler():
         if loginUserFromAuthorizationHeader():
             _flask.g.login_via_header = True
     except InvalidApiKeyException:
-        _flask.abort(403)
+        _flask.abort(403, "Invalid credentials in Basic Authorization header")
 
 
 class InvalidApiKeyException(Exception):
@@ -69,7 +69,7 @@ def loginUserFromApiKey():
     user = get_user_for_apikey(apikey)
     if user is None:
         # invalid API key = no API key
-        return False
+        raise InvalidApiKeyException("Invalid API key")
 
     return loginUser(user, login_mechanism="apikey")
 
