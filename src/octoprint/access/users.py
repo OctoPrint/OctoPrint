@@ -806,7 +806,7 @@ class FilebasedUserManager(UserManager):
         )
 
         if no_legacy and salt:
-            # no legacy hashs left, kill salt
+            # no legacy hashes left, kill salt
             self._settings.backup("cleanup_legacy_hashes")
             self._settings.remove(["accessControl", "salt"])
             self._settings.save()
