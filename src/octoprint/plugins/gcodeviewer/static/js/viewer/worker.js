@@ -454,7 +454,7 @@ var doParse = async function () {
 
     // if skipUntil is set, get skipUntilPresent
     skipUntilPresent = false;
-    if (skipUntil !== undefined) {
+    if (skipUntil !== undefined && skipUntil !== "") {
         result = await fetch("/api/plugin/gcodeviewer?path=" + localPath);
         if (result.ok) {
             response = await result.json();
