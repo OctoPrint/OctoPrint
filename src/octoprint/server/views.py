@@ -225,8 +225,7 @@ def login():
         _logger.exception("Error processing theming CSS, ignoring")
 
     resp = make_response(render_template("login.jinja2", **render_kwargs))
-    add_csrf_cookie(resp)
-    return resp
+    return add_csrf_cookie(resp)
 
 
 @app.route("/recovery")
@@ -258,8 +257,7 @@ def recovery():
         _logger.exception("Error adding backup upload size info, ignoring")
 
     resp = make_response(render_template("recovery.jinja2", **render_kwargs))
-    add_csrf_cookie(resp)
-    return resp
+    return add_csrf_cookie(resp)
 
 
 @app.route("/cached.gif")
@@ -700,8 +698,7 @@ def index():
     if response is None:
         return abort(404)
 
-    add_csrf_cookie(response)
-    return response
+    return add_csrf_cookie(response)
 
 
 def _get_render_kwargs(templates, plugin_names, plugin_vars, now):

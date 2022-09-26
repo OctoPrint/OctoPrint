@@ -177,8 +177,10 @@ class UserManager(GroupChangeListener):
     def cleanup_legacy_hashes(self):
         pass
 
-    def signature_key_for_user(self, username, salt=None):
-        return self.create_password_hash(username, salt=salt)
+    def signature_key_for_user(self, username, secret):
+        return hashlib.sha512(
+            to_bytes(username, encoding="utf-8", errors="replace") + to_bytes(secret)
+        ).hexdigest()
 
     def add_user(self, username, password, active, permissions, groups, overwrite=False):
         pass
@@ -809,14 +811,16 @@ class FilebasedUserManager(UserManager):
             self._settings.remove(["accessControl", "salt"])
             self._settings.save()
 
-    def signature_key_for_user(self, username, salt=None):
+    def signature_key_for_user(self, username, secret):
+        if username == "_api":
+            return super().signature_key_for_user(username, secret)
         if username not in self._users:
             raise UnknownUser(username)
         user = self._users[username]
 
         return hashlib.sha512(
             to_bytes(username + user._passwordHash, encoding="utf-8", errors="replace")
-            + to_bytes(salt)
+            + to_bytes(secret)
         ).hexdigest()
 
     def change_user_setting(self, username, key, value):

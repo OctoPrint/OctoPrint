@@ -468,7 +468,7 @@ def encode_remember_me_cookie(value):
     name = value.split("|")[0]
     try:
         remember_key = userManager.signature_key_for_user(
-            name, salt=current_app.config["SECRET_KEY"]
+            name, current_app.config["SECRET_KEY"]
         )
         timestamp = datetime.utcnow().timestamp()
         return encode_cookie(f"{name}|{timestamp}", key=remember_key)
@@ -488,7 +488,7 @@ def decode_remember_me_cookie(value):
         try:
             # valid signature?
             signature_key = userManager.signature_key_for_user(
-                name, salt=current_app.config["SECRET_KEY"]
+                name, current_app.config["SECRET_KEY"]
             )
             cookie = decode_cookie(value, key=signature_key)
             if cookie:
@@ -1944,11 +1944,12 @@ class OctoPrintJsonProvider(flask.json.provider.DefaultJSONProvider):
 def session_signature(user, session):
     from octoprint.server import userManager
 
-    key = userManager.signature_key_for_user(user, salt=current_app.config["SECRET_KEY"])
+    key = userManager.signature_key_for_user(user, current_app.config["SECRET_KEY"])
     return hmac.new(
         key.encode("utf-8"), session.encode("utf-8"), hashlib.sha512
     ).hexdigest()
 
 
 def validate_session_signature(sig, user, session):
-    return hmac.compare_digest(sig, session_signature(user, session))
+    user_sig = session_signature(user, session)
+    return len(user_sig) == len(sig) and hmac.compare_digest(sig, user_sig)
