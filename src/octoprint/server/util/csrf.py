@@ -65,7 +65,7 @@ def validate_csrf_tokens(cookie, header):
 
 def add_csrf_cookie(response):
     if not isinstance(response, OctoPrintFlaskResponse):
-        return
+        response = flask.make_response(response)
 
     token = generate_csrf_token()
     response.set_cookie("csrf_token", token, httponly=False)
