@@ -470,6 +470,20 @@ def decode_remember_me_cookie(value):
     raise ValueError("Invalid remember me cookie")
 
 
+def get_cookie_suffix(request):
+    """
+    Request specific suffix for set and read cookies
+
+    We need this because cookies are not port-specific and we don't want to overwrite our
+    session and other cookies from one OctoPrint instance on our machine with those of another
+    one who happens to listen on the same address albeit a different port or script root.
+    """
+    result = "_P" + request.server_port
+    if request.script_root:
+        return result + "_R" + request.script_root.replace("/", "|")
+    return result
+
+
 class OctoPrintFlaskRequest(flask.Request):
     environment_wrapper = staticmethod(lambda x: x)
 
@@ -518,17 +532,7 @@ class OctoPrintFlaskRequest(flask.Request):
 
     @cached_property
     def cookie_suffix(self):
-        """
-        Request specific suffix for set and read cookies
-
-        We need this because cookies are not port-specific and we don't want to overwrite our
-        session and other cookies from one OctoPrint instance on our machine with those of another
-        one who happens to listen on the same address albeit a different port or script root.
-        """
-        result = "_P" + self.server_port
-        if self.script_root:
-            return result + "_R" + self.script_root.replace("/", "|")
-        return result
+        return get_cookie_suffix(self)
 
 
 class OctoPrintFlaskResponse(flask.Response):
