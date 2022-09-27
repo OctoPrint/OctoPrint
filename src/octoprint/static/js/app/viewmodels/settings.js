@@ -41,15 +41,7 @@ $(function () {
         self.translationUploadFilename = ko.observable();
         self.invalidTranslationArchive = ko.pureComputed(function () {
             var name = self.translationUploadFilename();
-            return (
-                name !== undefined &&
-                !(
-                    _.endsWith(name.toLocaleLowerCase(), ".zip") ||
-                    _.endsWith(name.toLocaleLowerCase(), ".tar.gz") ||
-                    _.endsWith(name.toLocaleLowerCase(), ".tgz") ||
-                    _.endsWith(name.toLocaleLowerCase(), ".tar")
-                )
-            );
+            return name !== undefined && !_.endsWith(name.toLocaleLowerCase(), ".zip");
         });
         self.enableTranslationUpload = ko.pureComputed(function () {
             var name = self.translationUploadFilename();
