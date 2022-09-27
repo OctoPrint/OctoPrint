@@ -308,7 +308,7 @@ $(function () {
         };
 
         self.onDataUpdaterReauthRequired = function (reason) {
-            if (reason === "logout" || reason === "removed") {
+            if (reason === "logout" || reason === "stale" || reason === "removed") {
                 self.logout();
             } else {
                 self.requestData();
