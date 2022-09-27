@@ -228,7 +228,7 @@ default_settings = {
         "preemptiveCache": {"exceptions": [], "until": 7},
         "ipCheck": {"enabled": True, "trustedSubnets": []},
         "allowFraming": False,
-        "cookies": {"secure": False, "samesite": "strict"},
+        "cookies": {"secure": False, "samesite": "lax"},
     },
     "webcam": {
         "webcamEnabled": True,
