@@ -107,7 +107,7 @@
         return url;
     };
 
-    OctoPrintClient.prototype.getCookieSuffix = function () {
+    OctoPrintClient.prototype.getParsedBaseUrl = function () {
         if (!this.options.baseurl) return "";
 
         try {
@@ -120,6 +120,14 @@
             }
             var url = new URL(parsed.protocol + "//" + parsed.host + path);
         }
+
+        return url;
+    };
+
+    OctoPrintClient.prototype.getCookieSuffix = function () {
+        if (!this.options.baseurl) return "";
+
+        var url = this.getParsedBaseUrl();
 
         var port = url.port || (url.protocol === "https:" ? 443 : 80);
         if (url.pathname && url.pathname !== "/") {

@@ -331,6 +331,26 @@ def in_cache():
         return abort(404)
 
 
+@app.route("/reverse_proxy_test")
+@app.route("/reverse_proxy_test/")
+def reverse_proxy_test():
+    from octoprint.server.util.flask import get_cookie_suffix, get_remote_address
+
+    remote_address = get_remote_address(request)
+    cookie_suffix = get_cookie_suffix(request)
+
+    return render_template(
+        "reverse_proxy_test.jinja2",
+        theming=[],
+        client_ip=remote_address,
+        server_protocol=request.environ.get("wsgi.url_scheme"),
+        server_name=request.environ.get("SERVER_NAME"),
+        server_port=request.environ.get("SERVER_PORT"),
+        server_path=request.script_root if request.script_root else "/",
+        cookie_suffix=cookie_suffix,
+    )
+
+
 @app.route("/")
 def index():
     from octoprint.server import connectivityChecker, printer

@@ -305,6 +305,7 @@ class PrinterStateConnection(
                         f"Unknown user/session combo: {user_id}:{user_session}"
                     )
                     self._on_logout()
+                    self._sendReauthRequired("stale")
 
             self._register()
 
