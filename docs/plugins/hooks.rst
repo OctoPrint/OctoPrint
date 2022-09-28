@@ -510,7 +510,7 @@ octoprint.comm.protocol.firmware.capabilities
 .. _sec-plugins-hook-comm-protocol-action:
 
 octoprint.comm.protocol.firmware.capability_report
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:function:: firmware_capability_report_hook(comm_instance, firmware_capabilities, *args, **kwargs)
 
