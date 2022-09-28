@@ -2942,6 +2942,7 @@ class MachineCom:
                     if (
                         "SD init fail" in line
                         or "volume.init failed" in line
+                        or "No media" in line
                         or "openRoot failed" in line
                         or "SD Card unmounted" in line
                         or "SD card released" in line
