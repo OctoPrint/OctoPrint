@@ -453,6 +453,12 @@
                             <span class="help-block">{{ _('Try checking this if you run into connection timeouts due to your printer taking too long to respond to OctoPrint\'s handshake attempts on connect.') }}</span>
                         </label>
                     </div>
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: serial_waitToLoadSdFileList" id="settings-serialWaitToLoadSdFileList"> {{ _('Wait to load the SD card file list until the firmware capability report is processed.') }}
+                            <span class="help-block">{{ _('Try checking this if the SD card file list loads improperly after connecting to the printer.') }}</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="control-group">
                     <label class="control-label" for="settings-serialBlockedCommands">{{ _('Blocked commands') }}</label>

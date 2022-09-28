@@ -27,7 +27,16 @@ EMPTY_RESULT = {
         "minZ": 0,
         "maxZ": 0,
     },
+    "travelArea": {
+        "minX": 0,
+        "maxX": 0,
+        "minY": 0,
+        "maxY": 0,
+        "minZ": 0,
+        "maxZ": 0,
+    },
     "dimensions": {"width": 0, "height": 0, "depth": 0},
+    "travelDimensions": {"width": 0, "height": 0, "depth": 0},
     "filament": {},
 }
 
@@ -390,6 +399,28 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
          * Depth of the printed model along the Y axis, in mm
        - * ``dimensions.height``
          * Height of the printed model along the Z axis, in mm
+       - * ``travelArea``
+         * Bounding box of all machine movements (minimum and maximum coordinates)
+       - * ``travelArea.minX``
+         * Minimum X coordinate of the machine movement
+       - * ``travelArea.maxX``
+         * Maximum X coordinate of the machine movement
+       - * ``travelArea.minY``
+         * Minimum Y coordinate of the machine movement
+       - * ``travelArea.maxY``
+         * Maximum Y coordinate of the machine movement
+       - * ``travelArea.minZ``
+         * Minimum Z coordinate of the machine movement
+       - * ``travelArea.maxZ``
+         * Maximum Z coordinate of the machine movement
+       - * ``travelDimensions``
+         * Dimensions of the travel area in X, Y, Z
+       - * ``travelDimensions.width``
+         * Width of the travel area along the X axis, in mm
+       - * ``travelDimensions.depth``
+         * Depth of the travel area along the Y axis, in mm
+       - * ``travelDimensions.height``
+         * Height of the travel area along the Z axis, in mm
     """
 
     def __init__(self, finished_callback):
@@ -406,7 +437,14 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
         if self._current.analysis and all(
             map(
                 lambda x: x in self._current.analysis,
-                ("printingArea", "dimensions", "estimatedPrintTime", "filament"),
+                (
+                    "printingArea",
+                    "dimensions",
+                    "travelArea",
+                    "travelDimensions",
+                    "estimatedPrintTime",
+                    "filament",
+                ),
             )
         ):
             return self._current.analysis
@@ -499,6 +537,8 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 
                 result["printingArea"] = analysis["printing_area"]
                 result["dimensions"] = analysis["dimensions"]
+                result["travelArea"] = analysis["travel_area"]
+                result["travelDimensions"] = analysis["travel_dimensions"]
                 if analysis["total_time"]:
                     result["estimatedPrintTime"] = analysis["total_time"] * 60
                 if analysis["extrusion_length"]:

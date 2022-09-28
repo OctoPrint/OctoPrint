@@ -74,6 +74,11 @@ class CoreWizardPlugin(
         else:
             return {}
 
+    # ~~ BlueprintPlugin API
+
+    def is_blueprint_csrf_protected(self):
+        return True
+
     # ~~ WizardPlugin API
 
     def is_wizard_required(self):

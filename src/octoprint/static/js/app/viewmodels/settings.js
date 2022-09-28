@@ -41,15 +41,7 @@ $(function () {
         self.translationUploadFilename = ko.observable();
         self.invalidTranslationArchive = ko.pureComputed(function () {
             var name = self.translationUploadFilename();
-            return (
-                name !== undefined &&
-                !(
-                    _.endsWith(name.toLocaleLowerCase(), ".zip") ||
-                    _.endsWith(name.toLocaleLowerCase(), ".tar.gz") ||
-                    _.endsWith(name.toLocaleLowerCase(), ".tgz") ||
-                    _.endsWith(name.toLocaleLowerCase(), ".tar")
-                )
-            );
+            return name !== undefined && !_.endsWith(name.toLocaleLowerCase(), ".zip");
         });
         self.enableTranslationUpload = ko.pureComputed(function () {
             var name = self.translationUploadFilename();
@@ -218,6 +210,7 @@ $(function () {
         self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
         self.serial_waitForStart = ko.observable(undefined);
+        self.serial_waitToLoadSdFileList = ko.observable(undefined);
         self.serial_sendChecksum = ko.observable("print");
         self.serial_sendChecksumWithUnknownCommands = ko.observable(undefined);
         self.serial_unknownCommandsNeedAck = ko.observable(undefined);
@@ -255,8 +248,6 @@ $(function () {
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
-        self.folder_timelapseTmp = ko.observable(undefined);
-        self.folder_logs = ko.observable(undefined);
         self.folder_watched = ko.observable(undefined);
 
         self.scripts_gcode_beforePrintStarted = ko.observable(undefined);
@@ -344,7 +335,7 @@ $(function () {
             self.server_onlineCheckResolutionBroken(false);
         };
 
-        var folderTypes = ["uploads", "timelapse", "timelapseTmp", "logs", "watched"];
+        var folderTypes = ["uploads", "timelapse", "watched"];
 
         var checkForDuplicateFolders = function () {
             _.each(folderTypes, function (folderType) {
@@ -402,6 +393,7 @@ $(function () {
 
         self.observableCopies = {
             feature_waitForStart: "serial_waitForStart",
+            feature_waitToLoadSdFileList: "serial_waitToLoadSdFileList",
             feature_sendChecksum: "serial_sendChecksum",
             feature_sdRelativePath: "serial_sdRelativePath",
             feature_sdAlwaysAvailable: "serial_sdAlwaysAvailable",
@@ -772,7 +764,6 @@ $(function () {
                 dataType: "json",
                 maxNumberOfFiles: 1,
                 autoUpload: false,
-                headers: OctoPrint.getRequestHeaders(),
                 add: function (e, data) {
                     if (data.files.length == 0) {
                         return false;

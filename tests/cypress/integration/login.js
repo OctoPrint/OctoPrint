@@ -1,4 +1,11 @@
-import {prepare_server, await_coreui, await_loginui, login} from "../util/util";
+import {
+    prepare_server,
+    await_coreui,
+    await_loginui,
+    login,
+    get_cookie_name,
+    get_full_url
+} from "../util/util";
 
 context("Login tests", () => {
     const username = "admin";
@@ -13,7 +20,7 @@ context("Login tests", () => {
             cy.visit("/?l10n=en");
             await_loginui();
             cy.location().should((loc) => {
-                expect(loc.pathname).to.eq("/login/");
+                expect(loc.pathname).to.eq(get_full_url("/login/"));
             });
         });
 
@@ -27,8 +34,8 @@ context("Login tests", () => {
             await_coreui();
 
             cy.get("[data-test-id=login-menu-title]").should("contain", username);
-            cy.getCookie("session_P5000").should("exist");
-            cy.getCookie("remember_token_P5000").should("not.exist");
+            cy.getCookie(get_cookie_name("session")).should("exist");
+            cy.getCookie(get_cookie_name("remember_token")).should("not.exist");
             cy.location().should((loc) => {
                 expect(loc.hash).to.eq("#temp");
             });
@@ -45,8 +52,8 @@ context("Login tests", () => {
             await_coreui();
 
             cy.get("[data-test-id=login-menu-title]").should("contain", username);
-            cy.getCookie("session_P5000").should("exist");
-            cy.getCookie("remember_token_P5000").should(($cookie) => {
+            cy.getCookie(get_cookie_name("session")).should("exist");
+            cy.getCookie(get_cookie_name("remember_token")).should(($cookie) => {
                 expect($cookie).to.have.property("value");
                 expect($cookie.value).to.match(new RegExp("^" + username + "|"));
             });
@@ -71,7 +78,7 @@ context("Login tests", () => {
 
             await_loginui();
             cy.location().should((loc) => {
-                expect(loc.pathname).to.eq("/login/");
+                expect(loc.pathname).to.eq(get_full_url("/login/"));
             });
         });
     });
@@ -81,7 +88,7 @@ context("Login tests", () => {
             cy.visit("/?l10n=en");
             await_loginui();
             cy.location().should((loc) => {
-                expect(loc.pathname).to.eq("/login/");
+                expect(loc.pathname).to.eq(get_full_url("/login/"));
             });
         });
 

@@ -43,6 +43,7 @@ from octoprint.util import (
     sanitize_ascii,
     to_unicode,
 )
+from octoprint.util.files import m20_timestamp_to_unix_timestamp
 from octoprint.util.platform import get_os, set_close_exec
 
 try:
@@ -621,8 +622,11 @@ class MachineCom:
 
         self._firmware_detection = settings().getBoolean(["serial", "firmwareDetection"])
         self._firmware_info_received = False
+        self._firmware_capabilities_received = False
         self._firmware_info = {}
         self._firmware_capabilities = {}
+
+        self._defer_sd_refresh = settings().getBoolean(["serial", "waitToLoadSdFileList"])
 
         self._temperature_autoreporting = False
         self._sdstatus_autoreporting = False
@@ -723,6 +727,9 @@ class MachineCom:
             ),
             "capabilities": self._pluginManager.get_hooks(
                 "octoprint.comm.protocol.firmware.capabilities"
+            ),
+            "capability_report": self._pluginManager.get_hooks(
+                "octoprint.comm.protocol.firmware.capability_report"
             ),
         }
 
@@ -1969,7 +1976,7 @@ class MachineCom:
 
     def getSdFiles(self):
         return list(
-            map(lambda x: (x[0], x[1], self._sdFilesMap.get(x[0])), self._sdFiles)
+            map(lambda x: (x[0], x[1], self._sdFilesMap.get(x[0]), x[2]), self._sdFiles)
         )
 
     def deleteSdFile(self, filename, tags=None):
@@ -2003,11 +2010,17 @@ class MachineCom:
         if not self.isOperational() or self.isBusy():
             return
 
+        if self._defer_sd_refresh and not self._firmware_capabilities_received:
+            self._logger.debug(
+                "Deferring sd file refresh until capability report is processed"
+            )
+            return
+
         if tags is None:
             tags = set()
 
         if self._capability_supported(self.CAPABILITY_EXTENDED_M20):
-            command = "M20 L"
+            command = "M20 L T"
         else:
             command = "M20"
 
@@ -2443,28 +2456,7 @@ class MachineCom:
                 ##~~ SD file list
                 # if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
                 if self._sdEnabled and self._sdFileList and "End file list" not in line:
-                    preprocessed_line = line
-                    fileinfo = preprocessed_line.split(None, 2)
-                    if len(fileinfo) == 3:
-                        # name, size, long name
-                        filename, size, longname = fileinfo
-                    elif len(fileinfo) == 2:
-                        # name, size
-                        filename, size = fileinfo
-                        longname = None
-                    else:
-                        # name
-                        filename = preprocessed_line
-                        size = None
-                        longname = None
-
-                    if size is not None:
-                        try:
-                            size = int(size)
-                        except ValueError:
-                            # whatever that was, it was not an integer, so we'll just use the whole line as filename and set size to None
-                            filename = preprocessed_line
-                            size = None
+                    (filename, size, timestamp, longname) = parse_file_list_line(line)
 
                     if valid_file_type(filename, "machinecode"):
                         if filter_non_ascii(filename):
@@ -2487,11 +2479,8 @@ class MachineCom:
                                 filename = "/" + filename
                             if self._sdLowerCase:
                                 filename = filename.lower()
-                            self._sdFiles.append((filename, size))
+                            self._sdFiles.append((filename, size, timestamp))
                             if longname is not None:
-                                if longname[0] == '"' and longname[-1] == '"':
-                                    # apparently some firmwares enclose the long name in quotes...
-                                    longname = longname[1:-1]
                                 self._sdFilesMap[filename] = longname
                         continue
 
@@ -2580,6 +2569,33 @@ class MachineCom:
                     self.STATE_DETECT_SERIAL,
                 ):
                     continue
+
+                # wait for the end of the firmware capability report (M115) then notify plugins and refresh sd list if deferred
+                if (
+                    self._firmware_capabilities
+                    and not self._firmware_capabilities_received
+                    and not lower_line.startswith("cap:")
+                ):
+                    self._firmware_capabilities_received = True
+
+                    if self._defer_sd_refresh:
+                        # sd list was deferred, refresh it now
+                        self._logger.debug("Performing deferred sd file refresh")
+                        self.refreshSdFiles()
+
+                    # notify plugins
+                    for name, hook in self._firmware_info_hooks[
+                        "capability_report"
+                    ].items():
+                        try:
+                            hook(self, copy.copy(self._firmware_capabilities))
+                        except Exception:
+                            self._logger.exception(
+                                "Error processing firmware reported hook {}:".format(
+                                    name
+                                ),
+                                extra={"plugin": name},
+                            )
 
                 ##~~ position report processing
                 if "X:" in line and "Y:" in line and "Z:" in line:
@@ -2729,6 +2745,10 @@ class MachineCom:
                             ):
                                 self._logger.info(
                                     "Firmware states that it supports emergency GCODEs to be sent without waiting for an acknowledgement first"
+                                )
+                            elif capability == self.CAPABILITY_EXTENDED_M20 and enabled:
+                                self._logger.info(
+                                    "Firmware states that it supports long filenames"
                                 )
 
                         # notify plugins
@@ -3628,11 +3648,7 @@ class MachineCom:
         )
 
         if self._sdAvailable:
-            self.refreshSdFiles(
-                tags={
-                    "trigger:comm.on_connected",
-                }
-            )
+            self.refreshSdFiles(tags={"trigger:comm.on_connected"})
         else:
             self.initSdCard(tags={"trigger:comm.on_connected"})
 
@@ -6273,6 +6289,66 @@ def canonicalize_temperatures(parsed, current):
         del result["T"]
 
     return result
+
+
+def _validate_m20_timestamp(timestamp):
+    try:
+        m20_timestamp_to_unix_timestamp(timestamp)
+    except ValueError:
+        return False
+    return True
+
+
+def parse_file_list_line(line):
+    longname = None
+    size = None
+    timestamp = None
+    fileinfo = line.split(None, 3)
+    if len(fileinfo) == 4:
+        # name, size, timestamp, long name or name, size, long name with spaces
+        filename, size, timestamp, longname = fileinfo
+        if not _validate_m20_timestamp(timestamp):
+            # longname with spaces. Split line again with twice split limit to get longname right in case
+            # of multiple whitespace characters in it.
+            filename, size, longname = line.split(None, 2)
+            timestamp = None
+    elif len(fileinfo) == 3:
+        # name, size, long name or name, size, timestamp
+        filename, size, third = fileinfo
+        if _validate_m20_timestamp(third):
+            timestamp = third
+        else:
+            longname = third
+    elif len(fileinfo) == 2:
+        # name, size
+        filename, size = fileinfo
+    else:
+        # name
+        filename = line
+
+    if size is not None:
+        try:
+            size = int(size)
+        except ValueError:
+            # whatever that was, it was not an integer, so we'll just use the whole line as filename and set size/timestamp/longname to None
+            filename = line
+            size = None
+            timestamp = None
+            longname = None
+        else:
+            if timestamp is not None:
+                # size was valid and we have timestamp, so try to use it
+                try:
+                    timestamp = m20_timestamp_to_unix_timestamp(timestamp)
+                except ValueError:
+                    timestamp = None
+
+    if longname is not None:
+        if longname[0] == '"' and longname[-1] == '"':
+            # apparently some firmwares enclose the long name in quotes...
+            longname = longname[1:-1]
+
+    return (filename, size, timestamp, longname)
 
 
 def parse_temperature_line(line, current):

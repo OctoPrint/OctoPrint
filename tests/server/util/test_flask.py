@@ -10,6 +10,7 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 import unittest
 from unittest import mock
 
+import flask
 from ddt import data, ddt, unpack
 
 from octoprint.server.util.flask import (
@@ -424,6 +425,9 @@ class OctoPrintFlaskRequestTest(unittest.TestCase):
     def setUp(self):
         self.orig_environment_wrapper = OctoPrintFlaskRequest.environment_wrapper
 
+        self.app = flask.Flask("testapp")
+        self.app.config["SECRET_KEY"] = "secret"
+
     def tearDown(self):
         OctoPrintFlaskRequest.environment_wrapper = staticmethod(
             self.orig_environment_wrapper
@@ -470,7 +474,8 @@ class OctoPrintFlaskRequestTest(unittest.TestCase):
 
         request = OctoPrintFlaskRequest(environ)
 
-        cookies = request.cookies
+        with self.app.app_context():
+            cookies = request.cookies
         self.assertDictEqual(
             {
                 "postfixed": "postfixed_value",
@@ -494,6 +499,9 @@ class OctoPrintFlaskResponseTest(unittest.TestCase):
 
         self.settings = mock.MagicMock()
         self.settings_getter.return_value = self.settings
+
+        self.app = flask.Flask("testapp")
+        self.app.config["SECRET_KEY"] = "secret"
 
     def tearDown(self):
         self.settings_patcher.stop()
@@ -545,13 +553,14 @@ class OctoPrintFlaskResponseTest(unittest.TestCase):
 
                 # test set_cookie
                 with mock.patch("flask.Response.set_cookie") as set_cookie_mock:
-                    response.set_cookie("some_key", "some_value", **kwargs)
+                    with self.app.app_context():
+                        response.set_cookie("some_key", "some_value", **kwargs)
 
                     # set_cookie should have key and path values adjusted
                     set_cookie_mock.assert_called_once_with(
                         response,
                         "some_key" + expected_suffix,
-                        "some_value",
+                        value="some_value",
                         path=expected_path_set,
                         secure=secure,
                         samesite=expected_samesite,
@@ -560,7 +569,8 @@ class OctoPrintFlaskResponseTest(unittest.TestCase):
                 # test delete_cookie
                 with mock.patch("flask.Response.set_cookie") as set_cookie_mock:
                     with mock.patch("flask.Response.delete_cookie") as delete_cookie_mock:
-                        response.delete_cookie("some_key", **kwargs)
+                        with self.app.app_context():
+                            response.delete_cookie("some_key", **kwargs)
 
                         # delete_cookie internally calls set_cookie - so our delete_cookie call still uses the non modified
                         # key and path values, set_cookie will translate those (as tested above)

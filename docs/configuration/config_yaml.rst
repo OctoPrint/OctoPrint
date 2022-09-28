@@ -72,10 +72,6 @@ Use the following settings to enable access control:
      # If a remote user is not found, add them. Use this only if all users from the remote system can use OctoPrint.
      addRemoteUsers: false
 
-     # Secret salt used for password hashing, DO NOT TOUCH. If changed you will no longer be able to log in with your
-     # existing accounts.
-     salt: someSecretSalt
-
 .. _sec-configuration-config_yaml-api:
 
 API
@@ -767,6 +763,10 @@ Use the following settings to configure the serial connection to the printer:
      # Specifies whether OctoPrint should wait for the start response from the printer before trying to send commands
      # during connect.
      waitForStartOnConnect: false
+
+     # Specifies whether OctoPrint should wait to load the SD card file list until the first firmware capability
+     # report is processed.
+     waitToLoadSdFileList: false
 
      # Specifies whether OctoPrint should send linenumber + checksum with every printer command. Needed for
      # successful communication with Repetier firmware

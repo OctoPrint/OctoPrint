@@ -25,6 +25,8 @@ $(function () {
 
         self.access_password = ko.observable(undefined);
         self.access_repeatedPassword = ko.observable(undefined);
+        self.access_currentPassword = ko.observable(undefined);
+        self.access_currentPasswordMismatch = ko.observable(false);
         self.access_apikey = ko.observable(undefined);
         self.interface_language = ko.observable(undefined);
 
@@ -32,6 +34,8 @@ $(function () {
         self.currentUser.subscribe(function (newUser) {
             self.access_password(undefined);
             self.access_repeatedPassword(undefined);
+            self.access_currentPassword(undefined);
+            self.access_currentPasswordMismatch(false);
             self.access_apikey(undefined);
             self.interface_language("_default");
 
@@ -44,6 +48,9 @@ $(function () {
                     self.interface_language(newUser.settings.interface.language);
                 }
             }
+        });
+        self.access_currentPassword.subscribe(function () {
+            self.access_currentPasswordMismatch(false);
         });
 
         self.passwordMismatch = ko.pureComputed(function () {
@@ -81,25 +88,38 @@ $(function () {
 
             self.userSettingsDialog.trigger("beforeSave");
 
-            if (self.access_password() && !self.passwordMismatch()) {
-                self.users.updatePassword(
-                    self.currentUser().name,
-                    self.access_password(),
-                    function () {}
-                );
+            function saveSettings() {
+                var settings = {
+                    interface: {
+                        language: self.interface_language()
+                    }
+                };
+                self.updateSettings(self.currentUser().name, settings).done(function () {
+                    // close dialog
+                    self.currentUser(undefined);
+                    self.userSettingsDialog.modal("hide");
+                    self.loginState.reloadUser();
+                });
             }
 
-            var settings = {
-                interface: {
-                    language: self.interface_language()
-                }
-            };
-            self.updateSettings(self.currentUser().name, settings).done(function () {
-                // close dialog
-                self.currentUser(undefined);
-                self.userSettingsDialog.modal("hide");
-                self.loginState.reloadUser();
-            });
+            if (self.access_password() && !self.passwordMismatch()) {
+                self.users
+                    .updatePassword(
+                        self.currentUser().name,
+                        self.access_password(),
+                        self.access_currentPassword()
+                    )
+                    .done(function () {
+                        saveSettings();
+                    })
+                    .fail(function (xhr) {
+                        if (xhr.status === 403) {
+                            self.access_currentPasswordMismatch(true);
+                        }
+                    });
+            } else {
+                saveSettings();
+            }
         };
 
         self.copyApikey = function () {

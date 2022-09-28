@@ -167,6 +167,9 @@ class SerialConfig(BaseModel):
     waitForStartOnConnect: bool = False
     """Whether OctoPrint should wait for the `start` response from the printer before trying to send commands during connect."""
 
+    waitToLoadSdFileList: bool = False
+    """Specifies whether OctoPrint should wait to load the SD card file list until the first firmware capability report is processed."""
+
     alwaysSendChecksum: bool = False
     """Specifies whether OctoPrint should send linenumber + checksum with every printer command. Needed for successful communication with Repetier firmware."""
 

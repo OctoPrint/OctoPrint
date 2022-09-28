@@ -149,12 +149,13 @@
                         <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint')|edq }}" class="fas fa-th-large" data-bind="visible: bundled"></i> <i class="fas fa-lock" title="{{ _('Cannot be uninstalled through OctoPrint')|edq }}" data-bind="visible: !managable"></i> <i class="fas fa-bolt" title="{{ _('Incompatible to OctoPrint or the underlying Python environment')|edq }}" data-bind="visible: incompatible"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect')|edq }}" class="fas fa-sync" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install')|edq }}" class="fas fa-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall')|edq }}" class="fas fa-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode')|edq }}" class="fas fa-medkit" data-bind="visible: safe_mode_victim"></i> <i class="fas fa-exclamation-triangle" title="{{ _('There are notices available regarding this plugin')|edq }}" data-bind="visible: notifications && notifications.length"></i> <i class="fas fa-ban" title="{{ _('This plugin is blacklisted')|edq }}" data-bind="visible: blacklisted"></i></div>
                         <div data-bind="css: {muted: !enabled}">
                             <small class="prop" data-bind="visible: url"><i class="fas fa-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
+                            <small class="prop" data-bind="visible: privacypolicy"><i class="fas fa-gavel"></i> <a data-bind="attr: {href: privacypolicy}" target="_blank" rel="noreferrer noopener">{{ _('Privacy Policy') }}</a></small>
                             <small class="prop" data-bind="visible: author"><i class="fas fa-user"></i> <span data-bind="text: author"></span></small>
                         </div>
                         <div data-bind="visible: notifications && notifications.length"><a href="javascript:void(0)" class="text-error" style="text-decoration: underline" data-bind="click: function() { $root.showPluginNotifications($data) }, text: $root.showPluginNotificationsLinkText($data)"></a></div>
                         <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
                         <div data-bind="css: {muted: !enabled}">
-                            <small class="prop" data-bind="visible: license"><i class="fas fa-gavel"></i> <span data-bind="text: license"></span></small>
+                            <small class="prop" data-bind="visible: license"><i class="fas fa-section"></i> <span data-bind="text: license"></span></small>
                             <small class="prop" data-bind="visible: python"><i class="fas fa-cog"></i> Python <span data-bind="text: python"></span></small>
                             <small class="prop">&nbsp;</small>
                         </div>
@@ -278,11 +279,12 @@
                                 <div class="meta">
                                     <small class="prop" data-bind="visible: page"><i class="fas fa-info"></i>&nbsp;<a data-bind="attr: {href: page, title: page}" target="_blank">{{ _('Details') }}</a></small>
                                     <small class="prop" data-bind="visible: homepage"><i class="fas fa-home"></i>&nbsp;<a data-bind="attr: {href: homepage, title: homepage}" target="_blank">{{ _('Homepage') }}</a></small>
+                                    <small class="prop" data-bind="visible: privacypolicy"><i class="fas fa-gavel"></i>&nbsp;<a data-bind="attr: {href: privacypolicy, title: homepage}" target="_blank">{{ _('Privacy Policy') }}</a></small>
                                     <small class="prop" data-bind="visible: author"><i class="fas fa-user"></i> <span data-bind="text: author, attr: {title: author}"></span></small>
                                 </div>
                                 <div class="muted"><small data-bind="text: description">&nbsp;</small></div>
                                 <div class="stats">
-                                    <small class="prop" data-bind="visible: license" title="{{ _('License')|edq }}"><i class="fas fa-gavel"></i> <span data-bind="text: license"></span></small>
+                                    <small class="prop" data-bind="visible: license" title="{{ _('License')|edq }}"><i class="fas fa-section"></i> <span data-bind="text: license"></span></small>
                                     <small class="prop" data-bind="visible: published" title="{{ _('Publication date')|edq }}"><i class="fas fa-birthday-cake"></i> <span data-bind="text: published.substring(0, 10)"></span></small>
                                     <small class="prop" data-bind="visible: $data.stats !== undefined" title="{{ _('Active instances past month')|edq }}"><i class="fas fa-server"></i> <span data-bind="text: $data.stats !== undefined ? formatNumberK($data.stats.instances_month) : 0"></span></small>
                                     <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.stars !== undefined" title="{{ _('Github stars')|edq }}"><i class="fas fa-star"></i> <span data-bind="text: ($data.github !== undefined && $data.github.stars !== undefined) ? formatNumberK($data.github.stars) : 0"></span></small>

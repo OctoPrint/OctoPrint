@@ -5,15 +5,18 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import functools
+import hashlib
+import hmac
 import logging
 import os
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Union
 
 import flask
 import flask.json
+import flask.json.provider
 import flask.sessions
 import flask.templating
 import flask_assets
@@ -23,6 +26,9 @@ import tornado.web
 import webassets.updater
 import webassets.utils
 from cachelib import BaseCache
+from flask import current_app
+from flask_login import COOKIE_NAME as REMEMBER_COOKIE_NAME
+from flask_login.utils import decode_cookie, encode_cookie
 from werkzeug.local import LocalProxy
 from werkzeug.utils import cached_property
 
@@ -45,7 +51,6 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
     import flask_babel
     from babel import Locale, support
-    from flask import _request_ctx_stack
 
     if additional_folders is None:
         additional_folders = []
@@ -92,10 +97,9 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
         object if used outside of the request or if a translation cannot be
         found.
         """
-        ctx = _request_ctx_stack.top
-        if ctx is None:
+        if flask.g is None:
             return None
-        translations = getattr(ctx, "babel_translations", None)
+        translations = getattr(flask.g, "babel_translations", None)
         if translations is None:
             locale = flask_babel.get_locale()
             translations = support.Translations()
@@ -138,7 +142,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
                 # core translations
                 dirs = additional_folders + [
-                    os.path.join(ctx.app.root_path, "translations")
+                    os.path.join(flask.current_app.root_path, "translations")
                 ]
                 for dirname in dirs:
                     core_translations = support.Translations.load(dirname, [locale])
@@ -152,7 +156,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                     logger.debug(f"No translations for locale {locale} in core folders")
                 translations = translations.merge(core_translations)
 
-            ctx.babel_translations = translations
+            flask.g.babel_translations = translations
         return translations
 
     flask_babel.Babel.list_translations = fixed_list_translations
@@ -195,6 +199,42 @@ def fix_webassets_filtertool():
             return MemoryHunk("")
 
     FilterTool._wrap_cache = fixed_wrap_cache
+
+
+def fix_webassets_convert_item_to_flask_url():
+    import flask_assets
+
+    def fixed_convert_item_to_flask_url(self, ctx, item, filepath=None):
+        from flask import url_for
+
+        directory, rel_path, endpoint = self.split_prefix(ctx, item)
+
+        if filepath is not None:
+            filename = filepath[len(directory) + 1 :]
+        else:
+            filename = rel_path
+
+        flask_ctx = None
+        if not flask.has_request_context():  # fixed, was _request_ctx.top
+            flask_ctx = ctx.environment._app.test_request_context()
+            flask_ctx.push()
+        try:
+            url = url_for(endpoint, filename=filename)
+            # In some cases, url will be an absolute url with a scheme and hostname.
+            # (for example, when using werkzeug's host matching).
+            # In general, url_for() will return a http url. During assets build, we
+            # we don't know yet if the assets will be served over http, https or both.
+            # Let's use // instead. url_for takes a _scheme argument, but only together
+            # with external=True, which we do not want to force every time. Further,
+            # this _scheme argument is not able to render // - it always forces a colon.
+            if url and url.startswith("http:"):
+                url = url[5:]
+            return url
+        finally:
+            if flask_ctx:
+                flask_ctx.pop()
+
+    flask_assets.FlaskResolver.convert_item_to_flask_url = fixed_convert_item_to_flask_url
 
 
 def fix_flask_jsonify():
@@ -422,6 +462,63 @@ class ReverseProxiedEnvironment:
 # ~~ request and response versions
 
 
+def encode_remember_me_cookie(value):
+    from octoprint.server import userManager
+
+    name = value.split("|")[0]
+    try:
+        remember_key = userManager.signature_key_for_user(
+            name, current_app.config["SECRET_KEY"]
+        )
+        timestamp = datetime.utcnow().timestamp()
+        return encode_cookie(f"{name}|{timestamp}", key=remember_key)
+    except Exception:
+        pass
+
+    return ""
+
+
+def decode_remember_me_cookie(value):
+    from octoprint.server import userManager
+
+    parts = value.split("|")
+    if len(parts) == 3:
+        name, created, _ = parts
+
+        try:
+            # valid signature?
+            signature_key = userManager.signature_key_for_user(
+                name, current_app.config["SECRET_KEY"]
+            )
+            cookie = decode_cookie(value, key=signature_key)
+            if cookie:
+                # still valid?
+                if (
+                    datetime.fromtimestamp(float(created))
+                    + timedelta(seconds=current_app.config["REMEMBER_COOKIE_DURATION"])
+                    > datetime.utcnow()
+                ):
+                    return encode_cookie(name)
+        except Exception:
+            pass
+
+    raise ValueError("Invalid remember me cookie")
+
+
+def get_cookie_suffix(request):
+    """
+    Request specific suffix for set and read cookies
+
+    We need this because cookies are not port-specific and we don't want to overwrite our
+    session and other cookies from one OctoPrint instance on our machine with those of another
+    one who happens to listen on the same address albeit a different port or script root.
+    """
+    result = "_P" + request.server_port
+    if request.script_root:
+        return result + "_R" + request.script_root.replace("/", "|")
+    return result
+
+
 class OctoPrintFlaskRequest(flask.Request):
     environment_wrapper = staticmethod(lambda x: x)
 
@@ -437,10 +534,23 @@ class OctoPrintFlaskRequest(flask.Request):
         result = {}
         desuffixed = {}
         for key, value in cookies.items():
-            if key.endswith(self.cookie_suffix):
-                desuffixed[key[: -len(self.cookie_suffix)]] = value
-            else:
-                result[key] = value
+
+            def process_value(k, v):
+                if k == current_app.config.get(
+                    "REMEMBER_COOKIE_NAME", REMEMBER_COOKIE_NAME
+                ):
+                    return decode_remember_me_cookie(v)
+                return v
+
+            try:
+                if key.endswith(self.cookie_suffix):
+                    key = key[: -len(self.cookie_suffix)]
+                    desuffixed[key] = process_value(key, value)
+                else:
+                    result[key] = process_value(key, value)
+            except ValueError:
+                # ignore broken cookies
+                pass
 
         result.update(desuffixed)
         return result
@@ -457,21 +567,11 @@ class OctoPrintFlaskRequest(flask.Request):
 
     @cached_property
     def cookie_suffix(self):
-        """
-        Request specific suffix for set and read cookies
-
-        We need this because cookies are not port-specific and we don't want to overwrite our
-        session and other cookies from one OctoPrint instance on our machine with those of another
-        one who happens to listen on the same address albeit a different port or script root.
-        """
-        result = "_P" + self.server_port
-        if self.script_root:
-            return result + "_R" + self.script_root.replace("/", "|")
-        return result
+        return get_cookie_suffix(self)
 
 
 class OctoPrintFlaskResponse(flask.Response):
-    def set_cookie(self, key, *args, **kwargs):
+    def set_cookie(self, key, value="", *args, **kwargs):
         # restrict cookie path to script root
         kwargs["path"] = flask.request.script_root + kwargs.get("path", "/")
 
@@ -490,9 +590,13 @@ class OctoPrintFlaskResponse(flask.Response):
         # set secure if necessary
         kwargs["secure"] = settings().getBoolean(["server", "cookies", "secure"])
 
+        # tie account properties to remember me cookie (e.g. current password hash)
+        if key == current_app.config.get("REMEMBER_COOKIE_NAME", REMEMBER_COOKIE_NAME):
+            value = encode_remember_me_cookie(value)
+
         # add request specific cookie suffix to name
         flask.Response.set_cookie(
-            self, key + flask.request.cookie_suffix, *args, **kwargs
+            self, key + flask.request.cookie_suffix, value=value, *args, **kwargs
         )
 
     def delete_cookie(self, key, path="/", domain=None):
@@ -608,6 +712,9 @@ def passive_login():
         )
         if hasattr(u, "session"):
             flask.session["usersession.id"] = u.session
+            flask.session["usersession.signature"] = session_signature(
+                u.get_id(), u.session
+            )
         flask.g.user = u
 
         eventManager().fire(Events.USER_LOGGED_IN, payload={"username": u.get_id()})
@@ -667,6 +774,24 @@ def passive_login():
     if flask.session.get("login_mechanism") is not None:
         response["_login_mechanism"] = flask.session.get("login_mechanism")
     return flask.jsonify(response)
+
+
+# ~~ rate limiting helper
+
+
+def limit(*args, **kwargs):
+    if octoprint.server.limiter:
+        return octoprint.server.limiter.limit(*args, **kwargs)
+    else:
+
+        def decorator(f):
+            @functools.wraps(f)
+            def decorated_function(*args, **kwargs):
+                return f(*args, **kwargs)
+
+            return decorated_function
+
+        return decorator
 
 
 # ~~ cache decorator for cacheable views
@@ -1808,9 +1933,27 @@ def collect_plugin_assets(preferred_stylesheet="css"):
 ##~~ JSON encoding
 
 
-class OctoPrintJsonEncoder(flask.json.JSONEncoder):
-    def default(self, obj):
+class OctoPrintJsonProvider(flask.json.provider.DefaultJSONProvider):
+    @staticmethod
+    def default(object_):
         try:
-            return JsonEncoding.encode(obj)
+            return JsonEncoding.encode(object_)
         except TypeError:
-            return flask.json.JSONEncoder.default(self, obj)
+            return flask.json.provider.DefaultJSONProvider.default(object_)
+
+
+##~~ Session signing
+
+
+def session_signature(user, session):
+    from octoprint.server import userManager
+
+    key = userManager.signature_key_for_user(user, current_app.config["SECRET_KEY"])
+    return hmac.new(
+        key.encode("utf-8"), session.encode("utf-8"), hashlib.sha512
+    ).hexdigest()
+
+
+def validate_session_signature(sig, user, session):
+    user_sig = session_signature(user, session)
+    return len(user_sig) == len(sig) and hmac.compare_digest(sig, user_sig)

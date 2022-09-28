@@ -2,8 +2,10 @@ import unittest
 from unittest import mock
 
 import ddt
+import pytest
 
 import octoprint.util.comm
+from octoprint.util.files import m20_timestamp_to_unix_timestamp
 
 
 @ddt.ddt
@@ -286,3 +288,102 @@ class TestCommErrorHandling(unittest.TestCase):
         self.assert_not_disconnected()
         self.assert_not_print_cancelled()
         self.assert_not_cleared_to_send()
+
+
+@pytest.mark.parametrize(
+    "val,expected",
+    [
+        ("aaa", False),
+        ("1234", False),
+        ("0x21bf7d", True),
+        ("0xghijk", False),
+        ("0x28210800", True),
+    ],
+)
+def test__validate_m20_timestamp(val, expected):
+    assert octoprint.util.comm._validate_m20_timestamp(val) == expected
+
+
+@pytest.mark.parametrize(
+    "val,expected",
+    [
+        (
+            "line that makes little sense",
+            ("line that makes little sense", None, None, None),
+        ),
+        ("name.gco", ("name.gco", None, None, None)),
+        ("name.gco invalid-size", ("name.gco invalid-size", None, None, None)),
+        (
+            "name.gco 3424324",
+            ("name.gco", 3424324, None, None),
+        ),
+        (
+            "name.gco 3424324 longname.gcode",
+            ("name.gco", 3424324, None, "longname.gcode"),
+        ),
+        (
+            "name.gco 3424324 0x21bf7d",
+            (
+                "name.gco",
+                3424324,
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
+                None,
+            ),
+        ),
+        (
+            "name.gco 3424324 0xinvalid_timestamp_as_longname",
+            ("name.gco", 3424324, None, "0xinvalid_timestamp_as_longname"),
+        ),
+        (
+            "longname.gcode 3424324 0x21bf7d",
+            (
+                "longname.gcode",
+                3424324,
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
+                None,
+            ),
+        ),
+        (
+            "longname.gcode 3424324 longname.gcode",
+            ("longname.gcode", 3424324, None, "longname.gcode"),
+        ),
+        (
+            "name.gco 32424 0x21bf7d long name without quoting",
+            (
+                "name.gco",
+                32424,
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
+                "long name without quoting",
+            ),
+        ),
+        (
+            "name.gco 32424 0x21bf7d long   name   without   quoting",
+            (
+                "name.gco",
+                32424,
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
+                "long   name   without   quoting",
+            ),
+        ),
+        (
+            'name.gco 32424 0x21bf7d "long name with quoting"',
+            (
+                "name.gco",
+                32424,
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
+                "long name with quoting",
+            ),
+        ),
+        (
+            'name.gco 32424 0x21bf7d "long   name   with   quoting"',
+            (
+                "name.gco",
+                32424,
+                m20_timestamp_to_unix_timestamp("0x21bf7d"),
+                "long   name   with   quoting",
+            ),
+        ),
+    ],
+)
+def test_parse_file_list_line(val, expected):
+    assert octoprint.util.comm.parse_file_list_line(val) == expected

@@ -865,13 +865,13 @@ $(function () {
                     var icon = $("i.fa-trash-alt", element);
                     if (icon.length) {
                         activateSpinner = function () {
-                            icon.removeClass("fa-trash-alt").addClass(
-                                "fa-spinner fa-spin"
+                            icon.removeClass("far fa-trash-alt").addClass(
+                                "fas fa-spinner fa-spin"
                             );
                         };
                         finishSpinner = function () {
-                            icon.removeClass("fa-spinner fa-spin").addClass(
-                                "fa-trash-alt"
+                            icon.removeClass("fas fa-spinner fa-spin").addClass(
+                                "far fa-trash-alt"
                             );
                         };
                     }
@@ -1139,6 +1139,11 @@ $(function () {
                 return true;
             }
 
+            var travelArea = data["gcodeAnalysis"]["travelArea"];
+            if (!travelArea) {
+                return true;
+            }
+
             var printerProfile = self.printerProfiles.currentProfileData();
             if (!printerProfile) {
                 return true;
@@ -1177,46 +1182,72 @@ $(function () {
                 }
             }
 
-            // model not within bounds, we need to prepare a warning
-            var warning =
-                "<p>" +
-                _.sprintf(
-                    gettext(
-                        "Object in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."
-                    ),
-                    {name: _.escape(data.name)}
-                ) +
-                "</p>";
             var info = "";
+            var objectFits = true;
+            var travelFits = true;
 
-            var formatData = {
-                profile: boundaries,
-                object: printingArea
-            };
-
-            // find exceeded dimensions
-            if (
-                printingArea["minX"] < boundaries["minX"] ||
-                printingArea["maxX"] > boundaries["maxX"]
-            ) {
-                info += gettext("Object exceeds print volume in width.<br>");
-            }
-            if (
-                printingArea["minY"] < boundaries["minY"] ||
-                printingArea["maxY"] > boundaries["maxY"]
-            ) {
-                info += gettext("Object exceeds print volume in depth.<br>");
-            }
-            if (
-                printingArea["minZ"] < boundaries["minZ"] ||
-                printingArea["maxZ"] > boundaries["maxZ"]
-            ) {
-                info += gettext("Object exceeds print volume in height.<br>");
+            function _area_exceeds_boundaries(ax, area) {
+                return (
+                    area["min" + ax] < boundaries["min" + ax] ||
+                    area["max" + ax] > boundaries["max" + ax]
+                );
             }
 
-            //warn user
-            if (info !== "") {
+            function _exceed_warning(culprit, dimension) {
+                return _.sprintf(
+                    gettext("%(culprit)s exceeds print volume in %(dimension)s.<br>"),
+                    {culprit: culprit, dimension: dimension}
+                );
+            }
+
+            // check if printing area exceeds boundaries
+            if (_area_exceeds_boundaries("X", printingArea)) {
+                info += _exceed_warning(gettext("Object"), gettext("width"));
+                objectFits = false;
+            }
+            if (_area_exceeds_boundaries("Y", printingArea)) {
+                info += _exceed_warning(gettext("Object"), gettext("depth"));
+                objectFits = false;
+            }
+            if (_area_exceeds_boundaries("Z", printingArea)) {
+                info += _exceed_warning(gettext("Object"), gettext("height"));
+                objectFits = false;
+            }
+
+            // check if travel area exceeds boundaries
+            if (_area_exceeds_boundaries("X", travelArea)) {
+                info += _exceed_warning(gettext("Travel"), gettext("width"));
+                travelFits = false;
+            }
+            if (_area_exceeds_boundaries("Y", travelArea)) {
+                info += _exceed_warning(gettext("Travel"), gettext("depth"));
+                travelFits = false;
+            }
+            if (_area_exceeds_boundaries("Z", travelArea)) {
+                info += _exceed_warning(gettext("Travel"), gettext("height"));
+                travelFits = false;
+            }
+
+            if (travelFits && objectFits) {
+                return true;
+            } else {
+                // model not within bounds, we need to prepare a warning
                 if (notify) {
+                    var formatData = {
+                        name: _.escape(data.name),
+                        profile: boundaries,
+                        object: printingArea,
+                        travel: travelArea,
+                        culprit: !objectFits ? "Object" : "Travel area"
+                    };
+
+                    info += _.sprintf(
+                        gettext(
+                            "Travel area: (%(travel.minX).2f, %(travel.minY).2f, %(travel.minZ).2f) &times; (%(travel.maxX).2f, %(travel.maxY).2f, %(travel.maxZ).2f)"
+                        ),
+                        formatData
+                    );
+                    info += "<br>";
                     info += _.sprintf(
                         gettext(
                             "Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"
@@ -1231,21 +1262,34 @@ $(function () {
                         formatData
                     );
 
+                    // prepare a warning message
+                    var warning =
+                        "<p>" +
+                        _.sprintf(
+                            gettext(
+                                "%(culprit)s in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."
+                            ),
+                            formatData
+                        ) +
+                        "</p>";
+
                     warning += pnotifyAdditionalInfo(info);
 
                     warning +=
                         '<p><small>You can disable this check via Settings &gt; Features &gt; "Enable model size detection [...]"</small></p>';
 
+                    //warn user
                     new PNotify({
-                        title: gettext("Object doesn't fit print volume"),
+                        title: _.sprintf(
+                            gettext("%(culprit)s exceeds print volume"),
+                            formatData
+                        ),
                         text: warning,
                         type: "warning",
                         hide: false
                     });
                 }
                 return false;
-            } else {
-                return true;
             }
         };
 
@@ -1672,12 +1716,17 @@ $(function () {
                         }
                     });
                 });
-            $("a.upload-overwrite", self.uploadExistsDialog)
-                .off("click")
-                .on("click", function () {
-                    data.formData = formData;
-                    hideAndSubmit(data);
-                });
+            if (self.loginState.hasPermission(self.access.permissions.FILES_DELETE)) {
+                $("a.upload-overwrite", self.uploadExistsDialog)
+                    .off("click")
+                    .show()
+                    .on("click", function () {
+                        data.formData = formData;
+                        hideAndSubmit(data);
+                    });
+            } else {
+                $("a.upload-overwrite", self.uploadExistsDialog).hide();
+            }
 
             self.uploadExistsDialog.modal("show");
         };

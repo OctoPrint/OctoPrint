@@ -28,6 +28,7 @@ from octoprint.server import NO_CONTENT
 from octoprint.server.util import (
     corsRequestHandler,
     corsResponseHandler,
+    csrfRequestHandler,
     loginFromApiKeyRequestHandler,
     loginFromAuthorizationHeaderRequestHandler,
     noCachingExceptGetResponseHandler,
@@ -35,8 +36,10 @@ from octoprint.server.util import (
 from octoprint.server.util.flask import (
     get_json_command_from_request,
     get_remote_address,
+    limit,
     no_firstrun_access,
     passive_login,
+    session_signature,
 )
 from octoprint.settings import settings as s
 from octoprint.settings import valid_boolean_trues
@@ -66,6 +69,7 @@ api.after_request(noCachingExceptGetResponseHandler)
 api.before_request(corsRequestHandler)
 api.before_request(loginFromAuthorizationHeaderRequestHandler)
 api.before_request(loginFromApiKeyRequestHandler)
+api.before_request(csrfRequestHandler)
 api.after_request(corsResponseHandler)
 
 # ~~ data from plugins
@@ -281,6 +285,11 @@ def serverStatus():
 
 
 @api.route("/login", methods=["POST"])
+@limit(
+    "3/minute;5/10 minutes;10/hour",
+    deduct_when=lambda response: response.status_code == 403,
+    error_message="You have made too many failed login attempts. Please try again later.",
+)
 def login():
     data = request.get_json()
     if not data:
@@ -306,6 +315,9 @@ def login():
 
                 user = octoprint.server.userManager.login_user(user)
                 session["usersession.id"] = user.session
+                session["usersession.signature"] = session_signature(
+                    username, user.session
+                )
                 g.user = user
 
                 login_user(user, remember=remember)
