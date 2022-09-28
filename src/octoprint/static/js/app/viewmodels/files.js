@@ -402,7 +402,7 @@ $(function () {
         };
 
         self._otherRequestInProgress = undefined;
-        self._focus = undefined;
+        self._filesToFocus = [];
         self._switchToPath = undefined;
         self.requestData = function (params) {
             if (!self.loginState.hasPermission(self.access.permissions.FILES_LIST)) {
@@ -435,7 +435,7 @@ $(function () {
                 }
             }
 
-            self._focus = self._focus || focus;
+            self._filesToFocus = self._filesToFocus || focus;
             self._switchToPath = self._switchToPath || switchToPath;
 
             if (self._otherRequestInProgress !== undefined) {
@@ -446,7 +446,7 @@ $(function () {
                 .list(true, force)
                 .done(function (response) {
                     self.fromResponse(response, {
-                        focus: self._focus,
+                        focus: self._filesToFocus,
                         switchToPath: self._switchToPath
                     });
                 })
@@ -456,13 +456,13 @@ $(function () {
                 })
                 .always(function () {
                     self._otherRequestInProgress = undefined;
-                    self._focus = undefined;
+                    self._filesToFocus = [];
                     self._switchToPath = undefined;
                 }));
         };
 
         self.fromResponse = function (response, params) {
-            var focus = undefined;
+            var focus = [];
             var switchToPath;
 
             if (_.isObject(params)) {
@@ -470,7 +470,7 @@ $(function () {
                 switchToPath = params.switchToPath || undefined;
             } else if (arguments.length > 1) {
                 log.warn(
-                    "FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead."
+                    "FilesViewModel.fromResponse called with old argument list. That is deprecated, please use parameter object instead."
                 );
                 if (arguments.length > 2) {
                     focus = {location: arguments[2], path: arguments[1]};
@@ -530,27 +530,31 @@ $(function () {
                 self.changeFolderByPath(switchToPath);
             }
 
-            if (focus) {
-                // got a file to scroll to
-                var entryElement = self.getEntryElement({
-                    path: focus.path,
-                    origin: focus.location
-                });
-                if (entryElement) {
-                    // scroll to uploaded element
-                    self.listElement.scrollTop(entryElement.offsetTop);
-
-                    // highlight uploaded element
-                    var element = $(entryElement);
-                    element.on(
-                        "webkitAnimationEnd oanimationend msAnimationEnd animationend",
-                        function (e) {
-                            // remove highlight class again
-                            element.removeClass("highlight");
+            if (focus.length) {
+                _.each(focus, function (focusItem, index) {
+                    // got a file to scroll to
+                    var entryElement = self.getEntryElement({
+                        path: focusItem.path,
+                        origin: focusItem.location
+                    });
+                    if (entryElement) {
+                        // scroll to uploaded element
+                        if (index + 1 === focus.length) {
+                            self.listElement.scrollTop(entryElement.offsetTop);
                         }
-                    );
-                    element.addClass("highlight");
-                }
+
+                        // highlight uploaded element
+                        var element = $(entryElement);
+                        element.on(
+                            "webkitAnimationEnd oanimationend msAnimationEnd animationend",
+                            function (e) {
+                                // remove highlight class again
+                                element.removeClass("highlight");
+                            }
+                        );
+                        element.addClass("highlight");
+                    }
+                });
             }
 
             if (response.free !== undefined) {
@@ -1610,12 +1614,13 @@ $(function () {
                 url: url,
                 dataType: "json",
                 dropZone: enable ? drop : null,
+                sequentialUploads: true,
                 drop: function (e, data) {},
                 add: self._handleUploadAdd,
                 submit: self._handleUploadStart,
                 done: self._handleUploadDone,
                 fail: self._handleUploadFail,
-                always: self._handleUploadAlways,
+                stop: self._handleUploadStop,
                 progressall: self._handleUploadProgress
             });
         };
@@ -1644,6 +1649,88 @@ $(function () {
             }
         };
 
+        self._uploadExistsQueue = []; // Files will be in this queue if their test fails and something needs to be done
+        self._uploadExistsOpen = false;
+
+        self._processUploadQueue = function () {
+            if (!self._uploadExistsQueue.length > 0 || self._uploadExistsOpen) return;
+
+            const hideAndSubmit = function (data) {
+                self.uploadExistsDialog.modal("hide");
+                self._uploadExistsOpen = false;
+                data.submit();
+                // Recursively move on to process the queue every time a dialog is closed
+                if (self._uploadExistsQueue.length > 0) {
+                    self._processUploadQueue();
+                }
+            };
+
+            // Collect an item from the queue that needs an overwrite dialog
+            const {data, response, path, fileSizeTooBig} =
+                self._uploadExistsQueue.shift();
+            const file = data.files[0];
+
+            const formData = {};
+            if (path !== "") {
+                formData.path = path;
+            }
+
+            // Build and show a dialog
+            self._uploadExistsOpen = true;
+
+            $("h3", self.uploadExistsDialog).text(
+                _.sprintf(gettext("File already exists: %(name)s"), {
+                    name: file.name
+                })
+            );
+            $("p, form", self.uploadExistsDialog).toggle(!fileSizeTooBig);
+            $("span", self.uploadExistsDialog).toggle(fileSizeTooBig);
+            $("input", self.uploadExistsDialog)
+                .val("")
+                .prop("placeholder", response.suggestion);
+            $("a.upload-rename", self.uploadExistsDialog)
+                .toggle(!fileSizeTooBig)
+                .prop("disabled", false)
+                .off("click")
+                .on("click", function () {
+                    var newName = $("input", self.uploadExistsDialog).val();
+                    if (newName === "") newName = response.suggestion;
+
+                    OctoPrint.files.exists("local", path, newName).done(function (r) {
+                        if (r.exists) {
+                            $(".control-group", self.uploadExistsDialog).addClass(
+                                "error"
+                            );
+                            $(".help-block", self.uploadExistsDialog).show();
+                        } else {
+                            $(".control-group", self.uploadExistsDialog).removeClass(
+                                "error"
+                            );
+                            $(".help-block", self.uploadExistsDialog).hide();
+
+                            formData.filename = newName;
+                            formData.noOverwrite = true;
+                            data.formData = formData;
+
+                            hideAndSubmit(data);
+                        }
+                    });
+                });
+            if (self.loginState.hasPermission(self.access.permissions.FILES_DELETE)) {
+                $("a.upload-overwrite", self.uploadExistsDialog)
+                    .off("click")
+                    .show()
+                    .on("click", function () {
+                        data.formData = formData;
+                        hideAndSubmit(data);
+                    });
+            } else {
+                $("a.upload-overwrite", self.uploadExistsDialog).hide();
+            }
+
+            self.uploadExistsDialog.modal("show");
+        };
+
         self._handleUploadAdd = function (e, data) {
             var file = data.files[0];
             var path = self.currentPath();
@@ -1659,73 +1746,15 @@ $(function () {
                     .exists("local", path, file.name)
                     .done(function (response) {
                         if (response.exists) {
-                            $("h3", self.uploadExistsDialog).text(
-                                _.sprintf(gettext("File already exists: %(name)s"), {
-                                    name: file.name
-                                })
-                            );
-                            $("p, form", self.uploadExistsDialog).toggle(!fileSizeTooBig);
-                            $("span", self.uploadExistsDialog).toggle(fileSizeTooBig);
-                            $("input", self.uploadExistsDialog).val(response.suggestion);
-                            $("a.upload-rename", self.uploadExistsDialog)
-                                .toggle(!fileSizeTooBig)
-                                .prop("disabled", false)
-                                .off("click")
-                                .on("click", function () {
-                                    var newName = $(
-                                        "input",
-                                        self.uploadExistsDialog
-                                    ).val();
-
-                                    OctoPrint.files
-                                        .exists("local", path, newName)
-                                        .done(function (r) {
-                                            if (r.exists) {
-                                                $(
-                                                    ".control-group",
-                                                    self.uploadExistsDialog
-                                                ).addClass("error");
-                                                $(
-                                                    ".help-block",
-                                                    self.uploadExistsDialog
-                                                ).show();
-                                            } else {
-                                                $(
-                                                    ".control-group",
-                                                    self.uploadExistsDialog
-                                                ).removeClass("error");
-                                                $(
-                                                    ".help-block",
-                                                    self.uploadExistsDialog
-                                                ).hide();
-
-                                                self.uploadExistsDialog.modal("hide");
-
-                                                formData.filename = newName;
-                                                formData.noOverwrite = true;
-                                                data.formData = formData;
-
-                                                data.submit();
-                                            }
-                                        });
-                                });
-                            if (
-                                self.loginState.hasPermission(
-                                    self.access.permissions.FILES_DELETE
-                                )
-                            ) {
-                                $("a.upload-overwrite", self.uploadExistsDialog)
-                                    .off("click")
-                                    .show()
-                                    .on("click", function () {
-                                        self.uploadExistsDialog.modal("hide");
-                                        data.formData = formData;
-                                        data.submit();
-                                    });
-                            } else {
-                                $("a.upload-overwrite", self.uploadExistsDialog).hide();
-                            }
-                            self.uploadExistsDialog.modal("show");
+                            const queueEntry = {
+                                data,
+                                response,
+                                path,
+                                fileSizeTooBig
+                            };
+                            self._uploadExistsQueue.push(queueEntry);
+                            // Start processing queue - if already processing, this will do nothing
+                            self._processUploadQueue();
                         } else {
                             data.formData = formData;
                             data.submit();
@@ -1770,22 +1799,36 @@ $(function () {
         };
 
         self._handleUploadDone = function (e, data) {
-            self._setProgressBar(100, gettext("Refreshing list ..."), true);
-
             var focus = undefined;
             if (data.result.files.hasOwnProperty("sdcard")) {
                 focus = {location: "sdcard", path: data.result.files.sdcard.path};
             } else if (data.result.files.hasOwnProperty("local")) {
                 focus = {location: "local", path: data.result.files.local.path};
             }
-            self.requestData({focus: focus}).done(function () {
-                if (data.result.done) {
-                    self._setProgressBar(0, "", false);
-                }
-            });
+
+            if (focus) {
+                self._filesToFocus.push(focus);
+            }
 
             if (focus && _.endsWith(focus.path.toLowerCase(), ".stl")) {
                 self.slicing.show(focus.location, focus.path);
+            }
+        };
+
+        self._handleUploadStop = function (e, data) {
+            var reset = function () {
+                self.ignoreUpdatedFilesEvent = false;
+                self._setProgressBar(0, "", false);
+            };
+
+            if (self._filesToFocus.length > 0) {
+                // Only refresh the list if there were files uploaded successfully
+                self._setProgressBar(100, gettext("Refreshing list ..."), true);
+                self.requestData({focus: self._filesToFocus}).always(function () {
+                    reset();
+                });
+            } else {
+                reset();
             }
         };
 
@@ -1795,7 +1838,7 @@ $(function () {
             }).sort();
             extensions = extensions.join(", ");
 
-            var error = "<p>";
+            var error = "<p><pre>" + _.escape(data.files[0].name) + "</pre></p><p>";
             switch (data.jqXHR.status) {
                 case 409:
                     // already printing or otherwise busy
@@ -1840,11 +1883,6 @@ $(function () {
                 type: "error",
                 hide: false
             });
-            self._setProgressBar(0, "", false);
-        };
-
-        self._handleUploadAlways = function (e, data) {
-            self.ignoreUpdatedFilesEvent = false;
         };
 
         self._handleUploadProgress = function (e, data) {
