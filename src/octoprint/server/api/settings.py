@@ -387,11 +387,8 @@ def _get_plugin_settings():
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def setSettings():
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
-
     data = request.get_json()
-    if data is None or not isinstance(data, dict):
+    if not isinstance(data, dict):
         abort(400, description="Malformed JSON body in request")
 
     response = _saveSettings(data)

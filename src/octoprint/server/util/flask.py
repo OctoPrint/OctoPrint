@@ -1664,15 +1664,8 @@ def get_remote_address(request):
 
 
 def get_json_command_from_request(request, valid_commands):
-    content_type = request.headers.get("Content-Type", None)
-    if content_type is None or "application/json" not in content_type:
-        flask.abort(400, description="Expected content-type JSON")
-
     data = request.get_json()
-    if data is None:
-        flask.abort(
-            400, description="Malformed JSON body or wrong content-type in request"
-        )
+
     if "command" not in data or data["command"] not in valid_commands:
         flask.abort(400, description="command is invalid")
 
