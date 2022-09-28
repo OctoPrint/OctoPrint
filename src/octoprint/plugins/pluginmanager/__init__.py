@@ -1998,6 +1998,7 @@ class PluginManagerPlugin(
             "version": plugin.version,
             "url": plugin.url,
             "license": plugin.license,
+            "privacypolicy": plugin.privacypolicy,
             "python": plugin.pythoncompat,
             "bundled": plugin.bundled,
             "managable": plugin.managable,
