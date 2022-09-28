@@ -77,13 +77,12 @@ class GcodeviewerPlugin(
         import flask
 
         skipUntilThis = self._settings.get(["skipUntilThis"])
-        present = "false"
+        present = False
         if request.args.get("path") and skipUntilThis:
             path = self._file_manager.path_on_disk(
                 FileDestinations.LOCAL, request.args.get("path")
             )
-            if search_through_file(path, skipUntilThis, False):
-                present = "true"
+            present = search_through_file(path, skipUntilThis, False)
         return flask.jsonify(result=present)
 
 
