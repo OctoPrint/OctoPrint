@@ -629,7 +629,7 @@ class FilebasedUserManager(UserManager):
         if username in self._users and not overwrite:
             raise UserAlreadyExists(username)
 
-        if username != username.strip():
+        if not username.strip() or username != username.strip():
             raise InvalidUsername(username)
 
         self._users[username] = User(
