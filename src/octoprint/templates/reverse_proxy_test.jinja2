@@ -1,0 +1,130 @@
+<html>
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>OctoPrint Reverse Proxy Test</title>
+
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
+    <link rel="mask-icon" href="{{ url_for('static', filename='img/mask.svg') }}" color="#56BE37">
+    <link rel="mask-icon-theme" href="{{ url_for('static', filename='img/mask-theme.svg') }}" color="#56BE37">
+    <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
+    <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
+
+    <!-- le CSS -->
+
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap-responsive.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-5.15.1/css/all.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-5.15.1/css/v4-shims.min") }}">
+
+    {% for url in theming %}
+        <link rel="stylesheet" href="{{ url }}">
+    {% endfor %}
+
+    <!-- le javascript -->
+
+    <script>
+        var BASE_URL = "{{ url_for('index') }}";
+
+        var CLIENT_IP = "{{ client_ip }}";
+        var SERVER_PROTOCOL = "{{ server_protocol }}";
+        var SERVER_NAME = "{{ server_name }}";
+        var SERVER_PORT = {{ server_port }};
+        var SERVER_PATH = "{{ server_path }}";
+        var COOKIE_SUFFIX = "{{ cookie_suffix }}";
+    </script>
+    <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/knockout.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/bootstrap/bootstrap.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/lib/sprintf.min.js") }}"></script>
+
+    {% assets "js_client" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+
+    <script src="{{ url_for("static", filename="js/app/helpers.js") }}"></script>
+    <script src="{{ url_for("static", filename="js/reverse_proxy_test/reverse_proxy_test.js") }}"></script>
+</head>
+<body>
+    <div id="navbar" class="navbar navbar-inverse navbar-static-top">
+        <div class="navbar-inner">
+            <span class="brand">OctoPrint Reverse Proxy Test</span>
+        </div>
+    </div>
+    <div id="reverse_proxy_test" class="container" style="padding-top: 1em">
+        <div class="alert alert-error" data-bind="visible: !cookieSuffixMatch">
+            <strong>Warning!</strong> The used cookie suffix doesn't match between client and server. That means that OctoPrint's
+            UI won't work properly. Please check your configuration and fix it.
+        </div>
+
+        <p>
+            This page helps you identify issues in your reverse proxy configuration. It will show you information about
+            some of the variables that OctoPrint uses to set cookies and generate fully qualified URLs. If you see
+            any mismatches highlighted in red below, that means that something is not configured properly and you
+            need to fix it.
+        </p>
+
+        <p>
+            The table also shows you the client IP that your server saw you as. Make sure that this client IP is what
+            OctoPrint should be seeing, and not for example your reverse proxy itself.
+        </p>
+
+        <p>
+            For each variable, information is displayed what influences the value the server sees and thus where to
+            start debugging in case of any observed mismatches.
+        </p>
+
+        <table class="table table-bordered table-hover">
+            <thead>
+                <th>Variable</th>
+                <th>Source</th>
+                <th>Client</th>
+                <th>Server</th>
+            </thead>
+            <tr>
+                <td>Client IP</td>
+                <td><code>X-Forwarded-For</code></td>
+                <td>-</td>
+                <td>{{ client_ip }}</td>
+            </tr>
+            <tr data-bind="css: { success: serverProtocolMatch, error: !serverProtocolMatch }">
+                <td>Protocol</td>
+                <td><code>X-Forwarded-Protocol</code>, <code>X-Scheme</code> or config</td>
+                <td data-bind="text: serverProtocol"></td>
+                <td>{{ server_protocol }}</td>
+            </tr>
+            <tr data-bind="css: { success: serverNameMatch, error: !serverNameMatch }">
+                <td>Host</td>
+                <td><code>X-Forwarded-Host</code>, <code>Host</code>, <code>X-Forwarded-Server</code> or config</td>
+                <td data-bind="text: serverName"></td>
+                <td>{{ server_name }}</td>
+            </tr>
+            <tr data-bind="css: { success: serverPortMatch, error: !serverPortMatch }">
+                <td>Port</td>
+                <td><code>X-Forwarded-Host</code>, <code>Host</code>, <code>X-Forwarded-Port</code>, <code>X-Forwarded-Protocol</code>, <code>X-Scheme</code> or config</td>
+                <td data-bind="text: serverPort"></td>
+                <td>{{ server_port }}</td>
+            </tr>
+            <tr data-bind="css: { success: serverPathMatch, error: !serverPathMatch }">
+                <td>Path</td>
+                <td><code>X-Script-Name</code> or config</td>
+                <td data-bind="text: serverPath"></td>
+                <td>{{ server_path }}</td>
+            </tr>
+            <tr data-bind="css: { success: cookieSuffixMatch, error: !cookieSuffixMatch }">
+                <td>Cookie Suffix</td>
+                <td>Built from port & path</td>
+                <td data-bind="text: cookieSuffix"></td>
+                <td>{{ cookie_suffix }}</td>
+            </tr>
+        </table>
+
+        <p>
+            Please refer to <a href="https://faq.octoprint.org/reverse-proxy" target="_blank" rel="noopener noreferrer">the Reverse Proxy FAQ entry</a>
+            for information on correct configuration and examples.
+        </p>
+
+    </div>
+
+</body>
+</html>

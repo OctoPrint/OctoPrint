@@ -65,7 +65,7 @@ def validate_csrf_tokens(cookie, header):
 
 def add_csrf_cookie(response):
     if not isinstance(response, OctoPrintFlaskResponse):
-        return
+        response = flask.make_response(response)
 
     token = generate_csrf_token()
     response.set_cookie("csrf_token", token, httponly=False)
@@ -77,8 +77,9 @@ def validate_csrf_request(request):
         # Irrelevant method for CSRF, bypass
         return
 
-    if getattr(flask.g, "login_via_apikey", False):
-        # API key authorization, bypass
+    session = getattr(flask, "session", {})
+    if len(session) == 0 or session.get("login_mechanism") == "apikey":
+        # empty session, not a browser context
         return
 
     if is_exempt(request.endpoint):

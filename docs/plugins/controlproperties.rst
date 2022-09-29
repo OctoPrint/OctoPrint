@@ -53,6 +53,11 @@ The following properties are recognized:
 ``__plugin_license__``
   License of your plugin, optional, overrides the license specified in ``setup.py`` if provided.
 
+.. _sec-plugins-controlproperties-plugin_privacypolicy:
+
+``__plugin_privacypolicy__``
+  URL of the privacy policy of your plugin, optional.
+
 .. _sec-plugins-controlproperties-plugin_pythoncompat:
 
 ``__plugin_pythoncompat__``

@@ -85,7 +85,7 @@ class AclSubwizard:
         ):
             abort(404)
 
-        data = request.get_json()
+        data = request.get_json(silent=True)
         if data is None:
             data = request.values
 

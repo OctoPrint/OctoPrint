@@ -468,7 +468,7 @@ def encode_remember_me_cookie(value):
     name = value.split("|")[0]
     try:
         remember_key = userManager.signature_key_for_user(
-            name, salt=current_app.config["SECRET_KEY"]
+            name, current_app.config["SECRET_KEY"]
         )
         timestamp = datetime.utcnow().timestamp()
         return encode_cookie(f"{name}|{timestamp}", key=remember_key)
@@ -488,7 +488,7 @@ def decode_remember_me_cookie(value):
         try:
             # valid signature?
             signature_key = userManager.signature_key_for_user(
-                name, salt=current_app.config["SECRET_KEY"]
+                name, current_app.config["SECRET_KEY"]
             )
             cookie = decode_cookie(value, key=signature_key)
             if cookie:
@@ -503,6 +503,20 @@ def decode_remember_me_cookie(value):
             pass
 
     raise ValueError("Invalid remember me cookie")
+
+
+def get_cookie_suffix(request):
+    """
+    Request specific suffix for set and read cookies
+
+    We need this because cookies are not port-specific and we don't want to overwrite our
+    session and other cookies from one OctoPrint instance on our machine with those of another
+    one who happens to listen on the same address albeit a different port or script root.
+    """
+    result = "_P" + request.server_port
+    if request.script_root:
+        return result + "_R" + request.script_root.replace("/", "|")
+    return result
 
 
 class OctoPrintFlaskRequest(flask.Request):
@@ -553,17 +567,7 @@ class OctoPrintFlaskRequest(flask.Request):
 
     @cached_property
     def cookie_suffix(self):
-        """
-        Request specific suffix for set and read cookies
-
-        We need this because cookies are not port-specific and we don't want to overwrite our
-        session and other cookies from one OctoPrint instance on our machine with those of another
-        one who happens to listen on the same address albeit a different port or script root.
-        """
-        result = "_P" + self.server_port
-        if self.script_root:
-            return result + "_R" + self.script_root.replace("/", "|")
-        return result
+        return get_cookie_suffix(self)
 
 
 class OctoPrintFlaskResponse(flask.Response):
@@ -1660,15 +1664,8 @@ def get_remote_address(request):
 
 
 def get_json_command_from_request(request, valid_commands):
-    content_type = request.headers.get("Content-Type", None)
-    if content_type is None or "application/json" not in content_type:
-        flask.abort(400, description="Expected content-type JSON")
-
     data = request.get_json()
-    if data is None:
-        flask.abort(
-            400, description="Malformed JSON body or wrong content-type in request"
-        )
+
     if "command" not in data or data["command"] not in valid_commands:
         flask.abort(400, description="command is invalid")
 
@@ -1944,11 +1941,12 @@ class OctoPrintJsonProvider(flask.json.provider.DefaultJSONProvider):
 def session_signature(user, session):
     from octoprint.server import userManager
 
-    key = userManager.signature_key_for_user(user, salt=current_app.config["SECRET_KEY"])
+    key = userManager.signature_key_for_user(user, current_app.config["SECRET_KEY"])
     return hmac.new(
         key.encode("utf-8"), session.encode("utf-8"), hashlib.sha512
     ).hexdigest()
 
 
 def validate_session_signature(sig, user, session):
-    return hmac.compare_digest(sig, session_signature(user, session))
+    user_sig = session_signature(user, session)
+    return len(user_sig) == len(sig) and hmac.compare_digest(sig, user_sig)

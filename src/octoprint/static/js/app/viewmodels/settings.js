@@ -41,15 +41,7 @@ $(function () {
         self.translationUploadFilename = ko.observable();
         self.invalidTranslationArchive = ko.pureComputed(function () {
             var name = self.translationUploadFilename();
-            return (
-                name !== undefined &&
-                !(
-                    _.endsWith(name.toLocaleLowerCase(), ".zip") ||
-                    _.endsWith(name.toLocaleLowerCase(), ".tar.gz") ||
-                    _.endsWith(name.toLocaleLowerCase(), ".tgz") ||
-                    _.endsWith(name.toLocaleLowerCase(), ".tar")
-                )
-            );
+            return name !== undefined && !_.endsWith(name.toLocaleLowerCase(), ".zip");
         });
         self.enableTranslationUpload = ko.pureComputed(function () {
             var name = self.translationUploadFilename();
@@ -218,6 +210,7 @@ $(function () {
         self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
         self.serial_waitForStart = ko.observable(undefined);
+        self.serial_waitToLoadSdFileList = ko.observable(undefined);
         self.serial_sendChecksum = ko.observable("print");
         self.serial_sendChecksumWithUnknownCommands = ko.observable(undefined);
         self.serial_unknownCommandsNeedAck = ko.observable(undefined);
@@ -400,6 +393,7 @@ $(function () {
 
         self.observableCopies = {
             feature_waitForStart: "serial_waitForStart",
+            feature_waitToLoadSdFileList: "serial_waitToLoadSdFileList",
             feature_sendChecksum: "serial_sendChecksum",
             feature_sdRelativePath: "serial_sdRelativePath",
             feature_sdAlwaysAvailable: "serial_sdAlwaysAvailable",

@@ -10,6 +10,7 @@ import uuid
 
 import wrapt
 from flask_login import AnonymousUserMixin, UserMixin
+from passlib.hash import pbkdf2_sha256
 from werkzeug.local import LocalProxy
 
 from octoprint.access.groups import Group, GroupChangeListener
@@ -19,10 +20,22 @@ from octoprint.util import atomic_write, deprecated, generate_api_key
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import to_bytes, yaml
 
+password_hashers = []
+
 try:
-    from passlib.hash import argon2 as passwordhash
-except ImportError:
-    from passlib.hash import pbkdf2_sha256 as passwordhash
+    from passlib.hash import argon2
+
+    # test if we can actually hash and verify, if not we won't use this backend
+    hash = argon2.hash("test")
+    argon2.verify("test", hash)
+
+    password_hashers.append(argon2)
+except Exception:
+    logging.getLogger(__name__).warning(
+        "Argon2 passlib backend is not available, not using it for password hashing"
+    )
+
+password_hashers.append(pbkdf2_sha256)
 
 
 class UserManager(GroupChangeListener):
@@ -141,7 +154,7 @@ class UserManager(GroupChangeListener):
 
     @staticmethod
     def create_password_hash(password, *args, **kwargs):
-        return passwordhash.hash(password)
+        return password_hashers[0].hash(password)
 
     @staticmethod
     def create_legacy_password_hash(password, salt):
@@ -177,8 +190,10 @@ class UserManager(GroupChangeListener):
     def cleanup_legacy_hashes(self):
         pass
 
-    def signature_key_for_user(self, username, salt=None):
-        return self.create_password_hash(username, salt=salt)
+    def signature_key_for_user(self, username, secret):
+        return hashlib.sha512(
+            to_bytes(username, encoding="utf-8", errors="replace") + to_bytes(secret)
+        ).hexdigest()
 
     def add_user(self, username, password, active, permissions, groups, overwrite=False):
         pass
@@ -809,14 +824,16 @@ class FilebasedUserManager(UserManager):
             self._settings.remove(["accessControl", "salt"])
             self._settings.save()
 
-    def signature_key_for_user(self, username, salt=None):
+    def signature_key_for_user(self, username, secret):
+        if username == "_api":
+            return super().signature_key_for_user(username, secret)
         if username not in self._users:
             raise UnknownUser(username)
         user = self._users[username]
 
         return hashlib.sha512(
             to_bytes(username + user._passwordHash, encoding="utf-8", errors="replace")
-            + to_bytes(salt)
+            + to_bytes(secret)
         ).hexdigest()
 
     def change_user_setting(self, username, key, value):
@@ -1169,10 +1186,14 @@ class User(UserMixin):
         if legacy:
             return self._passwordHash == password
 
-        try:
-            return passwordhash.verify(password, self._passwordHash)
-        except ValueError:
-            return False
+        for password_hash in password_hashers:
+            if password_hash.identify(self._passwordHash):
+                try:
+                    return password_hash.verify(password, self._passwordHash)
+                except ValueError:
+                    pass
+
+        return False
 
     def get_id(self):
         return self.get_name()

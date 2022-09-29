@@ -225,8 +225,7 @@ def login():
         _logger.exception("Error processing theming CSS, ignoring")
 
     resp = make_response(render_template("login.jinja2", **render_kwargs))
-    add_csrf_cookie(resp)
-    return resp
+    return add_csrf_cookie(resp)
 
 
 @app.route("/recovery")
@@ -258,8 +257,7 @@ def recovery():
         _logger.exception("Error adding backup upload size info, ignoring")
 
     resp = make_response(render_template("recovery.jinja2", **render_kwargs))
-    add_csrf_cookie(resp)
-    return resp
+    return add_csrf_cookie(resp)
 
 
 @app.route("/cached.gif")
@@ -331,6 +329,26 @@ def in_cache():
     else:
         _logger.debug(f"Path {path} not yet cached (key: {key}), signaling as missing")
         return abort(404)
+
+
+@app.route("/reverse_proxy_test")
+@app.route("/reverse_proxy_test/")
+def reverse_proxy_test():
+    from octoprint.server.util.flask import get_cookie_suffix, get_remote_address
+
+    remote_address = get_remote_address(request)
+    cookie_suffix = get_cookie_suffix(request)
+
+    return render_template(
+        "reverse_proxy_test.jinja2",
+        theming=[],
+        client_ip=remote_address,
+        server_protocol=request.environ.get("wsgi.url_scheme"),
+        server_name=request.environ.get("SERVER_NAME"),
+        server_port=request.environ.get("SERVER_PORT"),
+        server_path=request.script_root if request.script_root else "/",
+        cookie_suffix=cookie_suffix,
+    )
 
 
 @app.route("/")
@@ -700,8 +718,7 @@ def index():
     if response is None:
         return abort(404)
 
-    add_csrf_cookie(response)
-    return response
+    return add_csrf_cookie(response)
 
 
 def _get_render_kwargs(templates, plugin_names, plugin_vars, now):

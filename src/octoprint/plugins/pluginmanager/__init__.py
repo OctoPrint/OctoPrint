@@ -66,6 +66,8 @@ def map_repository_entry(entry):
 
     if "follow_dependency_links" not in result:
         result["follow_dependency_links"] = False
+    if "privacypolicy" not in result:
+        result["privacypolicy"] = False
 
     result["is_compatible"] = {"octoprint": True, "os": True, "python": True}
 
@@ -1998,6 +2000,7 @@ class PluginManagerPlugin(
             "version": plugin.version,
             "url": plugin.url,
             "license": plugin.license,
+            "privacypolicy": plugin.privacypolicy,
             "python": plugin.pythoncompat,
             "bundled": plugin.bundled,
             "managable": plugin.managable,

@@ -34,9 +34,6 @@ def get_groups():
 @no_firstrun_access
 @Permissions.ADMIN.require(403)
 def add_group():
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
-
     data = request.get_json()
 
     if "key" not in data:
@@ -82,9 +79,6 @@ def get_group(key):
 @no_firstrun_access
 @Permissions.ADMIN.require(403)
 def update_group(key):
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
-
     data = request.get_json()
 
     try:
@@ -138,12 +132,7 @@ def get_users():
 @no_firstrun_access
 @Permissions.ADMIN.require(403)
 def add_user():
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
-
     data = request.get_json()
-    if data is None:
-        abort(400, description="Malformed JSON body in request")
 
     if "name" not in data:
         abort(400, description="name is missing")
@@ -192,13 +181,7 @@ def get_user(username):
 def update_user(username):
     user = userManager.find_user(username)
     if user is not None:
-        if "application/json" not in request.headers["Content-Type"]:
-            abort(400, description="Expected content-type JSON")
-
         data = request.get_json()
-
-        if data is None:
-            abort(400, description="Malformed JSON body in request")
 
         # change groups
         if "groups" in data:
@@ -246,13 +229,7 @@ def change_password_for_user(username):
             or current_user.has_permission(Permissions.ADMIN)
         )
     ):
-        if "application/json" not in request.headers["Content-Type"]:
-            abort(400, description="Expected content-type JSON")
-
         data = request.get_json()
-
-        if data is None:
-            abort(400, description="Malformed JSON body in request")
 
         if "password" not in data or not data["password"]:
             abort(400, description="new password is missing")
@@ -307,9 +284,6 @@ def change_settings_for_user(username):
         abort(403)
 
     data = request.get_json()
-
-    if data is None:
-        abort(400, description="Malformed JSON body in request")
 
     try:
         userManager.change_user_settings(username, data)

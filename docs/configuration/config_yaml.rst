@@ -764,6 +764,10 @@ Use the following settings to configure the serial connection to the printer:
      # during connect.
      waitForStartOnConnect: false
 
+     # Specifies whether OctoPrint should wait to load the SD card file list until the first firmware capability
+     # report is processed.
+     waitToLoadSdFileList: false
+
      # Specifies whether OctoPrint should send linenumber + checksum with every printer command. Needed for
      # successful communication with Repetier firmware
      alwaysSendChecksum: false
