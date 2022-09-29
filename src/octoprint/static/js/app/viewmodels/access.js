@@ -45,10 +45,12 @@ $(function () {
                 passwordMismatch: ko.pureComputed(function () {
                     return self.editor.password() !== self.editor.repeatedPassword();
                 }),
+                providedUsername: ko.pureComputed(function () {
+                    return self.editor.name() && self.editor.name().trim();
+                }),
                 validUsername: ko.pureComputed(function () {
                     return (
-                        self.editor.name() &&
-                        self.editor.name().trim() !== "" &&
+                        !self.editor.name() ||
                         self.editor.name() == self.editor.name().trim()
                     );
                 }),
@@ -94,8 +96,7 @@ $(function () {
                 confirm: undefined,
                 valid: ko.pureComputed(function () {
                     return (
-                        self.editor.name() &&
-                        self.editor.name().trim() &&
+                        self.editor.providedUsername() &&
                         self.editor.validUsername() &&
                         (!self.editor.new() ||
                             (self.editor.password() &&
