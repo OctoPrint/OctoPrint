@@ -455,10 +455,10 @@ var doParse = async function () {
     // if skipUntil is set, get skipUntilPresent
     skipUntilPresent = false;
     if (skipUntil !== undefined && skipUntil !== "") {
-        result = await fetch("/api/plugin/gcodeviewer?path=" + localPath);
+        result = await fetch("/plugin/gcodeviewer/skipuntilcheck/local/" + localPath);
         if (result.ok) {
             response = await result.json();
-            skipUntilPresent = response.result == "true";
+            skipUntilPresent = response.present;
         }
     }
 
