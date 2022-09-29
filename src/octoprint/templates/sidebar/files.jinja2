@@ -67,7 +67,7 @@
             <span class="btn btn-primary fileinput-button span6" style="margin-bottom: 10px">
                                 <i class="fas fa-upload"></i>
                                 <span>{{ _('Upload') }}</span>
-                                <input id="gcode_upload" data-test-id="upload-local" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button">
+                                <input id="gcode_upload" data-test-id="upload-local" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" multiple>
                             </span>
             <span class="btn btn-primary fileinput-button span6" data-bind="enable: $root.isSdReady() && !$root.isPrinting(), css: {disabled: !$root.isSdReady() || $root.isPrinting()}" style="margin-bottom: 10px">
                                 <i class="fas fa-upload"></i>

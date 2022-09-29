@@ -445,8 +445,7 @@ class StorageError(Exception):
     NOT_EMPTY = "not_empty"
 
     def __init__(self, message, code=None, cause=None):
-        BaseException.__init__(self)
-        self.message = message
+        Exception.__init__(self, message)
         self.cause = cause
 
         if code is None:
