@@ -5,9 +5,9 @@
  */
 
 // raw path suitable for fetch()
-var path;
+var url;
 // path relative to Local
-var localPath;
+var path;
 var firstReport;
 var toolOffsets = [{x: 0, y: 0}];
 var g90InfluencesExtruder = false;
@@ -455,7 +455,7 @@ var doParse = async function () {
     // if skipUntil is set, get skipUntilPresent
     skipUntilPresent = false;
     if (skipUntil !== undefined && skipUntil !== "") {
-        result = await fetch("/plugin/gcodeviewer/skipuntilcheck/local/" + localPath);
+        result = await fetch("/plugin/gcodeviewer/skipuntilcheck/local/" + path);
         if (result.ok) {
             response = await result.json();
             skipUntilPresent = response.present;
@@ -463,7 +463,7 @@ var doParse = async function () {
     }
 
     model = [];
-    for await (let [line, percentage] of gCodeLineGenerator(path)) {
+    for await (let [line, percentage] of gCodeLineGenerator(url)) {
         x = undefined;
         y = undefined;
         z = undefined;
@@ -860,8 +860,8 @@ var doParse = async function () {
 };
 
 var parseGCode = async function (message) {
+    url = message.url;
     path = message.path;
-    localPath = message.localPath;
     firstReport = message.options.firstReport;
     toolOffsets = message.options.toolOffsets;
     if (!toolOffsets || toolOffsets.length === 0) toolOffsets = [{x: 0, y: 0}];

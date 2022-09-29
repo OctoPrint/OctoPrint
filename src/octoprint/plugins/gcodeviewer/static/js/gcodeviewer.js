@@ -514,8 +514,8 @@ $(function () {
                 self.cachedPath = path;
                 self.cachedDate = date;
                 var par = {
-                    path: OctoPrint.files.downloadPath("local", path),
-                    localPath: path,
+                    url: OctoPrint.files.downloadPath("local", path),
+                    path: path,
                     skipUntil: self.settings.settings.plugins.gcodeviewer.skipUntilThis()
                 };
 

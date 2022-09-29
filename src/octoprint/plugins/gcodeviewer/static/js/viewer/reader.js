@@ -219,8 +219,8 @@ GCODE.gCodeReader = (function () {
             GCODE.ui.worker.postMessage({
                 cmd: "downloadAndParseGCode",
                 msg: {
+                    url: reader.url,
                     path: reader.path,
-                    localPath: reader.localPath,
                     skipUntil: reader.skipUntil,
                     options: {
                         firstReport: 5,
