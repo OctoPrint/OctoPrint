@@ -1233,8 +1233,8 @@ $(function () {
                     self.installUrl("");
                     if (response.hasOwnProperty("queued_installs")) {
                         self.queuedInstalls(response.queued_installs);
-                        if (typeof self.installQueuPopup !== "undefined") {
-                            self.installQueuPopup.update({
+                        if (typeof self.installQueuePopup !== "undefined") {
+                            self.installQueuePopup.update({
                                 text:
                                     '<div class="row-fluid"><p>' +
                                     gettext(
@@ -1252,11 +1252,11 @@ $(function () {
                                     }).join("</li><li>") +
                                     "</li></ul></div>"
                             });
-                            if (self.installQueuPopup.state === "closed") {
-                                self.installQueuPopup.open();
+                            if (self.installQueuePopup.state === "closed") {
+                                self.installQueuePopup.open();
                             }
                         } else {
-                            self.installQueuPopup = new PNotify({
+                            self.installQueuePopup = new PNotify({
                                 title: gettext("Plugin installs queued"),
                                 text:
                                     '<div class="row-fluid"><p>' +
@@ -1600,6 +1600,18 @@ $(function () {
                 data.is_compatible.os &&
                 data.is_compatible.python
             );
+        };
+
+        self.installButtonAction = function (data) {
+            if (self.enableRepoInstall(data)) {
+                if (!self.installQueued(data)) {
+                    self.installFromRepository(data);
+                } else {
+                    self.removeFromQueue(data);
+                }
+            } else {
+                return false;
+            }
         };
 
         self.installButtonText = function (data) {

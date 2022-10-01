@@ -274,7 +274,7 @@
                             </label>
                             <div class="span11">
                                 <div class="span3 pull-right">
-                                    <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { if (!$root.installQueued($data)) {$root.installFromRepository($data);} else {$root.removeFromQueue($data);} } else { return false; } }"><span data-bind="text: $root.installButtonText($data)"></span></button>
+                                    <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: $root.installButtonAction"><span data-bind="text: $root.installButtonText($data)"></span></button>
                                     <div data-bind="visible: $data.disabled !== undefined" style="text-align: center"><small><a data-bind="attr: {href: page}" target="_blank">{{ _('"Why?"') }}</a></small></div>
                                 </div>
                                 <div>
