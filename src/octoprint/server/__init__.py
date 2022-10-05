@@ -1472,6 +1472,7 @@ class Server:
             app,
             key_func=get_remote_address,
             enabled=s.getBoolean(["devel", "enableRateLimiter"]),
+            storage_uri="memory://",
         )
 
     def _setup_i18n(self, app):
