@@ -65,6 +65,20 @@ jobs:
         run: |
           pytest
 
+  test-js-unit:
+    name: 🧪 JavaScript unit tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: 🏗 Set up test dependencies
+        run: |
+          npm -g install node-qunit-puppeteer@2.1.0
+      - name: 🚀 Run helpers.js test suite
+        run: |
+          node-qunit-puppeteer tests/static/js/test-helpers.html
+          node-qunit-puppeteer tests/static/js/test-client-base.html
+
   test-install:
     name: 🧪 Installation tests
     needs: build
@@ -146,6 +160,7 @@ jobs:
     needs:
       - pre-commit
       - test-unit
+      - test-js-unit
       - test-install
       - test-e2e
     runs-on: ubuntu-latest
