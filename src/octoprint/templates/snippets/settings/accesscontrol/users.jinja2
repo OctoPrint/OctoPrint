@@ -79,10 +79,11 @@
             <div class="tab-content">
                 <div id="settings_accesscontrol_users_add_general" class="tab-pane active">
                     <form class="form-horizontal" onsubmit="return false;">
-                        <div class="control-group">
-                            <label class="control-label" for="settings-usersDialogAddUserName">{{ _('Username') }}</label>
+                        <div class="control-group" data-bind="css: {error: !$root.access.users.editor.validUsername()}">
+                            <label class="control-label" for="settings-usersDialogAddUsername">{{ _('Username') }}</label>
                             <div class="controls">
-                                <input type="text" class="input-block-level" id="settings-usersDialogAddUserName" data-bind="disable: !$root.access.users.editor.new(), value: $root.access.users.editor.name" required>
+                                <input type="text" class="input-block-level" id="settings-usersDialogAddUsername" data-bind="disable: !$root.access.users.editor.new(), value: $root.access.users.editor.name, valueUpdate: 'afterkeydown'" required>
+                                <span class="help-inline" data-bind="visible: !$root.access.users.editor.validUsername()">{{ _('Invalid username') }}</span>
                             </div>
                         </div>
                         <div class="control-group" data-bind="visible: $root.access.users.editor.new()">

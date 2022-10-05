@@ -7,10 +7,11 @@
     OctoPrint's settings:
 </p>{% endtrans %}
 <form class="form-horizontal" onsubmit="return false;">
-    <div class="control-group" data-bind="css: {success: validUsername()}">
+    <div class="control-group" data-bind="css: {error: !validUsername(), success: providedUsername() && validUsername()}">
         <label class="control-label" for="first_run_username">{{ _('Username') }}</label>
         <div class="controls">
             <input type="text" class="input-medium" data-bind="value: username, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
+            <span class="help-inline" data-bind="visible: !validUsername()">{{ _('Invalid username') }}</span>
         </div>
     </div>
     <div class="control-group" data-bind="css: {success: validPassword()}">
