@@ -588,7 +588,9 @@ class OctoPrintFlaskResponse(flask.Response):
         kwargs["samesite"] = samesite
 
         # set secure if necessary
-        kwargs["secure"] = settings().getBoolean(["server", "cookies", "secure"])
+        kwargs["secure"] = flask.request.environ.get(
+            "wsgi.url_scheme"
+        ) == "https" or settings().getBoolean(["server", "cookies", "secure"])
 
         # tie account properties to remember me cookie (e.g. current password hash)
         if key == current_app.config.get("REMEMBER_COOKIE_NAME", REMEMBER_COOKIE_NAME):
