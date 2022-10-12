@@ -77,6 +77,7 @@ jobs:
       - name: 🚀 Run helpers.js test suite
         run: |
           node-qunit-puppeteer tests/static/js/test-helpers.html
+          node-qunit-puppeteer tests/static/js/test-client-base.html
 
   test-install:
     name: 🧪 Installation tests
