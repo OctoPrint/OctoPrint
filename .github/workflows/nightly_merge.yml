@@ -23,6 +23,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: 🔀 Merge staging/bugfix into maintenance
+        uses: robotology/gh-action-nightly-merge@v1.3.3
+        with:
+          stable_branch: "staging/bugfix"
+          development_branch: "maintenance"
+          allow_ff: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔀 Merge staging/maintenance into maintenance
+        uses: robotology/gh-action-nightly-merge@v1.3.3
+        with:
+          stable_branch: "staging/bugfix"
+          development_branch: "maintenance"
+          allow_ff: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: 🔀 Merge maintenance into devel
         uses: robotology/gh-action-nightly-merge@v1.3.3
         with:
