@@ -107,13 +107,14 @@
         return url;
     };
 
-    OctoPrintClient.prototype.getParsedBaseUrl = function () {
+    OctoPrintClient.prototype.getParsedBaseUrl = function (location) {
         if (!this.options.baseurl) return "";
 
         try {
             var url = new URL(this.options.baseurl);
         } catch (e) {
-            var parsed = new URL(window.location);
+            location = location || window.location;
+            var parsed = new URL(location);
             var path = this.options.baseurl;
             if (!path || path[0] !== "/") {
                 path = "/" + (path ? path : "");
@@ -135,7 +136,7 @@
             if (path.endsWith("/")) {
                 path = path.substring(0, path.length - 1);
             }
-            return "_P" + port + "_R" + path.replace(/\//, "|");
+            return "_P" + port + "_R" + path.replace(/\//g, "|");
         } else {
             return "_P" + port;
         }
