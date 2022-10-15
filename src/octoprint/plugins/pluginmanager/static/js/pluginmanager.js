@@ -1233,10 +1233,7 @@ $(function () {
                     self.installUrl("");
                     if (response.hasOwnProperty("queued_installs")) {
                         self.queuedInstalls(response.queued_installs);
-                        if (typeof self.installQueuePopup !== "undefined") {
-                            self.installQueuePopup.update({
-                                text:
-                                    '<div class="row-fluid"><p>' +
+                        var text = '<div class="row-fluid"><p>' +
                                     gettext(
                                         "The following plugins are queued to be installed."
                                     ) +
@@ -1250,7 +1247,10 @@ $(function () {
                                         );
                                         return plugin.title;
                                     }).join("</li><li>") +
-                                    "</li></ul></div>"
+                                    "</li></ul></div>";
+                        if (typeof self.installQueuePopup !== "undefined") {
+                            self.installQueuePopup.update({
+                                text: text
                             });
                             if (self.installQueuePopup.state === "closed") {
                                 self.installQueuePopup.open();
@@ -1258,22 +1258,7 @@ $(function () {
                         } else {
                             self.installQueuePopup = new PNotify({
                                 title: gettext("Plugin installs queued"),
-                                text:
-                                    '<div class="row-fluid"><p>' +
-                                    gettext(
-                                        "The following plugins are queued to be installed."
-                                    ) +
-                                    "</p><ul><li>" +
-                                    _.map(response.queued_installs, function (info) {
-                                        var plugin = ko.utils.arrayFirst(
-                                            self.repositoryplugins.paginatedItems(),
-                                            function (item) {
-                                                return item.archive === info.url;
-                                            }
-                                        );
-                                        return plugin.title;
-                                    }).join("</li><li>") +
-                                    "</li></ul></div>",
+                                text: text,
                                 type: "notice"
                             });
                         }
