@@ -396,13 +396,7 @@ def printerCommand():
     if not printer.is_operational():
         abort(409, description="Printer is not operational")
 
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content type JSON")
-
     data = request.get_json()
-
-    if data is None:
-        abort(400, description="Malformed JSON body in request")
 
     if "command" in data and "commands" in data:
         abort(400, description="'command' and 'commands' are mutually exclusive")

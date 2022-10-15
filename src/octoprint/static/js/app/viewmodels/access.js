@@ -45,6 +45,15 @@ $(function () {
                 passwordMismatch: ko.pureComputed(function () {
                     return self.editor.password() !== self.editor.repeatedPassword();
                 }),
+                providedUsername: ko.pureComputed(function () {
+                    return self.editor.name() && self.editor.name().trim();
+                }),
+                validUsername: ko.pureComputed(function () {
+                    return (
+                        !self.editor.name() ||
+                        self.editor.name() == self.editor.name().trim()
+                    );
+                }),
                 currentPasswordMismatch: ko.observable(false),
                 apikey: ko.observable(undefined),
                 active: ko.observable(undefined),
@@ -87,8 +96,8 @@ $(function () {
                 confirm: undefined,
                 valid: ko.pureComputed(function () {
                     return (
-                        self.editor.name() &&
-                        self.editor.name().trim() &&
+                        self.editor.providedUsername() &&
+                        self.editor.validUsername() &&
                         (!self.editor.new() ||
                             (self.editor.password() &&
                                 self.editor.password().trim() &&
@@ -862,7 +871,7 @@ $(function () {
             access.onUserLoggedIn =
             access.onUserLoggedOut =
                 function (user) {
-                    if (access.loginState.hasPermission(access.permissions.SETTINGS)) {
+                    if (access.loginState.hasPermission(access.permissions.ADMIN)) {
                         access.groups.requestData().done(function () {
                             access.users.requestData();
                         });

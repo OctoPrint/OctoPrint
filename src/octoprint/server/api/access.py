@@ -25,18 +25,15 @@ def get_permissions():
 
 @api.route("/access/groups", methods=["GET"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
+@Permissions.ADMIN.require(403)
 def get_groups():
     return jsonify(groups=list(map(lambda g: g.as_dict(), groupManager.groups)))
 
 
 @api.route("/access/groups", methods=["POST"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
+@Permissions.ADMIN.require(403)
 def add_group():
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
-
     data = request.get_json()
 
     if "key" not in data:
@@ -69,7 +66,7 @@ def add_group():
 
 @api.route("/access/groups/<key>", methods=["GET"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
+@Permissions.ADMIN.require(403)
 def get_group(key):
     group = groupManager.find_group(key)
     if group is not None:
@@ -80,11 +77,8 @@ def get_group(key):
 
 @api.route("/access/groups/<key>", methods=["PUT"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
+@Permissions.ADMIN.require(403)
 def update_group(key):
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
-
     data = request.get_json()
 
     try:
@@ -113,7 +107,7 @@ def update_group(key):
 
 @api.route("/access/groups/<key>", methods=["DELETE"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
+@Permissions.ADMIN.require(403)
 def remove_group(key):
     try:
         groupManager.remove_group(key)
@@ -129,21 +123,16 @@ def remove_group(key):
 
 @api.route("/access/users", methods=["GET"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
+@Permissions.ADMIN.require(403)
 def get_users():
     return jsonify(users=list(map(lambda u: u.as_dict(), userManager.get_all_users())))
 
 
 @api.route("/access/users", methods=["POST"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
+@Permissions.ADMIN.require(403)
 def add_user():
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
-
     data = request.get_json()
-    if data is None:
-        abort(400, description="Malformed JSON body in request")
 
     if "name" not in data:
         abort(400, description="name is missing")
@@ -163,6 +152,8 @@ def add_user():
         userManager.add_user(name, password, active, permissions, groups)
     except users.UserAlreadyExists:
         abort(409)
+    except users.InvalidUsername:
+        abort(400, "Username invalid")
     return get_users()
 
 
@@ -188,17 +179,11 @@ def get_user(username):
 
 @api.route("/access/users/<username>", methods=["PUT"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
+@Permissions.ADMIN.require(403)
 def update_user(username):
     user = userManager.find_user(username)
     if user is not None:
-        if "application/json" not in request.headers["Content-Type"]:
-            abort(400, description="Expected content-type JSON")
-
         data = request.get_json()
-
-        if data is None:
-            abort(400, description="Malformed JSON body in request")
 
         # change groups
         if "groups" in data:
@@ -223,7 +208,7 @@ def update_user(username):
 
 @api.route("/access/users/<username>", methods=["DELETE"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
+@Permissions.ADMIN.require(403)
 def remove_user(username):
     try:
         userManager.remove_user(username)
@@ -243,21 +228,15 @@ def change_password_for_user(username):
         and not current_user.is_anonymous
         and (
             current_user.get_name() == username
-            or current_user.has_permission(Permissions.SETTINGS)
+            or current_user.has_permission(Permissions.ADMIN)
         )
     ):
-        if "application/json" not in request.headers["Content-Type"]:
-            abort(400, description="Expected content-type JSON")
-
         data = request.get_json()
-
-        if data is None:
-            abort(400, description="Malformed JSON body in request")
 
         if "password" not in data or not data["password"]:
             abort(400, description="new password is missing")
 
-        if not current_user.has_permission(Permissions.SETTINGS) or "current" in data:
+        if not current_user.has_permission(Permissions.ADMIN) or "current" in data:
             if "current" not in data or not data["current"]:
                 abort(400, description="current password is missing")
 
@@ -307,9 +286,6 @@ def change_settings_for_user(username):
         abort(403)
 
     data = request.get_json()
-
-    if data is None:
-        abort(400, description="Malformed JSON body in request")
 
     try:
         userManager.change_user_settings(username, data)

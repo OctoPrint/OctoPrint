@@ -53,3 +53,9 @@ class DevelConfig(BaseModel):
 
     sockJsConnectTimeout: float = 30
     pluginTimings: bool = False
+
+    enableRateLimiter: bool = True
+    """Enable or disable the rate limiter. Careful, disabling this reduces security."""
+
+    enableCsrfProtection: bool = True
+    """Enable or disable the CSRF protection. Careful, disabling this reduces security."""

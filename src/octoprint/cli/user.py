@@ -11,6 +11,7 @@ from octoprint.access.groups import FilebasedGroupManager
 from octoprint.access.users import (
     CorruptUserStorage,
     FilebasedUserManager,
+    InvalidUsername,
     UnknownUser,
     UserAlreadyExists,
 )
@@ -126,6 +127,8 @@ def add_user_command(ctx, username, password, groups, permissions, is_admin):
             click.echo(f"\t{_user_to_line(user.as_dict())}")
     except UserAlreadyExists:
         click.echo(f"A user with the name {username} does already exist!", err=True)
+    except InvalidUsername:
+        click.echo(f"The username '{username}' is invalid!", err=True)
 
 
 @cli.command(name="remove")

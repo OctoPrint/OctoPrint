@@ -20,26 +20,6 @@
             <span class="help-block" data-bind="visible: testFolderConfigBroken.timelapse() || testFolderConfigOk.timelapse(), text: testFolderConfigText.timelapse"></span>
         </div>
     </div>
-    <div class="control-group" data-bind="css: {error: testFolderConfigError.timelapseTmp, success: testFolderConfigSuccess.timelapseTmp}">
-        <label class="control-label" for="settings-folderTimelapseTemp">{{ _('Timelapse Temp Folder') }}</label>
-        <div class="controls">
-            <div class="input-append input-block-level">
-                <input type="text" data-bind="value: folder_timelapseTmp, valueUpdate: 'input'" id="settings-folderTimelapseTemp">
-                <a class="btn add-on" data-bind="click: function() { testFolderConfig('timelapseTmp'); }, enable: folder_timelapseTmp() && !testFolderConfigBusy(), css: {disabled: !folder_timelapseTmp() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
-            </div>
-            <span class="help-block" data-bind="visible: testFolderConfigBroken.timelapseTmp() || testFolderConfigOk.timelapseTmp(), text: testFolderConfigText.timelapseTmp"></span>
-        </div>
-    </div>
-    <div class="control-group" data-bind="css: {error: testFolderConfigError.logs, success: testFolderConfigSuccess.logs}">
-        <label class="control-label" for="settings-folderLogs">{{ _('Logs Folder') }}</label>
-        <div class="controls">
-            <div class="input-append input-block-level">
-                <input type="text" data-bind="value: folder_logs, valueUpdate: 'input'" id="settings-folderLogs">
-                <a class="btn add-on" data-bind="click: function() { testFolderConfig('logs'); }, enable: folder_logs() && !testFolderConfigBusy(), css: {disabled: !folder_logs() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
-            </div>
-            <span class="help-block" data-bind="visible: testFolderConfigBroken.logs() || testFolderConfigOk.logs(), text: testFolderConfigText.logs"></span>
-        </div>
-    </div>
     <div class="control-group" data-bind="css: {error: testFolderConfigError.watched, success: testFolderConfigSuccess.watched}">
         <label class="control-label" for="settings-folderWatched">{{ _('Watched Folder') }}</label>
         <div class="controls">
@@ -64,6 +44,11 @@
             configuration will be persisted when saving the settings.
         {% endtrans %}
     </div>
+
+    <p>{% trans %}
+        Please note: Not all of the folders used by OctoPrint can be configured through the UI, only those most commonly moved to other places. If you need to configure other folders,
+        please do so by manually editing the configuration. See the docs for details.
+    {% endtrans %}</p>
 
     <h3>{{ _('Disk space thresholds') }}</h3>
 

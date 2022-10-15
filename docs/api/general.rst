@@ -135,7 +135,7 @@ check the corresponding checkbox in the API settings dialog.
 
 .. warning::
 
-   This means any browser page can send requests to the OctoPrint API. Authorization is still required however.
+   This means any browser page can send requests to the OctoPrint API. Authorization via an API-Key is still required however.
 
 If CORS is not enabled you will get errors like the following::
 
@@ -150,6 +150,29 @@ If CORS is not enabled you will get errors like the following::
    the browser to OctoPrint, effectively making it impossible to authenticate through
    the login mechanism (or reusing an existing login session). When accessing OctoPrint
    via CORS, you'll therefore always need to use an API key.
+
+.. _sec-api-general-csrf:
+
+CSRF Protection
+===============
+
+.. versionadded:: 1.8.3
+
+To protect OctoPrint against `CSRF attacks <https://owasp.org/www-community/attacks/csrf>`_ against the non CORS affected upload endpoints, in case of browser session based authorization the API
+is protected using the `Double Submit Cookie mitigation strategy <https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#double-submit-cookie>`_.
+On first page load of the UI, the login page or the recovery page, a ``csrf_token_P<port>`` or ``csrf_token_P<port>_R<root>`` cookie is set
+that can be read via client-side JavaScript. All requests towards the API that are not ``GET``, ``HEAD`` or ``OPTIONS``
+and rely on cookie based authorization (so not on an API key but rather an active login session) are required
+to send both the ``csrf_token`` cookie as well as an ``X-CSRF-Token`` header containing its value.
+
+.. note::
+
+   If you use the :ref:`JS Client library <sec-jsclientlib>`, this will take care of doing the needful for you. Any code in the *Core UI* calling
+   API functions through ``$.ajax`` or ``$.get`` or ``$.post`` will also take care of this for you. If you use another library for
+   accessing OctoPrint's API in a browser context, you'll need to make sure to send the ``X-CSRF-Token`` header yourself. Examples for
+   several JS frameworks can be found in the `OWASP cheatsheet on CSRF attacks <https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#javascript-guidance-for-auto-inclusion-of-csrf-tokens-as-an-ajax-request-header>`_.
+   Take a look at the implementations of ``OctoPrintClient.getCookie`` and ``OctoPrintClient.getHeaders`` in ``src/octoprint/static/js/client/base.js``
+   for details on how to retrieve the cookie value and how to construct the header.
 
 .. _sec-api-general-login:
 

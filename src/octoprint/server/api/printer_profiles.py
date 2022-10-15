@@ -54,13 +54,7 @@ def printerProfilesList():
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def printerProfilesAdd():
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
-
-    json_data = request.get_json()
-
-    if json_data is None:
-        abort(400, description="Malformed JSON body in request")
+    json_data = request.get_json()  # Werkzeug should return 400 if invalid JSON
 
     if "profile" not in json_data:
         abort(400, description="profile is missing")
@@ -136,12 +130,7 @@ def printerProfilesDelete(identifier):
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def printerProfilesUpdate(identifier):
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
-
     json_data = request.get_json()
-    if json_data is None:
-        abort(400, description="Malformed JSON body in request")
 
     if "profile" not in json_data:
         abort(400, description="profile missing")

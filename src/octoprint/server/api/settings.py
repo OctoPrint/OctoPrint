@@ -18,8 +18,7 @@ from octoprint.settings import settings, valid_boolean_trues
 
 # ~~ settings
 
-FOLDER_TYPES = ("uploads", "timelapse", "timelapse_tmp", "logs", "watched")
-FOLDER_MAPPING = {"timelapseTmp": "timelapse_tmp"}
+FOLDER_TYPES = ("uploads", "timelapse", "watched")
 TIMELAPSE_BITRATE_PATTERN = re.compile(r"\d+[KMGTPEZY]?i?B?", flags=re.IGNORECASE)
 
 
@@ -214,6 +213,7 @@ def getSettings():
             "abortHeatupOnCancel": s.getBoolean(["serial", "abortHeatupOnCancel"]),
             "supportResendsWithoutOk": s.get(["serial", "supportResendsWithoutOk"]),
             "waitForStart": s.getBoolean(["serial", "waitForStartOnConnect"]),
+            "waitToLoadSdFileList": s.getBoolean(["serial", "waitToLoadSdFileList"]),
             "alwaysSendChecksum": s.getBoolean(["serial", "alwaysSendChecksum"]),
             "neverSendChecksum": s.getBoolean(["serial", "neverSendChecksum"]),
             "sendChecksumWithUnknownCommands": s.getBoolean(
@@ -269,8 +269,6 @@ def getSettings():
         "folder": {
             "uploads": s.getBaseFolder("uploads"),
             "timelapse": s.getBaseFolder("timelapse"),
-            "timelapseTmp": s.getBaseFolder("timelapse_tmp"),
-            "logs": s.getBaseFolder("logs"),
             "watched": s.getBaseFolder("watched"),
         },
         "temperature": {
@@ -389,11 +387,8 @@ def _get_plugin_settings():
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def setSettings():
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
-
     data = request.get_json()
-    if data is None or not isinstance(data, dict):
+    if not isinstance(data, dict):
         abort(400, description="Malformed JSON body in request")
 
     response = _saveSettings(data)
@@ -464,10 +459,7 @@ def _saveSettings(data):
 
     if "folder" in data:
         try:
-            folders = {
-                FOLDER_MAPPING.get(folder, folder): path
-                for folder, path in data["folder"].items()
-            }
+            folders = data["folder"]
             future = {}
             for folder in FOLDER_TYPES:
                 future[folder] = s.getBaseFolder(folder)
@@ -839,6 +831,11 @@ def _saveSettings(data):
         if "waitForStart" in data["serial"]:
             s.setBoolean(
                 ["serial", "waitForStartOnConnect"], data["serial"]["waitForStart"]
+            )
+        if "waitToLoadSdFileList" in data["serial"]:
+            s.setBoolean(
+                ["serial", "waitToLoadSdFileList"],
+                data["serial"]["waitToLoadSdFileList"],
             )
         if "alwaysSendChecksum" in data["serial"]:
             s.setBoolean(

@@ -24,6 +24,9 @@
                 <span class="help-inline" data-bind="visible: passwordMismatch()">{{ _('Passwords do not match') }}</span>
             </div>
         </div>
+        <p>{% trans %}
+            Please note that you will be <strong>logged out immediately</strong> after changing your password and asked to login again.
+        {% endtrans %}</p>
     </fieldset>
     <fieldset>
         <legend>{{ _('API Key') }}</legend>
