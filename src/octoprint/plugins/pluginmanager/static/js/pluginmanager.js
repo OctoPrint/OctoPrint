@@ -1233,21 +1233,20 @@ $(function () {
                     self.installUrl("");
                     if (response.hasOwnProperty("queued_installs")) {
                         self.queuedInstalls(response.queued_installs);
-                        var text = '<div class="row-fluid"><p>' +
-                                    gettext(
-                                        "The following plugins are queued to be installed."
-                                    ) +
-                                    "</p><ul><li>" +
-                                    _.map(response.queued_installs, function (info) {
-                                        var plugin = ko.utils.arrayFirst(
-                                            self.repositoryplugins.paginatedItems(),
-                                            function (item) {
-                                                return item.archive === info.url;
-                                            }
-                                        );
-                                        return plugin.title;
-                                    }).join("</li><li>") +
-                                    "</li></ul></div>";
+                        var text =
+                            '<div class="row-fluid"><p>' +
+                            gettext("The following plugins are queued to be installed.") +
+                            "</p><ul><li>" +
+                            _.map(response.queued_installs, function (info) {
+                                var plugin = ko.utils.arrayFirst(
+                                    self.repositoryplugins.paginatedItems(),
+                                    function (item) {
+                                        return item.archive === info.url;
+                                    }
+                                );
+                                return plugin.title;
+                            }).join("</li><li>") +
+                            "</li></ul></div>";
                         if (typeof self.installQueuePopup !== "undefined") {
                             self.installQueuePopup.update({
                                 text: text
@@ -1600,15 +1599,21 @@ $(function () {
         };
 
         self.installButtonText = function (data) {
-            return self.isCompatible(data)
-                ? self.installQueued(data)
-                    ? gettext("Dequeue")
-                    : self.installed(data)
-                    ? gettext("Reinstall")
-                    : gettext("Install")
-                : data.disabled
-                ? gettext("Disabled")
-                : gettext("Incompatible");
+            if (!self.isCompatible(data)) {
+                if (data.disabled) {
+                    return gettext("Disabled");
+                } else {
+                    return gettext("Incompatible");
+                }
+            }
+
+            if (self.installQueued(data)) {
+                return gettext("Dequeue");
+            } else if (self.installed(data)) {
+                return gettext("Reinstall");
+            } else {
+                return gettext("Install");
+            }
         };
 
         self._processPluginManagementResult = function (response, action, plugin) {
