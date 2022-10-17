@@ -19,6 +19,7 @@ thanks to everyone who contributed!
   * Christian Wolf
   * Christian Würthner
   * Christoph Sigrist
+  * Codense Consulting Oy
   * Creality3D
   * DeltaMaker 3D Printers
   * Dennis Breining
@@ -43,7 +44,6 @@ thanks to everyone who contributed!
   * Makespace Madrid
   * Mark Greenwald
   * Mark Walker
-  * Matt Van Itallie
   * Michael Aumock
   * Mike Kershaw
   * Mosaic Manufacturing
@@ -68,4 +68,4 @@ thanks to everyone who contributed!
   * TJ Horner
   * Ulrich Kempken
 
-and 2188 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2145 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
