@@ -390,9 +390,7 @@ class BackupPlugin(
                     "as_attachment": True,
                     "path_validation": path_validation_factory(
                         lambda path: not is_hidden_path(path)
-                        and self._match_backup_filename(
-                            os.path.basename(path), self._settings
-                        ),
+                        and self._valid_backup(path),
                         status_code=404,
                     ),
                     "access_validation": access_validation_factory(
@@ -739,9 +737,7 @@ class BackupPlugin(
         for entry in os.scandir(self.get_plugin_data_folder()):
             if is_hidden_path(entry.path):
                 continue
-            if not entry.is_file():
-                continue
-            if not entry.name.endswith(".zip"):
+            if not self._valid_backup(entry.path):
                 continue
 
             backups.append(
@@ -1374,13 +1370,6 @@ class BackupPlugin(
         )
 
     @classmethod
-    def _match_backup_filename(cls, path, settings):
-        import re
-
-        backup_prefix = cls._get_backup_prefix(settings)
-        return re.match(re.escape(backup_prefix) + r"-backup-\d{8}-\d{6}.zip", path)
-
-    @classmethod
     def _get_backup_prefix(cls, settings):
         if settings.global_get(["appearance", "name"]) == "":
             backup_prefix = "octoprint"
@@ -1396,6 +1385,17 @@ class BackupPlugin(
             and os.environ.get("OCTOPRINT_BACKUP_RESTORE_UNSUPPORTED", False)
             not in valid_boolean_trues
         )
+
+    @classmethod
+    def _valid_backup(cls, path):
+        if not path.endswith(".zip") or not zipfile.is_zipfile(path):
+            return False
+
+        try:
+            with zipfile.ZipFile(path) as z:
+                return "metadata.json" in z.namelist()
+        except Exception:
+            return False
 
     def _send_client_message(self, message, payload=None):
         if payload is None:
