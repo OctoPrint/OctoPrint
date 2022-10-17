@@ -81,6 +81,7 @@ class Events:
     PRINT_PAUSED = "PrintPaused"
     PRINT_RESUMED = "PrintResumed"
     ERROR = "Error"
+    CHART_MARKED = "ChartMarked"
 
     # print/gcode events
     POWER_ON = "PowerOn"

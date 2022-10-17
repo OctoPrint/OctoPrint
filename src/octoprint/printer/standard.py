@@ -163,6 +163,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         eventManager().subscribe(
             Events.METADATA_STATISTICS_UPDATED, self._on_event_MetadataStatisticsUpdated
         )
+        eventManager().subscribe(Events.CHART_MARKED, self._on_event_ChartMarked)
 
         self._handle_connect_hooks = plugin_manager().get_hooks(
             "octoprint.printer.handle_connect"
@@ -305,6 +306,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     self._selectedFile["sd"],
                     self._selectedFile["user"],
                 )
+
+    # ~~ chart marking insertions
+
+    def _on_event_ChartMarked(self, event, data):
+        self._markings.append(
+            {
+                "type": data.get("type", "unknown"),
+                "label": data.get("label"),
+                "time": data.get("time", time.time()),
+            }
+        )
 
     # ~~ progress plugin reporting
 
@@ -712,14 +724,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 return None
 
         return self._comm.getFilePosition()
-
-    def add_marking(self, type):
-        self._markings.append(
-            {
-                "type": type,
-                "time": time.time(),
-            }
-        )
 
     def get_markings(self):
         return self._markings
@@ -1583,7 +1587,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event(print_job_user=user, action_user=user)
         if payload:
             eventManager().fire(Events.PRINT_STARTED, payload)
-            self.add_marking("print")
+            eventManager().fire(
+                Events.CHART_MARKED,
+                {"type": "print", "label": "Start"},
+            )
             self._logger_job.info(
                 "Print job started - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -1607,7 +1614,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event()
         if payload:
             payload["time"] = self._comm.getPrintTime()
-            self.add_marking("done")
+            eventManager().fire(
+                Events.CHART_MARKED,
+                {"type": "done", "label": "Done"},
+            )
             self._updateProgressData(
                 completion=1.0,
                 filepos=payload["size"],
@@ -1684,7 +1694,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             payload["time"] = self._comm.getPrintTime()
 
             eventManager().fire(Events.PRINT_CANCELLED, payload)
-            self.add_marking("cancel")
+            eventManager().fire(
+                Events.CHART_MARKED,
+                {"type": "cancel", "label": "Cancel"},
+            )
             self._logger_job.info(
                 "Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
@@ -1736,7 +1749,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     payload.get("user"),
                 )
             )
-            self.add_marking("pause")
+            eventManager().fire(
+                Events.CHART_MARKED,
+                {"type": "pause", "label": "Pause"},
+            )
             if not suppress_script:
                 self.script(
                     "afterPrintPaused",
@@ -1749,7 +1765,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         payload = self._payload_for_print_job_event(action_user=user)
         if payload:
             eventManager().fire(Events.PRINT_RESUMED, payload)
-            self.add_marking("resume")
+            eventManager().fire(
+                Events.CHART_MARKED,
+                {"type": "resume", "label": "Resume"},
+            )
             self._logger_job.info(
                 "Print job resumed - origin: {}, path: {}, owner: {}, user: {}".format(
                     payload.get("origin"),
