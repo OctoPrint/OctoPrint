@@ -16,7 +16,7 @@ $(function () {
                 return {
                     event: ko.observable(""),
                     command: ko.observable(""),
-                    custom_name: ko.observable(""),
+                    name: ko.observable(""),
                     type: ko.observable(""),
                     enabled: ko.observable(true),
                     debug: ko.observable(false)

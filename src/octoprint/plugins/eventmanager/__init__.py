@@ -53,19 +53,6 @@ class EventManagerPlugin(
             }
         ]
 
-    def on_settings_migrate(self, target, current=None):
-        if current is None or current < 1:
-            events = self._settings.global_get(["events"])
-            if events:
-                subscriptions = events.get("subscriptions", [])
-                # Add retro compatiblity for old version which miss the parameter in the existing settings
-                for index, _value in enumerate(subscriptions):
-                    if "custom_name" not in subscriptions[index]:
-                        subscriptions[index]["custom_name"] = subscriptions[index][
-                            "event"
-                        ]
-                self._settings.global_set(["events"], events)
-
     def get_settings_version(self):
         return 1
 
