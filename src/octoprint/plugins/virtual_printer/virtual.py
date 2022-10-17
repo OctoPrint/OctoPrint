@@ -4,7 +4,6 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import collections
 import json
-import logging
 import math
 import os
 import queue
@@ -705,10 +704,16 @@ class VirtualPrinter:
 
     def _gcode_M118(self, data: str) -> None:
         try:
-            result = re.search(r"M118\s+(.*)", data).group(1)
-            self._send(f"{result}")
+            parameter, result = re.search(r"M118 (\w{2}) (.*)", data).groups()
+            if "A1" in parameter.upper():
+                self._send(f"{result}")
+            elif "E1" in parameter.upper():
+                self._send(f"echo:{result}")
+            else:
+                self._logger.exception(f"{parameter} is not recognised")
+                raise Exception
         except Exception:
-            logging.debug("Error sending back echo command M118")
+            self._logger.debug("Error sending back echo command M118")
 
     def _gcode_M154(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
