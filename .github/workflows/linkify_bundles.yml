@@ -7,7 +7,7 @@ jobs:
   linkifyBundles:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/github-script@v2
+      - uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -38,14 +38,14 @@ jobs:
               });
               text += "\n*edited by @github-actions to add bundle viewer links*\n";
 
-              github.issues.updateComment({
+              github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: context.payload.comment.id,
                 body: text
               });
             } else if (botWasHere !== -1) {
-              github.issues.updateComment({
+              github.rest.issues.updateComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: context.payload.comment.id,
