@@ -381,16 +381,21 @@ class BackupPlugin(
         )
         from octoprint.util import is_hidden_path
 
+        plugin_folder = self.get_plugin_data_folder()
+
+        def path_check(path):
+            joined = os.path.join(plugin_folder, path)
+            return not is_hidden_path(joined) and self._valid_backup(joined)
+
         return [
             (
                 r"/download/(.*)",
                 LargeResponseHandler,
                 {
-                    "path": self.get_plugin_data_folder(),
+                    "path": plugin_folder,
                     "as_attachment": True,
                     "path_validation": path_validation_factory(
-                        lambda path: not is_hidden_path(path)
-                        and self._valid_backup(path),
+                        path_check,
                         status_code=404,
                     ),
                     "access_validation": access_validation_factory(
