@@ -703,17 +703,20 @@ class VirtualPrinter:
                 self._send("echo:")
 
     def _gcode_M118(self, data: str) -> None:
-        try:
-            parameter, result = re.search(r"M118 (\w{2}) (.*)", data).groups()
-            if "A1" in parameter.upper():
-                self._send(f"{result}")
-            elif "E1" in parameter.upper():
-                self._send(f"echo:{result}")
-            else:
-                self._logger.exception(f"{parameter} is not recognised")
-                raise Exception
-        except Exception:
-            self._logger.debug("Error sending back echo command M118")
+        match = re.search(r"M118 (?:(?P<parameter>A1|E1|Pn[012])\s)?(?P<text>.*)")
+        if not match:
+            self._send("Unrecognized command parameters for M118")
+        
+        text = match.groupdict().get("text")
+        parameter = match.groupdict().get("parameter")
+        
+        if parameter == "A1":
+            self._send(f"//{text}")
+        elif parameter == "E1":
+            self._send(f"echo:{text}")
+        else:
+            self._send(text)
+
 
     def _gcode_M154(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
