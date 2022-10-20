@@ -210,25 +210,6 @@ GCODE.gCodeReader = (function () {
         loadFile: function (reader) {
             this.clear();
 
-            var totalSize = reader.target.result.length;
-
-            /*
-             * Split by line ending
-             *
-             * Be aware that for windows line endings \r\n this leaves the \r attached to
-             * the lines. That will not influence our parser, but makes file position
-             * calculation way easier (line length + 1), so we just leave it in.
-             *
-             * This cannot cope with old MacOS \r line endings, but those should
-             * really not be used anymore and thus we'll happily ignore them here.
-             *
-             * Note: A simple string split uses up *much* less memory than regex.
-             */
-            lines = reader.target.result.split("\n");
-
-            reader.target.result = null;
-            prepareGCode(totalSize);
-
             var mustCompress =
                 gCodeOptions["forceCompression"] ||
                 gCodeOptions["alwaysCompress"] ||
@@ -236,9 +217,11 @@ GCODE.gCodeReader = (function () {
                     gCodeOptions["compressionSizeThreshold"] <= totalSize);
 
             GCODE.ui.worker.postMessage({
-                cmd: "parseGCode",
+                cmd: "downloadAndParseGCode",
                 msg: {
-                    gcode: gcode,
+                    url: reader.url,
+                    path: reader.path,
+                    skipUntil: reader.skipUntil,
                     options: {
                         firstReport: 5,
                         toolOffsets: gCodeOptions["toolOffsets"],
