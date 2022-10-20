@@ -1,6 +1,6 @@
 {% macro pluginmanager_printing() %}
 <div class="alert" data-bind="visible: !enableManagement()">
-  {{ _('Take note that all plugin management functionality is disabled while your printer is printing or paused.') }}
+  {{ _('Take note that most plugin management functionality is disabled while your printer is printing or paused.') }}
 </div>
 {% endmacro %}
 
@@ -225,7 +225,6 @@
     </div>
     <div class="modal-body">
         <div class="full-sized-box">
-            {{ pluginmanager_printing() }}
             {{ pluginmanager_nopip() }}
             {{ pluginmanager_safemode() }}
             {{ pluginmanager_throttled() }}
@@ -260,14 +259,23 @@
                     </div>
                 </div>
             </div>
-
+            <div style="text-align: center">
+                <div style="margin: 0 auto;">
+                    <span class="muted" style="margin-right: 8px;" data-bind="text: multiInstallQueue().length + ' selected'"></span>
+                    <button class="btn btn-primary" data-bind="enable: multiInstallValid(), click: repoInstallSelectedConfirm, text: repoInstallSelectedButtonText()"></button>
+                </div>
+            </div>
+            <hr />
             <div data-bind="visible: repositoryAvailable() && repositoryplugins.paginatedItems().length > 0">
                 <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="foreach: repositoryplugins.paginatedItems">
                     <div class="entry">
                         <div class="row-fluid">
-                            <div class="span12">
+                            <label class="checkbox span1">
+                                <input type="checkbox" data-bind="value: $data, checked: $parent.multiInstallQueue">
+                            </label>
+                            <div class="span11">
                                 <div class="span3 pull-right">
-                                    <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }, attr: {title: !$root.enableRepoInstall($data) ? gettext('Plugin install is disabled') : ''}"><span data-bind="text: $root.installButtonText($data)"></span></button>
+                                    <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: $root.installButtonAction"><span data-bind="text: $root.installButtonText($data)"></span></button>
                                     <div data-bind="visible: $data.disabled !== undefined" style="text-align: center"><small><a data-bind="attr: {href: page}" target="_blank">{{ _('"Why?"') }}</a></small></div>
                                 </div>
                                 <div>
