@@ -703,20 +703,20 @@ class VirtualPrinter:
                 self._send("echo:")
 
     def _gcode_M118(self, data: str) -> None:
-        match = re.search(r"M118 (?:(?P<parameter>A1|E1|Pn[012])\s)?(?P<text>.*)")
+        match = re.search(r"M118 (?:(?P<parameter>A1|E1|Pn[012])\s)?(?P<text>.*)", data)
         if not match:
             self._send("Unrecognized command parameters for M118")
-        
-        text = match.groupdict().get("text")
-        parameter = match.groupdict().get("parameter")
-        
-        if parameter == "A1":
-            self._send(f"//{text}")
-        elif parameter == "E1":
-            self._send(f"echo:{text}")
         else:
-            self._send(text)
+            result = match.groupdict()
+            text = result["text"]
+            parameter = result["parameter"]
 
+            if parameter == "A1":
+                self._send(f"//{text}")
+            elif parameter == "E1":
+                self._send(f"echo:{text}")
+            else:
+                self._send(text)
 
     def _gcode_M154(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
