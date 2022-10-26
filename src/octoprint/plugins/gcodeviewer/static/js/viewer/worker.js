@@ -4,7 +4,10 @@
  * Time: 12:18 PM
  */
 
-var gcode;
+// raw path suitable for fetch()
+var url;
+// path relative to Local
+var path;
 var firstReport;
 var toolOffsets = [{x: 0, y: 0}];
 var g90InfluencesExtruder = false;
@@ -40,6 +43,8 @@ var emptyLayers = [];
 var percentageByLayer = [];
 
 var mustCompress = false;
+var skipUntil = null;
+var skipUntilPresent = false;
 
 importScripts("../lib/pako.js");
 
@@ -337,7 +342,73 @@ var analyzeModel = function () {
     sendAnalyzeDone();
 };
 
-var doParse = function () {
+var gCodeLineGenerator = async function* (fileURL) {
+    const utf8Decoder = new TextDecoder("utf-8");
+    const response = await fetch(fileURL);
+
+    // the download failed.
+    if (!response.ok) return;
+
+    // create a reader object that will read the incoming data
+    const reader = response.body.getReader();
+
+    // we use these two variables to calculate the percentage.
+    var totalDownloadLength = response.headers.get("content-length");
+    var currentDownloadLength = 0;
+
+    // lets read a first data chunk
+    let {value: chunk, done: readerDone} = await reader.read();
+    chunk = chunk ? utf8Decoder.decode(chunk) : "";
+
+    // some init
+    const re = /\n|\r|\r\n/gm;
+    let startIndex = 0;
+    let result;
+
+    // now continue until all the downloaded data is processed.
+    for (;;) {
+        // cut at a new line
+        let result = re.exec(chunk);
+        if (!result) {
+            // there was not a complete line, what is up?
+
+            if (readerDone) {
+                // we reached the end of the file.
+                break;
+            }
+            // lets read a new chunk
+            let remainder = chunk.substr(startIndex);
+            ({value: chunk, done: readerDone} = await reader.read());
+            // concatenate with our leftovers from the previous chunk
+            chunk = remainder + (chunk ? utf8Decoder.decode(chunk) : "");
+            // reset the indexes
+            startIndex = re.lastIndex = 0;
+            continue;
+        }
+        // we use re.lastIndex and not result.index so we include
+        //  the actual terminator.
+        currentDownloadLength += re.lastIndex - startIndex;
+        // return the data to the caller
+        yield [
+            chunk.substring(startIndex, result.index),
+            (100 * currentDownloadLength) / totalDownloadLength
+        ];
+
+        // move to after the line we just returned
+        startIndex = re.lastIndex;
+    }
+    if (startIndex < chunk.length) {
+        // last line didn't end in a newline char
+        currentDownloadLength += chunk.length - startIndex;
+        // return the data to the caller
+        yield [
+            chunk.substr(startIndex),
+            (100 * currentDownloadLength) / totalDownloadLength
+        ];
+    }
+};
+
+var doParse = async function () {
     var argChar, numSlice;
     var activeLayer = undefined;
     var sendLayer = undefined;
@@ -376,10 +447,23 @@ var doParse = function () {
     // visualizer doesn't actually have a physical offset ;)
     var activeToolOffset = toolOffsets[0];
 
+    // skipUntil preparations
+    var skipUntilFound = false;
+
     var i, j, args;
 
+    // if skipUntil is set, get skipUntilPresent
+    skipUntilPresent = false;
+    if (skipUntil !== undefined && skipUntil !== "") {
+        result = await fetch("/plugin/gcodeviewer/skipuntilcheck/local/" + path);
+        if (result.ok) {
+            response = await result.json();
+            skipUntilPresent = response.present;
+        }
+    }
+
     model = [];
-    for (i = 0; i < gcode.length; i++) {
+    for await (let [line, percentage] of gCodeLineGenerator(url)) {
         x = undefined;
         y = undefined;
         z = undefined;
@@ -388,8 +472,11 @@ var doParse = function () {
         center_j = undefined;
         direction = undefined;
 
-        var line = gcode[i].line;
-        var percentage = gcode[i].percentage;
+        // find the skipUntil if it is present
+        // we do not actually remove the line, it is parsed normally.
+        if (skipUntilPresent && !skipUntilFound && line.startsWith(skipUntil)) {
+            skipUntilFound = true;
+        }
 
         extrude = false;
         line = line.split(/[\(;]/)[0];
@@ -646,7 +733,9 @@ var doParse = function () {
             zLift = false;
         }
 
-        if (addToModel) {
+        // if skipUntilPresent is true, we will not add anything to
+        // the model until the skipUntil string is found.
+        if (addToModel && (!skipUntilPresent || skipUntilFound)) {
             if (!model[layer]) model[layer] = [];
             if (model[layer] instanceof Uint8Array)
                 model[layer] = decompress(model[layer]);
@@ -748,9 +837,9 @@ var doParse = function () {
         }
 
         if (typeof sendLayer !== "undefined") {
-            if (i - lastSend > gcode.length * 0.02 && sendMultiLayer.length !== 0) {
-                lastSend = i;
-                sendLayersToParent(sendMultiLayer, (i / gcode.length) * 100);
+            if (percentage - lastSend > 2 && sendMultiLayer.length !== 0) {
+                lastSend = percentage;
+                sendLayersToParent(sendMultiLayer, percentage);
                 sendMultiLayer = [];
                 sendMultiLayerZ = [];
             }
@@ -770,8 +859,9 @@ var doParse = function () {
     sendLayersToParent(sendMultiLayer, 100);
 };
 
-var parseGCode = function (message) {
-    gcode = message.gcode;
+var parseGCode = async function (message) {
+    url = message.url;
+    path = message.path;
     firstReport = message.options.firstReport;
     toolOffsets = message.options.toolOffsets;
     if (!toolOffsets || toolOffsets.length === 0) toolOffsets = [{x: 0, y: 0}];
@@ -780,9 +870,9 @@ var parseGCode = function (message) {
     g90InfluencesExtruder = message.options.g90InfluencesExtruder;
     boundingBox.minZ = min.z = message.options.bedZ;
     mustCompress = message.options.compress;
+    skipUntil = message.skipUntil;
 
-    doParse();
-    gcode = [];
+    await doParse();
     self.postMessage({
         cmd: "returnModel",
         msg: {}
@@ -827,7 +917,7 @@ onmessage = function (e) {
     var data = e.data;
     // for some reason firefox doesn't garbage collect when something inside closures is deleted, so we delete and recreate whole object eaech time
     switch (data.cmd) {
-        case "parseGCode":
+        case "downloadAndParseGCode":
             parseGCode(data.msg);
             break;
         case "setOption":

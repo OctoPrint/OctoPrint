@@ -358,7 +358,6 @@ $(function () {
 
         self.enableRepoInstall = function (data) {
             return (
-                self.enableManagement() &&
                 self.pipAvailable() &&
                 !self.safeMode() &&
                 !self.throttled() &&
@@ -530,6 +529,107 @@ $(function () {
                 });
             } else {
                 self.plugins.resetSearch();
+            }
+        };
+
+        self.multiInstallQueue = ko.observableArray([]);
+        self.queuedInstalls = ko.observableArray([]);
+        self.multiInstallRunning = ko.observable(false);
+        self.multiInstallInitialSize = ko.observable(0);
+
+        self.multiInstallValid = function () {
+            return (
+                self.loginState.hasPermission(
+                    self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL
+                ) &&
+                self.pipAvailable() &&
+                !self.safeMode() &&
+                !self.throttled() &&
+                self.online() &&
+                self.multiInstallQueue().length > 0 &&
+                self.multiInstallQueue().every(self.isCompatible)
+            );
+        };
+
+        self.repoInstallSelectedButtonText = function () {
+            return self.multiInstallQueue().some(self.installed)
+                ? "(Re)install selected"
+                : "Install selected";
+        };
+
+        self.repoInstallSelectedConfirm = function () {
+            if (!self.multiInstallValid()) return;
+
+            if (self.multiInstallQueue().length === 1) {
+                self.installFromRepository(self.multiInstallQueue()[0]);
+                return;
+            }
+
+            var question = "<ul>";
+            self.multiInstallQueue().forEach(function (plugin) {
+                var action = self.installed(plugin)
+                    ? gettext("Reinstall")
+                    : gettext("Install");
+
+                question += _.sprintf(
+                    "<li>%(action)s <em><b>%(name)s@%(version)s</b></em></li>",
+                    {
+                        action: _.escape(action),
+                        name: _.escape(plugin.title),
+                        version: _.escape(plugin.github.latest_release.tag)
+                    }
+                );
+            });
+            question += "</ul>";
+
+            showConfirmationDialog({
+                title: gettext("Confirm installation of multiple plugins"),
+                message: gettext("Please confirm you want to perform these actions:"),
+                question: question,
+                cancel: gettext("Cancel"),
+                proceed: gettext("Install"),
+                proceedClass: "primary",
+                onproceed: self.startMultiInstall
+            });
+        };
+
+        self.startMultiInstall = function () {
+            if (self.multiInstallRunning() || !self.multiInstallValid()) return;
+
+            self.multiInstallRunning(true);
+            self.multiInstallInitialSize(self.multiInstallQueue().length);
+
+            self._markWorking(
+                gettext("Installing multiple plugins"),
+                gettext("Starting installation of multiple plugins...")
+            );
+            self.performMultiInstallJob();
+        };
+
+        self.performMultiInstallJob = function () {
+            if (!self.multiInstallRunning() || self.multiInstallQueue().length === 0)
+                return;
+
+            var plugin = self.multiInstallQueue.pop();
+
+            self.installFromRepository(plugin);
+        };
+
+        self.alertMultiInstallJobDone = function (response) {
+            if (
+                !self.multiInstallRunning() ||
+                response.action != "install" ||
+                !response.result
+            )
+                return;
+
+            if (self.multiInstallQueue().length === 0) {
+                self.installUrl("");
+                self.multiInstallQueue([]);
+                self.multiInstallRunning(false);
+                self._markDone();
+            } else {
+                self.performMultiInstallJob();
             }
         };
 
@@ -1050,15 +1150,27 @@ $(function () {
                 return;
             }
 
-            if (!self.enableManagement()) {
-                return;
-            }
-
             self.installPlugin(
                 data.archive,
                 data.title,
                 self.installed(data) ? data.id : undefined,
                 data.follow_dependency_links || self.followDependencyLinks()
+            );
+        };
+
+        self.removeFromQueue = function (plugin) {
+            var data = {
+                plugin: {
+                    command: self.installed(plugin) ? "reinstall" : "install",
+                    url: plugin.archive,
+                    dependency_links:
+                        plugin.follow_dependency_links || self.followDependencyLinks()
+                }
+            };
+            OctoPrint.simpleApiCommand("pluginmanager", "clear_queued_plugin", data).done(
+                function (response) {
+                    self.queuedInstalls(response.queued_installs);
+                }
             );
         };
 
@@ -1068,10 +1180,6 @@ $(function () {
                     self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL
                 )
             ) {
-                return;
-            }
-
-            if (!self.enableManagement()) {
                 return;
             }
 
@@ -1108,10 +1216,59 @@ $(function () {
                     {url: _.escape(url), name: _.escape(name)}
                 );
             }
+
+            if (self.multiInstallRunning()) {
+                workTitle =
+                    _.sprintf("[%(index)d/%(total)d] ", {
+                        index:
+                            this.multiInstallInitialSize() -
+                            self.multiInstallQueue().length,
+                        total: this.multiInstallInitialSize()
+                    }) + workTitle;
+            }
+
             self._markWorking(workTitle, workText);
 
             var onSuccess = function (response) {
                     self.installUrl("");
+                    if (response.hasOwnProperty("queued_installs")) {
+                        self.queuedInstalls(response.queued_installs);
+                        var text =
+                            '<div class="row-fluid"><p>' +
+                            gettext("The following plugins are queued to be installed.") +
+                            "</p><ul><li>" +
+                            _.map(response.queued_installs, function (info) {
+                                var plugin = ko.utils.arrayFirst(
+                                    self.repositoryplugins.paginatedItems(),
+                                    function (item) {
+                                        return item.archive === info.url;
+                                    }
+                                );
+                                return plugin.title;
+                            }).join("</li><li>") +
+                            "</li></ul></div>";
+                        if (typeof self.installQueuePopup !== "undefined") {
+                            self.installQueuePopup.update({
+                                text: text
+                            });
+                            if (self.installQueuePopup.state === "closed") {
+                                self.installQueuePopup.open();
+                            }
+                        } else {
+                            self.installQueuePopup = new PNotify({
+                                title: gettext("Plugin installs queued"),
+                                text: text,
+                                type: "notice"
+                            });
+                        }
+                        if (self.multiInstallQueue().length > 0) {
+                            self.performMultiInstallJob();
+                        } else {
+                            self.multiInstallRunning(false);
+                            self.workingDialog.modal("hide");
+                            self._markDone();
+                        }
+                    }
                 },
                 onError = function (jqXHR) {
                     if (jqXHR.status === 409) {
@@ -1429,19 +1586,58 @@ $(function () {
             );
         };
 
+        self.installButtonAction = function (data) {
+            if (self.enableRepoInstall(data)) {
+                if (!self.installQueued(data)) {
+                    self.installFromRepository(data);
+                } else {
+                    self.removeFromQueue(data);
+                }
+            } else {
+                return false;
+            }
+        };
+
         self.installButtonText = function (data) {
-            return self.isCompatible(data)
-                ? self.installed(data)
-                    ? gettext("Reinstall")
-                    : gettext("Install")
-                : data.disabled
-                ? gettext("Disabled")
-                : gettext("Incompatible");
+            if (!self.isCompatible(data)) {
+                if (data.disabled) {
+                    return gettext("Disabled");
+                } else {
+                    return gettext("Incompatible");
+                }
+            }
+
+            if (self.installQueued(data)) {
+                return gettext("Dequeue");
+            } else if (self.installed(data)) {
+                return gettext("Reinstall");
+            } else {
+                return gettext("Install");
+            }
         };
 
         self._processPluginManagementResult = function (response, action, plugin) {
             if (response.result) {
-                self._markDone();
+                if (self.queuedInstalls().length > 0 && action === "install") {
+                    var plugin_dequeue = ko.utils.arrayFirst(
+                        self.queuedInstalls(),
+                        function (item) {
+                            return item.url === response.source;
+                        }
+                    );
+                    if (plugin_dequeue) {
+                        self.queuedInstalls.remove(plugin_dequeue);
+                    }
+                    if (self.queuedInstalls().length === 0) {
+                        self.multiInstallRunning(false);
+                        self._markDone();
+                    }
+                } else if (self.multiInstallRunning() && action === "install") {
+                    // A MultiInstall job has finished
+                    self.alertMultiInstallJobDone(response);
+                } else {
+                    self._markDone();
+                }
             } else {
                 self._markDone(response.reason, response.faq);
             }
@@ -1541,7 +1737,7 @@ $(function () {
                     "</p>";
                 type = "warning";
 
-                if (self.restartCommandSpec) {
+                if (self.restartCommandSpec && !self.multiInstallRunning()) {
                     var restartClicked = false;
                     confirm = {
                         confirm: true,
@@ -1596,20 +1792,22 @@ $(function () {
                     "</p>";
                 type = "warning";
 
-                var refreshClicked = false;
-                confirm = {
-                    confirm: true,
-                    buttons: [
-                        {
-                            text: gettext("Reload now"),
-                            click: function () {
-                                if (refreshClicked) return;
-                                refreshClicked = true;
-                                location.reload(true);
+                if (!self.multiInstallRunning()) {
+                    var refreshClicked = false;
+                    confirm = {
+                        confirm: true,
+                        buttons: [
+                            {
+                                text: gettext("Reload now"),
+                                click: function () {
+                                    if (refreshClicked) return;
+                                    refreshClicked = true;
+                                    location.reload(true);
+                                }
                             }
-                        }
-                    ]
-                };
+                        ]
+                    };
+                }
             } else if (self.logContents.action_reconnect) {
                 text +=
                     "<p>" +
@@ -2034,7 +2232,10 @@ $(function () {
 
             var messageType = data.type;
 
-            if (messageType === "loglines" && self.working()) {
+            if (
+                messageType === "loglines" &&
+                (self.working() || self.queuedInstalls().length > 0)
+            ) {
                 _.each(data.loglines, function (line) {
                     self.loglines.push(self._preprocessLine(line));
                 });
@@ -2054,7 +2255,208 @@ $(function () {
 
                 self._processPluginManagementResult(data, action, name);
                 self.requestPluginData();
+            } else if (messageType === "queued_installs") {
+                if (data.hasOwnProperty("queued")) {
+                    self.queuedInstalls(data.queued);
+                    var queuedInstallsPopupOptions = {
+                        title: gettext("Queued Installs"),
+                        text: "",
+                        type: "notice",
+                        icon: false,
+                        hide: false,
+                        buttons: {
+                            closer: false,
+                            sticker: false
+                        },
+                        history: {
+                            history: false
+                        }
+                    };
+
+                    if (data.print_failed && data.queued.length > 0) {
+                        queuedInstallsPopupOptions.title = gettext(
+                            "Queued Installs Paused"
+                        );
+                        queuedInstallsPopupOptions.text =
+                            '<div class="row-fluid"><p>' +
+                            gettext("The following plugins are queued to be installed.") +
+                            "</p><ul><li>" +
+                            _.map(self.queuedInstalls(), function (info) {
+                                var plugin = ko.utils.arrayFirst(
+                                    self.repositoryplugins.paginatedItems(),
+                                    function (item) {
+                                        return item.archive === info.url;
+                                    }
+                                );
+                                return plugin.title;
+                            }).join("</li><li>") +
+                            "</li></ul></div>";
+                        queuedInstallsPopupOptions.confirm = {
+                            confirm: true,
+                            buttons: [
+                                {
+                                    text: gettext("Continue Installs"),
+                                    addClass: "btn-block btn-primary",
+                                    promptTrigger: true,
+                                    click: function (notice, value) {
+                                        notice.remove();
+                                        notice
+                                            .get()
+                                            .trigger("pnotify.continue", [notice, value]);
+                                    }
+                                },
+                                {
+                                    text: gettext("Cancel Installs"),
+                                    addClass: "btn-block btn-danger",
+                                    promptTrigger: true,
+                                    click: function (notice, value) {
+                                        notice.remove();
+                                        notice
+                                            .get()
+                                            .trigger("pnotify.cancel", [notice, value]);
+                                    }
+                                }
+                            ]
+                        };
+                    } else if (
+                        data.hasOwnProperty("timeout_value") &&
+                        data.timeout_value > 0 &&
+                        data.queued.length > 0
+                    ) {
+                        var progress_percent = Math.floor(
+                            (data.timeout_value / 60) * 100
+                        );
+                        var progress_class =
+                            progress_percent < 25
+                                ? "progress-danger"
+                                : progress_percent > 75
+                                ? "progress-success"
+                                : "progress-warning";
+                        var countdownText = _.sprintf(
+                            gettext("Installing in %(sec)i secs..."),
+                            {
+                                sec: data.timeout_value
+                            }
+                        );
+
+                        queuedInstallsPopupOptions.title = gettext(
+                            "Starting Queued Installs"
+                        );
+                        queuedInstallsPopupOptions.text =
+                            '<div class="row-fluid"><p>' +
+                            gettext("The following plugins are going to be installed.") +
+                            "</p><ul><li>" +
+                            _.map(self.queuedInstalls(), function (info) {
+                                var plugin = ko.utils.arrayFirst(
+                                    self.repositoryplugins.paginatedItems(),
+                                    function (item) {
+                                        return item.archive === info.url;
+                                    }
+                                );
+                                return plugin.title;
+                            }).join("</li><li>") +
+                            '</li></ul></p></div><div class="progress progress-softwareupdate ' +
+                            progress_class +
+                            '"><div class="bar">' +
+                            countdownText +
+                            '</div><div class="progress-text" style="clip-path: inset(0 0 0 ' +
+                            progress_percent +
+                            "%);-webkit-clip-path: inset(0 0 0 " +
+                            progress_percent +
+                            '%);">' +
+                            countdownText +
+                            "</div></div>";
+                        queuedInstallsPopupOptions.confirm = {
+                            confirm: true,
+                            buttons: [
+                                {
+                                    text: gettext("Cancel Installs"),
+                                    addClass: "btn-block btn-danger",
+                                    promptTrigger: true,
+                                    click: function (notice, value) {
+                                        notice.remove();
+                                        notice
+                                            .get()
+                                            .trigger("pnotify.cancel", [notice, value]);
+                                    }
+                                },
+                                {
+                                    text: "",
+                                    addClass: "hidden"
+                                }
+                            ]
+                        };
+                    } else if (
+                        data.hasOwnProperty("timeout_value") &&
+                        data.timeout_value === 0 &&
+                        data.queued.length > 0
+                    ) {
+                        self.multiInstallRunning(true);
+                        self._markWorking(
+                            gettext("Installing queued plugins"),
+                            gettext("Starting installation of multiple plugins...")
+                        );
+                        self.queuedInstallsPopup.remove();
+                        self.queuedInstallsPopup = undefined;
+                        return;
+                    } else {
+                        if (typeof self.queuedInstallsPopup !== "undefined") {
+                            self.queuedInstallsPopup.remove();
+                            self.queuedInstallsPopup = undefined;
+                        }
+                        return;
+                    }
+
+                    if (typeof self.queuedInstallsPopup !== "undefined") {
+                        self.queuedInstallsPopup.update(queuedInstallsPopupOptions);
+                    } else {
+                        self.queuedInstallsPopup = new PNotify(
+                            queuedInstallsPopupOptions
+                        );
+                        self.queuedInstallsPopup.get().on("pnotify.cancel", function () {
+                            self.queuedInstallsPopup = undefined;
+                            self.cancelQueuedInstalls();
+                        });
+                        self.queuedInstallsPopup
+                            .get()
+                            .on("pnotify.continue", function () {
+                                self.queuedInstallsPopup = undefined;
+                                self.performQueuedInstalls();
+                            });
+                    }
+                }
             }
+        };
+
+        self.cancelQueuedInstalls = function () {
+            OctoPrint.simpleApiCommand("pluginmanager", "clear_queued_installs", {}).done(
+                function (response) {
+                    self.queuedInstalls(response.queued_installs);
+                }
+            );
+        };
+
+        self.installQueued = function (plugin) {
+            var plugin_queued = ko.utils.arrayFirst(
+                self.queuedInstalls(),
+                function (item) {
+                    return item.url === plugin.archive;
+                }
+            );
+            return typeof plugin_queued !== "undefined";
+        };
+
+        self.performQueuedInstalls = function () {
+            self.queuedInstalls().forEach(function (plugin) {
+                var queued_plugin = ko.utils.arrayFirst(
+                    self.repositoryplugins.paginatedItems(),
+                    function (item) {
+                        return plugin.url === item.archive;
+                    }
+                );
+                self.multiInstallQueue.push(queued_plugin);
+            });
+            self.startMultiInstall();
         };
 
         self._forcedStdoutLine =
