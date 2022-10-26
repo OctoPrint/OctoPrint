@@ -203,29 +203,6 @@ $(function () {
 
         self.markings = [];
 
-        self.marking_props = {
-            print: {
-                label: gettext("Start"),
-                color: "#218656"
-            },
-            pause: {
-                label: gettext("Pause"),
-                color: "#FDC02F"
-            },
-            resume: {
-                label: gettext("Resume"),
-                color: "#27CAEE"
-            },
-            cancel: {
-                label: gettext("Cancel"),
-                color: "#DA3749"
-            },
-            done: {
-                label: gettext("Done"),
-                color: "#1B72F9"
-            }
-        };
-
         self.showStateMarks = ko.observable(
             loadFromLocalStorage("temperatureGraph.showStateMarks", true)
         );
@@ -485,15 +462,15 @@ $(function () {
                     y: self.plot.getAxes().yaxis.max
                 });
 
+                var markLabel = mark.type;
+                if (mark.label) {
+                    markLabel = gettext(mark.label);
+                }
                 if (o.left > yAxisLabelWidth) {
                     var label = $("<div></div>");
-                    label.html(self.marking_props[mark.type].label);
-                    var css = {
-                        backgroundColor: self.marking_props[mark.type].color
-                    };
-
-                    label.css(css);
+                    label.html(markLabel);
                     label.addClass("temperature-mark-label");
+                    label.addClass("temperature-mark-type-" + mark.type);
 
                     graph.append(label);
 
@@ -520,7 +497,7 @@ $(function () {
                 }
 
                 return {
-                    color: self.marking_props[mark.type].color,
+                    color: label.css("background-color"),
                     lineWidth: lineWidth,
                     xaxis: {from: time, to: time}
                 };
@@ -528,6 +505,17 @@ $(function () {
 
             return marks;
         };
+
+        // Dummy translation requests for dynamic strings supplied by the backend
+        // noinspection BadExpressionStatementJS
+        [
+            // mark labels
+            gettext("Start"),
+            gettext("Done"),
+            gettext("Cancel"),
+            gettext("Pause"),
+            gettext("Resume")
+        ];
 
         self._initializePlot = function (force, plotInfo) {
             var graph = $("#temperature-graph");
