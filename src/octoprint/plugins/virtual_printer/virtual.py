@@ -700,9 +700,26 @@ class VirtualPrinter:
         # we'll just use this to echo a message, to allow playing around with pause triggers
         if self._echoOnM117:
             try:
-                self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
+                result = re.search(r"M117\s+(.*)", data).group(1)
+                self._send(f"echo:{result}")
             except AttributeError:
                 self._send("echo:")
+
+    def _gcode_M118(self, data: str) -> None:
+        match = re.search(r"M118 (?:(?P<parameter>A1|E1|Pn[012])\s)?(?P<text>.*)", data)
+        if not match:
+            self._send("Unrecognized command parameters for M118")
+        else:
+            result = match.groupdict()
+            text = result["text"]
+            parameter = result["parameter"]
+
+            if parameter == "A1":
+                self._send(f"//{text}")
+            elif parameter == "E1":
+                self._send(f"echo:{text}")
+            else:
+                self._send(text)
 
     def _gcode_M154(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
