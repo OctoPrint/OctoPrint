@@ -15,13 +15,10 @@ from __future__ import with_statement
 __version__ = '0.4.0'
 
 import sys
-
+from collections import deque, namedtuple
 from functools import partial, wraps
-from collections import deque
 
-from collections import namedtuple
-
-from flask import g, session, current_app, abort, request
+from flask import abort, current_app, g, request, session
 from flask.signals import Namespace
 
 PY3 = sys.version_info[0] == 3
@@ -378,9 +375,10 @@ class Principal(object):
                          identification.
     :param skip_static: Whether to ignore static endpoints.
     """
-    def __init__(self, app=None, use_sessions=True, skip_static=False):
+    def __init__(self, app=None, use_sessions=True, skip_static=False, anonymous_identity=AnonymousIdentity):
         self.identity_loaders = deque()
         self.identity_savers = deque()
+        self.anonymous_identity = anonymous_identity
         # XXX This will probably vanish for a better API
         self.use_sessions = use_sessions
         self.skip_static = skip_static
@@ -472,7 +470,7 @@ class Principal(object):
         if self._is_static_route():
             return
 
-        g.identity = AnonymousIdentity()
+        g.identity = self.anonymous_identity()
         for loader in self.identity_loaders:
             identity = loader()
             if identity is not None:

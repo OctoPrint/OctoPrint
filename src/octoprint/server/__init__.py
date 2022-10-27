@@ -93,7 +93,19 @@ jsonDecoder = None
 connectivityChecker = None
 environmentDetector = None
 
-principals = Principal(app)
+
+class OctoPrintAnonymousIdentity(AnonymousIdentity):
+    def __init__(self):
+        super().__init__()
+
+        user = userManager.anonymous_user_factory()
+
+        self.provides.add(UserNeed(user.get_id()))
+        for need in user.needs:
+            self.provides.add(need)
+
+
+principals = Principal(app, anonymous_identity=OctoPrintAnonymousIdentity)
 
 import octoprint.access.groups as groups  # noqa: E402
 import octoprint.access.permissions as permissions  # noqa: E402
