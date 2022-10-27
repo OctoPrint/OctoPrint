@@ -339,6 +339,7 @@ $(function () {
 
         self.loadedFilepath = undefined;
         self.loadedFileDate = undefined;
+        self.loadedFileSize = undefined;
         self.status = "idle";
         self.enabled = false;
 
@@ -417,6 +418,7 @@ $(function () {
             self.enableReload(false);
             self.loadedFilepath = undefined;
             self.loadedFileDate = undefined;
+            self.loadedFileSize = undefined;
             self.clear();
         };
 
@@ -505,7 +507,7 @@ $(function () {
             });
         };
 
-        self.loadFile = function (path, date) {
+        self.loadFile = function (path, date, size) {
             self.enableReload(false);
             self.needsLoad = false;
             if (self.status === "idle" && self.errorCount < 3) {
@@ -513,9 +515,11 @@ $(function () {
 
                 self.cachedPath = path;
                 self.cachedDate = date;
+                self.cachedSize = size;
                 var par = {
                     url: OctoPrint.files.downloadPath("local", path),
                     path: path,
+                    size: size,
                     skipUntil: self.settings.settings.plugins.gcodeviewer.skipUntilThis()
                 };
 
@@ -535,13 +539,14 @@ $(function () {
         self._onFileLoaded = function () {
             self.loadedFilepath = self.cachedPath;
             self.loadedFileDate = self.cachedDate;
+            self.loadedFileSize = self.cachedSize;
             self.status = "idle";
             self.enableReload(true);
         };
 
         self.reload = function () {
             if (!self.enableReload()) return;
-            self.loadFile(self.loadedFilepath, self.loadedFileDate);
+            self.loadFile(self.loadedFilepath, self.loadedFileDate, self.loadedFileSize);
         };
 
         self.fromHistoryData = function (data) {
@@ -576,6 +581,7 @@ $(function () {
 
                 self.loadedFilepath = undefined;
                 self.loadedFileDate = undefined;
+                self.loadedFileSize = undefined;
                 self.selectedFile.path(undefined);
                 self.selectedFile.date(undefined);
                 self.selectedFile.size(undefined);
@@ -591,7 +597,8 @@ $(function () {
             if (
                 self.loadedFilepath &&
                 self.loadedFilepath === data.job.file.path &&
-                self.loadedFileDate === data.job.file.date
+                self.loadedFileDate === data.job.file.date &&
+                self.loadedFileSize === data.job.file.size
             ) {
                 if (
                     OctoPrint.coreui.browserTabVisible &&
@@ -611,7 +618,8 @@ $(function () {
                     self.status !== "request" &&
                     (!self.waitForApproval() ||
                         self.selectedFile.path() !== data.job.file.path ||
-                        self.selectedFile.date() !== data.job.file.date)
+                        self.selectedFile.date() !== data.job.file.date ||
+                        self.selectedFile.size() !== data.job.file.size)
                 ) {
                     self.selectedFile.path(data.job.file.path);
                     self.selectedFile.date(data.job.file.date);
@@ -627,10 +635,15 @@ $(function () {
                         self.waitForApproval(true);
                         self.loadedFilepath = undefined;
                         self.loadedFileDate = undefined;
+                        self.loadedFileSize = undefined;
                     } else {
                         self.waitForApproval(false);
                         if (self.tabActive) {
-                            self.loadFile(data.job.file.path, data.job.file.date);
+                            self.loadFile(
+                                data.job.file.path,
+                                data.job.file.date,
+                                data.job.file.size
+                            );
                         } else {
                             self.needsLoad = true;
                         }
@@ -647,7 +660,11 @@ $(function () {
 
         self.approveLargeFile = function () {
             self.waitForApproval(false);
-            self.loadFile(self.selectedFile.path(), self.selectedFile.date());
+            self.loadFile(
+                self.selectedFile.path(),
+                self.selectedFile.date(),
+                self.selectedFile.size()
+            );
         };
 
         self._onProgress = function (type, percentage) {
@@ -872,7 +889,8 @@ $(function () {
         self.onTabChange = function (current, previous) {
             self.tabActive = current === "#gcode";
             if (self.tabActive && self.needsLoad) {
-                self.loadFile(self.selectedFile.path(), self.selectedFile.date());
+                self.loadFile(self.selectedFile.path(), self.selectedFile.date()),
+                    self.selectedFile.size();
             }
         };
 
