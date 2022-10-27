@@ -519,7 +519,7 @@ $(function () {
                 var par = {
                     url: OctoPrint.files.downloadPath("local", path),
                     path: path,
-                    size: path,
+                    size: size,
                     skipUntil: self.settings.settings.plugins.gcodeviewer.skipUntilThis()
                 };
 
