@@ -22,7 +22,7 @@ import octoprint_setuptools  # noqa: F401,E402
 # ----------------------------------------------------------------------------------------
 
 # Supported python versions
-PYTHON_REQUIRES = ">=3.7, <4"
+PYTHON_REQUIRES = ">=3.7, <3.12"
 
 # Requirements for setup.py
 SETUP_REQUIRES = []
