@@ -4,7 +4,8 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 from typing import Dict, List
 
 from pydantic import BaseModel, Field
-from pydantic_settings import with_attrs_docs
+
+from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 
 @with_attrs_docs

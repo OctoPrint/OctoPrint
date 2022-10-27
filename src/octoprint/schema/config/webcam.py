@@ -5,7 +5,8 @@ from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel
-from pydantic_settings import with_attrs_docs
+
+from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 
 class RatioEnum(str, Enum):
@@ -56,7 +57,7 @@ class WebcamConfig(BaseModel):
 
     stream: Optional[str] = None
 
-    streamRatio: RatioEnum = "16:9"
+    streamRatio: RatioEnum = RatioEnum.sixteen_nine
 
     streamTimeout: int = 5
 

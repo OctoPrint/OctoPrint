@@ -5,7 +5,8 @@ from enum import Enum
 from typing import List, Optional, Union
 
 from pydantic import BaseModel
-from pydantic_settings import with_attrs_docs
+
+from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 
 class LayoutEnum(str, Enum):

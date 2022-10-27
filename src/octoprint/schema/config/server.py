@@ -5,7 +5,8 @@ from enum import Enum
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel
-from pydantic_settings import with_attrs_docs
+
+from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 CONST_15MIN = 15 * 60
 CONST_1GB = 1024 * 1024 * 1024
