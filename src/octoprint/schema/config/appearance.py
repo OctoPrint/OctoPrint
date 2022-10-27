@@ -4,8 +4,7 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 from enum import Enum
 from typing import List
 
-from pydantic import BaseModel
-
+from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 
@@ -141,7 +140,7 @@ class AppearanceConfig(BaseModel):
     name: str = ""
     """Use this to give your OctoPrint instance a name. It will be displayed in the title bar (as "<Name> [OctoPrint]") and in the navigation bar (as "OctoPrint: <>")"""
 
-    color: ColorEnum = "default"
+    color: ColorEnum = ColorEnum.default
     """Use this to color the navigation bar."""
 
     colorTransparent: bool = False

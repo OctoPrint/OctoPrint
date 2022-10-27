@@ -4,8 +4,7 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel
-
+from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 

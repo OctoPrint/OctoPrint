@@ -3,15 +3,14 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 
 from enum import Enum
 
-from pydantic import BaseModel
-
+from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 
 class RunAtEnum(str, Enum):
-    never: str = "never"
-    idle: str = "idle"
-    always: str = "always"
+    never = "never"
+    idle = "idle"
+    always = "always"
 
 
 @with_attrs_docs
@@ -28,7 +27,7 @@ class GcodeAnalysisConfig(BaseModel):
     throttle_lines: int = 100
     """GCODE line batch size."""
 
-    runAt: RunAtEnum = "idle"
+    runAt: RunAtEnum = RunAtEnum.idle
     """Whether to run the analysis only when idle (not printing), regardless of printing state or never."""
 
     bedZ: float = 0.0
