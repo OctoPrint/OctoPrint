@@ -73,6 +73,7 @@ core_deps = [
 ]
 vendored_deps = [
     "blinker>=1.4,<2",  # dependency of flask_principal
+    "class-doc>=0.2.6,<0.3",  # dependency of with_attrs_docs
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
 ]
