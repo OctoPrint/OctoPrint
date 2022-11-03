@@ -12,13 +12,13 @@ $(function () {
 
         self.onUserLoggedOut = self.onUserPermissionsChanged = function () {
             // reload if user now lacks STATUS & SETTINGS_READ permissions and is not in first run setup, or is in
-            // first run setup but the ACL wizard has already run and ACL is active
+            // first run setup but the ACL wizard has already run
             if (
                 !self.loginState.hasAllPermissions(
                     self.access.permissions.STATUS,
                     self.access.permissions.SETTINGS_READ
                 ) &&
-                CONFIG_ACCESS_CONTROL_ACTIVE
+                (!CONFIG_FIRST_RUN || (self.coreWizardAcl && self.coreWizardAcl.setup()))
             ) {
                 location.reload();
             }
