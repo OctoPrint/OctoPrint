@@ -52,7 +52,7 @@ class VirtualPrinter:
         self._plugin_data_folder = data_folder
 
         self._seriallog = logging.getLogger(
-            "octoprint.plugin.virtual_printer.VirtualPrinter.serial"
+            "octoprint.plugins.virtual_printer.VirtualPrinter.serial"
         )
         self._seriallog.setLevel(logging.CRITICAL)
         self._seriallog.propagate = False
