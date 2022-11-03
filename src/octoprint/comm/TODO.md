@@ -12,6 +12,7 @@
 
 On disconnect from (virtual) printer:
 
+```
 2021-12-16 17:45:05,197 - tornado.application - ERROR - Uncaught exception POST /api/connection (127.0.0.1)
 HTTPServerRequest(protocol='http', host='localhost:5000', method='POST', uri='/api/connection', version='HTTP/1.1', remote_ip='127.0.0.1')
 Traceback (most recent call last):
@@ -41,6 +42,7 @@ Traceback (most recent call last):
     self._protocol.unregister_listener(self)
 AttributeError: 'NoneType' object has no attribute 'unregister_listener'
 2021-12-16 17:45:05,198 - octoprint.events.fire - DEBUG - Firing event: Disconnecting (Payload: None)
+```
 
 ---
 
