@@ -645,6 +645,18 @@ class PrinterProfileManager:
 
             value[path[-1]] = converter(value[path[-1]])
 
+        def validate_value(profile, path, validator):
+            value = profile
+            for part in path[:-1]:
+                if not isinstance(value, dict) or part not in value:
+                    raise RuntimeError("%s is not contained in profile" % ".".join(path))
+                value = value[part]
+
+            if not isinstance(value, dict) or path[-1] not in value:
+                raise RuntimeError("%s is not contained in profile" % ".".join(path))
+
+            return validator(value[path[-1]])
+
         # convert ints
         for path in (
             ("extruder", "count"),
@@ -695,6 +707,21 @@ class PrinterProfileManager:
                     )
                 )
                 return False
+
+        # validate volume size range
+        for path in (
+            ("volume", "width"),
+            ("volume", "depth"),
+            ("volume", "height"),
+        ):
+            if not validate_value(profile, path, lambda x: x > 0 and x < 10000):
+                return False
+
+        # validate extruder count range
+        if not validate_value(
+            profile, ("extruder", "count"), lambda x: x > 0 and x < 100
+        ):
+            return False
 
         # validate form factor
         if profile["volume"]["formFactor"] not in BedFormFactor.values():
