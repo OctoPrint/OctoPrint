@@ -12,7 +12,7 @@ import os
 import threading
 import time
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Any, Union
 
 import flask
 import flask.json
@@ -235,35 +235,6 @@ def fix_webassets_convert_item_to_flask_url():
                 flask_ctx.pop()
 
     flask_assets.FlaskResolver.convert_item_to_flask_url = fixed_convert_item_to_flask_url
-
-
-def fix_flask_jsonify():
-    def fixed_jsonify(*args, **kwargs):
-        """Backported from https://github.com/pallets/flask/blob/7e714bd28b6e96d82b2848b48cf8ff48b517b09b/flask/json/__init__.py#L257"""
-        from flask.json import current_app, dumps
-
-        indent = None
-        separators = (",", ":")
-
-        if current_app.config["JSONIFY_PRETTYPRINT_REGULAR"] or current_app.debug:
-            indent = 2
-            separators = (", ", ": ")
-
-        if args and kwargs:
-            raise TypeError(
-                "jsonify() behavior undefined when passed both args and kwargs"
-            )
-        elif len(args) == 1:  # single args are passed directly to dumps()
-            data = args[0]
-        else:
-            data = args or kwargs
-
-        return current_app.response_class(
-            dumps(data, indent=indent, separators=separators, allow_nan=False) + "\n",
-            mimetype="application/json",
-        )
-
-    flask.jsonify = fixed_jsonify
 
 
 # ~~ WSGI environment wrapper for reverse proxying
@@ -1938,6 +1909,10 @@ class OctoPrintJsonProvider(flask.json.provider.DefaultJSONProvider):
             return JsonEncoding.encode(object_)
         except TypeError:
             return flask.json.provider.DefaultJSONProvider.default(object_)
+
+    def dumps(self, obj: Any, **kwargs: Any) -> str:
+        kwargs.setdefault("allow_nan", False)
+        return super().dumps(obj, **kwargs)
 
 
 ##~~ Session signing

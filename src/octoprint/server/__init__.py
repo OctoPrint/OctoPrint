@@ -95,7 +95,19 @@ environmentDetector = None
 
 cli_key = None
 
-principals = Principal(app)
+
+class OctoPrintAnonymousIdentity(AnonymousIdentity):
+    def __init__(self):
+        super().__init__()
+
+        user = userManager.anonymous_user_factory()
+
+        self.provides.add(UserNeed(user.get_id()))
+        for need in user.needs:
+            self.provides.add(need)
+
+
+principals = Principal(app, anonymous_identity=OctoPrintAnonymousIdentity)
 
 import octoprint.access.groups as groups  # noqa: E402
 import octoprint.access.permissions as permissions  # noqa: E402
@@ -357,7 +369,6 @@ class Server:
         util.tornado.fix_json_encode()
         util.tornado.fix_websocket_check_origin()
         util.tornado.enable_per_message_deflate_extension()
-        util.flask.fix_flask_jsonify()
 
         cli_key = self._setup_cli_key()
         self._setup_mimetypes()
@@ -1383,7 +1394,6 @@ class Server:
         app.jinja_environment = PrefixAwareJinjaEnvironment
 
         app.config["TEMPLATES_AUTO_RELOAD"] = True
-        app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
         app.config["REMEMBER_COOKIE_DURATION"] = 90 * 24 * 60 * 60  # 90 days
         app.config["REMEMBER_COOKIE_HTTPONLY"] = True
         # REMEMBER_COOKIE_SECURE will be taken care of by our custom cookie handling
@@ -1393,6 +1403,7 @@ class Server:
 
         # setup octoprint's flask json serialization/deserialization
         app.json = OctoPrintJsonProvider(app)
+        app.json.compact = False
 
         s = settings()
 

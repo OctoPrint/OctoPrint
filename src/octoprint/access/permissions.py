@@ -185,7 +185,7 @@ class PluginIdentityContext:
         # check the permission here
         if not permission.can():
             if self.http_exception:
-                abort(self.http_exception, permission)
+                abort(self.http_exception)
             raise PermissionDenied(permission)
 
     def __exit__(self, *args):

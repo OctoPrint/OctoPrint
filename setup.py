@@ -22,7 +22,7 @@ import octoprint_setuptools  # noqa: F401,E402
 # ----------------------------------------------------------------------------------------
 
 # Supported python versions
-PYTHON_REQUIRES = ">=3.7, <4"
+PYTHON_REQUIRES = ">=3.7, <3.12"
 
 # Requirements for setup.py
 SETUP_REQUIRES = []
@@ -55,6 +55,7 @@ core_deps = [
     "pathvalidate>=2.4.1,<3",
     "pkginfo>=1.7.1,<2",
     "psutil>=5.8,<6",
+    "pydantic>=1.10.2,<2",
     "pylru>=1.2,<2",
     "pyserial>=3.4,<4",
     "PyYAML>=5.4.1,<6",
@@ -69,11 +70,10 @@ core_deps = [
     "wrapt>=1.14,<1.15",
     "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
     "zipstream-ng>=1.3.4,<2.0.0",
-    "pydantic>=1.9.1,<2",
-    "pydantic-settings>=0.2.5,<1",  # TODO: replace with vendored with_attrs_docs
 ]
 vendored_deps = [
     "blinker>=1.4,<2",  # dependency of flask_principal
+    "class-doc>=0.2.6,<0.3",  # dependency of with_attrs_docs
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
 ]

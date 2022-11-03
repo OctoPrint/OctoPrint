@@ -4,8 +4,8 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 from enum import Enum
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel
-from pydantic_settings import with_attrs_docs
+from octoprint.schema import BaseModel
+from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 CONST_15MIN = 15 * 60
 CONST_1GB = 1024 * 1024 * 1024
