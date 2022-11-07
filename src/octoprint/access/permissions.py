@@ -419,16 +419,16 @@ class Permissions(metaclass=PermissionsMetaClass):
         RoleNeed("timelapse_delete"),
         default_groups=[USER_GROUP],
     )
+    TIMELAPSE_MANAGE_UNRENDERED = OctoPrintPermission(
+        "Timelapse Manage Unrendered",
+        gettext("Allows to list, delete and render unrendered timelapses"),
+        RoleNeed("timelapse_manage_unrendered"),
+        default_groups=[USER_GROUP],
+    )
     TIMELAPSE_ADMIN = OctoPrintPermission(
         "Timelapse Admin",
-        gettext(
-            "Allows to change the timelapse settings and delete or "
-            'render unrendered timelapses. Includes the "Timelapse List",'
-            '"Timelapse Delete" and "Timelapse Download" permissions'
-        ),
+        gettext("Allows to change the timelapse settings."),
         RoleNeed("timelapse_admin"),
-        TIMELAPSE_LIST,
-        TIMELAPSE_DOWNLOAD,
         default_groups=[USER_GROUP],
     )
 
