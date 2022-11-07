@@ -881,6 +881,7 @@ ul.dropdown-menu li a {
       overflow-y: scroll;
       height: 306px;
       padding-right: 2px;
+      position: relative; // required for correct offsetParent, see #4680
     }
 
     .entry {
