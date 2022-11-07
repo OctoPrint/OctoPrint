@@ -11,6 +11,8 @@ $(function () {
 
         self.systeminfo = ko.observableArray();
 
+        self.devmode = getQueryParameterByName("devmode") !== null;
+
         self.getSystemInfo = function () {
             if (!self.loginState.hasPermission(self.access.permissions.SYSTEM)) return;
             return OctoPrint.system.getInfo().done(self.fromSystemInfo);
