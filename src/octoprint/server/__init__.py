@@ -665,7 +665,9 @@ class Server:
 
         ## Tornado initialization starts here
 
-        ioloop = IOLoop()
+        ioloop = (
+            IOLoop()
+        )  # TODO: This way to create the ioloop is deprecated and logs a warning
         ioloop.install()
 
         enable_cors = settings().getBoolean(["api", "allowCrossOrigin"])
