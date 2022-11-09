@@ -10,6 +10,7 @@ import queue
 import re
 import threading
 import time
+from typing import Any, Dict, List, Optional
 
 from serial import SerialTimeoutException
 
@@ -665,8 +666,7 @@ class VirtualPrinter:
             filename = data.split(None, 1)[1].strip()
             if filename.startswith("/"):
                 filename = filename[1:]
-            files = self._mappedSdList()
-            file = files.get(filename.lower())
+            file = self._getSdFileData(filename)
             if file is not None:
                 self._send(file["name"])
 
@@ -1411,16 +1411,13 @@ class VirtualPrinter:
                 else:
                     line += " {name}"
 
-        files = self._mappedSdList()
-        items = map(lambda x: line.format(**x), files.values())
-
         self._send("Begin file list")
-        for item in items:
+        for item in map(lambda x: line.format(**x), self._getSdFiles()):
             self._send(item)
         self._send("End file list")
 
-    def _mappedSdList(self) -> collections.OrderedDict:
-        result = collections.OrderedDict()
+    def _mappedSdList(self) -> Dict[str, Dict[str, Any]]:
+        result = {}
         for entry in os.scandir(self._virtualSd):
             if not entry.is_file():
                 continue
@@ -1429,27 +1426,41 @@ class VirtualPrinter:
             ).lower()
             if entry.name.startswith("."):
                 dosname = "." + dosname
-            result[dosname] = {
+            data = {
                 "name": entry.name,
                 "path": entry.path,
                 "dosname": dosname,
                 "size": entry.stat().st_size,
                 "timestamp": unix_timestamp_to_m20_timestamp(entry.stat().st_mtime),
             }
+            # index by lower case, we simulate a case insensitive filesystem like FAT,
+            # which should be closest to what we encounter in reality
+            result[entry.name.lower()] = data
+            result[dosname.lower()] = entry.name.lower()
         return result
+
+    def _getSdFileData(self, filename: str) -> Optional[Dict[str, Any]]:
+        files = self._mappedSdList()
+        data = files.get(filename.lower())
+        if isinstance(data, str):
+            data = files.get(data.lower())
+        return data
+
+    def _getSdFiles(self) -> List[Dict[str, Any]]:
+        files = self._mappedSdList()
+        return [x for x in files.values() if isinstance(x, dict)]
 
     def _selectSdFile(self, filename: str, check_already_open: bool = False) -> None:
         if filename.startswith("/"):
             filename = filename[1:]
 
-        files = self._mappedSdList()
-        file = files.get(filename)
+        file = self._getSdFileData(filename)
         if (
             file is None
             or not os.path.exists(file["path"])
             or not os.path.isfile(file["path"])
         ):
-            self._send("open failed, File: %s." % filename)
+            self._send(f"open failed, File: {file['name']}.")
             return
 
         if self._selectedSdFile == file["path"] and check_already_open:
@@ -1458,7 +1469,7 @@ class VirtualPrinter:
         self._selectedSdFile = file["path"]
         self._selectedSdFileSize = file["size"]
         if self._settings.get_boolean(["includeFilenameInOpened"]):
-            self._send("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
+            self._send(f"File opened: {file['name']}  Size: {self._selectedSdFileSize}")
         else:
             self._send("File opened")
         self._send("File selected")
@@ -1480,8 +1491,7 @@ class VirtualPrinter:
     def _reportSdStatus(self):
         if self._sdPrinter is not None and self._sdPrintingSemaphore.is_set:
             self._send(
-                "SD printing byte %d/%d"
-                % (self._selectedSdFilePos, self._selectedSdFileSize)
+                f"SD printing byte {self._selectedSdFilePos}/{self._selectedSdFileSize}"
             )
         else:
             self._send("Not SD printing")
@@ -1796,10 +1806,9 @@ class VirtualPrinter:
                 self._lastE = 0
 
     def _writeSdFile(self, filename: str) -> None:
-        filename = filename
         if filename.startswith("/"):
             filename = filename[1:]
-        file = os.path.join(self._virtualSd, filename.lower())
+        file = os.path.join(self._virtualSd, filename)
         if os.path.exists(file):
             if os.path.isfile(file):
                 os.remove(file)
@@ -1815,7 +1824,7 @@ class VirtualPrinter:
         self._writingToSdFile = file
         self._writingToSd = True
         self._selectedSdFile = file
-        self._send("Writing to file: %s" % filename)
+        self._send(f"Writing to file: {filename}")
 
     def _finishSdFile(self):
         try:
@@ -1927,8 +1936,7 @@ class VirtualPrinter:
     def _deleteSdFile(self, filename: str) -> None:
         if filename.startswith("/"):
             filename = filename[1:]
-        files = self._mappedSdList()
-        file = files.get(filename)
+        file = self._getSdFileData(filename)
         if (
             file is not None
             and os.path.exists(file["path"])
