@@ -70,13 +70,22 @@ class SerialCapabilities(BaseModel):
     """Whether to enable temperature autoreport in the firmware if its support is detected"""
 
     autoreport_sdstatus: bool = True
+    """Whether to enable SD printing autoreport in the firmware if its support is detected"""
+
     autoreport_pos: bool = True
+    """Whether to enable position autoreport in the firmware if its support is detected"""
 
     busy_protocol: bool = True
     """Whether to shorten the communication timeout if the firmware seems to support the busy protocol"""
 
     emergency_parser: bool = True
+    """Whether to send emergency commands out of band if the firmware seems to support the emergency parser"""
+
     extended_m20: bool = True
+    """Whether to request extended M20 (file list) output from the firmware if its support is detected"""
+
+    lfn_write: bool = True
+    """Whether to enable long filename support for SD card writes if the firmware reports support for it"""
 
 
 @with_attrs_docs

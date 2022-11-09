@@ -258,6 +258,7 @@ def getSettings():
                 ["serial", "capabilities", "emergency_parser"]
             ),
             "capExtendedM20": s.getBoolean(["serial", "capabilities", "extended_m20"]),
+            "capLfnWrite": s.getBoolean(["serial", "capabilities", "lfn_write"]),
             "resendRatioThreshold": s.getInt(["serial", "resendRatioThreshold"]),
             "resendRatioStart": s.getInt(["serial", "resendRatioStart"]),
             "ignoreEmptyPorts": s.getBoolean(["serial", "ignoreEmptyPorts"]),
@@ -957,6 +958,11 @@ def _saveSettings(data):
                 ["serial", "capabilities", "extended_m20"],
                 data["serial"]["capExtendedM20"],
             ),
+        if "capLfnWrite" in data["serial"]:
+            s.setBoolean(
+                ["serial", "capabilities", "lfn_write"],
+                data["serial"]["capLfnWrite"],
+            )
         if "resendRatioThreshold" in data["serial"]:
             s.setInt(
                 ["serial", "resendRatioThreshold"], data["serial"]["resendRatioThreshold"]
