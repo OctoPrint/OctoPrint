@@ -140,5 +140,5 @@ class Webcam(BaseModel):
     extras: dict = {}
     """Unstructured data describing this webcam"""
 
-    compat: WebcamCompatibility = None
+    compat: Optional[WebcamCompatibility] = None
     """A compatibility configuration to allow older clients to make use of this webcam"""
