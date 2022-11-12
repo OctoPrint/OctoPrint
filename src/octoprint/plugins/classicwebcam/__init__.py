@@ -50,13 +50,6 @@ class ClassicWebcamPlugin(
                 "suffix": "_real",
             },
             {
-                "type": "webcam",
-                "name": "Classic Webcam 2",
-                "template": "classicwebcam_webcam_2.jinja2",
-                "custom_bindings": False,
-                "suffix": "_mock",
-            },
-            {
                 "type": "wizard",
                 "name": "Classic Webcam Wizard",
                 "template": "classicwebcam_wizard.jinja2",
