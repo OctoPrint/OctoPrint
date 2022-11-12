@@ -768,10 +768,10 @@ class Timelapse:
             self._logger.debug(
                 f"Going to capture {filename} from {self._webcam.config.name} provided by {self._webcam.providerIdentifier}"
             )
-            iter = self._webcam.providerPlugin.take_webcam_snapshot(self._webcam)
+            snapshot = self._webcam.providerPlugin.take_webcam_snapshot(self._webcam)
 
             with open(filename, "wb") as f:
-                for chunk in iter:
+                for chunk in snapshot:
                     if chunk:
                         f.write(chunk)
                         f.flush()
