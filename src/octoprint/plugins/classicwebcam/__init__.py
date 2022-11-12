@@ -246,7 +246,7 @@ class ClassicWebcamPlugin(
         return {"webcam": {"required": self.is_wizard_required()}}
 
     def get_wizard_version(self):
-        return 11
+        return 1
 
 
 __plugin_name__ = gettext("Classic Webcam")
