@@ -8,6 +8,7 @@ from flask_babel import gettext
 
 import octoprint.plugin
 from octoprint.schema.config.webcam import RatioEnum, Webcam, WebcamCompatibility
+from octoprint.webcams import WebcamNotAbleToTakeSnapshotException
 
 
 class ClassicWebcamPlugin(
@@ -19,6 +20,7 @@ class ClassicWebcamPlugin(
 ):
     def __init__(self):
         self._capture_mutex = threading.Lock()
+        self._webcam_name = "classic"
 
     # ~~ TemplatePlugin API
 
@@ -91,7 +93,7 @@ class ClassicWebcamPlugin(
 
         return [
             Webcam(
-                name="classic",
+                name=self._webcam_name,
                 displayName="Classic Webcam",
                 flipH=flipH,
                 flipV=flipV,
@@ -131,7 +133,7 @@ class ClassicWebcamPlugin(
     def take_webcam_snapshot(self, _):
         snapshot_url = self._get_snapshot_url()
         if not self._can_snapshot():
-            raise Exception("Snapshot is not configured")
+            raise WebcamNotAbleToTakeSnapshotException(self._webcam_name)
 
         with self._capture_mutex:
             self._logger.debug(f"Capturing image from {snapshot_url}")
