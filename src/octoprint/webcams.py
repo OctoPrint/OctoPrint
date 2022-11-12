@@ -64,12 +64,12 @@ def get_default_webcam():
 
 
 def get_webcams_as_dicts():
-    def toDict(webcam):
+    def to_dict(webcam):
         webcam_dict = webcam.config.dict()
         webcam_dict["provider"] = webcam.providerIdentifier
         return webcam_dict
 
-    return list(map(lambda item: toDict(item), get_webcams().values()))
+    return list(map(to_dict, get_webcams().values()))
 
 
 class ProvidedWebcam:
