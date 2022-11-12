@@ -7,7 +7,7 @@
                                 value: webcam_defaultWebcam">
         </select>
 
-        <span class="help-inline">{{ _('Selects the default webcam. The default webcam will be used for timelapses and can also provide a MJPEG video stream for old clients that do not make use of the webcam plugin system introduced with OctoPrint 1.9.0') }}</span>
+        <span class="help-inline">{{ _('Selects the default webcam. If this webcam provides a MJPEG video stream, it will be available for old clients that do not make use of the webcam plugin system introduced with OctoPrint 1.9.0') }}</span>
 
         <!-- ko foreach: webcam_webcams -->
             <!-- ko if: name == $parent.webcam_defaultWebcam() -->
