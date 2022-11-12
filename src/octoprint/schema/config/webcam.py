@@ -137,7 +137,7 @@ class Webcam(BaseModel):
     rotate90: bool = False
     """Whether to rotate the webcam 90° counter clockwise."""
 
-    extras: dict = None
+    extras: dict = {}
     """Unstructured data describing this webcam"""
 
     compat: WebcamCompatibility = None
