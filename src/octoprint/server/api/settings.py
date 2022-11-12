@@ -331,38 +331,50 @@ def getSettings():
         data["webcam"] = {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
             "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
-            "streamUrl": compatWebcam.stream if compatWebcam is not None else None,
-            "streamRatio": compatWebcam.streamRatio if compatWebcam is not None else None,
-            "streamTimeout": compatWebcam.streamTimeout
-            if compatWebcam is not None
-            else None,
-            "streamWebrtcIceServers": compatWebcam.streamWebrtcIceServers
-            if compatWebcam is not None
-            else None,
-            "snapshotUrl": compatWebcam.snapshot if compatWebcam is not None else None,
-            "snapshotTimeout": compatWebcam.snapshotTimeout
-            if compatWebcam is not None
-            else None,
-            "snapshotSslValidation": compatWebcam.snapshotSslValidation
-            if compatWebcam is not None
-            else None,
             "ffmpegPath": s.get(["webcam", "ffmpeg"]),
             "ffmpegCommandline": s.get(["webcam", "ffmpegCommandline"]),
             "bitrate": s.get(["webcam", "bitrate"]),
             "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
             "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
             "watermark": s.getBoolean(["webcam", "watermark"]),
-            "flipH": defaultWebcam.config.flipH if defaultWebcam is not None else None,
-            "flipV": defaultWebcam.config.flipV if defaultWebcam is not None else None,
-            "rotate90": defaultWebcam.config.rotate90
-            if defaultWebcam is not None
-            else None,
-            "cacheBuster": compatWebcam.cacheBuster if compatWebcam is not None else None,
-            "defaultWebcam": defaultWebcam.config.name
-            if defaultWebcam is not None
-            else None,
             "webcams": webcamsDict,
+            "streamUrl": None,
+            "streamRatio": None,
+            "streamTimeout": None,
+            "streamWebrtcIceServers": None,
+            "snapshotUrl": None,
+            "snapshotTimeout": None,
+            "snapshotSslValidation": None,
+            "cacheBuster": None,
+            "flipH": None,
+            "flipV": None,
+            "rotate90": None,
+            "defaultWebcam": None,
         }
+
+        if compatWebcam:
+            data.update(
+                {
+                    "streamUrl": compatWebcam.stream,
+                    "streamRatio": compatWebcam.streamRatio,
+                    "streamTimeout": compatWebcam.streamTimeout,
+                    "streamWebrtcIceServers": compatWebcam.streamWebrtcIceServers,
+                    "snapshotUrl": compatWebcam.snapshot,
+                    "snapshotTimeout": compatWebcam.snapshotTimeout,
+                    "snapshotSslValidation": compatWebcam.snapshotSslValidation,
+                    "cacheBuster": compatWebcam.cacheBuster,
+                }
+            )
+
+        if defaultWebcam:
+            data.update(
+                {
+                    "flipH": defaultWebcam.config.flipH,
+                    "flipV": defaultWebcam.config.flipV,
+                    "rotate90": defaultWebcam.config.rotate90,
+                    "defaultWebcam": defaultWebcam.config.name,
+                }
+            )
 
     return jsonify(data)
 
