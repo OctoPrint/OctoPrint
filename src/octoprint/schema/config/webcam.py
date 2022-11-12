@@ -4,8 +4,8 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel
-from pydantic_settings import with_attrs_docs
+from octoprint.schema import BaseModel
+from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 
 class RatioEnum(str, Enum):
@@ -33,7 +33,7 @@ class TimelapseOptions(BaseModel):
 
 @with_attrs_docs
 class TimelapseConfig(BaseModel):
-    type: TimelapseTypeEnum = "off"
+    type: TimelapseTypeEnum = TimelapseTypeEnum.off
     """The timelapse type."""
 
     fps: int = 25

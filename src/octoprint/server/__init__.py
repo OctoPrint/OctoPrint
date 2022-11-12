@@ -40,6 +40,7 @@ from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from werkzeug.exceptions import HTTPException
 
+import octoprint.filemanager
 import octoprint.util
 import octoprint.util.net
 from octoprint.server import util
@@ -92,7 +93,19 @@ jsonDecoder = None
 connectivityChecker = None
 environmentDetector = None
 
-principals = Principal(app)
+
+class OctoPrintAnonymousIdentity(AnonymousIdentity):
+    def __init__(self):
+        super().__init__()
+
+        user = userManager.anonymous_user_factory()
+
+        self.provides.add(UserNeed(user.get_id()))
+        for need in user.needs:
+            self.provides.add(need)
+
+
+principals = Principal(app, anonymous_identity=OctoPrintAnonymousIdentity)
 
 import octoprint.access.groups as groups  # noqa: E402
 import octoprint.access.permissions as permissions  # noqa: E402
@@ -126,10 +139,11 @@ from octoprint.printer.standard import Printer
 from octoprint.server.util import (
     corsRequestHandler,
     corsResponseHandler,
+    csrfRequestHandler,
     loginFromApiKeyRequestHandler,
     requireLoginRequestHandler,
 )
-from octoprint.server.util.flask import PreemptiveCache
+from octoprint.server.util.flask import PreemptiveCache, validate_session_signature
 from octoprint.settings import settings
 
 VERSION = __version__
@@ -186,12 +200,25 @@ def load_user(id):
     else:
         sessionid = None
 
+    if session and "usersession.signature" in session:
+        sessionsig = session["usersession.signature"]
+    else:
+        sessionsig = ""
+
     if sessionid:
-        user = userManager.find_user(userid=id, session=sessionid)
+        # session["_fresh"] is False if the session comes from a remember me cookie,
+        # True if it came from a use of the login dialog
+        user = userManager.find_user(
+            userid=id, session=sessionid, fresh=session.get("_fresh", False)
+        )
     else:
         user = userManager.find_user(userid=id)
 
-    if user and user.is_active:
+    if (
+        user
+        and user.is_active
+        and (not sessionid or validate_session_signature(sessionsig, id, sessionid))
+    ):
         return user
 
     return None
@@ -339,7 +366,6 @@ class Server:
         util.tornado.fix_json_encode()
         util.tornado.fix_websocket_check_origin()
         util.tornado.enable_per_message_deflate_extension()
-        util.flask.fix_flask_jsonify()
 
         self._setup_mimetypes()
 
@@ -639,7 +665,9 @@ class Server:
 
         ## Tornado initialization starts here
 
-        ioloop = IOLoop()
+        ioloop = (
+            IOLoop()
+        )  # TODO: This way to create the ioloop is deprecated and logs a warning
         ioloop.install()
 
         enable_cors = settings().getBoolean(["api", "allowCrossOrigin"])
@@ -746,6 +774,15 @@ class Server:
             )
         }
 
+        only_known_types_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                lambda path: octoprint.filemanager.valid_file_type(
+                    os.path.basename(path)
+                ),
+                status_code=404,
+            )
+        }
+
         valid_timelapse = lambda path: not octoprint.util.is_hidden_path(path) and (
             octoprint.timelapse.valid_timelapse(path)
             or octoprint.timelapse.valid_timelapse_thumbnail(path)
@@ -840,6 +877,7 @@ class Server:
                     download_permission_validator,
                     download_handler_kwargs,
                     no_hidden_files_validator,
+                    only_known_types_validator,
                     additional_mime_types,
                 ),
             ),
@@ -1354,14 +1392,16 @@ class Server:
         app.jinja_environment = PrefixAwareJinjaEnvironment
 
         app.config["TEMPLATES_AUTO_RELOAD"] = True
-        app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
+        app.config["REMEMBER_COOKIE_DURATION"] = 90 * 24 * 60 * 60  # 90 days
         app.config["REMEMBER_COOKIE_HTTPONLY"] = True
+        # REMEMBER_COOKIE_SECURE will be taken care of by our custom cookie handling
 
         # we must not set this before TEMPLATES_AUTO_RELOAD is set to True or that won't take
         app.debug = self._debug
 
         # setup octoprint's flask json serialization/deserialization
         app.json = OctoPrintJsonProvider(app)
+        app.json.compact = False
 
         s = settings()
 
@@ -1441,7 +1481,12 @@ class Server:
 
         app.config["RATELIMIT_STRATEGY"] = "fixed-window-elastic-expiry"
 
-        limiter = Limiter(app, key_func=get_remote_address)
+        limiter = Limiter(
+            app,
+            key_func=get_remote_address,
+            enabled=s.getBoolean(["devel", "enableRateLimiter"]),
+            storage_uri="memory://",
+        )
 
     def _setup_i18n(self, app):
         global babel
@@ -1885,6 +1930,16 @@ class Server:
         blueprint.before_request(corsRequestHandler)
         blueprint.before_request(loginFromApiKeyRequestHandler)
         blueprint.after_request(corsResponseHandler)
+
+        if plugin.is_blueprint_csrf_protected():
+            self._logger.debug(
+                f"CSRF Protection for Blueprint of plugin {name} is enabled"
+            )
+            blueprint.before_request(csrfRequestHandler)
+        else:
+            self._logger.warning(
+                f"CSRF Protection for Blueprint of plugin {name} is DISABLED"
+            )
 
         if plugin.is_blueprint_protected():
             blueprint.before_request(requireLoginRequestHandler)

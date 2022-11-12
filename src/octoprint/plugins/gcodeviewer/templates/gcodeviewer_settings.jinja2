@@ -7,9 +7,6 @@
             <span class="help-block">
                 {% trans %}If provided, the GCode Viewer will search for a line beginning with this string. If found, all GCode up to that point will be skipped. This can be used to skip "purge/nozzle wipe" GCode in the viewer. Note the search is case sensitive.{% endtrans %}
             </span>
-            <span class="help-block">
-                {% trans %}<strong>Important!</strong> Make sure that any setup codes (especially things like <code>G20</code>/<code>G21</code>, <code>G90</code>/<code>G91</code>, <code>M82</code>/<code>M83</code>) are <strong>not</strong> skipped, or your files might not get rendered correctly! If things look broken with a skip configuration, you are skipping too much.{% endtrans %}
-            </span>
         </div>
     </div>
     <div class="control-group" title="{{ _('Maximum size for which the GCode Viewer autoloads the file for preview')|edq }}">

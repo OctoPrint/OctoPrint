@@ -161,6 +161,7 @@ class AppKeysPlugin(
         return NO_CONTENT
 
     @octoprint.plugin.BlueprintPlugin.route("/request", methods=["POST"])
+    @octoprint.plugin.BlueprintPlugin.csrf_exempt()
     @no_firstrun_access
     def handle_request(self):
         data = flask.request.json
@@ -196,7 +197,7 @@ class AppKeysPlugin(
         )
         return response
 
-    @octoprint.plugin.BlueprintPlugin.route("/request/<app_token>")
+    @octoprint.plugin.BlueprintPlugin.route("/request/<app_token>", methods=["GET"])
     @no_firstrun_access
     def handle_decision_poll(self, app_token):
         result = self._get_pending_by_app_token(app_token)
@@ -214,7 +215,7 @@ class AppKeysPlugin(
 
         return flask.abort(404)
 
-    @octoprint.plugin.BlueprintPlugin.route("/auth/<app_token>")
+    @octoprint.plugin.BlueprintPlugin.route("/auth/<app_token>", methods=["GET"])
     @no_firstrun_access
     def handle_auth_dialog(self, app_token):
         user_id = current_user.get_name()
@@ -283,6 +284,9 @@ class AppKeysPlugin(
 
     def is_blueprint_protected(self):
         return False  # No API key required to request API access
+
+    def is_blueprint_csrf_protected(self):
+        return True  # protect anything that isn't explicitly marked as exempt
 
     ##~~ SimpleApiPlugin mixin
 

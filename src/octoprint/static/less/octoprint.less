@@ -586,10 +586,27 @@ table {
 .temperature-mark-label {
   position: absolute;
   color: white;
+  background-color: #aeb6bf;
   padding: 0 5px;
   font-size: 8px;
   transform-origin: 0 0;
   transform: rotate(-90deg);
+}
+
+.temperature-mark-type-print {
+  background-color: #218656;
+}
+.temperature-mark-type-pause {
+  background-color: #fdc02f;
+}
+.temperature-mark-type-resume {
+  background-color: #27caee;
+}
+.temperature-mark-type-cancel {
+  background-color: #da3749;
+}
+.temperature-mark-type-done {
+  background-color: #1b72f9;
 }
 
 /** Various */
@@ -781,6 +798,7 @@ ul.dropdown-menu li a {
       overflow-y: scroll;
       height: 306px;
       padding-right: 2px;
+      position: relative; // required for correct offsetParent, see #4680
     }
 
     .entry {

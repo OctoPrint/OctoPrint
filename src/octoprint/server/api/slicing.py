@@ -160,12 +160,7 @@ def slicingGetSlicerProfile(slicer, name):
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def slicingAddSlicerProfile(slicer, name):
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
-
     json_data = request.get_json()
-    if json_data is None:
-        abort(400, description="Malformed JSON body in request")
 
     data = {}
     display_name = None
@@ -199,8 +194,7 @@ def slicingAddSlicerProfile(slicer, name):
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def slicingPatchSlicerProfile(slicer, name):
-    if "application/json" not in request.headers["Content-Type"]:
-        abort(400, description="Expected content-type JSON")
+    json_data = request.get_json()
 
     try:
         profile = slicingManager.load_profile(slicer, name, require_configured=False)
@@ -208,10 +202,6 @@ def slicingPatchSlicerProfile(slicer, name):
         return abort(404)
     except UnknownProfile:
         return abort(404)
-
-    json_data = request.get_json()
-    if json_data is None:
-        abort(400, description="Malformed JSON body in request")
 
     data = {}
     display_name = None

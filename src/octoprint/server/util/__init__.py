@@ -43,7 +43,7 @@ def loginFromApiKeyRequestHandler():
         if loginUserFromApiKey():
             _flask.g.login_via_apikey = True
     except InvalidApiKeyException:
-        _flask.abort(403)
+        _flask.abort(403, "Invalid API key")
 
 
 def loginFromAuthorizationHeaderRequestHandler():
@@ -54,7 +54,7 @@ def loginFromAuthorizationHeaderRequestHandler():
         if loginUserFromAuthorizationHeader():
             _flask.g.login_via_header = True
     except InvalidApiKeyException:
-        _flask.abort(403)
+        _flask.abort(403, "Invalid credentials in Basic Authorization header")
 
 
 class InvalidApiKeyException(Exception):
@@ -69,7 +69,7 @@ def loginUserFromApiKey():
     user = get_user_for_apikey(apikey)
     if user is None:
         # invalid API key = no API key
-        return False
+        raise InvalidApiKeyException("Invalid API key")
 
     return loginUser(user, login_mechanism="apikey")
 
@@ -146,6 +146,26 @@ def corsResponseHandler(resp):
         resp.headers["Access-Control-Allow-Origin"] = _flask.request.headers["Origin"]
 
     return resp
+
+
+def csrfRequestHandler():
+    """
+    ``before_request`` handler for blueprints which checks for CRFS double token on
+    relevant requests & methods.
+    """
+    from octoprint.server.util.csrf import validate_csrf_request
+
+    if settings().getBoolean(["devel", "enableCsrfProtection"]):
+        validate_csrf_request(_flask.request)
+
+
+def csrfResponseHandler(resp):
+    """
+    ``after_request`` handler for updating the CSRF cookie on each response.
+    """
+    from octoprint.server.util.csrf import add_csrf_cookie
+
+    return add_csrf_cookie(resp)
 
 
 def noCachingResponseHandler(resp):

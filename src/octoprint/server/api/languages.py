@@ -4,7 +4,6 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import logging
 import os
-import tarfile
 import zipfile
 from collections import defaultdict
 
@@ -141,12 +140,10 @@ def uploadLanguagePack():
 
     target_path = settings().getBaseFolder("translations")
 
-    if tarfile.is_tarfile(upload_path):
-        _unpack_uploaded_tarball(upload_path, target_path)
-    elif zipfile.is_zipfile(upload_path):
+    if zipfile.is_zipfile(upload_path):
         _unpack_uploaded_zipfile(upload_path, target_path)
     else:
-        abort(400, description="Neither zip file nor tarball included")
+        abort(400, description="No zip file included")
 
     return getInstalledLanguagePacks()
 
@@ -174,24 +171,20 @@ def deleteInstalledLanguagePack(locale, pack):
 def _unpack_uploaded_zipfile(path, target):
     with zipfile.ZipFile(path, "r") as zip:
         # sanity check
-        map(_validate_archive_name, zip.namelist())
+        for info in zip.infolist():
+            _validate_zip_info(info, target)
 
         # unpack everything
         zip.extractall(target)
 
 
-def _unpack_uploaded_tarball(path, target):
-    with tarfile.open(path, "r") as tar:
-        # sanity check
-        map(_validate_archive_name, tar.getmembers())
-
-        # unpack everything
-        tar.extractall(target)
-
-
-def _validate_archive_name(name):
-    if name.startswith("/") or ".." in name:
+def _validate_archive_name(name, target):
+    if not os.path.abspath(os.path.join(target, name)).startswith(target + os.path.sep):
         raise InvalidLanguagePack(f"Provided language pack contains invalid name {name}")
+
+
+def _validate_zip_info(info, target):
+    _validate_archive_name(info.filename, target)
 
 
 class InvalidLanguagePack(Exception):

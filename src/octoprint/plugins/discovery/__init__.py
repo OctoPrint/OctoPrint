@@ -134,6 +134,9 @@ class DiscoveryPlugin(
     def is_blueprint_protected(self):
         return False
 
+    def is_blueprint_csrf_protected(self):
+        return True
+
     ##~~ StartupPlugin API -- used for registering OctoPrint's Zeroconf and SSDP services upon application startup
 
     def on_startup(self, host, port):

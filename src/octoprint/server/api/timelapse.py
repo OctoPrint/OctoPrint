@@ -209,7 +209,7 @@ def deleteTimelapse(filename):
 
 @api.route("/timelapse/unrendered/<name>", methods=["DELETE"])
 @no_firstrun_access
-@Permissions.TIMELAPSE_DELETE.require(403)
+@Permissions.TIMELAPSE_MANAGE_UNRENDERED.require(403)
 def deleteUnrenderedTimelapse(name):
     octoprint.timelapse.delete_unrendered_timelapse(name)
     return NO_CONTENT
@@ -217,7 +217,7 @@ def deleteUnrenderedTimelapse(name):
 
 @api.route("/timelapse/unrendered/<name>", methods=["POST"])
 @no_firstrun_access
-@Permissions.TIMELAPSE_ADMIN.require(403)
+@Permissions.TIMELAPSE_MANAGE_UNRENDERED.require(403)
 def processUnrenderedTimelapseCommand(name):
     # valid file commands, dict mapping command name to mandatory parameters
     valid_commands = {"render": []}

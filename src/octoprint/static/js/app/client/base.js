@@ -107,14 +107,84 @@
         return url;
     };
 
-    OctoPrintClient.prototype.getRequestHeaders = function (additional) {
+    OctoPrintClient.prototype.getParsedBaseUrl = function (location) {
+        if (!this.options.baseurl) return "";
+
+        try {
+            var url = new URL(this.options.baseurl);
+        } catch (e) {
+            location = location || window.location;
+            var parsed = new URL(location);
+            var path = this.options.baseurl;
+            if (!path || path[0] !== "/") {
+                path = "/" + (path ? path : "");
+            }
+            var url = new URL(parsed.protocol + "//" + parsed.host + path);
+        }
+
+        return url;
+    };
+
+    OctoPrintClient.prototype.getCookieSuffix = function () {
+        if (!this.options.baseurl) return "";
+
+        var url = this.getParsedBaseUrl();
+
+        var port = url.port || (url.protocol === "https:" ? 443 : 80);
+        if (url.pathname && url.pathname !== "/") {
+            var path = url.pathname;
+            if (path.endsWith("/")) {
+                path = path.substring(0, path.length - 1);
+            }
+            return "_P" + port + "_R" + path.replace(/\//g, "|");
+        } else {
+            return "_P" + port;
+        }
+    };
+
+    OctoPrintClient.prototype.getCookieName = function (name) {
+        return name + this.getCookieSuffix();
+    };
+
+    OctoPrintClient.prototype.getCookie = function (name) {
+        name = this.getCookieName(name);
+        return ("; " + document.cookie)
+            .split("; " + name + "=")
+            .pop()
+            .split(";")[0];
+    };
+
+    OctoPrintClient.prototype.getRequestHeaders = function (method, additional, opts) {
+        if (arguments.length <= 1) {
+            // versions prior 1.8.3 don't know method and opts
+            if (!_.isString(method)) {
+                additional = method;
+                console.warn(
+                    "Calling OctoPrintClient.getRequestHeaders with additional " +
+                        "headers as the first parameter is deprecated. Please " +
+                        "consult the docs about the current signature and adjust " +
+                        "your code accordingly."
+                );
+            }
+        }
+
+        method = method || "GET";
         additional = additional || {};
+        opts = opts || {};
 
         var headers = $.extend({}, additional);
 
         if (this.options.apikey) {
             headers["X-Api-Key"] = this.options.apikey;
+        } else {
+            // no API key, so browser context, so let's make sure the CSRF token
+            // header is set
+            var csrfToken = this.getCookie("csrf_token");
+            if (!/^(GET|HEAD|OPTIONS)$/.test(method) && csrfToken && !opts.crossDomain) {
+                headers["X-CSRF-Token"] = csrfToken;
+            }
         }
+
         if (this.options.locale !== undefined) {
             headers["X-Locale"] = this.options.locale;
         }
@@ -134,7 +204,7 @@
             opts.url = urlToCall;
         }
 
-        var headers = this.getRequestHeaders(opts.headers);
+        var headers = this.getRequestHeaders(method, opts.headers, opts);
 
         var params = $.extend({}, opts);
         params.type = method;
@@ -292,14 +362,15 @@
             deferred.notify({loaded: e.loaded, total: e.total});
         });
 
-        var headers = this.getRequestHeaders();
+        var method = "POST";
+        var headers = this.getRequestHeaders(method);
 
         var urlToCall = url;
         if (!_.startsWith(url, "http://") && !_.startsWith(url, "https://")) {
             urlToCall = this.getBaseUrl() + url;
         }
 
-        request.open("POST", urlToCall);
+        request.open(method, urlToCall);
         _.each(headers, function (value, key) {
             request.setRequestHeader(key, value);
         });

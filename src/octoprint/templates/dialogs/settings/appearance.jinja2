@@ -92,7 +92,7 @@
         <div data-bind="visible: languagePacksAvailable()">
             <div id="settings_appearance_managelanguagesdialog_list" data-bind="foreach: translations.paginatedItems">
                 <div class="entry">
-                    <strong><a href="#" class="fas" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.entry', container: '.packs' }"><i class="fas fa-caret-down"></i> <span data-bind="text: $root.languagePackDisplay($data)"></span></a></strong>
+                    <strong><a href="#" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.entry', container: '.packs' }"><i class="fas fa-caret-down"></i> <span data-bind="text: $root.languagePackDisplay($data)"></span></a></strong>
                     <div class="packs">
                         <!-- ko foreach: $data.packs -->
                         <div class="row-fluid">
@@ -124,13 +124,13 @@
                 <div class="input-prepend span9">
                     <span class="btn fileinput-button">
                         <span>{{ _('Browse...') }}</span>
-                        <input id="settings_appearance_managelanguagesdialog_upload" type="file" name="file" accept=".zip,.tar.gz,.tgz,.tar" data-url="{{ url_for("api.uploadLanguagePack") }}">
+                        <input id="settings_appearance_managelanguagesdialog_upload" type="file" name="file" accept=".zip" data-url="{{ url_for("api.uploadLanguagePack") }}">
                     </span>
                     <span class="add-on add-on-limited text-left" data-bind="text: translationUploadFilename, attr: {title: translationUploadFilename}"></span>
                 </div>
                 <button id="settings_appearance_managelanguagesdialog_upload_start" class="btn btn-primary span3" data-bind="enable: enableTranslationUpload, css: {disabled: !enableTranslationUpload()}, click: function(){}">{{ _('Upload') }}</button>
             </div>
-            <span class="help-block" data-bind="visible: invalidTranslationArchive">{{ _('This does not look like a valid language pack. Valid language packs should be either zip files or tarballs and have the extension ".zip", ".tar.gz", ".tgz" or ".tar"') }}</span>
+            <span class="help-block" data-bind="visible: invalidTranslationArchive">{{ _('This does not look like a valid language pack. Valid language packs should be zip files and have the extension ".zip"') }}</span>
         </form>
 
         <small>{{ _('Please note that you will have to reload the page in order for any newly added language packs to become available.') }}</small>

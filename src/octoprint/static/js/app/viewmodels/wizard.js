@@ -18,10 +18,9 @@ $(function () {
         };
 
         self.showDialog = function () {
-            if (
-                !CONFIG_WIZARD ||
-                !(!CONFIG_ACCESS_CONTROL_ACTIVE || self.loginState.isAdmin())
-            )
+            // only open a wizard if we have one and either are in first run OR logged in
+            // as admin
+            if (!CONFIG_WIZARD || (!CONFIG_FIRST_RUN && !self.loginState.isAdmin()))
                 return;
 
             self.getWizardDetails().done(function (response) {

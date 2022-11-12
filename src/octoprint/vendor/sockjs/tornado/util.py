@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import sys
 import functools
+import sys
 
 PY3 = sys.version_info[0] == 3
 
@@ -61,3 +61,16 @@ def no_auto_finish(method):
         self._auto_finish = False
         return method(self, *args, **kwargs)
     return wrapper
+
+def get_current_ioloop():
+    import asyncio
+
+    from tornado.ioloop import IOLoop
+
+    try:
+        loop = asyncio.get_running_loop()
+        return IOLoop._ioloop_for_asyncio.get(loop)
+    except RuntimeError:
+        # no current loop
+        return None
+

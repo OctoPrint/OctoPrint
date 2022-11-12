@@ -605,6 +605,17 @@ GcodeScript${ScriptName}Finished
 
    .. versionadded:: 1.6.0
 
+ChartMarked
+   A time-based marking has been made on the UI's temperature chart.
+
+   Payload:
+
+     * ``type``: the marking's ID. Built-in types are ``print``, ``done``, ``cancel``, ``pause``, and ``resume``. Plugins may set arbitrary types
+     * ``label``: the human-readable short label of the marking
+     * ``time``: the epoch time of marking
+
+   .. versionadded:: 1.9.0
+
 .. _sec-events-available_events-gcode_processing:
 
 GCODE processing

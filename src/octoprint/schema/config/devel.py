@@ -3,8 +3,8 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 
 from enum import Enum
 
-from pydantic import BaseModel
-from pydantic_settings import with_attrs_docs
+from octoprint.schema import BaseModel
+from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 
 class StylesheetEnum(str, Enum):
@@ -37,7 +37,7 @@ class DevelCacheConfig(BaseModel):
 
 @with_attrs_docs
 class DevelConfig(BaseModel):
-    stylesheet: StylesheetEnum = "css"
+    stylesheet: StylesheetEnum = StylesheetEnum.css
     """Settings for stylesheet preference. OctoPrint will prefer to use the stylesheet type specified here. Usually (on a production install) that will be the compiled css (default). Developers may specify less here too."""
 
     cache: DevelCacheConfig = DevelCacheConfig()
@@ -53,3 +53,9 @@ class DevelConfig(BaseModel):
 
     sockJsConnectTimeout: float = 30
     pluginTimings: bool = False
+
+    enableRateLimiter: bool = True
+    """Enable or disable the rate limiter. Careful, disabling this reduces security."""
+
+    enableCsrfProtection: bool = True
+    """Enable or disable the CSRF protection. Careful, disabling this reduces security."""

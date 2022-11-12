@@ -87,7 +87,7 @@ access control as necessary.
 OctoPrint depends on a few python modules to do its job. Those are automatically installed when installing
 OctoPrint via `pip`.
 
-OctoPrint currently supports Python 3.7, 3.8, 3.9 and 3.10.
+OctoPrint currently supports Python 3.7, 3.8, 3.9, 3.10 and 3.11.
 
 ## Usage
 

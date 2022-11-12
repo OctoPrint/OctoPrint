@@ -33,7 +33,7 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import deprecated, to_bytes
+from octoprint.util import RepeatedTimer, deprecated, to_bytes
 from octoprint.util.net import download_file
 from octoprint.util.pip import (
     OUTPUT_SUCCESS,
@@ -66,6 +66,8 @@ def map_repository_entry(entry):
 
     if "follow_dependency_links" not in result:
         result["follow_dependency_links"] = False
+    if "privacypolicy" not in result:
+        result["privacypolicy"] = False
 
     result["is_compatible"] = {"octoprint": True, "os": True, "python": True}
 
@@ -191,6 +193,10 @@ class PluginManagerPlugin(
         self._install_task = None
         self._install_lock = threading.RLock()
 
+        self._queued_installs = []
+        self._queued_installs_abort_timer = None
+        self._print_cancelled = False
+
     def initialize(self):
         self._console_logger = logging.getLogger(
             "octoprint.plugins.pluginmanager.console"
@@ -228,7 +234,7 @@ class PluginManagerPlugin(
                 "name": "List plugins",
                 "description": gettext("Allows to list installed plugins."),
                 "default_groups": [READONLY_GROUP, USER_GROUP, ADMIN_GROUP],
-                "roles": ["manage"],
+                "roles": ["list"],
             },
             {
                 "key": "MANAGE",
@@ -609,18 +615,103 @@ class PluginManagerPlugin(
     def is_blueprint_protected(self):
         return False
 
+    def is_blueprint_csrf_protected(self):
+        return True
+
     ##~~ EventHandlerPlugin
 
     def on_event(self, event, payload):
         from octoprint.events import Events
 
-        if (
+        if event == Events.PRINT_STARTED:
+            self._queued_installs_timer_stop()
+            self._print_cancelled = False
+        elif (
+            event == Events.PRINT_DONE
+            and self._settings.global_get(["webcam", "timelapse", "type"]) == "off"
+            and len(self._queued_installs) > 0
+        ):
+            self._queued_installs_timer_start()
+        elif event == Events.PRINT_FAILED and len(self._queued_installs) > 0:
+            self._send_result_notification(
+                "queued_installs",
+                {
+                    "type": "queued_installs",
+                    "print_failed": True,
+                    "queued": self._queued_installs,
+                },
+            )
+            self._print_cancelled = True
+        elif (
+            event == Events.MOVIE_DONE
+            and self._settings.global_get(["webcam", "timelapse", "type"]) != "off"
+            and len(self._queued_installs) > 0
+            and not (self._printer.is_printing() or self._printer.is_paused())
+            and not self._print_cancelled
+        ):
+            self._queued_installs_timer_start()
+        elif event == Events.USER_LOGGED_IN and len(self._queued_installs) > 0:
+            self._send_result_notification(
+                "queued_installs",
+                {
+                    "type": "queued_installs",
+                    "queued": self._queued_installs,
+                },
+            )
+        elif (
             event != Events.CONNECTIVITY_CHANGED
             or not payload
             or not payload.get("new", False)
         ):
             return
         self._fetch_all_data(do_async=True)
+
+    def _queued_installs_timer_start(self):
+        if self._queued_installs_abort_timer is not None:
+            return
+
+        self._logger.debug("Starting queued updates timer.")
+
+        self._timeout_value = 60
+        self._queued_installs_abort_timer = RepeatedTimer(
+            1, self._queued_installs_timer_task
+        )
+        self._queued_installs_abort_timer.start()
+
+    def _queued_installs_timer_stop(self):
+        if self._queued_installs_abort_timer is not None:
+            self._queued_installs_abort_timer.cancel()
+            self._queued_installs_abort_timer = None
+            self._send_result_notification(
+                "queued_installs",
+                {
+                    "type": "queued_installs",
+                    "queued": self._queued_installs,
+                    "timeout_value": -1,
+                },
+            )
+
+    def _queued_installs_timer_task(self):
+        if self._timeout_value is None:
+            return
+
+        self._timeout_value -= 1
+        self._send_result_notification(
+            "queued_installs",
+            {
+                "type": "queued_installs",
+                "queued": self._queued_installs,
+                "timeout_value": self._timeout_value,
+            },
+        )
+        if self._timeout_value <= 0:
+            if self._queued_installs_abort_timer is not None:
+                self._queued_installs_abort_timer.cancel()
+                self._queued_installs_abort_timer = None
+                for plugin in self._queued_installs:
+                    plugin.pop("command")
+                    self.command_install(**plugin)
+                self._queued_installs = []
 
     ##~~ SimpleApiPlugin
 
@@ -633,17 +724,48 @@ class PluginManagerPlugin(
             "cleanup": ["plugin"],
             "cleanup_all": [],
             "refresh_repository": [],
+            "clear_queued_plugin": ["plugin"],
+            "clear_queued_installs": [],
         }
 
     def on_api_command(self, command, data):
         if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
             abort(403)
 
-        if self._printer.is_printing() or self._printer.is_paused():
-            # do not update while a print job is running
-            abort(409, description="Printer is currently printing or paused")
+        if command == "clear_queued_plugin":
+            if data["plugin"] and data["plugin"] in self._queued_installs:
+                self._queued_installs.remove(data["plugin"])
+            return (
+                jsonify({"queued_installs": self._queued_installs}),
+                202,
+            )
 
-        if command == "install":
+        elif command == "clear_queued_installs":
+            self._queued_installs.clear()
+            return (
+                jsonify({"queued_installs": self._queued_installs}),
+                202,
+            )
+
+        elif self._printer.is_printing() or self._printer.is_paused():
+            # do not update while a print job is running
+            # store targets to be run later on print done event
+            if command == "install" and data not in self._queued_installs:
+                self._logger.debug(f"Queuing install of {data}")
+                self._queued_installs.append(data)
+            if len(self._queued_installs) > 0:
+                self._logger.debug(f"Queued installs: {self._queued_installs}")
+                return (
+                    jsonify({"queued_installs": self._queued_installs}),
+                    202,
+                )
+            else:
+                abort(
+                    409,
+                    description="Printer is currently printing or paused and install could not be queued",
+                )
+
+        elif command == "install":
             if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
                 abort(403)
             url = data["url"]
@@ -1995,6 +2117,7 @@ class PluginManagerPlugin(
             "version": plugin.version,
             "url": plugin.url,
             "license": plugin.license,
+            "privacypolicy": plugin.privacypolicy,
             "python": plugin.pythoncompat,
             "bundled": plugin.bundled,
             "managable": plugin.managable,

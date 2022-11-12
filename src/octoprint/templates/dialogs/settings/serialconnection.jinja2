@@ -414,6 +414,13 @@
                         <div class="control-group">
                             <div class="controls">
                                 <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_capLfnWrite" id="settings-serialCapLfnWrite"> {{ _('Send long names for writing files to the printer\'s SD card via <code>M28</code>, if detected as supported by the firmware') }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
                                     <input type="checkbox" data-bind="checked: serial_triggerOkForM29" id="settings-serialTriggerOkForM29"> {{ _('Simulate <code>ok</code> for <code>M29</code>') }}
                                     <span class="help-block">{{ _('Most Marlin forks that were derived from Marlin versions &lt; v1.1.0 do not send an acknowledging <code>ok</code> for a <code>M29</code>. Check this if you run into communication stalls following streaming of a file to your printer\'s SD.') }}</span>
                                 </label>
@@ -451,6 +458,12 @@
                         <label class="checkbox">
                             <input type="checkbox" data-bind="checked: serial_waitForStart" id="settings-serialWaitForStart"> {{ _('Wait for <code>start</code> on connect') }}
                             <span class="help-block">{{ _('Try checking this if you run into connection timeouts due to your printer taking too long to respond to OctoPrint\'s handshake attempts on connect.') }}</span>
+                        </label>
+                    </div>
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: serial_waitToLoadSdFileList" id="settings-serialWaitToLoadSdFileList"> {{ _('Wait to load the SD card file list until the firmware capability report is processed.') }}
+                            <span class="help-block">{{ _('Try checking this if the SD card file list loads improperly after connecting to the printer.') }}</span>
                         </label>
                     </div>
                 </div>

@@ -11,11 +11,11 @@ jobs:
     name: 🔨 Build distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: 🏗 Set up Python 3.7
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: 3.7
       - name: 🏗 Install build dependencies
@@ -25,7 +25,7 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
       - name: ⬆ Upload build result
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         with:
           name: dist
           path: dist
@@ -34,9 +34,9 @@ jobs:
     name: 🧹 Pre-commit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: 🏗 Set up Python 3.7
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: 3.7
       - name: 🏗 Set up dev dependencies
@@ -50,12 +50,12 @@ jobs:
     name: 🧪 Unit tests
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: 🏗 Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: 🏗 Set up test dependencies
@@ -70,30 +70,31 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: 🏗 Set up test dependencies
         run: |
           npm -g install node-qunit-puppeteer@2.1.0
       - name: 🚀 Run helpers.js test suite
         run: |
           node-qunit-puppeteer tests/static/js/test-helpers.html
+          node-qunit-puppeteer tests/static/js/test-client-base.html
 
   test-install:
     name: 🧪 Installation tests
     needs: build
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
         installable: ["wheel", "sdist"]
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: dist
           path: dist
       - name: 🏗 Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: 🚀 Install wheel
@@ -112,15 +113,15 @@ jobs:
     continue-on-error: true
     steps:
       - name: ⬇ Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: dist
           path: dist
       - name: 🏗 Set up Python 3.7
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: 3.7
       - name: 🚀 Install wheel
@@ -133,7 +134,7 @@ jobs:
           cp -r .github/fixtures/with_acl/* e2econfig
 
       - name: 🚀 Run Cypress
-        uses: cypress-io/github-action@v2
+        uses: cypress-io/github-action@v4.2.0
         with:
           working-directory: tests/cypress
           browser: chrome
@@ -145,7 +146,7 @@ jobs:
           CYPRESS_DEPLOYSENTINEL_KEY: ${{ secrets.DEPLOYSENTINEL_APIKEY }}
 
       - name: ⬆ Upload screenshots
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cypress-screenshots
@@ -169,7 +170,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: dist
           path: dist
@@ -187,7 +188,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v3
         with:
           name: dist
           path: dist

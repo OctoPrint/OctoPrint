@@ -241,6 +241,29 @@ $(function () {
             self.configurationDialog.modal();
         };
 
+        self.deleteGithubTokenApiKey = function () {
+            var data = {
+                plugins: {
+                    softwareupdate: {
+                        credentials: {
+                            github: undefined
+                        }
+                    }
+                }
+            };
+
+            self.settings.saveData(data, {
+                success: function () {
+                    self.performCheck();
+                },
+                complete: function () {
+                    self.config_githubToken("");
+                    self.config_githubTokenSet(false);
+                },
+                sending: true
+            });
+        };
+
         self.savePluginSettings = function (viewModel, event) {
             var target = $(event.target);
             target.prepend('<i class="fa fa-spinner fa-spin"></i> ');

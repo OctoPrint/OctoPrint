@@ -4,8 +4,8 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel
-from pydantic_settings import with_attrs_docs
+from octoprint.schema import BaseModel
+from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 
 class AlwaysDetectNeverEnum(str, Enum):
@@ -70,13 +70,22 @@ class SerialCapabilities(BaseModel):
     """Whether to enable temperature autoreport in the firmware if its support is detected"""
 
     autoreport_sdstatus: bool = True
+    """Whether to enable SD printing autoreport in the firmware if its support is detected"""
+
     autoreport_pos: bool = True
+    """Whether to enable position autoreport in the firmware if its support is detected"""
 
     busy_protocol: bool = True
     """Whether to shorten the communication timeout if the firmware seems to support the busy protocol"""
 
     emergency_parser: bool = True
+    """Whether to send emergency commands out of band if the firmware seems to support the emergency parser"""
+
     extended_m20: bool = True
+    """Whether to request extended M20 (file list) output from the firmware if its support is detected"""
+
+    lfn_write: bool = True
+    """Whether to enable long filename support for SD card writes if the firmware reports support for it"""
 
 
 @with_attrs_docs
@@ -166,6 +175,9 @@ class SerialConfig(BaseModel):
 
     waitForStartOnConnect: bool = False
     """Whether OctoPrint should wait for the `start` response from the printer before trying to send commands during connect."""
+
+    waitToLoadSdFileList: bool = False
+    """Specifies whether OctoPrint should wait to load the SD card file list until the first firmware capability report is processed."""
 
     alwaysSendChecksum: bool = False
     """Specifies whether OctoPrint should send linenumber + checksum with every printer command. Needed for successful communication with Repetier firmware."""

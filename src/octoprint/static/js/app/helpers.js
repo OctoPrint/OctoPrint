@@ -619,7 +619,8 @@ function formatDate(unixTimestamp, options) {
         options = {seconds: false};
     }
 
-    if (!unixTimestamp) return "-";
+    var placeholder = options.placeholder || "-";
+    if (!unixTimestamp) return placeholder;
 
     var format = gettext(/* L10N: Date format */ "YYYY-MM-DD HH:mm");
     if (options.seconds) {
@@ -629,8 +630,9 @@ function formatDate(unixTimestamp, options) {
     return moment.unix(unixTimestamp).format(format);
 }
 
-function formatTimeAgo(unixTimestamp) {
-    if (!unixTimestamp) return "-";
+function formatTimeAgo(unixTimestamp, placeholder) {
+    placeholder = placeholder || "-";
+    if (!unixTimestamp) return placeholder;
     return moment.unix(unixTimestamp).fromNow();
 }
 
