@@ -34,7 +34,7 @@ def get_webcams():
             )
 
     def error_callback(name, _, exc):
-        logging.getLogger(name).info(exc)
+        logging.getLogger(__name__).info(exc)
 
     octoprint.plugin.call_plugin(
         octoprint.plugin.WebcamProviderPlugin,
