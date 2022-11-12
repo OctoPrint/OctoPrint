@@ -13,28 +13,38 @@ from octoprint.settings import settings
 def get_webcams():
     webcams = dict()
 
-    def success_callback(name, _, result):
+    def success_callback(name, plugin, result):
         nonlocal webcams
-        if type(result) is list:
-            for webcam in result:
-                if type(webcam) is not Webcam:
-                    logging.getLogger(name).error(
-                        "Received object in list from `get_webcam_configurations` that is not a instance of Webcam"
-                    )
-                elif webcam.name in webcams:
-                    logging.getLogger(name).error(
-                        f"Webcam name {webcam.name} is already used but must be unique"
-                    )
-                else:
-                    webcams[webcam.name] = ProvidedWebcam(
-                        config=webcam,
-                        providerIdentifier=name,
-                    )
-        elif result is None:
+
+        logger = logging.getLogger(__name__)
+
+        if result is None:
             return
-        else:
-            logging.getLogger(name).error(
-                "Received object from `get_webcam_configurations` that is not a list of Webcam instances"
+
+        if not isinstance(result, (list, tuple)):
+            logger.error(
+                f"Received object from `get_webcam_configurations` of plugin {name} that is not a list of Webcam instances",
+                extra={"plugin": name},
+            )
+            return
+
+        for webcam in result:
+            if not isinstance(webcam, Webcam):
+                logger.warning(
+                    f"Received object in list from `get_webcam_configurations` of plugin {name} that is not an instance of Webcam, skipping",
+                    extra={"plugin": name},
+                )
+                continue
+            if webcam.name in webcams:
+                logger.warning(
+                    f"Webcam name {webcam.name} provided by plugin {name} is already in use",
+                    extra={"plugin": name},
+                )
+                continue
+
+            webcams[webcam.name] = ProvidedWebcam(
+                config=webcam,
+                providerIdentifier=name,
             )
 
     def error_callback(name, _, exc):
@@ -53,14 +63,17 @@ def get_webcams():
 
 def get_default_webcam():
     webcams = get_webcams()
-    webcamsList = list(webcams.values())
+    if not webcams:
+        return None
+
     s = settings()
-    defaultWebcamName = s.get(["webcam", "defaultWebcam"])
-    defaultWebcam = webcams.get(defaultWebcamName)
-    if defaultWebcam is not None:
-        return defaultWebcam
-    else:
-        webcamsList[0] if len(webcamsList) > 0 else None
+    name = s.get(["webcam", "defaultWebcam"])
+    webcam = webcams.get(name)
+
+    if webcam:
+        return webcam
+
+    return next(iter(webcams.values()))
 
 
 def get_webcams_as_dicts():
