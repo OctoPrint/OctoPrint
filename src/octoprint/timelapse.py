@@ -24,7 +24,7 @@ from octoprint.settings import settings
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import sv
 from octoprint.util.commandline import CommandlineCaller
-from octoprint.webcams import get_default_webcam
+from octoprint.webcams import WebcamNotAbleToTakeSnapshotException, get_default_webcam
 
 # currently configured timelapse
 current = None
@@ -508,7 +508,7 @@ class Timelapse:
         if self._webcam is None:
             raise Exception("Invalid webcam configuration, missing defaultWebcam")
         elif self._webcam.config.canSnapshot is False:
-            raise Exception(f"Webcam {self._webcam.webcam.name} can't take snapshots")
+            raise WebcamNotAbleToTakeSnapshotException(self._webcam.webcam.name)
 
         self._capture_dir = settings().getBaseFolder("timelapse_tmp")
         self._movie_dir = settings().getBaseFolder("timelapse")

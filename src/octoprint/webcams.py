@@ -72,6 +72,15 @@ def get_webcams_as_dicts():
     return list(map(to_dict, get_webcams().values()))
 
 
+class WebcamNotAbleToTakeSnapshotException(Exception):
+    """Raised a webcam that is not able to take a snapshot is used to take a snapshot"""
+
+    def __init__(self, webcam_name):
+        self.webcam_name = webcam_name
+        self.message = f"Webcam {webcam_name} can't take snapshots"
+        super().__init__(self.message)
+
+
 class ProvidedWebcam:
     config: Webcam
     """the ``WebcamConfiguration`` configuration"""
