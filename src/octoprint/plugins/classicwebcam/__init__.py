@@ -71,15 +71,13 @@ class ClassicWebcamPlugin(
         else:
             streamRatio = RatioEnum.sixteen_nine
         webRtcServers = self._settings.get(["streamWebrtcIceServers"])
-        cacheBuster = self._settings.get_boolean(["cacheBuster"]) is True
+        cacheBuster = self._settings.get_boolean(["cacheBuster"])
         stream = self._get_stream_url()
         snapshot = self._get_snapshot_url()
-        flipH = self._settings.get_boolean(["flipH"]) is True
-        flipV = self._settings.get_boolean(["flipV"]) is True
-        rotate90 = self._settings.get_boolean(["rotate90"]) is True
-        snapshotSslValidation = (
-            self._settings.get_boolean(["snapshotSslValidation"]) is True
-        )
+        flipH = self._settings.get_boolean(["flipH"])
+        flipV = self._settings.get_boolean(["flipV"])
+        rotate90 = self._settings.get_boolean(["rotate90"])
+        snapshotSslValidation = self._settings.get_boolean(["snapshotSslValidation"])
 
         try:
             streamTimeout = int(self._settings.get(["streamTimeout"]))
