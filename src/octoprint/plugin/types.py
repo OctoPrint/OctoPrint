@@ -2334,9 +2334,9 @@ class WebcamProviderPlugin(OctoPrintPlugin):
             A list of :class:`~octoprint.schema.config.webcam.Webcam`: The available webcams, can be empty if none available.
         """
 
-        pass
+        return []
 
-    def take_snapshot(self, webcamName):
+    def take_webcam_snapshot(self, webcamName):
         """
         Used to take a JPEG snapshot of the webcam. This method may raise an exception, you can expect failures to be handled.
 
@@ -2345,3 +2345,4 @@ class WebcamProviderPlugin(OctoPrintPlugin):
         Returns:
             An iterator over bytes of the JPEG image
         """
+        raise NotImplementedError()
