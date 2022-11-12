@@ -106,23 +106,6 @@ $(function () {
         };
     }
 
-    function CoreWizardWebcamViewModel(parameters) {
-        var self = this;
-
-        self.settingsViewModel = parameters[0];
-
-        self.required = false;
-
-        self.onWizardDetails = function (response) {
-            self.required =
-                response &&
-                response.corewizard &&
-                response.corewizard.details &&
-                response.corewizard.details.webcam &&
-                response.corewizard.details.webcam.required;
-        };
-    }
-
     function CoreWizardServerCommandsViewModel(parameters) {
         var self = this;
 
@@ -347,11 +330,6 @@ $(function () {
             construct: CoreWizardAclViewModel,
             dependencies: ["loginStateViewModel"],
             elements: ["#wizard_plugin_corewizard_acl"]
-        },
-        {
-            construct: CoreWizardWebcamViewModel,
-            dependencies: ["settingsViewModel"],
-            elements: ["#wizard_plugin_corewizard_webcam"]
         },
         {
             construct: CoreWizardServerCommandsViewModel,

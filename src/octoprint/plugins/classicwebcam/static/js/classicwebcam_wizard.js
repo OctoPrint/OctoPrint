@@ -1,5 +1,5 @@
 $(function () {
-    function CoreWizardWebcamViewModel(parameters) {
+    function ClassicWebcamWizardViewModel(parameters) {
         var self = this;
 
         self.settingsViewModel = parameters[0];
@@ -24,8 +24,8 @@ $(function () {
     }
 
     OCTOPRINT_VIEWMODELS.push({
-        construct: CoreWizardWebcamViewModel,
+        construct: ClassicWebcamWizardViewModel,
         dependencies: ["classicWebcamSettingsViewModel"],
-        elements: ["#wizard_plugin_corewizard_webcam"]
+        elements: ["#wizard_classicwebcam"]
     });
 });
