@@ -37,9 +37,9 @@ def get_webcams():
         logging.getLogger(name).info(exc)
 
     octoprint.plugin.call_plugin(
-        octoprint.plugin.WebcamPlugin,
+        octoprint.plugin.WebcamProviderPlugin,
         "get_webcam_configurations",
-        sorting_context="WebcamPlugin.get_webcam_configurations",
+        sorting_context="WebcamProviderPlugin.get_webcam_configurations",
         callback=success_callback,
         error_callback=error_callback,
     )

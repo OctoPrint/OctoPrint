@@ -14,7 +14,7 @@ class ClassicWebcamPlugin(
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
     octoprint.plugin.SettingsPlugin,
-    octoprint.plugin.WebcamPlugin,
+    octoprint.plugin.WebcamProviderPlugin,
     octoprint.plugin.WizardPlugin,
 ):
     def __init__(self):
@@ -62,7 +62,7 @@ class ClassicWebcamPlugin(
             },
         ]
 
-    # ~~ WebcamPlugin API
+    # ~~ WebcamProviderPlugin API
 
     def get_webcam_configurations(self):
         streamRatio = self._settings.get(["streamRatio"])

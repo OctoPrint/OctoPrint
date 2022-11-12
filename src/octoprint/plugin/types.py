@@ -2321,9 +2321,9 @@ class ProgressPlugin(OctoPrintPlugin):
         pass
 
 
-class WebcamPlugin(OctoPrintPlugin):
+class WebcamProviderPlugin(OctoPrintPlugin):
     """
-    The ``WebcamPlugin`` can be used to provide one or more webcams visible on the frontend and used for snapshots/timelapses.
+    The ``WebcamProviderPlugin`` can be used to provide one or more webcams visible on the frontend and used for snapshots/timelapses.
     """
 
     def get_webcam_configurations(self):

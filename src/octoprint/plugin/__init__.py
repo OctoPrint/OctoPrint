@@ -22,7 +22,7 @@ import os
 import octoprint
 from octoprint.plugin.core import Plugin, PluginInfo, PluginManager  # noqa: F401
 from octoprint.plugin.types import *  # noqa: F401,F403 ## used by multiple other modules
-from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin, WebcamPlugin
+from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin, WebcamProviderPlugin
 from octoprint.settings import settings as s
 from octoprint.util import deprecated
 
@@ -403,7 +403,7 @@ class PluginSettings:
             # Assume no plugin is a webcam plugin in this case, which will apply the compatibility layer for the 1.9.0
             # webcam system for any plugin
             instance = plugin_manager().get_plugin(plugin_key).__plugin_implementation__
-            self._is_webcam_plugin = isinstance(instance, WebcamPlugin)
+            self._is_webcam_plugin = isinstance(instance, WebcamProviderPlugin)
         except Exception:
             self._is_webcam_plugin = False
 
@@ -700,7 +700,7 @@ class PluginSettings:
             return False
 
     def _get_compatibility_override(self, path, type):
-        # No compatibility overrides for WebcamPlugin
+        # No compatibility overrides for WebcamProviderPlugin
         if self._is_webcam_plugin is True:
             return None
 
