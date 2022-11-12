@@ -207,6 +207,6 @@ $(function () {
     OCTOPRINT_VIEWMODELS.push({
         construct: ClassicWebcamSettingsViewModel,
         dependencies: ["loginStateViewModel", "settingsViewModel"],
-        elements: ["#classic_webcam_settings"]
+        elements: ["#classicwebcam_settings"]
     });
 });
