@@ -130,7 +130,7 @@ class ClassicWebcamPlugin(
 
     def take_webcam_snapshot(self, _):
         snapshot_url = self._get_snapshot_url()
-        if self._can_snapshot() is False:
+        if not self._can_snapshot():
             raise Exception("Snapshot is not configured")
 
         with self._capture_mutex:
