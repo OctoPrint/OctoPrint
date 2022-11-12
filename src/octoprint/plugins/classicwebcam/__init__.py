@@ -253,8 +253,7 @@ __plugin_name__ = gettext("Classic Webcam")
 __plugin_author__ = "Christian Würthner"
 __plugin_description__ = "Provides a simple webcam viewer in OctoPrint's UI, images provided by an MJPEG webcam."
 __plugin_disabling_discouraged__ = gettext(
-    "Without this plugin the basic Webcam in the control tab"
-    " will no longer be available."
+    "This plugin provides the standard webcam in OctoPrint. If you do not have any other plugin providing a webcam set up, the webcam section in the control tab will no longer be visible."
 )
 __plugin_license__ = "AGPLv3"
 __plugin_pythoncompat__ = ">=3.7,<4"
