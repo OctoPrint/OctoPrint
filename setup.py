@@ -10,14 +10,19 @@
 
 import os
 import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+
 from distutils.command.build_py import build_py as _build_py
 
-import versioneer  # noqa: F401
-
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "src"))
 import setuptools  # noqa: F401,E402
 
-import octoprint_setuptools  # noqa: F401,E402
+try:
+    import octoprint_setuptools  # noqa: F401,E402
+except ImportError:
+    octoprint_setuptools = None
+
+import versioneer  # noqa: F401
 
 # ----------------------------------------------------------------------------------------
 
@@ -77,8 +82,12 @@ vendored_deps = [
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
 ]
+plugin_deps = [
+    "OctoPrint-Setuptools",  # makes sure plugins can import this on setup.py based install
+    "wheel",  # makes sure plugins can be built as wheels in OctoPrint's venv, see #4682
+]
 
-INSTALL_REQUIRES = bundled_plugins + core_deps + vendored_deps
+INSTALL_REQUIRES = bundled_plugins + core_deps + vendored_deps + plugin_deps
 
 # Additional requirements for optional install options and/or OS-specific dependencies
 EXTRA_REQUIRES = {
@@ -161,28 +170,29 @@ def get_cmdclass():
 
     cmdclass = versioneer.get_cmdclass()
 
-    # add clean command
-    cmdclass.update(
-        {
-            "clean": octoprint_setuptools.CleanCommand.for_options(
-                source_folder="src", eggs=["OctoPrint*.egg-info"]
-            )
-        }
-    )
-
-    # add translation commands
-    translation_dir = "translations"
-    pot_file = os.path.join(translation_dir, "messages.pot")
-    bundled_dir = os.path.join("src", "octoprint", "translations")
-    cmdclass.update(
-        octoprint_setuptools.get_babel_commandclasses(
-            pot_file=pot_file,
-            output_dir=translation_dir,
-            pack_name_prefix="OctoPrint-i18n-",
-            pack_path_prefix="",
-            bundled_dir=bundled_dir,
+    if octoprint_setuptools:
+        # add clean command
+        cmdclass.update(
+            {
+                "clean": octoprint_setuptools.CleanCommand.for_options(
+                    source_folder="src", eggs=["OctoPrint*.egg-info"]
+                )
+            }
         )
-    )
+
+        # add translation commands
+        translation_dir = "translations"
+        pot_file = os.path.join(translation_dir, "messages.pot")
+        bundled_dir = os.path.join("src", "octoprint", "translations")
+        cmdclass.update(
+            octoprint_setuptools.get_babel_commandclasses(
+                pot_file=pot_file,
+                output_dir=translation_dir,
+                pack_name_prefix="OctoPrint-i18n-",
+                pack_path_prefix="",
+                bundled_dir=bundled_dir,
+            )
+        )
 
     cmdclass["build_py"] = copy_files_build_py_factory(
         {
@@ -196,6 +206,22 @@ def get_cmdclass():
     )
 
     return cmdclass
+
+
+def package_data_dirs(source, sub_folders):
+    dirs = []
+
+    for d in sub_folders:
+        folder = os.path.join(source, d)
+        if not os.path.exists(folder):
+            continue
+
+        for dirname, _, files in os.walk(folder):
+            dirname = os.path.relpath(dirname, source)
+            for f in files:
+                dirs.append(os.path.join(dirname, f))
+
+    return dirs
 
 
 def params():
@@ -258,7 +284,7 @@ def params():
         "": "src",
     }
     package_data = {
-        "octoprint": octoprint_setuptools.package_data_dirs(
+        "octoprint": package_data_dirs(
             "src/octoprint", ["static", "templates", "plugins", "translations"]
         )
         + ["util/piptestballoon/setup.py"]
