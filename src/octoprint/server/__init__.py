@@ -1337,31 +1337,41 @@ class Server:
     def _get_locale(self):
         global LANGUAGES
 
+        l10n = None
+        default_language = self._settings.get(["appearance", "defaultLanguage"])
+
         if "l10n" in request.values:
-            return Locale.negotiate([request.values["l10n"]], LANGUAGES)
+            # request: query param
+            l10n = request.values["l10n"]
 
-        if "X-Locale" in request.headers:
-            return Locale.negotiate([request.headers["X-Locale"]], LANGUAGES)
+        elif "X-Locale" in request.headers:
+            # request: header
+            l10n = request.headers["X-Locale"]
 
-        if hasattr(g, "identity") and g.identity:
+        elif hasattr(g, "identity") and g.identity:
+            # user setting
             userid = g.identity.id
             try:
                 user_language = userManager.get_user_setting(
                     userid, ("interface", "language")
                 )
                 if user_language is not None and not user_language == "_default":
-                    return Locale.negotiate([user_language], LANGUAGES)
+                    l10n = user_language
             except octoprint.access.users.UnknownUser:
                 pass
 
-        default_language = self._settings.get(["appearance", "defaultLanguage"])
-        if (
+        elif (
             default_language is not None
             and not default_language == "_default"
             and default_language in LANGUAGES
         ):
-            return Locale.negotiate([default_language], LANGUAGES)
+            # instance setting
+            l10n = default_language
 
+        if l10n:
+            return Locale.negotiate([l10n], LANGUAGES)
+
+        # request: preference
         return Locale.parse(request.accept_languages.best_match(LANGUAGES))
 
     def _setup_heartbeat_logging(self):
@@ -1500,10 +1510,7 @@ class Server:
 
             # add available translations
             for locale in locales:
-                result.add(locale.language)
-                if locale.territory:
-                    # if a territory is specified, add that too
-                    result.add(f"{locale.language}_{locale.territory}")
+                result.add(str(locale))
 
             return result
 
