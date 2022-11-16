@@ -83,7 +83,7 @@ vendored_deps = [
     "unidecode",  # dependency of awesome-slugify
 ]
 plugin_deps = [
-    "OctoPrint-Setuptools",  # makes sure plugins can import this on setup.py based install
+    "OctoPrint-Setuptools>=1.0.1",  # makes sure plugins can import this on setup.py based install
     "wheel",  # makes sure plugins can be built as wheels in OctoPrint's venv, see #4682
 ]
 
@@ -261,6 +261,8 @@ def params():
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: JavaScript",
         "Topic :: Printing",
