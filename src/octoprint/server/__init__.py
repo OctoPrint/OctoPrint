@@ -1342,11 +1342,11 @@ class Server:
 
         if "l10n" in request.values:
             # request: query param
-            l10n = request.values["l10n"]
+            l10n = request.values["l10n"].split(",")
 
         elif "X-Locale" in request.headers:
             # request: header
-            l10n = request.headers["X-Locale"]
+            l10n = request.headers["X-Locale"].split(",")
 
         elif hasattr(g, "identity") and g.identity:
             # user setting
@@ -1356,7 +1356,7 @@ class Server:
                     userid, ("interface", "language")
                 )
                 if user_language is not None and not user_language == "_default":
-                    l10n = user_language
+                    l10n = [user_language]
             except octoprint.access.users.UnknownUser:
                 pass
 
@@ -1366,10 +1366,18 @@ class Server:
             and default_language in LANGUAGES
         ):
             # instance setting
-            l10n = default_language
+            l10n = [default_language]
 
         if l10n:
-            return Locale.negotiate([l10n], LANGUAGES)
+            # canonicalize and get rid of invalid language codes
+            l10n_canoicalized = []
+            for x in l10n:
+                try:
+                    l10n_canoicalized.append(str(Locale.parse(x)))
+                except Exception:
+                    # invalid language code, ignore
+                    continue
+            return Locale.negotiate(l10n_canoicalized, LANGUAGES)
 
         # request: preference
         return Locale.parse(request.accept_languages.best_match(LANGUAGES))
