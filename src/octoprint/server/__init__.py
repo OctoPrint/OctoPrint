@@ -95,7 +95,19 @@ environmentDetector = None
 
 cli_key = None
 
-principals = Principal(app)
+
+class OctoPrintAnonymousIdentity(AnonymousIdentity):
+    def __init__(self):
+        super().__init__()
+
+        user = userManager.anonymous_user_factory()
+
+        self.provides.add(UserNeed(user.get_id()))
+        for need in user.needs:
+            self.provides.add(need)
+
+
+principals = Principal(app, anonymous_identity=OctoPrintAnonymousIdentity)
 
 import octoprint.access.groups as groups  # noqa: E402
 import octoprint.access.permissions as permissions  # noqa: E402
@@ -357,7 +369,6 @@ class Server:
         util.tornado.fix_json_encode()
         util.tornado.fix_websocket_check_origin()
         util.tornado.enable_per_message_deflate_extension()
-        util.flask.fix_flask_jsonify()
 
         cli_key = self._setup_cli_key()
         self._setup_mimetypes()
@@ -658,7 +669,9 @@ class Server:
 
         ## Tornado initialization starts here
 
-        ioloop = IOLoop()
+        ioloop = (
+            IOLoop()
+        )  # TODO: This way to create the ioloop is deprecated and logs a warning
         ioloop.install()
 
         enable_cors = settings().getBoolean(["api", "allowCrossOrigin"])
@@ -1328,31 +1341,41 @@ class Server:
     def _get_locale(self):
         global LANGUAGES
 
+        l10n = None
+        default_language = self._settings.get(["appearance", "defaultLanguage"])
+
         if "l10n" in request.values:
-            return Locale.negotiate([request.values["l10n"]], LANGUAGES)
+            # request: query param
+            l10n = request.values["l10n"]
 
-        if "X-Locale" in request.headers:
-            return Locale.negotiate([request.headers["X-Locale"]], LANGUAGES)
+        elif "X-Locale" in request.headers:
+            # request: header
+            l10n = request.headers["X-Locale"]
 
-        if hasattr(g, "identity") and g.identity:
+        elif hasattr(g, "identity") and g.identity:
+            # user setting
             userid = g.identity.id
             try:
                 user_language = userManager.get_user_setting(
                     userid, ("interface", "language")
                 )
                 if user_language is not None and not user_language == "_default":
-                    return Locale.negotiate([user_language], LANGUAGES)
+                    l10n = user_language
             except octoprint.access.users.UnknownUser:
                 pass
 
-        default_language = self._settings.get(["appearance", "defaultLanguage"])
-        if (
+        elif (
             default_language is not None
             and not default_language == "_default"
             and default_language in LANGUAGES
         ):
-            return Locale.negotiate([default_language], LANGUAGES)
+            # instance setting
+            l10n = default_language
 
+        if l10n:
+            return Locale.negotiate([l10n], LANGUAGES)
+
+        # request: preference
         return Locale.parse(request.accept_languages.best_match(LANGUAGES))
 
     def _setup_heartbeat_logging(self):
@@ -1383,7 +1406,6 @@ class Server:
         app.jinja_environment = PrefixAwareJinjaEnvironment
 
         app.config["TEMPLATES_AUTO_RELOAD"] = True
-        app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
         app.config["REMEMBER_COOKIE_DURATION"] = 90 * 24 * 60 * 60  # 90 days
         app.config["REMEMBER_COOKIE_HTTPONLY"] = True
         # REMEMBER_COOKIE_SECURE will be taken care of by our custom cookie handling
@@ -1393,6 +1415,7 @@ class Server:
 
         # setup octoprint's flask json serialization/deserialization
         app.json = OctoPrintJsonProvider(app)
+        app.json.compact = False
 
         s = settings()
 
@@ -1491,10 +1514,7 @@ class Server:
 
             # add available translations
             for locale in locales:
-                result.add(locale.language)
-                if locale.territory:
-                    # if a territory is specified, add that too
-                    result.add(f"{locale.language}_{locale.territory}")
+                result.add(str(locale))
 
             return result
 

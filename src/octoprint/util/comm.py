@@ -17,7 +17,7 @@ import queue
 import re
 import threading
 import time
-from collections import deque
+from collections import deque, namedtuple
 
 import serial
 import wrapt
@@ -39,6 +39,7 @@ from octoprint.util import (
     filter_non_ascii,
     filter_non_utf8,
     get_bom,
+    get_dos_filename,
     get_exception_string,
     sanitize_ascii,
     to_unicode,
@@ -178,6 +179,13 @@ regex_resend_linenumber = re.compile(r"(N|N:)?(?P<n>%s)" % regex_int_pattern)
 
 regex_serial_devices = re.compile(r"^(?:ttyUSB|ttyACM|tty\.usb|cu\.|cuaU|ttyS|rfcomm).*")
 """Regex used to filter out valid tty devices"""
+
+
+MINIMAL_SD_TIMESTAMP = 1212012000
+# May 29th 2008 = RepRap 1.0 "Darwin" achieves self-replication
+
+
+SDFileData = namedtuple("SDFileData", ["name", "size", "timestamp", "longname"])
 
 
 def serialList():
@@ -475,6 +483,7 @@ class MachineCom:
     CAPABILITY_EMERGENCY_PARSER = "EMERGENCY_PARSER"
     CAPABILITY_CHAMBER_TEMP = "CHAMBER_TEMPERATURE"
     CAPABILITY_EXTENDED_M20 = "EXTENDED_M20"
+    CAPABILITY_LFN_WRITE = "LFN_WRITE"
 
     CAPABILITY_SUPPORT_ENABLED = "enabled"
     CAPABILITY_SUPPORT_DETECTED = "detected"
@@ -600,6 +609,9 @@ class MachineCom:
             ),
             self.CAPABILITY_EXTENDED_M20: settings().getBoolean(
                 ["serial", "capabilities", "extended_m20"]
+            ),
+            self.CAPABILITY_LFN_WRITE: settings().getBoolean(
+                ["serial", "capabilities", "lfn_write"]
             ),
         }
 
@@ -749,8 +761,8 @@ class MachineCom:
         self._sdAvailable = False
         self._sdFileList = False
         self._sdFileLongName = False
-        self._sdFiles = []
-        self._sdFilesMap = {}
+        self._sdFiles = {}
+        self._sdFilesAvailable = threading.Event()
         self._sdFileToSelect = None
         self._sdFileToSelectUser = None
         self._ignore_select = False
@@ -883,8 +895,7 @@ class MachineCom:
         if newState == self.STATE_CLOSED or newState == self.STATE_CLOSED_WITH_ERROR:
             if settings().getBoolean(["feature", "sdSupport"]):
                 self._sdFileList = False
-                self._sdFiles = []
-                self._sdFilesMap = {}
+                self._sdFiles = {}
                 self._callback.on_comm_sd_files([])
 
             if self._currentFile is not None:
@@ -1246,7 +1257,7 @@ class MachineCom:
             self._changeState(self.STATE_CLOSED)
 
         if settings().getBoolean(["feature", "sdSupport"]):
-            self._sdFileList = []
+            self._sdFiles = {}
 
     def setTemperatureOffset(self, offsets):
         self._tempOffsets.update(offsets)
@@ -1515,9 +1526,26 @@ class MachineCom:
             self._logger.exception("Error while trying to start printing")
             self._trigger_error(get_exception_string(), "start_print")
 
-    def startFileTransfer(
-        self, path, localFilename, remoteFilename, special=False, tags=None
-    ):
+    def _get_free_remote_name(self, filename: str) -> str:
+        if not self._capability_supported(self.CAPABILITY_LFN_WRITE) and valid_file_type(
+            filename, "gcode"
+        ):
+            # figure out remote filename
+            self.refreshSdFiles(blocking=True)
+            existingSdFiles = list(map(lambda x: x[0], self.getSdFiles()))
+            remote_name = get_dos_filename(
+                filename,
+                existing_filenames=existingSdFiles,
+                extension="gco",
+                whitelisted_extensions=["gco", "g"],
+            )
+        else:
+            # either LFN_WRITE is supported, or this is not a gcode file
+            remote_name = os.path.basename(filename)
+
+        return remote_name
+
+    def startFileTransfer(self, path, filename, remote=None, special=False, tags=None):
         if not self.isOperational() or self.isBusy():
             self._logger.info("Printer is not operational or busy")
             return
@@ -1525,32 +1553,35 @@ class MachineCom:
         if tags is None:
             tags = set()
 
+        if remote is None:
+            remote = "/" + self._get_free_remote_name(filename)
+
         with self._jobLock:
             self.resetLineNumbers(tags={"trigger:comm.start_file_transfer"})
 
             if special:
                 self._currentFile = SpecialStreamingGcodeFileInformation(
-                    path, localFilename, remoteFilename
+                    path, filename, remote
                 )
             else:
-                self._currentFile = StreamingGcodeFileInformation(
-                    path, localFilename, remoteFilename
-                )
+                self._currentFile = StreamingGcodeFileInformation(path, filename, remote)
             self._currentFile.start()
 
             self.sendCommand(
-                "M28 %s" % remoteFilename,
+                "M28 %s" % remote,
                 tags=tags
                 | {
                     "trigger:comm.start_file_transfer",
                 },
             )
             self._callback.on_comm_file_transfer_started(
-                localFilename,
-                remoteFilename,
+                filename,
+                remote,
                 self._currentFile.getFilesize(),
                 user=self._currentFile.getUser(),
             )
+
+        return remote
 
     def cancelFileTransfer(self, tags=None):
         if not self.isOperational() or not self.isStreaming():
@@ -1973,7 +2004,15 @@ class MachineCom:
 
     def getSdFiles(self):
         return list(
-            map(lambda x: (x[0], x[1], self._sdFilesMap.get(x[0]), x[2]), self._sdFiles)
+            map(
+                lambda x: (
+                    x.name,
+                    x.size,
+                    x.longname if x.longname else x.name,
+                    x.timestamp,
+                ),
+                self._sdFiles.values(),
+            )
         )
 
     def deleteSdFile(self, filename, tags=None):
@@ -2000,7 +2039,7 @@ class MachineCom:
         )
         self.refreshSdFiles()
 
-    def refreshSdFiles(self, tags=None):
+    def refreshSdFiles(self, tags=None, blocking=False, timeout=10):
         if not self._sdEnabled:
             return
 
@@ -2021,6 +2060,7 @@ class MachineCom:
         else:
             command = "M20"
 
+        self._sdFilesAvailable.clear()
         self.sendCommand(
             command,
             tags=tags
@@ -2028,6 +2068,8 @@ class MachineCom:
                 "trigger:comm.refresh_sd_files",
             },
         )
+        if blocking:
+            self._sdFilesAvailable.wait(timeout=timeout)
 
     def initSdCard(self, tags=None):
         if not self._sdEnabled:
@@ -2064,8 +2106,7 @@ class MachineCom:
             },
         )
         self._sdAvailable = False
-        self._sdFiles = []
-        self._sdFilesMap = {}
+        self._sdFiles = {}
 
         self._callback.on_comm_sd_state_change(self._sdAvailable)
         self._callback.on_comm_sd_files(self.getSdFiles())
@@ -2406,7 +2447,7 @@ class MachineCom:
                                 "Printer reported SD card as ejected", level=logging.INFO
                             )
                             self._sdAvailable = False
-                            self._sdFiles = []
+                            self._sdFiles = {}
                             self._callback.on_comm_sd_state_change(self._sdAvailable)
                         elif self._sdEnabled and action_name == "sd_updated":
                             self._dual_log(
@@ -2476,9 +2517,16 @@ class MachineCom:
                                 filename = "/" + filename
                             if self._sdLowerCase:
                                 filename = filename.lower()
-                            self._sdFiles.append((filename, size, timestamp))
-                            if longname is not None:
-                                self._sdFilesMap[filename] = longname
+                            if timestamp is not None and timestamp < MINIMAL_SD_TIMESTAMP:
+                                # sanitize timestamp, when creating a file through serial the firmware usually doesn't know the date
+                                # and sets something ridiculously low (e.g. 2000-01-01), so let's ignore timestamps like that here
+                                timestamp = None
+                            self._sdFiles[filename] = SDFileData(
+                                name=filename,
+                                size=size,
+                                timestamp=timestamp,
+                                longname=longname,
+                            )
                         continue
 
                 elif self._sdFileLongName:
@@ -2494,7 +2542,14 @@ class MachineCom:
                     # "<short name>: <long name>" or such, but why make things easy...
                     _, ext = os.path.splitext(lower_line)
                     if ext and valid_file_type(lower_line, "machinecode"):
-                        self._sdFilesMap[self._sdFileLongName] = line
+                        data = self._sdFiles.get(self._sdFileLongName)
+                        if data is not None:
+                            self._sdFiles[self._sdFileLongName] = SDFileData(
+                                name=data.name,
+                                size=data.size,
+                                timestamp=data.timestamp,
+                                longname=line,
+                            )
                         self._sdFileLongName = False
 
                 handled = False
@@ -2747,6 +2802,10 @@ class MachineCom:
                                 self._logger.info(
                                     "Firmware states that it supports long filenames"
                                 )
+                            elif capability == self.CAPABILITY_LFN_WRITE and enabled:
+                                self._logger.info(
+                                    "Firmware states that it supports writing long filenames"
+                                )
 
                         # notify plugins
                         for name, hook in self._firmware_info_hooks[
@@ -2945,7 +3004,7 @@ class MachineCom:
                         or "SD card released" in line
                     ):
                         self._sdAvailable = False
-                        self._sdFiles = []
+                        self._sdFiles = {}
                         self._callback.on_comm_sd_state_change(self._sdAvailable)
                     elif (
                         "SD card ok" in line or "Card successfully initialized" in line
@@ -2954,10 +3013,11 @@ class MachineCom:
                         self.refreshSdFiles()
                         self._callback.on_comm_sd_state_change(self._sdAvailable)
                     elif "Begin file list" in line:
-                        self._sdFiles = []
+                        self._sdFiles = {}
                         self._sdFileList = True
                     elif "End file list" in line:
                         self._sdFileList = False
+                        self._sdFilesAvailable.set()
                         self._callback.on_comm_sd_files(self.getSdFiles())
                     elif "SD printing byte" in line:
                         # answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
@@ -3052,6 +3112,7 @@ class MachineCom:
                                 self._currentFile.getFilesize(),
                                 True,
                                 user=self._currentFile.getUser(),
+                                data=self._sdFiles.get(self._currentFile.getFilename()),
                             )
                     elif "Writing to file" in line and self.isStreaming():
                         self._changeState(self.STATE_PRINTING)
@@ -5576,7 +5637,7 @@ class MachineComPrintCallback:
     def on_comm_z_change(self, newZ):
         pass
 
-    def on_comm_file_selected(self, filename, filesize, sd, user=None):
+    def on_comm_file_selected(self, filename, filesize, sd, user=None, data=None):
         pass
 
     def on_comm_sd_state_change(self, sdReady):

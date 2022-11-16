@@ -214,7 +214,7 @@ GCODE.gCodeReader = (function () {
                 gCodeOptions["forceCompression"] ||
                 gCodeOptions["alwaysCompress"] ||
                 (gCodeOptions["compressionSizeThreshold"] > 0 &&
-                    gCodeOptions["compressionSizeThreshold"] <= totalSize);
+                    gCodeOptions["compressionSizeThreshold"] <= reader.size);
 
             GCODE.ui.worker.postMessage({
                 cmd: "downloadAndParseGCode",

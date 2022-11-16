@@ -4,8 +4,8 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 from enum import Enum
 from typing import List, Optional, Union
 
-from pydantic import BaseModel
-from pydantic_settings import with_attrs_docs
+from octoprint.schema import BaseModel
+from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 
 class LayoutEnum(str, Enum):
@@ -46,7 +46,7 @@ class ContainerConfig(BaseModel):
     name: Optional[str] = None
     """A name to display above the container, basically a section header."""
 
-    layout: LayoutEnum = "vertical"
+    layout: LayoutEnum = LayoutEnum.vertical
     """The layout to use for laying out the contained children, either from top to bottom (`vertical`) or from left to right (`horizontal`)."""
 
 

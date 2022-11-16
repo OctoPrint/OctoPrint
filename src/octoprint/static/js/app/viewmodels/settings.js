@@ -237,6 +237,7 @@ $(function () {
         self.serial_capBusyProtocol = ko.observable(undefined);
         self.serial_capEmergencyParser = ko.observable(undefined);
         self.serial_capExtendedM20 = ko.observable(undefined);
+        self.serial_capLfnWrite = ko.observable(undefined);
         self.serial_sendM112OnError = ko.observable(undefined);
         self.serial_disableSdPrintingDetection = ko.observable(undefined);
         self.serial_ackMax = ko.observable(undefined);

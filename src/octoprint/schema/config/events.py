@@ -2,10 +2,10 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
-from pydantic import BaseModel
-from pydantic_settings import with_attrs_docs
+from octoprint.schema import BaseModel
+from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 
 class SubscriptionTypeEnum(str, Enum):
@@ -17,6 +17,9 @@ class SubscriptionTypeEnum(str, Enum):
 class EventSubscription(BaseModel):
     event: str
     """The event to subscribe to."""
+
+    name: Optional[str] = None
+    """The event name to show on the UI"""
 
     command: str
     """The command to execute when the event is triggered, either a GCODE or a system command."""

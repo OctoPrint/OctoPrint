@@ -29,7 +29,7 @@ $(function () {
         };
 
         self.fromResponse = function (data) {
-            if (data.hasOwnProperty("text") && data.hasOwnProperty("choices")) {
+            if (data && data.hasOwnProperty("text") && data.hasOwnProperty("choices")) {
                 self.text(data.text);
                 self.buttons(data.choices);
                 self.showPrompt();
