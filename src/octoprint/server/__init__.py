@@ -1193,6 +1193,7 @@ class Server:
                     condition=autorefresh_active,
                     on_finish=autorefresh_stopped,
                 )
+                autorefresh.name = "Serial autorefresh worker"
 
                 self._logger.info("Starting autorefresh of serial port list")
                 autorefresh.start()
