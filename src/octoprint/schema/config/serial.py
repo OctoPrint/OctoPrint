@@ -105,6 +105,12 @@ class SerialConfig(BaseModel):
     autoconnect: bool = False
     """Whether to try to automatically connect to the printer on startup or not"""
 
+    autorefresh: bool = True
+    """Whether to automatically refresh the port list while no connection is established"""
+
+    autorefreshInterval: int = 1
+    """Interval in seconds at which to refresh the port list while no connection is established"""
+
     log: bool = False
     """Whether to log whole communication to serial.log (warning: might decrease performance)"""
 
