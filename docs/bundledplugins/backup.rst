@@ -172,10 +172,60 @@ octoprint.plugin.backup.additional_excludes
    :return: A list of paths to exclude, relative to your plugin's data folder
    :rtype: list
 
-Helpers
--------
+.. _sec-bundledplugins-backup-hooks-before-backup:
+
+octoprint.plugin.backup.before_backup
++++++++++++++++++++++++++++++++++++++
+
+.. py:function:: before_backup_hook(*args, **kwargs)
+
+   .. versionadded:: 1.9.0
+
+   Use this to perform actions right before a backup is created.
+
+.. _sec-bundledplugins-backup-hooks-after-backup:
+
+octoprint.plugin.backup.after_backup
+++++++++++++++++++++++++++++++++++++
+
+.. py:function:: after_backup_hook(error=False, *args, **kwargs)
+
+   .. versionadded:: 1.9.0
+
+   Use this to perform actions right after a backup was created or backup creation failed. The ``error`` parameter will be set to ``True`` if
+   the backup creation failed.
+
+   :param error bool: Whether the backup creation failed or not
+
+.. _sec-bundledplugins-backup-hooks-before-restore:
+
+octoprint.plugin.backup.before_restore
+++++++++++++++++++++++++++++++++++++++
+
+.. py:function:: before_restore_hook(*args, **kwargs)
+
+   .. versionadded:: 1.9.0
+
+   Use this to perform actions right before a backup is restored.
+
+.. _sec-bundledplugins-backup-hooks-after-restore:
+
+octoprint.plugin.backup.after_restore
++++++++++++++++++++++++++++++++++++++
+
+.. py:function:: after_restore_hook(error=False, *args, **kwargs)
+
+   .. versionadded:: 1.9.0
+
+   Use this to perform actions right after a backup was restored or backup restoration failed. The ``error`` parameter will be set to ``True`` if
+   the backup restoration failed.
+
+   :param error bool: Whether the backup restoration failed or not
 
 .. _sec-bundledplugins-backup-helpers:
+
+Helpers
+-------
 
 The Backup plugin exports two helpers that can be used by other plugins or internal methods
 from within OctoPrint, without going via the API.

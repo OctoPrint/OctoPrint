@@ -40,6 +40,7 @@ from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from werkzeug.exceptions import HTTPException
 
+import octoprint.events
 import octoprint.filemanager
 import octoprint.util
 import octoprint.util.net
@@ -1151,6 +1152,60 @@ class Server:
                 self._logger.exception(
                     "Something went wrong while attempting to automatically connect to the printer"
                 )
+
+        # auto refresh serial ports while not connected
+        if self._settings.getBoolean(["serial", "autorefresh"]):
+            from octoprint.util.comm import serialList
+
+            last_ports = None
+            autorefresh = None
+
+            def refresh_serial_list():
+                nonlocal last_ports
+
+                new_ports = sorted(serialList())
+                if new_ports != last_ports:
+                    self._logger.info(
+                        "Serial port list was updated, refreshing the port list in the frontend"
+                    )
+                    eventManager.fire(
+                        events.Events.CONNECTIONS_AUTOREFRESHED,
+                        payload={"ports": new_ports},
+                    )
+                last_ports = new_ports
+
+            def autorefresh_active():
+                return printer.is_closed_or_error()
+
+            def autorefresh_stopped():
+                nonlocal autorefresh
+
+                self._logger.info("Autorefresh of serial port list stopped")
+                autorefresh = None
+
+            def run_autorefresh():
+                nonlocal autorefresh
+
+                if autorefresh is not None:
+                    autorefresh.stop()
+                    autorefresh = None
+
+                autorefresh = octoprint.util.RepeatedTimer(
+                    self._settings.getInt(["serial", "autorefreshInterval"]),
+                    refresh_serial_list,
+                    run_first=True,
+                    condition=autorefresh_active,
+                    on_finish=autorefresh_stopped,
+                )
+                autorefresh.name = "Serial autorefresh worker"
+
+                self._logger.info("Starting autorefresh of serial port list")
+                autorefresh.start()
+
+            run_autorefresh()
+            eventManager.subscribe(
+                octoprint.events.Events.DISCONNECTED, lambda e, p: run_autorefresh()
+            )
 
         # start up watchdogs
         try:
