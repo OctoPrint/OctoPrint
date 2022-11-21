@@ -556,6 +556,11 @@ class Settings:
             )
 
     def _is_deprecated_path(self, path):
+        if path and isinstance(path[-1], (list, tuple)):
+            prefix = path[:-1]
+            return any(
+                map(lambda x: tuple(prefix + [x]) in self._deprecated_paths, path[-1])
+            )
         return self._deprecated_paths.get(tuple(path), False)
 
     def _get_default_folder(self, type):
@@ -1558,7 +1563,7 @@ class Settings:
         is_deprecated = self._is_deprecated_path(path)
         if is_deprecated:
             self._logger.warn(
-                f"DeprecationWarning: Detected access to deprecated settings path {path}, returned value is derived from compatibility overlay. {is_deprecated}"
+                f"DeprecationWarning: Detected access to deprecated settings path {path}, returned value is derived from compatibility overlay. {is_deprecated if isinstance(is_deprecated, str) else ''}"
             )
             config = {}
 
@@ -1841,7 +1846,7 @@ class Settings:
         is_deprecated = self._is_deprecated_path(path)
         if is_deprecated:
             self._logger.warning(
-                f"[Deprecation] Prevented write of `{value}` to deprecated settings path {path}. {is_deprecated}"
+                f"[Deprecation] Prevented write of `{value}` to deprecated settings path {path}. {is_deprecated if isinstance(is_deprecated, str) else ''}"
             )
             return
 
