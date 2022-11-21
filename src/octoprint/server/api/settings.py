@@ -353,7 +353,7 @@ def getSettings():
         }
 
         if compatWebcam:
-            data.update(
+            data["webcam"].update(
                 {
                     "streamUrl": compatWebcam.stream,
                     "streamRatio": compatWebcam.streamRatio,
@@ -367,7 +367,7 @@ def getSettings():
             )
 
         if defaultWebcam:
-            data.update(
+            data["webcam"].update(
                 {
                     "flipH": defaultWebcam.config.flipH,
                     "flipV": defaultWebcam.config.flipV,
