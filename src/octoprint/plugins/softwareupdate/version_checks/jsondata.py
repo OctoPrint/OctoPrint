@@ -21,7 +21,7 @@ def get_latest(target, check, online=True, *args, **kwargs):
         raise ConfigurationInvalid("jsondata version check needs jsondata set")
 
     try:
-        with requests.get(url) as r:
+        with requests.get(url, timeout=(3.05, 30)) as r:
             data = r.json()
     except Exception as exc:
         raise NetworkError(cause=exc)

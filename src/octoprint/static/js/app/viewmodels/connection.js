@@ -220,6 +220,10 @@ $(function () {
             self.requestData();
         };
 
+        self.onEventConnectionsAutorefreshed = function () {
+            self.requestData();
+        };
+
         self.onStartup = function () {
             var connectionTab = $("#connection");
             connectionTab.on("show", function () {

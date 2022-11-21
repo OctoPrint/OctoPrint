@@ -85,11 +85,11 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                 continue
             dirs.append(plugin_translation_dir)
 
-        result = [Locale.parse(default_locale)]
+        result = {Locale.parse(default_locale)}
 
         for dir in dirs:
-            result += list_translations(dir)
-        return result
+            result.update(list_translations(dir))
+        return list(result)
 
     def fixed_get_translations():
         """Returns the correct gettext translations that should be used for

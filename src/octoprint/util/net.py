@@ -258,7 +258,7 @@ def resolve_host(host):
 
 
 def download_file(url, folder, max_length=None):
-    with requests.get(url, stream=True) as r:
+    with requests.get(url, stream=True, timeout=(3.05, 30)) as r:
         r.raise_for_status()
 
         filename = None

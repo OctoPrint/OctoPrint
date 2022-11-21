@@ -36,6 +36,7 @@ class Events:
     CONNECTED = "Connected"
     DISCONNECTING = "Disconnecting"
     DISCONNECTED = "Disconnected"
+    CONNECTIONS_AUTOREFRESHED = "ConnectionsAutorefreshed"
 
     # State changes
     PRINTER_STATE_CHANGED = "PrinterStateChanged"
