@@ -325,9 +325,6 @@ def getSettings():
 
     if Permissions.WEBCAM.can() is True:
         webcamsDict = get_webcams_as_dicts()
-        defaultWebcam = get_default_webcam()
-        compatWebcam = defaultWebcam.config.compat if defaultWebcam is not None else None
-
         data["webcam"] = {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
             "timelapseEnabled": s.getBoolean(["webcam", "timelapseEnabled"]),
@@ -352,6 +349,8 @@ def getSettings():
             "defaultWebcam": None,
         }
 
+        defaultWebcam = get_default_webcam()
+        compatWebcam = defaultWebcam.config.compat if defaultWebcam is not None else None
         if compatWebcam:
             data["webcam"].update(
                 {

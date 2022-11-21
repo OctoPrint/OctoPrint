@@ -7,10 +7,9 @@ import logging
 import octoprint.plugin
 from octoprint.plugin import plugin_manager
 from octoprint.schema.config.webcam import Webcam
-from octoprint.settings import settings
 
 
-def get_webcams():
+def get_webcams(plugin_manager=None):
     webcams = dict()
 
     def success_callback(name, plugin, result):
@@ -56,18 +55,22 @@ def get_webcams():
         sorting_context="WebcamProviderPlugin.get_webcam_configurations",
         callback=success_callback,
         error_callback=error_callback,
+        manager=plugin_manager,
     )
 
     return webcams
 
 
-def get_default_webcam():
-    webcams = get_webcams()
+def get_default_webcam(settings=None, plugin_manager=None):
+    webcams = get_webcams(plugin_manager=plugin_manager)
     if not webcams:
         return None
 
-    s = settings()
-    name = s.get(["webcam", "defaultWebcam"])
+    if settings is None:
+        from octoprint.settings import settings as s
+
+        settings = s()
+    name = settings.get(["webcam", "defaultWebcam"])
     webcam = webcams.get(name)
 
     if webcam:
@@ -76,13 +79,13 @@ def get_default_webcam():
     return next(iter(webcams.values()))
 
 
-def get_webcams_as_dicts():
+def get_webcams_as_dicts(plugin_manager=None):
     def to_dict(webcam):
         webcam_dict = webcam.config.dict()
         webcam_dict["provider"] = webcam.providerIdentifier
         return webcam_dict
 
-    return list(map(to_dict, get_webcams().values()))
+    return list(map(to_dict, get_webcams(plugin_manager=plugin_manager).values()))
 
 
 class WebcamNotAbleToTakeSnapshotException(Exception):
