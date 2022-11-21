@@ -2331,7 +2331,7 @@ class WebcamProviderPlugin(OctoPrintPlugin):
         Used to retrieve a list of available webcams
 
         Returns:
-            A list of :class:`~octoprint.schema.config.webcam.Webcam`: The available webcams, can be empty if none available.
+            A list of :class:`~octoprint.schema.webcam.Webcam`: The available webcams, can be empty if none available.
         """
 
         return []

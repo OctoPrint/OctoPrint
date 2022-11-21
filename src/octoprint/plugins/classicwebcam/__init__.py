@@ -7,7 +7,7 @@ import requests
 from flask_babel import gettext
 
 import octoprint.plugin
-from octoprint.schema.config.webcam import RatioEnum, Webcam, WebcamCompatibility
+from octoprint.schema.webcam import RatioEnum, Webcam, WebcamCompatibility
 from octoprint.webcams import WebcamNotAbleToTakeSnapshotException
 
 

@@ -6,7 +6,7 @@ import logging
 
 import octoprint.plugin
 from octoprint.plugin import plugin_manager
-from octoprint.schema.config.webcam import Webcam
+from octoprint.schema.webcam import Webcam
 
 
 def get_webcams(plugin_manager=None):
