@@ -4,19 +4,7 @@ $(function () {
 
         self.settingsViewModel = parameters[0];
 
-        self.required = false;
-
-        self.onWizardDetails = function (response) {
-            self.required =
-                response &&
-                response.corewizard &&
-                response.corewizard.details &&
-                response.corewizard.details.webcam &&
-                response.corewizard.details.webcam.required;
-        };
-
         self.onWizardFinish = function () {
-            if (!self.required) return;
             if (self.settingsViewModel.streamUrl()) {
                 return "reload";
             }
