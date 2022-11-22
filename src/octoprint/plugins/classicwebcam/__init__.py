@@ -235,9 +235,6 @@ class ClassicWebcamPlugin(
         firstrun = self._settings.global_get(["server", "firstRun"])
         return required and firstrun
 
-    def get_wizard_details(self):
-        return {"webcam": {"required": self.is_wizard_required()}}
-
     def get_wizard_version(self):
         return 1
 

@@ -7,42 +7,25 @@
                                 value: webcam_defaultWebcam">
         </select>
 
-        <span class="help-inline">{{ _('Selects the default webcam. If this webcam provides a MJPEG video stream, it will be available for old clients that do not make use of the webcam plugin system introduced with OctoPrint 1.9.0') }}</span>
 
         <!-- ko foreach: webcam_webcams -->
             <!-- ko if: name == $parent.webcam_defaultWebcam() -->
-                <table class="help-inline" style="padding-top: 10px">
-                    <tr>
-                        <td><b>{{ _('Snapshot')}}&nbsp;</b></td>
-                        <td>
-                             <!-- ko if: canSnapshot -->
-                                <!-- ko if: snapshotDisplay -->
-                                    <span data-bind="text: snapshotDisplay"></span>&nbsp;
-                                    <a data-bind="attr: { href: snapshotDisplay }, visible: $parent.validURL(snapshotDisplay)" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a>
-                                <!-- /ko -->
-                                <!-- ko ifnot: snapshotDisplay -->
-                                    <span>{{ _('Supported')}}</span>
-                                <!-- /ko -->
-                            <!-- /ko -->
-                            <!-- ko ifnot: canSnapshot -->
-                                <span>{{ _('Not supported')}}</span>
-                            <!-- /ko -->
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><b>{{ _('MJPEG stream')}}&nbsp;</b></td>
-                        <td>
-                            <!-- ko if: compat != null && compat.stream -->
-                                <span data-bind="text: compat.stream"></span>&nbsp;
-                                <a data-bind="attr: { href: compat.stream }" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a>
-                            <!-- /ko -->
-                            <!-- ko ifnot: compat != null && compat.stream -->
-                                <span>{{ _('Not supported')}}</span>
-                            <!-- /ko -->
-                        </td>
-                    </tr>
-                </table>
+                <span class="help-inline" style="padding-top: 10px; padding-bottom: 10px;">
+                    <span><b>{{ _('MJPEG stream')}}&nbsp;</b></span>
+                    <!-- ko if: compat != null && compat.stream -->
+                        <span data-bind="text: compat.stream"></span>&nbsp;
+                        <a data-bind="attr: { href: compat.stream }" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a>
+                    <!-- /ko -->
+                    <!-- ko ifnot: compat != null && compat.stream -->
+                        <span>{{ _('Not supported')}}</span>
+                    <!-- /ko -->
+                </span>
             <!-- /ko -->
         <!-- /ko -->
+
+        <span class="help-inline">{{ _('Selects the default webcam. If this webcam provides a MJPEG video stream, it will be available for old clients that do not make use of the webcam plugin system introduced with OctoPrint 1.9.0') }}</span>
+
+        <span class="help-inline" style="padding-top: 10px;">{{ _('You can make changes to this webcam in the plugin\'s settings.') }}</span>
+
     </div>
 </div>

@@ -22,9 +22,9 @@ $(function () {
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
         self.snapshotWebcam = ko.pureComputed(function () {
-            var defaultWebcamName = self.settings.webcam_defaultWebcam();
+            var snapshotWebcamName = self.settings.webcam_snapshotWebcam();
             return self.settings.webcam_webcams().find(function (w) {
-                return defaultWebcamName == w.name;
+                return snapshotWebcamName == w.name;
             });
         });
         self.canSnapshot = ko.pureComputed(function () {

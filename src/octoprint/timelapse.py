@@ -24,7 +24,7 @@ from octoprint.settings import settings
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import sv
 from octoprint.util.commandline import CommandlineCaller
-from octoprint.webcams import WebcamNotAbleToTakeSnapshotException, get_default_webcam
+from octoprint.webcams import WebcamNotAbleToTakeSnapshotException, get_snapshot_webcam
 
 # currently configured timelapse
 current = None
@@ -239,7 +239,7 @@ def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=None):
         fps = settings().getInt(["webcam", "timelapse", "fps"])
     threads = settings().get(["webcam", "ffmpegThreads"])
     videocodec = settings().get(["webcam", "ffmpegVideoCodec"])
-    webcam = get_default_webcam()
+    webcam = get_snapshot_webcam()
     if webcam is None:
         logging.getLogger(__name__).error("No webcam configured, can't render timelapse")
     else:
@@ -411,9 +411,9 @@ def configure_timelapse(config=None, persist=False):
     if current is not None:
         current.unload()
 
-    default_webcam = get_default_webcam()
+    snapshot_webcam = get_snapshot_webcam()
     can_snapshot = (
-        default_webcam.config.canSnapshot if default_webcam is not None else False
+        snapshot_webcam.config.canSnapshot if snapshot_webcam is not None else False
     )
     ffmpeg_path = settings().get(["webcam", "ffmpeg"])
     timelapse_enabled = settings().getBoolean(["webcam", "timelapseEnabled"])
@@ -504,7 +504,7 @@ class Timelapse:
         self._post_roll = post_roll
         self._on_post_roll_done = None
 
-        self._webcam = get_default_webcam()
+        self._webcam = get_snapshot_webcam()
         if self._webcam is None:
             raise Exception("Invalid webcam configuration, missing defaultWebcam")
         elif self._webcam.config.canSnapshot is False:

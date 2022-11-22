@@ -62,6 +62,20 @@ def get_webcams(plugin_manager=None):
 
 
 def get_default_webcam(settings=None, plugin_manager=None):
+    def fallbackFilter(webcam: Webcam):
+        return webcam.config.compat
+
+    return __get_webcam_by_setting("defaultWebcam", fallbackFilter)
+
+
+def get_snapshot_webcam(settings=None, plugin_manager=None):
+    def fallbackFilter(webcam: Webcam):
+        return webcam.config.canSnapshot
+
+    return __get_webcam_by_setting("snapshotWebcam", fallbackFilter)
+
+
+def __get_webcam_by_setting(setting, fallbackFilter, settings=None, plugin_manager=None):
     webcams = get_webcams(plugin_manager=plugin_manager)
     if not webcams:
         return None
@@ -70,13 +84,14 @@ def get_default_webcam(settings=None, plugin_manager=None):
         from octoprint.settings import settings as s
 
         settings = s()
-    name = settings.get(["webcam", "defaultWebcam"])
+
+    name = settings.get(["webcam", setting])
     webcam = webcams.get(name)
 
     if webcam:
         return webcam
 
-    return next(iter(webcams.values()))
+    return next(filter(fallbackFilter, iter(webcams.values())), None)
 
 
 def get_webcams_as_dicts(plugin_manager=None):

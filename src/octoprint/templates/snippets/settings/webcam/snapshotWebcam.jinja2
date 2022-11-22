@@ -1,0 +1,33 @@
+ <div class="control-group" title="">
+    <label class="control-label" for="settings-snapshotWebcam">{{ _('Snapshot Webcam') }}</label>
+    <div class="controls">
+        <select id="settings-snapshotWebcam" data-bind="options: webcam_webcams,
+                                optionsText: function(key) { return key.displayName },
+                                optionsValue: function(key) { return key.name },
+                                value: webcam_snapshotWebcam">
+        </select>
+
+        <!-- ko foreach: webcam_webcams -->
+            <!-- ko if: name == $parent.webcam_snapshotWebcam() -->
+              <span class="help-inline" style="padding-top: 10px;">
+                    <span><b>{{ _('Snapshot stream')}}&nbsp;</b></span>
+                    <!-- ko if: canSnapshot -->
+                        <!-- ko if: snapshotDisplay -->
+                            <span data-bind="text: snapshotDisplay"></span>&nbsp;
+                            <a data-bind="attr: { href: snapshotDisplay }, visible: $parent.validURL(snapshotDisplay)" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a>
+                        <!-- /ko -->
+                        <!-- ko ifnot: snapshotDisplay -->
+                            <span>{{ _('Supported')}}</span>
+                        <!-- /ko -->
+                    <!-- /ko -->
+                    <!-- ko ifnot: canSnapshot -->
+                        <span>{{ _('Not supported')}}</span>
+                    <!-- /ko -->
+                </span>
+            <!-- /ko -->
+        <!-- /ko -->
+
+        <span class="help-inline" style="padding-top: 10px;">{{ _('You can make changes to this webcam in the plugin\'s settings.') }}</span>
+
+    </div>
+</div>

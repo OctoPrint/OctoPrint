@@ -15,7 +15,11 @@ from octoprint.server import pluginManager, printer, userManager
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.settings import settings, valid_boolean_trues
-from octoprint.webcams import get_default_webcam, get_webcams_as_dicts
+from octoprint.webcams import (
+    get_default_webcam,
+    get_snapshot_webcam,
+    get_webcams_as_dicts,
+)
 
 # ~~ settings
 
@@ -347,9 +351,11 @@ def getSettings():
             "flipV": None,
             "rotate90": None,
             "defaultWebcam": None,
+            "snapshotWebcam": None,
         }
 
         defaultWebcam = get_default_webcam()
+        snapshotWebcam = get_snapshot_webcam()
         compatWebcam = defaultWebcam.config.compat if defaultWebcam is not None else None
         if compatWebcam:
             data["webcam"].update(
@@ -372,6 +378,13 @@ def getSettings():
                     "flipV": defaultWebcam.config.flipV,
                     "rotate90": defaultWebcam.config.rotate90,
                     "defaultWebcam": defaultWebcam.config.name,
+                }
+            )
+
+        if snapshotWebcam:
+            data["webcam"].update(
+                {
+                    "snapshotWebcam": snapshotWebcam.config.name,
                 }
             )
 
