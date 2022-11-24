@@ -6,6 +6,16 @@ $(function () {
         self.settings = parameters[1];
         self._subscriptions = [];
 
+        self.webRtcServersToText = function (list) {
+            self.streamWebrtcIceServersText(self.streamWebrtcIceServers().join(", "));
+        };
+
+        self.textToWebRtcServers = function (list) {
+            self.streamWebrtcIceServers(
+                splitTextToArray(self.streamWebrtcIceServersText(), ",", true)
+            );
+        };
+
         self.onBeforeBinding = function () {
             self.snapshotUrl = self.settings.settings.plugins.classicwebcam.snapshot;
             self.flipH = self.settings.settings.plugins.classicwebcam.flipH;
@@ -18,8 +28,22 @@ $(function () {
                 self.settings.settings.plugins.classicwebcam.streamTimeout;
             self.streamWebrtcIceServers =
                 self.settings.settings.plugins.classicwebcam.streamWebrtcIceServers;
+            self.streamWebrtcIceServersText = ko.observable("");
             self.cacheBuster = self.settings.settings.plugins.classicwebcam.cacheBuster;
             self.available_ratios = ["16:9", "4:3"];
+
+            self.webRtcServersToText();
+            self.streamWebrtcIceServers.subscribe(function (value) {
+                self.webRtcServersToText();
+            });
+        };
+
+        self.onSettingsBeforeSave = function () {
+            self.textToWebRtcServers();
+        };
+
+        self.onUserSettingsHidden = function () {
+            self.webRtcServersToText();
         };
 
         self.streamUrlEscaped = ko.pureComputed(function () {

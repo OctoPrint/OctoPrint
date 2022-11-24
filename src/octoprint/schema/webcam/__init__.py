@@ -2,7 +2,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
@@ -22,8 +22,8 @@ class WebcamCompatibility(BaseModel):
     streamRatio: RatioEnum = RatioEnum.sixteen_nine
     """The stream's native aspect ratio"""
 
-    streamWebrtcIceServers: str = "stun:stun.l.google.com:19302"
-    """The WebRTC STUN and TURN servers, comma separated"""
+    streamWebrtcIceServers: List[str] = ["stun:stun.l.google.com:19302"]
+    """The WebRTC STUN and TURN servers"""
 
     cacheBuster: bool = False
     """Whether the the URL should be randomized to bust caches"""

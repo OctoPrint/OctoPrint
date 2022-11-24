@@ -149,7 +149,7 @@ class ClassicWebcamPlugin(
             stream="",
             streamTimeout=5,
             streamRatio="16:9",
-            streamWebrtcIceServers="stun:stun.l.google.com:19302",
+            streamWebrtcIceServers=["stun:stun.l.google.com:19302"],
             snapshot="",
             cacheBuster=False,
             snapshotSslValidation=True,
@@ -194,10 +194,8 @@ class ClassicWebcamPlugin(
                 # streamWebrtcIceServers
                 self._settings.set(
                     ["streamWebrtcIceServers"],
-                    ",".join(
-                        config.get(
-                            "streamWebrtcIceServers", ["stun:stun.l.google.com:19302"]
-                        )
+                    config.get(
+                        "streamWebrtcIceServers", ["stun:stun.l.google.com:19302"]
                     ),
                 )
                 self._settings.global_remove(["webcam", "streamWebrtcIceServers"])
