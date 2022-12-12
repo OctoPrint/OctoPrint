@@ -750,6 +750,7 @@ class FileManager:
                 "path": path_in_storage,
                 "name": name,
                 "type": get_file_type(name),
+                "operation": "add",
             },
         )
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
@@ -787,6 +788,7 @@ class FileManager:
                 "path": path_in_storage,
                 "name": name,
                 "type": get_file_type(name),
+                "operation": "copy",
             },
         )
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
@@ -821,6 +823,7 @@ class FileManager:
                 "path": dst_path_in_storage,
                 "name": dst_name,
                 "type": get_file_type(dst_name),
+                "operation": "move",
             },
         )
         eventManager().fire(
