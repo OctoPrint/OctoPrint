@@ -89,7 +89,7 @@ $(function () {
         self.moveDestinationFilename = ko.observable(undefined);
         self.moveDestinationFullpath = ko.pureComputed(function () {
             // Join the paths for renaming
-            if (self.moveSourceFilename() != self.moveDestinationFilename()) {
+            if (self.moveSourceFilename() !== self.moveDestinationFilename()) {
                 if (self.moveDestination() === "/") {
                     return self.moveDestination() + self.moveDestinationFilename();
                 } else {
