@@ -6113,7 +6113,7 @@ class SendQueue(PrependableQueue):
 
 
 _temp_command_regex = re.compile(
-    r"^M(?P<command>104|109|140|190)(\s+T(?P<tool>\d+)|\s+S(?P<temperature>[-+]?\d*\.?\d*))+"
+    r"^M(?P<command>104|109|140|190)(\s+T(?P<tool>\d+)|\s+[SR](?P<temperature>[-+]?\d*\.?\d*))+"
 )
 
 
