@@ -96,7 +96,6 @@ class ActionCommandNotificationPlugin(
             if message:
                 self._add_notification(message)
 
-
     # ~ TemplatePlugin
 
     def get_template_configs(self):
@@ -134,7 +133,6 @@ class ActionCommandNotificationPlugin(
             return
 
         self._add_notification(parameter.strip())
-
 
     def _add_notification(self, message):
         self._notifications.append((time.time(), message))
