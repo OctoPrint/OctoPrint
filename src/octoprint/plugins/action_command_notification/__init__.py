@@ -29,9 +29,16 @@ class ActionCommandNotificationPlugin(
             {
                 "key": "SHOW",
                 "name": "Show printer notifications",
-                "description": gettext("Allows to see printer notifications"),
+                "description": gettext("Allows you to see printer notifications"),
                 "default_groups": [USER_GROUP],
                 "roles": ["show"],
+            },
+            {
+                "key": "ADD",
+                "name": "Add printer notifications",
+                "description": gettext("Allows you to add printer notifications"),
+                "default_groups": [USER_GROUP],
+                "roles": ["add"],
             },
             {
                 "key": "CLEAR",
@@ -75,13 +82,20 @@ class ActionCommandNotificationPlugin(
         )
 
     def get_api_commands(self):
-        return {"clear": []}
+        return {"clear": [], "add": []}
 
     def on_api_command(self, command, data):
         if command == "clear":
             if not Permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_CLEAR.can():
                 return flask.abort(403, "Insufficient permissions")
             self._clear_notifications()
+        elif command == "add":
+            if not Permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_ADD.can():
+                return flask.abort(403, "Insufficient permissions")
+            message = data.get("notification")
+            if message:
+                self._add_notification(message)
+
 
     # ~ TemplatePlugin
 
@@ -95,7 +109,7 @@ class ActionCommandNotificationPlugin(
             {
                 "type": "sidebar",
                 "name": gettext("Printer Notifications"),
-                "icon": "far fa-bell",
+                "icon": "bell-o",
                 "styles_wrapper": ["display: none"],
                 "template_header": "action_command_notification_sidebar_header.jinja2",
                 "data_bind": "visible: loginState.hasPermissionKo(access.permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_SHOW)"
@@ -119,10 +133,12 @@ class ActionCommandNotificationPlugin(
         if action != "notification":
             return
 
-        message = parameter.strip()
+        self._add_notification(parameter.strip())
+
+
+    def _add_notification(self, message):
         self._notifications.append((time.time(), message))
         self._plugin_manager.send_plugin_message(self._identifier, {"message": message})
-
         self._logger.info(f"Got a notification: {message}")
 
     def _clear_notifications(self):
