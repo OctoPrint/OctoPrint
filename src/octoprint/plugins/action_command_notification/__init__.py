@@ -92,7 +92,7 @@ class ActionCommandNotificationPlugin(
         elif command == "add":
             if not Permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_ADD.can():
                 return flask.abort(403, "Insufficient permissions")
-            message = data.get("notification")
+            message = data.get("message")
             if message:
                 self._add_notification(message)
 
@@ -109,7 +109,7 @@ class ActionCommandNotificationPlugin(
             {
                 "type": "sidebar",
                 "name": gettext("Printer Notifications"),
-                "icon": "bell-o",
+                "icon": "far fa-bell",
                 "styles_wrapper": ["display: none"],
                 "template_header": "action_command_notification_sidebar_header.jinja2",
                 "data_bind": "visible: loginState.hasPermissionKo(access.permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_SHOW)"
