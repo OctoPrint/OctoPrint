@@ -55,7 +55,7 @@ class ActionCommandNotificationPlugin(
 
     def on_event(self, event, payload):
         if event == Events.DISCONNECTED:
-            self._clear_notifications()
+            self.clear_notifications()
 
     # ~ SettingsPlugin
 
@@ -67,12 +67,7 @@ class ActionCommandNotificationPlugin(
     def on_api_get(self, request):
         if not Permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_SHOW.can():
             return flask.abort(403)
-        return flask.jsonify(
-            notifications=[
-                {"timestamp": notification[0], "message": notification[1]}
-                for notification in self._notifications
-            ]
-        )
+        return flask.jsonify(notifications=self.get_notifications())
 
     def get_api_commands(self):
         return {"clear": []}
@@ -81,7 +76,7 @@ class ActionCommandNotificationPlugin(
         if command == "clear":
             if not Permissions.PLUGIN_ACTION_COMMAND_NOTIFICATION_CLEAR.can():
                 return flask.abort(403, "Insufficient permissions")
-            self._clear_notifications()
+            self.clear_notifications()
 
     # ~ TemplatePlugin
 
@@ -119,13 +114,21 @@ class ActionCommandNotificationPlugin(
         if action != "notification":
             return
 
-        message = parameter.strip()
+        self.add_notification(parameter.strip())
+
+    def add_notification(self, message):
         self._notifications.append((time.time(), message))
         self._plugin_manager.send_plugin_message(self._identifier, {"message": message})
-
         self._logger.info(f"Got a notification: {message}")
 
-    def _clear_notifications(self):
+    def get_notifications(self):
+        notifications = [
+            {"timestamp": notification[0], "message": notification[1]}
+            for notification in self._notifications
+        ]
+        return notifications
+
+    def clear_notifications(self):
         self._notifications = []
         self._plugin_manager.send_plugin_message(self._identifier, {})
         self._logger.info("Notifications cleared")
@@ -146,4 +149,9 @@ __plugin_implementation__ = ActionCommandNotificationPlugin()
 __plugin_hooks__ = {
     "octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,
     "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+}
+__plugin_helpers__ = {
+    "add_notification": __plugin_implementation__.add_notification,
+    "get_notifications": __plugin_implementation__.get_notifications,
+    "clear_notificaions": __plugin_implementation__.clear_notifications,
 }
