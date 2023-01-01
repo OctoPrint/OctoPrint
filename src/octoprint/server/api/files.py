@@ -335,10 +335,13 @@ def _getFileList(
                     file.update({"date": f["date"]})
                 files.append(file)
     else:
+        # PERF: Only retrieve the extension tree once
+        extension_tree = octoprint.filemanager.full_extension_tree()
+
         filter_func = None
         if filter:
             filter_func = lambda entry, entry_data: octoprint.filemanager.valid_file_type(
-                entry, type=filter
+                entry, type=filter, tree=extension_tree
             )
 
         with _file_cache_mutex:
@@ -396,7 +399,7 @@ def _getFileList(
                     if (
                         "analysis" in file_or_folder
                         and octoprint.filemanager.valid_file_type(
-                            file_or_folder["name"], type="gcode"
+                            file_or_folder["name"], type="gcode", tree=extension_tree
                         )
                     ):
                         file_or_folder["gcodeAnalysis"] = file_or_folder["analysis"]
@@ -405,7 +408,7 @@ def _getFileList(
                     if (
                         "history" in file_or_folder
                         and octoprint.filemanager.valid_file_type(
-                            file_or_folder["name"], type="gcode"
+                            file_or_folder["name"], type="gcode", tree=extension_tree
                         )
                     ):
                         # convert print log
