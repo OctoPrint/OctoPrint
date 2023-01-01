@@ -174,6 +174,7 @@ date of first contribution):
   * ["tempodat"](https://github.com/tempodat)
   * [Frederik Kemner](https://github.com/040medien)
   * [Scott Martin](https://github.com/smartin015)
+  * [Shyam Sunder](https://github.com/sgsunder)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
