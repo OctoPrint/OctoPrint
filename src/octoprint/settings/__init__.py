@@ -27,7 +27,7 @@ import re
 import sys
 import threading
 import time
-from collections import ChainMap
+from collections import ChainMap, defaultdict
 from collections.abc import KeysView
 
 from yaml import YAMLError
@@ -491,6 +491,7 @@ class Settings:
 
         self._get_preprocessors = {"controls": self._process_custom_controls}
         self._set_preprocessors = {}
+        self._path_update_callbacks = defaultdict(list)
         self._deprecated_paths = {}
 
         self._init_basedir(basedir)
@@ -562,6 +563,18 @@ class Settings:
                 map(lambda x: tuple(prefix + [x]) in self._deprecated_paths, path[-1])
             )
         return self._deprecated_paths.get(tuple(path), False)
+
+    def _path_modified(self, path, current_value, new_value):
+        callbacks = self._path_update_callbacks.get(tuple(path))
+        if callbacks:
+            for callback in callbacks:
+                try:
+                    if callable(callback):
+                        callback(path, current_value, new_value)
+                except Exception:
+                    self._logger.exception(
+                        f"Error while executing callback {callback} for path {path}"
+                    )
 
     def _get_default_folder(self, type):
         folder = default_settings["folder"][type]
@@ -926,7 +939,9 @@ class Settings:
             self._migrate_config(config)
         return config
 
-    def add_overlay(self, overlay, at_end=False, key=None, deprecated=None):
+    def add_overlay(
+        self, overlay, at_end=False, key=None, deprecated=None, replace=False
+    ):
         assert isinstance(overlay, dict)
 
         if key is None:
@@ -936,6 +951,9 @@ class Settings:
             hash = hashlib.md5()
             hash.update(overlay_yaml.encode("utf-8"))
             key = hash.hexdigest()
+
+        if replace:
+            self.remove_overlay(key)
 
         if deprecated is not None:
 
@@ -970,6 +988,18 @@ class Settings:
             self._map.delete_map(index + 1)
             return True
         return False
+
+    def add_path_update_callback(self, path, callback):
+        callbacks = self._path_update_callbacks[tuple(path)]
+        if callback not in callbacks:
+            callbacks.append(callback)
+
+    def remove_path_update_callback(self, path, callback):
+        try:
+            self._path_update_callbacks[tuple(path)].remove(callback)
+        except ValueError:
+            # callback not in list
+            pass
 
     def _migrate_config(self, config=None, persist=False):
         if config is None:
@@ -1887,6 +1917,7 @@ class Settings:
                 try:
                     chain.del_by_path(path)
                     self._mark_dirty()
+                    self._path_modified(path, current, value)
                 except KeyError:
                     if error_on_path:
                         raise NoSuchSettingsPath()
@@ -1898,6 +1929,7 @@ class Settings:
             ):
                 chain.set_by_path(path, value)
                 self._mark_dirty()
+                self._path_modified(path, current, value)
 
         # we've changed the interface to no longer mutate the passed in config, so we
         # must manually do that here
