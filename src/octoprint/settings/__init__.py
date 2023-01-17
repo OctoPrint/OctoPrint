@@ -1608,7 +1608,7 @@ class Settings:
 
         is_deprecated = self._is_deprecated_path(path)
         if is_deprecated:
-            self._logger.warn(
+            self._logger.warning(
                 f"DeprecationWarning: Detected access to deprecated settings path {path}, returned value is derived from compatibility overlay. {is_deprecated if isinstance(is_deprecated, str) else ''}"
             )
             config = {}
