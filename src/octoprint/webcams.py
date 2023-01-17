@@ -1,4 +1,3 @@
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
@@ -125,15 +124,18 @@ class ProvidedWebcam:
     def __init__(self, config, providerIdentifier):
         self.config = config
         self.providerIdentifier = providerIdentifier
-        self.providerPlugin = (
-            plugin_manager().get_plugin(providerIdentifier).__plugin_implementation__
-        )
+
+        providerPluginInfo = plugin_manager().get_plugin_info(providerIdentifier)
+        if providerPluginInfo is None:
+            raise Exception(f"Can't find plugin {providerIdentifier}")
+        if not providerPluginInfo.implementation:
+            raise Exception(
+                f"Plugin {providerIdentifier} does not have an implementation"
+            )
+        self.providerPlugin = providerPluginInfo.implementation
 
         if self.config is None:
             raise Exception("Can't create ProvidedWebcam with None config")
 
         if self.providerIdentifier is None:
             raise Exception("Can't create ProvidedWebcam with None providerIdentifier")
-
-        if self.providerPlugin is None:
-            raise Exception("Can't create ProvidedWebcam with None providerPlugin")
