@@ -492,7 +492,7 @@ class Settings:
         self._get_preprocessors = {"controls": self._process_custom_controls}
         self._set_preprocessors = {}
         self._path_update_callbacks = defaultdict(list)
-        self._deprecated_paths = {}
+        self._deprecated_paths = defaultdict(dict)
 
         self._init_basedir(basedir)
 
@@ -560,9 +560,16 @@ class Settings:
         if path and isinstance(path[-1], (list, tuple)):
             prefix = path[:-1]
             return any(
-                map(lambda x: tuple(prefix + [x]) in self._deprecated_paths, path[-1])
+                map(lambda x: bool(self._deprecated_paths[tuple(prefix + [x])]), path[-1])
             )
-        return self._deprecated_paths.get(tuple(path), False)
+
+        if tuple(path) not in self._deprecated_paths:
+            return False
+
+        try:
+            return next(iter(reversed(self._deprecated_paths[tuple(path)].values())))
+        except StopIteration:
+            return False
 
     def _path_modified(self, path, current_value, new_value):
         callbacks = self._path_update_callbacks.get(tuple(path))
@@ -957,18 +964,11 @@ class Settings:
 
         if deprecated is not None:
 
-            def paths(prefix, data):
-                if isinstance(data, dict):
-                    for k, v in data.items():
-                        yield from paths(prefix + [k], v)
-                else:
-                    yield prefix
-
             self._logger.debug(
                 f"Marking all (recursive) paths in this overlay as deprecated: {overlay}"
             )
-            for path in paths([], overlay):
-                self._deprecated_paths[tuple(path)] = deprecated
+            for path in _paths([], overlay):
+                self._deprecated_paths[tuple(path)][key] = deprecated
 
         overlay[self.OVERLAY_KEY] = key
         if at_end:
@@ -983,9 +983,22 @@ class Settings:
         for i, overlay in enumerate(self._overlay_layers):
             if key == overlay.get(self.OVERLAY_KEY):
                 index = i
+                overlay = self._map._unflatten(overlay)
+                break
 
         if index > -1:
             self._map.delete_map(index + 1)
+
+            self._logger.debug(
+                f"Removing all deprecation marks for (recursive) paths in this overlay: {overlay}"
+            )
+            for path in _paths([], overlay):
+                try:
+                    del self._deprecated_paths[tuple(path)][key]
+                except KeyError:
+                    # key not in dict
+                    pass
+
             return True
         return False
 
@@ -2091,3 +2104,11 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
             except Exception:
                 logger.exception(f"Could not write test file to {testfile}")
                 raise OSError(error)
+
+
+def _paths(prefix, data):
+    if isinstance(data, dict):
+        for k, v in data.items():
+            yield from _paths(prefix + [k], v)
+    else:
+        yield prefix
