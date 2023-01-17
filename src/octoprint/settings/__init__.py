@@ -563,11 +563,14 @@ class Settings:
                 map(lambda x: bool(self._deprecated_paths[tuple(prefix + [x])]), path[-1])
             )
 
-        if tuple(path) not in self._deprecated_paths:
+        if (
+            tuple(path) not in self._deprecated_paths
+            or not self._deprecated_paths[tuple(path)]
+        ):
             return False
 
         try:
-            return next(iter(reversed(self._deprecated_paths[tuple(path)].values())))
+            return list(self._deprecated_paths[tuple(path)].values())[-1]
         except StopIteration:
             return False
 
