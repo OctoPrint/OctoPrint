@@ -220,6 +220,18 @@
         return this;
     };
 
+    OctoPrintSocketClient.prototype.removeMessage = function (message, handler) {
+        if (!this.registeredHandlers.hasOwnProperty(message)) {
+            // No handlers registered, do nothing
+            return;
+        }
+
+        const index = OctoPrint.socket.registeredHandlers[message].indexOf(handler);
+        if (index > -1) {
+            OctoPrint.socket.registeredHandlers[message].splice(index, 1);
+        }
+    };
+
     OctoPrintSocketClient.prototype.onReconnectAttempt = function (trial) {};
     OctoPrintSocketClient.prototype.onReconnectFailed = function () {};
     OctoPrintSocketClient.prototype.onConnected = function () {};
