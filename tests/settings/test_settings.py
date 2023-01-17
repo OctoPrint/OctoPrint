@@ -653,6 +653,24 @@ class HelpersTest(unittest.TestCase):
     def test_valid_boolean_trues(self, value, expected):
         self.assertEqual(expected, value in octoprint.settings.valid_boolean_trues)
 
+    @ddt.data(
+        (
+            {"a": {"b": "c"}, "d": 1, "e": {"f": {"g": {"h": 1, "i": 1, "j": 1}}}},
+            [
+                ["a", "b"],
+                [
+                    "d",
+                ],
+                ["e", "f", "g", "h"],
+                ["e", "f", "g", "i"],
+                ["e", "f", "g", "j"],
+            ],
+        ),
+    )
+    @ddt.unpack
+    def test_recursive_paths(self, value, expected):
+        self.assertEqual(expected, list(octoprint.settings._paths([], value)))
+
 
 def _key(*path):
     return octoprint.settings._CHAINMAP_SEP.join(path)
