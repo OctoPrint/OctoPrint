@@ -507,6 +507,32 @@ def init_settings_plugin_config_migration_and_cleanup(plugin_manager):
     ]
 
 
+def init_webcam_compat_overlay(settings, plugin_manager):
+    import logging
+
+    import octoprint.webcams
+
+    default_webcam = octoprint.webcams.get_default_webcam(
+        settings=settings, plugin_manager=plugin_manager
+    )
+    if default_webcam is None:
+        return
+
+    if not default_webcam.config or not default_webcam.config.compat:
+        return
+
+    logging.getLogger(__name__).info(
+        f"Installing webcam compat overlay for configured default webcam {default_webcam}"
+    )
+    overlay = {"webcam": default_webcam.config.compat.dict(by_alias=True)}
+    settings.add_overlay(
+        overlay,
+        key="webcam_compat",
+        at_end=True,
+        deprecated="Please use the webcam system introduced with 1.9.0, this compatibility layer will be removed in a future release.",
+    )
+
+
 def init_custom_events(plugin_manager):
     import logging
 

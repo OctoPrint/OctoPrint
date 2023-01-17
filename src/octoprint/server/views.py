@@ -392,9 +392,7 @@ def index():
     enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
     enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])
     enable_sd_support = settings().get(["feature", "sdSupport"])
-    enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"]) and bool(
-        settings().get(["webcam", "stream"])
-    )
+    enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"])
     enable_temperature_graph = settings().get(["feature", "temperatureGraph"])
     sockjs_connect_timeout = settings().getInt(["devel", "sockJsConnectTimeout"])
 
@@ -816,6 +814,11 @@ def fetch_template_data(refresh=False):
             "template": lambda x: x + "_wizard.jinja2",
             "to_entry": lambda data: (data["name"], data),
         },
+        "webcam": {
+            "div": lambda x: "webcam_plugin_" + x,
+            "template": lambda x: x + "_webcam.jinja2",
+            "to_entry": lambda data: (data["name"], data),
+        },
         "about": {
             "div": lambda x: "about_plugin_" + x,
             "template": lambda x: x + "_about.jinja2",
@@ -852,6 +855,7 @@ def fetch_template_data(refresh=False):
         },
         "usersettings": {"add": "append", "key": "name"},
         "wizard": {"add": "append", "key": "name", "key_extractor": wizard_key_extractor},
+        "webcam": {"add": "append", "key": "name"},
         "about": {"add": "append", "key": "name"},
         "generic": {"add": "append", "key": None},
     }

@@ -108,7 +108,6 @@ $(function () {
             }
         };
 
-        self.webcam_available_ratios = ["16:9", "4:3"];
         self.webcam_available_videocodecs = ["libx264", "mpeg2video"];
 
         var auto_locale = {
@@ -142,11 +141,6 @@ $(function () {
 
         self.webcam_webcamEnabled = ko.observable(undefined);
         self.webcam_timelapseEnabled = ko.observable(undefined);
-        self.webcam_streamUrl = ko.observable(undefined);
-        self.webcam_streamRatio = ko.observable(undefined);
-        self.webcam_streamTimeout = ko.observable(undefined);
-        self.webcam_streamWebrtcIceServers = ko.observable(undefined);
-        self.webcam_snapshotUrl = ko.observable(undefined);
         self.webcam_snapshotTimeout = ko.observable(undefined);
         self.webcam_snapshotSslValidation = ko.observable(undefined);
         self.webcam_ffmpegPath = ko.observable(undefined);
@@ -155,10 +149,9 @@ $(function () {
         self.webcam_ffmpegThreads = ko.observable(undefined);
         self.webcam_ffmpegVideoCodec = ko.observable(undefined);
         self.webcam_watermark = ko.observable(undefined);
-        self.webcam_flipH = ko.observable(undefined);
-        self.webcam_flipV = ko.observable(undefined);
-        self.webcam_rotate90 = ko.observable(undefined);
-        self.webcam_cacheBuster = ko.observable(undefined);
+        self.webcam_defaultWebcam = ko.observable(undefined);
+        self.webcam_snapshotWebcam = ko.observable(undefined);
+        self.webcam_webcams = ko.observableArray([]);
 
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_sdSupport = ko.observable(undefined);
@@ -304,20 +297,6 @@ $(function () {
             self.webcam_ffmpegPathOk(false);
             self.webcam_ffmpegPathBroken(false);
         };
-        self.webcam_streamUrlEscaped = ko.pureComputed(function () {
-            return encodeURI(self.webcam_streamUrl());
-        });
-        self.webcam_streamType = ko.pureComputed(function () {
-            try {
-                return determineWebcamStreamType(self.webcam_streamUrlEscaped());
-            } catch (e) {
-                return "";
-            }
-        });
-        self.webcam_streamValid = ko.pureComputed(function () {
-            var url = self.webcam_streamUrlEscaped();
-            return !url || validateWebcamUrl(url);
-        });
 
         self.server_onlineCheckText = ko.observable();
         self.server_onlineCheckOk = ko.observable(false);
@@ -435,170 +414,6 @@ $(function () {
 
         self.removeTerminalFilter = function (filter) {
             self.terminalFilters.remove(filter);
-        };
-
-        self.testWebcamStreamUrlBusy = ko.observable(false);
-        self.testWebcamStreamUrl = function () {
-            var url = self.webcam_streamUrlEscaped();
-            if (!url) {
-                return;
-            }
-
-            if (self.testWebcamStreamUrlBusy()) {
-                return;
-            }
-
-            var text = gettext(
-                "If you see your webcam stream below, the entered stream URL is ok."
-            );
-
-            var streamType;
-            try {
-                streamType = self.webcam_streamType();
-            } catch (e) {
-                streamType = "";
-            }
-
-            var webcam_element;
-            var webrtc_peer_connection;
-            if (streamType === "mjpg") {
-                webcam_element = $('<img src="' + url + '">');
-            } else if (streamType === "hls") {
-                webcam_element = $(
-                    '<video id="webcam_hls" muted autoplay style="width: 100%"/>'
-                );
-                video_element = webcam_element[0];
-                if (video_element.canPlayType("application/vnd.apple.mpegurl")) {
-                    video_element.src = url;
-                } else if (Hls.isSupported()) {
-                    var hls = new Hls();
-                    hls.loadSource(url);
-                    hls.attachMedia(video_element);
-                }
-            } else if (isWebRTCAvailable() && streamType === "webrtc") {
-                webcam_element = $(
-                    '<video id="webcam_webrtc" muted autoplay playsinline controls style="width: 100%"/>'
-                );
-                video_element = webcam_element[0];
-
-                webrtc_peer_connection = startWebRTC(
-                    video_element,
-                    url,
-                    self.webcam_streamWebrtcIceServers()
-                );
-            } else {
-                throw "Unknown stream type " + streamType;
-            }
-
-            var message = $("<div id='webcamTestContainer'></div>")
-                .append($("<p></p>"))
-                .append(text)
-                .append(webcam_element);
-
-            self.testWebcamStreamUrlBusy(true);
-            showMessageDialog({
-                title: gettext("Stream test"),
-                message: message,
-                onclose: function () {
-                    self.testWebcamStreamUrlBusy(false);
-                    if (webrtc_peer_connection != null) {
-                        webrtc_peer_connection.close();
-                        webrtc_peer_connection = null;
-                    }
-                }
-            });
-        };
-
-        self.testWebcamSnapshotUrlBusy = ko.observable(false);
-        self.testWebcamSnapshotUrl = function (viewModel, event) {
-            if (!self.webcam_snapshotUrl()) {
-                return;
-            }
-
-            if (self.testWebcamSnapshotUrlBusy()) {
-                return;
-            }
-
-            var errorText = gettext(
-                "Could not retrieve snapshot URL, please double check the URL"
-            );
-            var errorTitle = gettext("Snapshot test failed");
-
-            self.testWebcamSnapshotUrlBusy(true);
-            OctoPrint.util
-                .testUrl(self.webcam_snapshotUrl(), {
-                    method: "GET",
-                    response: "bytes",
-                    timeout: self.webcam_snapshotTimeout(),
-                    validSsl: self.webcam_snapshotSslValidation(),
-                    content_type_whitelist: ["image/*"],
-                    content_type_guess: true
-                })
-                .done(function (response) {
-                    if (!response.result) {
-                        if (
-                            response.status &&
-                            response.response &&
-                            response.response.content_type
-                        ) {
-                            // we could contact the server, but something else was wrong, probably the mime type
-                            errorText = gettext(
-                                "Could retrieve the snapshot URL, but it didn't look like an " +
-                                    "image. Got this as a content type header: <code>%(content_type)s</code>. Please " +
-                                    "double check that the URL is returning static images, not multipart data " +
-                                    "or videos."
-                            );
-                            errorText = _.sprintf(errorText, {
-                                content_type: _.escape(response.response.content_type)
-                            });
-                        }
-
-                        showMessageDialog({
-                            title: errorTitle,
-                            message: errorText,
-                            onclose: function () {
-                                self.testWebcamSnapshotUrlBusy(false);
-                            }
-                        });
-                        return;
-                    }
-
-                    var content = response.response.content;
-                    var contentType = response.response.assumed_content_type;
-
-                    var mimeType = "image/jpeg";
-                    if (contentType) {
-                        mimeType = contentType.split(";")[0];
-                    }
-
-                    var text = gettext(
-                        "If you see your webcam snapshot picture below, the entered snapshot URL is ok."
-                    );
-                    showMessageDialog({
-                        title: gettext("Snapshot test"),
-                        message: $(
-                            "<p>" +
-                                text +
-                                '</p><p><img src="data:' +
-                                mimeType +
-                                ";base64," +
-                                content +
-                                '" style="border: 1px solid black" /></p>'
-                        ),
-                        onclose: function () {
-                            self.testWebcamSnapshotUrlBusy(false);
-                        }
-                    });
-                })
-                .fail(function () {
-                    showMessageDialog({
-                        title: errorTitle,
-                        message: errorText,
-                        onclose: function () {
-                            self.testWebcamSnapshotUrlBusy(false);
-                        }
-                    });
-                });
         };
 
         self.testWebcamFfmpegPathBusy = ko.observable(false);
@@ -1183,15 +998,6 @@ $(function () {
                         });
                         return result;
                     }
-                },
-                webcam: {
-                    streamWebrtcIceServers: function () {
-                        return splitTextToArray(
-                            self.webcam_streamWebrtcIceServers(),
-                            ",",
-                            true
-                        );
-                    }
                 }
             };
 
@@ -1351,11 +1157,6 @@ $(function () {
                 temperature: {
                     profiles: function (value) {
                         self.temperature_profiles($.extend(true, [], value));
-                    }
-                },
-                webcam: {
-                    streamWebrtcIceServers: function (value) {
-                        self.webcam_streamWebrtcIceServers(value.join(", "));
                     }
                 }
             };
@@ -1568,6 +1369,19 @@ $(function () {
                     if (!self._startupComplete) return;
                     self.requestData();
                 };
+
+        self.validURL = function (str) {
+            var pattern = new RegExp(
+                "^(https?:\\/\\/)?" + // protocol
+                    "((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|" + // domain name
+                    "((\\d{1,3}\\.){3}\\d{1,3}))" + // OR ip (v4) address
+                    "(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*" + // port and path
+                    "(\\?[;&a-z\\d%_.~+=-]*)?" + // query string
+                    "(\\#[-a-z\\d_]*)?$",
+                "i"
+            ); // fragment locator
+            return !!pattern.test(str);
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({

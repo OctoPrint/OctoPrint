@@ -491,6 +491,7 @@ class Settings:
 
         self._get_preprocessors = {"controls": self._process_custom_controls}
         self._set_preprocessors = {}
+        self._deprecated_paths = {}
 
         self._init_basedir(basedir)
 
@@ -553,6 +554,14 @@ class Settings:
             self._logger.warning(
                 "CSRF Protection is disabled, this is a security risk. Do not run this in production."
             )
+
+    def _is_deprecated_path(self, path):
+        if path and isinstance(path[-1], (list, tuple)):
+            prefix = path[:-1]
+            return any(
+                map(lambda x: tuple(prefix + [x]) in self._deprecated_paths, path[-1])
+            )
+        return self._deprecated_paths.get(tuple(path), False)
 
     def _get_default_folder(self, type):
         folder = default_settings["folder"][type]
@@ -917,7 +926,7 @@ class Settings:
             self._migrate_config(config)
         return config
 
-    def add_overlay(self, overlay, at_end=False, key=None):
+    def add_overlay(self, overlay, at_end=False, key=None, deprecated=None):
         assert isinstance(overlay, dict)
 
         if key is None:
@@ -927,6 +936,21 @@ class Settings:
             hash = hashlib.md5()
             hash.update(overlay_yaml.encode("utf-8"))
             key = hash.hexdigest()
+
+        if deprecated is not None:
+
+            def paths(prefix, data):
+                if isinstance(data, dict):
+                    for k, v in data.items():
+                        yield from paths(prefix + [k], v)
+                else:
+                    yield prefix
+
+            self._logger.debug(
+                f"Marking all (recursive) paths in this overlay as deprecated: {overlay}"
+            )
+            for path in paths([], overlay):
+                self._deprecated_paths[tuple(path)] = deprecated
 
         overlay[self.OVERLAY_KEY] = key
         if at_end:
@@ -1536,6 +1560,13 @@ class Settings:
         if not path:
             raise NoSuchSettingsPath()
 
+        is_deprecated = self._is_deprecated_path(path)
+        if is_deprecated:
+            self._logger.warn(
+                f"DeprecationWarning: Detected access to deprecated settings path {path}, returned value is derived from compatibility overlay. {is_deprecated if isinstance(is_deprecated, str) else ''}"
+            )
+            config = {}
+
         chain = self._map.with_config_defaults(config=config, defaults=defaults)
 
         if preprocessors is None:
@@ -1810,6 +1841,13 @@ class Settings:
         if not path:
             if error_on_path:
                 raise NoSuchSettingsPath()
+            return
+
+        is_deprecated = self._is_deprecated_path(path)
+        if is_deprecated:
+            self._logger.warning(
+                f"[Deprecation] Prevented write of `{value}` to deprecated settings path {path}. {is_deprecated if isinstance(is_deprecated, str) else ''}"
+            )
             return
 
         if self._mtime is not None and self.last_modified != self._mtime:
