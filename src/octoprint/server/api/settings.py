@@ -25,6 +25,19 @@ from octoprint.webcams import (
 
 FOLDER_TYPES = ("uploads", "timelapse", "watched")
 TIMELAPSE_BITRATE_PATTERN = re.compile(r"\d+[KMGTPEZY]?i?B?", flags=re.IGNORECASE)
+DEPRECATED_WEBCAM_KEYS = (
+    "streamUrl",
+    "streamRatio",
+    "streamTimeout",
+    "streamWebrtcIceServers",
+    "snapshotUrl",
+    "snapshotTimeout",
+    "snapshotSslValidation",
+    "cacheBuster",
+    "flipH",
+    "flipV",
+    "rotate90",
+)
 
 
 def _lastmodified():
@@ -338,24 +351,26 @@ def getSettings():
             "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
             "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
             "watermark": s.getBoolean(["webcam", "watermark"]),
+            # webcams & defaults
             "webcams": webcamsDict,
-            "streamUrl": None,
-            "streamRatio": None,
-            "streamTimeout": None,
-            "streamWebrtcIceServers": None,
-            "snapshotUrl": None,
-            "snapshotTimeout": None,
-            "snapshotSslValidation": None,
-            "cacheBuster": None,
-            "flipH": None,
-            "flipV": None,
-            "rotate90": None,
             "defaultWebcam": None,
             "snapshotWebcam": None,
         }
 
+        for key in DEPRECATED_WEBCAM_KEYS:
+            data["webcam"][key] = None
+
         defaultWebcam = get_default_webcam()
-        snapshotWebcam = get_snapshot_webcam()
+        if defaultWebcam:
+            data["webcam"].update(
+                {
+                    "flipH": defaultWebcam.config.flipH,
+                    "flipV": defaultWebcam.config.flipV,
+                    "rotate90": defaultWebcam.config.rotate90,
+                    "defaultWebcam": defaultWebcam.config.name,
+                }
+            )
+
         compatWebcam = defaultWebcam.config.compat if defaultWebcam is not None else None
         if compatWebcam:
             data["webcam"].update(
@@ -371,16 +386,7 @@ def getSettings():
                 }
             )
 
-        if defaultWebcam:
-            data["webcam"].update(
-                {
-                    "flipH": defaultWebcam.config.flipH,
-                    "flipV": defaultWebcam.config.flipV,
-                    "rotate90": defaultWebcam.config.rotate90,
-                    "defaultWebcam": defaultWebcam.config.name,
-                }
-            )
-
+        snapshotWebcam = get_snapshot_webcam()
         if snapshotWebcam:
             data["webcam"].update(
                 {
@@ -576,6 +582,12 @@ def _saveSettings(data):
             )
 
     if "webcam" in data:
+        for key in DEPRECATED_WEBCAM_KEYS:
+            if key in data["webcam"]:
+                logger.warning(
+                    f"Setting webcam.{key} via the API is no longer supported, please use the individual settings of the default webcam instead."
+                )
+
         if "webcamEnabled" in data["webcam"]:
             s.setBoolean(["webcam", "webcamEnabled"], data["webcam"]["webcamEnabled"])
         if "timelapseEnabled" in data["webcam"]:
@@ -636,6 +648,8 @@ def _saveSettings(data):
             s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
         if "defaultWebcam" in data["webcam"]:
             s.set(["webcam", "defaultWebcam"], data["webcam"]["defaultWebcam"])
+        if "snapshotWebcam" in data["webcam"]:
+            s.set(["webcam", "snapshotWebcam"], data["webcam"]["snapshotWebcam"])
 
     if "feature" in data:
         if "temperatureGraph" in data["feature"]:
