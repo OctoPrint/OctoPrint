@@ -16,6 +16,7 @@ import shutil
 import tempfile
 import time
 import unittest
+import unittest.mock
 
 import ddt
 import pytest
@@ -555,6 +556,63 @@ class SettingsTest(unittest.TestCase):
             # verify updated values
             self.assertEqual("127.0.0.1", settings.get(["server", "host"]))
             self.assertEqual("key", settings.get(["api", "key"]))
+
+    ##~~ test update callbacks
+
+    def test_update_callback_change(
+        self,
+    ):
+        with self.settings() as settings:
+            callback = unittest.mock.Mock()
+            settings.add_path_update_callback(["api", "key"], callback)
+
+            # set a new value
+            settings.set(["api", "key"], "newkey")
+
+            # verify callback was called
+            callback.assert_called_once_with(["api", "key"], "test", "newkey")
+
+    def test_update_callback_reset_to_default(self):
+        with self.settings() as settings:
+            callback = unittest.mock.Mock()
+            settings.add_path_update_callback(["server", "port"], callback)
+
+            # set back to default
+            settings.set(["server", "port"], 5000)
+
+            # verify callback was called
+            callback.assert_called_once_with(["server", "port"], 8080, 5000)
+
+    def test_update_callback_wrong_path(self):
+        with self.settings() as settings:
+            callback = unittest.mock.Mock()
+            settings.add_path_update_callback(["wrong", "path"], callback)
+
+            # set a new value
+            settings.set(["api", "key"], "newkey")
+
+            # verify callback was not called
+            callback.assert_not_called()
+
+    def test_update_callback_removal(self):
+        with self.settings() as settings:
+            callback = unittest.mock.Mock()
+            settings.add_path_update_callback(["api", "key"], callback)
+
+            # set a new value
+            settings.set(["api", "key"], "newkey")
+
+            # verify callback was called
+            callback.assert_called_once_with(["api", "key"], "test", "newkey")
+
+            # remove callback
+            settings.remove_path_update_callback(["api", "key"], callback)
+
+            # set a new value
+            settings.set(["api", "key"], "newkey2")
+
+            # verify callback was not called again
+            callback.assert_called_once_with(["api", "key"], "test", "newkey")
 
     ##~~ test save
 
