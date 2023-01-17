@@ -614,6 +614,40 @@ class SettingsTest(unittest.TestCase):
             # verify callback was not called again
             callback.assert_called_once_with(["api", "key"], "test", "newkey")
 
+    ##~~ test overlays
+
+    def test_overlay_add_and_remove(self):
+        with self.settings() as settings:
+            # add overlay
+            overlay = {"server": {"host": "1.1.1.1"}}
+            overlay_key = settings.add_overlay(overlay)
+
+            # verify overlay was added
+            self.assertEqual(settings.get(["server", "host"]), "1.1.1.1")
+
+            # remove overlay
+            settings.remove_overlay(overlay_key)
+
+            # verify overlay was removed
+            self.assertEqual(settings.get(["server", "host"]), "0.0.0.0")
+
+    def test_overlay_add_and_remove_deprecated(self):
+        with self.settings() as settings:
+            # add overlay
+            overlay = {"server": {"host": "1.1.1.1"}}
+            overlay_key = settings.add_overlay(overlay, deprecated="test")
+
+            # verify overlay was added and path marked as deprecated
+            self.assertEqual(settings.get(["server", "host"]), "1.1.1.1")
+            self.assertTrue(settings._is_deprecated_path(["server", "host"]))
+
+            # remove overlay
+            settings.remove_overlay(overlay_key)
+
+            # verify overlay was removed and path no longer marked as deprecated
+            self.assertEqual(settings.get(["server", "host"]), "0.0.0.0")
+            self.assertFalse(settings._is_deprecated_path(["server", "host"]))
+
     ##~~ test save
 
     def test_save(self):
