@@ -46,7 +46,11 @@
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
-        <a href="#" class="btn btn-primary" data-bind="click: function() { if ((moveSource() !== moveDestination() || moveSourceFilename() !== moveDestinationFilename()) && !movingFileOrFolder()) { $root.moveFileOrFolder(moveEntry().path, moveDestinationFullpath()) } else {} }, css: {disabled: (moveSource() === moveDestination() && moveSourceFilename() === moveDestinationFilename()) || movingFileOrFolder()}"><i class="fas fa-spinner fa-spin" data-bind="visible: movingFileOrFolder"></i> {{ _('Confirm') }}</a>
+        <a href="#" class="btn btn-primary"
+           data-bind="click: function() { if ((moveSource() !== moveDestination() || moveSourceFilename() !== moveDestinationFilename()) && !movingFileOrFolder()) { $root.moveFileOrFolder(moveEntry().path, moveDestinationFullpath()) } else {} },
+                      css: {disabled: (moveSource() === moveDestination() && moveSourceFilename() === moveDestinationFilename()) || movingFileOrFolder()},
+                      text: moveButtonText">
+           <i class="fas fa-spinner fa-spin" data-bind="visible: movingFileOrFolder"></i></a>
     </div>
 </div>
 

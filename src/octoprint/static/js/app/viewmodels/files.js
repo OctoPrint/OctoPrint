@@ -100,6 +100,16 @@ $(function () {
             }
         });
         self.moveError = ko.observable("");
+        self.moveButtonText = ko.pureComputed(function () {
+            if (self.moveSource() === self.moveDestination()) {
+                return gettext("Rename");
+            } else {
+                // Moving, but maybe also renaming
+                if (self.moveSourceFilename() !== self.moveDestinationFilename()) {
+                    return gettext("Move & Rename");
+                } else return gettext("Move");
+            }
+        });
 
         self.folderList = ko.observableArray(["/"]);
         self.addFolderDialog = undefined;
