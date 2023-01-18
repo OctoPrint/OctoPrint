@@ -1626,42 +1626,34 @@ $(function () {
         };
 
         self._processPluginManagementResult = function (response, action, plugin) {
-            if (response.result) {
-                if (response.subResults) {
-                    self._markDone();
-                } else if (self.queuedInstalls().length > 0 && action === "install") {
-                    var plugin_dequeue = ko.utils.arrayFirst(
-                        self.queuedInstalls(),
-                        function (item) {
-                            return item.url === response.source;
-                        }
-                    );
-                    if (plugin_dequeue) {
-                        self.queuedInstalls.remove(plugin_dequeue);
-                    }
-                    if (self.queuedInstalls().length === 0) {
-                        self.multiInstallRunning(false);
-                        self._markDone();
-                    }
-                } else if (self.multiInstallRunning() && action === "install") {
-                    // A MultiInstall job has finished
-                    self.alertMultiInstallJobDone(response);
-                } else {
-                    self._markDone();
-                }
-            } else {
-                self._markDone(response.reason, response.faq);
-            }
-
-            if (response.sub_results) {
-                _.each(response.sub_results, (result) => {
-                    var {action, name} = self._extractActionAndNameFromResult(result);
-                    self._addPluginManagementLog(result, action, name);
-                });
-                self._displayPluginManagementNotification();
-            } else {
+            if (response.type == "partial_result") {
                 self._addPluginManagementLog(response, action, plugin);
                 self._displayPluginManagementNotification();
+            } else {
+                if (response.result) {
+                    if (self.queuedInstalls().length > 0 && action === "install") {
+                        var plugin_dequeue = ko.utils.arrayFirst(
+                            self.queuedInstalls(),
+                            function (item) {
+                                return item.url === response.source;
+                            }
+                        );
+                        if (plugin_dequeue) {
+                            self.queuedInstalls.remove(plugin_dequeue);
+                        }
+                        if (self.queuedInstalls().length === 0) {
+                            self.multiInstallRunning(false);
+                            self._markDone();
+                        }
+                    } else if (self.multiInstallRunning() && action === "install") {
+                        // A MultiInstall job has finished
+                        self.alertMultiInstallJobDone(response);
+                    } else {
+                        self._markDone();
+                    }
+                } else {
+                    self._markDone(response.reason, response.faq);
+                }
             }
         };
 
@@ -2278,10 +2270,12 @@ $(function () {
                     self.loglines.push(self._preprocessLine(line));
                 });
                 self._scrollWorkingOutputToEnd();
-            } else if (messageType === "result") {
+            } else if (messageType === "result" || messageType === "partial_result") {
                 var {action, name} = self._extractActionAndNameFromResult(data);
                 self._processPluginManagementResult(data, action, name);
-                self.requestPluginData();
+                if (messageType === "result") {
+                    self.requestPluginData();
+                }
             } else if (messageType === "queued_installs") {
                 if (data.hasOwnProperty("queued")) {
                     self.queuedInstalls(data.queued);

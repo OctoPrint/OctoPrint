@@ -907,7 +907,7 @@ class PluginManagerPlugin(
         force=False,
         reinstall=None,
         dependency_links=False,
-        send_notifications=True,
+        partial=False,
     ):
         folder = None
 
@@ -932,7 +932,7 @@ class PluginManagerPlugin(
                         force=force,
                         reinstall=reinstall,
                         dependency_links=dependency_links,
-                        send_notifications=send_notifications,
+                        partial=partial,
                     )
 
                 elif self._is_pythonfile(path):
@@ -941,16 +941,16 @@ class PluginManagerPlugin(
                         source=source,
                         source_type=source_type,
                         name=name,
-                        send_notifications=send_notifications,
+                        partial=partial,
                     )
 
-                elif self._is_jsonfile(path) and not self._jsonfile_install:
+                elif self._is_jsonfile(path):
                     result = self._command_install_jsonfile(
                         path,
                         source=source,
                         source_type=source_type,
                         name=name,
-                        send_notifications=send_notifications,
+                        partial=partial,
                     )
 
                 else:
@@ -964,8 +964,7 @@ class PluginManagerPlugin(
                     "source_type": source_type,
                     "reason": f"Could not fetch plugin from server, got {e}",
                 }
-                if send_notifications:
-                    self._send_result_notification("install", result)
+                self._send_result_notification("install", result, partial=partial)
 
             except exceptions.InvalidPackageFormat:
                 self._logger.error(
@@ -980,8 +979,7 @@ class PluginManagerPlugin(
                     "reason": "Could not install plugin from {}, was neither "
                     "a plugin archive nor a single file plugin".format(source),
                 }
-                if send_notifications:
-                    self._send_result_notification("install", result)
+                self._send_result_notification("install", result, partial=partial)
 
             except Exception:
                 error_msg = (
@@ -996,8 +994,7 @@ class PluginManagerPlugin(
                     "source_type": source_type,
                     "reason": error_msg,
                 }
-                if send_notifications:
-                    self._send_result_notification("install", result)
+                self._send_result_notification("install", result, partial=partial)
 
             finally:
                 if folder is not None:
@@ -1015,7 +1012,7 @@ class PluginManagerPlugin(
         force=False,
         reinstall=None,
         dependency_links=False,
-        send_notifications=True,
+        partial=False,
     ):
         throttled = self._get_throttled()
         if (
@@ -1036,8 +1033,7 @@ class PluginManagerPlugin(
                 "source_type": source_type,
                 "reason": error_msg,
             }
-            if send_notifications:
-                self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         from urllib.parse import quote as url_quote
@@ -1091,14 +1087,11 @@ class PluginManagerPlugin(
                     source
                 ),
             }
-            if send_notifications:
-                self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         if is_python_mismatch(stderr):
-            return self.handle_python_mismatch(
-                source, source_type, send_notifications=send_notifications
-            )
+            return self.handle_python_mismatch(source, source_type, partial=partial)
 
         if force:
             # We don't use --upgrade here because that will also happily update all our dependencies - we'd rather
@@ -1117,8 +1110,7 @@ class PluginManagerPlugin(
                         source
                     ),
                 }
-                if send_notifications:
-                    self._send_result_notification("install", result)
+                self._send_result_notification("install", result, partial=partial)
                 return result
 
             if is_python_mismatch(stderr):
@@ -1137,8 +1129,7 @@ class PluginManagerPlugin(
                 "reason": "Could not parse output from pip, see plugin_pluginmanager_console.log "
                 "for generated output",
             }
-            if send_notifications:
-                self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         # We'll need to fetch the "Successfully installed" line, strip the "Successfully" part, then split
@@ -1165,8 +1156,7 @@ class PluginManagerPlugin(
                 "source_type": source_type,
                 "reason": "Pip did not report successful installation",
             }
-            if send_notifications:
-                self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         installed = list(
@@ -1193,8 +1183,7 @@ class PluginManagerPlugin(
                 "was_reinstalled": False,
                 "plugin": "unknown",
             }
-            if send_notifications:
-                self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         self._plugin_manager.reload_plugins()
@@ -1250,11 +1239,10 @@ class PluginManagerPlugin(
             or reinstall is not None,
             "plugin": self._to_external_plugin(new_plugin),
         }
-        if send_notifications:
-            self._send_result_notification("install", result)
+        self._send_result_notification("install", result, partial=partial)
         return result
 
-    def _handle_python_mismatch(self, source, source_type, send_notifications=True):
+    def _handle_python_mismatch(self, source, source_type, partial=False):
         self._logger.error(
             "Installing the plugin from {} failed, pip reported a Python version mismatch".format(
                 source
@@ -1267,13 +1255,12 @@ class PluginManagerPlugin(
             "reason": "Pip reported a Python version mismatch",
             "faq": "https://faq.octoprint.org/plugin-python-mismatch",
         }
-        if send_notifications:
-            self._send_result_notification("install", result)
+        self._send_result_notification("install", result, partial=partial)
         return result
 
     # noinspection DuplicatedCode
     def _command_install_pythonfile(
-        self, path, source=None, source_type=None, name=None, send_notifications=True
+        self, path, source=None, source_type=None, name=None, partial=False
     ):
         if name is None:
             name = os.path.basename(path)
@@ -1303,8 +1290,7 @@ class PluginManagerPlugin(
                 )
             )
             result = PYTHON_MISMATCH
-            if send_notifications:
-                self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         pythoncompat = metadata.get(
@@ -1318,8 +1304,7 @@ class PluginManagerPlugin(
                 )
             )
             result = PYTHON_MISMATCH
-            if send_notifications:
-                self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         # copy plugin
@@ -1334,8 +1319,7 @@ class PluginManagerPlugin(
                 "source_type": source_type,
                 "reason": "Plugin could not be copied",
             }
-            if send_notifications:
-                self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         plugins = self._plugin_manager.find_plugins(existing={}, ignore_uninstalled=False)
@@ -1355,8 +1339,7 @@ class PluginManagerPlugin(
                 "was_reinstalled": False,
                 "plugin": "unknown",
             }
-            if send_notifications:
-                self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         self._plugin_manager.reload_plugins()
@@ -1400,12 +1383,11 @@ class PluginManagerPlugin(
             "was_reinstalled": new_plugin.key in all_plugins_before,
             "plugin": self._to_external_plugin(new_plugin),
         }
-        if send_notifications:
-            self._send_result_notification("install", result)
+        self._send_result_notification("install", result, partial=partial)
         return result
 
     def _command_install_jsonfile(
-        self, path, source=None, source_type=None, name=None, send_notifications=True
+        self, path, source=None, source_type=None, name=None, partial=False
     ):
         import json
 
@@ -1422,8 +1404,7 @@ class PluginManagerPlugin(
                     "source_type": source_type,
                     "reason": "Recursive json install",
                 }
-                if send_notifications:
-                    self._send_result_notification("install", result)
+                self._send_result_notification("install", result, partial=partial)
                 return result
 
             if name is None:
@@ -1444,8 +1425,7 @@ class PluginManagerPlugin(
                     "source_type": source_type,
                     "reason": "Invalid export",
                 }
-                if send_notifications:
-                    self._send_result_notification("install", result)
+                self._send_result_notification("install", result, partial=partial)
                 return result
 
             for entry in export:
@@ -1472,7 +1452,9 @@ class PluginManagerPlugin(
 
                 try:
                     self._logger.info(f"Installing plugin from {archive}")
-                    sub_result = self.command_install(url=archive, name=name)
+                    sub_result = self.command_install(
+                        url=archive, name=name, partial=True
+                    )
                     sub_results.append(sub_result)
 
                 except Exception:
@@ -1488,8 +1470,7 @@ class PluginManagerPlugin(
             "source_type": source_type,
             "sub_results": sub_results,
         }
-        if send_notifications:
-            self._send_result_notification("install", result)
+        self._send_result_notification("install", result, partial=partial)
         return result
 
     def command_uninstall(self, plugin, cleanup=False):
@@ -1826,8 +1807,11 @@ class PluginManagerPlugin(
 
         return None
 
-    def _send_result_notification(self, action, result):
-        notification = {"type": "result", "action": action}
+    def _send_result_notification(self, action, result, partial=False):
+        notification = {
+            "type": "partial_result" if partial else "result",
+            "action": action,
+        }
         notification.update(result)
         self._plugin_manager.send_plugin_message(self._identifier, notification)
 
