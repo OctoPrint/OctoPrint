@@ -481,18 +481,36 @@ $(function () {
 
                 self.uploadButton.unbind("click");
                 self.uploadButton.bind("click", function () {
-                    self._markWorking(
-                        isJsonFile
-                            ? gettext("Installing plugins...")
-                            : gettext("Installing plugin..."),
-                        isJsonFile
-                            ? gettext("Installing plugins from uploaded file...")
-                            : gettext("Installing plugin from uploaded file...")
-                    );
-                    data.formData = {
-                        dependency_links: self.followDependencyLinks()
+                    const proceed = () => {
+                        self._markWorking(
+                            isJsonFile
+                                ? gettext("Installing plugins...")
+                                : gettext("Installing plugin..."),
+                            isJsonFile
+                                ? gettext("Installing plugins from uploaded file...")
+                                : gettext("Installing plugin from uploaded file...")
+                        );
+                        data.formData = {
+                            dependency_links: self.followDependencyLinks()
+                        };
+                        data.submit();
                     };
-                    data.submit();
+
+                    if (isJsonFile) {
+                        showConfirmationDialog({
+                            title: gettext("Confirm installation of multiple plugins"),
+                            message: gettext(
+                                "Please confirm you want to perform all plugins specified in the json file:"
+                            ),
+                            cancel: gettext("Cancel"),
+                            proceed: gettext("Install"),
+                            proceedClass: "primary",
+                            onproceed: proceed
+                        });
+                    } else {
+                        proceed();
+                    }
+
                     return false;
                 });
             },
