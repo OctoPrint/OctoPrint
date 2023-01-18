@@ -56,9 +56,10 @@ jobs:
     steps:
       - name: 👀 Determine latest release
         id: latest
-        uses: foosel/github-action-get-latest-release@master
+        uses: pozetroninc/github-action-get-latest-release@master
         with:
           repository: "OctoPrint/OctoPrint"
+          excludes: prerelease,draft
       - name: 🐍 Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
