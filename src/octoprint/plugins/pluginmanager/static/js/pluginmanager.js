@@ -500,7 +500,7 @@ $(function () {
                         showConfirmationDialog({
                             title: gettext("Confirm installation of multiple plugins"),
                             message: gettext(
-                                "Please confirm you want to perform all plugins specified in the json file:"
+                                "Please confirm you want to perform all plugins specified in the json file."
                             ),
                             cancel: gettext("Cancel"),
                             proceed: gettext("Install"),
@@ -1650,9 +1650,6 @@ $(function () {
 
         self._processPluginManagementResult = function (response, action, plugin) {
             if (response.type == "partial_result") {
-                self._addPluginManagementLog(response, action, plugin);
-                self._displayPluginManagementNotification();
-
                 if (!response.result) {
                     self.loglines.push({line: gettext("Error!"), stream: "error"});
                     self.loglines.push({line: response.reason, stream: "error"});
@@ -1701,6 +1698,9 @@ $(function () {
                     self._markDone(response.reason, response.faq);
                 }
             }
+
+            self._addPluginManagementLog(response, action, plugin);
+            self._displayPluginManagementNotification();
         };
 
         self._extractActionAndNameFromResult = function (result) {
