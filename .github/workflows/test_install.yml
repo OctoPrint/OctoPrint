@@ -55,25 +55,23 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: 👀 Determine latest release
-        id: latest
-        uses: pozetroninc/github-action-get-latest-release@master
-        with:
-          repository: "OctoPrint/OctoPrint"
-          excludes: prerelease,draft
+        run: |
+          OCTOPRINT_VERSION=$(curl -i https://github.com/OctoPrint/OctoPrint/releases/latest | grep -i location: | awk -F/ '{print $NF}')
+          echo "OCTOPRINT_VERSION=$OCTOPRINT_VERSION" >> $GITHUB_ENV
       - name: 🐍 Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: 👷 Build and install latest release
         run: |
-          pip install https://github.com/OctoPrint/OctoPrint/archive/${{ steps.latest.outputs.release }}.zip
+          pip install https://github.com/OctoPrint/OctoPrint/archive/${{ env.OCTOPRINT_VERSION }}.zip
       - name: 📧 Discord success notification
         continue-on-error: true
         env:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
         uses: Ilshidur/action-discord@master
         with:
-          args: "☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ steps.latest.outputs.release }}` was successful"
+          args: "☑️ Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ env.OCTOPRINT_VERSION }}` was successful"
       - name: 📧 Discord failure notification
         continue-on-error: true
         if: failure()
@@ -81,4 +79,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.discord_webhook }}
         uses: Ilshidur/action-discord@master
         with:
-          args: "🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ steps.latest.outputs.release }}` failed"
+          args: "🚫 Test install on Python ${{ matrix.python }} under `${{ matrix.os }}` for `OctoPrint/OctoPrint:${{ env.OCTOPRINT_VERSION }}` failed"
