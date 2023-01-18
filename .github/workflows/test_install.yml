@@ -56,7 +56,7 @@ jobs:
     steps:
       - name: 👀 Determine latest release
         run: |
-          OCTOPRINT_VERSION=$(curl -i https://github.com/OctoPrint/OctoPrint/releases/latest | grep -i location: | awk -F/ '{print $NF}' | tr -d '\n')
+          OCTOPRINT_VERSION=$(curl -i https://github.com/OctoPrint/OctoPrint/releases/latest | grep -i location: | head -n1 | awk -F/ '{print $NF}' | tr -d '\r')
           echo "OCTOPRINT_VERSION=$OCTOPRINT_VERSION" >> $GITHUB_ENV
       - name: 🐍 Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
