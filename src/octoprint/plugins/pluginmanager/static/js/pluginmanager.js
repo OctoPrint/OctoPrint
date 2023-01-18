@@ -212,6 +212,7 @@ $(function () {
         self.online = ko.observable();
         self.supportedArchiveExtensions = ko.observableArray([]);
         self.supportedPythonExtensions = ko.observableArray([]);
+        self.supportedJsonExtensions = ko.observableArray([]);
 
         var createExtensionsHelp = function (extensions) {
             return _.reduce(
@@ -235,15 +236,21 @@ $(function () {
         self.supportedExtensionsHelp = ko.pureComputed(function () {
             var archiveExts = createExtensionsHelp(self.supportedArchiveExtensions());
             var pythonExts = createExtensionsHelp(self.supportedPythonExtensions());
+            var jsonExts = createExtensionsHelp(self.supportedJsonExtensions());
 
             return _.sprintf(
                 gettext(
                     "This does not look like a valid plugin. Valid plugins should be " +
                         "either archives installable via <code>pip</code> that " +
                         "have the extension %(archiveExtensions)s, or single file python " +
-                        "plugins with the extension %(pythonExtensions)s."
+                        "plugins with the extension %(pythonExtensions)s, or a plugin list " +
+                        "export with the extension %(jsonExtensions)s."
                 ),
-                {archiveExtensions: archiveExts, pythonExtensions: pythonExts}
+                {
+                    archiveExtensions: archiveExts,
+                    pythonExtensions: pythonExts,
+                    jsonExtensions: jsonExts
+                }
             );
         });
 
@@ -429,21 +436,19 @@ $(function () {
             );
         });
 
+        self.hasExtension = function (name, extensions) {
+            const lowerName = name.toLocaleLowerCase();
+            return extensions.some((ext) => lowerName.endsWith(ext));
+        };
+
         self.invalidFile = ko.pureComputed(function () {
             var allowedFileExtensions = self
                 .supportedArchiveExtensions()
-                .concat(self.supportedPythonExtensions());
+                .concat(self.supportedPythonExtensions())
+                .concat(self.supportedJsonExtensions());
 
             var name = self.uploadFilename();
-            var lowerName = name !== undefined ? name.toLocaleLowerCase() : undefined;
-
-            var lowerNameHasExtension = function (extension) {
-                return _.endsWith(lowerName, extension);
-            };
-
-            return (
-                name !== undefined && !_.any(allowedFileExtensions, lowerNameHasExtension)
-            );
+            return name !== undefined && !self.hasExtension(name, allowedFileExtensions);
         });
 
         self.enableFileInstall = ko.pureComputed(function () {
@@ -468,18 +473,44 @@ $(function () {
                     return false;
                 }
 
-                self.uploadFilename(data.files[0].name);
+                var name = data.files[0].name;
+                self.uploadFilename(name);
+                var isJsonFile =
+                    name !== undefined &&
+                    self.hasExtension(name, self.supportedJsonExtensions());
 
                 self.uploadButton.unbind("click");
                 self.uploadButton.bind("click", function () {
-                    self._markWorking(
-                        gettext("Installing plugin..."),
-                        gettext("Installing plugin from uploaded file...")
-                    );
-                    data.formData = {
-                        dependency_links: self.followDependencyLinks()
+                    const proceed = () => {
+                        self._markWorking(
+                            isJsonFile
+                                ? gettext("Installing plugins...")
+                                : gettext("Installing plugin..."),
+                            isJsonFile
+                                ? gettext("Installing plugins from uploaded file...")
+                                : gettext("Installing plugin from uploaded file...")
+                        );
+                        data.formData = {
+                            dependency_links: self.followDependencyLinks()
+                        };
+                        data.submit();
                     };
-                    data.submit();
+
+                    if (isJsonFile) {
+                        showConfirmationDialog({
+                            title: gettext("Confirm installation of multiple plugins"),
+                            message: gettext(
+                                "Please confirm you want to perform all plugins specified in the json file."
+                            ),
+                            cancel: gettext("Cancel"),
+                            proceed: gettext("Install"),
+                            proceedClass: "primary",
+                            onproceed: proceed
+                        });
+                    } else {
+                        proceed();
+                    }
+
                     return false;
                 });
             },
@@ -736,6 +767,7 @@ $(function () {
             if (!data) return;
             self.supportedArchiveExtensions(data.archive || []);
             self.supportedPythonExtensions(data.python || []);
+            self.supportedJsonExtensions(data.json || []);
         };
 
         self.dataPluginsDeferred = undefined;
@@ -1617,35 +1649,77 @@ $(function () {
         };
 
         self._processPluginManagementResult = function (response, action, plugin) {
-            if (response.result) {
-                if (self.queuedInstalls().length > 0 && action === "install") {
-                    var plugin_dequeue = ko.utils.arrayFirst(
-                        self.queuedInstalls(),
-                        function (item) {
-                            return item.url === response.source;
-                        }
-                    );
-                    if (plugin_dequeue) {
-                        self.queuedInstalls.remove(plugin_dequeue);
+            if (response.type == "partial_result") {
+                if (!response.result) {
+                    self.loglines.push({line: gettext("Error!"), stream: "error"});
+                    self.loglines.push({line: response.reason, stream: "error"});
+                    if (response.faq) {
+                        self.loglines.push({
+                            line: _.sprintf(
+                                gettext(
+                                    "You can find more info on this issue in the FAQ at %(url)s"
+                                ),
+                                {url: faq}
+                            ),
+                            stream: "error"
+                        });
                     }
-                    if (self.queuedInstalls().length === 0) {
-                        self.multiInstallRunning(false);
+                }
+
+                self.loglines.push({line: "", stream: "separator"});
+                self.loglines.push({
+                    line: _.repeat("+", 50),
+                    stream: "separator"
+                });
+                self.loglines.push({line: "", stream: "separator"});
+            } else {
+                if (response.result) {
+                    if (self.queuedInstalls().length > 0 && action === "install") {
+                        var plugin_dequeue = ko.utils.arrayFirst(
+                            self.queuedInstalls(),
+                            function (item) {
+                                return item.url === response.source;
+                            }
+                        );
+                        if (plugin_dequeue) {
+                            self.queuedInstalls.remove(plugin_dequeue);
+                        }
+                        if (self.queuedInstalls().length === 0) {
+                            self.multiInstallRunning(false);
+                            self._markDone();
+                        }
+                    } else if (self.multiInstallRunning() && action === "install") {
+                        // A MultiInstall job has finished
+                        self.alertMultiInstallJobDone(response);
+                    } else {
                         self._markDone();
                     }
-                } else if (self.multiInstallRunning() && action === "install") {
-                    // A MultiInstall job has finished
-                    self.alertMultiInstallJobDone(response);
                 } else {
-                    self._markDone();
+                    self._markDone(response.reason, response.faq);
                 }
-            } else {
-                self._markDone(response.reason, response.faq);
             }
 
-            self._displayPluginManagementNotification(response, action, plugin);
+            self._addPluginManagementLog(response, action, plugin);
+            self._displayPluginManagementNotification();
         };
 
-        self._displayPluginManagementNotification = function (response, action, plugin) {
+        self._extractActionAndNameFromResult = function (result) {
+            var action = result.action;
+            var name = "Unknown";
+            if (result.hasOwnProperty("plugin")) {
+                if (result.plugin !== "unknown") {
+                    if (_.isPlainObject(result.plugin)) {
+                        name = result.plugin.name;
+                    } else {
+                        name = result.plugin;
+                    }
+                }
+            }
+
+            return {action: action, name: name};
+        };
+
+        self._addPluginManagementLog = function (response, action, plugin) {
             self.logContents.action.restart =
                 self.logContents.action.restart || response.needs_restart;
             self.logContents.action.refresh =
@@ -1658,7 +1732,9 @@ $(function () {
                 result: response.result,
                 faq: response.faq
             });
+        };
 
+        self._displayPluginManagementNotification = function () {
             var title = gettext("Plugin management log");
             var text = "<p><ul>";
 
@@ -1737,7 +1813,11 @@ $(function () {
                     "</p>";
                 type = "warning";
 
-                if (self.restartCommandSpec && !self.multiInstallRunning()) {
+                if (
+                    self.restartCommandSpec &&
+                    !self.multiInstallRunning() &&
+                    !self.working()
+                ) {
                     var restartClicked = false;
                     confirm = {
                         confirm: true,
@@ -1792,7 +1872,7 @@ $(function () {
                     "</p>";
                 type = "warning";
 
-                if (!self.multiInstallRunning()) {
+                if (!self.multiInstallRunning() && !self.working()) {
                     var refreshClicked = false;
                     confirm = {
                         confirm: true,
@@ -2240,21 +2320,13 @@ $(function () {
                     self.loglines.push(self._preprocessLine(line));
                 });
                 self._scrollWorkingOutputToEnd();
-            } else if (messageType === "result") {
-                var action = data.action;
-                var name = "Unknown";
-                if (data.hasOwnProperty("plugin")) {
-                    if (data.plugin !== "unknown") {
-                        if (_.isPlainObject(data.plugin)) {
-                            name = data.plugin.name;
-                        } else {
-                            name = data.plugin;
-                        }
-                    }
-                }
-
+            } else if (messageType === "result" || messageType === "partial_result") {
+                var {action, name} = self._extractActionAndNameFromResult(data);
                 self._processPluginManagementResult(data, action, name);
-                self.requestPluginData();
+                if (messageType === "result") {
+                    self._displayPluginManagementNotification();
+                    self.requestPluginData();
+                }
             } else if (messageType === "queued_installs") {
                 if (data.hasOwnProperty("queued")) {
                     self.queuedInstalls(data.queued);
