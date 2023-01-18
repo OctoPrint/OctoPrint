@@ -2,15 +2,10 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
-
-
-class RatioEnum(str, Enum):
-    sixteen_nine = "16:9"
-    four_three = "4:3"
 
 
 class TimelapseTypeEnum(str, Enum):
@@ -54,20 +49,6 @@ class WebcamConfig(BaseModel):
     timelapseEnabled: bool = True
     """Use this option to enable timelapse support via snapshot, e.g. via MJPG-Streamer. Timelapse support will be disabled if not set."""
 
-    stream: Optional[str] = None
-
-    streamRatio: RatioEnum = RatioEnum.sixteen_nine
-
-    streamTimeout: int = 5
-
-    streamWebrtcIceServers: List[str] = ["stun:stun.l.google.com:19302"]
-
-    snapshot: Optional[str] = None
-
-    snapshotTimeout: int = 5
-
-    snapshotSslValidation: bool = True
-
     ffmpeg: Optional[str] = None
     """Path to ffmpeg binary to use for creating timelapse recordings. Timelapse support will be disabled if not set."""
 
@@ -83,15 +64,6 @@ class WebcamConfig(BaseModel):
     watermark: bool = True
     """Whether to include a "created with OctoPrint" watermark in the generated timelapse recordings."""
 
-    flipH: bool = False
-    """Whether to flip the webcam horizontally."""
-
-    flipV: bool = False
-    """Whether to flip the webcam vertically."""
-
-    rotate90: bool = False
-    """Whether to rotate the webcam 90° counter clockwise."""
-
     ffmpegCommandline: str = '{ffmpeg} -framerate {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b:v {bitrate} -f {containerformat} -y {filters} "{output}"'
 
     ffmpegThumbnailCommandline: str = (
@@ -104,4 +76,5 @@ class WebcamConfig(BaseModel):
     cleanTmpAfterDays: int = 7
     """After how many days unrendered timelapses will be deleted."""
 
-    cacheBuster: bool = False
+    defaultWebcam: str = "classic"
+    """The name of the default webcam"""

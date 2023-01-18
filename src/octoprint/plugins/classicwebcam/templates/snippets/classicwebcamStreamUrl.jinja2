@@ -1,0 +1,13 @@
+<div class="control-group" title="{{ _('URL to embed into the UI for live viewing of the webcam stream')|edq }}" data-bind="css: { error: !streamValid() }">
+    <label class="control-label" for="settings-webcamStreamUrl">{{ _('Stream URL') }}</label>
+    <div class="controls">
+        <div class="input-append">
+            <input type="text" class="input-block-level" data-bind="value: streamUrl, valueUpdate: 'afterkeydown'" id="settings-webcamStreamUrl">
+            <button class="btn" type="button" data-bind="click: testWebcamStreamUrl, enable: !testWebcamStreamUrlBusy() && streamValid(), css: {disabled: testWebcamStreamUrlBusy() || !streamValid()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testWebcamStreamUrlBusy"></i> {{ _('Test') }}</button>
+        </div>
+        <span class="help-block">
+            <p>{% trans %}Needs to be reachable from the browser displaying the OctoPrint UI, used to embed the webcam stream into the page.{% endtrans %}</p>
+            <p data-bind="visible: streamType() === 'webrtc'">{% trans %}<strong>Heads-up!</strong> WebRTC support is still in beta and subject to change, monitor the changelog of future versions closely for heads-ups regarding the WebRTC support in OctoPrint.{% endtrans %}</p>
+        </span>
+    </div>
+</div>

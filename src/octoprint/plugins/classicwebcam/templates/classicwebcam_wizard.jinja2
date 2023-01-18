@@ -1,0 +1,31 @@
+<h3>{{ _('Webcam &amp; Timelapse Recordings') }}</h3>
+
+{% trans %}<p>
+    If you have a webcam, you may now configure it here.
+</p>{% endtrans %}
+
+<h4>{{ _('Webcam') }}</h4>
+
+{% trans %}<p>
+    The <strong>Stream URL</strong> is the URL OctoPrint uses to embed the
+    actual webcam stream (which should be an MJPG stream) into the web
+    interface. This needs to be reachable <strong>from your browser</strong>.
+</p><p>
+    It may be
+    <ul>
+        <li>a fully qualified URL (<code>http://host:port/path</code>),</li>
+        <li>a URL defaulting to the protocol used for accessing the web
+            interface (e.g. <code>//host:port/path</code>),</li>
+        <li>an absolute path on the same host as OctoPrint (e.g. <code>/absolute/path</code>) or</li>
+        <li>a relative path on the same host as OctoPrint (e.g. <code>relative/path</code>)</li>
+    </ul>
+</p><p>
+    The <strong>Snapshot URL</strong> is the URL OctoPrint uses to fetch single
+    images from the webcam for creating timelapse recordings. This needs to be
+    a fully qualified URL reachable <strong>from the OctoPrint server</strong>.
+</p>{% endtrans %}
+
+<form id="wizard_classicwebcam" class="form-horizontal" data-bind="with: settingsViewModel" onsubmit="return false;">
+    {% include "snippets/classicwebcamStreamUrl.jinja2" %}
+    {% include "snippets/classicwebcamSnapshotUrl.jinja2" %}
+</form>

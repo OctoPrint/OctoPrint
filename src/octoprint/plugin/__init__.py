@@ -212,6 +212,7 @@ def call_plugin(
     error_callback=None,
     sorting_context=None,
     initialized=True,
+    manager=None,
 ):
     """
     Helper method to invoke the indicated ``method`` on all registered plugin implementations implementing the
@@ -249,6 +250,7 @@ def call_plugin(
             Will be called with the three arguments ``name``, ``plugin`` and ``exc``. ``name`` will be the plugin
             identifier, ``plugin`` the plugin implementation instance itself and ``exc`` the caught exception.
         initialized (boolean): Ignored.
+        manager (PluginManager or None): The plugin manager to use. If not provided, the global plugin manager
     """
 
     if not isinstance(types, (list, tuple)):
@@ -257,12 +259,12 @@ def call_plugin(
         args = []
     if kwargs is None:
         kwargs = {}
+    if manager is None:
+        manager = plugin_manager()
 
     logger = logging.getLogger(__name__)
 
-    plugins = plugin_manager().get_implementations(
-        *types, sorting_context=sorting_context
-    )
+    plugins = manager.get_implementations(*types, sorting_context=sorting_context)
     for plugin in plugins:
         if not hasattr(plugin, "_identifier"):
             continue

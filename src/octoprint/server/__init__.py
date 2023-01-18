@@ -613,6 +613,7 @@ class Server:
         from octoprint import (
             init_custom_events,
             init_settings_plugin_config_migration_and_cleanup,
+            init_webcam_compat_overlay,
         )
         from octoprint import octoprint_plugin_inject_factory as opif
         from octoprint import settings_plugin_inject_factory as spif
@@ -629,6 +630,7 @@ class Server:
         pluginManager.initialize_implementations()
 
         init_settings_plugin_config_migration_and_cleanup(pluginManager)
+        init_webcam_compat_overlay(self._settings, pluginManager)
 
         pluginManager.log_all_plugins()
 

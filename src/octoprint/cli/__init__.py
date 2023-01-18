@@ -53,6 +53,7 @@ def init_platform_for_cli(ctx):
         init_custom_events,
         init_platform,
         init_settings_plugin_config_migration_and_cleanup,
+        init_webcam_compat_overlay,
     )
     from octoprint import octoprint_plugin_inject_factory as opif
     from octoprint import settings_plugin_inject_factory as spif
@@ -94,6 +95,7 @@ def init_platform_for_cli(ctx):
     plugin_manager.initialize_implementations()
 
     init_settings_plugin_config_migration_and_cleanup(plugin_manager)
+    init_webcam_compat_overlay(settings, plugin_manager)
 
     return components
 

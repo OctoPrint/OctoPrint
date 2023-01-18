@@ -2319,3 +2319,30 @@ class ProgressPlugin(OctoPrintPlugin):
         :param int progress:                Current progress as a value between 0 and 100
         """
         pass
+
+
+class WebcamProviderPlugin(OctoPrintPlugin):
+    """
+    The ``WebcamProviderPlugin`` can be used to provide one or more webcams visible on the frontend and used for snapshots/timelapses.
+    """
+
+    def get_webcam_configurations(self):
+        """
+        Used to retrieve a list of available webcams
+
+        Returns:
+            A list of :class:`~octoprint.schema.webcam.Webcam`: The available webcams, can be empty if none available.
+        """
+
+        return []
+
+    def take_webcam_snapshot(self, webcamName):
+        """
+        Used to take a JPEG snapshot of the webcam. This method may raise an exception, you can expect failures to be handled.
+
+         :param string webcamName: The name of the webcam to take a snapshot of as given by the configurations
+
+        Returns:
+            An iterator over bytes of the JPEG image
+        """
+        raise NotImplementedError()
