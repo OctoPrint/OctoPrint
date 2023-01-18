@@ -1795,7 +1795,11 @@ $(function () {
                     "</p>";
                 type = "warning";
 
-                if (self.restartCommandSpec && !self.multiInstallRunning()) {
+                if (
+                    self.restartCommandSpec &&
+                    !self.multiInstallRunning() &&
+                    !self.working()
+                ) {
                     var restartClicked = false;
                     confirm = {
                         confirm: true,
@@ -1850,7 +1854,7 @@ $(function () {
                     "</p>";
                 type = "warning";
 
-                if (!self.multiInstallRunning()) {
+                if (!self.multiInstallRunning() && !self.working()) {
                     var refreshClicked = false;
                     confirm = {
                         confirm: true,
@@ -2302,6 +2306,7 @@ $(function () {
                 var {action, name} = self._extractActionAndNameFromResult(data);
                 self._processPluginManagementResult(data, action, name);
                 if (messageType === "result") {
+                    self._displayPluginManagementNotification();
                     self.requestPluginData();
                 }
             } else if (messageType === "queued_installs") {
