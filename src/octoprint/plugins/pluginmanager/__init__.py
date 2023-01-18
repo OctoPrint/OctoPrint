@@ -1451,7 +1451,9 @@ class PluginManagerPlugin(
                     archive = entry
 
                 try:
-                    self._logger.info(f"Installing plugin from {archive}")
+                    message = f"Installing plugin from {archive}"
+                    self._logger.info(message)
+                    self._log_message(message)
                     sub_result = self.command_install(
                         url=archive, name=name, partial=True
                     )

@@ -436,6 +436,11 @@ $(function () {
             );
         });
 
+        self.hasExtension = function (name, extensions) {
+            const lowerName = name.toLocaleLowerCase();
+            return extensions.some((ext) => lowerName.endsWith(ext));
+        };
+
         self.invalidFile = ko.pureComputed(function () {
             var allowedFileExtensions = self
                 .supportedArchiveExtensions()
@@ -443,15 +448,7 @@ $(function () {
                 .concat(self.supportedJsonExtensions());
 
             var name = self.uploadFilename();
-            var lowerName = name !== undefined ? name.toLocaleLowerCase() : undefined;
-
-            var lowerNameHasExtension = function (extension) {
-                return _.endsWith(lowerName, extension);
-            };
-
-            return (
-                name !== undefined && !_.any(allowedFileExtensions, lowerNameHasExtension)
-            );
+            return name !== undefined && !self.hasExtension(name, allowedFileExtensions);
         });
 
         self.enableFileInstall = ko.pureComputed(function () {
@@ -476,13 +473,21 @@ $(function () {
                     return false;
                 }
 
-                self.uploadFilename(data.files[0].name);
+                var name = data.files[0].name;
+                self.uploadFilename(name);
+                var isJsonFile =
+                    name !== undefined &&
+                    self.hasExtension(name, self.supportedJsonExtensions());
 
                 self.uploadButton.unbind("click");
                 self.uploadButton.bind("click", function () {
                     self._markWorking(
-                        gettext("Installing plugin..."),
-                        gettext("Installing plugin from uploaded file...")
+                        isJsonFile
+                            ? gettext("Installing plugins...")
+                            : gettext("Installing plugin..."),
+                        isJsonFile
+                            ? gettext("Installing plugins from uploaded file...")
+                            : gettext("Installing plugin from uploaded file...")
                     );
                     data.formData = {
                         dependency_links: self.followDependencyLinks()
@@ -1629,6 +1634,29 @@ $(function () {
             if (response.type == "partial_result") {
                 self._addPluginManagementLog(response, action, plugin);
                 self._displayPluginManagementNotification();
+
+                if (!response.result) {
+                    self.loglines.push({line: gettext("Error!"), stream: "error"});
+                    self.loglines.push({line: response.reason, stream: "error"});
+                    if (response.faq) {
+                        self.loglines.push({
+                            line: _.sprintf(
+                                gettext(
+                                    "You can find more info on this issue in the FAQ at %(url)s"
+                                ),
+                                {url: faq}
+                            ),
+                            stream: "error"
+                        });
+                    }
+                }
+
+                self.loglines.push({line: "", stream: "separator"});
+                self.loglines.push({
+                    line: _.repeat("+", 50),
+                    stream: "separator"
+                });
+                self.loglines.push({line: "", stream: "separator"});
             } else {
                 if (response.result) {
                     if (self.queuedInstalls().length > 0 && action === "install") {
