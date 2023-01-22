@@ -36,7 +36,15 @@ $(function () {
             .login(username, password, remember)
             .done(() => {
                 ignoreDisconnect = true;
-                window.location.href = REDIRECT_URL;
+
+                // If the current URL has a `redirect` param we redirect to this location (e.g. authorization flow),
+                // otherwise we redirect to the default REDIRECT_URL
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has("redirect")) {
+                    window.location.href = urlParams.get("redirect");
+                } else {
+                    window.location.href = REDIRECT_URL;
+                }
             })
             .fail((xhr) => {
                 usernameElement.val(USER_ID);
