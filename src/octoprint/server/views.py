@@ -181,7 +181,22 @@ def login():
 
     default_redirect_url = request.script_root + url_for("index")
     redirect_url = request.args.get("redirect", default_redirect_url)
-    allowed_paths = [url_for("index"), url_for("recovery")]
+
+    configured_allowed_paths = settings().get(["server", "allowedLoginRedirectPaths"])
+    if configured_allowed_paths is None or not isinstance(configured_allowed_paths, list):
+        configured_allowed_paths = []
+    configured_allowed_paths = list(
+        filter(
+            lambda x: isinstance(x, str),
+            configured_allowed_paths,
+        )
+    )
+
+    allowed_paths = [
+        url_for("index"),
+        url_for("recovery"),
+        url_for("plugin.appkeys.handle_auth_dialog", app_token="*"),
+    ] + configured_allowed_paths
 
     if not validate_local_redirect(redirect_url, allowed_paths):
         _logger.warning(

@@ -452,7 +452,7 @@ def validate_local_redirect(url, allowed_paths):
     Args:
         url (str): URL to validate
         allowed_paths (List[str]): List of allowed paths, only paths contained
-            will be considered valid.
+            or prefixed (if allowed path ends with "*") will be considered valid.
 
     Returns:
         bool: Whether the `url` passed validation or not.
@@ -460,4 +460,15 @@ def validate_local_redirect(url, allowed_paths):
     from urllib.parse import urlparse
 
     parsed = urlparse(url)
-    return parsed.scheme == "" and parsed.netloc == "" and parsed.path in allowed_paths
+    return (
+        parsed.scheme == ""
+        and parsed.netloc == ""
+        and any(
+            map(
+                lambda x: parsed.path.startswith(x[:-1])
+                if x.endswith("*")
+                else parsed.path == x,
+                allowed_paths,
+            )
+        )
+    )
