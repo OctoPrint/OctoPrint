@@ -105,12 +105,6 @@ def map_repository_entry(entry):
     return result
 
 
-already_installed_string = "Requirement already satisfied (use --upgrade to upgrade)"
-success_string = "Successfully installed"
-failure_string = "Could not install"
-python_mismatch_string = "requires a different Python:"
-
-
 class PluginManagerPlugin(
     octoprint.plugin.SimpleApiPlugin,
     octoprint.plugin.TemplatePlugin,
