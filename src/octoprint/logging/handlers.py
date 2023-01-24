@@ -141,6 +141,10 @@ class TornadoLogHandler(CleaningTimedRotatingFileHandler):
     pass
 
 
+class AuthLogHandler(CleaningTimedRotatingFileHandler):
+    pass
+
+
 class RecordingLogHandler(logging.Handler):
     def __init__(self, target=None, *args, **kwargs):
         super().__init__(*args, **kwargs)

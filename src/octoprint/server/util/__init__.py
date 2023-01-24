@@ -261,6 +261,8 @@ def get_user_for_remote_user_header(request):
         )
         user = octoprint.server.userManager.findUser(userid=header)
 
+    if user:
+        _flask.session["login_mechanism"] = "remote_user"
     return user
 
 
@@ -292,6 +294,8 @@ def get_user_for_authorization_header(header):
         # password check enabled and password don't match
         return None
 
+    if user:
+        _flask.session["login_mechanism"] = "basic_auth"
     return user
 
 

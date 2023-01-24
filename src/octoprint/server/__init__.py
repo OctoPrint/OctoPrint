@@ -34,6 +34,7 @@ from flask_login import (  # noqa: F401
     LoginManager,
     current_user,
     session_protected,
+    user_loaded_from_cookie,
     user_logged_out,
 )
 from watchdog.observers import Observer
@@ -187,6 +188,12 @@ def on_session_protected(sender):
 def on_user_logged_out(sender, user=None):
     # user was logged out, clear identity
     _clear_identity(sender)
+
+
+@user_loaded_from_cookie.connect_via(app)
+def on_user_loaded_from_cookie(sender, user=None):
+    if user:
+        session["login_mechanism"] = "remember_me"
 
 
 def load_user(id):

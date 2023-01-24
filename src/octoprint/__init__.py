@@ -288,6 +288,7 @@ def init_logging(
                     "format": simple_format,
                     "datefmt": date_format,
                 },
+                "auth": {"format": "%(asctime)s - %(message)s"},
                 "timings": {"format": "%(asctime)s - %(message)s"},
                 "timingscsv": {"format": "%(asctime)s;%(func)s;%(timing)f"},
             },
@@ -327,6 +328,13 @@ def init_logging(
                         settings.getBaseFolder("logs"), "tornado.log"
                     ),
                 },
+                "authFile": {
+                    "class": "octoprint.logging.handlers.AuthLogHandler",
+                    "level": "DEBUG",
+                    "formatter": "auth",
+                    "backupCount": 1,
+                    "filename": os.path.join(settings.getBaseFolder("logs"), "auth.log"),
+                },
                 "pluginTimingsFile": {
                     "class": "octoprint.logging.handlers.PluginTimingsLogHandler",
                     "level": "DEBUG",
@@ -352,6 +360,11 @@ def init_logging(
                 "SERIAL": {
                     "level": "INFO",
                     "handlers": ["serialFile"],
+                    "propagate": False,
+                },
+                "AUTH": {
+                    "level": "INFO",
+                    "handlers": ["authFile"],
                     "propagate": False,
                 },
                 "PLUGIN_TIMINGS": {
