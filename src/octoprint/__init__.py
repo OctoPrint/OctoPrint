@@ -265,6 +265,7 @@ def init_logging(
     # default logging configuration
     if default_config is None:
         simple_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        date_format = "%Y-%m-%d %H:%M:%S"
         default_config = {
             "version": 1,
             "formatters": {
@@ -281,6 +282,12 @@ def init_logging(
                     },
                 },
                 "serial": {"format": "%(asctime)s - %(message)s"},
+                "tornado": {
+                    "()": "tornado.log.LogFormatter",
+                    "color": False,
+                    "format": simple_format,
+                    "datefmt": date_format,
+                },
                 "timings": {"format": "%(asctime)s - %(message)s"},
                 "timingscsv": {"format": "%(asctime)s;%(func)s;%(timing)f"},
             },
@@ -310,6 +317,15 @@ def init_logging(
                         settings.getBaseFolder("logs"), "serial.log"
                     ),
                     "delay": True,
+                },
+                "tornadoFile": {
+                    "class": "octoprint.logging.handlers.TornadoLogHandler",
+                    "level": "DEBUG",
+                    "formatter": "tornado",
+                    "backupCount": 1,
+                    "filename": os.path.join(
+                        settings.getBaseFolder("logs"), "tornado.log"
+                    ),
                 },
                 "pluginTimingsFile": {
                     "class": "octoprint.logging.handlers.PluginTimingsLogHandler",
@@ -344,6 +360,11 @@ def init_logging(
                     "propagate": False,
                 },
                 "PLUGIN_TIMINGS.octoprint.plugin": {"level": "INFO"},
+                "tornado.access": {
+                    "level": "INFO",
+                    "handlers": ["tornadoFile"],
+                    "propagate": False,
+                },
                 "octoprint": {"level": "INFO"},
                 "octoprint.util": {"level": "INFO"},
                 "octoprint.plugins": {"level": "INFO"},
