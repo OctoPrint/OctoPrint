@@ -179,7 +179,7 @@ def _locale_str(locale):
 def login():
     from flask_login import current_user
 
-    default_redirect_url = request.script_root + url_for("index")
+    default_redirect_url = url_for("index")
     redirect_url = request.args.get("redirect", default_redirect_url)
 
     configured_allowed_paths = settings().get(["server", "allowedLoginRedirectPaths"])
