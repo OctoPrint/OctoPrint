@@ -861,7 +861,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
         if isinstance(result, list):
             return result
 
-    def fetch_blacklist_from_url(url, timeout=3, cache=None):
+    def fetch_blacklist_from_url(url, timeout=3.05, cache=None):
         result = []
         try:
             r = requests.get(url, timeout=timeout)

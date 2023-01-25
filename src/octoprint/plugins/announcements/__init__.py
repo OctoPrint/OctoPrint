@@ -488,7 +488,7 @@ class AnnouncementPlugin(
         url = config["url"]
         try:
             start = time.monotonic()
-            r = requests.get(url, timeout=30)
+            r = requests.get(url, timeout=3.05)
             r.raise_for_status()
             self._logger.info(
                 "Loaded channel {} from {} in {:.2}s".format(

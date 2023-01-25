@@ -102,8 +102,8 @@ class PluginBlacklistConfig(BaseModel):
     ttl: int = CONST_15MIN
     """Time to live of the cached blacklist, in seconds (default: 15 minutes)."""
 
-    timeout: float = 3.1
-    """Timeout for fetching the blacklist, in seconds (default: 3.1 seconds)."""
+    timeout: float = 3.05
+    """Timeout for fetching the blacklist, in seconds (default: 3.05 seconds)."""
 
 
 @with_attrs_docs

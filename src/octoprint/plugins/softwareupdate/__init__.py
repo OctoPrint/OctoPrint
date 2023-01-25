@@ -424,7 +424,7 @@ class SoftwareUpdatePlugin(
     def _get_check_overlay(self, url):
         self._logger.info(f"Fetching check overlays from {url}")
         try:
-            r = requests.get(url, timeout=3.1)
+            r = requests.get(url, timeout=3.05)
             r.raise_for_status()
             data = r.json()
         except Exception as exc:
@@ -1148,7 +1148,7 @@ class SoftwareUpdatePlugin(
         )
 
         def view():
-            self._environment_ready.wait(timeout=30.0)
+            self._environment_ready.wait(timeout=10.0)
 
             try:
                 (

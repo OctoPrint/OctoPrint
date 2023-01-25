@@ -1990,7 +1990,7 @@ class PluginManagerPlugin(
 
         repository_url = self._settings.get(["repository"])
         try:
-            r = requests.get(repository_url, timeout=30)
+            r = requests.get(repository_url, timeout=3.05)
             r.raise_for_status()
             self._logger.info(f"Loaded plugin repository data from {repository_url}")
         except Exception as e:
@@ -2080,7 +2080,7 @@ class PluginManagerPlugin(
 
         notices_url = self._settings.get(["notices"])
         try:
-            r = requests.get(notices_url, timeout=30)
+            r = requests.get(notices_url, timeout=3.05)
             r.raise_for_status()
             self._logger.info(f"Loaded plugin notices data from {notices_url}")
         except Exception as e:
