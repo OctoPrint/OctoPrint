@@ -437,7 +437,7 @@ class AnnouncementPlugin(
 
         if data is None:
             # cache not allowed or empty, fetch from network
-            if self._connectivity_checker.online:
+            if self._connectivity_checker.check_immediately():
                 data = self._get_channel_data_from_network(key, config)
             else:
                 self._logger.info(

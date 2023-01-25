@@ -2119,7 +2119,7 @@ class SoftwareUpdatePlugin(
                 self._send_client_message("success", {"results": target_results})
 
     def _perform_update(self, target, check, force, credentials=None):
-        online = self._connectivity_checker.online
+        online = self._connectivity_checker.check_immediately()
 
         information, update_available, update_possible, _, _ = self._get_current_version(
             target, check, online=online, credentials=credentials
