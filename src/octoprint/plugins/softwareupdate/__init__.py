@@ -1766,9 +1766,9 @@ class SoftwareUpdatePlugin(
                     self._save_version_cache()
 
                 self._get_versions_data = information, update_available, update_possible
-                self._get_versions_data_ready.set()
             finally:
                 self._get_versions_mutex.release()
+                self._get_versions_data_ready.set()
 
         else:  # something's already in progress, let's wait for it to complete and use its result
             self._get_versions_data_ready.wait()
