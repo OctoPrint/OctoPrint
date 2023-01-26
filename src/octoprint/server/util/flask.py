@@ -1759,6 +1759,7 @@ def collect_core_assets(preferred_stylesheet="css"):
     assets["js"] = [
         "js/app/bindings/allowbindings.js",
         "js/app/bindings/contextmenu.js",
+        "js/app/bindings/gettext.js",
         "js/app/bindings/invisible.js",
         "js/app/bindings/popover.js",
         "js/app/bindings/qrcode.js",
