@@ -92,6 +92,7 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None
     for log in (
         "octoprint.log",
         "serial.log",
+        "tornado.log",
     ):
         logpath = os.path.join(logbase, log)
         if os.path.exists(logpath):

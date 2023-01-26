@@ -600,7 +600,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 
     OctoPrint will query whether your mixin implementation will handle a
     provided request by calling :meth:`~octoprint.plugin.UiPlugin.will_handle_ui` with the Flask
-    `Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_ object as
+    `Request <https://flask.palletsprojects.com/api/#flask.Request>`_ object as
     parameter. If you plugin returns `True` here, OctoPrint will next call
     :meth:`~octoprint.plugin.UiPlugin.on_ui_render` with a few parameters like
     - again - the Flask Request object and the render keyword arguments as
@@ -676,7 +676,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         ``UiPlugin.will_handle_ui``.
 
         Arguments:
-            request (flask.Request): A Flask `Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_
+            request (flask.Request): A Flask `Request <https://flask.palletsprojects.com/api/#flask.Request>`_
                 object.
 
         Returns:
@@ -761,12 +761,12 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             now (datetime.datetime): The datetime instance representing "now"
                 for this request, in case your plugin implementation needs this
                 information.
-            request (flask.Request): A Flask `Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_ object.
+            request (flask.Request): A Flask `Request <https://flask.palletsprojects.com/api/#flask.Request>`_ object.
             render_kwargs (dict): The (cached) render keyword arguments that
                 would usually be provided to the core UI render function.
 
         Returns:
-            flask.Response: Should return a Flask `Response <http://flask.pocoo.org/docs/0.10/api/#flask.Response>`_
+            flask.Response: Should return a Flask `Response <https://flask.palletsprojects.com/api/#flask.Response>`_
                 object that can be served to the requesting client directly. May be
                 created with ``flask.make_response`` combined with something like
                 ``flask.render_template``.
@@ -1173,7 +1173,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
     """
     Utilizing the ``SimpleApiPlugin`` mixin plugins may implement a simple API based around one GET resource and one
     resource accepting JSON commands POSTed to it. This is the easy alternative for plugin's which don't need the
-    full power of a `Flask Blueprint <http://flask.pocoo.org/docs/0.10/blueprints/>`_ that the :class:`BlueprintPlugin`
+    full power of a `Flask Blueprint <https://flask.palletsprojects.com/blueprints/>`_ that the :class:`BlueprintPlugin`
     mixin offers.
 
     Use this mixin if all you need to do is return some kind of dynamic data to your plugin from the backend
@@ -1298,7 +1298,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
     def on_api_get(self, request):
         """
         Called by OctoPrint upon a GET request to ``/api/plugin/<plugin identifier>``. ``request`` will contain the
-        received `Flask request object <http://flask.pocoo.org/docs/0.9/api/#flask.Request>`_ which you may evaluate
+        received `Flask request object <https://flask.palletsprojects.com/api/#flask.Request>`_ which you may evaluate
         for additional arguments supplied with the request.
 
         If your plugin returns nothing here, OctoPrint will return an empty response with return code ``204 No content``
@@ -1317,7 +1317,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
     The ``BlueprintPlugin`` mixin allows plugins to define their own full fledged endpoints for whatever purpose,
     be it a more sophisticated API than what is possible via the :class:`SimpleApiPlugin` or a custom web frontend.
 
-    The mechanism at work here is `Flask's <http://flask.pocoo.org/>`_ own `Blueprint mechanism <http://flask.pocoo.org/docs/0.10/blueprints/>`_.
+    The mechanism at work here is `Flask's <https://flask.palletsprojects.com/>`_ own `Blueprint mechanism <https://flask.palletsprojects.com/blueprints/>`_.
 
     The mixin automatically creates a blueprint for you that will be registered under ``/plugin/<plugin identifier>/``.
     All you need to do is decorate all of your view functions with the :func:`route` decorator,
@@ -1389,8 +1389,8 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         A decorator to mark view methods in your BlueprintPlugin subclass. Works just the same as Flask's
         own ``route`` decorator available on blueprints.
 
-        See `the documentation for flask.Blueprint.route <http://flask.pocoo.org/docs/0.10/api/#flask.Blueprint.route>`_
-        and `the documentation for flask.Flask.route <http://flask.pocoo.org/docs/0.10/api/#flask.Flask.route>`_ for more
+        See `the documentation for flask.Blueprint.route <https://flask.palletsprojects.com/api/#flask.Blueprint.route>`_
+        and `the documentation for flask.Flask.route <https://flask.palletsprojects.com/api/#flask.Flask.route>`_ for more
         information.
         """
 
@@ -1413,8 +1413,8 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         A decorator to mark errorhandlings methods in your BlueprintPlugin subclass. Works just the same as Flask's
         own ``errorhandler`` decorator available on blueprints.
 
-        See `the documentation for flask.Blueprint.errorhandler <http://flask.pocoo.org/docs/0.10/api/#flask.Blueprint.errorhandler>`_
-        and `the documentation for flask.Flask.errorhandler <http://flask.pocoo.org/docs/0.10/api/#flask.Flask.errorhandler>`_ for more
+        See `the documentation for flask.Blueprint.errorhandler <https://flask.palletsprojects.com/api/#flask.Blueprint.errorhandler>`_
+        and `the documentation for flask.Flask.errorhandler <https://flask.palletsprojects.com/api/#flask.Flask.errorhandler>`_ for more
         information.
 
         .. versionadded:: 1.3.0

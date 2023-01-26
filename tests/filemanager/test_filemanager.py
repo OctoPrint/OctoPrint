@@ -108,6 +108,23 @@ class FilemanagerMethodTest(unittest.TestCase):
         self.assertTrue(octoprint.filemanager.valid_file_type("foo.mime_detect_yes"))
         self.assertFalse(octoprint.filemanager.valid_file_type("foo.unknown"))
 
+        extension_tree = {
+            "machinecode": {
+                "gcode": octoprint.filemanager.ContentTypeMapping(
+                    ["gcode", "gco", "g"], "text/plain"
+                ),
+                "foo": ["foo", "f"],
+            }
+        }
+
+        # With cached extension tree
+        self.assertTrue(
+            octoprint.filemanager.valid_file_type("foo.foo", tree=extension_tree)
+        )
+        self.assertFalse(
+            octoprint.filemanager.valid_file_type("foo.amf", tree=extension_tree)
+        )
+
     def test_get_file_type(self):
         self.assertEqual(
             ["machinecode", "gcode"], octoprint.filemanager.get_file_type("foo.gcode")
