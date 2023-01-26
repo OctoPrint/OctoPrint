@@ -840,7 +840,7 @@ class BackupPlugin(
             logger = logging.getLogger(__name__)
 
         try:
-            r = requests.get(url, timeout=30)
+            r = requests.get(url, timeout=3.05)
             r.raise_for_status()
         except Exception:
             logger.exception(

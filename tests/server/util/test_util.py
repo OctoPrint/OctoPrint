@@ -3,31 +3,39 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 
 import pytest
 
+DEFAULT_ALLOWED_PATHS = ["/", "/recovery/", "/plugin/appkeys/auth/*"]
+PREFIXED_ALLOWED_PATHS = list(map(lambda x: "/octoprint" + x, DEFAULT_ALLOWED_PATHS))
+
 
 @pytest.mark.parametrize(
     "url,paths,expected",
     [
         # various default UI URLs
-        ("/", ["/", "/recovery/"], True),
-        ("/?", ["/", "/recovery/"], True),
-        ("/?l10n=de", ["/", "/recovery/"], True),
-        ("/?l10n=de&", ["/", "/recovery/"], True),
-        ("/octoprint/", ["/octoprint/", "/octoprint/recovery/"], True),
+        ("/", DEFAULT_ALLOWED_PATHS, True),
+        ("/?", DEFAULT_ALLOWED_PATHS, True),
+        ("/?l10n=de", DEFAULT_ALLOWED_PATHS, True),
+        ("/?l10n=de&", DEFAULT_ALLOWED_PATHS, True),
+        ("/octoprint/", PREFIXED_ALLOWED_PATHS, True),
         # various recovery URLs
-        ("/recovery/", ["/", "/recovery/"], True),
-        ("/recovery/?", ["/", "/recovery/"], True),
-        ("/recovery/?l10n=de", ["/", "/recovery/"], True),
-        ("/octoprint/recovery/?l10n=de", ["/octoprint/", "/octoprint/recovery/"], True),
+        ("/recovery/", DEFAULT_ALLOWED_PATHS, True),
+        ("/recovery/?", DEFAULT_ALLOWED_PATHS, True),
+        ("/recovery/?l10n=de", DEFAULT_ALLOWED_PATHS, True),
+        ("/octoprint/recovery/?l10n=de", PREFIXED_ALLOWED_PATHS, True),
+        # various appkeys URLs
+        ("/plugin/appkeys/auth/1234567890", DEFAULT_ALLOWED_PATHS, True),
+        ("/plugin/appkeys/auth/1234567890?", DEFAULT_ALLOWED_PATHS, True),
+        ("/plugin/appkeys/auth/1234567890?l10n=de", DEFAULT_ALLOWED_PATHS, True),
+        ("/octoprint/plugin/appkeys/auth/1234567890", PREFIXED_ALLOWED_PATHS, True),
         # various external URLs
-        ("http://example.com", ["/", "/recovery/"], False),
-        ("https://example.com", ["/", "/recovery/"], False),
-        ("//example.com", ["/", "/recovery/"], False),
-        ("/\\/\\example.com", ["/", "/recovery/"], False),
-        (" /\\/\\example.com", ["/", "/recovery/"], False),
-        ("\\/\\/example.com", ["/", "/recovery/"], False),
-        (" \\/\\/example.com", ["/", "/recovery/"], False),
+        ("http://example.com", DEFAULT_ALLOWED_PATHS, False),
+        ("https://example.com", DEFAULT_ALLOWED_PATHS, False),
+        ("//example.com", DEFAULT_ALLOWED_PATHS, False),
+        ("/\\/\\example.com", DEFAULT_ALLOWED_PATHS, False),
+        (" /\\/\\example.com", DEFAULT_ALLOWED_PATHS, False),
+        ("\\/\\/example.com", DEFAULT_ALLOWED_PATHS, False),
+        (" \\/\\/example.com", DEFAULT_ALLOWED_PATHS, False),
         # other stuff
-        ("javascript:alert(document.cookie)", ["/", "/recovery/"], False),
+        ("javascript:alert(document.cookie)", DEFAULT_ALLOWED_PATHS, False),
     ],
 )
 def test_validate_local_redirect(url, paths, expected):

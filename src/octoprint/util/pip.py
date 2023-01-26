@@ -27,6 +27,9 @@ OUTPUT_SUCCESS = "Successfully installed"
 OUTPUT_FAILURE = "Could not install"
 """Start of failure result line"""
 
+OUTPUT_ERROR = "ERROR:"
+"""Start of error line"""
+
 OUTPUT_ALREADY_INSTALLED = "Requirement already satisfied"
 """Start of a line indicating some package was already installed in this version"""
 
@@ -58,8 +61,10 @@ def is_already_installed(lines):
         bool: True if detected, False otherwise
     """
     result_line = get_result_line(lines)  # neither success nor failure reported
-    return not result_line and any(
-        line.strip().startswith(OUTPUT_ALREADY_INSTALLED) for line in lines
+    return (
+        not result_line
+        and not any(line.strip().startswith(OUTPUT_ERROR) for line in lines)
+        and any(line.strip().startswith(OUTPUT_ALREADY_INSTALLED) for line in lines)
     )
 
 
@@ -114,7 +119,7 @@ def get_result_line(lines):
 
     pip might generate more lines after the actual result line, which is why
     we can't just take the final line. So instead we look for the last line
-    starting with either "Successfully installed" or "Could not installed".
+    starting with either "Successfully installed" or "Could not install".
     If neither can be found, an empty string will be returned, which should also
     be considered a failure to install.
 

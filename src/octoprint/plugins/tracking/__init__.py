@@ -518,9 +518,9 @@ class TrackingPlugin(
             params = urlencode(kwargs, doseq=True).replace("+", "%20")
 
             if body:
-                requests.post(url, data=params, timeout=3.1, headers=headers)
+                requests.post(url, data=params, timeout=3.05, headers=headers)
             else:
-                requests.get(url, params=params, timeout=3.1, headers=headers)
+                requests.get(url, params=params, timeout=3.05, headers=headers)
 
             self._logger.info(f"Sent tracking event {event}, payload: {kwargs!r}")
         except Exception:
