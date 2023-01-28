@@ -6,7 +6,7 @@
         <td class="settings_accesscontrol_permissions_list_checkbox"><input type="checkbox" data-bind="checkedValue: key, checked: $parents[1].editor.permissions, enable: $parents[1].editor.permissionSelectable($data)"></td>
         <td class="settings_accesscontrol_permissions_list_name" style="cursor: pointer" data-bind="click: function() { if ($parents[1].editor.permissionSelectable($data)) { $parents[1].editor.togglePermission($data.key) } }, attr: {title: description}">
             <span class="name" data-bind="text: name, style: { fontWeight: ($parents[1].editor.permissionSelected($data.key)) ? 'bold' : 'normal' }"></span> <span class="label label-info" data-bind="visible: typeof(plugin) !== 'undefined'">{{ _('Plugin') }}</span> <span class="label label-important" data-bind="visible: dangerous">{{ _('Dangerous') }}</span><br>
-            <small class="description muted" data-bind="text: description"></small>
+            <small class="description muted" data-bind="gettext: description"></small>
         </td>
     </tr>
     </tbody>

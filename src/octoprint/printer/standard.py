@@ -1491,12 +1491,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             if self._comm is not None:
                 self._comm = None
 
+            with self._selectedFileMutex:
+                if self._selectedFile is not None:
+                    eventManager().fire(Events.FILE_DESELECTED)
+                self._setJobData(None, None, None)
+
             self._updateProgressData()
             self._setCurrentZ(None)
-            self._setJobData(None, None, None)
             self._setOffsets(None)
             self._addTemperatureData()
             self._printerProfileManager.deselect()
+
             eventManager().fire(Events.DISCONNECTED)
 
         self._setState(state, state_string=state_string, error_string=error_string)
