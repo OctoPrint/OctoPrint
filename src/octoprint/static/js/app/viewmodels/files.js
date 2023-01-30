@@ -1695,6 +1695,13 @@ $(function () {
             );
             $("p, form", self.uploadExistsDialog).toggle(!fileSizeTooBig);
             $("span", self.uploadExistsDialog).toggle(fileSizeTooBig);
+            $("span.existing_size", self.uploadExistsDialog).text(formatSize(response.size));
+            var date_exists = new Date(response.date * 1000);
+            $("span.existing_date", self.uploadExistsDialog).text(date_exists.toLocaleString());
+            var date = new Date(file.lastModified);
+
+            $("span.new_size", self.uploadExistsDialog).text(formatSize(file.size));
+            $("span.new_date", self.uploadExistsDialog).text(date.toLocaleString());
             $("input", self.uploadExistsDialog)
                 .val("")
                 .prop("placeholder", response.suggestion);

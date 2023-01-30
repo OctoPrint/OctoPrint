@@ -70,10 +70,26 @@
                 </div>
             </div>
         </form>
+        <div>
+            <b>Existing file</b>
+            <ul>
+            <li>Size: <span class="existing_size"></span></li>
+            <li>Date: <span class="existing_date"></span></li>
+            </ul>
+
+            <b>New file</b>
+            <ul>
+            <li>Size: <span class="new_size"></span></li>
+            <li>Date: <span class="new_date"></span></li>
+            </ul>
+        </div>
         <span hidden>
             {{ _('There is not enough free disk space to keep the existing file and upload this one.') }}
         </span>
+
+
     </div>
+
     <div class="modal-footer">
         <a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
         <a href="javascript:void(0)" class="btn btn-primary upload-rename">{{ _('Upload (rename)') }}</a>
