@@ -4,10 +4,14 @@ devel:
   enableRateLimiter: false
   enableCsrfProtection: false
 plugins:
-  virtual_printer:
-    enabled: true
+  softwareupdate:
+    checks:
+      octoprint:
+        disabled: true
   tracking:
     enabled: false
+  virtual_printer:
+    enabled: true
 server:
   firstRun: false
   onlineCheck:

@@ -67,7 +67,6 @@ repos:
       - id: eslint
         additional_dependencies:
           - eslint@7.19.0
-          - eslint-plugin-cypress@2.11.2
         files: \.js$
         exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|docs/|scripts/|translations/)
   - repo: https://github.com/codespell-project/codespell
