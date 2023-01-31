@@ -1693,9 +1693,13 @@ $(function () {
                     name: file.name
                 })
             );
-            $("span.existing_size", self.uploadExistsDialog).text(formatSize(response.size));
+            $("span.existing_size", self.uploadExistsDialog).text(
+                formatSize(response.size)
+            );
             var date_exists = new Date(response.date * 1000);
-            $("span.existing_date", self.uploadExistsDialog).text(date_exists.toLocaleString());
+            $("span.existing_date", self.uploadExistsDialog).text(
+                date_exists.toLocaleString()
+            );
             var date = new Date(file.lastModified);
 
             $("span.new_size", self.uploadExistsDialog).text(formatSize(file.size));
