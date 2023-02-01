@@ -446,6 +446,7 @@ class StorageError(Exception):
 
     def __init__(self, message, code=None, cause=None):
         Exception.__init__(self, message)
+        self.message = message
         self.cause = cause
 
         if code is None:
