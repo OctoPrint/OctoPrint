@@ -9,14 +9,3 @@ overrides:
       browser: true
       jquery: true
       es6: true
-  - files:
-      - "tests/cypress/**"
-    env:
-      node: true
-      es6: true
-      cypress/globals: true
-    extends:
-      - "plugin:cypress/recommended"
-
-plugins:
-  - cypress
