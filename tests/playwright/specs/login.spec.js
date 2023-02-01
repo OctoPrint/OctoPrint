@@ -25,20 +25,19 @@ test.describe.parallel("Successful login", async () => {
         await util.loginCookiesWithRememberMe();
     });
 
-    test.fixme("by keyboard", async ({page, ui, util, credentials}) => {
-        // TODO: this doesn't work yet
+    test("by keyboard", async ({page, ui, util, credentials}) => {
         await expect(page.getByTestId("login-username")).toBeFocused();
         await page.getByTestId("login-username").type(credentials.username);
-        await page.getByTestId("login-username").press("Tab");
 
+        await page.getByTestId("login-username").press("Tab");
         await expect(page.getByTestId("login-password")).toBeFocused();
         await page.getByTestId("login-password").type(credentials.password);
-        await page.getByTestId("login-password").press("Tab");
 
+        await page.getByTestId("login-password").press("Tab");
         await expect(page.getByTestId("login-remember-me")).toBeFocused();
         await page.getByTestId("login-remember-me").press("Space");
-        await page.getByTestId("login-remember-me").press("Tab");
 
+        await page.getByTestId("login-remember-me").press("Tab");
         await expect(page.getByTestId("login-submit")).toBeFocused();
         await page.getByTestId("login-submit").press("Enter");
 
