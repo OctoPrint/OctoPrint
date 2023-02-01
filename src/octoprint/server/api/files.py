@@ -201,7 +201,9 @@ def runFilesTest():
                 exists_size = exists_file[0]["size"]
                 exists_date = exists_file[0]["date"]
             else:
-                abort(400, description="Not exists file found to retrieve information")
+                abort(
+                    400, description="File not found to retrieve additional information"
+                )
             suggestion = filename
             name, ext = os.path.splitext(filename)
             counter = 0
