@@ -14,12 +14,7 @@ const config = {
         max: 30_000,
         threshold: 50_000
     },
-    reporter: [
-        ["list"],
-        ["html"],
-        ...(process.env.CI ? [["@deploysentinel/playwright"]] : []),
-        ...(process.env.CI ? [["github"]] : [])
-    ],
+    reporter: [["list"], ["html"], ...(process.env.CI ? [["github"]] : [])],
     use: {
         actionTimeout: 0,
         baseURL: process.env.PLAYWRIGHT_BASEURL || "http://localhost:5000",
