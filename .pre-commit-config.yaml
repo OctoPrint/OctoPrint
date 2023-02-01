@@ -73,3 +73,4 @@ repos:
     rev: v2.1.0
     hooks:
       - id: codespell
+        exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|tests/playwright|scripts/)
