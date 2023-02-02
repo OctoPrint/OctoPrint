@@ -30,9 +30,8 @@ test.describe.parallel("Close settings", () => {
         await page.getByTestId("settings-dialog").press("Escape");
     });
 
-    test.fixme("via click outside", async ({page}) => {
-        // TODO: this doesn't work yet
-        await page.locator(".modal-scrollable").click();
+    test("via click outside", async ({page}) => {
+        await page.locator(".modal-scrollable").click({position: {x: 10, y: 10}});
     });
 
     test.afterEach(async ({page}) => {
