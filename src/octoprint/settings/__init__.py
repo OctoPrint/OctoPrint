@@ -1766,6 +1766,19 @@ class Settings:
             return value.lower() in valid_boolean_trues
         return value is not None
 
+    def checkBaseFolder(self, type):
+        if type != "base" and type not in default_settings["folder"]:
+            return False
+
+        if type == "base":
+            return os.path.exists(self._basedir)
+
+        folder = self.get(["folder", type])
+        default_folder = self._get_default_folder(type)
+        if folder is None:
+            folder = default_folder
+        return os.path.exists(folder)
+
     def getBaseFolder(
         self,
         type,
