@@ -187,7 +187,7 @@ jobs:
 
       - name: ⬆ Upload OctoPrint logs
         uses: actions/upload-artifact@v3
-        if: fail()
+        if: failure()
         with:
           name: octoprint-logs
           path: ${{ github.workspace }}/e2econfig/logs
