@@ -190,20 +190,8 @@ def runFilesTest():
 
         sanitized_path, _, sanitized = sanitize(storage, path, filename)
 
-        exists = fileManager.file_exists(storage, sanitized)
+        exists = _getFileDetails(storage, filename)
         if exists:
-            exists_file = [
-                gcode_file
-                for gcode_file in _getFileList(storage)
-                if gcode_file["name"] == filename
-            ]
-            if len(exists_file) > 0:
-                exists_size = exists_file[0]["size"]
-                exists_date = exists_file[0]["date"]
-            else:
-                abort(
-                    400, description="File not found to retrieve additional information"
-                )
             suggestion = filename
             name, ext = os.path.splitext(filename)
             counter = 0
@@ -218,7 +206,10 @@ def runFilesTest():
                 counter += 1
                 suggestion = f"{name}_{counter}{ext}"
             return jsonify(
-                exists=True, suggestion=suggestion, size=exists_size, date=exists_date
+                exists=True,
+                suggestion=suggestion,
+                size=exists.get("size"),
+                date=exists.get("date"),
             )
         else:
             return jsonify(exists=False)

@@ -1694,16 +1694,15 @@ $(function () {
                 })
             );
             $("span.existing_size", self.uploadExistsDialog).text(
-                formatSize(response.size)
+                response.size ? formatSize(response.size) : "-"
             );
-            var date_exists = new Date(response.date * 1000);
             $("span.existing_date", self.uploadExistsDialog).text(
-                date_exists.toLocaleString()
+                response.date ? new Date(response.date * 1000).toLocaleString() : "?"
             );
-            var date = new Date(file.lastModified);
-
             $("span.new_size", self.uploadExistsDialog).text(formatSize(file.size));
-            $("span.new_date", self.uploadExistsDialog).text(date.toLocaleString());
+            $("span.new_date", self.uploadExistsDialog).text(
+                new Date(file.lastModified).toLocaleString()
+            );
             $("p, form", self.uploadExistsDialog).toggle(!fileSizeTooBig);
             $("span", self.uploadExistsDialog).toggle(fileSizeTooBig);
             $("input", self.uploadExistsDialog)
