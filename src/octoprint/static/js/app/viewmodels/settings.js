@@ -392,6 +392,18 @@ $(function () {
             }
         });
 
+        self.webcamCompat = {
+            webcam_streamUrl: "streamUrl",
+            webcam_streamRatio: "streamRatio",
+            webcam_streamTimeout: "streamTimeout",
+            webcam_streamWebrtcIceServers: "webrtcIceServers",
+            webcam_snapshotUrl: "snapshotUrl",
+            webcam_flipH: "flipH",
+            webcam_flipV: "flipV",
+            webcam_rotate90: "rotate90",
+            webcam_cacheBuster: "cacheBuster"
+        };
+
         self.addTemperatureProfile = function () {
             self.temperature_profiles.push({
                 name: "New",
@@ -1161,6 +1173,31 @@ $(function () {
                 }
             };
 
+            // set up webcam compat layer if not yet done
+            _.each(self.webcamCompat, (mapped, key) => {
+                if (self.settings.hasOwnProperty(key)) return;
+                if (!self.settings.webcam.hasOwnProperty(mapped)) return;
+                const message =
+                    "Please use the webcam system introduced with 1.9.0, the " +
+                    key +
+                    " config setting is deprecated and will be removed in a future release. Stacktrace:";
+                self[key] = ko.pureComputed({
+                    read: () => {
+                        const exc = new Error();
+                        log.warn(message, exc.stack || exc.stacktrace || "<n/a>");
+
+                        return self.settings.webcam[mapped]();
+                    },
+                    write: (value) => {
+                        const exc = new Error();
+                        log.warn(message, exc.stack || exc.stacktrace || "<n/a>");
+
+                        self.settings.webcam[mapped](value);
+                    },
+                    owner: self
+                });
+            });
+
             var mapToObservables = function (data, mapping, local, keyPrefix) {
                 if (!_.isPlainObject(data)) {
                     return;
@@ -1175,6 +1212,11 @@ $(function () {
 
                     if (self.observableCopies.hasOwnProperty(observable)) {
                         // only a copy, skip
+                        return;
+                    }
+
+                    if (self.webcamCompat.hasOwnProperty(observable)) {
+                        // webcam compat layer, skip
                         return;
                     }
 
