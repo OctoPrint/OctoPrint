@@ -323,6 +323,7 @@ def init_logging(
                     "class": "octoprint.logging.handlers.TornadoLogHandler",
                     "level": "DEBUG",
                     "formatter": "tornado",
+                    "when": "D",
                     "backupCount": 1,
                     "filename": os.path.join(
                         settings.getBaseFolder("logs"), "tornado.log"
@@ -332,6 +333,7 @@ def init_logging(
                     "class": "octoprint.logging.handlers.AuthLogHandler",
                     "level": "DEBUG",
                     "formatter": "auth",
+                    "when": "D",
                     "backupCount": 1,
                     "filename": os.path.join(settings.getBaseFolder("logs"), "auth.log"),
                 },
