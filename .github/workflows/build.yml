@@ -134,7 +134,7 @@ jobs:
           cp -r .github/fixtures/with_acl/* e2econfig
 
       - name: 🚀 Run Cypress
-        uses: cypress-io/github-action@v4.2.0
+        uses: cypress-io/github-action@v5.0.8
         with:
           working-directory: tests/cypress
           browser: chrome
