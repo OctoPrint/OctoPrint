@@ -1,6 +1,10 @@
 name: Trigger doc build
 on:
   push:
+    branches:
+      - master
+      - maintenance
+      - devel
   release:
     types:
       - released
