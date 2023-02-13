@@ -1,6 +1,10 @@
 name: Trigger doc build
 on:
   push:
+    branches:
+      - master
+      - maintenance
+      - devel
   release:
     types:
       - released
@@ -12,7 +16,7 @@ jobs:
     if: github.repository == 'OctoPrint/OctoPrint'
     steps:
       - name: 🚀 Repository Dispatch
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.REPODISPATCH_TOKEN }}
           repository: OctoPrint/docs.octoprint.org
