@@ -1,6 +1,6 @@
 <div id="classicwebcam_container">
     <!-- Init style with display none to hide the content while we are binding -->
-    <div "id="webcam_video_container" tabindex="0" data-bind="visible: webcamWebRTCEnabled() || webcamHlsEnabled(), css: { webcam_rotated: settings.rotate90(), webcam_unrotated: !settings.rotate90() }" style="display: none;">
+    <div id="webcam_video_container" tabindex="0" data-bind="visible: webcamWebRTCEnabled() || webcamHlsEnabled(), css: { webcam_rotated: settings.rotate90(), webcam_unrotated: !settings.rotate90() }" style="display: none;">
         <div class="video-controls btn-group action-buttons">
             <div class="btn btn-mini" data-bind="click: function(data, event) { $root.launchWebcamFullscreen() }"><i class="fas fa-expand"></i></div>
             <div class="btn btn-mini" data-bind="visible: document.pictureInPictureEnabled, click: function(data, event) {  $root.launchWebcamPictureInPicture() }"><i class="fas fa-images"></i></div>

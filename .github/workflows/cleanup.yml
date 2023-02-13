@@ -10,11 +10,11 @@ jobs:
     name: 🔒 Lock issues & PRs closed over a year
     runs-on: ubuntu-latest
     steps:
-      - uses: dessant/lock-threads@v2
+      - uses: dessant/lock-threads@v4
         with:
           github-token: ${{ github.token }}
-          issue-lock-comment: ""
-          pr-lock-comment: ""
+          issue-comment: ""
+          pr-comment: ""
 
   cleanup:
     name: 🧹 Close issues marked as incomplete & older than 14 days
@@ -22,7 +22,7 @@ jobs:
     steps:
       - id: date
         run: |
-          echo "::set-output name=CUTOFF::`date --date='14 days ago' +'%Y-%m-%d'`"
+          echo "CUTOFF=`date --date='14 days ago' +'%Y-%m-%d'`" >> $GITHUB_OUTPUT
       - uses: OctoPrint/actions/close-by-query@main
         with:
           repo-token: "${{ secrets.GITHUB_TOKEN }}"

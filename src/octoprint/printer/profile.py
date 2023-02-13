@@ -257,11 +257,13 @@ class PrinterProfileManager:
 
     def __init__(self):
         self._current = None
-        self._folder = settings().getBaseFolder("printerProfiles")
         self._logger = logging.getLogger(__name__)
 
+        fresh = settings().checkBaseFolder("printerProfiles")
+        self._folder = settings().getBaseFolder("printerProfiles")
+
         self._migrate_old_default_profile()
-        self._verify_default_available()
+        self._verify_default_available(fresh=fresh)
 
     def _migrate_old_default_profile(self):
         default_overrides = settings().get(["printerProfiles", "defaultProfile"])
@@ -291,23 +293,24 @@ class PrinterProfileManager:
             )
         )
 
-    def _verify_default_available(self):
+    def _verify_default_available(self, fresh=False):
         default_id = settings().get(["printerProfiles", "default"])
         if default_id is None:
             default_id = "_default"
 
         if not self.exists(default_id):
             if not self.exists("_default"):
-                if default_id == "_default":
-                    self._logger.error(
-                        "Profile _default does not exist, creating _default again and setting it as default"
-                    )
-                else:
-                    self._logger.error(
-                        "Selected default profile {} and _default do not exist, creating _default again and setting it as default".format(
-                            default_id
+                if not fresh:
+                    if default_id == "_default":
+                        self._logger.error(
+                            "Profile _default does not exist, creating _default again and setting it as default"
                         )
-                    )
+                    else:
+                        self._logger.error(
+                            "Selected default profile {} and _default do not exist, creating _default again and setting it as default".format(
+                                default_id
+                            )
+                        )
                 self.save(self.__class__.default, allow_overwrite=True, make_default=True)
             else:
                 self._logger.error(

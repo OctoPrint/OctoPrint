@@ -1,0 +1,13 @@
+{
+  "name": "octoprint-playwright-tests",
+  "version": "1.0.0",
+  "description": "OctoPrint's E2E tests with Playwright",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "Gina Häußge",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.30.0"
+  }
+}

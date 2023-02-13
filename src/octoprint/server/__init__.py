@@ -1196,7 +1196,7 @@ class Server:
                 nonlocal autorefresh
 
                 if autorefresh is not None:
-                    autorefresh.stop()
+                    autorefresh.cancel()
                     autorefresh = None
 
                 autorefresh = octoprint.util.RepeatedTimer(
