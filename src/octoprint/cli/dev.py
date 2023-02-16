@@ -259,7 +259,10 @@ class OctoPrintDevelCommands(click.MultiCommand):
         )
         @click.option("--all", "all_files", is_flag=True, help="Build all less files")
         @click.option(
-            "--list", "list_files", is_flag=True, help="List all available files and exit"
+            "--list",
+            "list_files",
+            is_flag=True,
+            help="List all available files and exit",
         )
         def command(files, all_files, list_files):
             import shutil
@@ -312,12 +315,24 @@ class OctoPrintDevelCommands(click.MultiCommand):
 
             # Check that lessc is installed
             less = shutil.which("lessc")
-            if not less:
+
+            # Check that less-plugin-clean-css is installed
+            if less:
+                _, _, stderr = self.command_caller.call(
+                    [less, "--clean-css"], logged=False
+                )
+                clean_css = not any(
+                    map(lambda x: "Unable to load plugin clean-css" in x, stderr)
+                )
+            else:
+                clean_css = False
+
+            if not less or not clean_css:
                 click.echo(
-                    "lessc is not installed/not available, please install it first"
+                    "lessc or less-plugin-clean-css is not installed/not available, please install it first"
                 )
                 click.echo(
-                    "Try `npm i -g less` to install it (NOT lessc in this command!)"
+                    "Try `npm i -g less less-plugin-clean-css` to install both (note that it does NOT say 'lessc' in this command!)"
                 )
                 sys.exit(1)
 
@@ -327,10 +342,9 @@ class OctoPrintDevelCommands(click.MultiCommand):
                     sys.exit(1)
 
                 # Build command line, with necessary options
-                # TODO -x is deprecated, find replacement?
                 less_command = [
                     less,
-                    "-x",
+                    "--clean-css=--s1 --advanced --compatibility=ie8",
                     available_files[less_file]["source"],
                     available_files[less_file]["output"],
                 ]

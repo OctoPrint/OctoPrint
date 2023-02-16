@@ -49,7 +49,7 @@ def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
         headers["authorization"] = f"Basic {auth_value}"
 
     try:
-        r = requests.get(url, headers=headers, timeout=(3.05, 30))
+        r = requests.get(url, headers=headers, timeout=(3.05, 7))
     except requests.ConnectionError as exc:
         raise NetworkError(cause=exc)
 

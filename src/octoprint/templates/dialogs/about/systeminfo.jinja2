@@ -10,11 +10,8 @@
 
 <p><small>{% trans %}You can view Systeminfo Bundles at <a href="https://bundleviewer.octoprint.org" target="_blank" rel="noopener noreferrer">bundleviewer.octoprint.org</a>{% endtrans %}</small></p>
 
-<div class="more">
-    <div><small><a href="javascript:void(0)" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.more', container: '.hide' }"><i class="fas fa-caret-right"></i> {{ _('More') }}</a></small></div>
-    <div class="hide">
-        <p data-bind="foreach: systeminfo">
-            <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span><br />
-        </p>
-    </div>
+<div data-bind="visible: devmode">
+    <p data-bind="foreach: systeminfo">
+        <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span><br />
+    </p>
 </div>

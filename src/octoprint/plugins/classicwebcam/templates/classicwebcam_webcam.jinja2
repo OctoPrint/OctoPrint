@@ -1,0 +1,47 @@
+<div id="classicwebcam_container">
+    <!-- Init style with display none to hide the content while we are binding -->
+    <div id="webcam_video_container" tabindex="0" data-bind="visible: webcamWebRTCEnabled() || webcamHlsEnabled(), css: { webcam_rotated: settings.rotate90(), webcam_unrotated: !settings.rotate90() }" style="display: none;">
+        <div class="video-controls btn-group action-buttons">
+            <div class="btn btn-mini" data-bind="click: function(data, event) { $root.launchWebcamFullscreen() }"><i class="fas fa-expand"></i></div>
+            <div class="btn btn-mini" data-bind="visible: document.pictureInPictureEnabled, click: function(data, event) {  $root.launchWebcamPictureInPicture() }"><i class="fas fa-images"></i></div>
+            <div class="btn btn-mini" data-bind="click: function(data, event) { $root.toggleWebcamMute() }">
+                <!-- ko if: webcamMuted() -->
+                <i class="fas fa-volume-mute"></i>
+                <!-- /ko -->
+                <!-- ko ifnot: webcamMuted() -->
+                <i class="fas fa-volume-up"></i>
+                <!-- /ko -->
+            </div>
+        </div>
+        <div data-bind="css: { webcam_rotated: settings.rotate90(), webcam_unrotated: !settings.rotate90() }">
+            <div class="rotation_target">
+                <div data-bind="css: { flipH: settings.flipH(), flipV: settings.flipV() }">
+                    <video id="webcam_webrtc" muted autoplay playsinline style="width: 100%" data-bind="visible: webcamWebRTCEnabled()"></video>
+                    <video id="webcam_hls" muted autoplay playsinline style="width: 100%" data-bind="visible: webcamHlsEnabled()"></video>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Init style with display none to hide the content while we are binding -->
+    <div id="webcam_img_container" tabindex="0" data-bind="visible: webcamMjpgEnabled()" style="display: none;">
+        <div class="nowebcam" data-bind="visible: !webcamLoaded()">
+            <div class="text webcam_loading" data-bind="visible: !webcamLoaded() && !webcamError()">
+                <p><strong>{{ _('Webcam stream loading...') }}</strong></p>
+            </div>
+            <div class="text webcam_error" data-bind="visible: !webcamLoaded() && webcamError()">
+                <p><strong>{{ _('Webcam stream not loaded') }}</strong></p>
+                <p data-bind="visible: !loginState.isAdmin()"><small>{{ _('It might not be configured correctly or require authentication. To have this fixed, get in touch with an administrator of this OctoPrint instance.') }}</small></p>
+                <p data-bind="visible: loginState.isAdmin"><small>{{ _('It might not be configured correctly or require authentication. You can change the URL of the stream under "Settings" > "Classic Webcam" > "Stream URL". If you don\'t have a webcam you can also just disable webcam support there.') }}</small></p>
+                <p data-bind="visible: loginState.isUser"><small>{{ _('Currently configured stream URL') }}: <a target="_blank" rel="noreferrer" data-bind="attr: {href: settings.streamUrl}, text: settings.streamUrl"></a></small></p>
+            </div>
+        </div>
+        <div id="webcam_rotator" data-bind="css: { webcam_rotated: settings.rotate90(), webcam_unrotated: !settings.rotate90() }">
+            <div class="webcam_fixed_ratio" data-bind="css: webcamRatioClass">
+                <div class="webcam_fixed_ratio_inner">
+                    <img id="webcam_image" data-bind="css: { flipH: settings.flipH(), flipV: settings.flipV() }, event: { load: onWebcamLoaded, error: onWebcamErrored }, visible: !webcamError()">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

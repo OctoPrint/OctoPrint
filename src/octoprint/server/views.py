@@ -89,7 +89,7 @@ def _preemptive_data(
     d = {
         "path": path,
         "base_url": base_url,
-        "query_string": "l10n={}".format(g.locale.language if g.locale else "en"),
+        "query_string": f"l10n={_locale_str(g.locale)}",
     }
 
     if key != "_default":
@@ -103,7 +103,7 @@ def _preemptive_data(
             if data:
                 if "query_string" in data:
                     data["query_string"] = "l10n={}&{}".format(
-                        g.locale.language, data["query_string"]
+                        _locale_str(g.locale), data["query_string"]
                     )
                 d.update(data)
         except Exception:
@@ -131,7 +131,7 @@ def _cache_key(ui, url=None, locale=None, additional_key_data=None):
     if url is None:
         url = request.base_url
     if locale is None:
-        locale = g.locale.language if g.locale else "en"
+        locale = _locale_str(g.locale)
 
     k = f"ui:{ui}:{url}:{locale}"
     if callable(additional_key_data):
@@ -170,14 +170,33 @@ def _add_additional_assets(hook_name):
     return result
 
 
+def _locale_str(locale):
+    return str(locale) if locale else "en"
+
+
 @app.route("/login")
 @app.route("/login/")
 def login():
     from flask_login import current_user
 
-    default_redirect_url = request.script_root + url_for("index")
+    default_redirect_url = url_for("index")
     redirect_url = request.args.get("redirect", default_redirect_url)
-    allowed_paths = [url_for("index"), url_for("recovery")]
+
+    configured_allowed_paths = settings().get(["server", "allowedLoginRedirectPaths"])
+    if configured_allowed_paths is None or not isinstance(configured_allowed_paths, list):
+        configured_allowed_paths = []
+    configured_allowed_paths = list(
+        filter(
+            lambda x: isinstance(x, str),
+            configured_allowed_paths,
+        )
+    )
+
+    allowed_paths = [
+        url_for("index"),
+        url_for("recovery"),
+        url_for("plugin.appkeys.handle_auth_dialog", app_token="*"),
+    ] + configured_allowed_paths
 
     if not validate_local_redirect(redirect_url, allowed_paths):
         _logger.warning(
@@ -359,7 +378,7 @@ def index():
 
     preemptive_cache_enabled = settings().getBoolean(["devel", "cache", "preemptive"])
 
-    locale = g.locale.language if g.locale else "en"
+    locale = _locale_str(g.locale)
 
     # helper to check if wizards are active
     def wizard_active(templates):
@@ -388,9 +407,7 @@ def index():
     enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
     enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])
     enable_sd_support = settings().get(["feature", "sdSupport"])
-    enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"]) and bool(
-        settings().get(["webcam", "stream"])
-    )
+    enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"])
     enable_temperature_graph = settings().get(["feature", "temperatureGraph"])
     sockjs_connect_timeout = settings().getInt(["devel", "sockJsConnectTimeout"])
 
@@ -465,9 +482,7 @@ def index():
 
             files = _get_all_templates()
             files += _get_all_assets()
-            files += _get_all_translationfiles(
-                g.locale.language if g.locale else "en", "messages"
-            )
+            files += _get_all_translationfiles(_locale_str(g.locale), "messages")
 
             if callable(additional_files):
                 try:
@@ -731,8 +746,9 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
     locales = {}
     for loc in LOCALES:
         try:
-            locales[loc.language] = {
-                "language": loc.language,
+            key = _locale_str(loc)
+            locales[key] = {
+                "language": key,
                 "display": loc.display_name,
                 "english": loc.english_name,
             }
@@ -765,7 +781,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 def fetch_template_data(refresh=False):
     global _templates, _plugin_names, _plugin_vars
 
-    locale = g.locale.language if g.locale else "en"
+    locale = _locale_str(g.locale)
 
     if (
         not refresh
@@ -813,6 +829,11 @@ def fetch_template_data(refresh=False):
             "template": lambda x: x + "_wizard.jinja2",
             "to_entry": lambda data: (data["name"], data),
         },
+        "webcam": {
+            "div": lambda x: "webcam_plugin_" + x,
+            "template": lambda x: x + "_webcam.jinja2",
+            "to_entry": lambda data: (data["name"], data),
+        },
         "about": {
             "div": lambda x: "about_plugin_" + x,
             "template": lambda x: x + "_about.jinja2",
@@ -849,6 +870,7 @@ def fetch_template_data(refresh=False):
         },
         "usersettings": {"add": "append", "key": "name"},
         "wizard": {"add": "append", "key": "name", "key_extractor": wizard_key_extractor},
+        "webcam": {"add": "append", "key": "name"},
         "about": {"add": "append", "key": "name"},
         "generic": {"add": "append", "key": None},
     }

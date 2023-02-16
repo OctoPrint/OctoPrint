@@ -34,12 +34,14 @@ from flask_login import (  # noqa: F401
     LoginManager,
     current_user,
     session_protected,
+    user_loaded_from_cookie,
     user_logged_out,
 )
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from werkzeug.exceptions import HTTPException
 
+import octoprint.events
 import octoprint.filemanager
 import octoprint.util
 import octoprint.util.net
@@ -188,6 +190,12 @@ def on_session_protected(sender):
 def on_user_logged_out(sender, user=None):
     # user was logged out, clear identity
     _clear_identity(sender)
+
+
+@user_loaded_from_cookie.connect_via(app)
+def on_user_loaded_from_cookie(sender, user=None):
+    if user:
+        session["login_mechanism"] = "remember_me"
 
 
 def load_user(id):
@@ -612,6 +620,7 @@ class Server:
         from octoprint import (
             init_custom_events,
             init_settings_plugin_config_migration_and_cleanup,
+            init_webcam_compat_overlay,
         )
         from octoprint import octoprint_plugin_inject_factory as opif
         from octoprint import settings_plugin_inject_factory as spif
@@ -628,6 +637,7 @@ class Server:
         pluginManager.initialize_implementations()
 
         init_settings_plugin_config_migration_and_cleanup(pluginManager)
+        init_webcam_compat_overlay(self._settings, pluginManager)
 
         pluginManager.log_all_plugins()
 
@@ -669,7 +679,9 @@ class Server:
 
         ## Tornado initialization starts here
 
-        ioloop = IOLoop()
+        ioloop = (
+            IOLoop()
+        )  # TODO: This way to create the ioloop is deprecated and logs a warning
         ioloop.install()
 
         enable_cors = settings().getBoolean(["api", "allowCrossOrigin"])
@@ -1150,6 +1162,60 @@ class Server:
                     "Something went wrong while attempting to automatically connect to the printer"
                 )
 
+        # auto refresh serial ports while not connected
+        if self._settings.getBoolean(["serial", "autorefresh"]):
+            from octoprint.util.comm import serialList
+
+            last_ports = None
+            autorefresh = None
+
+            def refresh_serial_list():
+                nonlocal last_ports
+
+                new_ports = sorted(serialList())
+                if new_ports != last_ports:
+                    self._logger.info(
+                        "Serial port list was updated, refreshing the port list in the frontend"
+                    )
+                    eventManager.fire(
+                        events.Events.CONNECTIONS_AUTOREFRESHED,
+                        payload={"ports": new_ports},
+                    )
+                last_ports = new_ports
+
+            def autorefresh_active():
+                return printer.is_closed_or_error()
+
+            def autorefresh_stopped():
+                nonlocal autorefresh
+
+                self._logger.info("Autorefresh of serial port list stopped")
+                autorefresh = None
+
+            def run_autorefresh():
+                nonlocal autorefresh
+
+                if autorefresh is not None:
+                    autorefresh.cancel()
+                    autorefresh = None
+
+                autorefresh = octoprint.util.RepeatedTimer(
+                    self._settings.getInt(["serial", "autorefreshInterval"]),
+                    refresh_serial_list,
+                    run_first=True,
+                    condition=autorefresh_active,
+                    on_finish=autorefresh_stopped,
+                )
+                autorefresh.name = "Serial autorefresh worker"
+
+                self._logger.info("Starting autorefresh of serial port list")
+                autorefresh.start()
+
+            run_autorefresh()
+            eventManager.subscribe(
+                octoprint.events.Events.DISCONNECTED, lambda e, p: run_autorefresh()
+            )
+
         # start up watchdogs
         try:
             watched = self._settings.getBaseFolder("watched")
@@ -1339,31 +1405,49 @@ class Server:
     def _get_locale(self):
         global LANGUAGES
 
+        l10n = None
+        default_language = self._settings.get(["appearance", "defaultLanguage"])
+
         if "l10n" in request.values:
-            return Locale.negotiate([request.values["l10n"]], LANGUAGES)
+            # request: query param
+            l10n = request.values["l10n"].split(",")
 
-        if "X-Locale" in request.headers:
-            return Locale.negotiate([request.headers["X-Locale"]], LANGUAGES)
+        elif "X-Locale" in request.headers:
+            # request: header
+            l10n = request.headers["X-Locale"].split(",")
 
-        if hasattr(g, "identity") and g.identity:
+        elif hasattr(g, "identity") and g.identity:
+            # user setting
             userid = g.identity.id
             try:
                 user_language = userManager.get_user_setting(
                     userid, ("interface", "language")
                 )
                 if user_language is not None and not user_language == "_default":
-                    return Locale.negotiate([user_language], LANGUAGES)
+                    l10n = [user_language]
             except octoprint.access.users.UnknownUser:
                 pass
 
-        default_language = self._settings.get(["appearance", "defaultLanguage"])
-        if (
+        elif (
             default_language is not None
             and not default_language == "_default"
             and default_language in LANGUAGES
         ):
-            return Locale.negotiate([default_language], LANGUAGES)
+            # instance setting
+            l10n = [default_language]
 
+        if l10n:
+            # canonicalize and get rid of invalid language codes
+            l10n_canoicalized = []
+            for x in l10n:
+                try:
+                    l10n_canoicalized.append(str(Locale.parse(x)))
+                except Exception:
+                    # invalid language code, ignore
+                    continue
+            return Locale.negotiate(l10n_canoicalized, LANGUAGES)
+
+        # request: preference
         return Locale.parse(request.accept_languages.best_match(LANGUAGES))
 
     def _setup_heartbeat_logging(self):
@@ -1502,10 +1586,7 @@ class Server:
 
             # add available translations
             for locale in locales:
-                result.add(locale.language)
-                if locale.territory:
-                    # if a territory is specified, add that too
-                    result.add(f"{locale.language}_{locale.territory}")
+                result.add(str(locale))
 
             return result
 

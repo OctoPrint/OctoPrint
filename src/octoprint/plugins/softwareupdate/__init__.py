@@ -423,7 +423,7 @@ class SoftwareUpdatePlugin(
     def _get_check_overlay(self, url):
         self._logger.info(f"Fetching check overlays from {url}")
         try:
-            r = requests.get(url, timeout=3.1)
+            r = requests.get(url, timeout=3.05)
             r.raise_for_status()
             data = r.json()
         except Exception as exc:
@@ -1147,7 +1147,7 @@ class SoftwareUpdatePlugin(
         )
 
         def view():
-            self._environment_ready.wait(timeout=30.0)
+            self._environment_ready.wait(timeout=10.0)
 
             try:
                 (
@@ -1765,9 +1765,9 @@ class SoftwareUpdatePlugin(
                     self._save_version_cache()
 
                 self._get_versions_data = information, update_available, update_possible
-                self._get_versions_data_ready.set()
             finally:
                 self._get_versions_mutex.release()
+                self._get_versions_data_ready.set()
 
         else:  # something's already in progress, let's wait for it to complete and use its result
             self._get_versions_data_ready.wait()
@@ -2118,7 +2118,7 @@ class SoftwareUpdatePlugin(
                 self._send_client_message("success", {"results": target_results})
 
     def _perform_update(self, target, check, force, credentials=None):
-        online = self._connectivity_checker.online
+        online = self._connectivity_checker.check_immediately()
 
         information, update_available, update_possible, _, _ = self._get_current_version(
             target, check, online=online, credentials=credentials

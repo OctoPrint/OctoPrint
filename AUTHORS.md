@@ -174,6 +174,9 @@ date of first contribution):
   * [Arkadiusz Miśkiewicz](https://github.com/arekm)
   * ["tempodat"](https://github.com/tempodat)
   * [Frederik Kemner](https://github.com/040medien)
+  * [Moiz Rasheed](https://github.com/msrasheed)
+  * [Scott Martin](https://github.com/smartin015)
+  * [Shyam Sunder](https://github.com/sgsunder)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

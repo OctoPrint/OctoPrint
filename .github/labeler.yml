@@ -15,7 +15,10 @@ meta:
 ci/cd:
   - ".github/fixtures/**/*"
   - ".github/workflows/*"
+  - ".github/dependabot.yml"
+  - ".github/issue-validation.yml"
   - ".github/labeler.yml"
+  - ".github/pr-validation.yml"
 
 docker:
   - ".github/workflows/trigger_docker.yml"

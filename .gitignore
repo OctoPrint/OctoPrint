@@ -40,7 +40,3 @@ pypy
 
 venv*
 testconf*
-
-node_modules
-tests/cypress/screenshots
-tests/cypress/videos

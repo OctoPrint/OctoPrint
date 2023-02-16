@@ -122,44 +122,27 @@ class ConnectivityChecker:
             return self.online
 
     def log_full_report(self):
-        from octoprint.util import map_boolean
-
         with self._check_mutex:
             self._logger.info(
                 "Connectivity state is currently: {}".format(
-                    map_boolean(self.online, "online", "offline")
+                    self._map_online(self.online)
                 )
             )
             self.log_details()
 
-    def log_change_report(self, old_value, new_value, include_details=False):
-        from octoprint.util import map_boolean
-
-        with self._check_mutex:
-            self._logger.info(
-                "Connectivity changed from {} to {}".format(
-                    map_boolean(old_value, "online", "offline"),
-                    map_boolean(new_value, "online", "offline"),
-                )
-            )
-            if include_details:
-                self.log_details()
-
     def log_details(self):
-        from octoprint.util import map_boolean
-
         self._logger.info(
             "Connecting to {}:{} is {}".format(
                 self._host,
                 self._port,
-                map_boolean(self._connection_working, "working", "not working"),
+                self._map_working(self._connection_working),
             )
         )
         if self._name:
             self._logger.info(
                 "Resolving {} is {}".format(
                     self._name,
-                    map_boolean(self._resolution_working, "working", "not working"),
+                    self._map_working(self._resolution_working),
                 )
             )
 
@@ -220,14 +203,18 @@ class ConnectivityChecker:
                     time.sleep(1.0)
                     continue
 
+                # all good
+                break
+
             self._connection_working = connection_working
             self._resolution_working = resolution_working
+            new_value = self._online
 
-            if old_value != self._online:
-                self._trigger_change(old_value, self._online)
+            if old_value != new_value:
+                self._trigger_change(old_value, new_value)
 
     def _trigger_change(self, old_value, new_value):
-        self.log_change_report(old_value, new_value, include_details=not new_value)
+        self._log_change_report(old_value, new_value, include_details=not new_value)
         if callable(self._on_change):
             self._on_change(
                 old_value,
@@ -235,3 +222,19 @@ class ConnectivityChecker:
                 connection_working=self._connection_working,
                 resolution_working=self._resolution_working,
             )
+
+    def _log_change_report(self, old_value, new_value, include_details=False):
+        self._logger.info(
+            "Connectivity changed from {} to {}".format(
+                self._map_online(old_value),
+                self._map_online(new_value),
+            )
+        )
+        if include_details:
+            self.log_details()
+
+    def _map_working(self, value):
+        return "working" if value else "not working"
+
+    def _map_online(self, value):
+        return "online" if value else "offline"

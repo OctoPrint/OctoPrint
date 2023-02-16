@@ -15,7 +15,7 @@ jobs:
     if: github.repository == 'OctoPrint/OctoPrint' && github.event_name != 'push'
     steps:
       - name: 🚀 Repository Dispatch
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
           repository: ${{ github.repository_owner }}/octoprint-docker
@@ -27,7 +27,7 @@ jobs:
     if: github.repository == 'OctoPrint/OctoPrint' && github.event_name == 'push' && github.ref == 'refs/heads/maintenance'
     steps:
       - name: 🚀 Repository Dispatch
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
           repository: ${{ github.repository_owner }}/octoprint-docker
@@ -39,7 +39,7 @@ jobs:
     if: github.repository == 'OctoPrint/OctoPrint' && github.event_name == 'push' && github.ref == 'refs/heads/devel'
     steps:
       - name: 🚀 Repository Dispatch
-        uses: peter-evans/repository-dispatch@v1
+        uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
           repository: ${{ github.repository_owner }}/octoprint-docker

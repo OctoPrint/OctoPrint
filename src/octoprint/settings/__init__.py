@@ -27,7 +27,7 @@ import re
 import sys
 import threading
 import time
-from collections import ChainMap
+from collections import ChainMap, defaultdict
 from collections.abc import KeysView
 
 from yaml import YAMLError
@@ -490,6 +490,8 @@ class Settings:
 
         self._get_preprocessors = {"controls": self._process_custom_controls}
         self._set_preprocessors = {}
+        self._path_update_callbacks = defaultdict(list)
+        self._deprecated_paths = defaultdict(dict)
 
         self._init_basedir(basedir)
 
@@ -548,6 +550,36 @@ class Settings:
             self._logger.warning(
                 "CSRF Protection is disabled, this is a security risk. Do not run this in production."
             )
+
+    def _is_deprecated_path(self, path):
+        if path and isinstance(path[-1], (list, tuple)):
+            prefix = path[:-1]
+            return any(
+                map(lambda x: bool(self._deprecated_paths[tuple(prefix + [x])]), path[-1])
+            )
+
+        if (
+            tuple(path) not in self._deprecated_paths
+            or not self._deprecated_paths[tuple(path)]
+        ):
+            return False
+
+        try:
+            return list(self._deprecated_paths[tuple(path)].values())[-1]
+        except StopIteration:
+            return False
+
+    def _path_modified(self, path, current_value, new_value):
+        callbacks = self._path_update_callbacks.get(tuple(path))
+        if callbacks:
+            for callback in callbacks:
+                try:
+                    if callable(callback):
+                        callback(path, current_value, new_value)
+                except Exception:
+                    self._logger.exception(
+                        f"Error while executing callback {callback} for path {path}"
+                    )
 
     def _get_default_folder(self, type):
         folder = default_settings["folder"][type]
@@ -912,7 +944,9 @@ class Settings:
             self._migrate_config(config)
         return config
 
-    def add_overlay(self, overlay, at_end=False, key=None):
+    def add_overlay(
+        self, overlay, at_end=False, key=None, deprecated=None, replace=False
+    ):
         assert isinstance(overlay, dict)
 
         if key is None:
@@ -922,6 +956,17 @@ class Settings:
             hash = hashlib.md5()
             hash.update(overlay_yaml.encode("utf-8"))
             key = hash.hexdigest()
+
+        if replace:
+            self.remove_overlay(key)
+
+        if deprecated is not None:
+
+            self._logger.debug(
+                f"Marking all (recursive) paths in this overlay as deprecated: {overlay}"
+            )
+            for path in _paths([], overlay):
+                self._deprecated_paths[tuple(path)][key] = deprecated
 
         overlay[self.OVERLAY_KEY] = key
         if at_end:
@@ -936,11 +981,36 @@ class Settings:
         for i, overlay in enumerate(self._overlay_layers):
             if key == overlay.get(self.OVERLAY_KEY):
                 index = i
+                overlay = self._map._unflatten(overlay)
+                break
 
         if index > -1:
             self._map.delete_map(index + 1)
+
+            self._logger.debug(
+                f"Removing all deprecation marks for (recursive) paths in this overlay: {overlay}"
+            )
+            for path in _paths([], overlay):
+                try:
+                    del self._deprecated_paths[tuple(path)][key]
+                except KeyError:
+                    # key not in dict
+                    pass
+
             return True
         return False
+
+    def add_path_update_callback(self, path, callback):
+        callbacks = self._path_update_callbacks[tuple(path)]
+        if callback not in callbacks:
+            callbacks.append(callback)
+
+    def remove_path_update_callback(self, path, callback):
+        try:
+            self._path_update_callbacks[tuple(path)].remove(callback)
+        except ValueError:
+            # callback not in list
+            pass
 
     def _migrate_config(self, config=None, persist=False):
         if config is None:
@@ -1531,6 +1601,13 @@ class Settings:
         if not path:
             raise NoSuchSettingsPath()
 
+        is_deprecated = self._is_deprecated_path(path)
+        if is_deprecated:
+            self._logger.warning(
+                f"DeprecationWarning: Detected access to deprecated settings path {path}, returned value is derived from compatibility overlay. {is_deprecated if isinstance(is_deprecated, str) else ''}"
+            )
+            config = {}
+
         chain = self._map.with_config_defaults(config=config, defaults=defaults)
 
         if preprocessors is None:
@@ -1684,6 +1761,19 @@ class Settings:
             return value.lower() in valid_boolean_trues
         return value is not None
 
+    def checkBaseFolder(self, type):
+        if type != "base" and type not in default_settings["folder"]:
+            return False
+
+        if type == "base":
+            return os.path.exists(self._basedir)
+
+        folder = self.get(["folder", type])
+        default_folder = self._get_default_folder(type)
+        if folder is None:
+            folder = default_folder
+        return os.path.exists(folder)
+
     def getBaseFolder(
         self,
         type,
@@ -1807,6 +1897,13 @@ class Settings:
                 raise NoSuchSettingsPath()
             return
 
+        is_deprecated = self._is_deprecated_path(path)
+        if is_deprecated:
+            self._logger.warning(
+                f"[Deprecation] Prevented write of `{value}` to deprecated settings path {path}. {is_deprecated if isinstance(is_deprecated, str) else ''}"
+            )
+            return
+
         if self._mtime is not None and self.last_modified != self._mtime:
             self.load()
 
@@ -1844,6 +1941,7 @@ class Settings:
                 try:
                     chain.del_by_path(path)
                     self._mark_dirty()
+                    self._path_modified(path, current, value)
                 except KeyError:
                     if error_on_path:
                         raise NoSuchSettingsPath()
@@ -1855,6 +1953,7 @@ class Settings:
             ):
                 chain.set_by_path(path, value)
                 self._mark_dirty()
+                self._path_modified(path, current, value)
 
         # we've changed the interface to no longer mutate the passed in config, so we
         # must manually do that here
@@ -2006,3 +2105,11 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
             except Exception:
                 logger.exception(f"Could not write test file to {testfile}")
                 raise OSError(error)
+
+
+def _paths(prefix, data):
+    if isinstance(data, dict):
+        for k, v in data.items():
+            yield from _paths(prefix + [k], v)
+    else:
+        yield prefix

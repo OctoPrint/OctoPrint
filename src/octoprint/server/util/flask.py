@@ -36,6 +36,7 @@ import octoprint.access.users
 import octoprint.plugin
 import octoprint.server
 import octoprint.vendor.flask_principal as flask_principal
+from octoprint.access import auth_log, login_mechanisms
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated, yaml
@@ -85,11 +86,11 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                 continue
             dirs.append(plugin_translation_dir)
 
-        result = [Locale.parse(default_locale)]
+        result = {Locale.parse(default_locale)}
 
         for dir in dirs:
-            result += list_translations(dir)
-        return result
+            result.update(list_translations(dir))
+        return list(result)
 
     def fixed_get_translations():
         """Returns the correct gettext translations that should be used for
@@ -677,7 +678,16 @@ def passive_login():
     def login(u):
         # login known user
         if not u.is_anonymous:
+            if not flask.g.identity or not flask.g.identity.id:
+                # the user was just now found
+                login_mechanism = login_mechanisms.get(
+                    flask.session.get("login_mechanism", "unknown"), "unknown mechanism"
+                )
+                auth_log(
+                    f"Logging in user {u.get_id()} from {remote_address} via {login_mechanism}"
+                )
             u = octoprint.server.userManager.login_user(u)
+
         flask_login.login_user(u)
         flask_principal.identity_changed.send(
             flask.current_app._get_current_object(),
@@ -720,9 +730,7 @@ def passive_login():
                     autologin_user = octoprint.server.userManager.find_user(autologin_as)
                     if autologin_user is not None and autologin_user.is_active:
                         logger.info(
-                            "Passively logging in user {} from {} via autologin".format(
-                                autologin_as, remote_address
-                            )
+                            f"Logging in user {autologin_as} from {remote_address} via autologin"
                         )
                         flask.session["login_mechanism"] = "autologin"
                         return autologin_user
@@ -1754,6 +1762,7 @@ def collect_core_assets(preferred_stylesheet="css"):
     assets["js"] = [
         "js/app/bindings/allowbindings.js",
         "js/app/bindings/contextmenu.js",
+        "js/app/bindings/gettext.js",
         "js/app/bindings/invisible.js",
         "js/app/bindings/popover.js",
         "js/app/bindings/qrcode.js",

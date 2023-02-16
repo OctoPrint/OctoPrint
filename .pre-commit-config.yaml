@@ -48,7 +48,7 @@ repos:
       - id: black
         additional_dependencies:
           - click==8.0.4
-  - repo: https://gitlab.com/pycqa/flake8
+  - repo: https://github.com/pycqa/flake8
     rev: 3.9.2
     hooks:
       - id: flake8
@@ -67,10 +67,10 @@ repos:
       - id: eslint
         additional_dependencies:
           - eslint@7.19.0
-          - eslint-plugin-cypress@2.11.2
         files: \.js$
         exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|docs/|scripts/|translations/)
   - repo: https://github.com/codespell-project/codespell
     rev: v2.1.0
     hooks:
       - id: codespell
+        exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|tests/playwright|scripts/)

@@ -78,7 +78,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         # sd handling
         self._sdPrinting = False
         self._sdStreaming = False
-        self._sdFilelistAvailable = threading.Event()
         self._streamingFinishedCallback = None
         self._streamingFailedCallback = None
 
@@ -1007,12 +1006,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         if tags is None:
             tags = set()
 
-        remote_name = self._get_free_remote_name(filename)
         self._create_estimator("stream")
-        self._comm.startFileTransfer(
+        remote_name = self._comm.startFileTransfer(
             path,
             filename,
-            "/" + remote_name,
             special=not valid_file_type(filename, "gcode"),
             tags=tags | {"trigger:printer.add_sd_file"},
         )
@@ -1049,12 +1046,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         """
         if not self._comm or not self._comm.isSdReady():
             return
-        self._sdFilelistAvailable.clear()
         self._comm.refreshSdFiles(
-            tags=kwargs.get("tags", set()) | {"trigger:printer.refresh_sd_files"}
+            tags=kwargs.get("tags", set()) | {"trigger:printer.refresh_sd_files"},
+            blocking=blocking,
+            timeout=kwargs.get("timeout", 10),
         )
-        if blocking and not self.is_printing():
-            self._sdFilelistAvailable.wait(kwargs.get("timeout", 10))
 
     # ~~ state monitoring
 
@@ -1225,7 +1221,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 )
             )
 
-    def _setJobData(self, filename, filesize, sd, user=None):
+    def _setJobData(self, filename, filesize, sd, user=None, data=None):
         with self._selectedFileMutex:
             if filename is not None:
                 if sd:
@@ -1278,11 +1274,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             date = None
             filament = None
             display_name = name_in_storage
+
             if path_on_disk:
-                # Use a string for mtime because it could be float and the
+                # Use an int for mtime because it could be float and the
                 # javascript needs to exact match
-                if not sd:
-                    date = int(os.stat(path_on_disk).st_mtime)
+                date = int(os.stat(path_on_disk).st_mtime)
 
                 try:
                     fileData = self._fileManager.get_metadata(
@@ -1328,6 +1324,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                         # TODO apply factor which first needs to be tracked!
                         self._selectedFile["estimatedPrintTime"] = estimatedPrintTime
                         self._selectedFile["estimatedPrintTimeType"] = "analysis"
+
+            elif data:
+                display_name = data.longname
+                date = data.timestamp
 
             self._stateMonitor.set_job_data(
                 self._dict(
@@ -1491,12 +1491,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             if self._comm is not None:
                 self._comm = None
 
+            with self._selectedFileMutex:
+                if self._selectedFile is not None:
+                    eventManager().fire(Events.FILE_DESELECTED)
+                self._setJobData(None, None, None)
+
             self._updateProgressData()
             self._setCurrentZ(None)
-            self._setJobData(None, None, None)
             self._setOffsets(None)
             self._addTemperatureData()
             self._printerProfileManager.deselect()
+
             eventManager().fire(Events.DISCONNECTED)
 
         self._setState(state, state_string=state_string, error_string=error_string)
@@ -1539,9 +1544,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
     def on_comm_sd_files(self, files):
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
-        self._sdFilelistAvailable.set()
 
-    def on_comm_file_selected(self, full_path, size, sd, user=None):
+    def on_comm_file_selected(self, full_path, size, sd, user=None, data=None):
         if full_path is not None:
             payload = self._payload_for_print_job_event(
                 location=FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
@@ -1564,7 +1568,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 "Print job deselected - user: {}".format(user if user else "n/a")
             )
 
-        self._setJobData(full_path, size, sd, user=user)
+        self._setJobData(full_path, size, sd, user=user, data=data)
         self._stateMonitor.set_state(
             self._dict(
                 text=self.get_state_string(),

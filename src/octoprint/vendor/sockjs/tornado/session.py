@@ -8,26 +8,27 @@ from __future__ import absolute_import, division, print_function, unicode_litera
     SockJS session implementation.
 """
 
-import logging
+import asyncio
 import functools
+import logging
 
-from octoprint.vendor.sockjs.tornado import sessioncontainer, periodic, proto
-from octoprint.vendor.sockjs.tornado.util import bytes_to_str
-
-from tornado.ioloop import IOLoop
+from octoprint.vendor.sockjs.tornado import periodic, proto, sessioncontainer
+from octoprint.vendor.sockjs.tornado.util import bytes_to_str, get_current_ioloop
 
 LOG = logging.getLogger("tornado.general")
+
 
 def ensure_io_loop(method):
     @functools.wraps(method)
     def wrapper(self, *args, **kwargs):
-        if IOLoop.current(False):
+        if get_current_ioloop():
             method(self, *args, **kwargs)
         else:
             def run():
                 method(self, *args, **kwargs)
             self.server.io_loop.add_callback(run)
     return wrapper
+
 
 class ConnectionInfo(object):
     """Connection information object.

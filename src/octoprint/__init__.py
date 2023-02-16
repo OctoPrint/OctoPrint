@@ -264,6 +264,7 @@ def init_logging(
     # default logging configuration
     if default_config is None:
         simple_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        date_format = "%Y-%m-%d %H:%M:%S"
         default_config = {
             "version": 1,
             "formatters": {
@@ -280,6 +281,13 @@ def init_logging(
                     },
                 },
                 "serial": {"format": "%(asctime)s - %(message)s"},
+                "tornado": {
+                    "()": "tornado.log.LogFormatter",
+                    "color": False,
+                    "format": simple_format,
+                    "datefmt": date_format,
+                },
+                "auth": {"format": "%(asctime)s - %(message)s"},
                 "timings": {"format": "%(asctime)s - %(message)s"},
                 "timingscsv": {"format": "%(asctime)s;%(func)s;%(timing)f"},
             },
@@ -310,6 +318,24 @@ def init_logging(
                     ),
                     "delay": True,
                 },
+                "tornadoFile": {
+                    "class": "octoprint.logging.handlers.TornadoLogHandler",
+                    "level": "DEBUG",
+                    "formatter": "tornado",
+                    "when": "D",
+                    "backupCount": 1,
+                    "filename": os.path.join(
+                        settings.getBaseFolder("logs"), "tornado.log"
+                    ),
+                },
+                "authFile": {
+                    "class": "octoprint.logging.handlers.AuthLogHandler",
+                    "level": "DEBUG",
+                    "formatter": "auth",
+                    "when": "D",
+                    "backupCount": 1,
+                    "filename": os.path.join(settings.getBaseFolder("logs"), "auth.log"),
+                },
                 "pluginTimingsFile": {
                     "class": "octoprint.logging.handlers.PluginTimingsLogHandler",
                     "level": "DEBUG",
@@ -337,12 +363,22 @@ def init_logging(
                     "handlers": ["serialFile"],
                     "propagate": False,
                 },
+                "AUTH": {
+                    "level": "INFO",
+                    "handlers": ["authFile"],
+                    "propagate": False,
+                },
                 "PLUGIN_TIMINGS": {
                     "level": "INFO",
                     "handlers": ["pluginTimingsFile", "pluginTimingsCsvFile"],
                     "propagate": False,
                 },
                 "PLUGIN_TIMINGS.octoprint.plugin": {"level": "INFO"},
+                "tornado.access": {
+                    "level": "INFO",
+                    "handlers": ["tornadoFile"],
+                    "propagate": False,
+                },
                 "octoprint": {"level": "INFO"},
                 "octoprint.util": {"level": "INFO"},
                 "octoprint.plugins": {"level": "INFO"},
@@ -504,6 +540,42 @@ def init_settings_plugin_config_migration_and_cleanup(plugin_manager):
     plugin_manager.implementation_post_inits = [
         settings_plugin_config_migration_and_cleanup
     ]
+
+
+def init_webcam_compat_overlay(settings, plugin_manager):
+    import logging
+
+    import octoprint.webcams
+
+    def set_overlay():
+        default_webcam = octoprint.webcams.get_default_webcam(
+            settings=settings, plugin_manager=plugin_manager
+        )
+        if default_webcam is None:
+            settings.remove_overlay("webcam_compat")
+            return
+
+        if not default_webcam.config or not default_webcam.config.compat:
+            settings.remove_overlay("webcam_compat")
+            return
+
+        logging.getLogger(__name__).info(
+            f"Installing webcam compat overlay for configured default webcam {default_webcam}"
+        )
+        overlay = {"webcam": default_webcam.config.compat.dict(by_alias=True)}
+        settings.add_overlay(
+            overlay,
+            key="webcam_compat",
+            at_end=True,
+            deprecated="Please use the webcam system introduced with 1.9.0, this compatibility layer will be removed in a future release.",
+            replace=True,
+        )
+
+    def callback(path, current_value, new_value):
+        set_overlay()
+
+    set_overlay()
+    settings.add_path_update_callback(["webcam", "defaultWebcam"], callback)
 
 
 def init_custom_events(plugin_manager):
@@ -790,7 +862,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
         if isinstance(result, list):
             return result
 
-    def fetch_blacklist_from_url(url, timeout=3, cache=None):
+    def fetch_blacklist_from_url(url, timeout=3.05, cache=None):
         result = []
         try:
             r = requests.get(url, timeout=timeout)

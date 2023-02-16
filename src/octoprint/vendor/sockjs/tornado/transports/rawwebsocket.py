@@ -8,12 +8,12 @@ from __future__ import absolute_import, division, print_function, unicode_litera
     Raw websocket transport implementation
 """
 import logging
-import socket
 
-from octoprint.vendor.sockjs.tornado import websocket, session
-from octoprint.vendor.sockjs.tornado.transports import base
 from tornado.websocket import WebSocketError
-from tornado.ioloop import IOLoop
+
+from octoprint.vendor.sockjs.tornado import session, websocket
+from octoprint.vendor.sockjs.tornado.transports import base
+from octoprint.vendor.sockjs.tornado.util import get_current_ioloop
 
 LOG = logging.getLogger("tornado.general")
 
@@ -78,7 +78,7 @@ class RawWebSocketTransport(websocket.SockJSWebSocketHandler, base.BaseTransport
             session.close()
 
     def send_pack(self, message, binary=False):
-        if IOLoop.current(False) == self.server.io_loop:
+        if get_current_ioloop() == self.server.io_loop:
             # Running in Main Thread
             # Send message
             try:

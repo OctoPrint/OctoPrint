@@ -67,7 +67,7 @@ def _get_latest_release(package, include_prerelease):
     from ..exceptions import NetworkError
 
     try:
-        r = requests.get(INFO_URL.format(package=package), timeout=(3.05, 30))
+        r = requests.get(INFO_URL.format(package=package), timeout=(3.05, 7))
     except requests.ConnectionError as exc:
         raise NetworkError(cause=exc)
 
