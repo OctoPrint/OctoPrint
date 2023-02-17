@@ -20,7 +20,7 @@ development environment::
   $ virtualenv venv
   [...]
   $ source venv/bin/activate
-  (venv) $ pip install -e .[develop,plugins]
+  (venv) $ pip install -e '.[develop,plugins]'
   [...]
   (venv) $ octoprint --help
   Usage: octoprint [OPTIONS] COMMAND [ARGS]...
@@ -96,7 +96,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
 
    import octoprint.plugin
 
-   class HelloWorldPlugin(octoprint.plugin.StartupPlugin):
+   class HelloworldPlugin(octoprint.plugin.StartupPlugin):
        def on_after_startup(self):
            self._logger.info("Hello World!")
 
@@ -104,7 +104,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
    __plugin_version__ = "1.0.0"
    __plugin_description__ = "A quick \"Hello World\" example plugin for OctoPrint"
    __plugin_pythoncompat__ = ">=3.7,<4"
-   __plugin_implementation__ = HelloWorldPlugin()
+   __plugin_implementation__ = HelloworldPlugin()
 
 and restart OctoPrint. You now get this output in the log::
 
@@ -163,7 +163,7 @@ Then we can use the ``octoprint dev plugin:new`` command [#f1]_ to generate a ne
    email [you@example.com]: you@somewhere.net
    github_username [you]: yourGithubName
    plugin_version [0.1.0]: 1.0.0
-   plugin_description [TODO]: A quick "Hello World" example plugin for OCtoPrint
+   plugin_description [TODO]: A quick "Hello World" example plugin for OctoPrint
    plugin_license [AGPLv3]:
    plugin_homepage [https://github.com/yourGithubName/OctoPrint-Helloworld]:
    plugin_source [https://github.com/yourGithubName/OctoPrint-Helloworld]:
@@ -178,6 +178,9 @@ Then we can use the ``octoprint dev plugin:new`` command [#f1]_ to generate a ne
 This will create a project structure in the ``OctoPrint-HelloWorld`` folder we just changed to that looks like this::
 
    extras/
+       github/
+           bug_report.yml
+           feature_request.yml
        README.txt
        helloworld.md
    octoprint_helloworld/
@@ -200,6 +203,7 @@ This will create a project structure in the ``OctoPrint-HelloWorld`` folder we j
    README.md
    requirements.txt
    setup.py
+   setup.cfg
 
 While we'll need some of those folders later on, we'll now delete everything that we don't need right now first, that
 will make it easier to understand what folder does what later on. Delete the following folders and anything in them:
@@ -219,6 +223,7 @@ The final project structure should look like this for now::
    MANIFEST.in
    README.md
    requirements.txt
+   setup.cfg
    setup.py
 
 Out of curiosity, take a look into the ``setup.py`` file. The cookiecutter template should have prefilled all the
@@ -393,6 +398,7 @@ Our plugin's directory structure should now look like this::
    README.md
    requirements.txt
    setup.py
+   setup.cfg
 
 Restart OctoPrint and open the web interface in your browser (make sure to clear your browser's cache!).
 
@@ -648,6 +654,7 @@ look like this::
    README.md
    requirements.txt
    setup.py
+   setup.cfg
 
 We need to tell OctoPrint about this new static asset so that it will properly inject it into the page. For this we
 just need to subclass :class:`~octoprint.plugin.AssetPlugin` and override its method :func:`~octoprint.plugin.AssetPlugin.get_assets`
