@@ -20,7 +20,7 @@ and released under the [GNU Affero General Public License V3](https://www.gnu.or
 
 Its website can be found at [octoprint.org](https://octoprint.org/?utm_source=github&utm_medium=readme).
 
-The community forum is available at [community.octoprint.org](https://community.octoprint.org/?utm_source=github&utm_medium=readme). It also serves as central knowledge base.
+The community forum is available at [community.octoprint.org](https://community.octoprint.org/?utm_source=github&utm_medium=readme). It also serves as a central knowledge base.
 
 An invite to the Discord server can be found at [discord.octoprint.org](https://discord.octoprint.org).
 
