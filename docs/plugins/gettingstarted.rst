@@ -96,7 +96,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
 
    import octoprint.plugin
 
-   class HelloworldPlugin(octoprint.plugin.StartupPlugin):
+   class HelloWorldPlugin(octoprint.plugin.StartupPlugin):
        def on_after_startup(self):
            self._logger.info("Hello World!")
 
@@ -104,7 +104,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
    __plugin_version__ = "1.0.0"
    __plugin_description__ = "A quick \"Hello World\" example plugin for OctoPrint"
    __plugin_pythoncompat__ = ">=3.7,<4"
-   __plugin_implementation__ = HelloworldPlugin()
+   __plugin_implementation__ = HelloWorldPlugin()
 
 and restart OctoPrint. You now get this output in the log::
 
