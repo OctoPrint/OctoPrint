@@ -53,6 +53,7 @@ def clean_ansi(line: Union[str, bytes]) -> Union[str, bytes]:
         warnings.warn(
             "Calling clean_ansi with bytes is deprecated, call with str instead",
             DeprecationWarning,
+            stacklevel=2,
         )
         return to_bytes(_ANSI_REGEX.sub("", to_unicode(line)))
     return _ANSI_REGEX.sub("", line)

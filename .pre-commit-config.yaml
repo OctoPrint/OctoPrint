@@ -54,7 +54,7 @@ repos:
       - id: flake8
         args: [--config=setup.cfg]
         additional_dependencies:
-          - flake8-bugbear
+          - flake8-bugbear==23.2.13
         exclude: ^(docs/)
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v2.7.1
