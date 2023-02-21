@@ -864,6 +864,16 @@ def _saveSettings(data):
             s.setBoolean(
                 ["serial", "neverSendChecksum"], data["serial"]["neverSendChecksum"]
             )
+        if "sendChecksumWithUnknownCommands" in data["serial"]:
+            s.setBoolean(
+                ["serial", "sendChecksumWithUnknownCommands"],
+                data["serial"]["sendChecksumWithUnknownCommands"],
+            )
+        if "unknownCommandsNeedAck" in data["serial"]:
+            s.setBoolean(
+                ["serial", "unknownCommandsNeedAck"],
+                data["serial"]["unknownCommandsNeedAck"],
+            )
         if "sdRelativePath" in data["serial"]:
             s.setBoolean(["serial", "sdRelativePath"], data["serial"]["sdRelativePath"])
         if "sdAlwaysAvailable" in data["serial"]:
