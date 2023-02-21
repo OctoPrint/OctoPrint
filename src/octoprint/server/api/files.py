@@ -1289,9 +1289,7 @@ def deleteGcodeFile(filename, target):
 
 def _abortWithException(error):
     if type(error) is StorageError:
-        logging.getLogger(__name__).error(
-            f"{error.message}: {error.code}", exc_info=error.cause
-        )
+        logging.getLogger(__name__).error(f"{error}: {error.code}", exc_info=error.cause)
         if error.code == StorageError.INVALID_DIRECTORY:
             abort(400, description="Could not create folder, invalid directory")
         elif error.code == StorageError.INVALID_FILE:
@@ -1311,7 +1309,7 @@ def _abortWithException(error):
         elif error.code == StorageError.UNKNOWN:
             abort(500, description=str(error.cause).split(":")[0])
         else:
-            abort(500, description=error.message)
+            abort(500, description=error)
     else:
         logging.getLogger(__name__).exception(error)
         abort(500, description=str(error).split(":")[0])
