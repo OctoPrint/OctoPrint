@@ -1360,7 +1360,7 @@ octoprint.printer.sdcardupload
    to be created on the ``sdcard`` storage. ``elapsed`` is the elapsed time in seconds.
 
    If the hook is going to handle the upload, it must return the (future) remote filename of the file on the ``sdcard``
-   storage. If it returns ``None`` (or an otherwise falsy value), OctoPrint will interpret this as the hook not going to
+   storage. If it returns ``None`` (or an otherwise false-y value), OctoPrint will interpret this as the hook not going to
    handle the file upload, in which case the next hook or - if no other hook is registered - the default implementation
    will be called.
 

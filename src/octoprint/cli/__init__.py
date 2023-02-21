@@ -362,7 +362,6 @@ from .systeminfo import cli as systeminfo_commands  # noqa: E402
 @click.version_option(version=octoprint.__version__, allow_from_autoenv=False)
 @click.pass_context
 def octo(ctx, **kwargs):
-
     if ctx.invoked_subcommand is None:
         # We have to support calling the octoprint command without any
         # sub commands to remain backwards compatible.

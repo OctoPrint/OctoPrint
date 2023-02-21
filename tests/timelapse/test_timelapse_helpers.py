@@ -129,7 +129,6 @@ class TimelapseTest(unittest.TestCase):
 
     @mock.patch("os.scandir")
     def test_get_finished_timelapses(self, mock_listdir):
-
         ## prepare
 
         mocked_path = "/path/to/timelapse"
@@ -215,7 +214,6 @@ class TimelapseTest(unittest.TestCase):
         return result
 
     def test_ffmpeg_parse(self):
-
         # Test strings
         noChange1Str = "  built on Jan  7 2014 22:07:02 with gcc 4.8.2 (GCC)"
         durationStr = (

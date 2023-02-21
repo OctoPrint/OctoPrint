@@ -2726,10 +2726,10 @@ class Server:
             permission = PluginOctoPrintPermission(
                 permission_name(plugin_info.name, definition),
                 description,
+                *roles_and_permissions,
                 plugin=plugin_info.key,
                 dangerous=dangerous,
                 default_groups=default_groups,
-                *roles_and_permissions,
             )
             setattr(
                 octoprint.access.permissions.Permissions,
@@ -2737,10 +2737,10 @@ class Server:
                 PluginOctoPrintPermission(
                     permission_name(plugin_info.name, definition),
                     description,
+                    *roles_and_permissions,
                     plugin=plugin_info.key,
                     dangerous=dangerous,
                     default_groups=default_groups,
-                    *roles_and_permissions,
                 ),
             )
 

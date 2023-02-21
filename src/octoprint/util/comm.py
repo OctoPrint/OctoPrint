@@ -2717,7 +2717,6 @@ class MachineCom:
                     or line.startswith("T0:")
                     or ((" B:" in line or line.startswith("B:")) and "A:" not in line)
                 ):
-
                     if (
                         not disable_external_heatup_detection
                         and not self._temperature_autoreporting
@@ -3052,7 +3051,6 @@ class MachineCom:
                                 else:
                                     self._consecutive_not_sd_printing = 0
                                     if self.isSdFileSelected():
-
                                         # If we are not yet sd printing, the current does not equal the total, is larger
                                         # than zero and has increased since the last time we saw a position report, then
                                         # yes, this looks like we just started printing due to an external trigger.
@@ -4488,7 +4486,7 @@ class MachineCom:
             enqueued_something = False
 
             # process all but the last ...
-            for (cmd, cmd_type, gcode, subcode, tags) in results:
+            for cmd, cmd_type, gcode, subcode, tags in results:
                 enqueued_something = (
                     process(cmd, cmd_type, gcode, subcode, tags=tags)
                     or enqueued_something

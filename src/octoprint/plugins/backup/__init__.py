@@ -60,7 +60,6 @@ class BackupPlugin(
     octoprint.plugin.StartupPlugin,
     octoprint.plugin.WizardPlugin,
 ):
-
     _pip_caller = None
 
     _backup_in_progress = threading.Lock()
@@ -168,7 +167,6 @@ class BackupPlugin(
     @no_firstrun_access
     @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
     def create_backup(self):
-
         data = flask.request.json
         exclude = data.get("exclude", [])
         filename = self._build_backup_filename(settings=self._settings)
@@ -922,7 +920,6 @@ class BackupPlugin(
         )
 
         with cls._backup_in_progress:
-
             if name is None:
                 name = cls._build_backup_filename(settings)
 
@@ -971,7 +968,9 @@ class BackupPlugin(
                 final_path = os.path.join(datafolder, name)
 
                 own_folder = datafolder
-                defaults = [os.path.join(basedir, "config.yaml"),] + [
+                defaults = [
+                    os.path.join(basedir, "config.yaml"),
+                ] + [
                     os.path.join(basedir, folder)
                     for folder in default_settings["folder"].keys()
                 ]
@@ -1179,7 +1178,6 @@ class BackupPlugin(
                     on_restore_start(path)
 
                 try:
-
                     with zipfile.ZipFile(path, "r") as zip:
                         # read metadata
                         try:

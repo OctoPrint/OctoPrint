@@ -77,7 +77,6 @@ class PrinterStateConnection(
     LoginStatusListener,
     GroupChangeListener,
 ):
-
     _event_permissions = {
         Events.USER_LOGGED_IN: [Permissions.ADMIN],
         Events.USER_LOGGED_OUT: [Permissions.ADMIN],

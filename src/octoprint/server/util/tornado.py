@@ -92,7 +92,6 @@ def fix_websocket_check_origin():
 
 
 class RequestlessExceptionLoggingMixin(tornado.web.RequestHandler):
-
     LOG_REQUEST = False
 
     def log_exception(self, typ, value, tb, *args, **kwargs):
@@ -1616,7 +1615,6 @@ class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
 
 
 class GlobalHeaderTransform(tornado.web.OutputTransform):
-
     HEADERS = {}
     FORCED_HEADERS = {}
     REMOVED_HEADERS = []

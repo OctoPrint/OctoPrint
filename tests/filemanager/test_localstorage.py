@@ -833,7 +833,7 @@ class LocalStorageTest(unittest.TestCase):
         # prepare
         import yaml
 
-        with open(yaml_path, "wt") as f:
+        with open(yaml_path, "w") as f:
             yaml.safe_dump(metadata, f)
 
         # migrate

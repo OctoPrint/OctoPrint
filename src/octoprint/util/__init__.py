@@ -881,7 +881,6 @@ def dict_filter(dictionary, filter_function):
 # Source: http://stackoverflow.com/a/6190500/562769
 class DefaultOrderedDict(collections.OrderedDict):
     def __init__(self, default_factory=None, *a, **kw):
-
         if default_factory is not None and not callable(default_factory):
             raise TypeError("first argument must be callable")
         collections.OrderedDict.__init__(self, *a, **kw)

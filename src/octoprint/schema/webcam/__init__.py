@@ -15,7 +15,6 @@ class RatioEnum(str, Enum):
 
 @with_attrs_docs
 class WebcamCompatibility(BaseModel):
-
     streamTimeout: int = 5
     """The timeout of the stream in seconds"""
 
@@ -43,7 +42,6 @@ class WebcamCompatibility(BaseModel):
 
 @with_attrs_docs
 class Webcam(BaseModel):
-
     name: str
     """Identifier of this webcam"""
 

@@ -274,7 +274,6 @@ class ReverseProxiedEnvironment:
         server=None,
         port=None,
     ):
-
         # sensible defaults
         if header_prefix is None:
             header_prefix = ["x-script-name", "x-forwarded-prefix"]
@@ -1720,7 +1719,6 @@ class PluginAssetResolver(flask_assets.FlaskResolver):
 
 
 class SettingsCheckUpdater(webassets.updater.BaseUpdater):
-
     updater = "always"
 
     def __init__(self):

@@ -8,7 +8,6 @@ class TornadoAccessFilter(logging.Filter):
             status, request_line, rtt = record.args
 
             if status == 409:
-
                 _, url, _ = request_line.split()
                 u = urllib.parse.urlparse(url)
                 if u.path in ("/api/printer",):

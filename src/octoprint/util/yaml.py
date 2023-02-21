@@ -31,7 +31,7 @@ def load_from_file(
 def _save_to_file_base(data, file=None, path=None, pretty=False, **kwargs):
     if path is not None:
         assert file is None
-        with open(path, "wt", encoding="utf-8") as f:
+        with open(path, "w", encoding="utf-8") as f:
             return _save_to_file_base(data, file=f, pretty=pretty, **kwargs)
 
     if file is not None:

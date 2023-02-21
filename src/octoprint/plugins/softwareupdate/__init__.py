@@ -231,7 +231,6 @@ class SoftwareUpdatePlugin(
                 or self._configured_checks is None
                 or self._check_overlays_stale
             ):
-
                 self._refresh_configured_checks = False
 
                 overlays = self._get_check_overlays()
@@ -934,7 +933,6 @@ class SoftwareUpdatePlugin(
         return 9
 
     def on_settings_migrate(self, target, current=None):
-
         if current is None or current < 6:
             # up until & including config version 5 we didn't set the method parameter for the octoprint check
             # configuration
@@ -1657,7 +1655,6 @@ class SoftwareUpdatePlugin(
                             continue
 
                     for future in futures.as_completed(futures_to_result):
-
                         target, populated_check = futures_to_result[future]
                         if future.exception() is not None:
                             self._logger.error(
@@ -2034,7 +2031,6 @@ class SoftwareUpdatePlugin(
         return to_be_updated, check_data
 
     def _update_worker(self, checks, check_targets, force):
-
         restart_type = None
 
         credentials = self._settings.get(["credentials"], merged=True)

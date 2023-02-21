@@ -536,7 +536,7 @@ class Timelapse:
         eventManager().subscribe(Events.PRINT_FAILED, self.on_print_done)
         eventManager().subscribe(Events.PRINT_DONE, self.on_print_done)
         eventManager().subscribe(Events.PRINT_RESUMED, self.on_print_resumed)
-        for (event, callback) in self.event_subscriptions():
+        for event, callback in self.event_subscriptions():
             eventManager().subscribe(event, callback)
 
     @property
@@ -560,7 +560,7 @@ class Timelapse:
         eventManager().unsubscribe(Events.PRINT_FAILED, self.on_print_done)
         eventManager().unsubscribe(Events.PRINT_DONE, self.on_print_done)
         eventManager().unsubscribe(Events.PRINT_RESUMED, self.on_print_resumed)
-        for (event, callback) in self.event_subscriptions():
+        for event, callback in self.event_subscriptions():
             eventManager().unsubscribe(event, callback)
 
     def on_print_started(self, event, payload):
@@ -951,7 +951,6 @@ class TimedTimelapse(Timelapse):
 
 
 class TimelapseRenderJob:
-
     render_job_lock = threading.RLock()
 
     def __init__(

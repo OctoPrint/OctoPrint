@@ -1817,7 +1817,7 @@ class VirtualPrinter:
 
         handle = None
         try:
-            handle = open(file, "wt", encoding="utf-8")
+            handle = open(file, "w", encoding="utf-8")
         except Exception:
             self._send("error writing to file")
         self._writingToSdHandle = handle
@@ -2150,7 +2150,7 @@ class VirtualEEPROM:
         else:
             # no eeprom file, make new one with defaults
             data = self.get_default_settings()
-            with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+            with open(self._eeprom_file_path, "w", encoding="utf-8") as eeprom_file:
                 eeprom_file.write(to_unicode(json.dumps(data)))
             return data
 
@@ -2261,7 +2261,7 @@ class VirtualEEPROM:
 
     def save_settings(self):
         # M500 behind-the-scenes
-        with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+        with open(self._eeprom_file_path, "w", encoding="utf-8") as eeprom_file:
             eeprom_file.write(to_unicode(json.dumps(self._eeprom)))
 
     def read_settings(self):

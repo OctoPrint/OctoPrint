@@ -16,7 +16,6 @@ class CoreWizardPlugin(
     octoprint.plugin.BlueprintPlugin,
     Subwizards,
 ):
-
     # ~~ TemplatePlugin API
 
     def get_template_configs(self):
