@@ -8,10 +8,10 @@ const credentials = {
 const expect = base.expect;
 
 exports.test = base.test.extend({
-    loginApi: async ({context}, use) => {
+    loginApi: async ({context, baseURL}, use) => {
         const loginApi = {
             login: async (username, password) => {
-                return await context.request.post("/api/login", {
+                return await context.request.post(baseURL + "/api/login", {
                     data: {
                         user: username,
                         pass: password
@@ -20,7 +20,7 @@ exports.test = base.test.extend({
             },
 
             logout: async () => {
-                return await context.request.post("/api/logout");
+                return await context.request.post(baseURL + "/api/logout");
             },
 
             loginDefault: async () => {
@@ -36,12 +36,12 @@ exports.test = base.test.extend({
         await use(loginApi);
     },
 
-    connectionApi: async ({context}, use) => {
+    connectionApi: async ({context, baseURL}, use) => {
         const connectionApi = {
             connect: async (port, baudrate) => {
                 port = port || "AUTO";
                 baudrate = baudrate || 0;
-                return await context.request.post("/api/connection", {
+                return await context.request.post(baseURL + "/api/connection", {
                     data: {
                         command: "connect",
                         port: port,
@@ -51,7 +51,7 @@ exports.test = base.test.extend({
             },
 
             disconnect: async () => {
-                return await context.request.post("/api/connection", {
+                return await context.request.post(baseURL + "/api/connection", {
                     data: {
                         command: "disconnect"
                     }
@@ -61,10 +61,12 @@ exports.test = base.test.extend({
         await use(connectionApi);
     },
 
-    filesApi: async ({context}, use) => {
+    filesApi: async ({context, baseURL}, use) => {
         const filesApi = {
             ensureFileUnknown: async (location, name) => {
-                return await context.request.delete(`/api/files/${location}/${name}`);
+                return await context.request.delete(
+                    baseURL + `/api/files/${location}/${name}`
+                );
             }
         };
         await use(filesApi);
@@ -74,16 +76,16 @@ exports.test = base.test.extend({
         await use(credentials);
     },
 
-    ui: async ({page, util, loginApi}, use) => {
+    ui: async ({page, util, loginApi, baseURL}, use) => {
         const ui = {
             gotoLogin: async () => {
-                await page.goto("/?l10n=en");
+                await page.goto(baseURL + "/?l10n=en");
                 await ui.loginHasLoaded();
             },
 
             gotoLoggedInCore: async () => {
                 await loginApi.loginDefault();
-                await page.goto("/?l10n=en");
+                await page.goto(baseURL + "/?l10n=en");
                 await ui.coreHasLoaded();
             },
 
