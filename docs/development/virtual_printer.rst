@@ -192,37 +192,40 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
        m115FormatString: "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0"
 
        # Whether to include capability report in M115 output
-       m115ReportCapabilites: false
+       m115ReportCapabilities: false
 
        # Capabilities to report if capability report is enabled
        capabilities:
          AUTOREPORT_TEMP: true
 
+       # Response to GEOMETRY capability
+       m115AreaFormatString: "area:{{full:{{min:{{x:{f_xmin},y:{f_ymin},z:{f_zmin}}},max:{{x:{f_xmax},y:{f_ymax},z:{f_zmax}}}}},work:{{min:{{x:{w_xmin},y:{w_ymin},z:{w_zmin}}},max:{{x:{w_xmax},y:{w_ymax},z:{w_zmax}}}}}}}"
+
        # Simulated ambient temperature in °C
        ambientTemperature: 21.3
-       
+
        # Response to M105 when there is a target
        # Placeholders:
        # - heater: The heater id (eg. T0, T1, B)
        # - actual: The actual temperature of the heater
        # - target: The target temperature of heater
        m105TargetFormatString: {heater}:{actual:.2f}/ {target:.2f}
-       
+
        # Response to M105 when there is no target
        # Placeholders:
        # - heater: The heater id (eg. T0, T1, B)
        # - actual: The actual temperature of the heater
        m105NoTargetFormatString: {heater}:{actual:.2f}
-       
+
        # Enable virtual EEPROM
        # If enabled, a file `eeprom.json` will be created in the plugin data folder
        # to enable settings persistence across connections. Enables M500/1/2/4 commands
        # And a selection of other settings commands. Responses modeled on Marlin 2.0
        enable_eeprom: true
-       
+
        # Support M503
        support_m503: true
-       
+
        # Resend ratio to simulate noise on the line
        resend_ratio: 0
 
