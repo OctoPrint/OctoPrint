@@ -55,6 +55,10 @@ class VirtualPrinterPlugin(
                 "EMERGENCY_PARSER": True,
                 "EXTENDED_M20": False,
             },
+            "m115ReportExtraParams": True,
+            "extraParams": {
+                "area": "{full:{min:{x:0.00,y:0.00,z:0.00},max:{x:200.00,y:200.00,z:200.00}},work:{min:{x:0.00,y:0.00,z:0.00},max:{x:200.00,y:200.00,z:200.00}}}",
+            },
             "m114FormatString": "X:{x} Y:{y} Z:{z} E:{e[current]} Count: A:{a} B:{b} C:{c}",
             "m105TargetFormatString": "{heater}:{actual:.2f}/ {target:.2f}",
             "m105NoTargetFormatString": "{heater}:{actual:.2f}",

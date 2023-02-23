@@ -163,6 +163,8 @@ class VirtualPrinter:
 
         self._capabilities = self._settings.get(["capabilities"], merged=True)
 
+        self._extraParams = self._settings.get(["extraParams"], merged=True)
+
         self._locked = self._settings.get_boolean(["locked"])
 
         self._temperature_reporter = None
@@ -692,6 +694,10 @@ class VirtualPrinter:
         if self._settings.get_boolean(["m115ReportCapabilities"]):
             for cap, enabled in self._capabilities.items():
                 self._send("Cap:{}:{}".format(cap.upper(), "1" if enabled else "0"))
+
+        if self._settings.get_boolean(["m115ReportExtraParams"]):
+            for paramName, paramValue in self._extraParams.items():
+                self._send("{}:{}".format(paramName, paramValue))
 
     def _gcode_M117(self, data: str) -> None:
         # we'll just use this to echo a message, to allow playing around with pause triggers
