@@ -158,7 +158,7 @@ class RemoteAccessSubwizard:
         return gettext("Interent Remote Access")
 
     def _get_remoteaccess_additional_wizard_template_data(self):
-        return {"mandatory": False }
+        return {"mandatory": False}
 
 
 Subwizards = type(
