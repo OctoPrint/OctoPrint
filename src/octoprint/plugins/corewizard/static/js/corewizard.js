@@ -331,8 +331,11 @@ $(function () {
         self.settingsViewModel = parameters[0];
 
         self.onBeforeWizardTabChange = function (next, current) {
-            // This funciton fires for all wizard tab changes, so ingore calls that aren't for us.
-            if(!current || !_.startsWith(current, "wizard_plugin_corewizard_remoteaccess_")) {
+            // This function fires for all wizard tab changes, so ignore calls that aren't for us.
+            if (
+                !current ||
+                !_.startsWith(current, "wizard_plugin_corewizard_remoteaccess_")
+            ) {
                 return true;
             }
             // Set seen, show this doesn't show again.
@@ -387,6 +390,6 @@ $(function () {
             construct: CoreWizardRemoteAccessViewModel,
             dependencies: ["settingsViewModel"],
             elements: ["#wizard_plugin_corewizard_remoteaccess"]
-        },
+        }
     );
 });
