@@ -10,7 +10,6 @@ class ExpectedExit(BaseException):
 
 class DaemonTest(unittest.TestCase):
     def setUp(self):
-
         run_method = mock.MagicMock()
         echo_method = mock.MagicMock()
         error_method = mock.MagicMock()
@@ -19,10 +18,10 @@ class DaemonTest(unittest.TestCase):
             def run(self):
                 run_method()
 
-            def echo(cls, line):
+            def echo(self, line):
                 echo_method(line)
 
-            def error(cls, line):
+            def error(self, line):
                 error_method(line)
 
         self.pidfile = "/my/pid/file"
@@ -132,8 +131,8 @@ class DaemonTest(unittest.TestCase):
             mock_open.mock_calls,
             [
                 mock.call(mock_devnull, encoding="utf-8"),
-                mock.call(mock_devnull, "at+", encoding="utf-8"),
-                mock.call(mock_devnull, "at+", encoding="utf-8"),
+                mock.call(mock_devnull, "a+", encoding="utf-8"),
+                mock.call(mock_devnull, "a+", encoding="utf-8"),
             ],
         )
         self.assertListEqual(
@@ -448,7 +447,7 @@ class DaemonTest(unittest.TestCase):
             self.daemon.set_pid(pid)
 
         # assert
-        m.assert_called_once_with(self.pidfile, "wt+", encoding="utf-8")
+        m.assert_called_once_with(self.pidfile, "w+", encoding="utf-8")
         handle = m()
         handle.write.assert_called_once_with(f"{pid}\n")
 
@@ -461,7 +460,7 @@ class DaemonTest(unittest.TestCase):
             self.daemon.set_pid(pid)
 
         # assert
-        m.assert_called_once_with(self.pidfile, "wt+", encoding="utf-8")
+        m.assert_called_once_with(self.pidfile, "w+", encoding="utf-8")
         handle = m()
         handle.write.assert_called_once_with(f"{pid}\n")
 

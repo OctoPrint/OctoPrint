@@ -331,6 +331,18 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
        wrapper div and the link in the navigation will have the additional classes and styles applied as defined via the
        configuration through :func:`get_template_configs`.
 
+    Webcam
+       Plugins can provide a custom webcam view for watching a camera stream, which will be embedded into the "Control"
+       panel of OctoPrint's default UI.
+
+       The included template must be called ``<plugin identifier>_webcam.jinja2`` (e.g. ``myplugin_webcam.jinja2``) unless
+       overridden by the configuration supplied through :func:`get_template_configs`.
+
+       The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
+       wrapper div will have the additional classes and styles applied as defined via the configuration through :func:`get_template_configs`.
+
+       .. versionadded:: 1.9.0
+
     Wizards
        Plugins may define wizard dialogs to display to the user if necessary (e.g. in case of missing information that
        needs to be queried from the user to make the plugin work). Note that with the current implementation, all
@@ -518,12 +530,22 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
            .. list-table::
               :widths: 5 95
 
-              * - classes_link
-                - Like ``classes`` but only applied to the link in the navigation.
               * - classes_content
                 - Like ``classes`` but only applied to the content pane itself.
+              * - styles_content
+                - Like ``styles`` but only applied to the content pane itself.
+              * - classes_link
+                - Like ``classes`` but only applied to the link in the navigation.
               * - styles_link
                 - Like ``styles`` but only applied to the link in the navigation.
+
+        ``webcam`` type
+
+           .. list-table::
+              :widths: 5 95
+
+              * - classes_content
+                - Like ``classes`` but only applied to the content pane itself.
               * - styles_content
                 - Like ``styles`` but only applied to the content pane itself.
 

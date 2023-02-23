@@ -34,7 +34,7 @@ def _load_yaml(fname):
 
 
 def _dump_yaml(fname, config):
-    with open(fname, "wt", encoding="utf-8") as f:
+    with open(fname, "w", encoding="utf-8") as f:
         yaml.safe_dump(config, f)
 
 

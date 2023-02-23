@@ -114,7 +114,6 @@ class PluginManagerPlugin(
     octoprint.plugin.BlueprintPlugin,
     octoprint.plugin.EventHandlerPlugin,
 ):
-
     ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar", ".gz", ".whl")
     PYTHON_EXTENSIONS = (".py",)
     JSON_EXTENSIONS = (".json",)
@@ -1823,7 +1822,6 @@ class PluginManagerPlugin(
         additional_args = self._settings.get(["pip_args"])
 
         if additional_args is not None:
-
             inapplicable_arguments = self.__class__.PIP_INAPPLICABLE_ARGUMENTS.get(
                 args[0], list()
             )

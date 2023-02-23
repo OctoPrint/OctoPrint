@@ -1177,6 +1177,42 @@ octoprint.plugin.backup.additional_excludes
 
 See :ref:`here <sec-bundledplugins-backup-hooks-excludes>`.
 
+.. _sec-plugins-hook-plugin-backup-before-backup:
+
+octoprint.plugin.backup.before_backup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.9.0
+
+See :ref:`here <sec-bundledplugins-backup-hooks-before-backup>`.
+
+.. _sec-plugins-hook-plugin-backup-after-backup:
+
+octoprint.plugin.backup.after_backup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.9.0
+
+See :ref:`here <sec-bundledplugins-backup-hooks-after-backup>`.
+
+.. _sec-plugins-hook-plugin-backup-before-restore:
+
+octoprint.plugin.backup.before_restore
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.9.0
+
+See :ref:`here <sec-bundledplugins-backup-hooks-before-restore>`.
+
+.. _sec-plugins-hook-plugin-backup-after-restore:
+
+octoprint.plugin.backup.after_restore
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.9.0
+
+See :ref:`here <sec-bundledplugins-backup-hooks-after-restore>`.
+
 .. _sec-plugins-hook-plugin-pluginmanager-reconnect:
 
 octoprint.plugin.pluginmanager.reconnect_hooks
@@ -1360,7 +1396,7 @@ octoprint.printer.sdcardupload
    to be created on the ``sdcard`` storage. ``elapsed`` is the elapsed time in seconds.
 
    If the hook is going to handle the upload, it must return the (future) remote filename of the file on the ``sdcard``
-   storage. If it returns ``None`` (or an otherwise falsy value), OctoPrint will interpret this as the hook not going to
+   storage. If it returns ``None`` (or an otherwise false-y value), OctoPrint will interpret this as the hook not going to
    handle the file upload, in which case the next hook or - if no other hook is registered - the default implementation
    will be called.
 

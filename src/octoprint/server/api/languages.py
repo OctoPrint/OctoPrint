@@ -153,7 +153,6 @@ def uploadLanguagePack():
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def deleteInstalledLanguagePack(locale, pack):
-
     if pack == "_core":
         target_path = os.path.join(settings().getBaseFolder("translations"), locale)
     else:

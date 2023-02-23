@@ -268,7 +268,6 @@ class PermissionsMetaClass(type):
 
 
 class Permissions(metaclass=PermissionsMetaClass):
-
     # Special permission
     ADMIN = OctoPrintPermission(
         "Admin",

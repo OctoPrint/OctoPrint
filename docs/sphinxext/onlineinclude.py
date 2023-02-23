@@ -26,7 +26,6 @@ cache = {}
 
 class OnlineIncludeReader(LiteralIncludeReader):
     def read_file(self, filename: str, location: Any = None) -> list[str]:
-
         global cache
         try:
             if filename in cache:

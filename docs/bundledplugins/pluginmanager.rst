@@ -10,7 +10,26 @@ The OctoPrint Plugin Manager comes bundled with OctoPrint.
 It allows management of installed plugins (listing, enabling, disabling
 and uninstalling) and installing new plugins from the official
 `OctoPrint Plugin Repository <http://plugins.octoprint.org>`_, web addresses
-or uploaded file archives.
+or uploaded files.
+
+Installing from URL or file uploads currently supports the following file
+formats:
+
+  * ``.zip``, ``.tar.gz``, ``.tgz``, ``.tar``, ``.gz``, ``.whl``: Will be considered to be
+    plugin archive and installed via ``pip``.
+  * ``.py``: Will be considered to be a single file plugin and installed by copying it
+    into ``~/.octoprint/plugins``.
+  * ``.json``: Will be considered to be either a plugin manager export file (created by the Export button) or a manually created
+    list of URLs to install from, e.g.
+
+    .. code-block:: json
+
+       [
+         "https://github.com/jneilliii/OctoPrint-BedLevelVisualizer/archive/master.zip",
+         "https://github.com/eyal0/OctoPrint-PrintTimeGenius/archive/master.zip"
+       ]
+
+    The plugin manager will feed all contained URLs to the same logic as above.
 
 .. _fig-bundledplugins-pluginmanager-mainscreen:
 .. figure:: ../images/bundledplugins-pluginmanager-mainscreen.png

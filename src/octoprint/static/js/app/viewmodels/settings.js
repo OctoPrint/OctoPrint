@@ -1008,6 +1008,11 @@ $(function () {
                         return;
                     }
 
+                    if (self.webcamCompat.hasOwnProperty(observable)) {
+                        // webcam compat layer, skip
+                        return;
+                    }
+
                     if (mapping && mapping[key] && _.isFunction(mapping[key])) {
                         result[key] = mapping[key]();
                         flag = true;

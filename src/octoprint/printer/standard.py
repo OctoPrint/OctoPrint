@@ -360,7 +360,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         for name, hook in self._handle_connect_hooks.items():
             try:
                 if hook(
-                    self, port=port, baudrate=baudrate, profile=profile, *args, **kwargs
+                    self, *args, port=port, baudrate=baudrate, profile=profile, **kwargs
                 ):
                     self._logger.info(f"Connect signalled as handled by plugin {name}")
                     return
@@ -403,7 +403,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._firmware_info = None
 
     def get_transport(self, *args, **kwargs):
-
         if self._comm is None:
             return None
 

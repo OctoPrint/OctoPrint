@@ -961,7 +961,6 @@ class Settings:
             self.remove_overlay(key)
 
         if deprecated is not None:
-
             self._logger.debug(
                 f"Marking all (recursive) paths in this overlay as deprecated: {overlay}"
             )
@@ -2099,7 +2098,7 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
             # to determine whether things are *actually* writable
             testfile = os.path.join(folder, ".testballoon.txt")
             try:
-                with open(testfile, "wt", encoding="utf-8") as f:
+                with open(testfile, "w", encoding="utf-8") as f:
                     f.write("test")
                 os.remove(testfile)
             except Exception:

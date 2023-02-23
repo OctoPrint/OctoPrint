@@ -38,7 +38,6 @@ class ActionCommandPromptPlugin(
     octoprint.plugin.SimpleApiPlugin,
     octoprint.plugin.TemplatePlugin,
 ):
-
     COMMAND = "M876"
     CAP_PROMPT_SUPPORT = "PROMPT_SUPPORT"
 

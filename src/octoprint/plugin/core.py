@@ -2350,7 +2350,8 @@ class EntryPointMetadata(pkginfo.Distribution):
         warnings.warn(
             "No package metadata found for package {}".format(
                 self.entry_point.module_name
-            )
+            ),
+            stacklevel=2,
         )
 
 

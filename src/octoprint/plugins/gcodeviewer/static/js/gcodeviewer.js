@@ -496,8 +496,8 @@ $(function () {
         };
 
         self._configureContainerElement = function (containerElement) {
-            // Prevent the default browser action for the mouse wheel down event. The desired behavor is to have the
-            // gocde canvas pan on mouse down + drag, which happens. But if we don't prevent the default action, the browser
+            // Prevent the default browser action for the mouse wheel down event. The desired behavior is to have the
+            // gcode canvas pan on mouse down + drag, which happens. But if we don't prevent the default action, the browser
             // will also scroll the entire page.
             containerElement.mousedown(function (event) {
                 // Middle mouse button

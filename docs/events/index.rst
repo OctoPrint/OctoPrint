@@ -610,9 +610,13 @@ ChartMarked
 
    Payload:
 
-     * ``type``: the marking's ID. Built-in types are ``print``, ``done``, ``cancel``, ``pause``, and ``resume``. Plugins may set arbitrary types
-     * ``label``: the human-readable short label of the marking
-     * ``time``: the epoch time of marking
+     * ``type``: The marking's ID. Built-in types are ``print``, ``done``, ``cancel``, ``pause``, and ``resume``.
+       Plugins may set arbitrary types, which should be prefixed, e.g. ``pluginname_eventtype``. In the UI, the type
+       ID is used to stylize the marking label.
+     * ``label``: The human-readable short label of the marking, ideally one short word. Optional but recommended; if
+       not specified, the UI will display the ``type``. The label may be localized in the UI.
+     * ``time``: The epoch time of marking. Defaults to the event fire time if not specified. Plugins may set a time
+       in the past if it makes sense for the event.
 
    .. versionadded:: 1.9.0
 

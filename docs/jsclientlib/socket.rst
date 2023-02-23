@@ -60,7 +60,7 @@
    :param string message: The type of message for which to register
    :param function handler: The handler function
 
-.. js:function:: OctoPrintClient.socker.removeMessage(message, handler)
+.. js:function:: OctoPrintClient.socket.removeMessage(message, handler)
 
    Removes the ``handler`` for messages of type ``message``.
 

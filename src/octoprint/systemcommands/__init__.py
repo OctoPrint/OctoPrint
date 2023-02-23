@@ -23,7 +23,6 @@ def system_command_manager():
 
 
 class SystemCommandManager:
-
     SERVER_RESTART_COMMAND = "serverRestartCommand"
     SYSTEM_RESTART_COMMAND = "systemRestartCommand"
     SYSTEM_SHUTDOWN_COMMAND = "systemShutdownCommand"
