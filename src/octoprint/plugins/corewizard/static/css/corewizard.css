@@ -25,6 +25,10 @@
     margin-left:10px;
 }
 
+.wizard_plugin_corewizard_remoteaccess_details_nologo {
+    margin-left:0px !important;
+}
+
 .wizard_plugin_corewizard_remoteaccess_title {
     font-weight:bold
 }
@@ -32,4 +36,9 @@
 .wizard_plugin_corewizard_remoteaccess_button {
     margin-left: 0px !important;
     margin-top: 10px;
+}
+
+.wizard_plugin_corewizard_remoteaccess_see_more_button {
+    margin-left: 0px !important;
+    margin-top: 50px;
 }
