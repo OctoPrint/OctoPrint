@@ -325,6 +325,38 @@ $(function () {
         };
     }
 
+    function CoreWizardRemoteAccessViewModel(parameters) {
+        var self = this;
+
+        self.settingsViewModel = parameters[0];
+
+        self.onBeforeWizardTabChange = function (next, current) {
+            // This funciton fires for all wizard tab changes, so ingore calls that aren't for us.
+            if(!current || !_.startsWith(current, "wizard_plugin_corewizard_remoteaccess_")) {
+                return true;
+            }
+            // Set seen, show this doesn't show again.
+            self._setSeen();
+            return true;
+        };
+
+        self.onBeforeWizardFinish = function () {
+            self._setSeen();
+            return true;
+        };
+
+        self._setSeen = function () {
+            var data = {
+                server: {
+                    remoteaccess: {
+                        wizardseen: true
+                    }
+                }
+            };
+            self.settingsViewModel.saveData(data);
+        };
+    }
+
     OCTOPRINT_VIEWMODELS.push(
         {
             construct: CoreWizardAclViewModel,
@@ -350,6 +382,11 @@ $(function () {
             construct: CoreWizardPrinterProfileViewModel,
             dependencies: ["printerProfilesViewModel"],
             elements: ["#wizard_plugin_corewizard_printerprofile"]
-        }
+        },
+        {
+            construct: CoreWizardRemoteAccessViewModel,
+            dependencies: ["settingsViewModel"],
+            elements: ["#wizard_plugin_corewizard_remoteaccess"]
+        },
     );
 });

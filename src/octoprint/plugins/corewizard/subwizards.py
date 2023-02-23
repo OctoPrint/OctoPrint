@@ -143,6 +143,24 @@ class PrinterProfileSubwizard:
         return gettext("Default Printer Profile")
 
 
+# noinspection PyUnresolvedReferences,PyMethodMayBeStatic
+class RemoteAccessSubwizard:
+    def _is_remoteaccess_wizard_firstrunonly(self):
+        return False
+
+    def _is_remoteaccess_wizard_required(self):
+        return self._settings.global_get(["server", "remoteaccess", "wizardseen"]) is None
+
+    def _get_remoteaccess_wizard_details(self):
+        return {"required": self._is_remoteaccess_wizard_required()}
+
+    def _get_remoteaccess_wizard_name(self):
+        return gettext("Interent Remote Access")
+
+    def _get_remoteaccess_additional_wizard_template_data(self):
+        return {"mandatory": self._is_remoteaccess_wizard_required()}
+
+
 Subwizards = type(
     "Subwizards",
     tuple(

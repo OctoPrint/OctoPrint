@@ -1,0 +1,35 @@
+<h3>{{ _('Internet Remote Access') }}</h3>
+
+<div class="alert">{% trans %}
+    <strong>Never Expose OctoPrint To The Internet Directly From Your Home Network!</strong>
+{% endtrans %}</div>
+
+<p>{% trans %}For <strong>private and secure</strong> remote access to OctoPrint, use one of the many excellent 3rd party plugins. Exposing OctoPrint to the internet directly from your home network via port forwarding is unsafe and insecure.{% endtrans %}</p>
+
+<p>{% trans %}You can find a complete list of OctoPrint plugins offering remote access <a href="https://plugins.octoprint.org/topics/remote_access/" target="_blank">here</a>. Here are a few to checkout:{% endtrans %}</p>
+
+<div class="wizard_plugin_corewizard_remoteaccess_item_container" style="margin-top:30px">
+    <div class="wizard_plugin_corewizard_remoteaccess_item">
+        <img class="wizard_plugin_corewizard_remoteaccess_logo" src="plugin/corewizard/static/img/octoeverywhere-logo.svg" />
+        <div class="wizard_plugin_corewizard_remoteaccess_details">
+            <div class="wizard_plugin_corewizard_remoteaccess_title">OctoEverywhere.com</div>
+            <div>Free, unlimited, and secure remote access including your full webcam stream and plugins.</div>
+        </div>
+    </div>
+    <a href="https://octoeverywhere.com/?source=octoprint_main_wizard" target="_blank" class="btn btn-primary span6 wizard_plugin_corewizard_remoteaccess_button">
+        Learn More About OctoEverywhere
+    </a>
+</div>
+
+<div class="wizard_plugin_corewizard_remoteaccess_item_container" style="margin-top:40px">
+    <div class="wizard_plugin_corewizard_remoteaccess_item">
+        <img class="wizard_plugin_corewizard_remoteaccess_logo" src="plugin/corewizard/static/img/obico-logo.svg" />
+        <div class="wizard_plugin_corewizard_remoteaccess_details">
+            <div class="wizard_plugin_corewizard_remoteaccess_title">Obico.io</div>
+            <div>Free and secure remote access including your plugins.</div>
+        </div>
+    </div>
+    <a href="https://Obico.io/?source=octoprint_main_wizard" target="_blank" class="btn btn-primary span6 wizard_plugin_corewizard_remoteaccess_button">
+        Learn More About Obico
+    </a>
+</div>

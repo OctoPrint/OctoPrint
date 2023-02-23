@@ -2,3 +2,34 @@
     line-height: 1.5;
     margin-bottom: 1.5em;
 }
+
+.wizard_plugin_corewizard_remoteaccess_item_container {
+    display:flex;
+    flex-direction:column;
+}
+
+.wizard_plugin_corewizard_remoteaccess_item {
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+}
+
+.wizard_plugin_corewizard_remoteaccess_logo {
+    height: 40px;
+    width: 40px;
+}
+
+.wizard_plugin_corewizard_remoteaccess_details {
+    display:flex;
+    flex-direction:column;
+    margin-left:10px;
+}
+
+.wizard_plugin_corewizard_remoteaccess_title {
+    font-weight:bold
+}
+
+.wizard_plugin_corewizard_remoteaccess_button {
+    margin-left: 0px !important;
+    margin-top: 10px;
+}
