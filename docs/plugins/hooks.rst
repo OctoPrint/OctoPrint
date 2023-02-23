@@ -1177,6 +1177,42 @@ octoprint.plugin.backup.additional_excludes
 
 See :ref:`here <sec-bundledplugins-backup-hooks-excludes>`.
 
+.. _sec-plugins-hook-plugin-backup-before-backup:
+
+octoprint.plugin.backup.before_backup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.9.0
+
+See :ref:`here <sec-bundledplugins-backup-hooks-before-backup>`.
+
+.. _sec-plugins-hook-plugin-backup-after-backup:
+
+octoprint.plugin.backup.after_backup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.9.0
+
+See :ref:`here <sec-bundledplugins-backup-hooks-after-backup>`.
+
+.. _sec-plugins-hook-plugin-backup-before-restore:
+
+octoprint.plugin.backup.before_restore
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.9.0
+
+See :ref:`here <sec-bundledplugins-backup-hooks-before-restore>`.
+
+.. _sec-plugins-hook-plugin-backup-after-restore:
+
+octoprint.plugin.backup.after_restore
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 1.9.0
+
+See :ref:`here <sec-bundledplugins-backup-hooks-after-restore>`.
+
 .. _sec-plugins-hook-plugin-pluginmanager-reconnect:
 
 octoprint.plugin.pluginmanager.reconnect_hooks
