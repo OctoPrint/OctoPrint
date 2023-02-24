@@ -119,7 +119,7 @@
             if (!path || path[0] !== "/") {
                 path = "/" + (path ? path : "");
             }
-            var url = new URL(parsed.protocol + "//" + parsed.host + path);
+            var url = new URL(parsed.protocol + "//" + parsed.hostname + path);
         }
 
         return url;
