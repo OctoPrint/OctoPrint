@@ -148,7 +148,7 @@ jobs:
           name: cypress-screenshots
           path: tests/cypress/screenshots
       - name: ⬆ Upload videos
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v3
         if: always()
         with:
           name: cypress-videos
