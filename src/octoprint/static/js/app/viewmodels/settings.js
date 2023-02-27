@@ -719,7 +719,7 @@ $(function () {
                         "Error calling settings callback",
                         callback,
                         ":",
-                        exc.stack || exc.stacktrace || exc
+                        `${exc.message}\n${exc.stack || exc}`
                     );
                 }
             };
