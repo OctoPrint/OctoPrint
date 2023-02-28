@@ -156,7 +156,7 @@ class RemoteAccessSubwizard:
         return {"required": self._is_remoteaccess_wizard_required()}
 
     def _get_remoteaccess_wizard_name(self):
-        return gettext("Interent Remote Access")
+        return gettext("Internet Remote Access")
 
     def _get_remoteaccess_additional_wizard_template_data(self):
         return {"mandatory": False}
