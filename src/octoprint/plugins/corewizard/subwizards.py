@@ -149,7 +149,8 @@ class RemoteAccessSubwizard:
         return False
 
     def _is_remoteaccess_wizard_required(self):
-        return self._settings.global_get(["server", "remoteaccess", "wizardseen"]) is None
+        val = self._settings.global_get(["server", "remoteAccess", "wizardVersionSeen"])
+        return val is None or val != 1
 
     def _get_remoteaccess_wizard_details(self):
         return {"required": self._is_remoteaccess_wizard_required()}

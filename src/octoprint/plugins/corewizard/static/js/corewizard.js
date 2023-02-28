@@ -351,8 +351,8 @@ $(function () {
         self._setSeen = function () {
             var data = {
                 server: {
-                    remoteaccess: {
-                        wizardseen: true
+                    remoteAccess: {
+                        wizardVersionSeen: 1
                     }
                 }
             };
