@@ -1444,7 +1444,7 @@ class Server:
             return Locale.negotiate(l10n_canoicalized, LANGUAGES)
 
         # request: preference
-        return Locale.parse(request.accept_languages.best_match(LANGUAGES))
+        return Locale.parse(request.accept_languages.best_match(LANGUAGES, default="en"))
 
     def _setup_heartbeat_logging(self):
         logger = logging.getLogger(__name__ + ".heartbeat")
