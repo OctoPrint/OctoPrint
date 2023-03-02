@@ -24,10 +24,10 @@ maintenance 1.8.0 3fe45661cd79c5137d9d4f5f4adb4d9519bc2084 pep440-dev
 fix/.* 1.8.0 3fe45661cd79c5137d9d4f5f4adb4d9519bc2084 pep440-dev
 improve/.* 1.8.0 3fe45661cd79c5137d9d4f5f4adb4d9519bc2084 pep440-dev
 
-# staging/bugfix is the branch for preparation of the 1.8.6 bugfix release
+# staging/bugfix is the branch for preparation of the 1.8.7 bugfix release
 # so are any bug/... branches
-staging/bugfix 1.8.6 395354212c2bb65b37b303de171418f6475ca346 pep440-dev
-bug/.* 1.8.6 395354212c2bb65b37b303de171418f6475ca346 pep440-dev
+staging/bugfix 1.8.7 1875623f05e14c3a197c6ff324f02dce55cec7d2 pep440-dev
+bug/.* 1.8.7 1875623f05e14c3a197c6ff324f02dce55cec7d2 pep440-dev
 
 # staging/maintenance is currently the branch for preparation of 1.8.0rc6
 # so is regressionfix/...
