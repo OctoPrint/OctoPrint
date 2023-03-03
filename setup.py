@@ -40,44 +40,44 @@ bundled_plugins = [
 ]
 core_deps = [
     "argon2_cffi>=21.3.0,<22",
-    "cachelib>=0.2,<0.3",
-    "Click>=8.0.3,<9",
-    "colorlog>=6,<7",
-    "emoji>=1.4.2,<2",
-    "feedparser>=6.0.8,<7",
-    "filetype>=1.0.7,<2",
+    "cachelib>=0.10.2,<0.11",
+    "Click>=8.1.3,<9",
+    "colorlog>=6.7.0,<7",
+    "emoji>=2.2.0,<3",
+    "feedparser>=6.0.10,<7",
+    "filetype>=1.2.0,<2",
     "Flask-Assets>=2.0,<3",
-    "Flask-Babel>=2.0,<3",
+    "Flask-Babel>=3.0.1,<4",
     "Flask-Login>=0.6.2,<0.7",  # breaking changes can happen on minor version increases
-    "Flask-Limiter>=2.6,<3",
-    "flask>=2.2,<2.3",  # breaking changes can happen on minor version increases (with deprecation warnings)
-    "frozendict>=2.0,<3",
-    "future>=0.18.2,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
-    "markdown>=3.2.2,<4",
+    "Flask-Limiter>=3.3.0,<4",
+    "flask>=2.2.3,<2.3",  # breaking changes can happen on minor version increases (with deprecation warnings)
+    "frozendict>=2.3.5,<3",
+    "future>=0.18.3,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
+    "markdown>=3.4.1,<4",
     "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
     "netifaces>=0.11,<1",
     "passlib>=1.7.4,<2",
-    "pathvalidate>=2.4.1,<3",
-    "pkginfo>=1.7.1,<2",
-    "psutil>=5.8,<6",
-    "pydantic>=1.10.2,<2",
-    "pylru>=1.2,<2",
-    "pyserial>=3.4,<4",
-    "PyYAML>=5.4.1,<6",
-    "requests>=2.26.0,<3",
-    "sarge==0.1.6",
-    "semantic_version>=2.8.5,<3",
-    "sentry-sdk>=1.5.7,<2",
-    "tornado>=6.0.4,<7",
-    "watchdog>=1,<2",
-    "websocket-client>=1.2.1,<2",
-    "werkzeug>=2.2,<2.3",  # breaking changes can happen on minor version increases
-    "wrapt>=1.14,<1.15",
-    "zeroconf>=0.33,<0.34",  # breaking changes can happen on minor version increases
-    "zipstream-ng>=1.3.4,<2.0.0",
+    "pathvalidate>=2.5.2,<3",
+    "pkginfo>=1.9.6,<2",
+    "psutil>=5.9.4,<6",
+    "pydantic>=1.10.5,<2",
+    "pylru>=1.2.1,<2",
+    "pyserial>=3.5,<4",
+    "PyYAML>=5.4.1,<6",  # no changelog available for version 6, so we're not risking it
+    "requests>=2.28.2,<3",
+    "sarge==0.1.7.post1",
+    "semantic_version>=2.10.0,<3",
+    "sentry-sdk>=1.16.0,<2",
+    "tornado>=6.2,<7",
+    "watchdog>=2.3.0,<3",
+    "websocket-client>=1.5.1,<2",
+    "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
+    "wrapt>=1.15,<1.16",
+    "zeroconf>=0.47.3,<0.48",  # breaking changes can happen on minor version increases
+    "zipstream-ng>=1.4.0,<2.0.0",
 ]
 vendored_deps = [
-    "blinker>=1.4,<2",  # dependency of flask_principal
+    "blinker>=1.5,<2",  # dependency of flask_principal
     "class-doc>=0.2.6,<0.3",  # dependency of with_attrs_docs
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
@@ -99,23 +99,23 @@ EXTRA_REQUIRES = {
     "develop": [
         # Testing dependencies
         "ddt",
-        "mock>=4,<5",
+        "mock>=5.0.1,<6",
         "pytest-doctest-custom>=1.0.0,<2",
-        "pytest>=6.2.5,<7",
+        "pytest>=7.2.1,<8",
         # pre-commit
         "pre-commit",
         # profiler
         "pyinstrument",
     ],
     # Dependencies for developing OctoPrint plugins
-    "plugins": ["cookiecutter>=1.7.2,<1.8"],
+    "plugins": ["cookiecutter>=2.1.1,<3"],
     # Dependencies for building the documentation
     "docs": [
-        "readthedocs-sphinx-ext>=2.1.5,<3",
-        "sphinx_rtd_theme>=1,<2",
-        "sphinx>=4,<5",
-        "sphinxcontrib-httpdomain>=1.8.0,<2",
-        "sphinxcontrib-mermaid>=0.7.1,<0.8",
+        "readthedocs-sphinx-ext>=2.2.0,<3",
+        "sphinx_rtd_theme>=1.2.0,<2",
+        "sphinx>=6.1.3,<7",
+        "sphinxcontrib-httpdomain>=1.8.1,<2",
+        "sphinxcontrib-mermaid>=0.8.1,<0.9",
     ],
 }
 
@@ -164,6 +164,85 @@ def copy_files_build_py_factory(files, baseclass):
     )
 
 
+class ScanDepsCommand(setuptools.Command):
+    description = "Scan dependencies for updates"
+    user_options = []
+
+    PYPI = "https://pypi.org/simple/{package}/"
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        from collections import namedtuple
+
+        import pkg_resources
+        import requests
+        from packaging.version import parse as parse_version
+
+        Update = namedtuple("Update", ["name", "spec", "current", "latest"])
+        update_lower_bounds = []
+        update_bounds = []
+
+        all_requires = list(INSTALL_REQUIRES)
+        for value in EXTRA_REQUIRES.values():
+            all_requires += value
+
+        for r in all_requires:
+            requirement = pkg_resources.Requirement.parse(r)
+
+            resp = requests.get(
+                self.PYPI.format(package=requirement.project_name),
+                headers={"Accept": "application/vnd.pypi.simple.v1+json"},
+            )
+            resp.raise_for_status()
+
+            data = resp.json()
+            versions = list(
+                filter(
+                    lambda x: not x.is_prerelease and not x.is_devrelease,
+                    map(lambda x: parse_version(x), data.get("versions", [])),
+                )
+            )
+            if not versions:
+                continue
+
+            lower = None
+            for spec in requirement.specs:
+                if spec[0] == ">=":
+                    lower = spec[1]
+                    break
+
+            latest = versions[-1]
+
+            update = Update(requirement.project_name, str(requirement), lower, latest)
+
+            if str(latest) not in requirement:
+                update_bounds.append(update)
+            elif lower and parse_version(lower) < latest:
+                update_lower_bounds.append(update)
+
+        def print_update(update):
+            print(
+                f"{update.spec}: latest {update.latest}, pypi: https://pypi.org/project/{update.name}/"
+            )
+
+        print("")
+        print("The following dependencies can get their lower bounds updated:")
+        print("")
+        for update in update_lower_bounds:
+            print_update(update)
+
+        print("")
+        print("The following dependencies should get looked at for a full update:")
+        print("")
+        for update in update_bounds:
+            print_update(update)
+
+
 def get_cmdclass():
     # make sure these are always available, even when run by dependabot
     global versioneer, octoprint_setuptools, md_to_html_build_py_factory
@@ -204,6 +283,8 @@ def get_cmdclass():
         },
         cmdclass["build_py"] if "build_py" in cmdclass else _build_py,
     )
+
+    cmdclass["scan_deps"] = ScanDepsCommand
 
     return cmdclass
 

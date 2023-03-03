@@ -381,20 +381,16 @@ class Server:
         cli_key = self._setup_cli_key()
         self._setup_mimetypes()
 
+        # setup app
+        self._setup_app(app)
+
+        # setup i18n
         additional_translation_folders = []
         if not safe_mode:
             additional_translation_folders += [
                 self._settings.getBaseFolder("translations")
             ]
-        util.flask.enable_additional_translations(
-            additional_folders=additional_translation_folders
-        )
-
-        # setup app
-        self._setup_app(app)
-
-        # setup i18n
-        self._setup_i18n(app)
+        self._setup_i18n(app, additional_folders=additional_translation_folders)
 
         if self._settings.getBoolean(["serial", "log"]):
             # enable debug logging to serial.log
@@ -1568,18 +1564,33 @@ class Server:
         app.config["RATELIMIT_STRATEGY"] = "fixed-window-elastic-expiry"
 
         limiter = Limiter(
-            app,
             key_func=get_remote_address,
+            app=app,
             enabled=s.getBoolean(["devel", "enableRateLimiter"]),
             storage_uri="memory://",
         )
 
-    def _setup_i18n(self, app):
+    def _setup_i18n(self, app, additional_folders=None):
         global babel
         global LOCALES
         global LANGUAGES
 
-        babel = Babel(app)
+        if additional_folders is None:
+            additional_folders = []
+
+        dirs = additional_folders + [os.path.join(app.root_path, "translations")]
+
+        # translations from plugins
+        plugins = octoprint.plugin.plugin_manager().enabled_plugins
+        for plugin in plugins.values():
+            plugin_translation_dir = os.path.join(plugin.location, "translations")
+            if not os.path.isdir(plugin_translation_dir):
+                continue
+            dirs.append(plugin_translation_dir)
+
+        app.config["BABEL_TRANSLATION_DIRECTORIES"] = ";".join(dirs)
+
+        babel = Babel(app, locale_selector=self._get_locale)
 
         def get_available_locale_identifiers(locales):
             result = set()
@@ -1590,12 +1601,9 @@ class Server:
 
             return result
 
-        LOCALES = babel.list_translations()
+        with app.app_context():
+            LOCALES = babel.list_translations()
         LANGUAGES = get_available_locale_identifiers(LOCALES)
-
-        @babel.localeselector
-        def get_locale():
-            return self._get_locale()
 
     def _setup_jinja2(self):
         import re
