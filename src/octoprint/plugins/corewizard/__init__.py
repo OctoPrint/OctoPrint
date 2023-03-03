@@ -106,7 +106,7 @@ class CoreWizardPlugin(
         return result
 
     def get_wizard_version(self):
-        return 4
+        return 5
 
     # ~~ helpers
 
