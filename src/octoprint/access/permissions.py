@@ -414,7 +414,7 @@ class Permissions(metaclass=PermissionsMetaClass):
     )
     TIMELAPSE_DELETE = OctoPrintPermission(
         "Timelapse Delete",
-        gettext("Allows to delete timelapse videos and unrendered timelapses"),
+        gettext("Allows to delete timelapse videos"),
         RoleNeed("timelapse_delete"),
         default_groups=[USER_GROUP],
     )

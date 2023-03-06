@@ -48,7 +48,7 @@ Issue a command for an unrendered timelapse
    Current only supports to render the unrendered timelapse ``name`` via the
    ``render`` command.
 
-   Requires the ``TIMELAPSE_ADMIN`` permission.
+   Requires the ``TIMELAPSE_MANAGE_UNRENDERED`` permission.
 
    :json command: The command to issue, currently only ``render`` is supported
 
@@ -64,7 +64,7 @@ Delete an unrendered timelapse
    Returns a :ref:`timelapse list <sec-api-timelapse-datamodel-list>` in the
    response body.
 
-   Requires the ``TIMELAPSE_DELETE`` permission.
+   Requires the ``TIMELAPSE_MANAGE_UNRENDERED`` permission.
 
    :param unrendered: If provided and true, also include unrendered timelapses in the response
 
