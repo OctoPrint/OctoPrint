@@ -146,7 +146,7 @@ class PrinterProfileSubwizard:
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
 class RemoteAccessSubwizard:
     def _is_remoteaccess_wizard_firstrunonly(self):
-        return False
+        return True
 
     def _is_remoteaccess_wizard_required(self):
         val = self._settings.global_get(["server", "remoteAccess", "wizardVersionSeen"])
