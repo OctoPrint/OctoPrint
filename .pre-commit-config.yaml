@@ -61,11 +61,9 @@ repos:
     hooks:
       - id: prettier
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.34.0
+    rev: v8.35.0
     hooks:
       - id: eslint
-        additional_dependencies:
-          - eslint@7.19.0
         files: \.js$
         exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|docs/|scripts/|translations/)
   - repo: https://github.com/codespell-project/codespell
