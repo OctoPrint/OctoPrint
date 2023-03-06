@@ -61,6 +61,8 @@ When the virtual environment is activated you can then:
   * build the documentation running ``sphinx-build -b html . _build`` in the ``docs``
     folder -- the documentation will be available in the newly created ``_build``
     directory. You can simply browse it locally by opening ``index.html``
+  * check whether there are newer versions of OctoPrint's dependencies available via
+    ``python setup.py scan_deps``
 
 .. _sec-development-environment-source-linux:
 
