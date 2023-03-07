@@ -40,6 +40,7 @@ bundled_plugins = [
 ]
 core_deps = [
     "argon2_cffi>=21.3.0,<22",
+    "Babel>=2.12.1,<2.13",  # breaking changes can happen on minor version increases
     "cachelib>=0.10.2,<0.11",
     "Click>=8.1.3,<9",
     "colorlog>=6.7.0,<7",
@@ -69,7 +70,7 @@ core_deps = [
     "semantic_version>=2.10.0,<3",
     "sentry-sdk>=1.16.0,<2",
     "tornado>=6.2,<7",
-    "watchdog>=2.3.0,<3",
+    "watchdog>=2.3.1,<3",
     "websocket-client>=1.5.1,<2",
     "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
     "wrapt>=1.15,<1.16",
@@ -101,7 +102,7 @@ EXTRA_REQUIRES = {
         "ddt",
         "mock>=5.0.1,<6",
         "pytest-doctest-custom>=1.0.0,<2",
-        "pytest>=7.2.1,<8",
+        "pytest>=7.2.2,<8",
         # pre-commit
         "pre-commit",
         # profiler
@@ -111,11 +112,11 @@ EXTRA_REQUIRES = {
     "plugins": ["cookiecutter>=2.1.1,<3"],
     # Dependencies for building the documentation
     "docs": [
-        "readthedocs-sphinx-ext>=2.2.0,<3",
-        "sphinx_rtd_theme>=1.2.0,<2",
-        "sphinx>=6.1.3,<7",
-        "sphinxcontrib-httpdomain>=1.8.1,<2",
-        "sphinxcontrib-mermaid>=0.8.1,<0.9",
+        "sphinx",
+        "sphinxcontrib-httpdomain",
+        "sphinxcontrib-mermaid",
+        "sphinx_rtd_theme",
+        "readthedocs-sphinx-ext",
     ],
 }
 

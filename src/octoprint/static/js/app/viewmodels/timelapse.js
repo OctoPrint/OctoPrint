@@ -443,7 +443,11 @@ $(function () {
         };
 
         self.removeUnrendered = function (name) {
-            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.TIMELAPSE_MANAGE_UNRENDERED
+                )
+            )
                 return;
 
             var perform = function () {
@@ -463,7 +467,11 @@ $(function () {
         };
 
         self.removeMarkedUnrendered = function () {
-            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.TIMELAPSE_MANAGE_UNRENDERED
+                )
+            )
                 return;
 
             var perform = function () {

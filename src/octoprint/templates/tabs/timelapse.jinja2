@@ -194,7 +194,7 @@
 <div data-bind="visible: unrenderedListHelper.allSize">
     <div><small><a href="javascript:void(0)" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fas fa-caret-right"></i> {{ _('Unrendered Timelapses') }}</a></small></div>
     <div class="hide">
-        <div class="pull-left" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)">
+        <div class="pull-left" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_MANAGE_UNRENDERED)">
             <div class="btn-group">
                 <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fas fa-square"></i> <span class="caret"></span></button>
                 <ul class="dropdown-menu">
@@ -218,13 +218,13 @@
             </thead>
             <tbody data-bind="foreach: unrenderedListHelper.paginatedItems">
             <tr data-bind="attr: {title: name}">
-                <td class="timelapse_unrendered_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForUnrenderedDeletion, invisible: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()"></td>
+                <td class="timelapse_unrendered_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForUnrenderedDeletion, invisible: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSTIMELAPSE_MANAGE_UNRENDEREDE_DELETE)()"></td>
                 <td class="timelapse_unrendered_name" data-bind="text: name"></td>
                 <td class="timelapse_unrendered_count" data-bind="text: count"></td>
                 <td class="timelapse_unrendered_size" data-bind="text: size"></td>
                 <td class="timelapse_unrendered_action">
                     <span data-bind="visible: processing"><i class="fas fa-sync fa-spin"></i></span>
-                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.removeUnrendered($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse')|edq }}" class="fas fa-video" data-bind="click: function() { if (!$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: $root.isBusy() || !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)()}"></a></span>
+                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.removeUnrendered($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_MANAGE_UNRENDERED)()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse')|edq }}" class="fas fa-video" data-bind="click: function() { if (!$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: $root.isBusy() || !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)()}"></a></span>
                 </td>
             </tr>
             </tbody>

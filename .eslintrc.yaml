@@ -1,11 +1,4 @@
-parserOptions:
-  ecmaVersion: 2018
-
-overrides:
-  - files:
-      - "src/octoprint/static/js/**.js"
-      - "src/octoprint/plugins/**.js"
-    env:
-      browser: true
-      jquery: true
-      es6: true
+env:
+  browser: true
+  jquery: true
+  es2018: true
