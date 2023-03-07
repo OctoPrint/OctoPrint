@@ -339,7 +339,10 @@ def getSettings():
     if len(plugin_settings):
         data["plugins"] = plugin_settings
 
-    if Permissions.WEBCAM.can() is True:
+    if Permissions.WEBCAM.can() or (
+        settings().getBoolean(["server", "firstRun"])
+        and not userManager.has_been_customized()
+    ):
         webcamsDict = get_webcams_as_dicts()
         data["webcam"] = {
             "webcamEnabled": s.getBoolean(["webcam", "webcamEnabled"]),
@@ -392,6 +395,8 @@ def getSettings():
                     "snapshotWebcam": snapshotWebcam.config.name,
                 }
             )
+    else:
+        data["webcam"] = {}
 
     return jsonify(data)
 
