@@ -190,7 +190,7 @@ def runFilesTest():
 
         sanitized_path, _, sanitized = sanitize(storage, path, filename)
 
-        exists = fileManager.file_exists(storage, sanitized)
+        exists = _getFileDetails(storage, filename)
         if exists:
             suggestion = filename
             name, ext = os.path.splitext(filename)
@@ -205,7 +205,12 @@ def runFilesTest():
             ):
                 counter += 1
                 suggestion = f"{name}_{counter}{ext}"
-            return jsonify(exists=True, suggestion=suggestion)
+            return jsonify(
+                exists=True,
+                suggestion=suggestion,
+                size=exists.get("size"),
+                date=exists.get("date"),
+            )
         else:
             return jsonify(exists=False)
 
