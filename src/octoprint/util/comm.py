@@ -43,6 +43,7 @@ from octoprint.util import (
     get_exception_string,
     sanitize_ascii,
     to_unicode,
+	dict_merge,
 )
 from octoprint.util.files import m20_timestamp_to_unix_timestamp
 from octoprint.util.platform import get_os, set_close_exec
@@ -1380,7 +1381,7 @@ class MachineCom:
 
                 if len(retval) == 3:
                     variables = retval[2]
-                    context.update({"plugins": {name: variables}})
+                    context = dict_merge(context, {"plugins": {name: variables}})
 
         template = settings().loadScript("gcode", scriptName, context=context)
         if template is None:
