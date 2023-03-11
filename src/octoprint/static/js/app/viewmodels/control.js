@@ -85,7 +85,7 @@ $(function () {
                 .querySelectorAll("#webcam-group .tab-pane")
                 .forEach(function (target) {
                     var options = {
-                        root: document.querySelector("#control"),
+                        root: document.querySelector("#webcam_plugins_container"),
                         rootMargin: "0px",
                         threshold: 1.0
                     };
