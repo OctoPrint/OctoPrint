@@ -75,7 +75,7 @@ $(function () {
             }
         };
 
-        self.onAfterBinding = function () {
+        self.onStartupComplete = function () {
             self.recreateIntersectionObservers();
         };
 
