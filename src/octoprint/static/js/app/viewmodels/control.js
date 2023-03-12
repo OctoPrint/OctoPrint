@@ -37,6 +37,7 @@ $(function () {
 
         self.controlsFromServer = [];
         self.additionalControls = [];
+        self.intersectionObservers = [];
 
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
@@ -75,12 +76,21 @@ $(function () {
         };
 
         self.onAfterBinding = function () {
+            self.recreateIntersectionObservers();
+        };
+
+        self.recreateIntersectionObservers = function () {
             // We are using the IntersectionObserver API to determine whether a webcam is visible or not.
             // A webcam will not intersect with the control tab if the control tab is invisible because another tab
             // is selected or if the webcam isn't shown because another webcam is active.
             //
             // Whenever the webacam changes visibility we will call onWebcamVisbilityChange() which the webcam's
             //  VM can use to start or stop the stream.
+            self.intersectionObservers.forEach(function (observer) {
+                observer.disconnect();
+            });
+            self.intersectionObservers = [];
+
             document
                 .querySelectorAll("#webcam-group .tab-pane")
                 .forEach(function (target) {
@@ -103,6 +113,7 @@ $(function () {
 
                     var observer = new IntersectionObserver(callback, options);
                     observer.observe(target);
+                    self.intersectionObservers.push(observer);
                 });
         };
 
