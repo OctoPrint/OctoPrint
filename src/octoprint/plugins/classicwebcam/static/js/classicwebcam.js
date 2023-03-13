@@ -117,18 +117,11 @@ $(function () {
         };
 
         self._enableWebcam = function () {
-            if (
-                OctoPrint.coreui.selectedTab != "#control" ||
-                !OctoPrint.coreui.browserTabVisible
-            ) {
-                return;
-            }
-
             if (self.webcamDisableTimeout != undefined) {
                 clearTimeout(self.webcamDisableTimeout);
             }
 
-            // IF disabled then we dont need to do anything
+            // If disabled then we dont need to do anything
             if (self.settings.webcamEnabled() == false) {
                 console.log("Webcam not enabled");
                 return;
@@ -156,7 +149,7 @@ $(function () {
         };
 
         self.onWebcamErrored = function () {
-            log.debug("Webcam stream failed to load/disabled");
+            log.debug("Webcam stream failed to load/was unloaded");
             self.webcamLoaded(false);
             self.webcamError(true);
         };
