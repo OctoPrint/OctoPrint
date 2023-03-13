@@ -1430,14 +1430,14 @@ class Server:
 
         if l10n:
             # canonicalize and get rid of invalid language codes
-            l10n_canoicalized = []
+            l10n_canonicalized = []
             for x in l10n:
                 try:
-                    l10n_canoicalized.append(str(Locale.parse(x)))
+                    l10n_canonicalized.append(str(Locale.parse(x)))
                 except Exception:
                     # invalid language code, ignore
                     continue
-            return Locale.negotiate(l10n_canoicalized, LANGUAGES)
+            return Locale.negotiate(l10n_canonicalized, LANGUAGES)
 
         # request: preference
         return Locale.parse(request.accept_languages.best_match(LANGUAGES, default="en"))
