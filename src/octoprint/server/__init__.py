@@ -1420,8 +1420,9 @@ class Server:
             except octoprint.access.users.UnknownUser:
                 pass
 
-        elif (
-            default_language is not None
+        if (
+            not l10n
+            and default_language is not None
             and not default_language == "_default"
             and default_language in LANGUAGES
         ):
