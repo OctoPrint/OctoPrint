@@ -26,101 +26,10 @@ import versioneer  # noqa: F401
 
 # ----------------------------------------------------------------------------------------
 
-# Supported python versions
-PYTHON_REQUIRES = ">=3.7, <3.12"
+READ_THE_DOCS_DEPS = []
+INSTALL_REQUIRES = []
+EXTRA_REQUIRES = []
 
-# Requirements for setup.py
-SETUP_REQUIRES = []
-
-# Requirements for our application
-bundled_plugins = [
-    "OctoPrint-FileCheck>=2021.2.23",
-    "OctoPrint-FirmwareCheck>=2021.10.11",
-    "OctoPrint-PiSupport>=2022.6.13",
-]
-core_deps = [
-    "argon2_cffi>=21.3.0,<22",
-    "Babel>=2.12.1,<2.13",  # breaking changes can happen on minor version increases
-    "cachelib>=0.10.2,<0.11",
-    "Click>=8.1.3,<9",
-    "colorlog>=6.7.0,<7",
-    "emoji>=2.2.0,<3",
-    "feedparser>=6.0.10,<7",
-    "filetype>=1.2.0,<2",
-    "Flask-Assets>=2.0,<3",
-    "Flask-Babel>=3.0.1,<4",
-    "Flask-Login>=0.6.2,<0.7",  # breaking changes can happen on minor version increases
-    "Flask-Limiter>=3.3.0,<4",
-    "flask>=2.2.3,<2.3",  # breaking changes can happen on minor version increases (with deprecation warnings)
-    "frozendict>=2.3.5,<3",
-    "future>=0.18.3,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
-    "markdown>=3.4.1,<4",
-    "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
-    "netifaces2>=0.0.14,<0.1",
-    "passlib>=1.7.4,<2",
-    "pathvalidate>=2.5.2,<3",
-    "pkginfo>=1.9.6,<2",
-    "psutil>=5.9.4,<6",
-    "pydantic>=1.10.5,<2",
-    "pylru>=1.2.1,<2",
-    "pyserial>=3.5,<4",
-    "PyYAML>=5.4.1,<6",  # no changelog available for version 6, so we're not risking it
-    "requests>=2.28.2,<3",
-    "sarge==0.1.7.post1",
-    "semantic_version>=2.10.0,<3",
-    "sentry-sdk>=1.16.0,<2",
-    "tornado>=6.2,<7",
-    "watchdog>=2.3.1,<3",
-    "websocket-client>=1.5.1,<2",
-    "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
-    "wrapt>=1.15,<1.16",
-    "zeroconf==0.39.4",  # final version to include universal wheel, later takes ages to compiles on rpi, piwheels has no wheels for latest either
-    "zipstream-ng>=1.4.0,<2.0.0",
-]
-vendored_deps = [
-    "blinker>=1.5,<2",  # dependency of flask_principal
-    "class-doc>=0.2.6,<0.3",  # dependency of with_attrs_docs
-    "regex",  # dependency of awesome-slugify
-    "unidecode",  # dependency of awesome-slugify
-]
-plugin_deps = [
-    # "OctoPrint-Setuptools>=1.0.3",  # makes sure plugins can import this on setup.py based install
-    "wheel",  # makes sure plugins can be built as wheels in OctoPrint's venv, see #4682
-]
-
-INSTALL_REQUIRES = bundled_plugins + core_deps + vendored_deps + plugin_deps
-
-# Additional requirements for optional install options and/or OS-specific dependencies
-EXTRA_REQUIRES = {
-    # Dependencies for OSX
-    ":sys_platform == 'darwin'": [
-        "appdirs>=1.4.4,<2",
-    ],
-    # Dependencies for core development
-    "develop": [
-        # Testing dependencies
-        "ddt",
-        "mock>=5.0.1,<6",
-        "pytest-doctest-custom>=1.0.0,<2",
-        "pytest>=7.2.2,<8",
-        # pre-commit
-        "pre-commit",
-        # profiler
-        "pyinstrument",
-    ],
-    # Dependencies for developing OctoPrint plugins
-    "plugins": ["cookiecutter>=2.1.1,<3"],
-    # Dependencies for building the documentation
-    "docs": [
-        "sphinx",
-        "sphinxcontrib-httpdomain",
-        "sphinxcontrib-mermaid",
-        "sphinx_rtd_theme",
-        "readthedocs-sphinx-ext",
-    ],
-}
-
-# ----------------------------------------------------------------------------------------
 # Anything below here is just command setup and general setup configuration
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -306,24 +215,112 @@ def package_data_dirs(source, sub_folders):
     return dirs
 
 
-def params():
-    # make sure these are always available, even when run by dependabot
-    global versioneer, get_cmdclass, read_file_contents, here, PYTHON_REQUIRES, SETUP_REQUIRES, INSTALL_REQUIRES, EXTRA_REQUIRES
+if os.environ.get("READTHEDOCS", None) == "True":
+    # we can't tell read the docs to please perform a pip install -e .[docs], so we help
+    # it a bit here by explicitly adding the docs dependencies
+    READ_THE_DOCS_DEPS = [
+        "sphinx",
+        "sphinxcontrib-httpdomain",
+        "sphinxcontrib-mermaid",
+        "sphinx_rtd_theme",
+        "readthedocs-sphinx-ext",
+    ]
 
-    name = "OctoPrint"
-    version = versioneer.get_version()
-    cmdclass = get_cmdclass()
-
-    description = "The snappy web interface for your 3D printer"
-    long_description = read_file_contents(os.path.join(here, "README.md"))
-    long_description_content_type = "text/markdown"
-
-    python_requires = PYTHON_REQUIRES
-    setup_requires = SETUP_REQUIRES
-    install_requires = INSTALL_REQUIRES
-    extras_require = EXTRA_REQUIRES
-
-    classifiers = [
+setuptools.setup(
+    name="OctoPrint",
+    version=versioneer.get_version(),
+    cmdclass=get_cmdclass(),
+    description="The snappy web interface for your 3D printer",
+    long_description=read_file_contents(os.path.join(here, "README.md")),
+    long_description_content_type="text/markdown",
+    # Supported python versions
+    python_requires=">=3.7, <3.12",
+    # Requirements for setup.py
+    setup_requires=[],
+    # Requirements for our application
+    install_requires=[
+        # bundled plugins
+        "OctoPrint-FileCheck>=2021.2.23",
+        "OctoPrint-FirmwareCheck>=2021.10.11",
+        "OctoPrint-PiSupport>=2022.6.13",
+        # core deps
+        "argon2_cffi>=21.3.0,<22",
+        "Babel>=2.12.1,<2.13",  # breaking changes can happen on minor version increases
+        "cachelib>=0.10.2,<0.11",
+        "Click>=8.1.3,<9",
+        "colorlog>=6.7.0,<7",
+        "emoji>=2.2.0,<3",
+        "feedparser>=6.0.10,<7",
+        "filetype>=1.2.0,<2",
+        "Flask-Assets>=2.0,<3",
+        "Flask-Babel>=3.0.1,<4",
+        "Flask-Login>=0.6.2,<0.7",  # breaking changes can happen on minor version increases
+        "Flask-Limiter>=3.3.0,<4",
+        "flask>=2.2.3,<2.3",  # breaking changes can happen on minor version increases (with deprecation warnings)
+        "frozendict>=2.3.5,<3",
+        "future>=0.18.3,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
+        "markdown>=3.4.1,<4",
+        "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
+        "netifaces2>=0.0.14,<0.1",
+        "passlib>=1.7.4,<2",
+        "pathvalidate>=2.5.2,<3",
+        "pkginfo>=1.9.6,<2",
+        "psutil>=5.9.4,<6",
+        "pydantic>=1.10.5,<2",
+        "pylru>=1.2.1,<2",
+        "pyserial>=3.5,<4",
+        "PyYAML>=5.4.1,<6",  # no changelog available for version 6, so we're not risking it
+        "requests>=2.28.2,<3",
+        "sarge==0.1.7.post1",
+        "semantic_version>=2.10.0,<3",
+        "sentry-sdk>=1.16.0,<2",
+        "tornado>=6.2,<7",
+        "watchdog>=2.3.1,<3",
+        "websocket-client>=1.5.1,<2",
+        "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
+        "wrapt>=1.15,<1.16",
+        "zeroconf==0.39.4",  # final version to include universal wheel, later takes ages to compiles on rpi, piwheels has no wheels for latest either
+        "zipstream-ng>=1.4.0,<2.0.0",
+        # vendored deps
+        "blinker>=1.5,<2",  # dependency of flask_principal
+        "class-doc>=0.2.6,<0.3",  # dependency of with_attrs_docs
+        "regex",  # dependency of awesome-slugify
+        "unidecode",  # dependency of awesome-slugify
+        # plugin_deps
+        # "OctoPrint-Setuptools>=1.0.3",  # makes sure plugins can import this on setup.py based install
+        "wheel",  # makes sure plugins can be built as wheels in OctoPrint's venv, see #4682
+    ]
+    + READ_THE_DOCS_DEPS,
+    # Additional requirements for optional install options and/or OS-specific dependencies
+    extras_require={
+        # Dependencies for OSX
+        ":sys_platform == 'darwin'": [
+            "appdirs>=1.4.4,<2",
+        ],
+        # Dependencies for core development
+        "develop": [
+            # Testing dependencies
+            "ddt",
+            "mock>=5.0.1,<6",
+            "pytest-doctest-custom>=1.0.0,<2",
+            "pytest>=7.2.2,<8",
+            # pre-commit
+            "pre-commit",
+            # profiler
+            "pyinstrument",
+        ],
+        # Dependencies for developing OctoPrint plugins
+        "plugins": ["cookiecutter>=2.1.1,<3"],
+        # Dependencies for building the documentation
+        "docs": [
+            "sphinx",
+            "sphinxcontrib-httpdomain",
+            "sphinxcontrib-mermaid",
+            "sphinx_rtd_theme",
+            "readthedocs-sphinx-ext",
+        ],
+    },
+    classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Environment :: Web Environment",
         "Framework :: Flask",
@@ -349,42 +346,29 @@ def params():
         "Programming Language :: JavaScript",
         "Topic :: Printing",
         "Topic :: System :: Monitoring",
-    ]
-    author = "Gina Häußge"
-    author_email = "gina@octoprint.org"
-    url = "https://octoprint.org"
-    license = "GNU Affero General Public License v3"
-    keywords = "3dprinting 3dprinter 3d-printing 3d-printer octoprint"
-
-    project_urls = {
+    ],
+    author="Gina Häußge",
+    author_email="gina@octoprint.org",
+    url="https://octoprint.org",
+    license="GNU Affero General Public License v3",
+    keywords="3dprinting 3dprinter 3d-printing 3d-printer octoprint",
+    project_urls={
         "Community Forum": "https://community.octoprint.org",
         "Bug Reports": "https://github.com/OctoPrint/OctoPrint/issues",
         "Source": "https://github.com/OctoPrint/OctoPrint",
         "Funding": "https://support.octoprint.org",
-    }
-
-    packages = setuptools.find_packages(where="src")
-    package_dir = {
+    },
+    packages=setuptools.find_packages(where="src"),
+    package_dir={
         "": "src",
-    }
-    package_data = {
+    },
+    package_data={
         "octoprint": package_data_dirs(
             "src/octoprint", ["static", "templates", "plugins", "translations"]
         )
         + ["util/piptestballoon/setup.py"]
-    }
-
-    include_package_data = True
-    zip_safe = False
-
-    if os.environ.get("READTHEDOCS", None) == "True":
-        # we can't tell read the docs to please perform a pip install -e .[docs], so we help
-        # it a bit here by explicitly adding the docs dependencies
-        install_requires = install_requires + extras_require["docs"]
-
-    entry_points = {"console_scripts": ["octoprint = octoprint:main"]}
-
-    return locals()
-
-
-setuptools.setup(**params())
+    },
+    include_package_data=True,
+    zip_safe=False,
+    entry_points={"console_scripts": ["octoprint = octoprint:main"]},
+)
