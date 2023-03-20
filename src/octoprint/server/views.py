@@ -20,6 +20,7 @@ from flask import (
     send_from_directory,
     url_for,
 )
+from werkzeug.routing import BuildError
 
 import octoprint.plugin
 from octoprint.access.permissions import OctoPrintPermission, Permissions
@@ -195,8 +196,14 @@ def login():
     allowed_paths = [
         url_for("index"),
         url_for("recovery"),
-        url_for("plugin.appkeys.handle_auth_dialog", app_token="*"),
-    ] + configured_allowed_paths
+    ]
+    try:
+        allowed_paths += [
+            url_for("plugin.appkeys.handle_auth_dialog", app_token="*"),
+        ]
+    except BuildError:
+        pass  # no appkeys plugin enabled, see #4763
+    allowed_paths += configured_allowed_paths
 
     if not validate_local_redirect(redirect_url, allowed_paths):
         _logger.warning(
