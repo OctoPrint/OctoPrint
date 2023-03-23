@@ -466,12 +466,15 @@ $(function () {
                 if (mark.label) {
                     markLabel = gettext(mark.label);
                 }
-                if (o.left > yAxisLabelWidth) {
-                    var label = $("<div></div>");
-                    label.html(markLabel);
-                    label.addClass("temperature-mark-label");
-                    label.addClass("temperature-mark-type-" + mark.type);
 
+                // we create the label even if we don't show it so that we can query its
+                // background color (see #4761)
+                var label = $("<div></div>");
+                label.html(markLabel);
+                label.addClass("temperature-mark-label");
+                label.addClass("temperature-mark-type-" + mark.type);
+
+                if (o.left > yAxisLabelWidth) {
                     graph.append(label);
 
                     // draw markings label on the left if doesn't fit on the right

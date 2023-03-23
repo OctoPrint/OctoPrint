@@ -201,11 +201,17 @@ class ScanDepsCommand(setuptools.Command):
             )
             resp.raise_for_status()
 
+            def safe_parse_version(version):
+                try:
+                    return parse_version(version)
+                except ValueError:
+                    return None
+
             data = resp.json()
             versions = list(
                 filter(
-                    lambda x: not x.is_prerelease and not x.is_devrelease,
-                    map(lambda x: parse_version(x), data.get("versions", [])),
+                    lambda x: x and not x.is_prerelease and not x.is_devrelease,
+                    map(lambda x: safe_parse_version(x), data.get("versions", [])),
                 )
             )
             if not versions:
