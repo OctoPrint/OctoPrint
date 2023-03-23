@@ -290,7 +290,7 @@ $(function () {
                     }
                 }
                 if (checks.lt !== undefined) {
-                    if (!(value < checks.gt)) {
+                    if (!(value < checks.lt)) {
                         return def;
                     }
                 }

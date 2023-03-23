@@ -56,7 +56,7 @@ core_deps = [
     "future>=0.18.3,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
     "markdown>=3.4.1,<4",
     "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
-    "netifaces>=0.11,<1",
+    "netifaces2>=0.0.14,<0.1",
     "passlib>=1.7.4,<2",
     "pathvalidate>=2.5.2,<3",
     "pkginfo>=1.9.6,<2",
@@ -201,11 +201,17 @@ class ScanDepsCommand(setuptools.Command):
             )
             resp.raise_for_status()
 
+            def safe_parse_version(version):
+                try:
+                    return parse_version(version)
+                except ValueError:
+                    return None
+
             data = resp.json()
             versions = list(
                 filter(
-                    lambda x: not x.is_prerelease and not x.is_devrelease,
-                    map(lambda x: parse_version(x), data.get("versions", [])),
+                    lambda x: x and not x.is_prerelease and not x.is_devrelease,
+                    map(lambda x: safe_parse_version(x), data.get("versions", [])),
                 )
             )
             if not versions:

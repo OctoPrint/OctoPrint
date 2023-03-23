@@ -1693,6 +1693,16 @@ $(function () {
                     name: file.name
                 })
             );
+            $("span.existing_size", self.uploadExistsDialog).text(
+                response.size ? formatSize(response.size) : "-"
+            );
+            $("span.existing_date", self.uploadExistsDialog).text(
+                response.date ? new Date(response.date * 1000).toLocaleString() : "?"
+            );
+            $("span.new_size", self.uploadExistsDialog).text(formatSize(file.size));
+            $("span.new_date", self.uploadExistsDialog).text(
+                new Date(file.lastModified).toLocaleString()
+            );
             $("p, form", self.uploadExistsDialog).toggle(!fileSizeTooBig);
             $("span", self.uploadExistsDialog).toggle(fileSizeTooBig);
             $("input", self.uploadExistsDialog)
