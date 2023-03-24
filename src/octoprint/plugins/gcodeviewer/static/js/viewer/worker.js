@@ -353,7 +353,7 @@ var gCodeLineGenerator = async function* (fileURL) {
     const reader = response.body.getReader();
 
     // we use these two variables to calculate the percentage.
-    var totalDownloadLength = response.headers.get("content-length");
+    var totalDownloadLength = response.headers.get("X-Original-Content-Length");
     var currentDownloadLength = 0;
 
     // lets read a first data chunk
