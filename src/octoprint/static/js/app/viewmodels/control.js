@@ -75,7 +75,26 @@ $(function () {
             }
         };
 
+        const selectedCameraStorageKey = "core.control.selectedCamera";
+        self.selectDefaultWebcam = function () {
+            let div = localStorage[selectedCameraStorageKey];
+
+            if (!div || document.getElementById(div.slice(1)) === null) {
+                div = undefined;
+            }
+
+            if (div !== undefined) {
+                $(`${div}_link a`).tab("show");
+            } else {
+                $("#webcam_plugins_container .nav li:first a").tab("show");
+            }
+        };
+
         self.onStartupComplete = function () {
+            $("#webcam_plugins_container .nav a[data-toggle='tab']").on("shown", (e) => {
+                localStorage[selectedCameraStorageKey] = e.target.hash;
+            });
+            self.selectDefaultWebcam();
             self.recreateIntersectionObservers();
         };
 
