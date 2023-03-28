@@ -27,7 +27,7 @@ try:
 
     # test if we can actually hash and verify, if not we won't use this backend
     hash = argon2.hash("test")
-    argon2.verify("test", hash)
+    assert argon2.verify("test", hash)
 
     password_hashers.append(argon2)
 except Exception:

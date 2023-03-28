@@ -21,3 +21,17 @@ class UserManagerTest(unittest.TestCase):
 
         # should not throw an exception
         octoprint.access.users.UserManager.create_password_hash(password)
+
+    def test_createPasswordHash_is_valid(self):
+        password = "test1234"
+        password_hash = octoprint.access.users.UserManager.create_password_hash(password)
+        user = octoprint.access.users.User(
+            "username",
+            password_hash,
+            True,
+            permissions=[],
+            apikey="apikey",
+            settings={"key": "value"},
+        )
+
+        self.assertTrue(user.check_password(password))
