@@ -78,3 +78,6 @@ class WebcamConfig(BaseModel):
 
     defaultWebcam: str = "classic"
     """The name of the default webcam"""
+
+    snapshotWebcam: str = "classic"
+    """The name of the default webcam to use for snapshots"""
