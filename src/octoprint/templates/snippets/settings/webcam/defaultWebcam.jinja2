@@ -1,5 +1,5 @@
- <div class="control-group" title="{{ _('Default Stream Webcam')|edq }}">
-    <label class="control-label" for="settings-defaultWebcam">{{ _('Default Stream Webcam') }}</label>
+ <div class="control-group" title="{{ _('Fallback Webcam')|edq }}">
+    <label class="control-label" for="settings-defaultWebcam">{{ _('Fallback Webcam') }}</label>
     <div class="controls">
         <select id="settings-defaultWebcam" data-bind="options: webcam_webcams,
                                 optionsText: function(key) { return key.displayName },
@@ -23,17 +23,6 @@
         <!-- /ko -->
 
         <div class="help-block" style="padding-top: 10px;">{% trans %}
-            <p>
-                Selects the webcam to use to populate the stream URL on the settings
-                API used by old clients that do not yet utilize the webcam plugin
-                system introduced in OctoPrint 1.9.0. If the selected webcam does not
-                provide a stream URL, no stream will be available on the settings API.
-            </p>
-            <p>
-                Note that this does not affect the webcam stream options available
-                in OctoPrint's core UI, it is exclusively relevant for the compatibility
-                layer provided on the settings API.
-            </p>
             <p>
                 You can make changes to this webcam's configuration in its plugin settings if it provides any.
             </p>
