@@ -27,7 +27,14 @@
             <!-- /ko -->
         <!-- /ko -->
 
-        <div class="help-block" style="padding-top: 10px;">{{ _('You can make changes to this webcam in the plugin\'s settings.') }}</div>
+        <div class="help-block" style="padding-top: 10px;">{% trans %}
+            <p>
+                Selects the webcam to use to take snapshots for the timelapse.
+            </p>
+            <p>
+                You can make changes to this webcam's configuration in its plugin settings, if it provides any.
+            </p>
+        {% endtrans %}</div>
 
     </div>
 </div>
