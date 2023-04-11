@@ -1,4 +1,4 @@
- <div class="control-group" title="">
+ <div class="control-group" title="{{ _('Snapshot Webcam')|edq }}">
     <label class="control-label" for="settings-snapshotWebcam">{{ _('Snapshot Webcam') }}</label>
     <div class="controls">
         <select id="settings-snapshotWebcam" data-bind="options: webcam_webcams,
@@ -9,8 +9,8 @@
 
         <!-- ko foreach: webcam_webcams -->
             <!-- ko if: name == $parent.webcam_snapshotWebcam() -->
-              <span class="help-inline" style="padding-top: 10px;">
-                    <span><b>{{ _('Snapshot stream')}}&nbsp;</b></span>
+              <div class="help-block">
+                    <span><strong>{{ _('Snapshot stream')}}&nbsp;</strong></span>
                     <!-- ko if: canSnapshot -->
                         <!-- ko if: snapshotDisplay -->
                             <span data-bind="text: snapshotDisplay"></span>&nbsp;
@@ -23,11 +23,11 @@
                     <!-- ko ifnot: canSnapshot -->
                         <span>{{ _('Not supported')}}</span>
                     <!-- /ko -->
-                </span>
+                </div>
             <!-- /ko -->
         <!-- /ko -->
 
-        <span class="help-inline" style="padding-top: 10px;">{{ _('You can make changes to this webcam in the plugin\'s settings.') }}</span>
+        <div class="help-block" style="padding-top: 10px;">{{ _('You can make changes to this webcam in the plugin\'s settings.') }}</div>
 
     </div>
 </div>
