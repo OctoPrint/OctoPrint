@@ -1192,6 +1192,8 @@ class LargeResponseHandler(
             self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
             self.set_header("Expires", "-1")
 
+        self.set_header("X-Original-Content-Length", str(self.get_content_size()))
+
     @property
     def original_absolute_path(self):
         """The path of the uncompressed file corresponding to the compressed file"""

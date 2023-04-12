@@ -134,7 +134,7 @@ class ClassicWebcamPlugin(
                 snapshot_url,
                 stream=True,
                 timeout=self._settings.get_int(["snapshotTimeout"]),
-                verify=self._settings.get_boolean(["rosnapshotSslValidationtate90"]),
+                verify=self._settings.get_boolean(["snapshotSslValidation"]),
             )
             r.raise_for_status()
             return r.iter_content(chunk_size=1024)

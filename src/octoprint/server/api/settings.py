@@ -15,6 +15,7 @@ from octoprint.server import pluginManager, printer, userManager
 from octoprint.server.api import api
 from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
 from octoprint.settings import settings, valid_boolean_trues
+from octoprint.timelapse import configure_timelapse
 from octoprint.webcams import (
     get_default_webcam,
     get_snapshot_webcam,
@@ -638,6 +639,9 @@ def _saveSettings(data):
             s.set(["webcam", "defaultWebcam"], data["webcam"]["defaultWebcam"])
         if "snapshotWebcam" in data["webcam"]:
             s.set(["webcam", "snapshotWebcam"], data["webcam"]["snapshotWebcam"])
+
+            # timelapse needs to be reconfigured now since it depends on the current snapshot webcam
+            configure_timelapse()
 
     if "feature" in data:
         if "temperatureGraph" in data["feature"]:
