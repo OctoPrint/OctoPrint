@@ -92,8 +92,8 @@
     </div>
     <div class="alert" style="display: none" data-bind="visible: !canSnapshot() || !settings.webcam_ffmpegPath()">
         <p><strong>{{ _('Timelapse not fully configured') }}</strong></p>
-        <p data-bind="visible: !loginState.isAdmin()">{{ _('The snapshot URL and/or the path to FFMPEG are missing. To have this fixed, get in touch with an administrator of this OctoPrint instance.') }}</p>
-        <p data-bind="visible: loginState.isAdmin">{{ _('The snapshot URL and/or the path to FFMPEG are missing. You can change both under "Settings" > "Webcam & Timelapse". If you don\'t have a webcam or don\'t want to enable timelapse support you can also just disable it there.') }}</p>
+        <p data-bind="visible: !loginState.isAdmin()">{{ _('A working snapshot setup and/or the path to FFMPEG are missing. To have this fixed, get in touch with an administrator of this OctoPrint instance.') }}</p>
+        <p data-bind="visible: loginState.isAdmin">{{ _('A working snapshot setup and/or the path to FFMPEG are missing. You can change both under "Settings" > "Webcam & Timelapse" and in the settings of your chosen webcam plugin. If you don\'t have a webcam or don\'t want to enable timelapse support you can also just disable it there.') }}</p>
         <p data-bind="visible: loginState.isUser"><small>
             <!-- ko if: canSnapshot -->
                 <!-- ko if: snapshotDisplay -->

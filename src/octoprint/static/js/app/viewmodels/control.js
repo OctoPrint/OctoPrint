@@ -66,16 +66,35 @@ $(function () {
                 console.debug(
                     `VM for webcam #${target.id} not found, skipping visibility update`
                 );
-            } else if (typeof vm.onWebcamVisbilityChange === "function") {
-                vm.onWebcamVisbilityChange(visible);
+            } else if (typeof vm.onWebcamVisibilityChange === "function") {
+                vm.onWebcamVisibilityChange(visible);
             } else {
                 console.debug(
-                    `VM for webcam #${target.id} does not declare 'onWebcamVisbilityChange(visible)', skipping visibility update (vm=${vm.constructor.name})`
+                    `VM for webcam #${target.id} does not declare 'onWebcamVisibilityChange(visible)', skipping visibility update (vm=${vm.constructor.name})`
                 );
             }
         };
 
+        const selectedCameraStorageKey = "core.control.selectedCamera";
+        self.selectDefaultWebcam = function () {
+            let div = localStorage[selectedCameraStorageKey];
+
+            if (!div || document.getElementById(div.slice(1)) === null) {
+                div = undefined;
+            }
+
+            if (div !== undefined) {
+                $(`${div}_link a`).tab("show");
+            } else {
+                $("#webcam_plugins_container .nav li:first a").tab("show");
+            }
+        };
+
         self.onStartupComplete = function () {
+            $("#webcam_plugins_container .nav a[data-toggle='tab']").on("shown", (e) => {
+                localStorage[selectedCameraStorageKey] = e.target.hash;
+            });
+            self.selectDefaultWebcam();
             self.recreateIntersectionObservers();
         };
 
@@ -84,7 +103,7 @@ $(function () {
             // A webcam will not intersect with the control tab if the control tab is invisible because another tab
             // is selected or if the webcam isn't shown because another webcam is active.
             //
-            // Whenever the webacam changes visibility we will call onWebcamVisbilityChange() which the webcam's
+            // Whenever the webacam changes visibility we will call onWebcamVisibilityChange() which the webcam's
             //  VM can use to start or stop the stream.
             self.intersectionObservers.forEach(function (observer) {
                 observer.disconnect();

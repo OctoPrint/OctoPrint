@@ -54,7 +54,7 @@ $(function () {
             });
         };
 
-        self.onWebcamVisbilityChange = function (visible) {
+        self.onWebcamVisibilityChange = function (visible) {
             self.webcamStreamVisible = visible;
             if (self.webcamStreamVisible) {
                 self._enableWebcam();
