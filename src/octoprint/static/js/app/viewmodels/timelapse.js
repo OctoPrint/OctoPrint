@@ -710,7 +710,7 @@ $(function () {
             var html =
                 "<p>" +
                 gettext(
-                    "Failed repeatedly to capture timelapse frame from webcam - is the snapshot URL configured correctly and the camera on?"
+                    "Failed repeatedly to capture timelapse frame from webcam - is the snapshot webcam configured correctly and the camera on?"
                 );
 
             var additional = "";
@@ -773,7 +773,7 @@ $(function () {
                     "<p>" +
                     _.sprintf(
                         gettext(
-                            "Rendering of timelapse %(movie_prefix)s is not possible since no frames were captured. Is the webcam configured correctly?"
+                            "Rendering of timelapse %(movie_prefix)s is not possible since no frames were captured. Is the snapshot webcam configured correctly?"
                         ),
                         {movie_prefix: _.escape(payload.movie_prefix)}
                     ) +
