@@ -44,7 +44,8 @@ $(function () {
                     return self.determineWebcamStreamType(self.streamUrlEscaped());
                 } catch (e) {
                     console.error(e);
-                    return "test";
+                    self.webcamError(true);
+                    return "mjpg";
                 }
             });
 
