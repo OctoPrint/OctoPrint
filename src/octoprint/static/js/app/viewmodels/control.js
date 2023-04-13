@@ -77,6 +77,12 @@ $(function () {
 
         const selectedCameraStorageKey = "core.control.selectedCamera";
         self.selectDefaultWebcam = function () {
+            if (!document.querySelector("#webcam_plugins_container .nav")) {
+                // we only have one webcam plugin, select that and be done (note: this bypasses local storage)
+                $("#webcam-group .tab-pane:first").addClass("active");
+                return;
+            }
+
             let div = localStorage[selectedCameraStorageKey];
 
             if (!div || document.getElementById(div.slice(1)) === null) {
