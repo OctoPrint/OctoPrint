@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.9.0rc4.dev14+g8baf2c3f4.dirty\n"
+"Project-Id-Version: OctoPrint 1.9.0rc5.dev4+ge7ee1d804\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2023-04-12 12:02+0200\n"
+"POT-Creation-Date: 2023-04-13 13:14+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1709,7 +1709,7 @@ msgid "Filament"
 msgstr ""
 
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:765
-#: src/octoprint/static/js/app/viewmodels/control.js:171
+#: src/octoprint/static/js/app/viewmodels/control.js:177
 #: src/octoprint/static/js/app/viewmodels/files.js:1099
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:357
 #: src/octoprint/static/js/app/viewmodels/temperature.js:147
@@ -4521,7 +4521,7 @@ msgstr ""
 msgid "Stay Connected"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/control.js:177
+#: src/octoprint/static/js/app/viewmodels/control.js:183
 msgid "Hotend"
 msgstr ""
 
@@ -7178,7 +7178,7 @@ msgstr ""
 #: src/octoprint/templates/dialogs/settings/webcam.jinja2:34
 msgid ""
 "<p>\n"
-"    Select the webcam to fall back to to populate the stream and snapshot"
+"    Select the webcam to fall back on to populate the stream and snapshot"
 " URLs on the settings\n"
 "    API used by old clients that do not yet utilize the webcam plugin\n"
 "    system introduced in OctoPrint 1.9.0. If the selected webcam does not"
