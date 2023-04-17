@@ -16,6 +16,9 @@ class EventManagerPlugin(
             "subscriptions": [],
         }
         events = self._settings.global_get(["events"])
+        for event in events.get("subscriptions", []):
+            if "name" not in event:
+                event["name"] = event["command"]
         if events:
             my_settings["subscriptions"] = sorted(
                 events.get("subscriptions", []), key=(lambda x: x["event"])
