@@ -122,13 +122,13 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
          #
          # True: <filename> <filesize in bytes> <timestamp as hex>
          # False: <filename> <filesize in bytes>
-         timestamp: false
+         timestamp: true
 
          # Whether M20 responses will include longname or not (only if size = true as well)
          #
          # True:  <filename> <filesize in bytes> <longname>
          # False: <filename> <filesize in bytes>
-         longname: false
+         longname: true
 
        # Forced pause for retrieving from the outgoing buffer
        throttle: 0.01
@@ -203,6 +203,10 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
        # Capabilities to report if capability report is enabled
        capabilities:
          AUTOREPORT_TEMP: true
+         AUTOREPORT_SD_STATUS: true
+         EMERGENCY_PARSER: true
+         EXTENDED_M20: true
+         LFN_WRITE: true
 
        # Simulated ambient temperature in °C
        ambientTemperature: 21.3
