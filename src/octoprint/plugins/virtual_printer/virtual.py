@@ -128,7 +128,6 @@ class VirtualPrinter:
 
         self._writingToSd = False
         self._writingToSdHandle = None
-        self._writingToSdFile = None
         self._newSdFilePos = None
 
         self._heatingUp = False
@@ -259,7 +258,6 @@ class VirtualPrinter:
                     pass
             self._writingToSd = False
             self._writingToSdHandle = None
-            self._writingToSdFile = None
             self._newSdFilePos = None
 
             self._heatingUp = False
@@ -1821,7 +1819,6 @@ class VirtualPrinter:
         except Exception:
             self._send("error writing to file")
         self._writingToSdHandle = handle
-        self._writingToSdFile = file
         self._writingToSd = True
         self._selectedSdFile = file
         self._send(f"Writing to file: {filename}")
@@ -1835,12 +1832,6 @@ class VirtualPrinter:
             self._writingToSdHandle = None
         self._writingToSd = False
         self._selectedSdFile = None
-        # Most printers don't have RTC and set some ancient date
-        # by default. Emulate that using 2000-01-01 01:00:00
-        # (taken from prusa firmware behaviour)
-        st = os.stat(self._writingToSdFile)
-        os.utime(self._writingToSdFile, (st.st_atime, 946684800))
-        self._writingToSdFile = None
         self._send("Done saving file")
 
     def _sdPrintingWorker(self):
