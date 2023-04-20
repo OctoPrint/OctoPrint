@@ -697,7 +697,7 @@ class VirtualPrinter:
 
         if self._settings.get_boolean(["m115ReportExtraParams"]):
             for paramName, paramValue in self._extraParams.items():
-                self._send("{}:{}".format(paramName, paramValue))
+                self._send(f"{paramName}:{paramValue}")
 
     def _gcode_M117(self, data: str) -> None:
         # we'll just use this to echo a message, to allow playing around with pause triggers
