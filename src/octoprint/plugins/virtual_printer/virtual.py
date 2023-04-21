@@ -692,10 +692,9 @@ class VirtualPrinter:
         self._send(output)
 
         if self._settings.get_boolean(["m115ReportCapabilities"]):
-            for cap, enabled in self._capabilities.items():
-                if cap == "GEOMETRY" and enabled:
+            for cap, value in self._capabilities.items():
+                if cap == "GEOMETRY_REPORT":
                     profile = self._printer_profile_manager.get_current_or_default()
-                    m115AreaFormatString = self._settings.get(["m115AreaFormatString"])
 
                     lowerLeft = profile["volume"]["origin"] == "lowerleft"
                     depth = profile["volume"]["depth"]
@@ -710,7 +709,7 @@ class VirtualPrinter:
                     w_ymax = depth if lowerLeft else depth / 2
                     w_zmax = height if lowerLeft else height / 2
 
-                    output = m115AreaFormatString.format(
+                    output = value.format(
                         f_xmin=customBox["x_min"] if customBox else w_xmin,
                         f_ymin=customBox["y_min"] if customBox else w_ymin,
                         f_zmin=customBox["z_min"] if customBox else w_zmin,
@@ -725,7 +724,7 @@ class VirtualPrinter:
                         w_zmax=w_zmax,
                     )
                 else:
-                    output = "Cap:{}:{}".format(cap.upper(), "1" if enabled else "0")
+                    output = "Cap:{}:{}".format(cap.upper(), "1" if value else "0")
                 self._send(output)
 
     def _gcode_M117(self, data: str) -> None:

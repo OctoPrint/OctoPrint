@@ -197,9 +197,7 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
        # Capabilities to report if capability report is enabled
        capabilities:
          AUTOREPORT_TEMP: true
-
-       # Response to GEOMETRY capability
-       m115AreaFormatString: "area:{{full:{{min:{{x:{f_xmin},y:{f_ymin},z:{f_zmin}}},max:{{x:{f_xmax},y:{f_ymax},z:{f_zmax}}}}},work:{{min:{{x:{w_xmin},y:{w_ymin},z:{w_zmin}}},max:{{x:{w_xmax},y:{w_ymax},z:{w_zmax}}}}}}}"
+         GEOMETRY_REPORT: "area:{{full:{{min:{{x:{f_xmin},y:{f_ymin},z:{f_zmin}}},max:{{x:{f_xmax},y:{f_ymax},z:{f_zmax}}}}},work:{{min:{{x:{w_xmin},y:{w_ymin},z:{w_zmin}}},max:{{x:{w_xmax},y:{w_ymax},z:{w_zmax}}}}}}}"
 
        # Simulated ambient temperature in °C
        ambientTemperature: 21.3
