@@ -704,10 +704,10 @@ class VirtualPrinter:
 
                     w_xmin = 0 if lowerLeft else -width / 2
                     w_ymin = 0 if lowerLeft else -depth / 2
-                    w_zmin = 0 if lowerLeft else -height / 2
+                    w_zmin = 0
                     w_xmax = width if lowerLeft else width / 2
                     w_ymax = depth if lowerLeft else depth / 2
-                    w_zmax = height if lowerLeft else height / 2
+                    w_zmax = height
 
                     output = value.format(
                         f_xmin=customBox["x_min"] if customBox else w_xmin,
