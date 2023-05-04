@@ -198,12 +198,20 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
        m115FormatString: "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0"
 
        # Whether to include capability report in M115 output
-       m115ReportCapabilities: false
+       m115ReportCapabilities: true
 
        # Capabilities to report if capability report is enabled
        capabilities:
          AUTOREPORT_TEMP: true
-         GEOMETRY_REPORT: "area:{{full:{{min:{{x:{f_xmin},y:{f_ymin},z:{f_zmin}}},max:{{x:{f_xmax},y:{f_ymax},z:{f_zmax}}}}},work:{{min:{{x:{w_xmin},y:{w_ymin},z:{w_zmin}}},max:{{x:{w_xmax},y:{w_ymax},z:{w_zmax}}}}}}}"
+         AUTOREPORT_TEMP: true
+         AUTOREPORT_SD_STATUS: true
+         AUTOREPORT_POS: false
+         EMERGENCY_PARSER: true
+         EXTENDED_M20: false
+         LFN_WRITE: false
+
+      # Whether to include area report in the M115 output (M115_GEOMETRY_REPORT in Marlin)
+      m115ReportArea: false
 
        # Simulated ambient temperature in °C
        ambientTemperature: 21.3

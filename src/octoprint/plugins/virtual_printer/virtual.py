@@ -696,39 +696,85 @@ class VirtualPrinter:
 
         if self._settings.get_boolean(["m115ReportCapabilities"]):
             for cap, value in self._capabilities.items():
-                if cap == "GEOMETRY_REPORT":
-                    profile = self._printer_profile_manager.get_current_or_default()
+                self._send("Cap:{}:{}".format(cap.upper(), "1" if value else "0"))
 
-                    lowerLeft = profile["volume"]["origin"] == "lowerleft"
-                    depth = profile["volume"]["depth"]
-                    width = profile["volume"]["width"]
-                    height = profile["volume"]["height"]
-                    customBox = profile["volume"]["custom_box"]
+            if self._settings.get_boolean(["m115ReportArea"]):
+                area_report = self._generate_area_report(
+                    self._printer_profile_manager.get_current_or_default()
+                )
+                if area_report:
+                    self._send(area_report)
 
-                    w_xmin = 0 if lowerLeft else -width / 2
-                    w_ymin = 0 if lowerLeft else -depth / 2
-                    w_zmin = 0
-                    w_xmax = width if lowerLeft else width / 2
-                    w_ymax = depth if lowerLeft else depth / 2
-                    w_zmax = height
+    @staticmethod
+    def _generate_area_report(profile: Dict) -> str:
+        """
+        Generate a string with the area of the printer volume.
 
-                    output = value.format(
-                        f_xmin=customBox["x_min"] if customBox else w_xmin,
-                        f_ymin=customBox["y_min"] if customBox else w_ymin,
-                        f_zmin=customBox["z_min"] if customBox else w_zmin,
-                        f_xmax=customBox["x_max"] if customBox else w_xmax,
-                        f_ymax=customBox["y_max"] if customBox else w_ymax,
-                        f_zmax=customBox["z_max"] if customBox else w_zmax,
-                        w_xmin=w_xmin,
-                        w_ymin=w_ymin,
-                        w_zmin=w_zmin,
-                        w_xmax=w_xmax,
-                        w_ymax=w_ymax,
-                        w_zmax=w_zmax,
-                    )
-                else:
-                    output = "Cap:{}:{}".format(cap.upper(), "1" if value else "0")
-                self._send(output)
+        See https://marlinfw.org/docs/gcode/M115.html
+
+        Example::
+
+        >>> VirtualPrinter._generate_area_report({"volume": {"width": 200, "depth": 200, "height": 200, "origin": "lowerleft"}})
+        'area:{full:{min:{x:0,y:0,z:0},max:{x:200,y:200,z:200}},work:{min:{x:0,y:0,z:0},max:{x:200,y:200,z:200}}}'
+        >>> VirtualPrinter._generate_area_report({"volume": {"width": 200, "depth": 200, "height": 200, "origin": "center"}})
+        'area:{full:{min:{x:-100.0,y:-100.0,z:0},max:{x:100.0,y:100.0,z:200}},work:{min:{x:-100.0,y:-100.0,z:0},max:{x:100.0,y:100.0,z:200}}}'
+        >>> VirtualPrinter._generate_area_report({"volume": {"width": 200, "depth": 200, "height": 200, "custom_box": {"x_min": -3, "y_min": -3, "z_min": 0, "x_max": 200, "y_max": 200, "z_max": 200}, "origin": "lowerleft"}})
+        'area:{full:{min:{x:-3,y:-3,z:0},max:{x:200,y:200,z:200}},work:{min:{x:0,y:0,z:0},max:{x:200,y:200,z:200}}}'
+        >>> VirtualPrinter._generate_area_report({})
+        ''
+        >>> VirtualPrinter._generate_area_report({"foo": "bar"})
+        ''
+        >>> VirtualPrinter._generate_area_report({"volume": {}})
+        ''
+
+        We use printer profile data here, with the full volume being defined by a custom bounding box, if defined.
+        Based on the docs it's currently unclear on whether this matches the actual behaviour of the implementation
+        of this part of the M115 command in Marlin, however for testing purposes as part of the virtual printer
+        it should be sufficient.
+        """
+
+        if not profile or "volume" not in profile:
+            return ""
+
+        volume = profile["volume"]
+        if any([x not in volume for x in ["width", "depth", "height", "origin"]]):
+            return ""
+
+        origin_ll = volume["origin"] == "lowerleft"
+
+        work_bounds = {
+            "min": {
+                "x": 0 if origin_ll else -volume["width"] / 2,
+                "y": 0 if origin_ll else -volume["depth"] / 2,
+                "z": 0,
+            },
+            "max": {
+                "x": volume["width"] if origin_ll else volume["width"] / 2,
+                "y": volume["depth"] if origin_ll else volume["depth"] / 2,
+                "z": volume["height"],
+            },
+        }
+
+        full_bounds = work_bounds
+        custom = volume.get("custom_box")
+        if custom:
+            full_bounds = {
+                "min": {
+                    "x": custom["x_min"],
+                    "y": custom["y_min"],
+                    "z": custom["z_min"],
+                },
+                "max": {
+                    "x": custom["x_max"],
+                    "y": custom["y_max"],
+                    "z": custom["z_max"],
+                },
+            }
+
+        # we'll just use json.dumps to generate the string, and then remove the quotes and spaces
+        return "area:" + json.dumps({"full": full_bounds, "work": work_bounds}).replace(
+            '"', ""
+        ).replace(" ", "")
 
     def _gcode_M117(self, data: str) -> None:
         # we'll just use this to echo a message, to allow playing around with pause triggers
