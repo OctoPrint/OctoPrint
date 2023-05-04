@@ -55,6 +55,7 @@ class VirtualPrinterPlugin(
                 "EMERGENCY_PARSER": True,
                 "EXTENDED_M20": False,
                 "LFN_WRITE": False,
+                "GEOMETRY_REPORT": "area:{{full:{{min:{{x:{f_xmin},y:{f_ymin},z:{f_zmin}}},max:{{x:{f_xmax},y:{f_ymax},z:{f_zmax}}}}},work:{{min:{{x:{w_xmin},y:{w_ymin},z:{w_zmin}}},max:{{x:{w_xmax},y:{w_ymax},z:{w_zmax}}}}}}}",
             },
             "m114FormatString": "X:{x} Y:{y} Z:{z} E:{e[current]} Count: A:{a} B:{b} C:{c}",
             "m105TargetFormatString": "{heater}:{actual:.2f}/ {target:.2f}",
@@ -114,6 +115,7 @@ class VirtualPrinterPlugin(
 
         serial_obj = virtual.VirtualPrinter(
             self._settings,
+            self._printer_profile_manager,
             data_folder=self.get_plugin_data_folder(),
             seriallog_handler=seriallog_handler,
             read_timeout=float(read_timeout),

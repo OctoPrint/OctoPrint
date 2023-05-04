@@ -36,6 +36,7 @@ class VirtualPrinter:
     def __init__(
         self,
         settings,
+        printer_profile_manager,
         data_folder,
         seriallog_handler=None,
         read_timeout=5.0,
@@ -49,6 +50,7 @@ class VirtualPrinter:
         )
 
         self._settings = settings
+        self._printer_profile_manager = printer_profile_manager
         self._faked_baudrate = faked_baudrate
         self._plugin_data_folder = data_folder
 
@@ -693,8 +695,40 @@ class VirtualPrinter:
         self._send(output)
 
         if self._settings.get_boolean(["m115ReportCapabilities"]):
-            for cap, enabled in self._capabilities.items():
-                self._send("Cap:{}:{}".format(cap.upper(), "1" if enabled else "0"))
+            for cap, value in self._capabilities.items():
+                if cap == "GEOMETRY_REPORT":
+                    profile = self._printer_profile_manager.get_current_or_default()
+
+                    lowerLeft = profile["volume"]["origin"] == "lowerleft"
+                    depth = profile["volume"]["depth"]
+                    width = profile["volume"]["width"]
+                    height = profile["volume"]["height"]
+                    customBox = profile["volume"]["custom_box"]
+
+                    w_xmin = 0 if lowerLeft else -width / 2
+                    w_ymin = 0 if lowerLeft else -depth / 2
+                    w_zmin = 0
+                    w_xmax = width if lowerLeft else width / 2
+                    w_ymax = depth if lowerLeft else depth / 2
+                    w_zmax = height
+
+                    output = value.format(
+                        f_xmin=customBox["x_min"] if customBox else w_xmin,
+                        f_ymin=customBox["y_min"] if customBox else w_ymin,
+                        f_zmin=customBox["z_min"] if customBox else w_zmin,
+                        f_xmax=customBox["x_max"] if customBox else w_xmax,
+                        f_ymax=customBox["y_max"] if customBox else w_ymax,
+                        f_zmax=customBox["z_max"] if customBox else w_zmax,
+                        w_xmin=w_xmin,
+                        w_ymin=w_ymin,
+                        w_zmin=w_zmin,
+                        w_xmax=w_xmax,
+                        w_ymax=w_ymax,
+                        w_zmax=w_zmax,
+                    )
+                else:
+                    output = "Cap:{}:{}".format(cap.upper(), "1" if value else "0")
+                self._send(output)
 
     def _gcode_M117(self, data: str) -> None:
         # we'll just use this to echo a message, to allow playing around with pause triggers
