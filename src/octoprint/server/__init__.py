@@ -2045,6 +2045,9 @@ class Server:
         url_prefix = f"/plugin/{name}"
         blueprint = Blueprint(name, name, static_folder=plugin.get_asset_folder())
 
+        blueprint.before_request(corsRequestHandler)
+        blueprint.after_request(corsResponseHandler)
+
         return blueprint, url_prefix
 
     def _add_plugin_request_handlers_to_blueprints(self, *blueprints):
