@@ -21,6 +21,7 @@ thanks to everyone who contributed!
   * Creality3D
   * DeltaMaker 3D Printers
   * Dennis Breining
+  * Dima Gorbenko
   * Douglas Floyd
   * Ed Crump
   * Ernesto Martinez
@@ -46,6 +47,7 @@ thanks to everyone who contributed!
   * Mark Walker
   * Michael Aumock
   * Michael Badagliacco
+  * Mike Labanov
   * Mosaic Manufacturing
   * Norman Jaffe
   * Obico
@@ -65,4 +67,4 @@ thanks to everyone who contributed!
   * Steve Thompson
   * Ulrich Kempken
 
-and 2025 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2008 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
