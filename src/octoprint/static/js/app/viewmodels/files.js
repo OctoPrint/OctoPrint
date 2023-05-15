@@ -180,13 +180,10 @@ $(function () {
         // initialize list helper
         var listHelperFilters = {
             printed: function (data) {
-                return (
-                    !(
-                        data["prints"] &&
-                        data["prints"]["success"] &&
-                        data["prints"]["success"] > 0
-                    ) ||
-                    (data["type"] && data["type"] === "folder")
+                return !(
+                    data["prints"] &&
+                    data["prints"]["success"] &&
+                    data["prints"]["success"] > 0
                 );
             },
             sd: function (data) {
