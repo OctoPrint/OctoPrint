@@ -60,7 +60,7 @@ class SoftwareUpdatePlugin(
     octoprint.plugin.EventHandlerPlugin,
 ):
     COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
-    CURRENT_TRACKING_TYPES = COMMIT_TRACKING_TYPES + ("etag", "lastmodified", "jsondata")
+    CURRENT_TRACKING_TYPES = COMMIT_TRACKING_TYPES + ("httpheader", "jsondata")
     RELEASE_TRACKING_TYPES = ("github_release",)
 
     OCTOPRINT_RESTART_TYPES = ("pip", "single_file_plugin")

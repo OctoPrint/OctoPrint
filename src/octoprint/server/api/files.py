@@ -387,10 +387,37 @@ def _getFileList(
 
                 if file_or_folder["type"] == "folder":
                     if "children" in file_or_folder:
-                        file_or_folder["children"] = analyse_recursively(
+                        children = analyse_recursively(
                             file_or_folder["children"].values(),
                             path + file_or_folder["name"] + "/",
                         )
+                        latest_print = None
+                        success = 0
+                        failure = 0
+                        for child in children:
+                            if (
+                                "prints" not in child
+                                or "last" not in child["prints"]
+                                or "date" not in child["prints"]["last"]
+                            ):
+                                continue
+
+                            success += child["prints"].get("success", 0)
+                            failure += child["prints"].get("failure", 0)
+
+                            if (
+                                latest_print is None
+                                or child["prints"]["last"]["date"] > latest_print["date"]
+                            ):
+                                latest_print = child["prints"]["last"]
+
+                        file_or_folder["children"] = children
+                        file_or_folder["prints"] = {
+                            "success": success,
+                            "failure": failure,
+                        }
+                        if latest_print:
+                            file_or_folder["prints"]["last"] = latest_print
 
                     file_or_folder["refs"] = {
                         "resource": url_for(
