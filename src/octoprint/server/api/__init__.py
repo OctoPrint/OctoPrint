@@ -22,6 +22,7 @@ import octoprint.access.users
 import octoprint.plugin
 import octoprint.server
 import octoprint.util.net as util_net
+from octoprint.access import auth_log
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events, eventManager
 from octoprint.server import NO_CONTENT
@@ -291,13 +292,14 @@ def serverStatus():
     error_message="You have made too many failed login attempts. Please try again later.",
 )
 def login():
-    data = request.get_json()
+    data = request.get_json(silent=True)
     if not data:
         data = request.values
 
     if "user" in data and "pass" in data:
         username = data["user"]
         password = data["pass"]
+        remote_addr = get_remote_address(request)
 
         if "remember" in data and data["remember"] in valid_boolean_trues:
             remember = True
@@ -311,6 +313,9 @@ def login():
         if user is not None:
             if octoprint.server.userManager.check_password(username, password):
                 if not user.is_active:
+                    auth_log(
+                        f"Failed login attempt for user {username} from {remote_addr}, user is deactivated"
+                    )
                     abort(403)
 
                 user = octoprint.server.userManager.login_user(user)
@@ -326,7 +331,6 @@ def login():
                 )
                 session["login_mechanism"] = "http"
 
-                remote_addr = get_remote_address(request)
                 logging.getLogger(__name__).info(
                     "Actively logging in user {} from {}".format(
                         user.get_id(), remote_addr
@@ -348,8 +352,18 @@ def login():
                 eventManager().fire(
                     Events.USER_LOGGED_IN, payload={"username": user.get_id()}
                 )
+                auth_log(f"Logging in user {username} from {remote_addr} via credentials")
 
                 return r
+
+            else:
+                auth_log(
+                    f"Failed login attempt for user {username} from {remote_addr}, wrong password"
+                )
+        else:
+            auth_log(
+                f"Failed login attempt for user {username} from {remote_addr}, user is unknown"
+            )
 
         abort(403)
 
@@ -377,6 +391,7 @@ def logout():
 
     if username:
         eventManager().fire(Events.USER_LOGGED_OUT, payload={"username": username})
+        auth_log(f"Logging out user {username} from {get_remote_address(request)}")
 
     return r
 

@@ -18,21 +18,21 @@ prerelease
 HEAD
 \(detached.*
 
-# maintenance is currently the branch for preparation of maintenance release 1.8.0
+# maintenance is currently the branch for preparation of maintenance release 1.9.0
 # so are any fix/... and improve/... branches
-maintenance 1.8.0 3fe45661cd79c5137d9d4f5f4adb4d9519bc2084 pep440-dev
-fix/.* 1.8.0 3fe45661cd79c5137d9d4f5f4adb4d9519bc2084 pep440-dev
-improve/.* 1.8.0 3fe45661cd79c5137d9d4f5f4adb4d9519bc2084 pep440-dev
+maintenance 1.9.0 fa2c4680cca0d1d6b46e6c1ed68ceea4d9b79afb pep440-dev
+fix/.* 1.9.0 fa2c4680cca0d1d6b46e6c1ed68ceea4d9b79afb pep440-dev
+improve/.* 1.9.0 fa2c4680cca0d1d6b46e6c1ed68ceea4d9b79afb pep440-dev
 
 # staging/bugfix is the branch for preparation of the 1.8.7 bugfix release
 # so are any bug/... branches
-staging/bugfix 1.8.7 1875623f05e14c3a197c6ff324f02dce55cec7d2 pep440-dev
-bug/.* 1.8.7 1875623f05e14c3a197c6ff324f02dce55cec7d2 pep440-dev
+staging/bugfix 1.8.8 8e4c1f5246c4245b839ccdcdabf2beee671b08d7 pep440-dev
+bug/.* 1.8.8 8e4c1f5246c4245b839ccdcdabf2beee671b08d7 pep440-dev
 
-# staging/maintenance is currently the branch for preparation of 1.8.0rc6
+# staging/maintenance is currently the branch for preparation of 1.9.0rc6
 # so is regressionfix/...
-staging/maintenance 1.8.0rc6 45598764e6c7f6257de87a98d15964209ddc9e09 pep440-dev
-regressionfix/.* 1.8.0rc6 45598764e6c7f6257de87a98d15964209ddc9e09 pep440-dev
+staging/maintenance 1.9.0rc6 2596a99a2497e53e3f73399941bda7822bb1ef6f pep440-dev
+regressionfix/.* 1.9.0rc6 2596a99a2497e53e3f73399941bda7822bb1ef6f pep440-dev
 
 # staging/devel is currently inactive (but has the 1.4.1rc4 namespace)
 staging/devel 1.4.1rc4 650d54d1885409fa1d411eb54b9e8c7ff428910f pep440-dev

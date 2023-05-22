@@ -65,6 +65,7 @@ $(function () {
         self.config_pipEnableCheck = ko.observable();
         self.config_minimumFreeStorage = ko.observable();
         self.config_githubToken = ko.observable();
+        self.config_githubTokenSet = ko.observable(false);
 
         self.error_checkoutFolder = ko.pureComputed(function () {
             return (
@@ -240,6 +241,29 @@ $(function () {
             self.configurationDialog.modal();
         };
 
+        self.deleteGithubTokenApiKey = function () {
+            var data = {
+                plugins: {
+                    softwareupdate: {
+                        credentials: {
+                            github: undefined
+                        }
+                    }
+                }
+            };
+
+            self.settings.saveData(data, {
+                success: function () {
+                    self.performCheck();
+                },
+                complete: function () {
+                    self.config_githubToken("");
+                    self.config_githubTokenSet(false);
+                },
+                sending: true
+            });
+        };
+
         self.savePluginSettings = function (viewModel, event) {
             var target = $(event.target);
             target.prepend('<i class="fa fa-spinner fa-spin"></i> ');
@@ -333,6 +357,10 @@ $(function () {
 
             self.config_minimumFreeStorage(
                 self.settings.settings.plugins.softwareupdate.minimum_free_storage()
+            );
+
+            self.config_githubTokenSet(
+                self.settings.settings.plugins.softwareupdate.credentials.github_set()
             );
         };
 

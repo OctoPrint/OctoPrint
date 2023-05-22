@@ -156,6 +156,14 @@
         return this.base.download(downloadForEntry(location, path), opts);
     };
 
+    OctoPrintFilesClient.prototype.downloadPath = function (location, path) {
+        var url = downloadForEntry(location, path);
+        if (!_.startsWith(url, "http://") && !_.startsWith(url, "https://")) {
+            url = this.base.getBaseUrl() + url;
+        }
+        return url;
+    };
+
     OctoPrintFilesClient.prototype.pathForEntry = function (entry) {
         if (!entry || !entry.hasOwnProperty("parent") || entry.parent == undefined) {
             return "";

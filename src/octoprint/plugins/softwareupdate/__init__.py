@@ -231,7 +231,6 @@ class SoftwareUpdatePlugin(
                 or self._configured_checks is None
                 or self._check_overlays_stale
             ):
-
                 self._refresh_configured_checks = False
 
                 overlays = self._get_check_overlays()
@@ -424,7 +423,7 @@ class SoftwareUpdatePlugin(
     def _get_check_overlay(self, url):
         self._logger.info(f"Fetching check overlays from {url}")
         try:
-            r = requests.get(url, timeout=3.1)
+            r = requests.get(url, timeout=3.05)
             r.raise_for_status()
             data = r.json()
         except Exception as exc:
@@ -712,6 +711,13 @@ class SoftwareUpdatePlugin(
     def on_settings_load(self):
         # ensure we don't persist check configs we receive on the API
         data = dict(octoprint.plugin.SettingsPlugin.on_settings_load(self))
+
+        # set credentials flag
+        credentials = self._settings.get(["credentials"])
+        data["credentials"] = {}
+        for key, value in credentials.items():
+            data["credentials"][f"{key}_set"] = bool(value)
+
         if "checks" in data:
             del data["checks"]
 
@@ -773,7 +779,9 @@ class SoftwareUpdatePlugin(
     def on_settings_save(self, data):
         # ~~ plugin settings
 
-        for key in self.get_settings_defaults():
+        defaults = self.get_settings_defaults()
+
+        for key in defaults:
             if key in (
                 "checks",
                 "cache_ttl",
@@ -783,6 +791,7 @@ class SoftwareUpdatePlugin(
                 "octoprint_checkout_folder",
                 "octoprint_type",
                 "octoprint_release_channel",
+                "credentials",
             ):
                 continue
             if key in data:
@@ -912,11 +921,18 @@ class SoftwareUpdatePlugin(
         if update_pip_check_config:
             self._invalidate_version_cache("pip")
 
+        # ~~ credentials
+
+        if "credentials" in data:
+            credentials = data["credentials"]
+            for key in defaults["credentials"]:
+                if key in credentials:
+                    self._settings.set(["credentials", key], credentials[key])
+
     def get_settings_version(self):
         return 9
 
     def on_settings_migrate(self, target, current=None):
-
         if current is None or current < 6:
             # up until & including config version 5 we didn't set the method parameter for the octoprint check
             # configuration
@@ -1130,7 +1146,7 @@ class SoftwareUpdatePlugin(
         )
 
         def view():
-            self._environment_ready.wait(timeout=30.0)
+            self._environment_ready.wait(timeout=10.0)
 
             try:
                 (
@@ -1639,7 +1655,6 @@ class SoftwareUpdatePlugin(
                             continue
 
                     for future in futures.as_completed(futures_to_result):
-
                         target, populated_check = futures_to_result[future]
                         if future.exception() is not None:
                             self._logger.error(
@@ -1748,9 +1763,9 @@ class SoftwareUpdatePlugin(
                     self._save_version_cache()
 
                 self._get_versions_data = information, update_available, update_possible
-                self._get_versions_data_ready.set()
             finally:
                 self._get_versions_mutex.release()
+                self._get_versions_data_ready.set()
 
         else:  # something's already in progress, let's wait for it to complete and use its result
             self._get_versions_data_ready.wait()
@@ -2016,7 +2031,6 @@ class SoftwareUpdatePlugin(
         return to_be_updated, check_data
 
     def _update_worker(self, checks, check_targets, force):
-
         restart_type = None
 
         credentials = self._settings.get(["credentials"], merged=True)
@@ -2101,7 +2115,7 @@ class SoftwareUpdatePlugin(
                 self._send_client_message("success", {"results": target_results})
 
     def _perform_update(self, target, check, force, credentials=None):
-        online = self._connectivity_checker.online
+        online = self._connectivity_checker.check_immediately()
 
         information, update_available, update_possible, _, _ = self._get_current_version(
             target, check, online=online, credentials=credentials
@@ -2411,11 +2425,11 @@ class SoftwareUpdatePlugin(
                     )
 
             if check.get("update_script", None):
-                # we force an exact version & python unequality check, to be able to downgrade
+                # we force an exact version & python inequality check, to be able to downgrade
                 result["force_exact_version"] = True
                 result["release_compare"] = "python_unequal"
             elif check.get("pip", None):
-                # we force python unequality check for pip installs, to be able to downgrade
+                # we force python inequality check for pip installs, to be able to downgrade
                 result["release_compare"] = "python_unequal"
 
         if result.get("pip", None):

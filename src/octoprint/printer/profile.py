@@ -94,7 +94,7 @@ A printer profile is a ``dict`` of the following structure:
      - Information about the printer's X axis
    * - ``axes.x.speed``
      - ``float``
-     - Speed of the X axis in mm/s
+     - Speed of the X axis in mm/min
    * - ``axes.x.inverted``
      - ``bool``
      - Whether a positive value change moves the nozzle away from the print bed's origin (False, default) or towards it (True)
@@ -103,7 +103,7 @@ A printer profile is a ``dict`` of the following structure:
      - Information about the printer's Y axis
    * - ``axes.y.speed``
      - ``float``
-     - Speed of the Y axis in mm/s
+     - Speed of the Y axis in mm/min
    * - ``axes.y.inverted``
      - ``bool``
      - Whether a positive value change moves the nozzle away from the print bed's origin (False, default) or towards it (True)
@@ -112,7 +112,7 @@ A printer profile is a ``dict`` of the following structure:
      - Information about the printer's Z axis
    * - ``axes.z.speed``
      - ``float``
-     - Speed of the Z axis in mm/s
+     - Speed of the Z axis in mm/min
    * - ``axes.z.inverted``
      - ``bool``
      - Whether a positive value change moves the nozzle away from the print bed (False, default) or towards it (True)
@@ -121,7 +121,7 @@ A printer profile is a ``dict`` of the following structure:
      - Information about the printer's E axis
    * - ``axes.e.speed``
      - ``float``
-     - Speed of the E axis in mm/s
+     - Speed of the E axis in mm/min
    * - ``axes.e.inverted``
      - ``bool``
      - Whether a positive value change extrudes (False, default) or retracts (True) filament
@@ -257,11 +257,13 @@ class PrinterProfileManager:
 
     def __init__(self):
         self._current = None
-        self._folder = settings().getBaseFolder("printerProfiles")
         self._logger = logging.getLogger(__name__)
 
+        fresh = settings().checkBaseFolder("printerProfiles")
+        self._folder = settings().getBaseFolder("printerProfiles")
+
         self._migrate_old_default_profile()
-        self._verify_default_available()
+        self._verify_default_available(fresh=fresh)
 
     def _migrate_old_default_profile(self):
         default_overrides = settings().get(["printerProfiles", "defaultProfile"])
@@ -291,23 +293,24 @@ class PrinterProfileManager:
             )
         )
 
-    def _verify_default_available(self):
+    def _verify_default_available(self, fresh=False):
         default_id = settings().get(["printerProfiles", "default"])
         if default_id is None:
             default_id = "_default"
 
         if not self.exists(default_id):
             if not self.exists("_default"):
-                if default_id == "_default":
-                    self._logger.error(
-                        "Profile _default does not exist, creating _default again and setting it as default"
-                    )
-                else:
-                    self._logger.error(
-                        "Selected default profile {} and _default do not exist, creating _default again and setting it as default".format(
-                            default_id
+                if not fresh:
+                    if default_id == "_default":
+                        self._logger.error(
+                            "Profile _default does not exist, creating _default again and setting it as default"
                         )
-                    )
+                    else:
+                        self._logger.error(
+                            "Selected default profile {} and _default do not exist, creating _default again and setting it as default".format(
+                                default_id
+                            )
+                        )
                 self.save(self.__class__.default, allow_overwrite=True, make_default=True)
             else:
                 self._logger.error(
@@ -645,6 +648,18 @@ class PrinterProfileManager:
 
             value[path[-1]] = converter(value[path[-1]])
 
+        def validate_value(profile, path, validator):
+            value = profile
+            for part in path[:-1]:
+                if not isinstance(value, dict) or part not in value:
+                    raise RuntimeError("%s is not contained in profile" % ".".join(path))
+                value = value[part]
+
+            if not isinstance(value, dict) or path[-1] not in value:
+                raise RuntimeError("%s is not contained in profile" % ".".join(path))
+
+            return validator(value[path[-1]])
+
         # convert ints
         for path in (
             ("extruder", "count"),
@@ -695,6 +710,21 @@ class PrinterProfileManager:
                     )
                 )
                 return False
+
+        # validate volume size range
+        for path in (
+            ("volume", "width"),
+            ("volume", "depth"),
+            ("volume", "height"),
+        ):
+            if not validate_value(profile, path, lambda x: x > 0 and x < 10000):
+                return False
+
+        # validate extruder count range
+        if not validate_value(
+            profile, ("extruder", "count"), lambda x: x > 0 and x < 100
+        ):
+            return False
 
         # validate form factor
         if profile["volume"]["formFactor"] not in BedFormFactor.values():

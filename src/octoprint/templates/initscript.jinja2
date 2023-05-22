@@ -11,9 +11,6 @@
     var CONFIG_LOGFILESPERPAGE = 10;
     var CONFIG_USERSPERPAGE = 10;
     var CONFIG_GROUPSPERPAGE = 10;
-    var CONFIG_WEBCAM_STREAM = "{{ webcamStream|e }}"; // deprecated, only left for compatibility reasons
-    var CONFIG_ACCESS_CONTROL = true; // deprecated, only left for compatibility reasons
-    var CONFIG_ACCESS_CONTROL_ACTIVE = {% if accessControlActive -%} true; {% else %} false; {%- endif %}
     var CONFIG_SD_SUPPORT = {% if enableSdSupport -%} true; {% else %} false; {%- endif %}
     var CONFIG_FIRST_RUN = {%  if firstRun -%} true; {% else %} false; {%- endif %}
     var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
@@ -25,7 +22,6 @@
     // sockjs should define CLOSE_NORMAL for us, but they don't (from ws spec)
     var SOCKJS_CLOSE_NORMAL = 1000;
 
-    var UI_API_KEY = ""; // deprecated, only left for compatibility reasons
     var VERSION = "{{ version.number|e }}";
     var DISPLAY_VERSION = "{{ version.display|e }}";
     var BRANCH = "{{ version.branch|e }}";
@@ -41,6 +37,13 @@
     var OCTOPRINT_VIEWMODELS = [];
     var ADDITIONAL_VIEWMODELS = [];
     var OCTOPRINT_ADDITIONAL_BINDINGS = [];
+
+    // deprecated stuff only kept for backwards compatibility goes here
+    var CONFIG_WEBCAM_STREAM = "{{ webcamStream|e }}"; // deprecated, only left for compatibility reasons
+    var CONFIG_ACCESS_CONTROL = true; // deprecated, only left for compatibility reasons
+    var CONFIG_ACCESS_CONTROL_ACTIVE = {% if accessControlActive -%} true; {% else %} false; {%- endif %}; // deprecated, only left for compatibility reasons
+    var UI_API_KEY = ""; // deprecated, only left for compatibility reasons
+    // end of deprecated stuff
 
     {% if templates.tab.order %}
         {% set first_tab = templates.tab.order[0] %}

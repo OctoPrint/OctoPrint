@@ -331,6 +331,18 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
        wrapper div and the link in the navigation will have the additional classes and styles applied as defined via the
        configuration through :func:`get_template_configs`.
 
+    Webcam
+       Plugins can provide a custom webcam view for watching a camera stream, which will be embedded into the "Control"
+       panel of OctoPrint's default UI.
+
+       The included template must be called ``<plugin identifier>_webcam.jinja2`` (e.g. ``myplugin_webcam.jinja2``) unless
+       overridden by the configuration supplied through :func:`get_template_configs`.
+
+       The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
+       wrapper div will have the additional classes and styles applied as defined via the configuration through :func:`get_template_configs`.
+
+       .. versionadded:: 1.9.0
+
     Wizards
        Plugins may define wizard dialogs to display to the user if necessary (e.g. in case of missing information that
        needs to be queried from the user to make the plugin work). Note that with the current implementation, all
@@ -500,7 +512,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
               :widths: 5 95
 
               * - icon
-                - Icon to use for the sidebar header, should be the name of a Font Awesome icon without the leading ``icon-`` part.
+                - Icon to use for the sidebar header, should be the full name of a Font Awesome icon including the ``fas``/``far``/``fab`` prefix, eg. ``fas fa-plus``.
               * - template_header
                 - Additional template to include in the head section of the sidebar item. For an example of this, see the additional
                   options included in the "Files" section.
@@ -518,12 +530,22 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
            .. list-table::
               :widths: 5 95
 
-              * - classes_link
-                - Like ``classes`` but only applied to the link in the navigation.
               * - classes_content
                 - Like ``classes`` but only applied to the content pane itself.
+              * - styles_content
+                - Like ``styles`` but only applied to the content pane itself.
+              * - classes_link
+                - Like ``classes`` but only applied to the link in the navigation.
               * - styles_link
                 - Like ``styles`` but only applied to the link in the navigation.
+
+        ``webcam`` type
+
+           .. list-table::
+              :widths: 5 95
+
+              * - classes_content
+                - Like ``classes`` but only applied to the content pane itself.
               * - styles_content
                 - Like ``styles`` but only applied to the content pane itself.
 
@@ -600,7 +622,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 
     OctoPrint will query whether your mixin implementation will handle a
     provided request by calling :meth:`~octoprint.plugin.UiPlugin.will_handle_ui` with the Flask
-    `Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_ object as
+    `Request <https://flask.palletsprojects.com/api/#flask.Request>`_ object as
     parameter. If you plugin returns `True` here, OctoPrint will next call
     :meth:`~octoprint.plugin.UiPlugin.on_ui_render` with a few parameters like
     - again - the Flask Request object and the render keyword arguments as
@@ -631,12 +653,10 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
     at it being a mobile device:
 
     .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/__init__.py
-       :linenos:
        :tab-width: 4
        :caption: `dummy_mobile_ui/__init__.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/__init__.py>`_
 
     .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2
-       :linenos:
        :tab-width: 4
        :caption: `dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2 <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2>`_
 
@@ -678,7 +698,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
         ``UiPlugin.will_handle_ui``.
 
         Arguments:
-            request (flask.Request): A Flask `Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_
+            request (flask.Request): A Flask `Request <https://flask.palletsprojects.com/api/#flask.Request>`_
                 object.
 
         Returns:
@@ -763,12 +783,12 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
             now (datetime.datetime): The datetime instance representing "now"
                 for this request, in case your plugin implementation needs this
                 information.
-            request (flask.Request): A Flask `Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_ object.
+            request (flask.Request): A Flask `Request <https://flask.palletsprojects.com/api/#flask.Request>`_ object.
             render_kwargs (dict): The (cached) render keyword arguments that
                 would usually be provided to the core UI render function.
 
         Returns:
-            flask.Response: Should return a Flask `Response <http://flask.pocoo.org/docs/0.10/api/#flask.Response>`_
+            flask.Response: Should return a Flask `Response <https://flask.palletsprojects.com/api/#flask.Response>`_
                 object that can be served to the requesting client directly. May be
                 created with ``flask.make_response`` combined with something like
                 ``flask.render_template``.
@@ -1175,7 +1195,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
     """
     Utilizing the ``SimpleApiPlugin`` mixin plugins may implement a simple API based around one GET resource and one
     resource accepting JSON commands POSTed to it. This is the easy alternative for plugin's which don't need the
-    full power of a `Flask Blueprint <http://flask.pocoo.org/docs/0.10/blueprints/>`_ that the :class:`BlueprintPlugin`
+    full power of a `Flask Blueprint <https://flask.palletsprojects.com/blueprints/>`_ that the :class:`BlueprintPlugin`
     mixin offers.
 
     Use this mixin if all you need to do is return some kind of dynamic data to your plugin from the backend
@@ -1191,7 +1211,6 @@ class SimpleApiPlugin(OctoPrintPlugin):
     Take this example of a plugin registered under plugin identifier ``mysimpleapiplugin``:
 
     .. code-block:: python
-       :linenos:
 
        import octoprint.plugin
 
@@ -1301,7 +1320,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
     def on_api_get(self, request):
         """
         Called by OctoPrint upon a GET request to ``/api/plugin/<plugin identifier>``. ``request`` will contain the
-        received `Flask request object <http://flask.pocoo.org/docs/0.9/api/#flask.Request>`_ which you may evaluate
+        received `Flask request object <https://flask.palletsprojects.com/api/#flask.Request>`_ which you may evaluate
         for additional arguments supplied with the request.
 
         If your plugin returns nothing here, OctoPrint will return an empty response with return code ``204 No content``
@@ -1320,14 +1339,13 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
     The ``BlueprintPlugin`` mixin allows plugins to define their own full fledged endpoints for whatever purpose,
     be it a more sophisticated API than what is possible via the :class:`SimpleApiPlugin` or a custom web frontend.
 
-    The mechanism at work here is `Flask's <http://flask.pocoo.org/>`_ own `Blueprint mechanism <http://flask.pocoo.org/docs/0.10/blueprints/>`_.
+    The mechanism at work here is `Flask's <https://flask.palletsprojects.com/>`_ own `Blueprint mechanism <https://flask.palletsprojects.com/blueprints/>`_.
 
     The mixin automatically creates a blueprint for you that will be registered under ``/plugin/<plugin identifier>/``.
     All you need to do is decorate all of your view functions with the :func:`route` decorator,
     which behaves exactly the same like Flask's regular ``route`` decorators. Example:
 
     .. code-block:: python
-       :linenos:
 
        import octoprint.plugin
        import flask
@@ -1393,8 +1411,8 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         A decorator to mark view methods in your BlueprintPlugin subclass. Works just the same as Flask's
         own ``route`` decorator available on blueprints.
 
-        See `the documentation for flask.Blueprint.route <http://flask.pocoo.org/docs/0.10/api/#flask.Blueprint.route>`_
-        and `the documentation for flask.Flask.route <http://flask.pocoo.org/docs/0.10/api/#flask.Flask.route>`_ for more
+        See `the documentation for flask.Blueprint.route <https://flask.palletsprojects.com/api/#flask.Blueprint.route>`_
+        and `the documentation for flask.Flask.route <https://flask.palletsprojects.com/api/#flask.Flask.route>`_ for more
         information.
         """
 
@@ -1417,8 +1435,8 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         A decorator to mark errorhandlings methods in your BlueprintPlugin subclass. Works just the same as Flask's
         own ``errorhandler`` decorator available on blueprints.
 
-        See `the documentation for flask.Blueprint.errorhandler <http://flask.pocoo.org/docs/0.10/api/#flask.Blueprint.errorhandler>`_
-        and `the documentation for flask.Flask.errorhandler <http://flask.pocoo.org/docs/0.10/api/#flask.Flask.errorhandler>`_ for more
+        See `the documentation for flask.Blueprint.errorhandler <https://flask.palletsprojects.com/api/#flask.Blueprint.errorhandler>`_
+        and `the documentation for flask.Flask.errorhandler <https://flask.palletsprojects.com/api/#flask.Flask.errorhandler>`_ for more
         information.
 
         .. versionadded:: 1.3.0
@@ -1482,7 +1500,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         # we now iterate over all members of ourselves and look if we find an attribute
         # that has data originating from one of our decorators - we ignore anything
         # starting with a _ to only handle public stuff
-        for member in [member for member in dir(self) if not member.startswith("_")]:
+        for member in [x for x in dir(self) if not x.startswith("_")]:
             f = getattr(self, member)
 
             if hasattr(f, "_blueprint_rules") and member in f._blueprint_rules:
@@ -2323,3 +2341,32 @@ class ProgressPlugin(OctoPrintPlugin):
         :param int progress:                Current progress as a value between 0 and 100
         """
         pass
+
+
+class WebcamProviderPlugin(OctoPrintPlugin):
+    """
+    The ``WebcamProviderPlugin`` can be used to provide one or more webcams visible on the frontend and used for snapshots/timelapses.
+
+    For an example of how to utilize this, see the bundled ``classicwebcam`` plugin, or the ``testpicture`` plugin available `here <https://github.com/OctoPrint/OctoPrint-Testpicture>`_.
+    """
+
+    def get_webcam_configurations(self):
+        """
+        Used to retrieve a list of available webcams
+
+        Returns:
+            A list of :class:`~octoprint.schema.webcam.Webcam`: The available webcams, can be empty if none available.
+        """
+
+        return []
+
+    def take_webcam_snapshot(self, webcamName):
+        """
+        Used to take a JPEG snapshot of the webcam. This method may raise an exception, you can expect failures to be handled.
+
+         :param string webcamName: The name of the webcam to take a snapshot of as given by the configurations
+
+        Returns:
+            An iterator over bytes of the JPEG image
+        """
+        raise NotImplementedError()

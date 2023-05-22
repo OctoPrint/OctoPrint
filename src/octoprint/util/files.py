@@ -1,7 +1,9 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2021 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import datetime
 import itertools
+import logging
 import os.path
 import re
 
@@ -270,3 +272,109 @@ def silent_remove(file):
         os.remove(file)
     except OSError:
         pass
+
+
+def search_through_file(path, term, regex=False):
+    if regex:
+        pattern = term
+    else:
+        pattern = re.escape(term)
+    compiled = re.compile(pattern)
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        try:
+            # try native grep
+            import sarge
+
+            result = sarge.capture_stderr(["grep", "-q", "-E", pattern, path])
+            if result.stderr.text:
+                logger.warning(
+                    "Error raised by native grep, falling back to python "
+                    "implementation: {}".format(result.stderr.text.strip())
+                )
+                return search_through_file_python(path, term, compiled)
+            return result.returncode == 0
+        except ValueError as exc:
+            if "Command not found" in str(exc):
+                return search_through_file_python(path, term, compiled)
+            else:
+                raise
+    except Exception:
+        logger.exception(
+            "Something unexpectedly went wrong while trying to "
+            "search for {} in {} via grep".format(term, path)
+        )
+
+    return False
+
+
+def search_through_file_python(path, term, compiled):
+    with open(path, encoding="utf8", errors="replace") as f:
+        for line in f:
+            if term in line or compiled.match(term):
+                return True
+    return False
+
+
+def unix_timestamp_to_m20_timestamp(unix_timestamp):
+    """
+    Converts unix timestamp to "M20 T" format
+    which embeds date and time into 32bit int.
+    Upper 16 bit contain date, lower 16 bit contain time.
+
+    https://reprap.org/wiki/G-code#M20:_List_SD_card
+
+    Format derived from FAT filesystem timestamps:
+    https://wiki.osdev.org/FAT
+
+    Arguments:
+        unix_timestamp (int): Unix timestamp in seconds
+    Returns:
+        string: M20 T timestamp as hex string
+    """
+
+    dt = datetime.datetime.fromtimestamp(unix_timestamp)
+    m20_date = dt.year - 1980 << 9 | dt.month << 5 | dt.day
+    m20_time = dt.hour << 11 | dt.minute << 5
+    m20_time |= (dt.second - (dt.second % 2)) // 2
+    return hex(m20_date << 16 | m20_time)
+
+
+def m20_timestamp_to_unix_timestamp(timestamp):
+    """
+    Converts "M20 T" timestamp to unix timestamp.
+    Upper 16 bit contain date, lower 16 bit contain time.
+
+    https://reprap.org/wiki/G-code#M20:_List_SD_card
+
+    Format derived from FAT filesystem timestamps:
+    https://wiki.osdev.org/FAT
+
+    Arguments:
+        timestamp (string): M20 T timestamp as hex string
+    Returns:
+        int: Unix timestamp in seconds
+    """
+
+    # Only hex in 0xABC format is valid while int() accepts
+    # hex without 0x prefix, too.
+    if not timestamp.startswith("0x"):
+        raise ValueError("Invalid M20 T timestamp format")
+
+    timestamp = int(timestamp, 16)
+    dt = timestamp >> 16
+    day = dt & (1 << 5) - 1
+    month = (dt >> 5) & ((1 << 4) - 1)
+    year = ((dt >> 9) & (1 << 7) - 1) + 1980
+    d = datetime.date(year, month, day)
+
+    tm = timestamp & (2**16 - 1)
+    second = (tm & (1 << 5) - 1) * 2
+    minute = (tm >> 5) & ((1 << 6) - 1)
+    hour = (tm >> 11) & ((1 << 5) - 1)
+    t = datetime.time(hour, minute, second)
+
+    combined_dt = datetime.datetime.combine(d, t)
+    return int(combined_dt.timestamp())

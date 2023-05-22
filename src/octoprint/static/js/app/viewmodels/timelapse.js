@@ -21,6 +21,26 @@ $(function () {
         self.timelapseFps = ko.observable(self.defaultFps);
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
+        self.snapshotWebcam = ko.pureComputed(function () {
+            var snapshotWebcamName = self.settings.webcam_snapshotWebcam();
+            return self.settings.webcam_webcams().find(function (w) {
+                return snapshotWebcamName == w.name;
+            });
+        });
+        self.canSnapshot = ko.pureComputed(function () {
+            if (!self.snapshotWebcam()) {
+                return false;
+            } else {
+                return self.snapshotWebcam().canSnapshot;
+            }
+        });
+        self.snapshotDisplay = ko.pureComputed(function () {
+            if (!self.snapshotWebcam()) {
+                return "";
+            } else {
+                return self.snapshotWebcam().snapshotDisplay;
+            }
+        });
 
         self.renderProgress = ko.observable();
         self.renderTarget = ko.observable();
@@ -423,7 +443,11 @@ $(function () {
         };
 
         self.removeUnrendered = function (name) {
-            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.TIMELAPSE_MANAGE_UNRENDERED
+                )
+            )
                 return;
 
             var perform = function () {
@@ -443,7 +467,11 @@ $(function () {
         };
 
         self.removeMarkedUnrendered = function () {
-            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_DELETE))
+            if (
+                !self.loginState.hasPermission(
+                    self.access.permissions.TIMELAPSE_MANAGE_UNRENDERED
+                )
+            )
                 return;
 
             var perform = function () {
@@ -682,15 +710,30 @@ $(function () {
             var html =
                 "<p>" +
                 gettext(
-                    "Failed repeatedly to capture timelapse frame from webcam - is the snapshot URL configured correctly and the camera on?"
+                    "Failed repeatedly to capture timelapse frame from webcam - is the snapshot webcam configured correctly and the camera on?"
                 );
-            html += pnotifyAdditionalInfo(
-                'Snapshot URL: <pre style="overflow: auto">' +
-                    payload.url +
-                    '</pre>Error: <pre style="overflow: auto">' +
-                    payload.error +
-                    "</pre>"
-            );
+
+            var additional = "";
+            if (payload.snapshotDisplay) {
+                additional +=
+                    'Snapshot info: <pre style="overflow: auto">' +
+                    payload.snapshotDisplay +
+                    "</pre>";
+            }
+            if (payload.webcamDisplay) {
+                additional +=
+                    'Webcam: <pre style="overflow: auto">' +
+                    payload.webcamDisplay +
+                    "</pre>";
+            }
+            if (payload.error) {
+                additional +=
+                    'Error: <pre style="overflow: auto">' + payload.error + "</pre>";
+            }
+            if (additional) {
+                html += pnotifyAdditionalInfo(additional);
+            }
+
             new PNotify({
                 title: gettext("Could not capture snapshots"),
                 text: html,
@@ -730,7 +773,7 @@ $(function () {
                     "<p>" +
                     _.sprintf(
                         gettext(
-                            "Rendering of timelapse %(movie_prefix)s is not possible since no frames were captured. Is the snapshot URL configured correctly?"
+                            "Rendering of timelapse %(movie_prefix)s is not possible since no frames were captured. Is the snapshot webcam configured correctly?"
                         ),
                         {movie_prefix: _.escape(payload.movie_prefix)}
                     ) +

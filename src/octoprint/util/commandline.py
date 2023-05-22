@@ -43,7 +43,7 @@ def clean_ansi(line: Union[str, bytes]) -> Union[str, bytes]:
     Returns:
         (str or bytes) The line without any ANSI control codes
 
-    .. changed:: 1.8.0
+    .. versionchanged:: 1.8.0
 
        Usage as ``clean_ansi(line: bytes) -> bytes`` is now deprecated and will be removed
        in a future version of OctoPrint.
@@ -53,6 +53,7 @@ def clean_ansi(line: Union[str, bytes]) -> Union[str, bytes]:
         warnings.warn(
             "Calling clean_ansi with bytes is deprecated, call with str instead",
             DeprecationWarning,
+            stacklevel=2,
         )
         return to_bytes(_ANSI_REGEX.sub("", to_unicode(line)))
     return _ANSI_REGEX.sub("", line)
@@ -161,6 +162,7 @@ class CommandlineCaller:
         command: Union[str, List[str], Tuple[str]],
         delimiter: bytes = b"\n",
         buffer_size: int = -1,
+        logged: bool = True,
         **kwargs,
     ) -> Tuple[Optional[int], List[str], List[str]]:
         """
@@ -176,7 +178,7 @@ class CommandlineCaller:
         """
 
         p = self.non_blocking_call(
-            command, delimiter=delimiter, buffer_size=buffer_size, **kwargs
+            command, delimiter=delimiter, buffer_size=buffer_size, logged=logged, **kwargs
         )
         if p is None:
             return None, [], []
@@ -190,7 +192,8 @@ class CommandlineCaller:
             processed = self._preprocess_lines(
                 *map(lambda x: to_unicode(x, errors="replace"), lines)
             )
-            logger(*processed)
+            if logged:
+                logger(*processed)
             return list(processed)
 
         def process_stdout(lines):
@@ -218,6 +221,7 @@ class CommandlineCaller:
         command: Union[str, List, Tuple],
         delimiter: bytes = b"\n",
         buffer_size: int = -1,
+        logged: bool = True,
         **kwargs,
     ) -> Optional[sarge.Pipeline]:
         if isinstance(command, (list, tuple)):
@@ -225,7 +229,9 @@ class CommandlineCaller:
         else:
             joined_command = command
         self._logger.debug(f"Calling: {joined_command}")
-        self.on_log_call(joined_command)
+
+        if logged:
+            self.on_log_call(joined_command)
 
         kwargs.update(
             {

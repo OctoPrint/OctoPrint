@@ -232,7 +232,7 @@ def _rescue_changes(git_executable, folder):
                 )
             )
 
-        with open(patch, "wt", encoding="utf-8", errors="replace") as f:
+        with open(patch, "w", encoding="utf-8", errors="replace") as f:
             for line in stdout:
                 f.write(line)
 

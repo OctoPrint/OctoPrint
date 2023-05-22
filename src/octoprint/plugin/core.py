@@ -177,6 +177,9 @@ class ControlProperties:
     attr_license = "__plugin_license__"
     """ Module attribute from which to retrieve the plugin's license. """
 
+    attr_privacypolicy = "__plugin_privacypolicy__"
+    """ Module attribute from which to retrieve the plugin's privacy policy URL, if any. """
+
     attr_pythoncompat = "__plugin_pythoncompat__"
     """
     Module attribute from which to retrieve the plugin's python compatibility string.
@@ -615,6 +618,19 @@ class PluginInfo:
         """
         return self._get_instance_attribute(
             ControlProperties.attr_license, default=self._license, incl_metadata=True
+        )
+
+    @property
+    def privacypolicy(self):
+        """
+        Privacy Policy URL of the plugin. Will be taken from the privacy policy attribute of the plugin module
+        as defined in :attr:`attr_privacypolicy` if available. May be None.
+
+        Returns:
+            str or None: Privacy Policy URL of the plugin.
+        """
+        return self._get_instance_attribute(
+            ControlProperties.attr_privacypolicy, default=None, incl_metadata=True
         )
 
     @property
@@ -2334,7 +2350,8 @@ class EntryPointMetadata(pkginfo.Distribution):
         warnings.warn(
             "No package metadata found for package {}".format(
                 self.entry_point.module_name
-            )
+            ),
+            stacklevel=2,
         )
 
 

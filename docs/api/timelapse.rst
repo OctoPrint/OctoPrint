@@ -30,7 +30,7 @@ Delete a timelapse
 .. http:delete:: /api/timelapse/(string:name)
 
    Delete the timelapse ``name``.
-   
+
    Returns a :ref:`timelapse list <sec-api-timelapse-datamodel-list>` in the
    response body with the updated information.
 
@@ -48,7 +48,7 @@ Issue a command for an unrendered timelapse
    Current only supports to render the unrendered timelapse ``name`` via the
    ``render`` command.
 
-   Requires the ``TIMELAPSE_ADMIN`` permission.
+   Requires the ``TIMELAPSE_MANAGE_UNRENDERED`` permission.
 
    :json command: The command to issue, currently only ``render`` is supported
 
@@ -64,7 +64,7 @@ Delete an unrendered timelapse
    Returns a :ref:`timelapse list <sec-api-timelapse-datamodel-list>` in the
    response body.
 
-   Requires the ``TIMELAPSE_DELETE`` permission.
+   Requires the ``TIMELAPSE_MANAGE_UNRENDERED`` permission.
 
    :param unrendered: If provided and true, also include unrendered timelapses in the response
 
@@ -283,4 +283,3 @@ For timelapse type ``timed``.
      - 1
      - int
      - Seconds between individual shots
-

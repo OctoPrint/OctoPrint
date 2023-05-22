@@ -63,8 +63,8 @@ class Daemon:
         sys.stdout.flush()
         sys.stderr.flush()
         si = open(os.devnull, encoding="utf-8")
-        so = open(os.devnull, "at+", encoding="utf-8")
-        se = open(os.devnull, "at+", encoding="utf-8")
+        so = open(os.devnull, "a+", encoding="utf-8")
+        se = open(os.devnull, "a+", encoding="utf-8")
 
         os.dup2(si.fileno(), sys.stdin.fileno())
         os.dup2(so.fileno(), sys.stdout.fileno())
@@ -160,7 +160,7 @@ class Daemon:
 
     def set_pid(self, pid):
         """Write the pid to the pidfile."""
-        with open(self.pidfile, "wt+", encoding="utf-8") as f:
+        with open(self.pidfile, "w+", encoding="utf-8") as f:
             f.write(str(pid) + "\n")
 
     def remove_pidfile(self):

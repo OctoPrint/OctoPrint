@@ -34,12 +34,14 @@ from flask_login import (  # noqa: F401
     LoginManager,
     current_user,
     session_protected,
+    user_loaded_from_cookie,
     user_logged_out,
 )
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from werkzeug.exceptions import HTTPException
 
+import octoprint.events
 import octoprint.filemanager
 import octoprint.util
 import octoprint.util.net
@@ -93,7 +95,19 @@ jsonDecoder = None
 connectivityChecker = None
 environmentDetector = None
 
-principals = Principal(app)
+
+class OctoPrintAnonymousIdentity(AnonymousIdentity):
+    def __init__(self):
+        super().__init__()
+
+        user = userManager.anonymous_user_factory()
+
+        self.provides.add(UserNeed(user.get_id()))
+        for need in user.needs:
+            self.provides.add(need)
+
+
+principals = Principal(app, anonymous_identity=OctoPrintAnonymousIdentity)
 
 import octoprint.access.groups as groups  # noqa: E402
 import octoprint.access.permissions as permissions  # noqa: E402
@@ -174,6 +188,12 @@ def on_session_protected(sender):
 def on_user_logged_out(sender, user=None):
     # user was logged out, clear identity
     _clear_identity(sender)
+
+
+@user_loaded_from_cookie.connect_via(app)
+def on_user_loaded_from_cookie(sender, user=None):
+    if user:
+        session["login_mechanism"] = "remember_me"
 
 
 def load_user(id):
@@ -354,24 +374,19 @@ class Server:
         util.tornado.fix_json_encode()
         util.tornado.fix_websocket_check_origin()
         util.tornado.enable_per_message_deflate_extension()
-        util.flask.fix_flask_jsonify()
 
         self._setup_mimetypes()
-
-        additional_translation_folders = []
-        if not safe_mode:
-            additional_translation_folders += [
-                self._settings.getBaseFolder("translations")
-            ]
-        util.flask.enable_additional_translations(
-            additional_folders=additional_translation_folders
-        )
 
         # setup app
         self._setup_app(app)
 
         # setup i18n
-        self._setup_i18n(app)
+        additional_translation_folders = []
+        if not safe_mode:
+            additional_translation_folders += [
+                self._settings.getBaseFolder("translations")
+            ]
+        self._setup_i18n(app, additional_folders=additional_translation_folders)
 
         if self._settings.getBoolean(["serial", "log"]):
             # enable debug logging to serial.log
@@ -597,6 +612,7 @@ class Server:
         from octoprint import (
             init_custom_events,
             init_settings_plugin_config_migration_and_cleanup,
+            init_webcam_compat_overlay,
         )
         from octoprint import octoprint_plugin_inject_factory as opif
         from octoprint import settings_plugin_inject_factory as spif
@@ -613,6 +629,7 @@ class Server:
         pluginManager.initialize_implementations()
 
         init_settings_plugin_config_migration_and_cleanup(pluginManager)
+        init_webcam_compat_overlay(self._settings, pluginManager)
 
         pluginManager.log_all_plugins()
 
@@ -654,7 +671,9 @@ class Server:
 
         ## Tornado initialization starts here
 
-        ioloop = IOLoop()
+        ioloop = (
+            IOLoop()
+        )  # TODO: This way to create the ioloop is deprecated and logs a warning
         ioloop.install()
 
         enable_cors = settings().getBoolean(["api", "allowCrossOrigin"])
@@ -1135,6 +1154,60 @@ class Server:
                     "Something went wrong while attempting to automatically connect to the printer"
                 )
 
+        # auto refresh serial ports while not connected
+        if self._settings.getBoolean(["serial", "autorefresh"]):
+            from octoprint.util.comm import serialList
+
+            last_ports = None
+            autorefresh = None
+
+            def refresh_serial_list():
+                nonlocal last_ports
+
+                new_ports = sorted(serialList())
+                if new_ports != last_ports:
+                    self._logger.info(
+                        "Serial port list was updated, refreshing the port list in the frontend"
+                    )
+                    eventManager.fire(
+                        events.Events.CONNECTIONS_AUTOREFRESHED,
+                        payload={"ports": new_ports},
+                    )
+                last_ports = new_ports
+
+            def autorefresh_active():
+                return printer.is_closed_or_error()
+
+            def autorefresh_stopped():
+                nonlocal autorefresh
+
+                self._logger.info("Autorefresh of serial port list stopped")
+                autorefresh = None
+
+            def run_autorefresh():
+                nonlocal autorefresh
+
+                if autorefresh is not None:
+                    autorefresh.cancel()
+                    autorefresh = None
+
+                autorefresh = octoprint.util.RepeatedTimer(
+                    self._settings.getInt(["serial", "autorefreshInterval"]),
+                    refresh_serial_list,
+                    run_first=True,
+                    condition=autorefresh_active,
+                    on_finish=autorefresh_stopped,
+                )
+                autorefresh.name = "Serial autorefresh worker"
+
+                self._logger.info("Starting autorefresh of serial port list")
+                autorefresh.start()
+
+            run_autorefresh()
+            eventManager.subscribe(
+                octoprint.events.Events.DISCONNECTED, lambda e, p: run_autorefresh()
+            )
+
         # start up watchdogs
         try:
             watched = self._settings.getBaseFolder("watched")
@@ -1324,31 +1397,50 @@ class Server:
     def _get_locale(self):
         global LANGUAGES
 
+        l10n = None
+        default_language = self._settings.get(["appearance", "defaultLanguage"])
+
         if "l10n" in request.values:
-            return Locale.negotiate([request.values["l10n"]], LANGUAGES)
+            # request: query param
+            l10n = request.values["l10n"].split(",")
 
-        if "X-Locale" in request.headers:
-            return Locale.negotiate([request.headers["X-Locale"]], LANGUAGES)
+        elif "X-Locale" in request.headers:
+            # request: header
+            l10n = request.headers["X-Locale"].split(",")
 
-        if hasattr(g, "identity") and g.identity:
+        elif hasattr(g, "identity") and g.identity:
+            # user setting
             userid = g.identity.id
             try:
                 user_language = userManager.get_user_setting(
                     userid, ("interface", "language")
                 )
                 if user_language is not None and not user_language == "_default":
-                    return Locale.negotiate([user_language], LANGUAGES)
+                    l10n = [user_language]
             except octoprint.access.users.UnknownUser:
                 pass
 
-        default_language = self._settings.get(["appearance", "defaultLanguage"])
         if (
-            default_language is not None
+            not l10n
+            and default_language is not None
             and not default_language == "_default"
             and default_language in LANGUAGES
         ):
-            return Locale.negotiate([default_language], LANGUAGES)
+            # instance setting
+            l10n = [default_language]
 
+        if l10n:
+            # canonicalize and get rid of invalid language codes
+            l10n_canonicalized = []
+            for x in l10n:
+                try:
+                    l10n_canonicalized.append(str(Locale.parse(x)))
+                except Exception:
+                    # invalid language code, ignore
+                    continue
+            return Locale.negotiate(l10n_canonicalized, LANGUAGES)
+
+        # request: preference
         return Locale.parse(request.accept_languages.best_match(LANGUAGES, default="en"))
 
     def _setup_heartbeat_logging(self):
@@ -1369,7 +1461,7 @@ class Server:
         from octoprint.server.util.flask import (
             OctoPrintFlaskRequest,
             OctoPrintFlaskResponse,
-            OctoPrintJsonEncoder,
+            OctoPrintJsonProvider,
             OctoPrintSessionInterface,
             PrefixAwareJinjaEnvironment,
             ReverseProxiedEnvironment,
@@ -1379,7 +1471,6 @@ class Server:
         app.jinja_environment = PrefixAwareJinjaEnvironment
 
         app.config["TEMPLATES_AUTO_RELOAD"] = True
-        app.config["JSONIFY_PRETTYPRINT_REGULAR"] = False
         app.config["REMEMBER_COOKIE_DURATION"] = 90 * 24 * 60 * 60  # 90 days
         app.config["REMEMBER_COOKIE_HTTPONLY"] = True
         # REMEMBER_COOKIE_SECURE will be taken care of by our custom cookie handling
@@ -1388,7 +1479,8 @@ class Server:
         app.debug = self._debug
 
         # setup octoprint's flask json serialization/deserialization
-        app.json_encoder = OctoPrintJsonEncoder
+        app.json = OctoPrintJsonProvider(app)
+        app.json.compact = False
 
         s = settings()
 
@@ -1469,37 +1561,46 @@ class Server:
         app.config["RATELIMIT_STRATEGY"] = "fixed-window-elastic-expiry"
 
         limiter = Limiter(
-            app,
             key_func=get_remote_address,
+            app=app,
             enabled=s.getBoolean(["devel", "enableRateLimiter"]),
             storage_uri="memory://",
         )
 
-    def _setup_i18n(self, app):
+    def _setup_i18n(self, app, additional_folders=None):
         global babel
         global LOCALES
         global LANGUAGES
 
-        babel = Babel(app)
+        if additional_folders is None:
+            additional_folders = []
+
+        dirs = additional_folders + [os.path.join(app.root_path, "translations")]
+
+        # translations from plugins
+        plugins = octoprint.plugin.plugin_manager().enabled_plugins
+        for plugin in plugins.values():
+            plugin_translation_dir = os.path.join(plugin.location, "translations")
+            if not os.path.isdir(plugin_translation_dir):
+                continue
+            dirs.append(plugin_translation_dir)
+
+        app.config["BABEL_TRANSLATION_DIRECTORIES"] = ";".join(dirs)
+
+        babel = Babel(app, locale_selector=self._get_locale)
 
         def get_available_locale_identifiers(locales):
             result = set()
 
             # add available translations
             for locale in locales:
-                result.add(locale.language)
-                if locale.territory:
-                    # if a territory is specified, add that too
-                    result.add(f"{locale.language}_{locale.territory}")
+                result.add(str(locale))
 
             return result
 
-        LOCALES = babel.list_translations()
+        with app.app_context():
+            LOCALES = babel.list_translations()
         LANGUAGES = get_available_locale_identifiers(LOCALES)
-
-        @babel.localeselector
-        def get_locale():
-            return self._get_locale()
 
     def _setup_jinja2(self):
         import re
@@ -1529,19 +1630,19 @@ class Server:
             return html_header_regex.sub(repl, s)
 
         markdown_header_regex = re.compile(
-            r"^(?P<hashs>#+)\s+(?P<content>.*)$", flags=re.MULTILINE
+            r"^(?P<hashes>#+)\s+(?P<content>.*)$", flags=re.MULTILINE
         )
 
         def offset_markdown_headers(s, offset):
             def repl(match):
-                number = len(match.group("hashs"))
+                number = len(match.group("hashes"))
                 number += offset
                 if number > 6:
                     number = 6
                 elif number < 1:
                     number = 1
-                return "{hashs} {content}".format(
-                    hashs="#" * number, content=match.group("content")
+                return "{hashes} {content}".format(
+                    hashes="#" * number, content=match.group("content")
                 )
 
             return markdown_header_regex.sub(repl, s)
@@ -1999,6 +2100,7 @@ class Server:
 
         from octoprint.server.util.webassets import MemoryManifest  # noqa: F401
 
+        util.flask.fix_webassets_convert_item_to_flask_url()
         util.flask.fix_webassets_filtertool()
 
         base_folder = self._settings.getBaseFolder("generated")
@@ -2167,8 +2269,9 @@ class Server:
             "css/bootstrap-slider.css",
             "css/bootstrap-tabdrop.css",
             "vendor/font-awesome-3.2.1/css/font-awesome.min.css",
-            "vendor/font-awesome-5.15.1/css/all.min.css",
-            "vendor/font-awesome-5.15.1/css/v4-shims.min.css",
+            "vendor/fontawesome-6.1.1/css/all.min.css",
+            "vendor/fontawesome-6.1.1/css/v4-shims.min.css",
+            "vendor/fa5-power-transforms.min.css",
             "css/jquery.fileupload-ui.css",
             "css/pnotify.core.min.css",
             "css/pnotify.buttons.min.css",
@@ -2632,10 +2735,10 @@ class Server:
             permission = PluginOctoPrintPermission(
                 permission_name(plugin_info.name, definition),
                 description,
+                *roles_and_permissions,
                 plugin=plugin_info.key,
                 dangerous=dangerous,
                 default_groups=default_groups,
-                *roles_and_permissions,
             )
             setattr(
                 octoprint.access.permissions.Permissions,
@@ -2643,10 +2746,10 @@ class Server:
                 PluginOctoPrintPermission(
                     permission_name(plugin_info.name, definition),
                     description,
+                    *roles_and_permissions,
                     plugin=plugin_info.key,
                     dangerous=dangerous,
                     default_groups=default_groups,
-                    *roles_and_permissions,
                 ),
             )
 

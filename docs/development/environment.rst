@@ -57,9 +57,12 @@ When the virtual environment is activated you can then:
   * run the test suite from the checked out source folder via ``pytest``
   * trigger the pre-commit check suite manually from the checked out source folder via
     ``pre-commit run --hook-stage manual --all-files``
+  * rebuild ``.css`` files from ``.less`` sources. See ``octoprint dev css:build --help``
   * build the documentation running ``sphinx-build -b html . _build`` in the ``docs``
     folder -- the documentation will be available in the newly created ``_build``
     directory. You can simply browse it locally by opening ``index.html``
+  * check whether there are newer versions of OctoPrint's dependencies available via
+    ``python setup.py scan_deps``
 
 .. _sec-development-environment-source-linux:
 
@@ -329,10 +332,6 @@ Visual Studio Code (vscode)
          {
              "python.defaultInterpreterPath": "venv/bin/python",
              "python.formatting.provider": "black",
-             "python.formatting.blackArgs": [
-                 "--config",
-                 "black.toml"
-             ],
              "editor.formatOnSave": true,
              "python.sortImports.args": [
                  "--profile=black",
@@ -409,5 +408,3 @@ Visual Studio Code (vscode)
   * Saving a file will run an auto formatter and import sort
 
   * ``Ctrl+Shift+B`` can be used to run the ``build docs`` task to rebuild the documentation
-
-

@@ -627,9 +627,11 @@ Profile
      - ``float``
      - The diameter of the printer's nozzle(s) in mm.
    * - ``extruder.sharedNozzle``
+     - 0..1
      - ``boolean``
      - Whether there's only one nozzle shared among all extruders (true) or one nozzle per extruder (false).
    * - ``extruder.defaultExtrusionLength``
+     - 0..1
      - ``int``
      - Default extrusion length used in Control tab on initial page load in mm.
    * - ``extruder.count``
@@ -642,4 +644,3 @@ Profile
      - Tuple of (x, y) values describing the offsets of the other extruders relative to the first extruder. E.g. for a
        printer with two extruders, if the second extruder is offset by 20mm in the X and 25mm in the Y direction, this
        array will read ``[ [0.0, 0.0], [20.0, 25.0] ]``
-

@@ -265,6 +265,7 @@ def init_logging(
     # default logging configuration
     if default_config is None:
         simple_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        date_format = "%Y-%m-%d %H:%M:%S"
         default_config = {
             "version": 1,
             "formatters": {
@@ -281,6 +282,13 @@ def init_logging(
                     },
                 },
                 "serial": {"format": "%(asctime)s - %(message)s"},
+                "tornado": {
+                    "()": "tornado.log.LogFormatter",
+                    "color": False,
+                    "format": simple_format,
+                    "datefmt": date_format,
+                },
+                "auth": {"format": "%(asctime)s - %(message)s"},
                 "timings": {"format": "%(asctime)s - %(message)s"},
                 "timingscsv": {"format": "%(asctime)s;%(func)s;%(timing)f"},
             },
@@ -311,6 +319,24 @@ def init_logging(
                     ),
                     "delay": True,
                 },
+                "tornadoFile": {
+                    "class": "octoprint.logging.handlers.TornadoLogHandler",
+                    "level": "DEBUG",
+                    "formatter": "tornado",
+                    "when": "D",
+                    "backupCount": 1,
+                    "filename": os.path.join(
+                        settings.getBaseFolder("logs"), "tornado.log"
+                    ),
+                },
+                "authFile": {
+                    "class": "octoprint.logging.handlers.AuthLogHandler",
+                    "level": "DEBUG",
+                    "formatter": "auth",
+                    "when": "D",
+                    "backupCount": 1,
+                    "filename": os.path.join(settings.getBaseFolder("logs"), "auth.log"),
+                },
                 "pluginTimingsFile": {
                     "class": "octoprint.logging.handlers.PluginTimingsLogHandler",
                     "level": "DEBUG",
@@ -338,12 +364,22 @@ def init_logging(
                     "handlers": ["serialFile"],
                     "propagate": False,
                 },
+                "AUTH": {
+                    "level": "INFO",
+                    "handlers": ["authFile"],
+                    "propagate": False,
+                },
                 "PLUGIN_TIMINGS": {
                     "level": "INFO",
                     "handlers": ["pluginTimingsFile", "pluginTimingsCsvFile"],
                     "propagate": False,
                 },
                 "PLUGIN_TIMINGS.octoprint.plugin": {"level": "INFO"},
+                "tornado.access": {
+                    "level": "INFO",
+                    "handlers": ["tornadoFile"],
+                    "propagate": False,
+                },
                 "octoprint": {"level": "INFO"},
                 "octoprint.util": {"level": "INFO"},
                 "octoprint.plugins": {"level": "INFO"},
@@ -497,14 +533,50 @@ def init_settings_plugin_config_migration_and_cleanup(plugin_manager):
             )
         except Exception:
             logging.getLogger(__name__).exception(
-                "Error while trying to migrate settings for "
-                "plugin {}, ignoring it".format(implementation._identifier),
+                "Error while trying to migrate settings for " "plugin %s, ignoring it",
+                implementation._identifier,
                 extra={"plugin": implementation._identifier},
             )
 
     plugin_manager.implementation_post_inits = [
         settings_plugin_config_migration_and_cleanup
     ]
+
+
+def init_webcam_compat_overlay(settings, plugin_manager):
+    import logging
+
+    import octoprint.webcams
+
+    def set_overlay():
+        default_webcam = octoprint.webcams.get_default_webcam(
+            settings=settings, plugin_manager=plugin_manager
+        )
+        if default_webcam is None:
+            settings.remove_overlay("webcam_compat")
+            return
+
+        if not default_webcam.config or not default_webcam.config.compat:
+            settings.remove_overlay("webcam_compat")
+            return
+
+        logging.getLogger(__name__).info(
+            f"Installing webcam compat overlay for configured default webcam {default_webcam}"
+        )
+        overlay = {"webcam": default_webcam.config.compat.dict(by_alias=True)}
+        settings.add_overlay(
+            overlay,
+            key="webcam_compat",
+            at_end=True,
+            deprecated="Please use the webcam system introduced with 1.9.0, this compatibility layer will be removed in a future release.",
+            replace=True,
+        )
+
+    def callback(path, current_value, new_value):
+        set_overlay()
+
+    set_overlay()
+    settings.add_path_update_callback(["webcam", "defaultWebcam"], callback)
 
 
 def init_custom_events(plugin_manager):
@@ -526,13 +598,16 @@ def init_custom_events(plugin_manager):
                         event, prefix=f"plugin_{name}_"
                     )
                     logger.debug(
-                        'Registered event {} of plugin {} as Events.{} = "{}"'.format(
-                            event, name, constant, value
-                        )
+                        'Registered event %s of plugin %s as Events. %s = "%s"',
+                        event,
+                        name,
+                        constant,
+                        value,
                     )
         except Exception:
             logger.exception(
-                f"Error while retrieving custom event list from plugin {name}",
+                "Error while retrieving custom event list from plugin %s",
+                name,
                 extra={"plugin": name},
             )
 
@@ -661,7 +736,7 @@ def init_pluginsystem(
                 disabled_from_overlays[name] = (disabled_plugins, order)
 
             settings_overlays[name] = overlay
-            logger.debug(f"Found settings overlay on plugin {name}")
+            logger.debug("Found settings overlay on plugin %s", name)
 
     def handle_plugins_loaded(
         startup=False, initialize_implementations=True, force_reload=None
@@ -686,24 +761,22 @@ def init_pluginsystem(
 
                     if addon in already_processed:
                         logger.info(
-                            "Plugin {} wants to disable plugin {}, but that was already processed".format(
-                                name, addon
-                            )
+                            "Plugin %s wants to disable plugin %s, but that was already processed",
+                            name,
+                            addon,
                         )
 
                     if addon not in already_processed and addon not in disabled_list:
                         disabled_list.append(addon)
                         logger.info(
-                            "Disabling plugin {} as defined by plugin {}".format(
-                                addon, name
-                            )
+                            "Disabling plugin %s as defined by plugin %s", addon, name
                         )
                 already_processed.append(name)
 
     def handle_plugin_enabled(name, plugin):
         if name in settings_overlays:
             settings.add_overlay(settings_overlays[name])
-            logger.info(f"Added settings overlay from plugin {name}")
+            logger.info("Added settings overlay from plugin %s", name)
 
     pm.on_plugin_loaded = handle_plugin_loaded
     pm.on_plugins_loaded = handle_plugins_loaded
@@ -756,22 +829,22 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
             if "pluginversions" in entry:
                 logger.debug(
-                    "Blacklisted plugin: {}, versions: {}".format(
-                        entry["plugin"], ", ".join(entry["pluginversions"])
-                    )
+                    "Blacklisted plugin: %s, versions: %s",
+                    entry["plugin"],
+                    ", ".join(entry["pluginversions"]),
                 )
                 for version in entry["pluginversions"]:
                     result.append((entry["plugin"], version))
             elif "versions" in entry:
                 logger.debug(
-                    "Blacklisted plugin: {}, versions: {}".format(
-                        entry["plugin"], ", ".join(entry["versions"])
-                    )
+                    "Blacklisted plugin: %s, versions: %s",
+                    entry["plugin"],
+                    ", ".join(entry["versions"]),
                 )
                 for version in entry["versions"]:
                     result.append((entry["plugin"], f"=={version}"))
             else:
-                logger.debug("Blacklisted plugin: {}".format(entry["plugin"]))
+                logger.debug("Blacklisted plugin: %s", entry["plugin"])
                 result.append(entry["plugin"])
 
         return result
@@ -790,7 +863,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
         if isinstance(result, list):
             return result
 
-    def fetch_blacklist_from_url(url, timeout=3, cache=None):
+    def fetch_blacklist_from_url(url, timeout=3.05, cache=None):
         result = []
         try:
             r = requests.get(url, timeout=timeout)
@@ -808,9 +881,9 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
                     )
         except Exception as e:
             logger.info(
-                "Unable to fetch plugin blacklist from {}, proceeding without it: {}".format(
-                    url, e
-                )
+                "Unable to fetch plugin blacklist from %s, proceeding without it: %s",
+                url,
+                e,
             )
         return result
 
@@ -832,10 +905,9 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
         if blacklist:
             logger.info(
-                "Blacklist processing done, "
-                "adding {} blacklisted plugin versions: {}".format(
-                    len(blacklist), format_blacklist(blacklist)
-                )
+                "Blacklist processing done, adding %s blacklisted plugin versions: %s",
+                len(blacklist),
+                format_blacklist(blacklist),
             )
         else:
             logger.info("Blacklist processing done")

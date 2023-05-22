@@ -1,15 +1,20 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import os
+
+import flask
 from flask_babel import gettext
 
 import octoprint.plugin
+from octoprint.util.files import search_through_file
 
 
 class GcodeviewerPlugin(
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
     octoprint.plugin.SettingsPlugin,
+    octoprint.plugin.BlueprintPlugin,
 ):
     def get_assets(self):
         js = [
@@ -17,6 +22,7 @@ class GcodeviewerPlugin(
             "js/viewer/ui.js",
             "js/viewer/reader.js",
             "js/viewer/renderer.js",
+            "js/lib/pako.js",
         ]
 
         return {
@@ -47,6 +53,8 @@ class GcodeviewerPlugin(
             "mobileSizeThreshold": 2 * 1024 * 1024,  # 2MB
             "sizeThreshold": 20 * 1024 * 1024,  # 20MB
             "skipUntilThis": None,
+            "alwaysCompress": False,
+            "compressionSizeThreshold": 200 * 1024 * 1024,
         }
 
     def get_settings_version(self):
@@ -66,6 +74,30 @@ class GcodeviewerPlugin(
                 if "sizeThreshold" in config:
                     self._settings.set_int(["sizeThreshold"], config["sizeThreshold"])
                 self._settings.global_remove(["gcodeViewer"])
+
+    @octoprint.plugin.BlueprintPlugin.route(
+        "/skipuntilcheck/<string:origin>/<path:filename>", methods=["GET"]
+    )
+    def check_skip_until_presence(self, origin, filename):
+        try:
+            path = self._file_manager.path_on_disk(origin, filename)
+        except NotImplementedError:
+            # storage doesn't support path on disk
+            flask.abort(404)
+
+        if not os.path.exists(path):
+            # path doesn't exist
+            flask.abort(404)
+
+        skipUntilThis = self._settings.get(["skipUntilThis"])
+        if not skipUntilThis:
+            # no skipUntilThis, no need to search, shortcut
+            return flask.jsonify(present=False)
+
+        return flask.jsonify(present=search_through_file(path, skipUntilThis))
+
+    def is_blueprint_csrf_protected(self):
+        return True
 
 
 __plugin_name__ = gettext("GCode Viewer")

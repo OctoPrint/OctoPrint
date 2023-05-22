@@ -655,6 +655,9 @@ class FilebasedUserManager(UserManager):
         if username in self._users and not overwrite:
             raise UserAlreadyExists(username)
 
+        if not username.strip() or username != username.strip():
+            raise InvalidUsername(username)
+
         self._users[username] = User(
             username,
             UserManager.create_password_hash(password, settings=self._settings),
@@ -819,7 +822,7 @@ class FilebasedUserManager(UserManager):
         )
 
         if no_legacy and salt:
-            # no legacy hashs left, kill salt
+            # no legacy hashes left, kill salt
             self._settings.backup("cleanup_legacy_hashes")
             self._settings.remove(["accessControl", "salt"])
             self._settings.save()
@@ -1052,6 +1055,11 @@ class FilebasedUserManager(UserManager):
 class UserAlreadyExists(Exception):
     def __init__(self, username):
         Exception.__init__(self, "User %s already exists" % username)
+
+
+class InvalidUsername(Exception):
+    def __init__(self, username):
+        Exception.__init__(self, "Username '%s' is invalid" % username)
 
 
 class UnknownUser(Exception):

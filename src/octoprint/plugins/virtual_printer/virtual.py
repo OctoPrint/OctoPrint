@@ -10,11 +10,13 @@ import queue
 import re
 import threading
 import time
+from typing import Any, Dict, List, Optional
 
 from serial import SerialTimeoutException
 
 from octoprint.plugin import plugin_manager
 from octoprint.util import RepeatedTimer, get_dos_filename, to_bytes, to_unicode
+from octoprint.util.files import unix_timestamp_to_m20_timestamp
 
 
 # noinspection PyBroadException
@@ -51,7 +53,7 @@ class VirtualPrinter:
         self._plugin_data_folder = data_folder
 
         self._seriallog = logging.getLogger(
-            "octoprint.plugin.virtual_printer.VirtualPrinter.serial"
+            "octoprint.plugins.virtual_printer.VirtualPrinter.serial"
         )
         self._seriallog.setLevel(logging.CRITICAL)
         self._seriallog.propagate = False
@@ -126,6 +128,7 @@ class VirtualPrinter:
 
         self._writingToSd = False
         self._writingToSdHandle = None
+        self._writingToSdFile = None
         self._newSdFilePos = None
 
         self._heatingUp = False
@@ -256,6 +259,7 @@ class VirtualPrinter:
                     pass
             self._writingToSd = False
             self._writingToSdHandle = None
+            self._writingToSdFile = None
             self._newSdFilePos = None
 
             self._heatingUp = False
@@ -592,7 +596,7 @@ class VirtualPrinter:
     # noinspection PyUnusedLocal
     def _gcode_M20(self, data: str) -> None:
         if self._sdCardReady:
-            self._listSd(incl_long="L" in data)
+            self._listSd(incl_long="L" in data, incl_timestamp="T" in data)
 
     # noinspection PyUnusedLocal
     def _gcode_M21(self, data: str) -> None:
@@ -662,8 +666,7 @@ class VirtualPrinter:
             filename = data.split(None, 1)[1].strip()
             if filename.startswith("/"):
                 filename = filename[1:]
-            files = self._mappedSdList()
-            file = files.get(filename.lower())
+            file = self._getSdFileData(filename)
             if file is not None:
                 self._send(file["name"])
 
@@ -697,9 +700,26 @@ class VirtualPrinter:
         # we'll just use this to echo a message, to allow playing around with pause triggers
         if self._echoOnM117:
             try:
-                self._send("echo:%s" % re.search(r"M117\s+(.*)", data).group(1))
+                result = re.search(r"M117\s+(.*)", data).group(1)
+                self._send(f"echo:{result}")
             except AttributeError:
                 self._send("echo:")
+
+    def _gcode_M118(self, data: str) -> None:
+        match = re.search(r"M118 (?:(?P<parameter>A1|E1|Pn[012])\s)?(?P<text>.*)", data)
+        if not match:
+            self._send("Unrecognized command parameters for M118")
+        else:
+            result = match.groupdict()
+            text = result["text"]
+            parameter = result["parameter"]
+
+            if parameter == "A1":
+                self._send(f"//{text}")
+            elif parameter == "E1":
+                self._send(f"echo:{text}")
+            else:
+                self._send(text)
 
     def _gcode_M154(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
@@ -1379,28 +1399,25 @@ class VirtualPrinter:
             except Exception:
                 self._logger.exception("While handling %r", data)
 
-    def _listSd(self, incl_long=False):
+    def _listSd(self, incl_long=False, incl_timestamp=False):
+        line = "{dosname}"
         if self._settings.get_boolean(["sdFiles", "size"]):
+            line += " {size}"
+            if self._settings.get_boolean(["sdFiles", "timestamp"]) or incl_timestamp:
+                line += " {timestamp}"
             if self._settings.get_boolean(["sdFiles", "longname"]) or incl_long:
                 if self._settings.get_boolean(["sdFiles", "longname_quoted"]):
-                    line = '{dosname} {size} "{name}"'
+                    line += ' "{name}"'
                 else:
-                    line = "{dosname} {size} {name}"
-            else:
-                line = "{dosname} {size}"
-        else:
-            line = "{dosname}"
-
-        files = self._mappedSdList()
-        items = map(lambda x: line.format(**x), files.values())
+                    line += " {name}"
 
         self._send("Begin file list")
-        for item in items:
+        for item in map(lambda x: line.format(**x), self._getSdFiles()):
             self._send(item)
         self._send("End file list")
 
-    def _mappedSdList(self) -> collections.OrderedDict:
-        result = collections.OrderedDict()
+    def _mappedSdList(self) -> Dict[str, Dict[str, Any]]:
+        result = {}
         for entry in os.scandir(self._virtualSd):
             if not entry.is_file():
                 continue
@@ -1409,26 +1426,41 @@ class VirtualPrinter:
             ).lower()
             if entry.name.startswith("."):
                 dosname = "." + dosname
-            result[dosname] = {
+            data = {
                 "name": entry.name,
                 "path": entry.path,
                 "dosname": dosname,
                 "size": entry.stat().st_size,
+                "timestamp": unix_timestamp_to_m20_timestamp(entry.stat().st_mtime),
             }
+            # index by lower case, we simulate a case insensitive filesystem like FAT,
+            # which should be closest to what we encounter in reality
+            result[entry.name.lower()] = data
+            result[dosname.lower()] = entry.name.lower()
         return result
+
+    def _getSdFileData(self, filename: str) -> Optional[Dict[str, Any]]:
+        files = self._mappedSdList()
+        data = files.get(filename.lower())
+        if isinstance(data, str):
+            data = files.get(data.lower())
+        return data
+
+    def _getSdFiles(self) -> List[Dict[str, Any]]:
+        files = self._mappedSdList()
+        return [x for x in files.values() if isinstance(x, dict)]
 
     def _selectSdFile(self, filename: str, check_already_open: bool = False) -> None:
         if filename.startswith("/"):
             filename = filename[1:]
 
-        files = self._mappedSdList()
-        file = files.get(filename)
+        file = self._getSdFileData(filename)
         if (
             file is None
             or not os.path.exists(file["path"])
             or not os.path.isfile(file["path"])
         ):
-            self._send("open failed, File: %s." % filename)
+            self._send(f"open failed, File: {file['name']}.")
             return
 
         if self._selectedSdFile == file["path"] and check_already_open:
@@ -1437,7 +1469,7 @@ class VirtualPrinter:
         self._selectedSdFile = file["path"]
         self._selectedSdFileSize = file["size"]
         if self._settings.get_boolean(["includeFilenameInOpened"]):
-            self._send("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
+            self._send(f"File opened: {file['name']}  Size: {self._selectedSdFileSize}")
         else:
             self._send("File opened")
         self._send("File selected")
@@ -1459,8 +1491,7 @@ class VirtualPrinter:
     def _reportSdStatus(self):
         if self._sdPrinter is not None and self._sdPrintingSemaphore.is_set:
             self._send(
-                "SD printing byte %d/%d"
-                % (self._selectedSdFilePos, self._selectedSdFileSize)
+                f"SD printing byte {self._selectedSdFilePos}/{self._selectedSdFileSize}"
             )
         else:
             self._send("Not SD printing")
@@ -1775,10 +1806,9 @@ class VirtualPrinter:
                 self._lastE = 0
 
     def _writeSdFile(self, filename: str) -> None:
-        filename = filename
         if filename.startswith("/"):
             filename = filename[1:]
-        file = os.path.join(self._virtualSd, filename).lower()
+        file = os.path.join(self._virtualSd, filename)
         if os.path.exists(file):
             if os.path.isfile(file):
                 os.remove(file)
@@ -1787,13 +1817,14 @@ class VirtualPrinter:
 
         handle = None
         try:
-            handle = open(file, "wt", encoding="utf-8")
+            handle = open(file, "w", encoding="utf-8")
         except Exception:
             self._send("error writing to file")
         self._writingToSdHandle = handle
+        self._writingToSdFile = file
         self._writingToSd = True
         self._selectedSdFile = file
-        self._send("Writing to file: %s" % filename)
+        self._send(f"Writing to file: {filename}")
 
     def _finishSdFile(self):
         try:
@@ -1804,6 +1835,12 @@ class VirtualPrinter:
             self._writingToSdHandle = None
         self._writingToSd = False
         self._selectedSdFile = None
+        # Most printers don't have RTC and set some ancient date
+        # by default. Emulate that using 2000-01-01 01:00:00
+        # (taken from prusa firmware behaviour)
+        st = os.stat(self._writingToSdFile)
+        os.utime(self._writingToSdFile, (st.st_atime, 946684800))
+        self._writingToSdFile = None
         self._send("Done saving file")
 
     def _sdPrintingWorker(self):
@@ -1899,8 +1936,7 @@ class VirtualPrinter:
     def _deleteSdFile(self, filename: str) -> None:
         if filename.startswith("/"):
             filename = filename[1:]
-        files = self._mappedSdList()
-        file = files.get(filename)
+        file = self._getSdFileData(filename)
         if (
             file is not None
             and os.path.exists(file["path"])
@@ -2114,7 +2150,7 @@ class VirtualEEPROM:
         else:
             # no eeprom file, make new one with defaults
             data = self.get_default_settings()
-            with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+            with open(self._eeprom_file_path, "w", encoding="utf-8") as eeprom_file:
                 eeprom_file.write(to_unicode(json.dumps(data)))
             return data
 
@@ -2225,7 +2261,7 @@ class VirtualEEPROM:
 
     def save_settings(self):
         # M500 behind-the-scenes
-        with open(self._eeprom_file_path, "wt", encoding="utf-8") as eeprom_file:
+        with open(self._eeprom_file_path, "w", encoding="utf-8") as eeprom_file:
             eeprom_file.write(to_unicode(json.dumps(self._eeprom)))
 
     def read_settings(self):

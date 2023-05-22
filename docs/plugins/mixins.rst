@@ -26,7 +26,6 @@ merged into one big asset map (differing between javascripts and stylesheets of 
 rendition of the UI.
 
 .. code-block:: python
-   :linenos:
 
    asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
    for name, implementation in asset_plugins.items():
@@ -79,7 +78,6 @@ and ``plugin_d`` don't override :meth:`~octoprint.plugin.core.SortablePlugin.get
 ``plugin_b`` and ``plugin_c`` both return ``1`` for the sorting context ``StartupPlugin.on_startup``, ``None`` otherwise:
 
 .. code-block:: python
-   :linenos:
    :caption: plugin_a.py
 
    import octoprint.plugin
@@ -95,7 +93,6 @@ and ``plugin_d`` don't override :meth:`~octoprint.plugin.core.SortablePlugin.get
    __plugin_implementation__ = PluginA()
 
 .. code-block:: python
-   :linenos:
    :caption: plugin_b.py
 
    import octoprint.plugin
@@ -116,7 +113,6 @@ and ``plugin_d`` don't override :meth:`~octoprint.plugin.core.SortablePlugin.get
    __plugin_implementation__ = PluginB()
 
 .. code-block:: python
-   :linenos:
    :caption: plugin_c.py
 
    import octoprint.plugin
@@ -138,7 +134,6 @@ and ``plugin_d`` don't override :meth:`~octoprint.plugin.core.SortablePlugin.get
    __plugin_implementation__ = PluginC()
 
 .. code-block:: python
-   :linenos:
    :caption: plugin_d.py
 
    # in this example this is bundled with OctoPrint
@@ -203,75 +198,12 @@ The following plugin mixins are currently available:
 Please note that all plugin mixins inherit from :class:`~octoprint.plugin.core.Plugin` and
 :class:`~octoprint.plugin.types.OctoPrintPlugin`,  which also provide attributes of interest to plugin developers.
 
-.. _sec-plugins-mixins-startupplugin:
-
-StartupPlugin
-~~~~~~~~~~~~~
-
-.. autoclass:: octoprint.plugin.StartupPlugin
-   :members:
-   :show-inheritance:
-
-.. _sec-plugins-mixins-shutdownplugin:
-
-ShutdownPlugin
-~~~~~~~~~~~~~~
-
-.. autoclass:: octoprint.plugin.ShutdownPlugin
-   :members:
-   :show-inheritance:
-
-.. _sec-plugins-mixins-settingsplugin:
-
-SettingsPlugin
-~~~~~~~~~~~~~~
-
-.. autoclass:: octoprint.plugin.SettingsPlugin
-   :members:
-   :show-inheritance:
-
 .. _sec-plugins-mixins-assetplugin:
 
 AssetPlugin
 ~~~~~~~~~~~
 
 .. autoclass:: octoprint.plugin.AssetPlugin
-   :members:
-   :show-inheritance:
-
-.. _sec-plugins-mixins-templateplugin:
-
-TemplatePlugin
-~~~~~~~~~~~~~~
-
-.. autoclass:: octoprint.plugin.TemplatePlugin
-   :members:
-   :show-inheritance:
-
-.. _sec-plugins-mixins-wizardplugin:
-
-WizardPlugin
-~~~~~~~~~~~~
-
-.. autoclass:: octoprint.plugin.WizardPlugin
-   :members:
-   :show-inheritance:
-
-.. _sec-plugins-mixins-uiplugin:
-
-UiPlugin
-~~~~~~~~
-
-.. autoclass:: octoprint.plugin.UiPlugin
-   :members:
-   :show-inheritance:
-
-.. _sec-plugins-mixins-simpleapiplugin:
-
-SimpleApiPlugin
-~~~~~~~~~~~~~~~
-
-.. autoclass:: octoprint.plugin.SimpleApiPlugin
    :members:
    :show-inheritance:
 
@@ -302,12 +234,12 @@ ProgressPlugin
    :members:
    :show-inheritance:
 
-.. _sec-plugins-mixins-slicerplugin:
+.. _sec-plugins-mixins-reloadneeding:
 
-SlicerPlugin
-~~~~~~~~~~~~
+ReloadNeedingPlugin
+~~~~~~~~~~~~~~~~~~~
 
-.. autoclass:: octoprint.plugin.SlicerPlugin
+.. autoclass:: octoprint.plugin.ReloadNeedingPlugin
    :members:
    :show-inheritance:
 
@@ -320,11 +252,83 @@ RestartNeedingPlugin
    :members:
    :show-inheritance:
 
-.. _sec-plugins-mixins-reloadneeding:
+.. _sec-plugins-mixins-settingsplugin:
 
-ReloadNeedingPlugin
-~~~~~~~~~~~~~~~~~~~
+SettingsPlugin
+~~~~~~~~~~~~~~
 
-.. autoclass:: octoprint.plugin.ReloadNeedingPlugin
+.. autoclass:: octoprint.plugin.SettingsPlugin
+   :members:
+   :show-inheritance:
+
+.. _sec-plugins-mixins-shutdownplugin:
+
+ShutdownPlugin
+~~~~~~~~~~~~~~
+
+.. autoclass:: octoprint.plugin.ShutdownPlugin
+   :members:
+   :show-inheritance:
+
+.. _sec-plugins-mixins-simpleapiplugin:
+
+SimpleApiPlugin
+~~~~~~~~~~~~~~~
+
+.. autoclass:: octoprint.plugin.SimpleApiPlugin
+   :members:
+   :show-inheritance:
+
+.. _sec-plugins-mixins-slicerplugin:
+
+SlicerPlugin
+~~~~~~~~~~~~
+
+.. autoclass:: octoprint.plugin.SlicerPlugin
+   :members:
+   :show-inheritance:
+
+.. _sec-plugins-mixins-startupplugin:
+
+StartupPlugin
+~~~~~~~~~~~~~
+
+.. autoclass:: octoprint.plugin.StartupPlugin
+   :members:
+   :show-inheritance:
+
+.. _sec-plugins-mixins-templateplugin:
+
+TemplatePlugin
+~~~~~~~~~~~~~~
+
+.. autoclass:: octoprint.plugin.TemplatePlugin
+   :members:
+   :show-inheritance:
+
+.. _sec-plugins-mixins-uiplugin:
+
+UiPlugin
+~~~~~~~~
+
+.. autoclass:: octoprint.plugin.UiPlugin
+   :members:
+   :show-inheritance:
+
+.. _sec-plugins-mixins-webcamproviderplugin:
+
+WebcamProviderPlugin
+~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: octoprint.plugin.WebcamProviderPlugin
+   :members:
+   :show-inheritance:
+
+.. _sec-plugins-mixins-wizardplugin:
+
+WizardPlugin
+~~~~~~~~~~~~
+
+.. autoclass:: octoprint.plugin.WizardPlugin
    :members:
    :show-inheritance:

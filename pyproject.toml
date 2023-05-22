@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=40.8.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 90
+include = '''
+
+(
+    (
+        src
+      | tests
+      | .github
+    ).*\.pyi?$
+)|(
+    setup\.py
+)
+'''
+exclude = '''
+
+(
+    src/octoprint/vendor  # we want to still be able to apply patches from upstream w/o
+                          # match issues
+)
+'''

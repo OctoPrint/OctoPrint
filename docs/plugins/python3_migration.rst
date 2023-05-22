@@ -235,7 +235,7 @@ will now fail with an error. You'll need to explicitly make the import a relativ
 
    from . import my_sub_package
 
-To make your code behave the same in that regard unter both Python 2 and Python 3, you should add the corresponding
+To make your code behave the same in that regard in both Python 2 and Python 3, you should add the corresponding
 future import:
 
 .. code-block:: python
@@ -373,5 +373,3 @@ Further reading
    `Migrating plugins to Python 2 & 3 compatibility - experiences? <https://community.octoprint.org/t/migrating-plugins-to-python-2-3-compatibility-experiences/16294?u=foosel>`__
       Forum topic collecting experiences by plugin developers in migrating their plugins to achieve Python 2 & 3
       compatibility.
-
-

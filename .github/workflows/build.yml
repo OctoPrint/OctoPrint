@@ -50,7 +50,7 @@ jobs:
     name: 🧪 Unit tests
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -84,7 +84,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
         installable: ["wheel", "sdist"]
     runs-on: ubuntu-latest
     steps:
@@ -110,7 +110,6 @@ jobs:
     name: 🧪 E2E tests
     needs: build
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: ⬇ Checkout code
         uses: actions/checkout@v3
@@ -120,11 +119,13 @@ jobs:
         with:
           name: dist
           path: dist
+
       - name: 🏗 Set up Python 3.7
         uses: actions/setup-python@v4
         with:
           python-version: 3.7
-      - name: 🚀 Install wheel
+
+      - name: 🏗 Install OctoPrint build
         run: |
           pip install dist/OctoPrint-*-py2.py3-none-any.whl
 
@@ -133,26 +134,63 @@ jobs:
           mkdir e2econfig
           cp -r .github/fixtures/with_acl/* e2econfig
 
-      - name: 🚀 Run Cypress
-        uses: cypress-io/github-action@v4.2.0
-        with:
-          working-directory: tests/cypress
-          browser: chrome
-          start: "octoprint -b ${{ github.workspace }}/e2econfig serve --host 127.0.0.1 --port 5000"
-          wait-on: "http://127.0.0.1:5000/online.txt"
+      - name: 🏗 Prepare Playwright env
+        working-directory: ./tests/playwright
+        run: |
+          npm ci
+          PLAYWRIGHT_VERSION=$(npm ls --json @playwright/test | jq --raw-output '.dependencies["@playwright/test"].version')
+          echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
 
-      - name: ⬆ Upload screenshots
-        uses: actions/upload-artifact@v3
-        if: failure()
+      - name: 🧰 Cache Playwright browser binaries
+        uses: actions/cache@v3
+        id: playwright-cache
         with:
-          name: cypress-screenshots
-          path: tests/cypress/screenshots
-      - name: ⬆ Upload videos
+          path: "~/.cache/ms-playwright"
+          key: "${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}"
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: 🏗 Install Playwright browser binaries & OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: ./tests/playwright
+        run: |
+          npx playwright install --with-deps
+
+      - name: 🏗 Install Playwright OS dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        working-directory: ./tests/playwright
+        run: |
+          npx playwright install-deps
+
+      - name: 🎭 Run Playwright
+        working-directory: ./tests/playwright
+        run: |
+          npx playwright test
+        env:
+          OCTOPRINT_SERVER_BASE: ${{ github.workspace }}/e2econfig
+
+      - name: 🔎 Check octoprint.log for errors
+        run: |
+          log=${{ github.workspace }}/e2econfig/logs/octoprint.log
+          if grep "\- ERROR \-" $log; then
+            echo "::error::Errors were logged to octoprint.log"
+            grep -Pazo '(?m)^\N+\- ERROR \-\N*\n(^\N*?\n)*?(?=\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} \- )' $log
+            exit 1
+          fi
+
+      - name: ⬆ Upload Playwright report
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: cypress-videos
-          path: tests/cypress/videos
+          name: playwright-report
+          path: tests/playwright/playwright-report
+
+      - name: ⬆ Upload OctoPrint logs
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: octoprint-logs
+          path: ${{ github.workspace }}/e2econfig/logs
 
   publish-on-testpypi:
     name: 📦 Publish on TestPyPI
@@ -171,7 +209,7 @@ jobs:
           name: dist
           path: dist
       - name: 📦 Publish to index
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         continue-on-error: true
         with:
           password: ${{ secrets.testpypi_password }}
@@ -189,7 +227,7 @@ jobs:
           name: dist
           path: dist
       - name: 📦 Publish to index
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.pypi_password }}
 

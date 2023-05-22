@@ -14,7 +14,6 @@ import sys
 import threading
 import time
 
-import requests
 import sarge
 
 import octoprint.plugin
@@ -25,6 +24,7 @@ from octoprint.settings import settings
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import sv
 from octoprint.util.commandline import CommandlineCaller
+from octoprint.webcams import WebcamNotAbleToTakeSnapshotException, get_snapshot_webcam
 
 # currently configured timelapse
 current = None
@@ -33,7 +33,7 @@ current = None
 current_render_job = None
 
 # filename formats
-_capture_format = "{prefix}-%d.jpg"
+_capture_format = "{prefix}-{number}.jpg"
 _capture_glob = "{prefix}-*.jpg"
 _output_format = "{prefix}{postfix}.{extension}"
 
@@ -233,26 +233,34 @@ def delete_unrendered_timelapse(name):
 def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=None):
     capture_dir = settings().getBaseFolder("timelapse_tmp")
     output_dir = settings().getBaseFolder("timelapse")
+    watermark = settings().getBoolean(["webcam", "watermark"])
 
     if fps is None:
         fps = settings().getInt(["webcam", "timelapse", "fps"])
     threads = settings().get(["webcam", "ffmpegThreads"])
     videocodec = settings().get(["webcam", "ffmpegVideoCodec"])
-
-    job = TimelapseRenderJob(
-        capture_dir,
-        output_dir,
-        name,
-        postfix=postfix,
-        fps=fps,
-        threads=threads,
-        videocodec=videocodec,
-        on_start=_create_render_start_handler(name, gcode=gcode),
-        on_success=_create_render_success_handler(name, gcode=gcode),
-        on_fail=_create_render_fail_handler(name, gcode=gcode),
-        on_always=_create_render_always_handler(name, gcode=gcode),
-    )
-    job.process()
+    webcam = get_snapshot_webcam()
+    if webcam is None:
+        logging.getLogger(__name__).error("No webcam configured, can't render timelapse")
+    else:
+        job = TimelapseRenderJob(
+            capture_dir,
+            output_dir,
+            name,
+            postfix=postfix,
+            fps=fps,
+            threads=threads,
+            videocodec=videocodec,
+            watermark=watermark,
+            flipH=webcam.config.flipH,
+            flipV=webcam.config.flipV,
+            rotate=webcam.config.rotate90,
+            on_start=_create_render_start_handler(name, gcode=gcode),
+            on_success=_create_render_success_handler(name, gcode=gcode),
+            on_fail=_create_render_fail_handler(name, gcode=gcode),
+            on_always=_create_render_always_handler(name, gcode=gcode),
+        )
+        job.process()
 
 
 def delete_old_unrendered_timelapses():
@@ -403,14 +411,14 @@ def configure_timelapse(config=None, persist=False):
     if current is not None:
         current.unload()
 
-    snapshot_url = settings().get(["webcam", "snapshot"])
+    snapshot_webcam = get_snapshot_webcam()
+    can_snapshot = (
+        snapshot_webcam.config.canSnapshot if snapshot_webcam is not None else False
+    )
     ffmpeg_path = settings().get(["webcam", "ffmpeg"])
     timelapse_enabled = settings().getBoolean(["webcam", "timelapseEnabled"])
     timelapse_precondition = (
-        snapshot_url is not None
-        and snapshot_url.strip() != ""
-        and ffmpeg_path is not None
-        and ffmpeg_path.strip() != ""
+        can_snapshot is True and ffmpeg_path is not None and ffmpeg_path.strip() != ""
     )
 
     type = config["type"]
@@ -496,13 +504,14 @@ class Timelapse:
         self._post_roll = post_roll
         self._on_post_roll_done = None
 
+        self._webcam = get_snapshot_webcam()
+        if self._webcam is None:
+            raise Exception("Invalid webcam configuration, missing defaultWebcam")
+        elif self._webcam.config.canSnapshot is False:
+            raise WebcamNotAbleToTakeSnapshotException(self._webcam.webcam.name)
+
         self._capture_dir = settings().getBaseFolder("timelapse_tmp")
         self._movie_dir = settings().getBaseFolder("timelapse")
-        self._snapshot_url = settings().get(["webcam", "snapshot"])
-        self._snapshot_timeout = settings().getInt(["webcam", "snapshotTimeout"])
-        self._snapshot_validate_ssl = settings().getBoolean(
-            ["webcam", "snapshotSslValidation"]
-        )
 
         self._fps = fps
 
@@ -527,7 +536,7 @@ class Timelapse:
         eventManager().subscribe(Events.PRINT_FAILED, self.on_print_done)
         eventManager().subscribe(Events.PRINT_DONE, self.on_print_done)
         eventManager().subscribe(Events.PRINT_RESUMED, self.on_print_resumed)
-        for (event, callback) in self.event_subscriptions():
+        for event, callback in self.event_subscriptions():
             eventManager().subscribe(event, callback)
 
     @property
@@ -551,7 +560,7 @@ class Timelapse:
         eventManager().unsubscribe(Events.PRINT_FAILED, self.on_print_done)
         eventManager().unsubscribe(Events.PRINT_DONE, self.on_print_done)
         eventManager().unsubscribe(Events.PRINT_RESUMED, self.on_print_resumed)
-        for (event, callback) in self.event_subscriptions():
+        for event, callback in self.event_subscriptions():
             eventManager().unsubscribe(event, callback)
 
     def on_print_started(self, event, payload):
@@ -596,7 +605,7 @@ class Timelapse:
         return None
 
     def start_timelapse(self, gcode_file):
-        self._logger.debug("Starting timelapse for %s" % gcode_file)
+        self._logger.debug(f"Starting timelapse for {gcode_file}")
 
         self._image_number = 0
         self._capture_errors = 0
@@ -604,7 +613,7 @@ class Timelapse:
         self._in_timelapse = True
         self._gcode_file = os.path.basename(gcode_file)
         self._file_prefix = "{}_{}".format(
-            os.path.splitext(self._gcode_file)[0].replace("%", "%%"),
+            os.path.splitext(self._gcode_file)[0],
             time.strftime("%Y%m%d%H%M%S"),
         )
 
@@ -702,7 +711,9 @@ class Timelapse:
 
             filename = os.path.join(
                 self._capture_dir,
-                _capture_format.format(prefix=self._file_prefix) % self._image_number,
+                _capture_format.format(
+                    prefix=self._file_prefix, number=self._image_number
+                ),
             )
             self._image_number += 1
 
@@ -722,23 +733,27 @@ class Timelapse:
 
     def _capture_queue_worker(self):
         while self._capture_queue_active:
-            entry = self._capture_queue.get(block=True)
+            try:
+                entry = self._capture_queue.get(block=True)
+                if (
+                    entry["type"] == self.__class__.QUEUE_ENTRY_TYPE_CAPTURE
+                    and "filename" in entry
+                ):
+                    filename = entry["filename"]
+                    onerror = entry.pop("onerror", None)
+                    self._perform_capture(filename, onerror=onerror)
 
-            if (
-                entry["type"] == self.__class__.QUEUE_ENTRY_TYPE_CAPTURE
-                and "filename" in entry
-            ):
-                filename = entry["filename"]
-                onerror = entry.pop("onerror", None)
-                self._perform_capture(filename, onerror=onerror)
-
-            elif (
-                entry["type"] == self.__class__.QUEUE_ENTRY_TYPE_CALLBACK
-                and "callback" in entry
-            ):
-                args = entry.pop("args", [])
-                kwargs = entry.pop("kwargs", {})
-                entry["callback"](*args, **kwargs)
+                elif (
+                    entry["type"] == self.__class__.QUEUE_ENTRY_TYPE_CALLBACK
+                    and "callback" in entry
+                ):
+                    args = entry.pop("args", [])
+                    kwargs = entry.pop("kwargs", {})
+                    entry["callback"](*args, **kwargs)
+            except Exception:
+                self._logger.exception(
+                    "Caught unhandled exception in timelapse queue worker"
+                )
 
     def _perform_capture(self, filename, onerror=None):
         # pre-capture hook
@@ -750,25 +765,23 @@ class Timelapse:
 
         eventManager().fire(Events.CAPTURE_START, {"file": filename})
         try:
-            self._logger.debug(f"Going to capture {filename} from {self._snapshot_url}")
-            r = requests.get(
-                self._snapshot_url,
-                stream=True,
-                timeout=self._snapshot_timeout,
-                verify=self._snapshot_validate_ssl,
+            self._logger.debug(
+                f"Going to capture {filename} from {self._webcam.config.name} provided by {self._webcam.providerIdentifier}"
             )
-            r.raise_for_status()
+            snapshot = self._webcam.providerPlugin.take_webcam_snapshot(self._webcam)
 
             with open(filename, "wb") as f:
-                for chunk in r.iter_content(chunk_size=1024):
+                for chunk in snapshot:
                     if chunk:
                         f.write(chunk)
                         f.flush()
 
-            self._logger.debug(f"Image {filename} captured from {self._snapshot_url}")
+            self._logger.debug(
+                f"Image {filename} captured from {self._webcam.config.name} provided by {self._webcam.providerIdentifier}"
+            )
         except Exception as e:
             self._logger.exception(
-                f"Could not capture image {filename} from {self._snapshot_url}"
+                f"Could not capture image {filename} from {self._webcam.config.name} provided by {self._webcam.providerIdentifier}"
             )
             self._capture_errors += 1
             err = e
@@ -792,7 +805,13 @@ class Timelapse:
                 onerror()
             eventManager().fire(
                 Events.CAPTURE_FAILED,
-                {"file": filename, "error": str(err), "url": self._snapshot_url},
+                {
+                    "file": filename,
+                    "error": str(err),
+                    "webcamDisplay": self._webcam.config.displayName,
+                    "snapshotDisplay": self._webcam.config.snapshotDisplay,
+                    "webcamProvider": self._webcam.providerIdentifier,
+                },
             )
             return False
 
@@ -800,7 +819,9 @@ class Timelapse:
         with self._capture_mutex:
             filename = os.path.join(
                 self._capture_dir,
-                _capture_format.format(prefix=self._file_prefix) % self._image_number,
+                _capture_format.format(
+                    prefix=self._file_prefix, number=self._image_number
+                ),
             )
             self._image_number += 1
 
@@ -808,7 +829,9 @@ class Timelapse:
             for _ in range(self._post_roll * self._fps):
                 newFile = os.path.join(
                     self._capture_dir,
-                    _capture_format.format(prefix=self._file_prefix) % self._image_number,
+                    _capture_format.format(
+                        prefix=self._file_prefix, number=self._image_number
+                    ),
                 )
                 self._image_number += 1
                 shutil.copyfile(filename, newFile)
@@ -928,7 +951,6 @@ class TimedTimelapse(Timelapse):
 
 
 class TimelapseRenderJob:
-
     render_job_lock = threading.RLock()
 
     def __init__(
@@ -940,6 +962,10 @@ class TimelapseRenderJob:
         capture_glob=_capture_glob,
         capture_format=_capture_format,
         output_format=_output_format,
+        flipH=False,
+        flipV=False,
+        rotate=False,
+        watermark=False,
         fps=25,
         threads=1,
         videocodec="mpeg2video",
@@ -962,6 +988,10 @@ class TimelapseRenderJob:
         self._on_success = on_success
         self._on_fail = on_fail
         self._on_always = on_always
+        self._hflip = flipH
+        self._vflip = flipV
+        self._rotate = rotate
+        self._watermark = watermark
 
         self._thread = None
         self._logger = logging.getLogger(__name__)
@@ -997,14 +1027,27 @@ class TimelapseRenderJob:
         else:
             extension = "mp4"
 
+        # input pattern for ffmpeg
         input = os.path.join(
+            self._capture_dir,
+            self._capture_format.format(
+                prefix=self._prefix.replace(
+                    "%", "%%"
+                ),  # ffmpeg, and ONLY that, needs % replaced
+                postfix=self._postfix if self._postfix is not None else "",
+                number="%d",
+            ),
+        )
+        # pattern for checking if snapshots were made at all
+        snapshot = os.path.join(
             self._capture_dir,
             self._capture_format.format(
                 prefix=self._prefix,
                 postfix=self._postfix if self._postfix is not None else "",
+                number="{number}",
             ),
         )
-
+        # output file name
         output_name = self._output_format.format(
             prefix=self._prefix,
             postfix=self._postfix if self._postfix is not None else "",
@@ -1014,7 +1057,7 @@ class TimelapseRenderJob:
         output = os.path.join(self._output_dir, output_name)
 
         for i in range(4):
-            if os.path.exists(input % i):
+            if os.path.exists(snapshot.format(number=i)):
                 break
         else:
             self._logger.warning("Cannot create a movie, no frames captured")
@@ -1023,12 +1066,8 @@ class TimelapseRenderJob:
             )
             return
 
-        hflip = settings().getBoolean(["webcam", "flipH"])
-        vflip = settings().getBoolean(["webcam", "flipV"])
-        rotate = settings().getBoolean(["webcam", "rotate90"])
-
         watermark = None
-        if settings().getBoolean(["webcam", "watermark"]):
+        if self._watermark:
             watermark = os.path.join(
                 os.path.dirname(__file__), "static", "img", "watermark.png"
             )
@@ -1047,9 +1086,9 @@ class TimelapseRenderJob:
             input,
             temporary,
             self._videocodec,
-            hflip=hflip,
-            vflip=vflip,
-            rotate=rotate,
+            hflip=self._hflip,
+            vflip=self._vflip,
+            rotate=self._rotate,
             watermark=watermark,
         )
         self._logger.debug(f"Executing command: {command_str}")

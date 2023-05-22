@@ -1,5 +1,5 @@
 <div data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)">
-    <div style="display: none;" data-bind="visible: settings.webcam_snapshotUrl() && settings.webcam_ffmpegPath()">
+    <div style="display: none;" data-bind="visible: canSnapshot() && settings.webcam_ffmpegPath()">
         <div class="alert" data-bind="visible: isPrinting()">
             {{ _('Take note that timelapse configuration is disabled while your printer is printing.') }}
         </div>
@@ -90,12 +90,22 @@
             </div>
         </form>
     </div>
-    <div class="alert" style="display: none" data-bind="visible: !settings.webcam_snapshotUrl() || !settings.webcam_ffmpegPath()">
+    <div class="alert" style="display: none" data-bind="visible: !canSnapshot() || !settings.webcam_ffmpegPath()">
         <p><strong>{{ _('Timelapse not fully configured') }}</strong></p>
-        <p data-bind="visible: !loginState.isAdmin()">{{ _('The snapshot URL and/or the path to FFMPEG are missing. To have this fixed, get in touch with an administrator of this OctoPrint instance.') }}</p>
-        <p data-bind="visible: loginState.isAdmin">{{ _('The snapshot URL and/or the path to FFMPEG are missing. You can change both under "Settings" > "Webcam & Timelapse" > "Timelapse". If you don\'t have a webcam or don\'t want to enable timelapse support you can also just disable it there.') }}</p>
+        <p data-bind="visible: !loginState.isAdmin()">{{ _('A working snapshot setup and/or the path to FFMPEG are missing. To have this fixed, get in touch with an administrator of this OctoPrint instance.') }}</p>
+        <p data-bind="visible: loginState.isAdmin">{{ _('A working snapshot setup and/or the path to FFMPEG are missing. You can change both under "Settings" > "Webcam & Timelapse" and in the settings of your chosen webcam plugin. If you don\'t have a webcam or don\'t want to enable timelapse support you can also just disable it there.') }}</p>
         <p data-bind="visible: loginState.isUser"><small>
-            {{ _('Currently configured snapshot URL') }}: <span data-bind="text: settings.webcam_snapshotUrl"></span><br/>
+            <!-- ko if: canSnapshot -->
+                <!-- ko if: snapshotDisplay -->
+                {{ _('Currently configured snapshot (from default webcam)') }}: <span data-bind="text: snapshotDisplay"></span><br/>
+                <!-- /ko -->
+                <!-- ko ifnot: snapshotDisplay -->
+                {{ _('Snapshots supported by default webcam') }}<br/>
+                <!-- /ko -->
+            <!-- /ko -->
+            <!-- ko ifnot: canSnapshot -->
+            {{ _('Currently configured default webcam cannot take snapshots') }}<br/>
+            <!-- /ko -->
             {{ _('Currently configured path to FFMPEG') }}: <span data-bind="text: settings.webcam_ffmpegPath"></span>
         </small></p>
     </div>
@@ -184,7 +194,7 @@
 <div data-bind="visible: unrenderedListHelper.allSize">
     <div><small><a href="javascript:void(0)" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fas fa-caret-right"></i> {{ _('Unrendered Timelapses') }}</a></small></div>
     <div class="hide">
-        <div class="pull-left" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)">
+        <div class="pull-left" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_MANAGE_UNRENDERED)">
             <div class="btn-group">
                 <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fas fa-square"></i> <span class="caret"></span></button>
                 <ul class="dropdown-menu">
@@ -208,13 +218,13 @@
             </thead>
             <tbody data-bind="foreach: unrenderedListHelper.paginatedItems">
             <tr data-bind="attr: {title: name}">
-                <td class="timelapse_unrendered_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForUnrenderedDeletion, invisible: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()"></td>
+                <td class="timelapse_unrendered_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForUnrenderedDeletion, invisible: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSTIMELAPSE_MANAGE_UNRENDEREDE_DELETE)()"></td>
                 <td class="timelapse_unrendered_name" data-bind="text: name"></td>
                 <td class="timelapse_unrendered_count" data-bind="text: count"></td>
                 <td class="timelapse_unrendered_size" data-bind="text: size"></td>
                 <td class="timelapse_unrendered_action">
                     <span data-bind="visible: processing"><i class="fas fa-sync fa-spin"></i></span>
-                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.removeUnrendered($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_DELETE)()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse')|edq }}" class="fas fa-video" data-bind="click: function() { if (!$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: $root.isBusy() || !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)()}"></a></span>
+                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.removeUnrendered($data.name); }, css: {disabled: !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_MANAGE_UNRENDERED)()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse')|edq }}" class="fas fa-video" data-bind="click: function() { if (!$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: $root.isBusy() || !$root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)()}"></a></span>
                 </td>
             </tr>
             </tbody>

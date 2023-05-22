@@ -33,7 +33,7 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.settings import valid_boolean_trues
-from octoprint.util import deprecated, to_bytes
+from octoprint.util import RepeatedTimer, deprecated, to_bytes
 from octoprint.util.net import download_file
 from octoprint.util.pip import (
     OUTPUT_SUCCESS,
@@ -66,6 +66,8 @@ def map_repository_entry(entry):
 
     if "follow_dependency_links" not in result:
         result["follow_dependency_links"] = False
+    if "privacypolicy" not in result:
+        result["privacypolicy"] = False
 
     result["is_compatible"] = {"octoprint": True, "os": True, "python": True}
 
@@ -97,16 +99,10 @@ def map_repository_entry(entry):
                 entry["compatibility"]["python"]
             )
         else:
-            # we default to only assume py2 compatiblity for now
+            # we default to only assume py2 compatibility for now
             result["is_compatible"]["python"] = is_python_compatible(">=2.7,<3")
 
     return result
-
-
-already_installed_string = "Requirement already satisfied (use --upgrade to upgrade)"
-success_string = "Successfully installed"
-failure_string = "Could not install"
-python_mismatch_string = "requires a different Python:"
 
 
 class PluginManagerPlugin(
@@ -118,9 +114,9 @@ class PluginManagerPlugin(
     octoprint.plugin.BlueprintPlugin,
     octoprint.plugin.EventHandlerPlugin,
 ):
-
     ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar", ".gz", ".whl")
     PYTHON_EXTENSIONS = (".py",)
+    JSON_EXTENSIONS = (".json",)
 
     # valid pip install URL schemes according to https://pip.pypa.io/en/stable/reference/pip_install/
     URL_SCHEMES = (
@@ -172,6 +168,7 @@ class PluginManagerPlugin(
 
         self._repository_available = False
         self._repository_plugins = []
+        self._repository_plugins_by_id = {}
         self._repository_cache_path = None
         self._repository_cache_ttl = 0
         self._repository_mtime = None
@@ -190,6 +187,11 @@ class PluginManagerPlugin(
 
         self._install_task = None
         self._install_lock = threading.RLock()
+        self._jsoninstall_lock = threading.Lock()
+
+        self._queued_installs = []
+        self._queued_installs_abort_timer = None
+        self._print_cancelled = False
 
     def initialize(self):
         self._console_logger = logging.getLogger(
@@ -342,7 +344,9 @@ class PluginManagerPlugin(
         return {
             "all": plugins,
             "thirdparty": list(filter(lambda p: not p["bundled"], plugins)),
-            "file_extensions": self.ARCHIVE_EXTENSIONS + self.PYTHON_EXTENSIONS,
+            "file_extensions": self.ARCHIVE_EXTENSIONS
+            + self.PYTHON_EXTENSIONS
+            + self.JSON_EXTENSIONS,
         }
 
     def get_template_types(self, template_sorting, template_rules, *args, **kwargs):
@@ -385,7 +389,7 @@ class PluginManagerPlugin(
         exts = list(
             filter(
                 lambda x: upload_name.lower().endswith(x),
-                self.ARCHIVE_EXTENSIONS + self.PYTHON_EXTENSIONS,
+                self.ARCHIVE_EXTENSIONS + self.PYTHON_EXTENSIONS + self.JSON_EXTENSIONS,
             )
         )
         if not len(exts):
@@ -439,11 +443,15 @@ class PluginManagerPlugin(
     def export_plugin_list(self):
         import json
 
-        plugins = self.generate_plugins_json(self._settings, self._plugin_manager)
+        plugins = self.generate_plugins_json(
+            self._settings,
+            self._plugin_manager,
+            repo_plugins=self._repository_plugins_by_id,
+        )
 
         return Response(
             json.dumps(plugins),
-            mimetype="text/plain",
+            mimetype="application/json",
             headers={"Content-Disposition": 'attachment; filename="plugin_list.json"'},
         )
 
@@ -466,6 +474,7 @@ class PluginManagerPlugin(
             "supported_extensions": {
                 "archive": self.ARCHIVE_EXTENSIONS,
                 "python": self.PYTHON_EXTENSIONS,
+                "json": self.JSON_EXTENSIONS,
             },
         }
 
@@ -617,13 +626,95 @@ class PluginManagerPlugin(
     def on_event(self, event, payload):
         from octoprint.events import Events
 
-        if (
+        if event == Events.PRINT_STARTED:
+            self._queued_installs_timer_stop()
+            self._print_cancelled = False
+        elif (
+            event == Events.PRINT_DONE
+            and self._settings.global_get(["webcam", "timelapse", "type"]) == "off"
+            and len(self._queued_installs) > 0
+        ):
+            self._queued_installs_timer_start()
+        elif event == Events.PRINT_FAILED and len(self._queued_installs) > 0:
+            self._send_result_notification(
+                "queued_installs",
+                {
+                    "type": "queued_installs",
+                    "print_failed": True,
+                    "queued": self._queued_installs,
+                },
+            )
+            self._print_cancelled = True
+        elif (
+            event == Events.MOVIE_DONE
+            and self._settings.global_get(["webcam", "timelapse", "type"]) != "off"
+            and len(self._queued_installs) > 0
+            and not (self._printer.is_printing() or self._printer.is_paused())
+            and not self._print_cancelled
+        ):
+            self._queued_installs_timer_start()
+        elif event == Events.USER_LOGGED_IN and len(self._queued_installs) > 0:
+            self._send_result_notification(
+                "queued_installs",
+                {
+                    "type": "queued_installs",
+                    "queued": self._queued_installs,
+                },
+            )
+        elif (
             event != Events.CONNECTIVITY_CHANGED
             or not payload
             or not payload.get("new", False)
         ):
             return
         self._fetch_all_data(do_async=True)
+
+    def _queued_installs_timer_start(self):
+        if self._queued_installs_abort_timer is not None:
+            return
+
+        self._logger.debug("Starting queued updates timer.")
+
+        self._timeout_value = 60
+        self._queued_installs_abort_timer = RepeatedTimer(
+            1, self._queued_installs_timer_task
+        )
+        self._queued_installs_abort_timer.start()
+
+    def _queued_installs_timer_stop(self):
+        if self._queued_installs_abort_timer is not None:
+            self._queued_installs_abort_timer.cancel()
+            self._queued_installs_abort_timer = None
+            self._send_result_notification(
+                "queued_installs",
+                {
+                    "type": "queued_installs",
+                    "queued": self._queued_installs,
+                    "timeout_value": -1,
+                },
+            )
+
+    def _queued_installs_timer_task(self):
+        if self._timeout_value is None:
+            return
+
+        self._timeout_value -= 1
+        self._send_result_notification(
+            "queued_installs",
+            {
+                "type": "queued_installs",
+                "queued": self._queued_installs,
+                "timeout_value": self._timeout_value,
+            },
+        )
+        if self._timeout_value <= 0:
+            if self._queued_installs_abort_timer is not None:
+                self._queued_installs_abort_timer.cancel()
+                self._queued_installs_abort_timer = None
+                for plugin in self._queued_installs:
+                    plugin.pop("command")
+                    self.command_install(**plugin)
+                self._queued_installs = []
 
     ##~~ SimpleApiPlugin
 
@@ -636,17 +727,48 @@ class PluginManagerPlugin(
             "cleanup": ["plugin"],
             "cleanup_all": [],
             "refresh_repository": [],
+            "clear_queued_plugin": ["plugin"],
+            "clear_queued_installs": [],
         }
 
     def on_api_command(self, command, data):
         if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE.can():
             abort(403)
 
-        if self._printer.is_printing() or self._printer.is_paused():
-            # do not update while a print job is running
-            abort(409, description="Printer is currently printing or paused")
+        if command == "clear_queued_plugin":
+            if data["plugin"] and data["plugin"] in self._queued_installs:
+                self._queued_installs.remove(data["plugin"])
+            return (
+                jsonify({"queued_installs": self._queued_installs}),
+                202,
+            )
 
-        if command == "install":
+        elif command == "clear_queued_installs":
+            self._queued_installs.clear()
+            return (
+                jsonify({"queued_installs": self._queued_installs}),
+                202,
+            )
+
+        elif self._printer.is_printing() or self._printer.is_paused():
+            # do not update while a print job is running
+            # store targets to be run later on print done event
+            if command == "install" and data not in self._queued_installs:
+                self._logger.debug(f"Queuing install of {data}")
+                self._queued_installs.append(data)
+            if len(self._queued_installs) > 0:
+                self._logger.debug(f"Queued installs: {self._queued_installs}")
+                return (
+                    jsonify({"queued_installs": self._queued_installs}),
+                    202,
+                )
+            else:
+                abort(
+                    409,
+                    description="Printer is currently printing or paused and install could not be queued",
+                )
+
+        elif command == "install":
             if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
                 abort(403)
             url = data["url"]
@@ -758,6 +880,18 @@ class PluginManagerPlugin(
 
         return False
 
+    def _is_jsonfile(self, path):
+        _, ext = os.path.splitext(path)
+        if ext in PluginManagerPlugin.JSON_EXTENSIONS:
+            import json
+
+            try:
+                with open(path) as f:
+                    json.load(f)
+                return True
+            except Exception as exc:
+                self._logger.exception(f"Could not parse {path} as json file: {exc}")
+
     def command_install(
         self,
         url=None,
@@ -766,6 +900,7 @@ class PluginManagerPlugin(
         force=False,
         reinstall=None,
         dependency_links=False,
+        partial=False,
     ):
         folder = None
 
@@ -790,11 +925,25 @@ class PluginManagerPlugin(
                         force=force,
                         reinstall=reinstall,
                         dependency_links=dependency_links,
+                        partial=partial,
                     )
 
                 elif self._is_pythonfile(path):
                     result = self._command_install_pythonfile(
-                        path, source=source, source_type=source_type, name=name
+                        path,
+                        source=source,
+                        source_type=source_type,
+                        name=name,
+                        partial=partial,
+                    )
+
+                elif self._is_jsonfile(path):
+                    result = self._command_install_jsonfile(
+                        path,
+                        source=source,
+                        source_type=source_type,
+                        name=name,
+                        partial=partial,
                     )
 
                 else:
@@ -808,7 +957,7 @@ class PluginManagerPlugin(
                     "source_type": source_type,
                     "reason": f"Could not fetch plugin from server, got {e}",
                 }
-                self._send_result_notification("install", result)
+                self._send_result_notification("install", result, partial=partial)
 
             except exceptions.InvalidPackageFormat:
                 self._logger.error(
@@ -823,7 +972,7 @@ class PluginManagerPlugin(
                     "reason": "Could not install plugin from {}, was neither "
                     "a plugin archive nor a single file plugin".format(source),
                 }
-                self._send_result_notification("install", result)
+                self._send_result_notification("install", result, partial=partial)
 
             except Exception:
                 error_msg = (
@@ -838,7 +987,7 @@ class PluginManagerPlugin(
                     "source_type": source_type,
                     "reason": error_msg,
                 }
-                self._send_result_notification("install", result)
+                self._send_result_notification("install", result, partial=partial)
 
             finally:
                 if folder is not None:
@@ -856,6 +1005,7 @@ class PluginManagerPlugin(
         force=False,
         reinstall=None,
         dependency_links=False,
+        partial=False,
     ):
         throttled = self._get_throttled()
         if (
@@ -876,7 +1026,7 @@ class PluginManagerPlugin(
                 "source_type": source_type,
                 "reason": error_msg,
             }
-            self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         from urllib.parse import quote as url_quote
@@ -930,11 +1080,11 @@ class PluginManagerPlugin(
                     source
                 ),
             }
-            self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         if is_python_mismatch(stderr):
-            return self.handle_python_mismatch(source, source_type)
+            return self.handle_python_mismatch(source, source_type, partial=partial)
 
         if force:
             # We don't use --upgrade here because that will also happily update all our dependencies - we'd rather
@@ -953,7 +1103,7 @@ class PluginManagerPlugin(
                         source
                     ),
                 }
-                self._send_result_notification("install", result)
+                self._send_result_notification("install", result, partial=partial)
                 return result
 
             if is_python_mismatch(stderr):
@@ -972,7 +1122,7 @@ class PluginManagerPlugin(
                 "reason": "Could not parse output from pip, see plugin_pluginmanager_console.log "
                 "for generated output",
             }
-            self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         # We'll need to fetch the "Successfully installed" line, strip the "Successfully" part, then split
@@ -999,7 +1149,7 @@ class PluginManagerPlugin(
                 "source_type": source_type,
                 "reason": "Pip did not report successful installation",
             }
-            self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         installed = list(
@@ -1026,7 +1176,7 @@ class PluginManagerPlugin(
                 "was_reinstalled": False,
                 "plugin": "unknown",
             }
-            self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         self._plugin_manager.reload_plugins()
@@ -1082,10 +1232,10 @@ class PluginManagerPlugin(
             or reinstall is not None,
             "plugin": self._to_external_plugin(new_plugin),
         }
-        self._send_result_notification("install", result)
+        self._send_result_notification("install", result, partial=partial)
         return result
 
-    def _handle_python_mismatch(self, source, source_type):
+    def _handle_python_mismatch(self, source, source_type, partial=False):
         self._logger.error(
             "Installing the plugin from {} failed, pip reported a Python version mismatch".format(
                 source
@@ -1098,11 +1248,13 @@ class PluginManagerPlugin(
             "reason": "Pip reported a Python version mismatch",
             "faq": "https://faq.octoprint.org/plugin-python-mismatch",
         }
-        self._send_result_notification("install", result)
+        self._send_result_notification("install", result, partial=partial)
         return result
 
     # noinspection DuplicatedCode
-    def _command_install_pythonfile(self, path, source=None, source_type=None, name=None):
+    def _command_install_pythonfile(
+        self, path, source=None, source_type=None, name=None, partial=False
+    ):
         if name is None:
             name = os.path.basename(path)
 
@@ -1131,7 +1283,7 @@ class PluginManagerPlugin(
                 )
             )
             result = PYTHON_MISMATCH
-            self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         pythoncompat = metadata.get(
@@ -1145,7 +1297,7 @@ class PluginManagerPlugin(
                 )
             )
             result = PYTHON_MISMATCH
-            self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         # copy plugin
@@ -1160,7 +1312,7 @@ class PluginManagerPlugin(
                 "source_type": source_type,
                 "reason": "Plugin could not be copied",
             }
-            self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         plugins = self._plugin_manager.find_plugins(existing={}, ignore_uninstalled=False)
@@ -1180,7 +1332,7 @@ class PluginManagerPlugin(
                 "was_reinstalled": False,
                 "plugin": "unknown",
             }
-            self._send_result_notification("install", result)
+            self._send_result_notification("install", result, partial=partial)
             return result
 
         self._plugin_manager.reload_plugins()
@@ -1224,7 +1376,96 @@ class PluginManagerPlugin(
             "was_reinstalled": new_plugin.key in all_plugins_before,
             "plugin": self._to_external_plugin(new_plugin),
         }
-        self._send_result_notification("install", result)
+        self._send_result_notification("install", result, partial=partial)
+        return result
+
+    def _command_install_jsonfile(
+        self, path, source=None, source_type=None, name=None, partial=False
+    ):
+        import json
+
+        sub_results = []
+
+        try:
+            if not self._jsoninstall_lock.acquire(blocking=False):
+                self._logger.error(
+                    "Attempting to install from json file from within an install running from a json install - this is not supported"
+                )
+                result = {
+                    "result": False,
+                    "source": source,
+                    "source_type": source_type,
+                    "reason": "Recursive json install",
+                }
+                self._send_result_notification("install", result, partial=partial)
+                return result
+
+            if name is None:
+                name = os.path.basename(path)
+
+            self._logger.info(f"Installing plugins from export {name} from {source}")
+
+            with open(path) as f:
+                export = json.load(f)
+
+            if not isinstance(export, list):
+                self._logger.error(
+                    f"Installing plugins from export {name} from {source} failed, export is not a list"
+                )
+                result = {
+                    "result": False,
+                    "source": source,
+                    "source_type": source_type,
+                    "reason": "Invalid export",
+                }
+                self._send_result_notification("install", result, partial=partial)
+                return result
+
+            for entry in export:
+                if isinstance(entry, dict):
+                    archive = entry.get("archive")
+                    name = None
+
+                    if archive is None:
+                        if not self._repository_available:
+                            continue
+                        key = entry.get("key")
+                        if not key:
+                            continue
+                        repo_entry = self._repository_plugins_by_id.get(key)
+                        if not repo_entry:
+                            continue
+                        archive = repo_entry.get("archive")
+                        if not archive:
+                            continue
+
+                elif isinstance(entry, str):
+                    # just a URL?
+                    archive = entry
+
+                try:
+                    message = f"Installing plugin from {archive}"
+                    self._logger.info(message)
+                    self._log_message(message)
+                    sub_result = self.command_install(
+                        url=archive, name=name, partial=True
+                    )
+                    sub_results.append(sub_result)
+
+                except Exception:
+                    self._logger.exception(
+                        f"Installing plugin from {archive} failed, continuing with next entry"
+                    )
+        finally:
+            self._jsoninstall_lock.release()
+
+        result = {
+            "result": True,
+            "source": source,
+            "source_type": source_type,
+            "sub_results": sub_results,
+        }
+        self._send_result_notification("install", result, partial=partial)
         return result
 
     def command_uninstall(self, plugin, cleanup=False):
@@ -1561,8 +1802,11 @@ class PluginManagerPlugin(
 
         return None
 
-    def _send_result_notification(self, action, result):
-        notification = {"type": "result", "action": action}
+    def _send_result_notification(self, action, result, partial=False):
+        notification = {
+            "type": "partial_result" if partial else "result",
+            "action": action,
+        }
         notification.update(result)
         self._plugin_manager.send_plugin_message(self._identifier, notification)
 
@@ -1578,7 +1822,6 @@ class PluginManagerPlugin(
         additional_args = self._settings.get(["pip_args"])
 
         if additional_args is not None:
-
             inapplicable_arguments = self.__class__.PIP_INAPPLICABLE_ARGUMENTS.get(
                 args[0], list()
             )
@@ -1745,7 +1988,7 @@ class PluginManagerPlugin(
 
         repository_url = self._settings.get(["repository"])
         try:
-            r = requests.get(repository_url, timeout=30)
+            r = requests.get(repository_url, timeout=3.05)
             r.raise_for_status()
             self._logger.info(f"Loaded plugin repository data from {repository_url}")
         except Exception as e:
@@ -1793,6 +2036,7 @@ class PluginManagerPlugin(
         self._repository_plugins = list(
             filter(lambda x: x is not None, map(map_repository_entry, repo_data))
         )
+        self._repository_plugins_by_id = {x["id"]: x for x in self._repository_plugins}
         return True
 
     def _is_notices_cache_valid(self, mtime=None):
@@ -1834,7 +2078,7 @@ class PluginManagerPlugin(
 
         notices_url = self._settings.get(["notices"])
         try:
-            r = requests.get(notices_url, timeout=30)
+            r = requests.get(notices_url, timeout=3.05)
             r.raise_for_status()
             self._logger.info(f"Loaded plugin notices data from {notices_url}")
         except Exception as e:
@@ -1970,7 +2214,11 @@ class PluginManagerPlugin(
 
     @staticmethod
     def generate_plugins_json(
-        settings, plugin_manager, ignore_bundled=True, ignore_plugins_folder=True
+        settings,
+        plugin_manager,
+        ignore_bundled=True,
+        ignore_plugins_folder=True,
+        repo_plugins=None,
     ):
         plugins = []
         plugin_folder = settings.getBaseFolder("plugins")
@@ -1983,7 +2231,10 @@ class PluginManagerPlugin(
                 # ignore bundled or from the plugins folder already included in the backup
                 continue
 
-            plugins.append({"key": plugin.key, "name": plugin.name, "url": plugin.url})
+            data = {"key": plugin.key, "name": plugin.name, "url": plugin.url}
+            if repo_plugins and plugin.key in repo_plugins:
+                data["archive"] = repo_plugins[plugin.key]["archive"]
+            plugins.append(data)
         return plugins
 
     def _to_external_plugin(self, plugin):
@@ -1998,6 +2249,7 @@ class PluginManagerPlugin(
             "version": plugin.version,
             "url": plugin.url,
             "license": plugin.license,
+            "privacypolicy": plugin.privacypolicy,
             "python": plugin.pythoncompat,
             "bundled": plugin.bundled,
             "managable": plugin.managable,

@@ -92,7 +92,6 @@ def fix_websocket_check_origin():
 
 
 class RequestlessExceptionLoggingMixin(tornado.web.RequestHandler):
-
     LOG_REQUEST = False
 
     def log_exception(self, typ, value, tb, *args, **kwargs):
@@ -795,6 +794,14 @@ class WsgiInputContainer:
             environ["CONTENT_TYPE"] = request.headers.pop("Content-Type")
         if "Content-Length" in request.headers:
             environ["CONTENT_LENGTH"] = request.headers.pop("Content-Length")
+
+        # remove transfer encoding header if chunked, otherwise flask wsgi entrypoint makes input empty
+        if (
+            "Transfer-Encoding" in request.headers
+            and request.headers.get("Transfer-Encoding") == "chunked"
+        ):
+            request.headers.pop("Transfer-Encoding")
+
         for key, value in request.headers.items():
             environ["HTTP_" + key.replace("-", "_").upper()] = value
         return environ
@@ -1184,6 +1191,8 @@ class LargeResponseHandler(
         if not self._allow_client_caching:
             self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
             self.set_header("Expires", "-1")
+
+        self.set_header("X-Original-Content-Length", str(self.get_content_size()))
 
     @property
     def original_absolute_path(self):
@@ -1608,7 +1617,6 @@ class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
 
 
 class GlobalHeaderTransform(tornado.web.OutputTransform):
-
     HEADERS = {}
     FORCED_HEADERS = {}
     REMOVED_HEADERS = []

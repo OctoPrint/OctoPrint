@@ -42,7 +42,6 @@ class DiscoveryPlugin(
     octoprint.plugin.BlueprintPlugin,
     octoprint.plugin.SettingsPlugin,
 ):
-
     ssdp_multicast_addr = "239.255.255.250"  # IPv6: ff0X::c
 
     ssdp_multicast_port = 1900
@@ -688,7 +687,6 @@ class DiscoveryPlugin(
         )
 
         class Request(BaseHTTPRequestHandler):
-
             # noinspection PyMissingConstructor
             def __init__(self, request_text):
                 self.rfile = BytesIO(request_text)

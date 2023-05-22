@@ -110,7 +110,7 @@ The subnet to use is usually the IP address range of your LAN, which sounds scar
 actually isn't. Just `figure out your PC's IP address and subnet mask <https://lifehacker.com/how-to-find-your-local-and-external-ip-address-5833108>`_
 and then combine both with a / in between.
 
-On OctoPi (or another Linux distribution) you can use the follwing command:
+On OctoPi (or another Linux distribution) you can use the following command:
 
 .. code-block::
 
@@ -202,7 +202,7 @@ further down there's also a dedicated list of steps for OctoPi specifically.
 
 4. Restart OctoPrint, check that everything works.
 
-This will automatically log you in as the user you specified whenver you connect to
+This will automatically log you in as the user you specified whenever you connect to
 OctoPrint from an address in the address range (e.g. a device on your local network).
 
 OctoPi specific steps

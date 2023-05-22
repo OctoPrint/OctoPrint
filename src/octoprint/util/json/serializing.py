@@ -57,7 +57,7 @@ class SerializableJsonEncoding(JsonEncoding):
     def encode(cls, val):
         """
         Recursively replace all instances of encodable types with their encoded
-        value. This is useful over the ``default=`` functionallity of the JSON
+        value. This is useful over the ``default=`` functionality of the JSON
         encoder because JSON will not call default for tuples, lists, ints, etc:
         https://docs.python.org/3/library/json.html#json.JSONEncoder
 

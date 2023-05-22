@@ -7,7 +7,8 @@ Backup Plugin
 
 The OctoPrint Backup Plugin comes bundled with OctoPrint (starting with 1.3.10).
 
-It allows the creation and restoration [#1]_ of backups of OctoPrint's settings, data and installed plugins [#2]_.
+It allows the creation and restoration [#1]_ of backups of OctoPrint's settings, data and installed plugins [#2]_
+(but doesn't restore the same plugins versions [#3]_).
 
 This allows easy migration
 to newly setup instances as well as making regular backups to prevent data loss.
@@ -171,10 +172,60 @@ octoprint.plugin.backup.additional_excludes
    :return: A list of paths to exclude, relative to your plugin's data folder
    :rtype: list
 
-Helpers
--------
+.. _sec-bundledplugins-backup-hooks-before-backup:
+
+octoprint.plugin.backup.before_backup
++++++++++++++++++++++++++++++++++++++
+
+.. py:function:: before_backup_hook(*args, **kwargs)
+
+   .. versionadded:: 1.9.0
+
+   Use this to perform actions right before a backup is created.
+
+.. _sec-bundledplugins-backup-hooks-after-backup:
+
+octoprint.plugin.backup.after_backup
+++++++++++++++++++++++++++++++++++++
+
+.. py:function:: after_backup_hook(error=False, *args, **kwargs)
+
+   .. versionadded:: 1.9.0
+
+   Use this to perform actions right after a backup was created or backup creation failed. The ``error`` parameter will be set to ``True`` if
+   the backup creation failed.
+
+   :param error bool: Whether the backup creation failed or not
+
+.. _sec-bundledplugins-backup-hooks-before-restore:
+
+octoprint.plugin.backup.before_restore
+++++++++++++++++++++++++++++++++++++++
+
+.. py:function:: before_restore_hook(*args, **kwargs)
+
+   .. versionadded:: 1.9.0
+
+   Use this to perform actions right before a backup is restored.
+
+.. _sec-bundledplugins-backup-hooks-after-restore:
+
+octoprint.plugin.backup.after_restore
++++++++++++++++++++++++++++++++++++++
+
+.. py:function:: after_restore_hook(error=False, *args, **kwargs)
+
+   .. versionadded:: 1.9.0
+
+   Use this to perform actions right after a backup was restored or backup restoration failed. The ``error`` parameter will be set to ``True`` if
+   the backup restoration failed.
+
+   :param error bool: Whether the backup restoration failed or not
 
 .. _sec-bundledplugins-backup-helpers:
+
+Helpers
+-------
 
 The Backup plugin exports two helpers that can be used by other plugins or internal methods
 from within OctoPrint, without going via the API.
@@ -208,3 +259,5 @@ its source repository under ``src/octoprint/plugins/backup``.
 .. [#2] Note that only those plugins that are available on `OctoPrint's official plugin repository <https://plugins.octoprint.org>`_
         can be automatically restored. If you have plugins installed that are not available on there you'll get their
         names and - if available - homepage URL displayed after restore in order to be able to manually reinstall them.
+.. [#3] Note that the restore process will install the latest possible versions of the plugins instead of the version that was installed at backup
+   creation time.

@@ -2,6 +2,5 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 
 class FileDestinations:
-
     SDCARD = "sdcard"
     LOCAL = "local"

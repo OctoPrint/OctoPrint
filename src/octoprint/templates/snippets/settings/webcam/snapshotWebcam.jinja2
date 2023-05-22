@@ -1,0 +1,40 @@
+ <div class="control-group" title="{{ _('Snapshot Webcam')|edq }}">
+    <label class="control-label" for="settings-snapshotWebcam">{{ _('Snapshot Webcam') }}</label>
+    <div class="controls">
+        <select id="settings-snapshotWebcam" data-bind="options: webcam_webcams,
+                                optionsText: function(key) { return key.displayName },
+                                optionsValue: function(key) { return key.name },
+                                value: webcam_snapshotWebcam">
+        </select>
+
+        <!-- ko foreach: webcam_webcams -->
+            <!-- ko if: name == $parent.webcam_snapshotWebcam() -->
+              <div class="help-block">
+                    <span><strong>{{ _('Snapshot stream')}}&nbsp;</strong></span>
+                    <!-- ko if: canSnapshot -->
+                        <!-- ko if: snapshotDisplay -->
+                            <span data-bind="text: snapshotDisplay"></span>&nbsp;
+                            <a data-bind="attr: { href: snapshotDisplay }, visible: $parent.validURL(snapshotDisplay)" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a>
+                        <!-- /ko -->
+                        <!-- ko ifnot: snapshotDisplay -->
+                            <span>{{ _('Supported')}}</span>
+                        <!-- /ko -->
+                    <!-- /ko -->
+                    <!-- ko ifnot: canSnapshot -->
+                        <span>{{ _('Not supported')}}</span>
+                    <!-- /ko -->
+                </div>
+            <!-- /ko -->
+        <!-- /ko -->
+
+        <div class="help-block" style="padding-top: 10px;">{% trans %}
+            <p>
+                Selects the webcam to use to take snapshots for the timelapse.
+            </p>
+            <p>
+                You can make changes to this webcam's configuration in its plugin settings, if it provides any.
+            </p>
+        {% endtrans %}</div>
+
+    </div>
+</div>

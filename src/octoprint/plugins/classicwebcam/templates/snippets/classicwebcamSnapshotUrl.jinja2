@@ -1,0 +1,10 @@
+<div class="control-group" title="{{ _('URL to use for retrieving webcam snapshot images for timelapse creation')|edq }}">
+    <label class="control-label" for="settings-webcamSnapshotUrl">{{ _('Snapshot URL') }}</label>
+    <div class="controls">
+        <div class="input-append">
+            <input type="text" class="input-block-level" data-bind="value: snapshotUrl, valueUpdate: 'afterkeydown'" id="settings-webcamSnapshotUrl">
+            <button class="btn" type="button" data-bind="click: testWebcamSnapshotUrl, enable: snapshotUrl() && !testWebcamSnapshotUrlBusy(), css: {disabled: !snapshotUrl() || testWebcamSnapshotUrlBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testWebcamSnapshotUrlBusy"></i> {{ _('Test') }}</button>
+        </div>
+        <span class="help-inline">{% trans %}Fully qualified URL, needs to be reachable by OctoPrint's server{% endtrans %}</span>
+    </div>
+</div>

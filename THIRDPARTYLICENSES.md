@@ -28,6 +28,7 @@
   * [md5.js](https://blueimp.github.io/JavaScript-MD5/): MIT
   * [Modernizr](http://modernizr.com): MIT
   * [Moment.js](http://momentjs.com/): MIT
+  * [Pako](https://github.com/nodeca/pako): MIT
   * [PNotify](http://sciactive.com/pnotify/): GPL, LGPL, MPL (triple licensed)
   * [pusher.color.js](http://cache.preserve.io/5g18q0pw/index.html) (original link dead): MIT
   * [SockJS](https://github.com/sockjs/sockjs-client): MIT
@@ -43,7 +44,7 @@
   * [emoji](https://github.com/carpedm20/emoji/): BSD
   * [feedparser](https://github.com/kurtmckee/feedparser): BSD
   * [filetype](https://h2non.github.io/filetype.py/): MIT
-  * [Flask](http://flask.pocoo.org/): BSD
+  * [Flask](https://flask.palletsprojects.com/): BSD
   * [Flask-Assets](http://github.com/miracle2k/flask-assets): BSD
   * [Flask-Babel](http://github.com/mitsuhiko/flask-babel): BSD
   * [Flask-Login](https://github.com/maxcountryman/flask-login): MIT

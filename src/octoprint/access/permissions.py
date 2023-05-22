@@ -185,7 +185,7 @@ class PluginIdentityContext:
         # check the permission here
         if not permission.can():
             if self.http_exception:
-                abort(self.http_exception, permission)
+                abort(self.http_exception)
             raise PermissionDenied(permission)
 
     def __exit__(self, *args):
@@ -268,7 +268,6 @@ class PermissionsMetaClass(type):
 
 
 class Permissions(metaclass=PermissionsMetaClass):
-
     # Special permission
     ADMIN = OctoPrintPermission(
         "Admin",
@@ -415,20 +414,20 @@ class Permissions(metaclass=PermissionsMetaClass):
     )
     TIMELAPSE_DELETE = OctoPrintPermission(
         "Timelapse Delete",
-        gettext("Allows to delete timelapse videos and unrendered timelapses"),
+        gettext("Allows to delete timelapse videos"),
         RoleNeed("timelapse_delete"),
+        default_groups=[USER_GROUP],
+    )
+    TIMELAPSE_MANAGE_UNRENDERED = OctoPrintPermission(
+        "Timelapse Manage Unrendered",
+        gettext("Allows to list, delete and render unrendered timelapses"),
+        RoleNeed("timelapse_manage_unrendered"),
         default_groups=[USER_GROUP],
     )
     TIMELAPSE_ADMIN = OctoPrintPermission(
         "Timelapse Admin",
-        gettext(
-            "Allows to change the timelapse settings and delete or "
-            'render unrendered timelapses. Includes the "Timelapse List",'
-            '"Timelapse Delete" and "Timelapse Download" permissions'
-        ),
+        gettext("Allows to change the timelapse settings."),
         RoleNeed("timelapse_admin"),
-        TIMELAPSE_LIST,
-        TIMELAPSE_DOWNLOAD,
         default_groups=[USER_GROUP],
     )
 

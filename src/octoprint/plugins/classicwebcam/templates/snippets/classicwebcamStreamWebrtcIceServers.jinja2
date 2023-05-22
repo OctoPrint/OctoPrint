@@ -1,0 +1,7 @@
+<div class="control-group" title="{{ _('ICE server (STUN and/or TURN) to use for WebRTC')|edq }}">
+    <label class="control-label" for="settings-webcamStreamWebrtcIceServers">{{ _('WebRTC ICE endpoint') }}</label>
+    <div class="controls">
+        <input type="text" class="input-block-level" data-bind="value: streamWebrtcIceServersText, valueUpdate: 'afterkeydown'" id="settings-webcamStreamWebrtcIceServers">
+        <span class="help-block"><span class="label">{{ _('WebRTC') }}</span> {% trans %}Only used for WebRTC streams. Optionally specify the ICE server(s) (STUN and/or TURN) to use for WebRTC. Multiple servers should be separated by a comma. If unsure, leave at the default of <code>stun:stun.l.google.com:19302</code>.{% endtrans %}</span>
+    </div>
+</div>

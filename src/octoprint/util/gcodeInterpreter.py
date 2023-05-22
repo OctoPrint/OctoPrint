@@ -194,6 +194,22 @@ class MinMax3D:
             setattr(result, c, value)
         return result
 
+    @property
+    def dimensions(self):
+        size = self.size
+        return {"width": size.x, "depth": size.y, "height": size.z}
+
+    @property
+    def area(self):
+        return {
+            "minX": None if math.isinf(self.min.x) else self.min.x,
+            "minY": None if math.isinf(self.min.y) else self.min.y,
+            "minZ": None if math.isinf(self.min.z) else self.min.z,
+            "maxX": None if math.isinf(self.max.x) else self.max.x,
+            "maxY": None if math.isinf(self.max.y) else self.max.y,
+            "maxZ": None if math.isinf(self.max.z) else self.max.z,
+        }
+
 
 class AnalysisAborted(Exception):
     def __init__(self, reenqueue=True, *args, **kwargs):
@@ -217,7 +233,8 @@ class gcode:
         self._abort = False
         self._reenqueue = True
         self._filamentDiameter = 0
-        self._minMax = MinMax3D()
+        self._print_minMax = MinMax3D()
+        self._travel_minMax = MinMax3D()
         self._progress_callback = progress_callback
 
         self._incl_layers = incl_layers
@@ -249,19 +266,19 @@ class gcode:
 
     @property
     def dimensions(self):
-        size = self._minMax.size
-        return {"width": size.x, "depth": size.y, "height": size.z}
+        return self._print_minMax.dimensions
+
+    @property
+    def travel_dimensions(self):
+        return self._travel_minMax.dimensions
 
     @property
     def printing_area(self):
-        return {
-            "minX": None if math.isinf(self._minMax.min.x) else self._minMax.min.x,
-            "minY": None if math.isinf(self._minMax.min.y) else self._minMax.min.y,
-            "minZ": None if math.isinf(self._minMax.min.z) else self._minMax.min.z,
-            "maxX": None if math.isinf(self._minMax.max.x) else self._minMax.max.x,
-            "maxY": None if math.isinf(self._minMax.max.y) else self._minMax.max.y,
-            "maxZ": None if math.isinf(self._minMax.max.z) else self._minMax.max.z,
-        }
+        return self._print_minMax.area
+
+    @property
+    def travel_area(self):
+        return self._travel_minMax.area
 
     @property
     def layers(self):
@@ -291,7 +308,7 @@ class gcode:
         g90_extruder=False,
         bed_z=0.0,
     ):
-        self._minMax.min.z = bed_z
+        self._print_minMax.min.z = self._travel_minMax.min.z = bed_z
         if os.path.isfile(filename):
             self.filename = filename
             self._fileSize = os.stat(filename).st_size
@@ -463,12 +480,6 @@ class gcode:
                     else:
                         e -= currentE[currentExtruder]
 
-                    # If move with extrusion, calculate new min/max coordinates of model
-                    if e > 0 and move:
-                        # extrusion and move -> oldPos & pos relevant for print area & dimensions
-                        self._minMax.record(oldPos)
-                        self._minMax.record(pos)
-
                     totalExtrusion[currentExtruder] += e
                     currentE[currentExtruder] += e
                     maxExtrusion[currentExtruder] = max(
@@ -483,6 +494,15 @@ class gcode:
                             maxExtrusion[i] = max(maxExtrusion[i], totalExtrusion[i])
                 else:
                     e = 0
+
+                # If move, calculate new min/max coordinates
+                if move:
+                    self._travel_minMax.record(oldPos)
+                    self._travel_minMax.record(pos)
+                    if e > 0:
+                        # store as print move if extrusion is > 0
+                        self._print_minMax.record(oldPos)
+                        self._print_minMax.record(pos)
 
                 # move time in x, y, z, will be 0 if no movement happened
                 moveTimeXYZ = abs((oldPos - pos).length / feedrate)
@@ -546,13 +566,17 @@ class gcode:
                 centerArc = Vector3D(oldPos.x + i, oldPos.y + j, oldPos.z)
                 startAngle = math.atan2(oldPos.y - centerArc.y, oldPos.x - centerArc.x)
                 endAngle = math.atan2(pos.y - centerArc.y, pos.x - centerArc.x)
+                arcAngle = endAngle - startAngle
 
-                if gcode == "G2":
+                if gcode in ("G2", "G02"):
                     startAngle, endAngle = endAngle, startAngle
+                    arcAngle = -arcAngle
                 if startAngle < 0:
                     startAngle += math.pi * 2
                 if endAngle < 0:
                     endAngle += math.pi * 2
+                if arcAngle < 0:
+                    arcAngle += math.pi * 2
 
                 # from now on we only think in counter-clockwise direction
 
@@ -562,15 +586,6 @@ class gcode:
                         pass
                     else:
                         e -= currentE[currentExtruder]
-
-                    # If move with extrusion, calculate new min/max coordinates of model
-                    if e > 0 and move:
-                        # extrusion and move -> oldPos & pos relevant for print area & dimensions
-                        self._minMax.record(oldPos)
-                        self._minMax.record(pos)
-                        self._addArcMinMax(
-                            self._minMax, startAngle, endAngle, centerArc, r
-                        )
 
                     totalExtrusion[currentExtruder] += e
                     currentE[currentExtruder] += e
@@ -587,8 +602,26 @@ class gcode:
                 else:
                     e = 0
 
+                # If move, calculate new min/max coordinates
+                if move:
+                    self._travel_minMax.record(oldPos)
+                    self._travel_minMax.record(pos)
+                    self._addArcMinMax(
+                        self._travel_minMax, startAngle, endAngle, centerArc, r
+                    )
+                    if e > 0:
+                        # store as print move if extrusion is > 0
+                        self._print_minMax.record(oldPos)
+                        self._print_minMax.record(pos)
+                        self._addArcMinMax(
+                            self._print_minMax, startAngle, endAngle, centerArc, r
+                        )
+
+                # calculate 3d arc length
+                arcLengthXYZ = math.sqrt((oldPos.z - pos.z) ** 2 + (arcAngle * r) ** 2)
+
                 # move time in x, y, z, will be 0 if no movement happened
-                moveTimeXYZ = abs((oldPos - pos).length / feedrate)
+                moveTimeXYZ = abs(arcLengthXYZ / feedrate)
 
                 # time needed for extruding, will be 0 if no extrusion happened
                 extrudeTime = abs(e / feedrate)
@@ -678,10 +711,17 @@ class gcode:
                 f = getCodeFloat(line, "F")
                 if s is not None and f is not None:
                     if gcode == "M207":
-                        fwretractTime = s / f
+                        # Ensure division is valid
+                        if f > 0:
+                            fwretractTime = s / f
+                        else:
+                            fwretractTime = 0
                         fwretractDist = s
                     else:
-                        fwrecoverTime = (fwretractDist + s) / f
+                        if f > 0:
+                            fwrecoverTime = (fwretractDist + s) / f
+                        else:
+                            fwrecoverTime = 0
             elif gcode == "M605":  # Duplication/Mirroring mode
                 s = getCodeInt(line, "S")
                 if s in [2, 4, 5, 6]:
@@ -792,6 +832,8 @@ class gcode:
             "extrusion_volume": self.extrusionVolume,
             "dimensions": self.dimensions,
             "printing_area": self.printing_area,
+            "travel_dimensions": self.travel_dimensions,
+            "travel_area": self.travel_area,
         }
         if self._incl_layers:
             result["layers"] = self.layers

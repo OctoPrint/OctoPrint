@@ -36,7 +36,6 @@ class AnnouncementPlugin(
     octoprint.plugin.TemplatePlugin,
     octoprint.plugin.EventHandlerPlugin,
 ):
-
     # noinspection PyMissingConstructor
     def __init__(self):
         self._cached_channel_configs = None
@@ -288,6 +287,35 @@ class AnnouncementPlugin(
 
         return NO_CONTENT
 
+    @octoprint.plugin.BlueprintPlugin.route("/channels", methods=["POST"])
+    @no_firstrun_access
+    @Permissions.PLUGIN_ANNOUNCEMENTS_READ.require(403)
+    def channels_command(self):
+        from octoprint.server import NO_CONTENT
+        from octoprint.server.util.flask import get_json_command_from_request
+
+        valid_commands = {"read": []}
+
+        command, _, response = get_json_command_from_request(
+            flask.request, valid_commands=valid_commands
+        )
+        if response is not None:
+            return response
+
+        if command == "read":
+            channel_data = self._fetch_all_channels()
+            for key, entries in channel_data.items():
+                if not entries:
+                    continue
+                last = sorted(
+                    self._to_internal_feed(entries),
+                    key=lambda x: x["published"],
+                    reverse=True,
+                )[0]["published"]
+                self._mark_read_until(key, last)
+
+        return NO_CONTENT
+
     def is_blueprint_protected(self):
         return False
 
@@ -408,7 +436,7 @@ class AnnouncementPlugin(
 
         if data is None:
             # cache not allowed or empty, fetch from network
-            if self._connectivity_checker.online:
+            if self._connectivity_checker.check_immediately():
                 data = self._get_channel_data_from_network(key, config)
             else:
                 self._logger.info(
@@ -459,7 +487,7 @@ class AnnouncementPlugin(
         url = config["url"]
         try:
             start = time.monotonic()
-            r = requests.get(url, timeout=30)
+            r = requests.get(url, timeout=3.05)
             r.raise_for_status()
             self._logger.info(
                 "Loaded channel {} from {} in {:.2}s".format(

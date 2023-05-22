@@ -1,0 +1,31 @@
+ <div class="control-group" title="{{ _('Fallback Webcam')|edq }}">
+    <label class="control-label" for="settings-defaultWebcam">{{ _('Fallback Webcam') }}</label>
+    <div class="controls">
+        <select id="settings-defaultWebcam" data-bind="options: webcam_webcams,
+                                optionsText: function(key) { return key.displayName },
+                                optionsValue: function(key) { return key.name },
+                                value: webcam_defaultWebcam">
+        </select>
+
+
+        <!-- ko foreach: webcam_webcams -->
+            <!-- ko if: name == $parent.webcam_defaultWebcam() -->
+                <div class="help-block">
+                    <span><strong>{{ _('MJPEG stream')}}&nbsp;</strong></span>
+                    <!-- ko if: compat != null && compat.stream -->
+                        <a data-bind="attr: { href: compat.stream }, text: compat.stream" rel="noreferer noopener" target="_blank"></a>
+                    <!-- /ko -->
+                    <!-- ko ifnot: compat != null && compat.stream -->
+                        {{ _('Not supported') }}
+                    <!-- /ko -->
+                </div>
+            <!-- /ko -->
+        <!-- /ko -->
+
+        <div class="help-block" style="padding-top: 10px;">{% trans %}
+            <p>
+                You can make changes to this webcam's configuration in its plugin settings if it provides any.
+            </p>
+        {% endtrans %}</div>
+    </div>
+</div>

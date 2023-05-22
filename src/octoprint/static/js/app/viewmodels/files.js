@@ -89,7 +89,7 @@ $(function () {
         self.moveDestinationFilename = ko.observable(undefined);
         self.moveDestinationFullpath = ko.pureComputed(function () {
             // Join the paths for renaming
-            if (self.moveSourceFilename() != self.moveDestinationFilename()) {
+            if (self.moveSourceFilename() !== self.moveDestinationFilename()) {
                 if (self.moveDestination() === "/") {
                     return self.moveDestination() + self.moveDestinationFilename();
                 } else {
@@ -100,6 +100,16 @@ $(function () {
             }
         });
         self.moveError = ko.observable("");
+        self.moveButtonText = ko.pureComputed(function () {
+            if (self.moveSource() === self.moveDestination()) {
+                return gettext("Rename");
+            } else {
+                // Moving, but maybe also renaming
+                if (self.moveSourceFilename() !== self.moveDestinationFilename()) {
+                    return gettext("Move & Rename");
+                } else return gettext("Move");
+            }
+        });
 
         self.folderList = ko.observableArray(["/"]);
         self.addFolderDialog = undefined;
@@ -402,7 +412,7 @@ $(function () {
         };
 
         self._otherRequestInProgress = undefined;
-        self._focus = undefined;
+        self._filesToFocus = [];
         self._switchToPath = undefined;
         self.requestData = function (params) {
             if (!self.loginState.hasPermission(self.access.permissions.FILES_LIST)) {
@@ -435,7 +445,7 @@ $(function () {
                 }
             }
 
-            self._focus = self._focus || focus;
+            self._filesToFocus = self._filesToFocus || focus;
             self._switchToPath = self._switchToPath || switchToPath;
 
             if (self._otherRequestInProgress !== undefined) {
@@ -446,7 +456,7 @@ $(function () {
                 .list(true, force)
                 .done(function (response) {
                     self.fromResponse(response, {
-                        focus: self._focus,
+                        focus: self._filesToFocus,
                         switchToPath: self._switchToPath
                     });
                 })
@@ -456,13 +466,13 @@ $(function () {
                 })
                 .always(function () {
                     self._otherRequestInProgress = undefined;
-                    self._focus = undefined;
+                    self._filesToFocus = [];
                     self._switchToPath = undefined;
                 }));
         };
 
         self.fromResponse = function (response, params) {
-            var focus = undefined;
+            var focus = [];
             var switchToPath;
 
             if (_.isObject(params)) {
@@ -470,7 +480,7 @@ $(function () {
                 switchToPath = params.switchToPath || undefined;
             } else if (arguments.length > 1) {
                 log.warn(
-                    "FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead."
+                    "FilesViewModel.fromResponse called with old argument list. That is deprecated, please use parameter object instead."
                 );
                 if (arguments.length > 2) {
                     focus = {location: arguments[2], path: arguments[1]};
@@ -530,27 +540,31 @@ $(function () {
                 self.changeFolderByPath(switchToPath);
             }
 
-            if (focus) {
-                // got a file to scroll to
-                var entryElement = self.getEntryElement({
-                    path: focus.path,
-                    origin: focus.location
-                });
-                if (entryElement) {
-                    // scroll to uploaded element
-                    self.listElement.scrollTop(entryElement.offsetTop);
-
-                    // highlight uploaded element
-                    var element = $(entryElement);
-                    element.on(
-                        "webkitAnimationEnd oanimationend msAnimationEnd animationend",
-                        function (e) {
-                            // remove highlight class again
-                            element.removeClass("highlight");
+            if (focus.length) {
+                _.each(focus, function (focusItem, index) {
+                    // got a file to scroll to
+                    var entryElement = self.getEntryElement({
+                        path: focusItem.path,
+                        origin: focusItem.location
+                    });
+                    if (entryElement) {
+                        // scroll to uploaded element
+                        if (index + 1 === focus.length) {
+                            self.listElement.scrollTop(entryElement.offsetTop);
                         }
-                    );
-                    element.addClass("highlight");
-                }
+
+                        // highlight uploaded element
+                        var element = $(entryElement);
+                        element.on(
+                            "webkitAnimationEnd oanimationend msAnimationEnd animationend",
+                            function (e) {
+                                // remove highlight class again
+                                element.removeClass("highlight");
+                            }
+                        );
+                        element.addClass("highlight");
+                    }
+                });
             }
 
             if (response.free !== undefined) {
@@ -861,13 +875,13 @@ $(function () {
                     var icon = $("i.fa-trash-alt", element);
                     if (icon.length) {
                         activateSpinner = function () {
-                            icon.removeClass("fa-trash-alt").addClass(
-                                "fa-spinner fa-spin"
+                            icon.removeClass("far fa-trash-alt").addClass(
+                                "fas fa-spinner fa-spin"
                             );
                         };
                         finishSpinner = function () {
-                            icon.removeClass("fa-spinner fa-spin").addClass(
-                                "fa-trash-alt"
+                            icon.removeClass("fas fa-spinner fa-spin").addClass(
+                                "far fa-trash-alt"
                             );
                         };
                     }
@@ -888,8 +902,27 @@ $(function () {
                             deferred.reject();
                         });
                 })
-                .fail(function () {
+                .fail(function (data) {
                     deferred.reject();
+
+                    // Notify user
+                    var error =
+                        "<p>" +
+                        gettext(
+                            "Could not remove entry. Please check octoprint.log for possible reasons."
+                        ) +
+                        "</p>";
+                    if (data.responseJSON && data.responseJSON.error) {
+                        error += pnotifyAdditionalInfo(
+                            "<pre>" + _.escape(data.responseJSON.error) + "</pre>"
+                        );
+                    }
+                    new PNotify({
+                        title: gettext("Failed to remove entry"),
+                        text: error,
+                        type: "error",
+                        hide: false
+                    });
                 });
 
             return deferred.promise().always(function () {
@@ -1116,6 +1149,11 @@ $(function () {
                 return true;
             }
 
+            var travelArea = data["gcodeAnalysis"]["travelArea"];
+            if (!travelArea) {
+                return true;
+            }
+
             var printerProfile = self.printerProfiles.currentProfileData();
             if (!printerProfile) {
                 return true;
@@ -1154,46 +1192,72 @@ $(function () {
                 }
             }
 
-            // model not within bounds, we need to prepare a warning
-            var warning =
-                "<p>" +
-                _.sprintf(
-                    gettext(
-                        "Object in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."
-                    ),
-                    {name: _.escape(data.name)}
-                ) +
-                "</p>";
             var info = "";
+            var objectFits = true;
+            var travelFits = true;
 
-            var formatData = {
-                profile: boundaries,
-                object: printingArea
-            };
-
-            // find exceeded dimensions
-            if (
-                printingArea["minX"] < boundaries["minX"] ||
-                printingArea["maxX"] > boundaries["maxX"]
-            ) {
-                info += gettext("Object exceeds print volume in width.<br>");
-            }
-            if (
-                printingArea["minY"] < boundaries["minY"] ||
-                printingArea["maxY"] > boundaries["maxY"]
-            ) {
-                info += gettext("Object exceeds print volume in depth.<br>");
-            }
-            if (
-                printingArea["minZ"] < boundaries["minZ"] ||
-                printingArea["maxZ"] > boundaries["maxZ"]
-            ) {
-                info += gettext("Object exceeds print volume in height.<br>");
+            function _area_exceeds_boundaries(ax, area) {
+                return (
+                    area["min" + ax] < boundaries["min" + ax] ||
+                    area["max" + ax] > boundaries["max" + ax]
+                );
             }
 
-            //warn user
-            if (info !== "") {
+            function _exceed_warning(culprit, dimension) {
+                return _.sprintf(
+                    gettext("%(culprit)s exceeds print volume in %(dimension)s.<br>"),
+                    {culprit: culprit, dimension: dimension}
+                );
+            }
+
+            // check if printing area exceeds boundaries
+            if (_area_exceeds_boundaries("X", printingArea)) {
+                info += _exceed_warning(gettext("Object"), gettext("width"));
+                objectFits = false;
+            }
+            if (_area_exceeds_boundaries("Y", printingArea)) {
+                info += _exceed_warning(gettext("Object"), gettext("depth"));
+                objectFits = false;
+            }
+            if (_area_exceeds_boundaries("Z", printingArea)) {
+                info += _exceed_warning(gettext("Object"), gettext("height"));
+                objectFits = false;
+            }
+
+            // check if travel area exceeds boundaries
+            if (_area_exceeds_boundaries("X", travelArea)) {
+                info += _exceed_warning(gettext("Travel"), gettext("width"));
+                travelFits = false;
+            }
+            if (_area_exceeds_boundaries("Y", travelArea)) {
+                info += _exceed_warning(gettext("Travel"), gettext("depth"));
+                travelFits = false;
+            }
+            if (_area_exceeds_boundaries("Z", travelArea)) {
+                info += _exceed_warning(gettext("Travel"), gettext("height"));
+                travelFits = false;
+            }
+
+            if (travelFits && objectFits) {
+                return true;
+            } else {
+                // model not within bounds, we need to prepare a warning
                 if (notify) {
+                    var formatData = {
+                        name: _.escape(data.name),
+                        profile: boundaries,
+                        object: printingArea,
+                        travel: travelArea,
+                        culprit: !objectFits ? "Object" : "Travel area"
+                    };
+
+                    info += _.sprintf(
+                        gettext(
+                            "Travel area: (%(travel.minX).2f, %(travel.minY).2f, %(travel.minZ).2f) &times; (%(travel.maxX).2f, %(travel.maxY).2f, %(travel.maxZ).2f)"
+                        ),
+                        formatData
+                    );
+                    info += "<br>";
                     info += _.sprintf(
                         gettext(
                             "Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"
@@ -1208,21 +1272,34 @@ $(function () {
                         formatData
                     );
 
+                    // prepare a warning message
+                    var warning =
+                        "<p>" +
+                        _.sprintf(
+                            gettext(
+                                "%(culprit)s in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."
+                            ),
+                            formatData
+                        ) +
+                        "</p>";
+
                     warning += pnotifyAdditionalInfo(info);
 
                     warning +=
                         '<p><small>You can disable this check via Settings &gt; Features &gt; "Enable model size detection [...]"</small></p>';
 
+                    //warn user
                     new PNotify({
-                        title: gettext("Object doesn't fit print volume"),
+                        title: _.sprintf(
+                            gettext("%(culprit)s exceeds print volume"),
+                            formatData
+                        ),
                         text: warning,
                         type: "warning",
                         hide: false
                     });
                 }
                 return false;
-            } else {
-                return true;
             }
         };
 
@@ -1401,7 +1478,7 @@ $(function () {
             self.uploadProgress.addClass("progress-striped").addClass("active");
             self.uploadProgressBar.css("width", "100%");
             if (payload.progressAvailable) {
-                self.uploadProgressPercentage(percentage);
+                self.uploadProgressPercentage(0);
                 self.uploadProgressText(
                     _.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0})
                 );
@@ -1547,12 +1624,13 @@ $(function () {
                 url: url,
                 dataType: "json",
                 dropZone: enable ? drop : null,
+                sequentialUploads: true,
                 drop: function (e, data) {},
                 add: self._handleUploadAdd,
                 submit: self._handleUploadStart,
                 done: self._handleUploadDone,
                 fail: self._handleUploadFail,
-                always: self._handleUploadAlways,
+                stop: self._handleUploadStop,
                 progressall: self._handleUploadProgress
             });
         };
@@ -1581,9 +1659,92 @@ $(function () {
             }
         };
 
+        self._uploadExistsQueue = []; // Files will be in this queue if their test fails and something needs to be done
+        self._uploadExistsOpen = false;
+
+        self._processUploadQueue = function () {
+            if (!self._uploadExistsQueue.length > 0 || self._uploadExistsOpen) return;
+
+            const hideAndSubmit = function (data) {
+                self.uploadExistsDialog.modal("hide");
+                self._uploadExistsOpen = false;
+                data.submit();
+                // Recursively move on to process the queue every time a dialog is closed
+                if (self._uploadExistsQueue.length > 0) {
+                    self._processUploadQueue();
+                }
+            };
+
+            // Collect an item from the queue that needs an overwrite dialog
+            const {data, response, path, fileSizeTooBig} =
+                self._uploadExistsQueue.shift();
+            const file = data.files[0];
+
+            const formData = {};
+            if (path !== "") {
+                formData.path = path;
+            }
+
+            // Build and show a dialog
+            self._uploadExistsOpen = true;
+
+            $("h3", self.uploadExistsDialog).text(
+                _.sprintf(gettext("File already exists: %(name)s"), {
+                    name: file.name
+                })
+            );
+            $("p, form", self.uploadExistsDialog).toggle(!fileSizeTooBig);
+            $("span", self.uploadExistsDialog).toggle(fileSizeTooBig);
+            $("input", self.uploadExistsDialog)
+                .val("")
+                .prop("placeholder", response.suggestion);
+            $("a.upload-rename", self.uploadExistsDialog)
+                .toggle(!fileSizeTooBig)
+                .prop("disabled", false)
+                .off("click")
+                .on("click", function () {
+                    var newName = $("input", self.uploadExistsDialog).val();
+                    if (newName === "") newName = response.suggestion;
+
+                    OctoPrint.files.exists("local", path, newName).done(function (r) {
+                        if (r.exists) {
+                            $(".control-group", self.uploadExistsDialog).addClass(
+                                "error"
+                            );
+                            $(".help-block", self.uploadExistsDialog).show();
+                        } else {
+                            $(".control-group", self.uploadExistsDialog).removeClass(
+                                "error"
+                            );
+                            $(".help-block", self.uploadExistsDialog).hide();
+
+                            formData.filename = newName;
+                            formData.noOverwrite = true;
+                            data.formData = formData;
+
+                            hideAndSubmit(data);
+                        }
+                    });
+                });
+            if (self.loginState.hasPermission(self.access.permissions.FILES_DELETE)) {
+                $("a.upload-overwrite", self.uploadExistsDialog)
+                    .off("click")
+                    .show()
+                    .on("click", function () {
+                        data.formData = formData;
+                        hideAndSubmit(data);
+                    });
+            } else {
+                $("a.upload-overwrite", self.uploadExistsDialog).hide();
+            }
+
+            self.uploadExistsDialog.modal("show");
+        };
+
         self._handleUploadAdd = function (e, data) {
             var file = data.files[0];
             var path = self.currentPath();
+            var fileSizeTooBig = file.size > self.freeSpace();
 
             var formData = {};
             if (path !== "") {
@@ -1595,78 +1756,50 @@ $(function () {
                     .exists("local", path, file.name)
                     .done(function (response) {
                         if (response.exists) {
-                            $("h3", self.uploadExistsDialog).text(
-                                _.sprintf(gettext("File already exists: %(name)s"), {
-                                    name: file.name
-                                })
-                            );
-                            $("input", self.uploadExistsDialog).val(response.suggestion);
-                            $("a.upload-rename", self.uploadExistsDialog)
-                                .prop("disabled", false)
-                                .off("click")
-                                .on("click", function () {
-                                    var newName = $(
-                                        "input",
-                                        self.uploadExistsDialog
-                                    ).val();
-
-                                    OctoPrint.files
-                                        .exists("local", path, newName)
-                                        .done(function (r) {
-                                            if (r.exists) {
-                                                $(
-                                                    ".control-group",
-                                                    self.uploadExistsDialog
-                                                ).addClass("error");
-                                                $(
-                                                    ".help-block",
-                                                    self.uploadExistsDialog
-                                                ).show();
-                                            } else {
-                                                $(
-                                                    ".control-group",
-                                                    self.uploadExistsDialog
-                                                ).removeClass("error");
-                                                $(
-                                                    ".help-block",
-                                                    self.uploadExistsDialog
-                                                ).hide();
-
-                                                self.uploadExistsDialog.modal("hide");
-
-                                                formData.filename = newName;
-                                                formData.noOverwrite = true;
-                                                data.formData = formData;
-
-                                                data.submit();
-                                            }
-                                        });
-                                });
-                            if (
-                                self.loginState.hasPermission(
-                                    self.access.permissions.FILES_DELETE
-                                )
-                            ) {
-                                $("a.upload-overwrite", self.uploadExistsDialog)
-                                    .off("click")
-                                    .show()
-                                    .on("click", function () {
-                                        self.uploadExistsDialog.modal("hide");
-                                        data.formData = formData;
-                                        data.submit();
-                                    });
-                            } else {
-                                $("a.upload-overwrite", self.uploadExistsDialog).hide();
-                            }
-                            self.uploadExistsDialog.modal("show");
+                            const queueEntry = {
+                                data,
+                                response,
+                                path,
+                                fileSizeTooBig
+                            };
+                            self._uploadExistsQueue.push(queueEntry);
+                            // Start processing queue - if already processing, this will do nothing
+                            self._processUploadQueue();
                         } else {
                             data.formData = formData;
                             data.submit();
                         }
                     });
             } else {
-                data.formData = formData;
-                data.submit();
+                if (fileSizeTooBig) {
+                    var error =
+                        "<p>" +
+                        gettext(
+                            "Could not upload the file. There is not enough disk space remaining."
+                        ) +
+                        "</p>";
+
+                    error +=
+                        "<pre>" +
+                        _.sprintf(gettext("Free Space: %(freespace)s"), {
+                            freespace: self.freeSpaceString()
+                        }) +
+                        "<br>" +
+                        _.sprintf(gettext("File Size: %(filesize)s"), {
+                            filesize: formatSize(file.size)
+                        }) +
+                        "</pre>";
+
+                    new PNotify({
+                        title: "Upload failed",
+                        text: error,
+                        type: "error",
+                        hide: false
+                    });
+                } else {
+                    data.formData = formData;
+                    data.submit();
+                }
             }
         };
 
@@ -1676,22 +1809,36 @@ $(function () {
         };
 
         self._handleUploadDone = function (e, data) {
-            self._setProgressBar(100, gettext("Refreshing list ..."), true);
-
             var focus = undefined;
             if (data.result.files.hasOwnProperty("sdcard")) {
                 focus = {location: "sdcard", path: data.result.files.sdcard.path};
             } else if (data.result.files.hasOwnProperty("local")) {
                 focus = {location: "local", path: data.result.files.local.path};
             }
-            self.requestData({focus: focus}).done(function () {
-                if (data.result.done) {
-                    self._setProgressBar(0, "", false);
-                }
-            });
+
+            if (focus) {
+                self._filesToFocus.push(focus);
+            }
 
             if (focus && _.endsWith(focus.path.toLowerCase(), ".stl")) {
                 self.slicing.show(focus.location, focus.path);
+            }
+        };
+
+        self._handleUploadStop = function (e, data) {
+            var reset = function () {
+                self.ignoreUpdatedFilesEvent = false;
+                self._setProgressBar(0, "", false);
+            };
+
+            if (self._filesToFocus.length > 0) {
+                // Only refresh the list if there were files uploaded successfully
+                self._setProgressBar(100, gettext("Refreshing list ..."), true);
+                self.requestData({focus: self._filesToFocus}).always(function () {
+                    reset();
+                });
+            } else {
+                reset();
             }
         };
 
@@ -1701,7 +1848,7 @@ $(function () {
             }).sort();
             extensions = extensions.join(", ");
 
-            var error = "<p>";
+            var error = "<p><pre>" + _.escape(data.files[0].name) + "</pre></p><p>";
             switch (data.jqXHR.status) {
                 case 409:
                     // already printing or otherwise busy
@@ -1735,9 +1882,9 @@ $(function () {
             }
             error += "</p>";
 
-            if (data.jqXHR.responseText) {
+            if (data.jqXHR.responseJSON && data.jqXHR.responseJSON.error) {
                 error += pnotifyAdditionalInfo(
-                    "<pre>" + _.escape(data.jqXHR.responseText) + "</pre>"
+                    "<pre>" + _.escape(data.jqXHR.responseJSON.error) + "</pre>"
                 );
             }
             new PNotify({
@@ -1746,11 +1893,6 @@ $(function () {
                 type: "error",
                 hide: false
             });
-            self._setProgressBar(0, "", false);
-        };
-
-        self._handleUploadAlways = function (e, data) {
-            self.ignoreUpdatedFilesEvent = false;
         };
 
         self._handleUploadProgress = function (e, data) {

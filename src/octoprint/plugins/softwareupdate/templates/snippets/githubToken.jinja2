@@ -1,7 +1,16 @@
 <div class="control-group">
     <label class="control-label">{{ _('GitHub Access Token') }}</label>
     <div class="controls">
-        <input type="text" class="input-block-level" data-bind="value: config_githubToken" placeholder="{{ _('Enter a new token...')|edq }}">
+        <div class="input-append input-block-level ">
+            <!-- ko if : config_githubTokenSet -->
+            <input type="text" class="input-block-level" data-bind="value: config_githubToken" placeholder="{{ _('Token entered but hidden for privacy reasons')|edq }}">
+            <!-- /ko -->
+            <!-- ko ifnot : config_githubTokenSet -->
+            <input type="text" class="input-block-level" data-bind="value: config_githubToken" placeholder="{{ _('Enter a new token...')|edq }}">
+            <!-- /ko -->
+            <a class="btn add-on btn-danger" title="Delete GitHub Access Token" data-bind="click: function() { $root.deleteGithubTokenApiKey(); }, css: {'disabled': !$root.config_githubTokenSet()}"><i class="far fa-trash-alt"></i></a>
+        </div>
         <span class="help-block">{{ _('Set this if you keep running into rate limiting issues. <a href="%(url)s" target="_blank" rel="noopener noreferer">See here for how to obtain a token</a>.', url="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token") }}</span>
+        <span class="help-block">{{ _('Please note that the deletion of the access token is applied immediately, without having to "Confirm" first.') }}</span>
     </div>
 </div>

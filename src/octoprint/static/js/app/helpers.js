@@ -619,7 +619,8 @@ function formatDate(unixTimestamp, options) {
         options = {seconds: false};
     }
 
-    if (!unixTimestamp) return "-";
+    var placeholder = options.placeholder || "-";
+    if (!unixTimestamp) return placeholder;
 
     var format = gettext(/* L10N: Date format */ "YYYY-MM-DD HH:mm");
     if (options.seconds) {
@@ -629,8 +630,9 @@ function formatDate(unixTimestamp, options) {
     return moment.unix(unixTimestamp).format(format);
 }
 
-function formatTimeAgo(unixTimestamp) {
-    if (!unixTimestamp) return "-";
+function formatTimeAgo(unixTimestamp, placeholder) {
+    placeholder = placeholder || "-";
+    if (!unixTimestamp) return placeholder;
     return moment.unix(unixTimestamp).fromNow();
 }
 
@@ -652,13 +654,25 @@ function cleanTemperature(temp, offThreshold) {
     return temp;
 }
 
-function formatTemperature(temp, showF, offThreshold) {
+function formatTemperature(temp, showF, offThreshold, returnUnicode) {
     if (temp === undefined || !_.isNumber(temp)) return "-";
     if (offThreshold !== undefined && temp < offThreshold) return gettext("off");
+
+    var degreeSymbol = "&deg;";
+    if (returnUnicode !== undefined && returnUnicode) {
+        degreeSymbol = "\u00B0";
+    }
+
     if (showF) {
-        return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, (temp * 9) / 5 + 32);
+        return _.sprintf(
+            "%.1f%sC (%.1f%sF)",
+            temp,
+            degreeSymbol,
+            (temp * 9) / 5 + 32,
+            degreeSymbol
+        );
     } else {
-        return _.sprintf("%.1f&deg;C", temp);
+        return _.sprintf("%.1f%sC", temp, degreeSymbol);
     }
 }
 
@@ -1485,7 +1499,7 @@ var sizeObservable = function (observable) {
 var getQueryParameterByName = function (name, url) {
     // from http://stackoverflow.com/a/901144/2028598
     if (!url) {
-        url = window.location.href;
+        url = fetchWindowLocation().href;
     }
     name = name.replace(/[\[\]]/g, "\\$&");
     var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
@@ -1543,7 +1557,7 @@ var copyToClipboard = function (text) {
 };
 
 var getExternalHostUrl = function () {
-    var loc = window.location;
+    var loc = fetchWindowLocation();
     var port = "";
     if (
         (loc.protocol === "http:" && loc.port !== "80") ||
@@ -1564,7 +1578,7 @@ var validateWebcamUrl = function (streamUrl) {
 
     if (lower.startsWith("//")) {
         // protocol relative
-        toParse = window.location.protocol + streamUrl;
+        toParse = fetchWindowLocation().protocol + streamUrl;
     } else if (lower.startsWith("/")) {
         // host relative
         toParse = getExternalHostUrl() + streamUrl;
@@ -1738,4 +1752,8 @@ var startWebRTC = function (videoElement, streamUrl, iceServers) {
 
     negotiateWebRTC(streamUrl);
     return pc;
+};
+
+var fetchWindowLocation = function () {
+    return window.location;
 };

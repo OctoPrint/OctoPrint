@@ -92,6 +92,7 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None
     for log in (
         "octoprint.log",
         "serial.log",
+        "tornado.log",
     ):
         logpath = os.path.join(logbase, log)
         if os.path.exists(logpath):
@@ -118,12 +119,16 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None
                             z.add_path(content, arcname=log)
                     elif callable(content):
                         # content generating callable
-                        z.add(to_bytes(content()), arcname=log)
+                        try:
+                            z.add(to_bytes(content()), arcname=log)
+                        except Exception:
+                            logging.getLogger(__name__).exception(
+                                f"Error while executing callable for additional bundle content {log} for plugin {name}",
+                                extra={"plugin": name},
+                            )
             except Exception:
                 logging.getLogger(__name__).exception(
-                    "Error while retrieving additional bundle contents for plugin {}".format(
-                        name
-                    ),
+                    f"Error while retrieving additional bundle contents for plugin {name}",
                     extra={"plugin": name},
                 )
 

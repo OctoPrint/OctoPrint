@@ -1,46 +1,38 @@
 {% if enableWebcam %}
-    <!-- ko if: loginState.hasPermissionKo(access.permissions.WEBCAM) -->
-    <div id="webcam_video_container" tabindex="0" data-bind="visible: webcamWebRTCEnabled() || webcamHlsEnabled(), css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
-        <div class="video-controls btn-group action-buttons">
-            <div class="btn btn-mini" data-bind="click: function(data, event) { $root.launchWebcamFullscreen() }"><i class="fas fa-expand"></i></div>
-            <div class="btn btn-mini" data-bind="visible: document.pictureInPictureEnabled, click: function(data, event) {  $root.launchWebcamPictureInPicture() }"><i class="fas fa-images"></i></div>
-            <div class="btn btn-mini" data-bind="click: function(data, event) { $root.toggleWebcamMute() }">
-                <!-- ko if: webcamMuted() -->
-                <i class="fas fa-volume-mute"></i>
-                <!-- /ko -->
-                <!-- ko ifnot: webcamMuted() -->
-                <i class="fas fa-volume-up"></i>
-                <!-- /ko -->
+    <div id="webcam_plugins_container" tabindex="0" data-bind="visible: loginState.hasPermissionKo(access.permissions.WEBCAM), event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
+        <div class="tabbable row-fluid">
+            <div class="tab-content" id="webcam-group">
+            {% for key in templates.webcam.order %}
+                {% set entry, data = templates.webcam.entries[key] %}
+                {% if data is not none %}
+                    {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                    <div id="{{ data._div }}"
+                            {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                            class="tab-pane {% if classes_content in data %}{{ data.classes_content|join(' ') }}{% elif classes in data %}{{ data.classes|join(' ') }}{% endif %}"
+                            {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif styles in data %} style="{{ data.styles|join(', ') }}" {% endif %}
+                            >
+                        {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template ignore missing %}{% endtry %}
+                    </div>
+                    {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                {% endif %}
+            {% endfor %}
             </div>
         </div>
-        <div data-bind="css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
-            <div class="rotation_target">
-                <div data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
-                    <video id="webcam_webrtc" muted autoplay playsinline style="width: 100%" data-bind="visible: webcamWebRTCEnabled()"></video>
-                    <video id="webcam_hls" muted autoplay playsinline style="width: 100%" data-bind="visible: webcamHlsEnabled()"></video>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }, visible: webcamMjpgEnabled()">
-        <div class="nowebcam" data-bind="visible: !webcamLoaded()">
-            <div class="text webcam_loading" data-bind="visible: !webcamLoaded() && !webcamError()">
-                <p><strong>{{ _('Webcam stream loading...') }}</strong></p>
-            </div>
-            <div class="text webcam_error" data-bind="visible: !webcamLoaded() && webcamError()">
-                <p><strong>{{ _('Webcam stream not loaded') }}</strong></p>
-                <p data-bind="visible: !loginState.isAdmin()"><small>{{ _('It might not be configured correctly or require authentication. To have this fixed, get in touch with an administrator of this OctoPrint instance.') }}</small></p>
-                <p data-bind="visible: loginState.isAdmin"><small>{{ _('It might not be configured correctly or require authentication. You can change the URL of the stream under "Settings" > "Webcam & Timelapse" > "Webcam" > "Stream URL". If you don\'t have a webcam you can also just disable webcam support there.') }}</small></p>
-                <p data-bind="visible: loginState.isUser"><small>{{ _('Currently configured stream URL') }}: <a target="_blank" rel="noreferrer" data-bind="attr: {href: settings.webcam_streamUrl}, text: settings.webcam_streamUrl"></a></small></p>
-            </div>
-        </div>
-        <div id="webcam_rotator" data-bind="css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
-            <div class="webcam_fixed_ratio" data-bind="css: webcamRatioClass">
-                <div class="webcam_fixed_ratio_inner">
-                    <img id="webcam_image" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }, event: { load: onWebcamLoaded, error: onWebcamErrored }, visible: !webcamError()">
-                </div>
-            </div>
-        </div>
+
+
+        {% if templates.webcam.order|length > 1 %}
+        <ul class="nav justify-content-end">
+            {% for key in templates.webcam.order %}
+                {% set entry, data = templates.webcam.entries[key] %}
+                <li id="{{ data._div }}_link"
+                    {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                    class="nav-item">
+                    <a class="nav-link" href="#{{ data._div }}" data-toggle="tab">{{ entry|e }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
         <div class="keycontrol_overlay" data-bind="visible: showKeycontrols">
             <div class="keycontrol_overlay_heading">{{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i class="fas" data-bind="css: { 'fa-chevron-down': !keycontrolHelpActive(), 'fa-chevron-up': keycontrolHelpActive() }"></i></a></div>
             <div data-bind="visible: keycontrolHelpActive">
@@ -56,11 +48,12 @@
                 </div>
             </div>
         </div>
+
     </div>
+
     <div data-bind="visible: keycontrolPossible() && loginState.hasPermissionKo(access.permissions.WEBCAM)() && loginState.hasPermissionKo(access.permissions.CONTROL)()">
         <small class="muted">{{ _("Hint: If you move your mouse over the picture, you enter keyboard control mode.") }}</small>
     </div>
-    <!-- /ko -->
 {% endif %}
 
 <div class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
@@ -68,28 +61,28 @@
     <div id="control-jog-xy" class="jog-panel">
         <h1>X/Y</h1>
         <div>
-            <button id="control-yinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',1) }"><i class="fas fa-arrow-up"></i></button>
+            <button id="control-yinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',1) }" aria-label="{{ _('Move front')|edq }}"><i class="fas fa-arrow-up"></i></button>
         </div>
         <div>
-            <button id="control-xdec" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',-1) }"><i class="fas fa-arrow-left"></i></button>
-            <button id="control-xyhome" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() , click: function() { $root.sendHomeCommand(['x', 'y']) }"><i class="fas fa-home"></i></button>
-            <button id="control-xinc" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',1) }"><i class="fas fa-arrow-right"></i></button>
+            <button id="control-xdec" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',-1) }" aria-label="{{ _('Move left')|edq }}"><i class="fas fa-arrow-left"></i></button>
+            <button id="control-xyhome" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() , click: function() { $root.sendHomeCommand(['x', 'y']) }" aria-label="{{ _('Home')|edq }}"><i class="fas fa-home"></i></button>
+            <button id="control-xinc" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',1) }" aria-label="{{ _('Move right')|edq }}"><i class="fas fa-arrow-right"></i></button>
         </div>
         <div>
-            <button id="control-ydec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',-1) }"><i class="fas fa-arrow-down"></i></button>
+            <button id="control-ydec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',-1) }" aria-label="{{ _('Move back')|edq }}"><i class="fas fa-arrow-down"></i></button>
         </div>
     </div>
     <!-- Z jogging control panel -->
     <div id="control-jog-z" class="jog-panel">
         <h1>Z</h1>
         <div>
-            <button id="control-zinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',1) }"><i class="fas fa-arrow-up"></i></button>
+            <button id="control-zinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',1) }" aria-label="{{ _('Move up')|edq }}"><i class="fas fa-arrow-up"></i></button>
         </div>
         <div>
-            <button id="control-zhome" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand(['z']) }"><i class="fas fa-home"></i></button>
+            <button id="control-zhome" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand(['z']) }" aria-label="{{ _('Home')|edq }}"><i class="fas fa-home"></i></button>
         </div>
         <div>
-            <button id="control-zdec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',-1) }"><i class="fas fa-arrow-down"></i></button>
+            <button id="control-zdec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',-1) }" aria-label="{{ _('Move down')|edq }}"><i class="fas fa-arrow-down"></i></button>
         </div>
     </div>
 

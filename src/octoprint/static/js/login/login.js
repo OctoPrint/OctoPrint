@@ -34,11 +34,11 @@ $(function () {
 
         OctoPrint.browser
             .login(username, password, remember)
-            .done(function () {
+            .done(() => {
                 ignoreDisconnect = true;
                 window.location.href = REDIRECT_URL;
             })
-            .fail(function (xhr) {
+            .fail((xhr) => {
                 usernameElement.val(USER_ID);
                 passwordElement.val("");
 
@@ -61,18 +61,18 @@ $(function () {
 
     OctoPrint.options.baseurl = BASE_URL;
 
-    OctoPrint.socket.onConnected = function () {
+    OctoPrint.socket.onConnected = () => {
         buttonElement.prop("disabled", false);
         offlineElement.removeClass("in");
     };
 
-    OctoPrint.socket.onDisconnected = function () {
+    OctoPrint.socket.onDisconnected = () => {
         if (ignoreDisconnect) return;
         buttonElement.prop("disabled", true);
         offlineElement.addClass("in");
     };
 
-    reconnectElement.click(function () {
+    reconnectElement.click(() => {
         OctoPrint.socket.reconnect();
     });
 

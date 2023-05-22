@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 #
 # OctoPrint documentation build configuration file, created by
 # sphinx-quickstart on Mon Dec 02 17:08:50 2013.
@@ -13,7 +10,8 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import sys
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -21,8 +19,9 @@ import sys, os
 sys.path.insert(0, os.path.abspath("../src/"))
 sys.path.append(os.path.abspath("sphinxext"))
 
-import octoprint._version
 from datetime import date
+
+import octoprint._version
 
 year_since = 2013
 year_current = date.today().year
@@ -43,6 +42,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinxcontrib.mermaid",
     "sphinx.ext.intersphinx",
+    "sphinx_rtd_theme",
 ]
 todo_include_todos = True
 intersphinx_mapping = {
@@ -108,7 +108,7 @@ exclude_patterns = ["_build"]
 # show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "sphinx"
+pygments_style = "stata-dark"
 
 # A list of ignored prefixes for module index sorting.
 # modindex_common_prefix = []
@@ -122,19 +122,14 @@ mermaid_version = ""
 
 # -- Options for HTML output ---------------------------------------------------
 
-import sphinx_rtd_theme
-
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of built-in themes.
-# html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-# html_theme_options = {}
+html_theme_options = {}
 
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]

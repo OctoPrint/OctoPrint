@@ -79,4 +79,3 @@
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
-

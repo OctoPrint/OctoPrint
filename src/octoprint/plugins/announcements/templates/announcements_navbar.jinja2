@@ -1,3 +1,8 @@
-<a id="navbar_show_announcements" class="pull-right" href="javascript:void(0)" data-bind="click: function() { showAnnouncementDialog(); }" title="{{ _('Announcements')|edq }}">
-    <i class="fa-bell" data-bind="css: {'far': !unread(), 'fas': unread()}"></i>
+<a id="navbar_show_announcements" class="pull-right" href="javascript:void(0)" data-bind="click: function() { showAnnouncementDialog(); }" title="{{ _('Announcements')|edq }}" aria-label="{{ _('Announcements')|edq }}">
+    <span class="fa-layers fa-fw" data-bind="visible: unread">
+        <i class="fas fa-bell"></i>
+        <i class="fas fa-circle" data-fa-transform="shrink-6 right-3 up-3" style="color:#ff0000"></i>
+        <span class="fa-layers-text fa-inverse" data-fa-transform="shrink-7 right-3 up-3" data-bind="text: unreadText"></span>
+    </span>
+    <i class="far fa-bell" data-bind="hidden: unread"></i>
 </a>

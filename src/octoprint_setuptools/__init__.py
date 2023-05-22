@@ -158,6 +158,12 @@ class CleanCommand(_clean):
             )
 
 
+def _normalize_locale(l):
+    from babel.core import Locale
+
+    return str(Locale.parse(l))
+
+
 class NewTranslation(Command):
     description = "create a new translation"
     user_options = [
@@ -190,7 +196,7 @@ class NewTranslation(Command):
         self.babel_init_messages.initialize_options()
 
     def finalize_options(self):
-        self.babel_init_messages.locale = self.locale
+        self.babel_init_messages.locale = _normalize_locale(self.locale)
         self.babel_init_messages.input_file = self.__class__.pot_file
         self.babel_init_messages.output_dir = self.__class__.output_dir
         self.babel_init_messages.finalize_options()
@@ -327,7 +333,8 @@ class RefreshTranslation(Command):
 
         self.babel_update_messages.input_file = self.__class__.pot_file
         self.babel_update_messages.output_dir = self.__class__.output_dir
-        self.babel_update_messages.locale = self.locale
+        if self.locale:
+            self.babel_update_messages.locale = _normalize_locale(self.locale)
         self.babel_update_messages.finalize_options()
 
     def run(self):
@@ -392,7 +399,7 @@ class BundleTranslation(Command):
         pass
 
     def run(self):
-        locale = self.locale
+        locale = _normalize_locale(self.locale)
         source_path = os.path.join(self.__class__.source_dir, locale)
         target_path = os.path.join(self.__class__.target_dir, locale)
 
@@ -456,7 +463,7 @@ class PackTranslation(Command):
             raise ValueError("locale must be provided")
 
     def run(self):
-        locale = self.locale
+        locale = _normalize_locale(self.locale)
         locale_dir = os.path.join(self.__class__.source_dir, locale)
 
         if not os.path.isdir(locale_dir):
@@ -518,6 +525,11 @@ def get_babel_commandclasses(
     mail_address="i18n@octoprint.org",
     copyright_holder="The OctoPrint Project",
 ):
+    try:
+        import babel
+    except ImportError:
+        return {}
+
     result = {
         "babel_new": NewTranslation.for_options(pot_file=pot_file, output_dir=output_dir),
         "babel_extract": ExtractTranslation.for_options(

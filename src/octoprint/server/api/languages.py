@@ -4,7 +4,6 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import logging
 import os
-import tarfile
 import zipfile
 from collections import defaultdict
 
@@ -56,7 +55,7 @@ def getInstalledLanguagePacks():
                         ).total_seconds()
 
             loc = Locale.parse(locale)
-            meta["locale"] = locale
+            meta["locale"] = str(loc)
             meta["locale_display"] = loc.display_name
             meta["locale_english"] = loc.english_name
             return meta
@@ -141,12 +140,11 @@ def uploadLanguagePack():
 
     target_path = settings().getBaseFolder("translations")
 
-    if tarfile.is_tarfile(upload_path):
-        _unpack_uploaded_tarball(upload_path, target_path)
-    elif zipfile.is_zipfile(upload_path):
-        _unpack_uploaded_zipfile(upload_path, target_path)
-    else:
-        abort(400, description="Neither zip file nor tarball included")
+    if not zipfile.is_zipfile(upload_path):
+        abort(400, description="No zip file included")
+
+    if not _validate_and_install_language_pack(upload_path, target_path):
+        abort(400, description="Invalid language pack archive")
 
     return getInstalledLanguagePacks()
 
@@ -155,7 +153,6 @@ def uploadLanguagePack():
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def deleteInstalledLanguagePack(locale, pack):
-
     if pack == "_core":
         target_path = os.path.join(settings().getBaseFolder("translations"), locale)
     else:
@@ -171,39 +168,90 @@ def deleteInstalledLanguagePack(locale, pack):
     return getInstalledLanguagePacks()
 
 
-def _unpack_uploaded_zipfile(path, target):
-    with zipfile.ZipFile(path, "r") as zip:
-        # sanity check
-        for info in zip.infolist():
-            _validate_zip_info(info, target)
+def _validate_and_install_language_pack(path, target):
+    import tempfile
 
-        # unpack everything
-        zip.extractall(target)
+    if not zipfile.is_zipfile(path):
+        return False
+
+    something_installed = False
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with zipfile.ZipFile(path, mode="r") as zip:
+            # protect against path traversal
+            if any(
+                map(
+                    lambda x: not os.path.abspath(os.path.join(temp_dir, x)).startswith(
+                        temp_dir + os.path.sep
+                    ),
+                    zip.namelist(),
+                )
+            ):
+                return False
+            zip.extractall(temp_dir)
+
+        something_installed = (
+            _validate_and_install_translations(temp_dir, target) or something_installed
+        )
+        if os.path.exists(os.path.join(temp_dir, "_plugins")):
+            something_installed = (
+                _validate_and_install_plugin_language_pack(
+                    os.path.join(temp_dir, "_plugins"), os.path.join(target, "_plugins")
+                )
+                or something_installed
+            )
+
+    return something_installed
 
 
-def _unpack_uploaded_tarball(path, target):
-    with tarfile.open(path, "r") as tar:
-        # sanity check
-        for info in tar.getmembers():
-            _validate_tar_info(info, target)
+def _validate_and_install_plugin_language_pack(path, target):
+    something_installed = False
 
-        # unpack everything
-        tar.extractall(target)
+    for entry in os.scandir(path):
+        if not entry.is_dir():
+            continue
 
+        something_installed = (
+            _validate_and_install_translations(
+                entry.path, os.path.join(target, entry.name)
+            )
+            or something_installed
+        )
 
-def _validate_archive_name(name, target):
-    if not os.path.abspath(os.path.join(target, name)).startswith(target + os.path.sep):
-        raise InvalidLanguagePack(f"Provided language pack contains invalid name {name}")
-
-
-def _validate_zip_info(info, target):
-    _validate_archive_name(info.filename, target)
+    return something_installed
 
 
-def _validate_tar_info(info, target):
-    _validate_archive_name(info.name, target)
-    if not (info.isfile() or info.isdir()):
-        raise InvalidLanguagePack("Provided language pack contains invalid file type")
+def _validate_and_install_translations(path, target):
+    import shutil
+
+    from babel.core import Locale
+
+    something_installed = False
+
+    for entry in os.scandir(path):
+        if not entry.is_dir():
+            continue
+
+        try:
+            loc = Locale.parse(entry.name)
+        except Exception:
+            continue
+
+        if not os.path.isfile(os.path.join(entry.path, "meta.yaml")):
+            continue
+
+        if not os.path.isdir(os.path.join(entry.path, "LC_MESSAGES")):
+            continue
+
+        if not os.path.isfile(os.path.join(entry.path, "LC_MESSAGES", "messages.mo")):
+            continue
+
+        # looks like a valid translation folder incl. metadata, let's move it
+        if not os.path.exists(target):
+            os.makedirs(target)
+        shutil.move(entry.path, os.path.join(target, str(loc)))
+        something_installed = True
+
+    return something_installed
 
 
 class InvalidLanguagePack(Exception):

@@ -66,7 +66,6 @@ class OctoPrintStreamHandler(AsyncLogHandlerMixin, logging.StreamHandler):
 class TriggeredRolloverLogHandler(
     AsyncLogHandlerMixin, logging.handlers.RotatingFileHandler
 ):
-
     do_rollover = False
     suffix_template = "%Y-%m-%d_%H-%M-%S"
     file_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}$")
@@ -134,6 +133,14 @@ class SerialLogHandler(TriggeredRolloverLogHandler):
 
 
 class PluginTimingsLogHandler(TriggeredRolloverLogHandler):
+    pass
+
+
+class TornadoLogHandler(CleaningTimedRotatingFileHandler):
+    pass
+
+
+class AuthLogHandler(CleaningTimedRotatingFileHandler):
     pass
 
 

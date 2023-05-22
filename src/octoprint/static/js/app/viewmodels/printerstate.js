@@ -260,7 +260,7 @@ $(function () {
         self.dateString = ko.pureComputed(function () {
             var date = self.filedate();
             if (!date) {
-                return "";
+                return gettext("unknown");
             }
 
             return formatDate(date, {seconds: true});

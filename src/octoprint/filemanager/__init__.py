@@ -180,19 +180,19 @@ def get_content_type_mapping_for_extension(extension, subtree=None):
     return None
 
 
-def valid_extension(extension, type=None):
+def valid_extension(extension, type=None, tree=None):
     if not type:
-        return extension in get_all_extensions()
+        return extension in get_all_extensions(subtree=tree)
     else:
-        extensions = get_extensions(type)
+        extensions = get_extensions(type, subtree=tree)
         if extensions:
             return extension in extensions
 
 
-def valid_file_type(filename, type=None):
+def valid_file_type(filename, type=None, tree=None):
     _, extension = os.path.splitext(filename)
     extension = extension[1:].lower()
-    return valid_extension(extension, type=type)
+    return valid_extension(extension, type=type, tree=tree)
 
 
 def get_file_type(filename):
@@ -750,6 +750,7 @@ class FileManager:
                 "path": path_in_storage,
                 "name": name,
                 "type": get_file_type(name),
+                "operation": "add",
             },
         )
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
@@ -787,6 +788,7 @@ class FileManager:
                 "path": path_in_storage,
                 "name": name,
                 "type": get_file_type(name),
+                "operation": "copy",
             },
         )
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
@@ -821,6 +823,7 @@ class FileManager:
                 "path": dst_path_in_storage,
                 "name": dst_name,
                 "type": get_file_type(dst_name),
+                "operation": "move",
             },
         )
         eventManager().fire(

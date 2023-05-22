@@ -197,7 +197,6 @@ class PrintTimeEstimator:
 
 
 class TimeEstimationHelper:
-
     STABLE_THRESHOLD = 0.1
     STABLE_COUNTDOWN = 250
     STABLE_ROLLING_WINDOW = 250

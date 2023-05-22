@@ -23,7 +23,6 @@ class LoggingPlugin(
     octoprint.plugin.TemplatePlugin,
     octoprint.plugin.BlueprintPlugin,
 ):
-
     # Additional permissions hook
 
     def get_additional_permissions(self):

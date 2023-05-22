@@ -60,6 +60,23 @@
    :param string message: The type of message for which to register
    :param function handler: The handler function
 
+.. js:function:: OctoPrintClient.socket.removeMessage(message, handler)
+
+   Removes the ``handler`` for messages of type ``message``.
+
+   .. code-block:: javascript
+
+      const handler = (message) => {
+          // do something with the message object
+      };
+
+      OctoPrint.socket.onMessage("*", handler);
+      // Use the same reference to the handler function to remove it again
+      OctoPrint.socket.removeMessage("*", handler);
+
+   :param string message: The type of message for which to remove the handler
+   :param function handler: The handler function
+
 .. js:function:: OctoPrintClient.socket.sendMessage(type, payload)
 
    Sends a message of type ``type`` with the provided ``payload`` to the server.

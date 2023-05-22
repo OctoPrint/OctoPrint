@@ -11,7 +11,6 @@ An example for providing some helper functions to the system can be found in the
 which provides its SSDP browsing and Zeroconf browsing and publishing functions as helper methods.
 
 .. code-block:: python
-   :linenos:
    :emphasize-lines: 11-20
    :caption: Excerpt from the Discovery Plugin showing the declaration of its exported helpers.
    :name: sec-plugin-concepts-helpers-example-export
@@ -42,7 +41,6 @@ Using :meth:`~octoprint.plugin.code.PluginManager.get_helpers` plugins can retri
 them as (hopefully) documented.
 
 .. code-block:: python
-   :linenos:
    :emphasize-lines: 6-8,20
    :caption: Excerpt from the Growl Plugin showing utilization of the helpers published by the Discovery Plugin.
    :name: sec-plugin-concepts-helpers-example-usage
@@ -73,4 +71,3 @@ them as (hopefully) documented.
            browsing_enabled=True,
            growl_instances=growl_instances
        ))
-

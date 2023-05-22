@@ -12,10 +12,11 @@ import os
 import threading
 import time
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Any, Union
 
 import flask
 import flask.json
+import flask.json.provider
 import flask.sessions
 import flask.templating
 import flask_assets
@@ -35,6 +36,7 @@ import octoprint.access.users
 import octoprint.plugin
 import octoprint.server
 import octoprint.vendor.flask_principal as flask_principal
+from octoprint.access import auth_log, login_mechanisms
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated, yaml
@@ -50,7 +52,6 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
     import flask_babel
     from babel import Locale, support
-    from flask import _request_ctx_stack
 
     if additional_folders is None:
         additional_folders = []
@@ -85,11 +86,11 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                 continue
             dirs.append(plugin_translation_dir)
 
-        result = [Locale.parse(default_locale)]
+        result = {Locale.parse(default_locale)}
 
         for dir in dirs:
-            result += list_translations(dir)
-        return result
+            result.update(list_translations(dir))
+        return list(result)
 
     def fixed_get_translations():
         """Returns the correct gettext translations that should be used for
@@ -97,10 +98,9 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
         object if used outside of the request or if a translation cannot be
         found.
         """
-        ctx = _request_ctx_stack.top
-        if ctx is None:
+        if flask.g is None:
             return None
-        translations = getattr(ctx, "babel_translations", None)
+        translations = getattr(flask.g, "babel_translations", None)
         if translations is None:
             locale = flask_babel.get_locale()
             translations = support.Translations()
@@ -143,7 +143,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
                 # core translations
                 dirs = additional_folders + [
-                    os.path.join(ctx.app.root_path, "translations")
+                    os.path.join(flask.current_app.root_path, "translations")
                 ]
                 for dirname in dirs:
                     core_translations = support.Translations.load(dirname, [locale])
@@ -157,7 +157,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                     logger.debug(f"No translations for locale {locale} in core folders")
                 translations = translations.merge(core_translations)
 
-            ctx.babel_translations = translations
+            flask.g.babel_translations = translations
         return translations
 
     flask_babel.Babel.list_translations = fixed_list_translations
@@ -202,33 +202,40 @@ def fix_webassets_filtertool():
     FilterTool._wrap_cache = fixed_wrap_cache
 
 
-def fix_flask_jsonify():
-    def fixed_jsonify(*args, **kwargs):
-        """Backported from https://github.com/pallets/flask/blob/7e714bd28b6e96d82b2848b48cf8ff48b517b09b/flask/json/__init__.py#L257"""
-        from flask.json import current_app, dumps
+def fix_webassets_convert_item_to_flask_url():
+    import flask_assets
 
-        indent = None
-        separators = (",", ":")
+    def fixed_convert_item_to_flask_url(self, ctx, item, filepath=None):
+        from flask import url_for
 
-        if current_app.config["JSONIFY_PRETTYPRINT_REGULAR"] or current_app.debug:
-            indent = 2
-            separators = (", ", ": ")
+        directory, rel_path, endpoint = self.split_prefix(ctx, item)
 
-        if args and kwargs:
-            raise TypeError(
-                "jsonify() behavior undefined when passed both args and kwargs"
-            )
-        elif len(args) == 1:  # single args are passed directly to dumps()
-            data = args[0]
+        if filepath is not None:
+            filename = filepath[len(directory) + 1 :]
         else:
-            data = args or kwargs
+            filename = rel_path
 
-        return current_app.response_class(
-            dumps(data, indent=indent, separators=separators, allow_nan=False) + "\n",
-            mimetype="application/json",
-        )
+        flask_ctx = None
+        if not flask.has_request_context():  # fixed, was _request_ctx.top
+            flask_ctx = ctx.environment._app.test_request_context()
+            flask_ctx.push()
+        try:
+            url = url_for(endpoint, filename=filename)
+            # In some cases, url will be an absolute url with a scheme and hostname.
+            # (for example, when using werkzeug's host matching).
+            # In general, url_for() will return a http url. During assets build, we
+            # we don't know yet if the assets will be served over http, https or both.
+            # Let's use // instead. url_for takes a _scheme argument, but only together
+            # with external=True, which we do not want to force every time. Further,
+            # this _scheme argument is not able to render // - it always forces a colon.
+            if url and url.startswith("http:"):
+                url = url[5:]
+            return url
+        finally:
+            if flask_ctx:
+                flask_ctx.pop()
 
-    flask.jsonify = fixed_jsonify
+    flask_assets.FlaskResolver.convert_item_to_flask_url = fixed_convert_item_to_flask_url
 
 
 # ~~ WSGI environment wrapper for reverse proxying
@@ -267,10 +274,9 @@ class ReverseProxiedEnvironment:
         server=None,
         port=None,
     ):
-
         # sensible defaults
         if header_prefix is None:
-            header_prefix = ["x-script-name"]
+            header_prefix = ["x-script-name", "x-forwarded-prefix"]
         if header_scheme is None:
             header_scheme = ["x-forwarded-proto", "x-scheme"]
         if header_host is None:
@@ -553,7 +559,9 @@ class OctoPrintFlaskResponse(flask.Response):
         kwargs["samesite"] = samesite
 
         # set secure if necessary
-        kwargs["secure"] = settings().getBoolean(["server", "cookies", "secure"])
+        kwargs["secure"] = flask.request.environ.get(
+            "wsgi.url_scheme"
+        ) == "https" or settings().getBoolean(["server", "cookies", "secure"])
 
         # tie account properties to remember me cookie (e.g. current password hash)
         if key == current_app.config.get("REMEMBER_COOKIE_NAME", REMEMBER_COOKIE_NAME):
@@ -669,7 +677,16 @@ def passive_login():
     def login(u):
         # login known user
         if not u.is_anonymous:
+            if not flask.g.identity or not flask.g.identity.id:
+                # the user was just now found
+                login_mechanism = login_mechanisms.get(
+                    flask.session.get("login_mechanism", "unknown"), "unknown mechanism"
+                )
+                auth_log(
+                    f"Logging in user {u.get_id()} from {remote_address} via {login_mechanism}"
+                )
             u = octoprint.server.userManager.login_user(u)
+
         flask_login.login_user(u)
         flask_principal.identity_changed.send(
             flask.current_app._get_current_object(),
@@ -712,9 +729,7 @@ def passive_login():
                     autologin_user = octoprint.server.userManager.find_user(autologin_as)
                     if autologin_user is not None and autologin_user.is_active:
                         logger.info(
-                            "Passively logging in user {} from {} via autologin".format(
-                                autologin_as, remote_address
-                            )
+                            f"Logging in user {autologin_as} from {remote_address} via autologin"
                         )
                         flask.session["login_mechanism"] = "autologin"
                         return autologin_user
@@ -1629,15 +1644,8 @@ def get_remote_address(request):
 
 
 def get_json_command_from_request(request, valid_commands):
-    content_type = request.headers.get("Content-Type", None)
-    if content_type is None or "application/json" not in content_type:
-        flask.abort(400, description="Expected content-type JSON")
-
     data = request.get_json()
-    if data is None:
-        flask.abort(
-            400, description="Malformed JSON body or wrong content-type in request"
-        )
+
     if "command" not in data or data["command"] not in valid_commands:
         flask.abort(400, description="command is invalid")
 
@@ -1711,7 +1719,6 @@ class PluginAssetResolver(flask_assets.FlaskResolver):
 
 
 class SettingsCheckUpdater(webassets.updater.BaseUpdater):
-
     updater = "always"
 
     def __init__(self):
@@ -1750,6 +1757,7 @@ def collect_core_assets(preferred_stylesheet="css"):
     assets["js"] = [
         "js/app/bindings/allowbindings.js",
         "js/app/bindings/contextmenu.js",
+        "js/app/bindings/gettext.js",
         "js/app/bindings/invisible.js",
         "js/app/bindings/popover.js",
         "js/app/bindings/qrcode.js",
@@ -1898,12 +1906,17 @@ def collect_plugin_assets(preferred_stylesheet="css"):
 ##~~ JSON encoding
 
 
-class OctoPrintJsonEncoder(flask.json.JSONEncoder):
-    def default(self, obj):
+class OctoPrintJsonProvider(flask.json.provider.DefaultJSONProvider):
+    @staticmethod
+    def default(object_):
         try:
-            return JsonEncoding.encode(obj)
+            return JsonEncoding.encode(object_)
         except TypeError:
-            return flask.json.JSONEncoder.default(self, obj)
+            return flask.json.provider.DefaultJSONProvider.default(object_)
+
+    def dumps(self, obj: Any, **kwargs: Any) -> str:
+        kwargs.setdefault("allow_nan", False)
+        return super().dumps(obj, **kwargs)
 
 
 ##~~ Session signing

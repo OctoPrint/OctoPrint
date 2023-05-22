@@ -38,25 +38,6 @@ class ServerCommandsSubwizard:
 
 
 # noinspection PyUnresolvedReferences,PyMethodMayBeStatic
-class WebcamSubwizard:
-    def _is_webcam_wizard_firstrunonly(self):
-        return True
-
-    def _is_webcam_wizard_required(self):
-        webcam_snapshot_url = self._settings.global_get(["webcam", "snapshot"])
-        webcam_stream_url = self._settings.global_get(["webcam", "stream"])
-        ffmpeg_path = self._settings.global_get(["webcam", "ffmpeg"])
-
-        return not (webcam_snapshot_url and webcam_stream_url and ffmpeg_path)
-
-    def _get_webcam_wizard_details(self):
-        return {"required": self._is_webcam_wizard_required()}
-
-    def _get_webcam_wizard_name(self):
-        return gettext("Webcam & Timelapse")
-
-
-# noinspection PyUnresolvedReferences,PyMethodMayBeStatic
 class AclSubwizard:
     def _is_acl_wizard_firstrunonly(self):
         return False
@@ -85,7 +66,7 @@ class AclSubwizard:
         ):
             abort(404)
 
-        data = request.get_json()
+        data = request.get_json(silent=True)
         if data is None:
             data = request.values
 

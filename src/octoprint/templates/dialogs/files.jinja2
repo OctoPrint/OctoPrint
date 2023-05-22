@@ -23,7 +23,7 @@
 <div id="move_file_or_folder_dialog" class="modal hide fade-in">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Move File or Folder') }}</h3>
+        <h3>{{ _('Move or Rename ') }}<span data-bind="text: moveEntry().type === 'folder' ? gettext('Folder') : gettext('File')"></span></h3>
     </div>
     <div class="modal-body">
         <form class="form-vertical" action="javascript:void(0)">
@@ -33,18 +33,24 @@
                     <select class="input-block-level" data-bind="value: moveDestination, options: folderList"></select>
                     <span class="help-block"><small class="text-error" data-bind="text: moveError, visible: moveError().length > 0" style="display: none"></small></span>
                 </div>
-                <label class="control-label">{{ _('Set destination filename ') }} ({{ _('Currently:') }} <span data-bind="text: moveSourceFilename()"></span>)</label>
+                <label class="control-label">{{ _('Set destination name ') }} ({{ _('Currently:') }} <span data-bind="text: moveSourceFilename()"></span>)</label>
                 <div class="controls">
-                    <input class="input-block-level" data-bind="value: moveDestinationFilename" />
+                    <input type="text" class="input-block-level" data-bind="value: moveDestinationFilename" />
                 </div>
 
-                <p> {{ _('File/Folder will be moved to: ') }} <span data-bind="text: moveDestinationFullpath()"></span></p>
+                <p data-bind="visible: moveSource() !== moveDestination() || moveSourceFilename() !== moveDestinationFilename()">
+                    <span data-bind="text: moveEntry().type === 'folder' ? gettext('Folder') : gettext('File')"></span>{{ _(' will be moved to: ') }} <span data-bind="text: moveDestinationFullpath()"></span>
+                </p>
             </div>
         </form>
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
-        <a href="#" class="btn btn-primary" data-bind="click: function() { if ((moveSource() !== moveDestination() || moveSourceFilename() !== moveDestinationFilename()) && !movingFileOrFolder()) { $root.moveFileOrFolder(moveEntry().path, moveDestinationFullpath()) } else {} }, css: {disabled: (moveSource() === moveDestination() && moveSourceFilename() === moveDestinationFilename()) || movingFileOrFolder()}"><i class="fas fa-spinner fa-spin" data-bind="visible: movingFileOrFolder"></i> {{ _('Move') }}</a>
+        <a href="#" class="btn btn-primary"
+           data-bind="click: function() { if ((moveSource() !== moveDestination() || moveSourceFilename() !== moveDestinationFilename()) && !movingFileOrFolder()) { $root.moveFileOrFolder(moveEntry().path, moveDestinationFullpath()) } else {} },
+                      css: {disabled: (moveSource() === moveDestination() && moveSourceFilename() === moveDestinationFilename()) || movingFileOrFolder()},
+                      text: moveButtonText">
+           <i class="fas fa-spinner fa-spin" data-bind="visible: movingFileOrFolder"></i></a>
     </div>
 </div>
 
@@ -64,6 +70,9 @@
                 </div>
             </div>
         </form>
+        <span hidden>
+            {{ _('There is not enough free disk space to keep the existing file and upload this one.') }}
+        </span>
     </div>
     <div class="modal-footer">
         <a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>

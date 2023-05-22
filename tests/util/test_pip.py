@@ -165,6 +165,7 @@ class PipUtilTest(unittest.TestCase):
         ("already_installed_1.txt", True),
         ("already_installed_2.txt", True),
         ("successful_install_1.txt", False),
+        ("dependency_error.txt", False),
     )
     @ddt.unpack
     def test_is_already_installed(self, file, expected):

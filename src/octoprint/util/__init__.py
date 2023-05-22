@@ -77,7 +77,7 @@ def to_unicode(
     s_or_u: Union[str, bytes], encoding: str = "utf-8", errors: str = "strict"
 ) -> str:
     """
-    Make sure ``s_or_u`` is a unicode string (str).
+    Make sure ``s_or_u`` is a string (str).
 
     Arguments:
         s_or_u (str or bytes): The value to convert
@@ -202,7 +202,6 @@ def warning_factory(warning_type):
                 "__dict__",
                 "__doc__",
                 "__str__",
-                "__unicode__",
                 "__repr__",
                 "__getattribute__",
                 "__setattr__",
@@ -882,7 +881,6 @@ def dict_filter(dictionary, filter_function):
 # Source: http://stackoverflow.com/a/6190500/562769
 class DefaultOrderedDict(collections.OrderedDict):
     def __init__(self, default_factory=None, *a, **kw):
-
         if default_factory is not None and not callable(default_factory):
             raise TypeError("first argument must be callable")
         collections.OrderedDict.__init__(self, *a, **kw)
@@ -1611,7 +1609,7 @@ class CaseInsensitiveSet(Set):
     """
     Basic case insensitive set
 
-    Any str or unicode values will be stored and compared in lower case. Other value types are left as-is.
+    Any str values will be stored and compared in lower case. Other value types are left as-is.
     """
 
     def __init__(self, *args):
@@ -1716,7 +1714,7 @@ def serialize(filename, data, encoding="utf-8", compressed=True):
     If `compressed` is True (the default), the serialized data put through zlib.compress.
 
     Supported data types are listed at the bottom of
-    :ref:`octoprint.util.comprehensive_json`, and include some data types that are not
+    :func:`octoprint.util.comprehensive_json`, and include some data types that are not
     supported by json.dumps by default.
 
     This is not thread-safe, if concurrent access is required, the caller needs to ensure

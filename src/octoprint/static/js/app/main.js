@@ -460,7 +460,7 @@ $(function () {
                 };
             }
 
-            // make sure we have atleast a function
+            // make sure we have at least a function
             if (!_.isFunction(viewModel.construct)) {
                 log.error("No function to instantiate with", viewModel);
                 continue;
@@ -549,7 +549,7 @@ $(function () {
             }
         }
 
-        // anything that's now in the postponed list has to be readded to the unprocessedViewModels
+        // anything that's now in the postponed list has to be re-added to the unprocessedViewModels
         unprocessedViewModels = unprocessedViewModels.concat(postponed);
 
         // if we still have the same amount of items in our list of unprocessed view models it means that we

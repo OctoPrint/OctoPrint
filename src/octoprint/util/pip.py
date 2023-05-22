@@ -27,6 +27,9 @@ OUTPUT_SUCCESS = "Successfully installed"
 OUTPUT_FAILURE = "Could not install"
 """Start of failure result line"""
 
+OUTPUT_ERROR = "ERROR:"
+"""Start of error line"""
+
 OUTPUT_ALREADY_INSTALLED = "Requirement already satisfied"
 """Start of a line indicating some package was already installed in this version"""
 
@@ -58,8 +61,10 @@ def is_already_installed(lines):
         bool: True if detected, False otherwise
     """
     result_line = get_result_line(lines)  # neither success nor failure reported
-    return not result_line and any(
-        line.strip().startswith(OUTPUT_ALREADY_INSTALLED) for line in lines
+    return (
+        not result_line
+        and not any(line.strip().startswith(OUTPUT_ERROR) for line in lines)
+        and any(line.strip().startswith(OUTPUT_ALREADY_INSTALLED) for line in lines)
     )
 
 
@@ -83,7 +88,7 @@ def is_python_mismatch(lines):
 
 def is_egg_problem(lines):
     """
-    Returns whether the given output lines indicates an occurence of the "egg-problem".
+    Returns whether the given output lines indicates an occurrence of the "egg-problem".
 
     If something (target or dependency of target) was installed as an egg at an earlier
     date (e.g. thanks to just running python setup.py install), pip install will throw an
@@ -114,7 +119,7 @@ def get_result_line(lines):
 
     pip might generate more lines after the actual result line, which is why
     we can't just take the final line. So instead we look for the last line
-    starting with either "Successfully installed" or "Could not installed".
+    starting with either "Successfully installed" or "Could not install".
     If neither can be found, an empty string will be returned, which should also
     be considered a failure to install.
 
@@ -473,7 +478,7 @@ class PipCaller(CommandlineCaller):
 
             if not output.startswith("pip"):
                 self._logger.warning(
-                    "pip command returned unparseable output, can't determine version: {}".format(
+                    "pip command returned unparsable output, can't determine version: {}".format(
                         output
                     )
                 )
@@ -481,7 +486,7 @@ class PipCaller(CommandlineCaller):
             split_output = list(map(lambda x: x.strip(), output.split()))
             if len(split_output) < 2:
                 self._logger.warning(
-                    "pip command returned unparseable output, can't determine version: {}".format(
+                    "pip command returned unparsable output, can't determine version: {}".format(
                         output
                     )
                 )

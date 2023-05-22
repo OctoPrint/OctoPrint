@@ -605,6 +605,21 @@ GcodeScript${ScriptName}Finished
 
    .. versionadded:: 1.6.0
 
+ChartMarked
+   A time-based marking has been made on the UI's temperature chart.
+
+   Payload:
+
+     * ``type``: The marking's ID. Built-in types are ``print``, ``done``, ``cancel``, ``pause``, and ``resume``.
+       Plugins may set arbitrary types, which should be prefixed, e.g. ``pluginname_eventtype``. In the UI, the type
+       ID is used to stylize the marking label.
+     * ``label``: The human-readable short label of the marking, ideally one short word. Optional but recommended; if
+       not specified, the UI will display the ``type``. The label may be localized in the UI.
+     * ``time``: The epoch time of marking. Defaults to the event fire time if not specified. Plugins may set a time
+       in the past if it makes sense for the event.
+
+   .. versionadded:: 1.9.0
+
 .. _sec-events-available_events-gcode_processing:
 
 GCODE processing
@@ -870,4 +885,3 @@ PrinterProfileModified
      * ``identifier``: the identifier of the modified printer profile
 
    .. versionadded:: 1.3.12
-
