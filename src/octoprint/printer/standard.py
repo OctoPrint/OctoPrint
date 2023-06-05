@@ -1748,9 +1748,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 position = str(payload["position"])
             else:
                 position = "unknown"
-            fileposition = str(self._comm.getFilePosition());
+            fileposition = str(self._comm.getFilePosition())
             self._logger_job.info(
-                    "Print job paused - origin: {}, path: {}, owner: {}, user: {}, fileposition: {}, position: {}".format(
+                "Print job paused - origin: {}, path: {}, owner: {}, user: {}, fileposition: {}, position: {}".format(
                     payload.get("origin"),
                     payload.get("path"),
                     payload.get("owner"),
