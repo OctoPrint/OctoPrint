@@ -1744,12 +1744,19 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         )
         if payload:
             eventManager().fire(Events.PRINT_PAUSED, payload)
+            if "position" in payload:
+                position = str(payload["position"])
+            else:
+                position = "unknown"
+            fileposition = str(self._comm.getFilePosition());
             self._logger_job.info(
-                "Print job paused - origin: {}, path: {}, owner: {}, user: {}".format(
+                    "Print job paused - origin: {}, path: {}, owner: {}, user: {}, fileposition: {}, position: {}".format(
                     payload.get("origin"),
                     payload.get("path"),
                     payload.get("owner"),
                     payload.get("user"),
+                    fileposition,
+                    position,
                 )
             )
             eventManager().fire(
