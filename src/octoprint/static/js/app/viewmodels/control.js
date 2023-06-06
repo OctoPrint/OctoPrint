@@ -122,7 +122,7 @@ $(function () {
                     var options = {
                         root: document.querySelector("#webcam_plugins_container"),
                         rootMargin: "0px",
-                        threshold: 1.0
+                        threshold: 0.9
                     };
                     var callback = function (entries) {
                         var visible = entries[0].isIntersecting;
