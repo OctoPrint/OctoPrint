@@ -212,7 +212,7 @@ to the persisted pause position on resume, making sure to also reset the extrude
 
 .. code-block:: jinja
    :caption: ``afterPrintPaused`` script
-   
+
    ; disable stepper inactivity timeout - otherwise axes can move
    M18 S0
 
