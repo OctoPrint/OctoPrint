@@ -1691,9 +1691,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             position=self._comm.cancel_position.as_dict()
             if self._comm and self._comm.cancel_position
             else None,
-            fileposition=self._comm.getFilePosition()
-            if self._comm
-            else None,
+            fileposition=self._comm.getFilePosition() if self._comm else None,
             action_user=user,
         )
         if payload:
@@ -1745,9 +1743,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             position=self._comm.pause_position.as_dict()
             if self._comm and self._comm.pause_position and not suppress_script
             else None,
-            fileposition=self._comm.getFilePosition()
-            if self._comm
-            else None,
+            fileposition=self._comm.getFilePosition() if self._comm else None,
             action_user=user,
         )
         if payload:
