@@ -1691,6 +1691,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             position=self._comm.cancel_position.as_dict()
             if self._comm and self._comm.cancel_position
             else None,
+            fileposition=self._comm.getFilePosition()
+            if self._comm
+            else None,
             action_user=user,
         )
         if payload:
@@ -1702,11 +1705,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 {"type": "cancel", "label": "Cancel"},
             )
             self._logger_job.info(
-                "Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(
+                "Print job cancelled - origin: {}, path: {}, owner: {}, user: {}, fileposition: {}, position: {}".format(
                     payload.get("origin"),
                     payload.get("path"),
                     payload.get("owner"),
                     payload.get("user"),
+                    payload.get("fileposition"),
+                    payload.get("position"),
                 )
             )
 
@@ -1740,23 +1745,21 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             position=self._comm.pause_position.as_dict()
             if self._comm and self._comm.pause_position and not suppress_script
             else None,
+            fileposition=self._comm.getFilePosition()
+            if self._comm
+            else None,
             action_user=user,
         )
         if payload:
             eventManager().fire(Events.PRINT_PAUSED, payload)
-            if "position" in payload:
-                position = str(payload["position"])
-            else:
-                position = "unknown"
-            fileposition = str(self._comm.getFilePosition())
             self._logger_job.info(
                 "Print job paused - origin: {}, path: {}, owner: {}, user: {}, fileposition: {}, position: {}".format(
                     payload.get("origin"),
                     payload.get("path"),
                     payload.get("owner"),
                     payload.get("user"),
-                    fileposition,
-                    position,
+                    payload.get("fileposition"),
+                    payload.get("position"),
                 )
             )
             eventManager().fire(
@@ -1872,6 +1875,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         print_job_size=None,
         print_job_user=None,
         position=None,
+        fileposition=None,
         action_user=None,
     ):
         if print_job_file is None:
@@ -1913,6 +1917,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         if position is not None:
             result["position"] = position
+
+        if fileposition is not None:
+            result["fileposition"] = fileposition
 
         if print_job_user is not None:
             result["owner"] = print_job_user
