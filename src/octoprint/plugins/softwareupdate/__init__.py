@@ -8,6 +8,7 @@ import hashlib
 import logging
 import logging.handlers
 import os
+import sys
 import threading
 import time
 from concurrent import futures
@@ -1912,6 +1913,14 @@ class SoftwareUpdatePlugin(
             except Exception:
                 self._logger.exception(f"Error while checking if {target} can be updated")
                 update_possible = False
+                error = "update"
+
+        if target == "octoprint" and sys.platform == "win32":
+            self._logger.info(
+                "OctoPrint is running on Windows, it cannot be updated through itself due to Windows' file locking behavior. Please update manually."
+            )
+            update_possible = False
+            error = "windows"
 
         self._version_cache[target] = {
             "timestamp": time.time(),

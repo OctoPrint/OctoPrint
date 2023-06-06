@@ -720,6 +720,19 @@ $(function () {
                         "Unknown error while checking for update, please check the logs"
                     );
                 }
+                case "update": {
+                    return gettext(
+                        "Unknown error while checking if update is possible, please check the logs"
+                    );
+                }
+                case "windows": {
+                    return _.sprintf(
+                        gettext(
+                            'Update not possible under Windows due to its strict file locking behaviour, please <a href="%(url)s" target="_blank">see the FAQ</a>'
+                        ),
+                        {url: "https://faq.octoprint.org/update-not-possible-windows"}
+                    );
+                }
                 default: {
                     return "";
                 }
