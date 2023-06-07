@@ -112,7 +112,9 @@ def get_extensions(type, subtree=None, directory=""):
         if key == type:
             return get_all_extensions(subtree=value, directory=directory)
         elif isinstance(value, dict):
-            sub_extensions = get_extensions(type, subtree=value, directory=directory + key + "/")
+            sub_extensions = get_extensions(
+                type, subtree=value, directory=directory + key + "/"
+            )
             if sub_extensions:
                 return sub_extensions
 
@@ -189,7 +191,7 @@ def valid_extension(extension, type=None, tree=None, directory=""):
             return extension in extensions
 
 
-def valid_file_type(filename, type=None, tree=None, directory=''):
+def valid_file_type(filename, type=None, tree=None, directory=""):
     _, extension = os.path.splitext(filename)
     extension = extension[1:].lower()
     return valid_extension(extension, type=type, tree=tree, directory=directory)
