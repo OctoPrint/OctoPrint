@@ -103,35 +103,34 @@ def full_extension_tree():
 
     return result
 
-
-def get_extensions(type, subtree=None):
+def get_extensions(type, subtree=None, directory=''):
     if subtree is None:
         subtree = full_extension_tree()
 
     for key, value in subtree.items():
         if key == type:
-            return get_all_extensions(subtree=value)
+            return get_all_extensions(subtree=value, directory=directory)
         elif isinstance(value, dict):
-            sub_extensions = get_extensions(type, subtree=value)
+            sub_extensions = get_extensions(type, subtree=value, directory=directory + key + '/')
             if sub_extensions:
                 return sub_extensions
 
     return None
 
 
-def get_all_extensions(subtree=None):
+def get_all_extensions(subtree=None, directory=''):
     if subtree is None:
         subtree = full_extension_tree()
 
     result = []
     if isinstance(subtree, dict):
-        for value in subtree.values():
+        for key, value in subtree.items():
             if isinstance(value, dict):
-                result += get_all_extensions(value)
+                result.extend(get_all_extensions(value, directory + key + '/'))
             elif isinstance(value, (ContentTypeMapping, ContentTypeDetector)):
-                result += value.extensions
+                result.extend(value.extensions)
             elif isinstance(value, (list, tuple)):
-                result += value
+                result.extend(value)
     elif isinstance(subtree, (ContentTypeMapping, ContentTypeDetector)):
         result = subtree.extensions
     elif isinstance(subtree, (list, tuple)):
@@ -180,19 +179,23 @@ def get_content_type_mapping_for_extension(extension, subtree=None):
     return None
 
 
-def valid_extension(extension, type=None, tree=None):
+def valid_extension(extension, type=None, tree=None, directory=''):
     if not type:
-        return extension in get_all_extensions(subtree=tree)
+        return extension in get_all_extensions(subtree=tree, directory=directory)
     else:
-        extensions = get_extensions(type, subtree=tree)
+        extensions = get_extensions(type, subtree=tree, directory=directory)
         if extensions:
             return extension in extensions
-
 
 def valid_file_type(filename, type=None, tree=None):
     _, extension = os.path.splitext(filename)
     extension = extension[1:].lower()
     return valid_extension(extension, type=type, tree=tree)
+
+def valid_file_type(filename, type=None, tree=None, directory=''):
+    _, extension = os.path.splitext(filename)
+    extension = extension[1:].lower()
+    return valid_extension(extension, type=type, tree=tree, directory=directory)
 
 
 def get_file_type(filename):
