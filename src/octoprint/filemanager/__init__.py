@@ -103,6 +103,7 @@ def full_extension_tree():
 
     return result
 
+
 def get_extensions(type, subtree=None, directory=''):
     if subtree is None:
         subtree = full_extension_tree()
