@@ -188,15 +188,11 @@ def valid_extension(extension, type=None, tree=None, directory=''):
         if extensions:
             return extension in extensions
 
+
 def valid_file_type(filename, type=None, tree=None):
     _, extension = os.path.splitext(filename)
     extension = extension[1:].lower()
     return valid_extension(extension, type=type, tree=tree)
-
-def valid_file_type(filename, type=None, tree=None, directory=''):
-    _, extension = os.path.splitext(filename)
-    extension = extension[1:].lower()
-    return valid_extension(extension, type=type, tree=tree, directory=directory)
 
 
 def get_file_type(filename):
