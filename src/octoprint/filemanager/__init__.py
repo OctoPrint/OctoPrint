@@ -112,7 +112,7 @@ def get_extensions(type, subtree=None, directory=""):
         if key == type:
             return get_all_extensions(subtree=value, directory=directory)
         elif isinstance(value, dict):
-            sub_extensions = get_extensions(type, subtree=value, directory=directory + key + '/')
+            sub_extensions = get_extensions(type, subtree=value, directory=directory + key + "/")
             if sub_extensions:
                 return sub_extensions
 
@@ -127,7 +127,7 @@ def get_all_extensions(subtree=None, directory=""):
     if isinstance(subtree, dict):
         for key, value in subtree.items():
             if isinstance(value, dict):
-                result.extend(get_all_extensions(value, directory + key + '/'))
+                result.extend(get_all_extensions(value, directory + key + "/"))
             elif isinstance(value, (ContentTypeMapping, ContentTypeDetector)):
                 result.extend(value.extensions)
             elif isinstance(value, (list, tuple)):
@@ -180,7 +180,7 @@ def get_content_type_mapping_for_extension(extension, subtree=None):
     return None
 
 
-def valid_extension(extension, type=None, tree=None, directory=''):
+def valid_extension(extension, type=None, tree=None, directory=""):
     if not type:
         return extension in get_all_extensions(subtree=tree, directory=directory)
     else:
