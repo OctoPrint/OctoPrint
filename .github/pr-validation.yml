@@ -2,9 +2,17 @@ approve_label: "approved"
 problem_label: "needs some work"
 ignore_label: "skip validation"
 
-allowed_targets: ["maintenance", "devel", "staging/maintenance", "staging/devel"]
+allowed_targets:
+  ["maintenance", "devel", "staging/bugfix", "staging/maintenance", "staging/devel"]
 forbidden_sources:
-  ["master", "maintenance", "devel", "staging/maintenance", "staging/devel"]
+  [
+    "master",
+    "maintenance",
+    "devel",
+    "staging/bugfix",
+    "staging/maintenance",
+    "staging/devel"
+  ]
 
 labels:
   docs:
