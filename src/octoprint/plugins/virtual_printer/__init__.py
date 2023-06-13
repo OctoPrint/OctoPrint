@@ -56,6 +56,7 @@ class VirtualPrinterPlugin(
                 "EXTENDED_M20": False,
                 "LFN_WRITE": False,
             },
+            "m115ReportArea": False,
             "m114FormatString": "X:{x} Y:{y} Z:{z} E:{e[current]} Count: A:{a} B:{b} C:{c}",
             "m105TargetFormatString": "{heater}:{actual:.2f}/ {target:.2f}",
             "m105NoTargetFormatString": "{heater}:{actual:.2f}",
@@ -114,6 +115,7 @@ class VirtualPrinterPlugin(
 
         serial_obj = virtual.VirtualPrinter(
             self._settings,
+            self._printer_profile_manager,
             data_folder=self.get_plugin_data_folder(),
             seriallog_handler=seriallog_handler,
             read_timeout=float(read_timeout),

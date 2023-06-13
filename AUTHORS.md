@@ -177,6 +177,7 @@ date of first contribution):
   * [Scott Martin](https://github.com/smartin015)
   * [Shyam Sunder](https://github.com/sgsunder)
   * [Conny Rasch](https://github.com/CMR-DEV)
+  * [Christopher Perrin](https://github.com/cperrin88)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
