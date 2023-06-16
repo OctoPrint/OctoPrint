@@ -11,7 +11,7 @@
 <span title="{{ _('Current timelapse configuration')|edq }}">{{ _('Timelapse') }}</span>: <strong data-bind="text: timelapseString"></strong><br>
 <!-- /ko -->
 <!-- ko foreach: filament -->
-<span data-bind="text: 'Filament (' + name() + '): ', title: 'Filament usage for ' + name()"></span><strong data-bind="text: formatFilament(data())"></strong><br>
+<span data-bind="text: '{{ _('Filament')|edq }} (' + name() + '): ', title: 'Filament usage for ' + name()"></span><strong data-bind="text: formatFilament(data())"></strong><br>
 <!-- /ko -->
 <span title="{{ _('Estimated total print time based on analysis of the file or past prints')|edq }}">{{ _('Approx. Total Print Time') }}</span>: <strong data-bind="text: estimatedPrintTimeString, attr: {title: estimatedPrintTimeExactString}"></strong><br>
 <hr>

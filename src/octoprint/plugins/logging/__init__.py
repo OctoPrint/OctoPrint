@@ -254,7 +254,11 @@ class LoggingPlugin(
                 "template": "logging_navbar_plugintimingslog.jinja2",
                 "suffix": "_plugintimingslog",
             },
-            {"type": "settings", "custom_bindings": True},
+            {
+                "type": "settings",
+                "name": gettext("Logging"),
+                "custom_bindings": True
+             },
         ]
 
     def get_assets(self):
