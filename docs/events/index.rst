@@ -519,6 +519,7 @@ PrintCancelled
      * ``position.f``: last feedrate for move commands **sent through OctoPrint** (note that if you modified the
        feedrate outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will
        NOT be accurate)
+     * ``fileposition``: position in the file in bytes at the time of cancellation
 
    .. deprecated:: 1.3.0
 
@@ -550,6 +551,7 @@ PrintPaused
      * ``position.f``: last feedrate for move commands **sent through OctoPrint** (note that if you modified the
        feedrate outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will
        NOT be accurate)
+     * ``fileposition``: position in the file in bytes at the time of pausing
 
    .. deprecated:: 1.3.0
 
