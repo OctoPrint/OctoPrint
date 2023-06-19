@@ -519,6 +519,10 @@ PrintCancelled
      * ``position.f``: last feedrate for move commands **sent through OctoPrint** (note that if you modified the
        feedrate outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will
        NOT be accurate)
+     * ``fileposition``: record of the processed file and current position inside in the moment of cancel
+     * ``fileposition.origin``: origin of the file (local or SD card)
+     * ``fileposition.filename``: full path to the filename on octoprint filesystem
+     * ``fileposition.pos``: position in the file in bytes
 
    .. deprecated:: 1.3.0
 
@@ -550,6 +554,10 @@ PrintPaused
      * ``position.f``: last feedrate for move commands **sent through OctoPrint** (note that if you modified the
        feedrate outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will
        NOT be accurate)
+     * ``fileposition``: record of the processed file and current position inside in the moment of pause
+     * ``fileposition.origin``: origin of the file (local or SD card)
+     * ``fileposition.filename``: full path to the filename on octoprint filesystem
+     * ``fileposition.pos``: position in the file in bytes
 
    .. deprecated:: 1.3.0
 
