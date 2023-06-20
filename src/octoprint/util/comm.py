@@ -36,6 +36,7 @@ from octoprint.util import (
     TypeAlreadyInQueue,
     TypedQueue,
     chunks,
+    dict_merge,
     filter_non_ascii,
     filter_non_utf8,
     get_bom,
@@ -43,7 +44,6 @@ from octoprint.util import (
     get_exception_string,
     sanitize_ascii,
     to_unicode,
-	dict_merge,
 )
 from octoprint.util.files import m20_timestamp_to_unix_timestamp
 from octoprint.util.platform import get_os, set_close_exec
