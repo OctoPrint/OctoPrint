@@ -127,7 +127,10 @@ GCODE.gCodeReader = (function () {
         if (key == null) return {layer: cachedLayer, cmd: cachedCmd};
 
         var layer = searchInLayers(0, rendererModel.length - 1, key);
-        var cmd = searchInCmds(layer, 0, GCODE.renderer.getLayer(layer).length - 1, key);
+        var cmds = GCODE.renderer.getLayer(layer);
+        if (cmds === undefined) return undefined;
+
+        var cmd = searchInCmds(layer, 0, cmds.length - 1, key);
 
         // remember last position
         cachedLayer = layer;

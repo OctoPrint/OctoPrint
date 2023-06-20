@@ -209,7 +209,7 @@ jobs:
           name: dist
           path: dist
       - name: 📦 Publish to index
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         continue-on-error: true
         with:
           password: ${{ secrets.testpypi_password }}
@@ -227,7 +227,7 @@ jobs:
           name: dist
           path: dist
       - name: 📦 Publish to index
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.pypi_password }}
 

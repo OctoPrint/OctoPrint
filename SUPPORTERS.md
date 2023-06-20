@@ -9,7 +9,6 @@ thanks to everyone who contributed!
   * 3D-TECH
   * 3DPrinterOS
   * Al Mucci
-  * Arnljot Arntsen
   * Ash King
   * Ben Fritsch
   * BigTreeTech
@@ -19,20 +18,18 @@ thanks to everyone who contributed!
   * Christian Wolf
   * Christian Würthner
   * Christoph Sigrist
-  * CooperSpartan
   * Creality3D
   * DeltaMaker 3D Printers
   * Dennis Breining
+  * Dima Gorbenko
   * Douglas Floyd
   * Ed Crump
   * Ernesto Martinez
   * Franziska Kunsmann
   * Hog Duske
   * Jacob Renstrom
-  * James Mackay
   * Jeff Green
   * Jeff Moe
-  * jeffiel
   * Jeremy Cole
   * John Cassel
   * Julian Melo
@@ -44,11 +41,13 @@ thanks to everyone who contributed!
   * Lachlan Bell
   * Lefteris Lertas
   * LulzBot
+  * Makerbase
   * Makespace Madrid
   * Mark Greenwald
   * Mark Walker
   * Michael Aumock
-  * Mike Kershaw
+  * Michael Badagliacco
+  * Mike Labanov
   * Mosaic Manufacturing
   * Norman Jaffe
   * Obico
@@ -59,15 +58,13 @@ thanks to everyone who contributed!
   * Randy C. Will
   * Ranjib Dey
   * Richard McGuire
-  * Richard Michaud
   * Richard Stocks
   * Robert Gusek
-  * Sean Jensen-Grey
-  * Sebastien Andrivet
   * SimplyPrint
+  * Songyin Zheng
   * Stefan Krister
   * Steve Dougherty
   * Steve Thompson
   * Ulrich Kempken
 
-and 2041 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 2002 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!

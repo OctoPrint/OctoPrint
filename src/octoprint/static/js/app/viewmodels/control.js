@@ -37,6 +37,7 @@ $(function () {
 
         self.controlsFromServer = [];
         self.additionalControls = [];
+        self.intersectionObservers = [];
 
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
@@ -65,27 +66,61 @@ $(function () {
                 console.debug(
                     `VM for webcam #${target.id} not found, skipping visibility update`
                 );
-            } else if (typeof vm.onWebcamVisbilityChange === "function") {
-                vm.onWebcamVisbilityChange(visible);
+            } else if (typeof vm.onWebcamVisibilityChange === "function") {
+                vm.onWebcamVisibilityChange(visible);
             } else {
                 console.debug(
-                    `VM for webcam #${target.id} does not declare 'onWebcamVisbilityChange(visible)', skipping visibility update (vm=${vm.constructor.name})`
+                    `VM for webcam #${target.id} does not declare 'onWebcamVisibilityChange(visible)', skipping visibility update (vm=${vm.constructor.name})`
                 );
             }
         };
 
-        self.onAfterBinding = function () {
+        const selectedCameraStorageKey = "core.control.selectedCamera";
+        self.selectDefaultWebcam = function () {
+            if (!document.querySelector("#webcam_plugins_container .nav")) {
+                // we only have one webcam plugin, select that and be done (note: this bypasses local storage)
+                $("#webcam-group .tab-pane:first").addClass("active");
+                return;
+            }
+
+            let div = localStorage[selectedCameraStorageKey];
+
+            if (!div || document.getElementById(div.slice(1)) === null) {
+                div = undefined;
+            }
+
+            if (div !== undefined) {
+                $(`${div}_link a`).tab("show");
+            } else {
+                $("#webcam_plugins_container .nav li:first a").tab("show");
+            }
+        };
+
+        self.onStartupComplete = function () {
+            $("#webcam_plugins_container .nav a[data-toggle='tab']").on("shown", (e) => {
+                localStorage[selectedCameraStorageKey] = e.target.hash;
+            });
+            self.selectDefaultWebcam();
+            self.recreateIntersectionObservers();
+        };
+
+        self.recreateIntersectionObservers = function () {
             // We are using the IntersectionObserver API to determine whether a webcam is visible or not.
             // A webcam will not intersect with the control tab if the control tab is invisible because another tab
             // is selected or if the webcam isn't shown because another webcam is active.
             //
-            // Whenever the webacam changes visibility we will call onWebcamVisbilityChange() which the webcam's
+            // Whenever the webacam changes visibility we will call onWebcamVisibilityChange() which the webcam's
             //  VM can use to start or stop the stream.
+            self.intersectionObservers.forEach(function (observer) {
+                observer.disconnect();
+            });
+            self.intersectionObservers = [];
+
             document
                 .querySelectorAll("#webcam-group .tab-pane")
                 .forEach(function (target) {
                     var options = {
-                        root: document.querySelector("#control"),
+                        root: document.querySelector("#webcam_plugins_container"),
                         rootMargin: "0px",
                         threshold: 1.0
                     };
@@ -103,6 +138,7 @@ $(function () {
 
                     var observer = new IntersectionObserver(callback, options);
                     observer.observe(target);
+                    self.intersectionObservers.push(observer);
                 });
         };
 

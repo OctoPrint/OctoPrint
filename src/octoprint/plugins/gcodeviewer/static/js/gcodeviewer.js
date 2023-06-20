@@ -345,8 +345,6 @@ $(function () {
 
         self.currentlyPrinting = false;
 
-        self.errorCount = 0;
-
         self.layerSlider = undefined;
         self.layerCommandSlider = undefined;
 
@@ -510,7 +508,12 @@ $(function () {
         self.loadFile = function (path, date, size) {
             self.enableReload(false);
             self.needsLoad = false;
-            if (self.status === "idle" && self.errorCount < 3) {
+            if (
+                self.status === "idle" &&
+                self.cachedPath !== path &&
+                self.cachedDate !== date &&
+                self.cachedSize !== size
+            ) {
                 self.status = "request";
 
                 self.cachedPath = path;
@@ -609,7 +612,6 @@ $(function () {
                 ) {
                     self._renderPercentage(data.progress.completion);
                 }
-                self.errorCount = 0;
             } else {
                 if (self.status === "idle") self.clear();
                 if (

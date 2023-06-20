@@ -182,7 +182,7 @@ class SerialConfig(BaseModel):
     waitForStartOnConnect: bool = False
     """Whether OctoPrint should wait for the `start` response from the printer before trying to send commands during connect."""
 
-    waitToLoadSdFileList: bool = False
+    waitToLoadSdFileList: bool = True
     """Specifies whether OctoPrint should wait to load the SD card file list until the first firmware capability report is processed."""
 
     alwaysSendChecksum: bool = False

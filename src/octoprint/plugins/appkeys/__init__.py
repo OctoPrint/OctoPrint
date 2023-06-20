@@ -218,6 +218,8 @@ class AppKeysPlugin(
     @octoprint.plugin.BlueprintPlugin.route("/auth/<app_token>", methods=["GET"])
     @no_firstrun_access
     def handle_auth_dialog(self, app_token):
+        from octoprint.server.util.csrf import add_csrf_cookie
+
         user_id = current_user.get_name()
         required_user = flask.request.args.get("user", None)
 
@@ -256,7 +258,7 @@ class AppKeysPlugin(
                 ).replace("%(app)s", app_id),
             )
         )
-        return add_non_caching_response_headers(response)
+        return add_csrf_cookie(add_non_caching_response_headers(response))
 
     @octoprint.plugin.BlueprintPlugin.route("/decision/<user_token>", methods=["POST"])
     @restricted_access

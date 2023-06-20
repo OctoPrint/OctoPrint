@@ -1420,8 +1420,9 @@ class Server:
             except octoprint.access.users.UnknownUser:
                 pass
 
-        elif (
-            default_language is not None
+        if (
+            not l10n
+            and default_language is not None
             and not default_language == "_default"
             and default_language in LANGUAGES
         ):
@@ -1430,14 +1431,14 @@ class Server:
 
         if l10n:
             # canonicalize and get rid of invalid language codes
-            l10n_canoicalized = []
+            l10n_canonicalized = []
             for x in l10n:
                 try:
-                    l10n_canoicalized.append(str(Locale.parse(x)))
+                    l10n_canonicalized.append(str(Locale.parse(x)))
                 except Exception:
                     # invalid language code, ignore
                     continue
-            return Locale.negotiate(l10n_canoicalized, LANGUAGES)
+            return Locale.negotiate(l10n_canonicalized, LANGUAGES)
 
         # request: preference
         return Locale.parse(request.accept_languages.best_match(LANGUAGES, default="en"))
@@ -2039,6 +2040,10 @@ class Server:
 
         url_prefix = f"/plugin/{name}"
         blueprint = Blueprint(name, name, static_folder=plugin.get_asset_folder())
+
+        blueprint.before_request(corsRequestHandler)
+        blueprint.after_request(corsResponseHandler)
+
         return blueprint, url_prefix
 
     def _add_plugin_request_handlers_to_blueprints(self, *blueprints):

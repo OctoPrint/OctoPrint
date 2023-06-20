@@ -48,37 +48,37 @@ core_deps = [
     "feedparser>=6.0.10,<7",
     "filetype>=1.2.0,<2",
     "Flask-Assets>=2.0,<3",
-    "Flask-Babel>=3.0.1,<4",
+    "Flask-Babel>=3.1.0,<4",
     "Flask-Login>=0.6.2,<0.7",  # breaking changes can happen on minor version increases
     "Flask-Limiter>=3.3.0,<4",
     "flask>=2.2.3,<2.3",  # breaking changes can happen on minor version increases (with deprecation warnings)
-    "frozendict>=2.3.5,<3",
+    "frozendict>=2.3.7,<3",
     "future>=0.18.3,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
-    "markdown>=3.4.1,<4",
+    "markdown>=3.4.3,<4",
     "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
-    "netifaces>=0.11,<1",
+    "netifaces2>=0.0.14,<0.1",
     "passlib>=1.7.4,<2",
     "pathvalidate>=2.5.2,<3",
     "pkginfo>=1.9.6,<2",
     "psutil>=5.9.4,<6",
-    "pydantic>=1.10.5,<2",
+    "pydantic>=1.10.7,<2",
     "pylru>=1.2.1,<2",
     "pyserial>=3.5,<4",
     "PyYAML>=5.4.1,<6",  # no changelog available for version 6, so we're not risking it
     "requests>=2.28.2,<3",
     "sarge==0.1.7.post1",
     "semantic_version>=2.10.0,<3",
-    "sentry-sdk>=1.16.0,<2",
+    "sentry-sdk>=1.19.1,<2",
     "tornado>=6.2,<7",
     "watchdog>=2.3.1,<3",
     "websocket-client>=1.5.1,<2",
     "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
     "wrapt>=1.15,<1.16",
     "zeroconf==0.39.4",  # final version to include universal wheel, later takes ages to compiles on rpi, piwheels has no wheels for latest either
-    "zipstream-ng>=1.4.0,<2.0.0",
+    "zipstream-ng>=1.5.0,<2.0.0",
 ]
 vendored_deps = [
-    "blinker>=1.5,<2",  # dependency of flask_principal
+    "blinker>=1.6.1,<2",  # dependency of flask_principal
     "class-doc>=0.2.6,<0.3",  # dependency of with_attrs_docs
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
@@ -102,7 +102,7 @@ EXTRA_REQUIRES = {
         "ddt",
         "mock>=5.0.1,<6",
         "pytest-doctest-custom>=1.0.0,<2",
-        "pytest>=7.2.2,<8",
+        "pytest>=7.3.0,<8",
         # pre-commit
         "pre-commit",
         # profiler
@@ -201,11 +201,17 @@ class ScanDepsCommand(setuptools.Command):
             )
             resp.raise_for_status()
 
+            def safe_parse_version(version):
+                try:
+                    return parse_version(version)
+                except ValueError:
+                    return None
+
             data = resp.json()
             versions = list(
                 filter(
-                    lambda x: not x.is_prerelease and not x.is_devrelease,
-                    map(lambda x: parse_version(x), data.get("versions", [])),
+                    lambda x: x and not x.is_prerelease and not x.is_devrelease,
+                    map(lambda x: safe_parse_version(x), data.get("versions", [])),
                 )
             )
             if not versions:
