@@ -891,8 +891,11 @@ $(function () {
         self.onTabChange = function (current, previous) {
             self.tabActive = current === "#gcode";
             if (self.tabActive && self.needsLoad) {
-                self.loadFile(self.selectedFile.path(), self.selectedFile.date()),
-                    self.selectedFile.size();
+                self.loadFile(
+                    self.selectedFile.path(),
+                    self.selectedFile.date(),
+                    self.selectedFile.size()
+                );
             }
         };
 
