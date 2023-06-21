@@ -1770,6 +1770,7 @@ def collect_core_assets(preferred_stylesheet="css"):
         "js/app/viewmodels/connection.js",
         "js/app/viewmodels/control.js",
         "js/app/viewmodels/files.js",
+        "js/app/viewmodels/firstrun_wizard.js",
         "js/app/viewmodels/loginstate.js",
         "js/app/viewmodels/loginui.js",
         "js/app/viewmodels/navigation.js",
