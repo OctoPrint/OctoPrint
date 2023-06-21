@@ -36,6 +36,7 @@ from octoprint.util import (
     TypeAlreadyInQueue,
     TypedQueue,
     chunks,
+    dict_merge,
     filter_non_ascii,
     filter_non_utf8,
     get_bom,
@@ -1377,7 +1378,7 @@ class MachineCom:
 
                 if len(retval) == 3:
                     variables = retval[2]
-                    context.update({"plugins": {name: variables}})
+                    context = dict_merge(context, {"plugins": {name: variables}})
 
         template = settings().loadScript("gcode", scriptName, context=context)
         if template is None:
