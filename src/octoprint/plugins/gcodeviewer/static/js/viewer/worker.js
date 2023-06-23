@@ -914,6 +914,8 @@ var runAnalyze = function (message) {
     layerCnt = 0;
     speeds = {extrude: [], retract: [], move: []};
     speedsByLayer = {extrude: {}, retract: {}, move: {}};
+    emptyLayers = [];
+    percentageByLayer = [];
 };
 
 var setOption = function (options) {
