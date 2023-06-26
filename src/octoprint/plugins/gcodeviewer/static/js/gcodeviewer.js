@@ -505,14 +505,15 @@ $(function () {
             });
         };
 
-        self.loadFile = function (path, date, size) {
+        self.loadFile = function (path, date, size, force) {
             self.enableReload(false);
             self.needsLoad = false;
             if (
                 self.status === "idle" &&
-                self.cachedPath !== path &&
-                self.cachedDate !== date &&
-                self.cachedSize !== size
+                (force ||
+                    (self.cachedPath !== path &&
+                        self.cachedDate !== date &&
+                        self.cachedSize !== size))
             ) {
                 self.status = "request";
 
@@ -549,7 +550,12 @@ $(function () {
 
         self.reload = function () {
             if (!self.enableReload()) return;
-            self.loadFile(self.loadedFilepath, self.loadedFileDate, self.loadedFileSize);
+            self.loadFile(
+                self.loadedFilepath,
+                self.loadedFileDate,
+                self.loadedFileSize,
+                true
+            );
         };
 
         self.fromHistoryData = function (data) {
@@ -891,8 +897,11 @@ $(function () {
         self.onTabChange = function (current, previous) {
             self.tabActive = current === "#gcode";
             if (self.tabActive && self.needsLoad) {
-                self.loadFile(self.selectedFile.path(), self.selectedFile.date()),
-                    self.selectedFile.size();
+                self.loadFile(
+                    self.selectedFile.path(),
+                    self.selectedFile.date(),
+                    self.selectedFile.size()
+                );
             }
         };
 

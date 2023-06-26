@@ -4,10 +4,18 @@
  * Time: 12:18 PM
  */
 
+// base url to use for API calls; it's the worker location minus the worker.js path
+var baseUrl = self.location.href.substring(
+    0,
+    self.location.href.length - "/plugin/gcodeviewer/static/js/viewer/worker.js".length
+);
+
 // raw path suitable for fetch()
 var url;
+
 // path relative to Local
 var path;
+
 var firstReport;
 var toolOffsets = [{x: 0, y: 0}];
 var g90InfluencesExtruder = false;
@@ -455,7 +463,9 @@ var doParse = async function () {
     // if skipUntil is set, get skipUntilPresent
     skipUntilPresent = false;
     if (skipUntil !== undefined && skipUntil !== "") {
-        result = await fetch("/plugin/gcodeviewer/skipuntilcheck/local/" + path);
+        result = await fetch(
+            baseUrl + "/plugin/gcodeviewer/skipuntilcheck/local/" + path
+        );
         if (result.ok) {
             response = await result.json();
             skipUntilPresent = response.present;
@@ -904,6 +914,8 @@ var runAnalyze = function (message) {
     layerCnt = 0;
     speeds = {extrude: [], retract: [], move: []};
     speedsByLayer = {extrude: {}, retract: {}, move: {}};
+    emptyLayers = [];
+    percentageByLayer = [];
 };
 
 var setOption = function (options) {
