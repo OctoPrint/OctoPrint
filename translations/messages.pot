@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.9.0rc5.dev4+ge7ee1d804\n"
+"Project-Id-Version: OctoPrint 1.9.1.dev7+gc847ed9d1\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2023-04-13 13:14+0200\n"
+"POT-Creation-Date: 2023-06-26 15:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1573,16 +1573,16 @@ msgid ""
 "</p>\n"
 msgstr ""
 
-#: src/octoprint/plugins/eventmanager/__init__.py:39
-#: src/octoprint/plugins/eventmanager/__init__.py:57
+#: src/octoprint/plugins/eventmanager/__init__.py:42
+#: src/octoprint/plugins/eventmanager/__init__.py:60
 msgid "Event Manager"
 msgstr ""
 
-#: src/octoprint/plugins/eventmanager/__init__.py:48
+#: src/octoprint/plugins/eventmanager/__init__.py:51
 msgid "Allows for the management of event subscriptions."
 msgstr ""
 
-#: src/octoprint/plugins/eventmanager/__init__.py:61
+#: src/octoprint/plugins/eventmanager/__init__.py:64
 msgid "Plugin to configure event subscriptions available in config.yaml."
 msgstr ""
 
@@ -1667,48 +1667,48 @@ msgstr ""
 msgid "Ready!"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:694
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:700
 #: src/octoprint/static/js/app/viewmodels/files.js:1066
 msgid "Model size"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:704
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:710
 msgid "Estimated layer height"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:707
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:713
 #: src/octoprint/templates/tabs/timelapse.jinja2:69
 msgid "mm"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:710
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:716
 msgid "Estimated total print time"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:715
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:721
 msgid "Layers with extrusion"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:748
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:754
 msgid "Layer number"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:749
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:755
 msgid "Layer height"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:750
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:756
 msgid "GCODE commands"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:754
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:763
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:760
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:769
 #: src/octoprint/static/js/app/viewmodels/files.js:1081
 #: src/octoprint/static/js/app/viewmodels/files.js:1097
 msgid "Filament"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:765
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:771
 #: src/octoprint/static/js/app/viewmodels/control.js:177
 #: src/octoprint/static/js/app/viewmodels/files.js:1099
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:357
@@ -1718,7 +1718,7 @@ msgstr ""
 msgid "Tool"
 msgstr ""
 
-#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:777
+#: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:783
 #: src/octoprint/static/js/app/viewmodels/files.js:1109
 msgid "Estimated print time"
 msgstr ""
@@ -6820,8 +6820,9 @@ msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:466
 msgid ""
-"Try checking this if the SD card file list loads improperly after "
-"connecting to the printer."
+"Try unchecking this if the SD card file list never gets loaded after "
+"connecting to the printer, due to your firmware not providing a "
+"capability report."
 msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:471
