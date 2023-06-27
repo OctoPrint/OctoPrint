@@ -18,10 +18,10 @@ from octoprint.util.version import (
 )
 
 SENTRY_URL_SERVER = (
-    "https://21dc312545ad43599cec6447a22b1199@o118517.ingest.sentry.io/1373987"
+    "https://2887d6b262504b589a67632ab6ff6953@o118517.ingest.sentry.io/1373987"
 )
 SENTRY_URL_COREUI = (
-    "https://2e072e9c589742e18ba5e26f22395779@o118517.ingest.sentry.io/1374096"
+    "https://b6be6ca750ff4f8aabb07119fc6a7f31@o118517.ingest.sentry.io/1374096"
 )
 
 SETTINGS_DEFAULTS = {
