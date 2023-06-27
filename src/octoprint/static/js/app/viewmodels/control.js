@@ -57,19 +57,20 @@ $(function () {
         self._visibleWebcam = undefined;
 
         self._dispatchWebcamVisibilityChange = function (target, visible) {
+            log.debug(`Webcam visibility of #${target.id} changed to ${visible}`);
             var vm = ko.dataFor(target.children[0]);
             if (vm === self) {
-                console.debug(
+                log.debug(
                     `VM for webcam #${target.id} is not bound, skipping visibility update`
                 );
             } else if (vm === undefined) {
-                console.debug(
+                log.debug(
                     `VM for webcam #${target.id} not found, skipping visibility update`
                 );
             } else if (typeof vm.onWebcamVisibilityChange === "function") {
                 vm.onWebcamVisibilityChange(visible);
             } else {
-                console.debug(
+                log.debug(
                     `VM for webcam #${target.id} does not declare 'onWebcamVisibilityChange(visible)', skipping visibility update (vm=${vm.constructor.name})`
                 );
             }
@@ -122,7 +123,7 @@ $(function () {
                     var options = {
                         root: document.querySelector("#webcam_plugins_container"),
                         rootMargin: "0px",
-                        threshold: 1.0
+                        threshold: 0.01
                     };
                     var callback = function (entries) {
                         var visible = entries[0].isIntersecting;
