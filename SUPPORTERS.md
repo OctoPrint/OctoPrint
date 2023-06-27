@@ -61,10 +61,9 @@ thanks to everyone who contributed!
   * Richard Stocks
   * Robert Gusek
   * SimplyPrint
-  * Songyin Zheng
   * Stefan Krister
   * Steve Dougherty
   * Steve Thompson
   * Ulrich Kempken
 
-and 2002 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 1979 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
