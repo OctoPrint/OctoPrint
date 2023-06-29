@@ -42,6 +42,7 @@ class GcodeviewerPlugin(
             },
             {
                 "type": "settings",
+                "name": gettext("GCode Viewer"),
                 "template": "gcodeviewer_settings.jinja2",
                 "custom_bindings": True,
             },
