@@ -2653,6 +2653,18 @@ class MachineCom:
                                 extra={"plugin": name},
                             )
 
+                    # log firmware capabilities
+                    capability_list = "\n  ".join(
+                        [
+                            f"{capability}: {'supported' if enabled else 'not supported'}"
+                            for capability, enabled in self._firmware_capabilities.items()
+                        ]
+                    )
+                    self._logger.info(
+                        "Firmware sent the following capability report:\n  "
+                        + capability_list
+                    )
+
                 ##~~ position report processing
                 if "X:" in line and "Y:" in line and "Z:" in line:
                     parsed = parse_position_line(line)
@@ -2862,6 +2874,7 @@ class MachineCom:
                         self._logger.info(
                             f'Printer reports firmware name "{firmware_name}"'
                         )
+                        self._logger.info(f"Firmware info line: {line}")
 
                         if self._firmware_detection:
                             if (
