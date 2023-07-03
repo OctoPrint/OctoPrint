@@ -234,10 +234,9 @@ class LoggingPlugin(
 
         # set runtime logging levels now
         for logger, level in new_levels.items():
-            level = logging.getLevelName(level)
-
             self._logger.info(f"Setting logger {logger} level to {level}")
-            self._logger.manager.loggerDict[logger].setLevel(level)
+            level_val = logging.getLevelName(level)
+            logging.getLogger(logger).setLevel(level_val)
 
     def _is_managed_logger(self, logger):
         return logger and (logger.startswith("octoprint") or logger.startswith("tornado"))
