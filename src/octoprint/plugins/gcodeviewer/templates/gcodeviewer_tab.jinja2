@@ -125,7 +125,7 @@
 <div data-bind="visible: waitForApproval">
     <h1>{{ _('Warning') }}</h1>
     {% trans %}<p>
-        You've selected <strong data-bind="text: selectedFile.name"></strong> for printing which has a size of
+        You've selected <strong data-bind="text: selectedFile.path"></strong> for printing which has a size of
         <strong data-bind="text: formatSize(selectedFile.size())"></strong>. Depending on your machine this
         might be too large for rendering and cause your browser to become unresponsive or crash.
     </p>
@@ -136,7 +136,7 @@
 
     <p>
         <button class="btn btn-warning btn-block" data-bind="click: approveLargeFile">
-            {{ _('Yes, please visualize %(name)s regardless of its size', name='<span data-bind="text: selectedFile.name"></span>') }}
+            {{ _('Yes, please visualize %(name)s regardless of its size', name='<span data-bind="text: selectedFile.path"></span>') }}
         </button>
     <p>
 

@@ -180,13 +180,10 @@ $(function () {
         // initialize list helper
         var listHelperFilters = {
             printed: function (data) {
-                return (
-                    !(
-                        data["prints"] &&
-                        data["prints"]["success"] &&
-                        data["prints"]["success"] > 0
-                    ) ||
-                    (data["type"] && data["type"] === "folder")
+                return !(
+                    data["prints"] &&
+                    data["prints"]["success"] &&
+                    data["prints"]["success"] > 0
                 );
             },
             sd: function (data) {
@@ -1692,6 +1689,16 @@ $(function () {
                 _.sprintf(gettext("File already exists: %(name)s"), {
                     name: file.name
                 })
+            );
+            $("span.existing_size", self.uploadExistsDialog).text(
+                response.size ? formatSize(response.size) : "-"
+            );
+            $("span.existing_date", self.uploadExistsDialog).text(
+                response.date ? new Date(response.date * 1000).toLocaleString() : "?"
+            );
+            $("span.new_size", self.uploadExistsDialog).text(formatSize(file.size));
+            $("span.new_date", self.uploadExistsDialog).text(
+                new Date(file.lastModified).toLocaleString()
             );
             $("p, form", self.uploadExistsDialog).toggle(!fileSizeTooBig);
             $("span", self.uploadExistsDialog).toggle(fileSizeTooBig);
