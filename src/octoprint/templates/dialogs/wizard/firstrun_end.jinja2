@@ -4,30 +4,56 @@
     Your OctoPrint installation is now all set up and ready to go.
 {% endtrans %}</p>
 
-<h4>{{ _('For your printer\'s safety') }}</h4>
+<h4>{{ _('Please read this for your and your printer\'s safety!') }}</h4>
 
-<i class="fas fa-exclamation-triangle fa-4x fa-pull-left text-error"></i>
-<p>{% trans %}
-    Even with OctoPrint attached you should <strong class="text-error">never leave
-    your printer running completely unattended</strong>. The electronics in our consumer printers can and
-    sometimes sadly do catch fire, so stay or have someone else stay close enough to physically intervene
-    in case of such catastrophic failure.
-{% endtrans %}</p>
-<p>{% trans url='https://octoprint.org/blog/2018/09/03/safe-remote-access/' %}
-    You also should <strong class="text-error">never make your OctoPrint instance available for everyone on the
-    public internet</strong>, even with Access Control enabled. Your instance <em>will</em> be found, and bad people
-    <em>will</em> try to abuse it. Don't put yourself at risk,
-    <a href="{{ url }}" target="_blank" rel="noopener noreferrer">use a safe way to access your instance remotely</a>.
-{% endtrans %}</p>
+<div class="row-fluid">
+    <div class="span1 text-center">
+        <i class="fas fa-fire-extinguisher fa-3x text-error"></i>
+    </div>
+    <div class="span11">
+        <p>{% trans %}
+            Even with OctoPrint you should <strong class="text-error">never leave
+            your printer running unattended</strong>. The electronics in our consumer printers can and
+            sometimes sadly do catch fire, so stay or have someone else stay close enough to physically intervene
+            in case of catastrophic failure.
+        {% endtrans %}</p>
+        <p><label class="checkbox" data-bind="style: { border: !dontPrintUnattendedAcknowledged() && error() ? '1px dashed red' : 'inherit' }">
+            <input type="checkbox" data-bind="checked: dontPrintUnattendedAcknowledged">
+            <strong>{{ _('I have read and understood this') }}</strong><i class="fas fa-left-arrow text-error"></i>
+        </label></p>
+    </div>
+</div>
+
+<div class="row-fluid">
+    <div class="span1 text-center">
+        <i class="fas fa-unlink fa-3x text-error"></i>
+    </div>
+    <div class="span11">
+        <p>{% trans url='https://plugins.octoprint.org/topics/remote_access/' %}
+            You also should <strong class="text-error">never expose OctoPrint on the public internet</strong>,
+            e.g. through a port forward. It can and <em>will</em> be found, and bad people
+            <em>will</em> try to abuse it. Don't put yourself at risk, use a safe way to access your instance remotely, like
+            one of the available <strong><a href="{{ url }}" target="_blank" rel="noopener noreferrer">Remote Access plugins!</a></strong>
+        {% endtrans %}</p>
+        <p><label class="checkbox" data-bind="style: { border: !dontPortForwardAcknowledged() && error() ? '1px dashed red' : 'inherit' }">
+            <input type="checkbox" data-bind="checked: dontPortForwardAcknowledged">
+            <strong>{{ _('I have read and understood this') }}</strong>
+        </label></p>
+    </div>
+</div>
 
 <h4>{{ _('If you enjoy OctoPrint...') }}</h4>
 
-<span style="display: inline-block; float: left; font-size: 4em; margin-right: .3em"><img src="{{ url_for('static', filename='img/tentacle-56x56.png') }}"></span>
-<p>{% trans url='https://octoprint.org/support-octoprint/?utm_source=octoprint&utm_medium=first_run_wizard' %}
-    Please consider <strong><a href="{{ url }}" target="_blank">supporting OctoPrint's ongoing development</a></strong>,
-    which can only continue with funding by users like you! You can also find this link in the "About" dialog.<br>
-    <strong>Thank you!</strong>
-{% endtrans %}</p>
+<div class="row-fluid">
+    <div class="span1 text-center"><img src="{{ url_for('static', filename='img/tentacle-56x56.png') }}"></div>
+    <div class="span11">
+        <p>{% trans url='https://octoprint.org/support-octoprint/?utm_source=octoprint&utm_medium=first_run_wizard' %}
+            Please consider <strong><a href="{{ url }}" target="_blank">supporting OctoPrint's ongoing development</a></strong>,
+            which can only continue with funding by users like you! You can also find this link in the "About" dialog.<br>
+            <strong>Thank you!</strong>
+        {% endtrans %}</p>
+    </div>
+</div>
 
 <p>{% trans %}
     With all that being said, <strong>Happy and Safe Printing</strong>!
