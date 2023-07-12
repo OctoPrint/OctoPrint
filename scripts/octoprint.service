@@ -7,7 +7,7 @@ Wants=network-online.target
 Environment="LC_ALL=C.UTF-8"
 Environment="LANG=C.UTF-8"
 Type=exec
-User=pi
+User=user
 ExecStart=/home/user/OctoPrint/venv/bin/octoprint
 
 [Install]
