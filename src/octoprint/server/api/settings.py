@@ -148,6 +148,7 @@ def getSettings():
             ),
             "g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
             "autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"]),
+            "enableDragDropUpload": s.getBoolean(["feature", "enableDragDropUpload"]),
         },
         "gcodeAnalysis": {
             "runAt": s.get(["gcodeAnalysis", "runAt"]),
@@ -708,6 +709,11 @@ def _saveSettings(data):
             s.set(
                 ["feature", "autoUppercaseBlacklist"],
                 data["feature"]["autoUppercaseBlacklist"],
+            )
+        if "enableDragDropUpload" in data["feature"]:
+            s.setBoolean(
+                ["feature", "enableDragDropUpload"],
+                data["feature"]["enableDragDropUpload"],
             )
 
     if "gcodeAnalysis" in data:

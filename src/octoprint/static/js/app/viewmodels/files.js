@@ -1930,43 +1930,50 @@ $(function () {
         };
 
         self._handleDragEnter = function (e) {
-            self.dropOverlay.addClass("in");
+            if (self.settingsViewModel.feature_enableDragDropUpload()) {
+                self.dropOverlay.addClass("in");
 
-            var foundLocal = false;
-            var foundSd = false;
-            var found = false;
-            var node = e.target;
-            do {
-                if (self.dropZoneLocal && node === self.dropZoneLocal[0]) {
-                    foundLocal = true;
-                    break;
-                } else if (self.dropZoneSd && node === self.dropZoneSd[0]) {
-                    foundSd = true;
-                    break;
-                } else if (self.dropZone && node === self.dropZone[0]) {
-                    found = true;
-                    break;
-                }
-                node = node.parentNode;
-            } while (node !== null);
+                var foundLocal = false;
+                var foundSd = false;
+                var found = false;
+                var node = e.target;
+                do {
+                    if (self.dropZoneLocal && node === self.dropZoneLocal[0]) {
+                        foundLocal = true;
+                        break;
+                    } else if (self.dropZoneSd && node === self.dropZoneSd[0]) {
+                        foundSd = true;
+                        break;
+                    } else if (self.dropZone && node === self.dropZone[0]) {
+                        found = true;
+                        break;
+                    }
+                    node = node.parentNode;
+                } while (node !== null);
 
-            if (foundLocal) {
-                self.dropZoneLocalBackground.addClass("hover");
-                self.dropZoneSdBackground.removeClass("hover");
-            } else if (foundSd && self.printerState.isSdReady() && !self.isPrinting()) {
-                self.dropZoneSdBackground.addClass("hover");
-                self.dropZoneLocalBackground.removeClass("hover");
-            } else if (found) {
-                self.dropZoneBackground.addClass("hover");
-            } else {
-                if (self.dropZoneLocalBackground)
-                    self.dropZoneLocalBackground.removeClass("hover");
-                if (self.dropZoneSdBackground)
+                if (foundLocal) {
+                    self.dropZoneLocalBackground.addClass("hover");
                     self.dropZoneSdBackground.removeClass("hover");
-                if (self.dropZoneBackground) self.dropZoneBackground.removeClass("hover");
+                } else if (
+                    foundSd &&
+                    self.printerState.isSdReady() &&
+                    !self.isPrinting()
+                ) {
+                    self.dropZoneSdBackground.addClass("hover");
+                    self.dropZoneLocalBackground.removeClass("hover");
+                } else if (found) {
+                    self.dropZoneBackground.addClass("hover");
+                } else {
+                    if (self.dropZoneLocalBackground)
+                        self.dropZoneLocalBackground.removeClass("hover");
+                    if (self.dropZoneSdBackground)
+                        self.dropZoneSdBackground.removeClass("hover");
+                    if (self.dropZoneBackground)
+                        self.dropZoneBackground.removeClass("hover");
+                }
+                self._dragNDropTarget = e.target;
+                self._dragNDropLastOver = Date.now();
             }
-            self._dragNDropTarget = e.target;
-            self._dragNDropLastOver = Date.now();
         };
         self.onEventSettingsUpdated = function () {
             self.showInternalFilename(
