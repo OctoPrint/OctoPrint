@@ -871,10 +871,6 @@ Use the following settings to configure the server:
      # reset the setting to false
      startOnceInSafeMode: false
 
-     # Signals to OctoPrint that the last startup was incomplete. OctoPrint will then startup
-     # in safe mode
-     incompleteStartup: false
-
      # Set this to true to make OctoPrint ignore incomplete startups. Helpful for development.
      ignoreIncompleteStartup: false
 

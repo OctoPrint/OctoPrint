@@ -9,6 +9,7 @@ import logging
 import logging.config
 import mimetypes
 import os
+import pathlib
 import re
 import signal
 import sys
@@ -300,9 +301,14 @@ class Server:
         if self._settings is None:
             self._settings = settings()
 
+        incomplete_startup_flag = (
+            pathlib.Path(self._settings._basedir) / ".incomplete_startup"
+        )
         if not self._settings.getBoolean(["server", "ignoreIncompleteStartup"]):
-            self._settings.setBoolean(["server", "incompleteStartup"], True)
-            self._settings.save()
+            try:
+                incomplete_startup_flag.touch()
+            except Exception:
+                self._logger.exception("Could not create startup triggered safemode flag")
 
         if self._plugin_manager is None:
             self._plugin_manager = octoprint.plugin.plugin_manager()
@@ -1294,8 +1300,13 @@ class Server:
 
                 # if there was a rogue plugin we wouldn't even have made it here, so remove startup triggered safe mode
                 # flag again...
-                self._settings.setBoolean(["server", "incompleteStartup"], False)
-                self._settings.save()
+                try:
+                    if incomplete_startup_flag.exists():
+                        incomplete_startup_flag.unlink()
+                except Exception:
+                    self._logger.exception(
+                        "Could not clear startup triggered safe mode flag"
+                    )
 
                 # make a backup of the current config
                 self._settings.backup(ext="backup")
