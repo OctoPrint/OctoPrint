@@ -64,7 +64,7 @@ core_deps = [
     "pydantic>=1.10.7,<2",
     "pylru>=1.2.1,<2",
     "pyserial>=3.5,<4",
-    "PyYAML>=5.4.1,<6",  # no changelog available for version 6, so we're not risking it
+    "PyYAML>=6.0.1,<7",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
     "requests>=2.28.2,<3",
     "sarge==0.1.7.post1",
     "semantic_version>=2.10.0,<3",
