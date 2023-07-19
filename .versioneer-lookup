@@ -26,8 +26,8 @@ improve/.* 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774 pep440-dev
 
 # staging/bugfix is the branch for preparation of the 1.9.x bugfix releases
 # so are any bug/... branches
-staging/bugfix 1.9.2 1d519a21702ea180c026929da2a6e17079470b9a pep440-dev
-bug/.* 1.9.2 1d519a21702ea180c026929da2a6e17079470b9a pep440-dev
+staging/bugfix 1.9.3 f027aaa7300f70b046525a49245b33c43dd198c1 pep440-dev
+bug/.* 1.9.3 f027aaa7300f70b046525a49245b33c43dd198c1 pep440-dev
 
 # staging/maintenance is currently the branch for preparation of 1.9.0rc7
 # so is regressionfix/...
