@@ -123,7 +123,7 @@ def init_platform(
     )
     settings_incomplete_startup_safemode = (
         "incomplete_startup"
-        if settings.getBoolean(["server", "incompleteStartup"])
+        if os.path.exists(os.path.join(settings._basedir, ".incomplete_startup"))
         and not settings.getBoolean(["server", "ignoreIncompleteStartup"])
         else None
     )
