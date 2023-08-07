@@ -1373,7 +1373,7 @@ class Server:
             pass
         except Exception:
             self._logger.fatal(
-                "Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!"
+                "Now that is embarrassing... Something went really really wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!"
             )
             self._logger.exception("Stacktrace follows:")
 

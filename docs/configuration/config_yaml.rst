@@ -51,7 +51,7 @@ Use the following settings to enable access control:
 
      # Whether to trust Basic Authentication headers. If you have setup Basic Authentication in front of
      # OctoPrint and the user names you use there match OctoPrint accounts, by setting this to true users will
-     # be logged into OctoPrint as the user user during Basic Authentication. Your should ONLY ENABLE THIS if your
+     # be logged into OctoPrint as the user during Basic Authentication. Your should ONLY ENABLE THIS if your
      # OctoPrint instance is only accessible through a connection locked down through Basic Authentication!
      trustBasicAuthentication: false
 

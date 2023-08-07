@@ -6274,7 +6274,7 @@ msgid "Site default"
 msgstr "Seitenvoreinstellung"
 
 #: src/octoprint/static/js/app/viewmodels/usersettings.js:157
-msgid "This will delete the API Key. It will cease to to function immediately."
+msgid "This will delete the API Key. It will cease to function immediately."
 msgstr "Dies wird den API-Key löschen. Er wird sofort aufhören, zu funktionieren."
 
 #: src/octoprint/templates/footer.jinja2:7
@@ -6731,7 +6731,7 @@ msgid ""
 "Sharing a Systeminfo Bundle when requesting support on the forums or\n"
 "    when opening a new bug report is <strong>mandatory!</strong>"
 msgstr ""
-"Das Teilen eines Systeminfobundles bei Supportanfragen in den den Foren "
+"Das Teilen eines Systeminfobundles bei Supportanfragen in den Foren "
 "oder\n"
 "    beim Öffnen eines neuen Bugreports ist <strong>obligatorisch!</strong>"
 
@@ -8161,7 +8161,7 @@ msgid ""
 msgstr ""
 "Wenn das aktiviert ist, wird OctoPrint solche Tool-Befehle nicht zu "
 "deinem Drucke senden, die über die Anzahl der im aktuellen Druckerprofile"
-" konfigurierten Extruder hinausgehen oder für die die Firmware einen "
+" konfigurierten Extruder hinausgehen oder für die Firmware einen "
 "\"invalid extruder\" Fehler zurückgegeben hat. Deaktiviere diese Option "
 "nur, wenn OctoPrint oder deine Firmware Tools fälschlicherweise als nicht"
 " valide markieren, und stelle sicher, dass du auch die Ursache dafür "

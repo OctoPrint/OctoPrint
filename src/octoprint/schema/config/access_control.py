@@ -37,7 +37,7 @@ class AccessControlConfig(BaseModel):
     """The name of the user to automatically log on clients originating from `localNetworks` as. Must be the name of one of your configured users."""
 
     trustBasicAuthentication: bool = False
-    """Whether to trust Basic Authentication headers. If you have setup Basic Authentication in front of OctoPrint and the user names you use there match OctoPrint accounts, by setting this to true users will be logged into OctoPrint as the user user during Basic Authentication. **ONLY ENABLE THIS** if your OctoPrint instance is only accessible through a connection locked down through Basic Authentication!"""
+    """Whether to trust Basic Authentication headers. If you have setup Basic Authentication in front of OctoPrint and the user names you use there match OctoPrint accounts, by setting this to true users will be logged into OctoPrint as the user during Basic Authentication. **ONLY ENABLE THIS** if your OctoPrint instance is only accessible through a connection locked down through Basic Authentication!"""
 
     checkBasicAuthenticationPassword: bool = True
     """Whether to also check the password provided through Basic Authentication, if the Basic Authentication header is to be trusted. Disabling this will only match the user name in the Basic Authentication header and login the user without further checks, thus disable with caution."""
