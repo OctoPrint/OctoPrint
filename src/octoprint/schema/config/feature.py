@@ -43,3 +43,6 @@ class FeatureConfig(BaseModel):
 
     enforceReallyUniversalFilenames: bool = False
     """Replace all special characters and spaces with text equivalent to make them universally compatible. Most OS filesystems work fine with unicode characters, but just in case you can revert to the older behaviour by setting this to true."""
+
+    enableDragDropUpload: bool = True
+    """Enable drag and drop upload overlay"""

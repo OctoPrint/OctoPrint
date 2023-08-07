@@ -1633,7 +1633,7 @@ $(function () {
         };
 
         self._enableDragNDrop = function (enable) {
-            if (enable) {
+            if (enable && self.settingsViewModel.feature_enableDragDropUpload()) {
                 $(document).bind("dragenter", self._handleDragEnter);
                 $(document).bind("dragleave", self._handleDragLeave);
                 log.debug("Enabled drag-n-drop");
@@ -1930,6 +1930,10 @@ $(function () {
         };
 
         self._handleDragEnter = function (e) {
+            if (!self.settingsViewModel.feature_enableDragDropUpload()) {
+                return;
+            }
+
             const draggedFiles = Array.from(e.originalEvent.dataTransfer.items).filter(
                 (item) => item.kind === "file"
             );
