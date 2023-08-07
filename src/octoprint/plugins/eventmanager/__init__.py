@@ -19,7 +19,7 @@ class EventManagerPlugin(
         for event in events.get("subscriptions", []):
             if "name" not in event:
                 event["name"] = event["command"]
-            if not type(event["event"]) == list:
+            if not isinstance(event["event"], list):
                 event["event"] = [event["event"]]
         if events:
             my_settings["subscriptions"] = sorted(
