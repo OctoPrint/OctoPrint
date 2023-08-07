@@ -1934,6 +1934,13 @@ $(function () {
                 return;
             }
 
+            const draggedFiles = Array.from(e.originalEvent.dataTransfer.items).filter(
+                (item) => item.kind === "file"
+            );
+            if (!draggedFiles.length) {
+                return;
+            }
+
             self.dropOverlay.addClass("in");
 
             var foundLocal = false;

@@ -144,7 +144,7 @@ $(function () {
         };
 
         self.onBrowserTabVisibilityChange = function (tabVisible) {
-            // We also observe the the browser tab. If any webcam is currently visible, we will update
+            // We also observe the browser tab. If any webcam is currently visible, we will update
             // it with the tab status as well.
             if (self._visibleWebcam !== undefined) {
                 self._dispatchWebcamVisibilityChange(self._visibleWebcam, tabVisible);
