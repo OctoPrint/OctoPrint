@@ -5454,7 +5454,7 @@ msgid "Site default"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/usersettings.js:157
-msgid "This will delete the API Key. It will cease to to function immediately."
+msgid "This will delete the API Key. It will cease to function immediately."
 msgstr ""
 
 #: src/octoprint/templates/footer.jinja2:7

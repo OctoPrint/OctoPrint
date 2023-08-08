@@ -163,6 +163,7 @@ $(function () {
         self.feature_uploadOverwriteConfirmation = ko.observable(undefined);
         self.feature_g90InfluencesExtruder = ko.observable(undefined);
         self.feature_autoUppercaseBlacklist = ko.observable(undefined);
+        self.feature_enableDragDropUpload = ko.observable(undefined);
 
         self.gcodeAnalysis_runAt = ko.observable(undefined);
 

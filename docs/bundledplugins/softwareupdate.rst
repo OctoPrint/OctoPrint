@@ -360,7 +360,7 @@ supported:
     * ``update_script``: (mandatory) The path of the script to run. May
       contain placeholders ``{target}`` (for the most recent version specified
       as retrieved from the update check), ``{branch}`` for the branch to switch
-      to to access the release, ``{folder}`` for the working directory
+      to access the release, ``{folder}`` for the working directory
       of the script and ``{python}`` for the python executable OctoPrint is
       running under. Presence implies ``method: update_script``.
     * ``update_folder`` or ``checkout_folder``: (mandatory) The working directory.
