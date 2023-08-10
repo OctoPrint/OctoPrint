@@ -1652,7 +1652,8 @@ class Settings:
                     if default_value is not None:
                         value = dict_merge(default_value, value)
                 except KeyError:
-                    raise NoSuchSettingsPath()
+                    # no default value, so nothing to merge
+                    pass
 
             if callable(preprocessor):
                 value = preprocessor(value)
