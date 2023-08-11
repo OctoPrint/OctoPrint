@@ -8,7 +8,7 @@ import pprint
 
 import click
 
-from octoprint import FatalStartupError, init_settings
+from octoprint import FatalStartupError, init_pluginsystem, init_settings
 from octoprint.cli import get_ctx_obj_option, standard_options
 from octoprint.util import yaml
 
@@ -39,6 +39,17 @@ def _set_helper(settings, path, value, data_type=None):
 
     method(path, value, force=True)
     settings.save()
+
+
+def _init_pluginsettings(ctx):
+    try:
+        ctx.obj.plugin_manager = init_pluginsystem(
+            ctx.obj.settings, safe_mode=get_ctx_obj_option(ctx, "safe_mode", False)
+        )
+    except FatalStartupError as e:
+        click.echo(str(e), err=True)
+        click.echo("There was a fatal error initializing the plugin manager.", err=True)
+        ctx.exit(-1)
 
 
 # ~~ "octoprint config" commands
@@ -112,6 +123,8 @@ def remove_command(ctx, path):
 def append_value_command(ctx, path, value, as_json=False):
     """Appends value to list behind config path."""
     path = _to_settings_path(path)
+    if len(path) == 0 or path[0] == "plugins":
+        _init_pluginsettings(ctx)
 
     if as_json:
         try:
@@ -141,6 +154,8 @@ def append_value_command(ctx, path, value, as_json=False):
 def insert_value_command(ctx, path, index, value, as_json=False):
     """Inserts value at index of list behind config key."""
     path = _to_settings_path(path)
+    if len(path) == 0 or path[0] == "plugins":
+        _init_pluginsettings(ctx)
 
     if as_json:
         try:
@@ -169,6 +184,8 @@ def insert_value_command(ctx, path, index, value, as_json=False):
 def remove_value_command(ctx, path, value, as_json=False):
     """Removes value from list at config path."""
     path = _to_settings_path(path)
+    if len(path) == 0 or path[0] == "plugins":
+        _init_pluginsettings(ctx)
 
     if as_json:
         try:
@@ -204,6 +221,8 @@ def remove_value_command(ctx, path, value, as_json=False):
 def get_command(ctx, path, as_json=False, as_yaml=False, as_raw=False):
     """Retrieves value from config path."""
     path = _to_settings_path(path)
+    if len(path) == 0 or path[0] == "plugins":
+        _init_pluginsettings(ctx)
     value = ctx.obj.settings.get(path, merged=True)
 
     if as_json:
@@ -228,6 +247,7 @@ def get_command(ctx, path, as_json=False, as_yaml=False, as_raw=False):
 @click.pass_context
 def effective_command(ctx, as_json=False, as_yaml=False, as_raw=False):
     """Retrieves the full effective config."""
+    _init_pluginsettings(ctx)
     value = ctx.obj.settings.effective
 
     if as_json:

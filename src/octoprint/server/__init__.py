@@ -938,11 +938,10 @@ class Server:
             # camera snapshot
             (
                 r"/downloads/camera/current",
-                util.tornado.UrlProxyHandler,
+                util.tornado.WebcamSnapshotHandler,
                 joined_dict(
                     {
-                        "url": self._settings.get(["webcam", "snapshot"]),
-                        "as_attachment": True,
+                        "as_attachment": "snapshot",
                     },
                     camera_permission_validator,
                 ),
