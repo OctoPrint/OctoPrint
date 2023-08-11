@@ -180,6 +180,7 @@ date of first contribution):
   * [Christopher Perrin](https://github.com/cperrin88)
   * [Martin Bartsch](https://github.com/kaenguruhs)
   * [Matthias Weis](https://github.com/mad73923)
+  * [Valentin Hamm](https://github.com/havalli)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

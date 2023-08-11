@@ -1720,16 +1720,18 @@ var negotiateWebRTC = function (streamUrl) {
             return $.ajax({
                 url: streamUrl,
                 type: "POST",
-                dataType: "json",
-                data: JSON.stringify({
-                    sdp: offer.sdp,
-                    type: offer.type
-                }),
-                contentType: "application/json; charset=UTF-8"
+                dataType: "*",
+                data: offer.sdp,
+                contentType: "application/sdp"
             });
         })
         .then(function (response) {
-            return pc.setRemoteDescription(response);
+            return pc.setRemoteDescription(
+                new RTCSessionDescription({
+                    type: "answer",
+                    sdp: response
+                })
+            );
         })
         .catch(function (e) {
             console.error(e);
