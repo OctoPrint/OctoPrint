@@ -90,7 +90,7 @@ regex_minMaxError = re.compile(r"Error:[0-9]\n")
 """Regex matching first line of min/max errors from the firmware."""
 
 regex_marlinKillError = re.compile(
-    r"Heating failed|Thermal Runaway|MAXTEMP triggered|MINTEMP triggered|Invalid extruder number|Watchdog barked|KILL caused"
+    r"Heating failed|Thermal Runaway|Thermal Malfunction|MAXTEMP triggered|MINTEMP triggered|Invalid extruder number|Watchdog barked|KILL caused"
 )
 """Regex matching first line of kill causing errors from Marlin."""
 
