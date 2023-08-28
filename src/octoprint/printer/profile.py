@@ -666,6 +666,7 @@ class PrinterProfileManager:
             ("axes", "x", "speed"),
             ("axes", "y", "speed"),
             ("axes", "z", "speed"),
+            ("axes", "e", "speed"),
         ):
             try:
                 convert_value(profile, path, int)
