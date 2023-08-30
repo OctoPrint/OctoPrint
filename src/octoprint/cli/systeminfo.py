@@ -167,6 +167,11 @@ def cli():
 
 @cli.command(name="systeminfo")
 @standard_options()
+@click.option(
+    "--short",
+    is_flag=True,
+    help="Only output an abridged version of the systeminfo.",
+)
 @click.argument(
     "path",
     nargs=1,
@@ -174,8 +179,16 @@ def cli():
     type=click.Path(writable=True, dir_okay=True, resolve_path=True),
 )
 @click.pass_context
-def systeminfo_command(ctx, path, **kwargs):
-    """Retrieves and prints the system info."""
+def systeminfo_command(ctx, short, path, **kwargs):
+    """
+    Creates a system info bundle at PATH.
+
+    If PATH is not provided, the system info bundle will be created in the
+    current working directory.
+
+    If --short is provided, only an abridged version of the systeminfo will be
+    output to the console.
+    """
     logging.disable(logging.ERROR)
     try:
         (
@@ -199,9 +212,19 @@ def systeminfo_command(ctx, path, **kwargs):
             additional_fields={"systeminfo.generator": "cli"},
         )
 
-        if path:
+        if short:
+            # output abridged systeminfo to console
+            for k in sorted(systeminfo.keys()):
+                click.echo(f"{k}: {systeminfo[k]}")
+
+        else:
+            if not path:
+                path = "."
+
             # create zip at path
-            zipfilename = os.path.join(path, get_systeminfo_bundle_name())
+            zipfilename = os.path.abspath(
+                os.path.join(path, get_systeminfo_bundle_name())
+            )
             click.echo(f"Writing systeminfo bundle to {zipfilename}...")
 
             z = get_systeminfo_bundle(
@@ -218,8 +241,4 @@ def systeminfo_command(ctx, path, **kwargs):
             click.echo("Done!")
             click.echo(zipfilename)
 
-        else:
-            # output systeminfo to console
-            for k in sorted(systeminfo.keys()):
-                click.echo(f"{k}: {systeminfo[k]}")
     ctx.exit(0)
