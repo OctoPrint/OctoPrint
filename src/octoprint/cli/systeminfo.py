@@ -193,7 +193,10 @@ def systeminfo_command(ctx, path, **kwargs):
         ctx.exit(-1)
     else:
         systeminfo = get_systeminfo(
-            environment_detector, connectivity_checker, {"systeminfo.generator": "cli"}
+            environment_detector,
+            connectivity_checker,
+            settings,
+            additional_fields={"systeminfo.generator": "cli"},
         )
 
         if path:
