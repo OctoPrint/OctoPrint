@@ -72,6 +72,19 @@ $(function () {
             }
         };
 
+        self.onWebcamRefresh = function () {
+            var streamType = self.webcamStreamType();
+            if (streamType == "mjpg") {
+                if (OctoPrint.coreui.browser.safari) {
+                    // safari bug doesn't release the mjpeg stream, so no reload
+                    return;
+                }
+                $("#webcam_image").attr("src", "");
+                self._switchToMjpgWebcam();
+                log.info("Triggered refresh of mjpg webcam stream");
+            } // no other stream types support refresh yet
+        };
+
         self.onEventSettingsUpdated = function (payload) {
             // the webcam url might have changed, make sure we replace it now if the
             // view is visible

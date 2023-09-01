@@ -19,6 +19,9 @@
             </div>
         </div>
 
+        <div class="refresh_overlay">
+            <a data-bind="click: refreshWebcam" aria-label="{{ _('Refresh webcam view')|edq }}"><i class="fas fa-refresh"></i></a>
+        </div>
 
         {% if templates.webcam.order|length > 1 %}
         <ul class="nav justify-content-end">
