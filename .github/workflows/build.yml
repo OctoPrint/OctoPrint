@@ -11,7 +11,7 @@ jobs:
     name: 🔨 Build distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: 🏗 Set up Python 3.7
@@ -34,7 +34,7 @@ jobs:
     name: 🧹 Pre-commit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: 🏗 Set up Python 3.7
         uses: actions/setup-python@v4
         with:
@@ -53,7 +53,7 @@ jobs:
         python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: 🏗 Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
@@ -70,7 +70,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: 🏗 Set up test dependencies
         run: |
           npm -g install node-qunit-puppeteer@2.1.0
@@ -112,7 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ⬇ Download build result
         uses: actions/download-artifact@v3
