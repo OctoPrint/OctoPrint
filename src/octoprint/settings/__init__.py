@@ -493,6 +493,8 @@ class Settings:
         self._path_update_callbacks = defaultdict(list)
         self._deprecated_paths = defaultdict(dict)
 
+        self.flagged_basefolders = {}
+
         self._init_basedir(basedir)
 
         if configfile is not None:
@@ -1800,7 +1802,7 @@ class Settings:
                 check_writable=check_writable,
                 deep_check_writable=deep_check_writable,
             )
-        except Exception:
+        except Exception as exc:
             if folder != default_folder and allow_fallback:
                 self._logger.exception(
                     "Invalid configured {} folder at {}, attempting to "
@@ -1815,6 +1817,7 @@ class Settings:
                     deep_check_writable=deep_check_writable,
                 )
                 folder = default_folder
+                self.flagged_basefolders[type] = str(exc)
 
                 try:
                     self.remove(["folder", type])

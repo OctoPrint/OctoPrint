@@ -8,6 +8,7 @@
     var url = "api/system";
     var commandUrl = "api/system/commands";
     var infoUrl = "api/system/info";
+    var startupUrl = "api/system/startup";
 
     var OctoPrintSystemClient = function (base) {
         this.base = base;
@@ -27,6 +28,10 @@
 
     OctoPrintSystemClient.prototype.getInfo = function (opts) {
         return this.base.get(infoUrl, opts);
+    };
+
+    OctoPrintSystemClient.prototype.getStartupData = function (opts) {
+        return this.base.get(startupUrl, opts);
     };
 
     OctoPrintClient.registerComponent("system", OctoPrintSystemClient);
