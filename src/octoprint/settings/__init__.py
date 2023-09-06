@@ -302,7 +302,7 @@ class HierarchicalChainMap:
         key = self._path_to_key(path)
         prefix = key + _CHAINMAP_SEP
 
-        if key in current:  # and not self._has_prefix(prefix, current):
+        if key in current and not self._has_prefix(prefix, current):
             # found it, return
             return current[key]
 
