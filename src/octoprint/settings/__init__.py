@@ -41,6 +41,7 @@ from octoprint.util import (
     fast_deepcopy,
     generate_api_key,
     is_hidden_path,
+    time_this,
     yaml,
 )
 
@@ -255,6 +256,11 @@ class HierarchicalChainMap:
         prefix = key + _CHAINMAP_SEP
         return key in current or any(map(lambda x: x.startswith(prefix), current.keys()))
 
+    @time_this(
+        logtarget="octoprint.settings.timings.HierarchicalChainMap.get_by_path",
+        message="{func}({func_args}) took {timing:.6f}ms",
+        incl_func_args=True,
+    )
     def get_by_path(self, path, only_local=False, only_defaults=False, merged=False):
         if only_defaults:
             current = self._chainmap.parents
