@@ -7,10 +7,26 @@ $(function () {
         self.settings = parameters[2];
 
         self.notifications = ko.observableArray([]);
+        self.regex = ko.observable();
         self.sortDesc = ko.observable(false);
         self.sortDesc.subscribe(function () {
             self._toLocalStorage();
         });
+
+        self.onBeforeBinding = function () {
+            self.regex(
+                self.settings.settings.plugins.action_command_notification.regex()
+            );
+        };
+
+        self.regexValid = function () {
+            try {
+                new RegExp(self.regex());
+                return true;
+            } catch (e) {
+                return false;
+            }
+        };
 
         self.toDateTimeString = function (timestamp) {
             return formatDate(timestamp);
@@ -106,6 +122,9 @@ $(function () {
     OCTOPRINT_VIEWMODELS.push({
         construct: ActionCommandNotificationViewModel,
         dependencies: ["loginStateViewModel", "accessViewModel", "settingsViewModel"],
-        elements: ["#sidebar_plugin_action_command_notification_wrapper"]
+        elements: [
+            "#sidebar_plugin_action_command_notification_wrapper",
+            "#settings_plugin_action_command_notification"
+        ]
     });
 });
