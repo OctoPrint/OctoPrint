@@ -7,21 +7,16 @@ $(function () {
         self.settings = parameters[2];
 
         self.notifications = ko.observableArray([]);
-        self.regex = ko.observable();
         self.sortDesc = ko.observable(false);
         self.sortDesc.subscribe(function () {
             self._toLocalStorage();
         });
 
-        self.onBeforeBinding = function () {
-            self.regex(
-                self.settings.settings.plugins.action_command_notification.regex()
-            );
-        };
-
         self.regexValid = function () {
             try {
-                new RegExp(self.regex());
+                new RegExp(
+                    self.settings.settings.plugins.action_command_notification.regex()
+                );
                 return true;
             } catch (e) {
                 return false;
