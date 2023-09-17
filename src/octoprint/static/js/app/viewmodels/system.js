@@ -8,8 +8,11 @@ $(function () {
         self.lastCommandResponse = undefined;
         self.systemActions = ko.observableArray([]);
 
+        self._startupNotification = undefined;
+
         self.requestData = function () {
             self.requestCommandData();
+            self.requestStartupData();
         };
 
         self.requestCommandData = function () {
@@ -50,6 +53,52 @@ $(function () {
             });
             self.lastCommandResponse = response;
             self.systemActions(actions);
+        };
+
+        self.requestStartupData = function () {
+            if (!self.loginState.hasPermission(self.access.permissions.SYSTEM)) {
+                return $.Deferred().reject().promise();
+            }
+
+            return OctoPrint.system.getStartupData().done(self.fromStartupResponse);
+        };
+
+        self.fromStartupResponse = function (response) {
+            const startupData = response.startup;
+
+            if (startupData.flagged_basefolders) {
+                if (self._startupNotification) self._startupNotification.remove();
+
+                let html =
+                    "<p>" +
+                    gettext(
+                        "The following folder(s) were found to be unusable by OctoPrint during startup and have been turned back to the default:"
+                    ) +
+                    "</p>";
+                html += "<ul>";
+                _.each(startupData.flagged_basefolders, (value, key) => {
+                    html +=
+                        "<li><code>" +
+                        _.escape(key) +
+                        "</code>: " +
+                        _.escape(value) +
+                        "</li>";
+                });
+                html += "</ul>";
+                html +=
+                    "<p>" +
+                    gettext(
+                        "Please check the permissions of these folders and make sure they are writable by the user running OctoPrint. In case of network shares, make sure they have been mounted <em>before</em> OctoPrint starts."
+                    ) +
+                    "</p>";
+
+                self._startupNotification = new PNotify({
+                    title: gettext("Warning"),
+                    text: html,
+                    type: "warning",
+                    hide: false
+                });
+            }
         };
 
         self.triggerCommand = function (commandSpec) {

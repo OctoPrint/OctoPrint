@@ -1653,6 +1653,8 @@ class LocalFileStorage(StorageInterface):
                                 "type": "folder",
                                 "typePath": ["folder"],
                             }
+                            if entry_stat:
+                                entry_data["date"] = int(entry_stat.st_mtime)
 
                             result[entry_name] = entry_data
                     except Exception:

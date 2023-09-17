@@ -142,7 +142,7 @@ existing ticket**:
 <!--
 READ THE FOLLOWING FIRST:
 
-If not already done, please read the the Contribution Guidelines that
+If not already done, please read the Contribution Guidelines that
 are linked to the right under "Helpful resources" > "Contributing".
 
 Also read the FAQ: https://faq.octoprint.org

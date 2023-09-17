@@ -677,7 +677,7 @@ like so:
 
 Note how we did not add another entry to the return value of :func:`~octoprint.plugin.TemplatePlugin.get_template_configs`.
 Remember how we only added those since we wanted OctoPrint to use existing bindings on our navigation bar and settings
-menu entries? We don't want this this time, and we named our tab template such that OctoPrint will pick it up automatically
+menu entries? We don't want this time, and we named our tab template such that OctoPrint will pick it up automatically
 so we don't have to do anything here.
 
 Then we'll create our custom `Knockout <http://knockoutjs.com/documentation/introduction.html>`_ view model in ``helloworld.js``

@@ -25,7 +25,7 @@ class WebcamCompatibility(BaseModel):
     """The WebRTC STUN and TURN servers"""
 
     cacheBuster: bool = False
-    """Whether the the URL should be randomized to bust caches"""
+    """Whether the URL should be randomized to bust caches"""
 
     stream: str
     """The URL to get an MJPEG stream from"""

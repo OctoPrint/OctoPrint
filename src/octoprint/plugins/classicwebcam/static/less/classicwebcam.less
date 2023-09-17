@@ -1,3 +1,26 @@
+.classicwebcam_aspect_ratio_mixin {
+  aspect-ratio: 1;
+
+  &.ratio43 {
+    aspect-ratio: 4 / 3;
+  }
+
+  &.ratio169 {
+    aspect-ratio: 16 / 9;
+  }
+
+  &.ratio1610 {
+    aspect-ratio: 16 / 10;
+  }
+}
+
+.classicwebcam_flexbox_mixin {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 #webcam_video_container {
   width: 100%;
   position: relative;
@@ -23,30 +46,29 @@
     height: 100%;
   }
 
-  .webcam_rotated {
+  .webcam_rotated,
+  .webcam_unrotated {
     position: relative;
-    width: 100%;
-    padding-bottom: 56.25%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: auto;
+    .classicwebcam_flexbox_mixin();
+    .classicwebcam_aspect_ratio_mixin();
 
     .rotation_target {
-      position: absolute;
-      transform: rotate(-90deg);
-      width: 100%;
-
+      .classicwebcam_flexbox_mixin();
       div {
-        width: 100%;
-        height: 100%;
+        .classicwebcam_flexbox_mixin();
       }
     }
   }
 
-  .webcam_unrotated {
-    position: relative;
-    width: 100%;
+  .webcam_rotated {
+    aspect-ratio: 1;
+    .rotation_target {
+      position: absolute;
+      transform: rotate(-90deg);
+      div {
+        height: 100%;
+      }
+    }
   }
 }
 
@@ -141,19 +163,7 @@
       width: 100%;
       pointer-events: none;
 
-      padding-bottom: 100%;
-
-      &.ratio43 {
-        padding-bottom: 75%;
-      }
-
-      &.ratio169 {
-        padding-bottom: 56.25%;
-      }
-
-      &.ratio1610 {
-        padding-bottom: 62.5%;
-      }
+      .classicwebcam_aspect_ratio_mixin();
 
       position: relative;
 

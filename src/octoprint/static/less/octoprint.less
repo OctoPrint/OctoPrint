@@ -707,7 +707,9 @@ ul.dropdown-menu li a {
     padding: 0px;
   }
 
-  &:hover .nav {
+  &:hover .nav,
+  &:hover .refresh_overlay,
+  &:hover .keycontrol_overlay {
     opacity: 1;
   }
 
@@ -741,6 +743,28 @@ ul.dropdown-menu li a {
     }
   }
 
+  .refresh_overlay {
+    position: absolute;
+    padding: @side-padding;
+    left: @side-padding;
+    top: @side-padding;
+    border-radius: @border-radius;
+    background: @overlay-color;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+
+    a {
+      padding: @side-padding;
+      border-radius: @border-radius;
+      color: white;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+    }
+  }
+
   .keycontrol_overlay {
     position: absolute;
     left: @side-padding;
@@ -752,6 +776,8 @@ ul.dropdown-menu li a {
     font-size: 85%;
     color: white;
     padding: 0;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
 
     kbd {
       border: 1px solid #eeeeee;
@@ -1479,6 +1505,14 @@ _:future,
       -moz-border-radius: 0;
       border-radius: 0;
     }
+  }
+}
+
+label.checkbox,
+label.radio {
+  input[type="radio"],
+  input[type="checkbox"] {
+    margin-top: 2px;
   }
 }
 

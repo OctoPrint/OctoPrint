@@ -62,6 +62,25 @@ def getSystemInfo():
     return jsonify(systeminfo=systeminfo)
 
 
+@api.route("/system/startup", methods=["GET"])
+@no_firstrun_access
+@Permissions.SYSTEM.require(403)
+def getStartupInformation():
+    from octoprint.server import safe_mode
+    from octoprint.settings import settings
+
+    result = {}
+
+    if safe_mode is not None:
+        result["safe_mode"] = safe_mode
+
+    flagged_basefolders = settings().flagged_basefolders
+    if flagged_basefolders:
+        result["flagged_basefolders"] = flagged_basefolders
+
+    return jsonify(startup=result)
+
+
 def _usageForFolders():
     data = {}
     for folder_name in s().get(["folder"]).keys():

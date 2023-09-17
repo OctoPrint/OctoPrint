@@ -180,13 +180,10 @@ $(function () {
         // initialize list helper
         var listHelperFilters = {
             printed: function (data) {
-                return (
-                    !(
-                        data["prints"] &&
-                        data["prints"]["success"] &&
-                        data["prints"]["success"] > 0
-                    ) ||
-                    (data["type"] && data["type"] === "folder")
+                return !(
+                    data["prints"] &&
+                    data["prints"]["success"] &&
+                    data["prints"]["success"] > 0
                 );
             },
             sd: function (data) {
@@ -1636,7 +1633,7 @@ $(function () {
         };
 
         self._enableDragNDrop = function (enable) {
-            if (enable) {
+            if (enable && self.settingsViewModel.feature_enableDragDropUpload()) {
                 $(document).bind("dragenter", self._handleDragEnter);
                 $(document).bind("dragleave", self._handleDragLeave);
                 log.debug("Enabled drag-n-drop");
@@ -1692,6 +1689,16 @@ $(function () {
                 _.sprintf(gettext("File already exists: %(name)s"), {
                     name: file.name
                 })
+            );
+            $("span.existing_size", self.uploadExistsDialog).text(
+                response.size ? formatSize(response.size) : "-"
+            );
+            $("span.existing_date", self.uploadExistsDialog).text(
+                response.date ? new Date(response.date * 1000).toLocaleString() : "?"
+            );
+            $("span.new_size", self.uploadExistsDialog).text(formatSize(file.size));
+            $("span.new_date", self.uploadExistsDialog).text(
+                new Date(file.lastModified).toLocaleString()
             );
             $("p, form", self.uploadExistsDialog).toggle(!fileSizeTooBig);
             $("span", self.uploadExistsDialog).toggle(fileSizeTooBig);
@@ -1923,6 +1930,17 @@ $(function () {
         };
 
         self._handleDragEnter = function (e) {
+            if (!self.settingsViewModel.feature_enableDragDropUpload()) {
+                return;
+            }
+
+            const draggedFiles = Array.from(e.originalEvent.dataTransfer.items).filter(
+                (item) => item.kind === "file"
+            );
+            if (!draggedFiles.length) {
+                return;
+            }
+
             self.dropOverlay.addClass("in");
 
             var foundLocal = false;

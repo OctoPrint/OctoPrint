@@ -292,6 +292,12 @@ onWizardFinish()
    Called after executing the finishing of the wizard and before closing the dialog. Return ``reload`` here in order to
    instruct OctoPrint to reload the UI after the wizard closes.
 
+onWebcamVisibilityChange(visible)
+   Called when the webcam stream visibility changes, with the new visibility state as parameter.
+
+onWebcamRefresh()
+   Called when the webcam refresh button in the UI is clicked. Implement this to allow refreshing the webcam stream on demand.
+
 In order to hook into any of those callbacks, just have your view model define a function named accordingly, e.g.
 to get called after all view models have been bound during application startup, implement a function ``onAllBound``
 on your view model, taking a list of all bound view models:
