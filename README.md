@@ -68,7 +68,7 @@ which is a custom SD card image that includes OctoPrint plus dependencies.
 The generic steps that should basically be done regardless of operating system
 and runtime environment are the following (as *regular
 user*, please keep your hands *off* of the `sudo` command here!) - this assumes
-you already have Python 3.7+, pip and virtualenv and their dependencies set up on your system:
+you already have Python 3.8+, pip and virtualenv and their dependencies set up on your system:
 
 1. Create a user-owned virtual environment therein: `virtualenv venv`. If you want to specify a specific python
    to use instead of whatever version your system defaults to, you can also explicitly require that via the `--python`
@@ -86,7 +86,7 @@ access control as necessary.
 OctoPrint depends on a few python modules to do its job. Those are automatically installed when installing
 OctoPrint via `pip`.
 
-OctoPrint currently supports Python 3.7, 3.8, 3.9, 3.10 and 3.11.
+OctoPrint currently supports Python 3.8, 3.9, 3.10 and 3.11.
 
 ## Usage
 
