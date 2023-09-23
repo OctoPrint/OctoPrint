@@ -6,12 +6,7 @@ import datetime
 import json
 import time
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List
-
-try:
-    from typing import OrderedDict as OrderedDictType
-except ImportError:
-    OrderedDictType = Dict  # py3.7.{0,1}
+from typing import Any, Callable, Dict, List, OrderedDict as OrderedDictType
 
 from frozendict import frozendict
 
