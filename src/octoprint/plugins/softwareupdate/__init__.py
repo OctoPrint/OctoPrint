@@ -2572,7 +2572,7 @@ __plugin_disabling_discouraged__ = gettext(
     "your system at risk."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.8,<4"
 
 
 def __plugin_load__():
