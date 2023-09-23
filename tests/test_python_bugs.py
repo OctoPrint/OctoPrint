@@ -5,6 +5,7 @@ Unit tests for Python bugs.
 import unittest
 from datetime import datetime
 
+
 class PythonBugsTest(unittest.TestCase):
     """Tests for Python bugs"""
 
