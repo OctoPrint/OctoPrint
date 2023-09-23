@@ -59,7 +59,7 @@ We'll start at the most basic form a plugin can take - just a few simple lines o
    __plugin_name__ = "Hello World"
    __plugin_version__ = "1.0.0"
    __plugin_description__ = "A quick \"Hello World\" example plugin for OctoPrint"
-   __plugin_pythoncompat__ = ">=3.7,<4"
+   __plugin_pythoncompat__ = ">=3.8,<4"
 
 Saving this as ``helloworld.py`` in ``~/.octoprint/plugins`` yields you something resembling these log entries upon server startup::
 
@@ -77,7 +77,7 @@ OctoPrint found that plugin in the folder and took a look into it. The name and 
 entry it got from the ``__plugin_name__`` and ``__plugin_version__`` lines. It also read the description from
 ``__plugin_description__`` and stored it in an internal data structure, but we'll just ignore this for now. Additionally
 there is ``__plugin_pythoncompat__`` which tells OctoPrint here that your plugin can be run under any Python versions
-between 3.7 and 4. That is necessary so that your plugin will be loadable in OctoPrint instances running under Python 3
+between 3.8 and 4. That is necessary so that your plugin will be loadable in OctoPrint instances running under Python 3
 but not Python 2 (so you can use modern language features), and going forward you really should no longer have to care about
 the end-of-life Python 2.
 
@@ -101,7 +101,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
    __plugin_name__ = "Hello World"
    __plugin_version__ = "1.0.0"
    __plugin_description__ = "A quick \"Hello World\" example plugin for OctoPrint"
-   __plugin_pythoncompat__ = ">=3.7,<4"
+   __plugin_pythoncompat__ = ">=3.8,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 and restart OctoPrint. You now get this output in the log::
@@ -298,7 +298,7 @@ and ``__plugin_description__`` from ``__init__.py``, but leave ``__plugin_implem
        def on_after_startup(self):
            self._logger.info("Hello World!")
 
-   __plugin_pythoncompat__ = ">=3.7,<4"
+   __plugin_pythoncompat__ = ">=3.8,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 and restart OctoPrint::
@@ -321,7 +321,7 @@ Our "Hello World" Plugin still gets detected fine, but it's now listed under the
            self._logger.info("Hello World!")
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=3.7,<4"
+   __plugin_pythoncompat__ = ">=3.8,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 
@@ -367,7 +367,7 @@ add the :class:`TemplatePlugin` to our ``HelloWorldPlugin`` class:
            self._logger.info("Hello World!")
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=3.7,<4"
+   __plugin_pythoncompat__ = ">=3.8,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 Next, we'll create a sub folder ``templates`` underneath our ``octoprint_helloworld`` folder, and within that a file
@@ -434,7 +434,7 @@ Let's take a look at how all that would look in our plugin's ``__init__.py``:
            return dict(url="https://en.wikipedia.org/wiki/Hello_world")
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=3.7,<4"
+   __plugin_pythoncompat__ = ">=3.8,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 Restart OctoPrint. You should see something like this::
@@ -468,7 +468,7 @@ Adjust your plugin's ``__init__.py`` like this:
            return dict(url=self._settings.get(["url"]))
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=3.7,<4"
+   __plugin_pythoncompat__ = ">=3.8,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 Also adjust your plugin's ``templates/helloworld_navbar.jinja2`` like this:
@@ -572,7 +572,7 @@ again since we don't use that anymore:
        ]
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=3.7,<4"
+   __plugin_pythoncompat__ = ">=3.8,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 Restart OctoPrint and shift-reload your browser. Your link in the navigation bar should still point to the URL we
@@ -672,7 +672,7 @@ like so:
         )
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=3.7,<4"
+   __plugin_pythoncompat__ = ">=3.8,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 Note how we did not add another entry to the return value of :func:`~octoprint.plugin.TemplatePlugin.get_template_configs`.
@@ -847,7 +847,7 @@ a reference to our CSS file:
         )
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=3.7,<4"
+   __plugin_pythoncompat__ = ">=3.8,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 OctoPrint by default bundles all CSS, JavaScript and LESS files to reduce the amount of requests necessary to fully
@@ -930,7 +930,7 @@ Then adjust our returned assets to include our LESS file as well:
        )
 
    __plugin_name__ = "Hello World"
-   __plugin_pythoncompat__ = ">=3.7,<4"
+   __plugin_pythoncompat__ = ">=3.8,<4"
    __plugin_implementation__ = HelloWorldPlugin()
 
 
