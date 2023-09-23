@@ -3,7 +3,8 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 
 import json
 from collections import OrderedDict
-from typing import Any, Callable, OrderedDict as OrderedDictType
+from typing import Any, Callable
+from typing import OrderedDict as OrderedDictType
 
 from frozendict import frozendict
 

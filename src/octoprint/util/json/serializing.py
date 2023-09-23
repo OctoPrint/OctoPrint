@@ -6,7 +6,8 @@ import datetime
 import json
 import time
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List, OrderedDict as OrderedDictType
+from typing import Any, Callable, Dict, List
+from typing import OrderedDict as OrderedDictType
 
 from frozendict import frozendict
 
