@@ -1407,7 +1407,9 @@ def check_lastmodified(lastmodified: Union[int, float, datetime]) -> bool:
     if isinstance(lastmodified, (int, float)):
         # Timestamps are defined as seconds since epoch aka 1970/01/01 00:00:00Z, so we
         # use UTC as timezone here.
-        lastmodified = datetime.fromtimestamp(lastmodified, tz=UTC_TZ).replace(microsecond=0)
+        lastmodified = datetime.fromtimestamp(lastmodified, tz=UTC_TZ).replace(
+            microsecond=0
+        )
 
     if not isinstance(lastmodified, datetime):
         raise ValueError(
