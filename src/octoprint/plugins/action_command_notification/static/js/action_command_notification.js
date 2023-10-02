@@ -15,7 +15,7 @@ $(function () {
         self.regexValid = function () {
             try {
                 new RegExp(
-                    self.settings.settings.plugins.action_command_notification.regex()
+                    self.settings.settings.plugins.action_command_notification.filter()
                 );
                 return true;
             } catch (e) {

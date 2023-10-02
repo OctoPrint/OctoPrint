@@ -62,18 +62,18 @@ class ActionCommandNotificationPlugin(
     # ~ SettingsPlugin
 
     def get_settings_defaults(self):
-        return {"enable": True, "enable_popups": False, "regex": ""}
+        return {"enable": True, "enable_popups": False, "filter": ""}
 
     def on_settings_initialized(self):
         try:
-            self._filter = re.compile(self._settings.get(["regex"]))
+            self._filter = re.compile(self._settings.get(["filter"]))
         except re.error:
             self._filter = ""
 
     def on_settings_save(self, data):
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
         try:
-            self._filter = re.compile(self._settings.get(["regex"]))
+            self._filter = re.compile(self._settings.get(["filter"]))
         except re.error:
             self._filter = ""
 
@@ -137,6 +137,7 @@ class ActionCommandNotificationPlugin(
         message = parameter.strip()
 
         if self._filter.search(message):
+            self._logger.debug(f"Notification matches filter regex: {message}")
             return
 
         self._notifications.append((time.time(), message))
