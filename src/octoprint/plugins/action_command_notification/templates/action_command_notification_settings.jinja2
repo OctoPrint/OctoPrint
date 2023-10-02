@@ -4,16 +4,23 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.action_command_notification.enable"> {{ _('Enable') }}
+                <input type="checkbox" data-bind="checked: settings.settings.plugins.action_command_notification.enable"> {{ _('Enable') }}
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.action_command_notification.enable_popups"> {{ _('Enable popups') }}
+                <input type="checkbox" data-bind="checked: settings.settings.plugins.action_command_notification.enable_popups"> {{ _('Enable popups') }}
                 <span class="help-block">{{ _("Check this if you want notifications to also show up as popups in addition to the notification list in the sidebar") }}</span>
             </label>
+        </div>
+    </div>
+    <div class="control-group" data-bind="css: { error: !regexValid() }">
+        <label class="control-label" for="settings-filterRegex"> {{ _('Filtering Regex') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" id="settings-filterRegex" data-bind="value: settings.settings.plugins.action_command_notification.filter, valueUpdate: 'afterkeydown'"></textarea>
+            <span class="help-inline">{{ _('Use this to write a valid <em>regular expression</em> to hide notifications having the pattern defined in it. Chain multiple filters using "|". For more information, please see <a href="%%(tut_url)s" target="_blank" rel="noopener noreferer">the Python docs on regular expressions</a>')|format(tut_url="https://docs.python.org/3/library/re.html") }}</span>
         </div>
     </div>
 </form>
