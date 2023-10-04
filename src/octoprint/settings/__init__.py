@@ -254,10 +254,10 @@ class HierarchicalChainMap:
 
     def _cached_prefixed_keys(self, prefix):
         if prefix not in self._prefixed_keys:
-            self._prefixed_keys[prefix] = [
-                k for k in self._chainmap.keys() if k.startswith(prefix)
-            ]
-        return self._prefixed_keys[prefix]
+            keys = [k for k in self._chainmap.keys() if k.startswith(prefix)]
+            if keys:
+                self._prefixed_keys[prefix] = keys
+        return self._prefixed_keys.get(prefix, [])
 
     def _invalidate_prefixed_keys(self, prefix):
         seps = []
@@ -270,6 +270,10 @@ class HierarchicalChainMap:
                 del self._prefixed_keys[prefix[: sep + 1]]
             except KeyError:
                 pass
+
+        to_delete = [key for key in self._prefixed_keys.keys() if key.startswith(prefix)]
+        for prefix in to_delete:
+            del self._prefixed_keys[prefix]
 
     def deep_dict(self):
         return self._unflatten(self._chainmap)
@@ -440,19 +444,13 @@ class HierarchicalChainMap:
     def insert_map(self, pos, d):
         flattened = self._flatten(d)
         for k in flattened:
-            if _CHAINMAP_SEP in k:
-                self._invalidate_prefixed_keys(
-                    k.rsplit(_CHAINMAP_SEP, 1)[0] + _CHAINMAP_SEP
-                )
+            self._invalidate_prefixed_keys(k + _CHAINMAP_SEP)
         self._chainmap.maps.insert(pos, flattened)
 
     def delete_map(self, pos):
         flattened = self._chainmap.maps[pos]
         for k in flattened:
-            if _CHAINMAP_SEP in k:
-                self._invalidate_prefixed_keys(
-                    k.rsplit(_CHAINMAP_SEP, 1)[0] + _CHAINMAP_SEP
-                )
+            self._invalidate_prefixed_keys(k + _CHAINMAP_SEP)
         del self._chainmap.maps[pos]
 
     @property
