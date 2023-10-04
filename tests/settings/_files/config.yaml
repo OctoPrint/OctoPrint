@@ -18,6 +18,14 @@ plugins:
       a: 1
       b: 2
       c: 3
+  baz:
+    a: 1
+    b: 2
+    c: 3
+    d:
+      a: 1
+      b: 2
+      c: 3
 server:
   port: 8080
 devel:
