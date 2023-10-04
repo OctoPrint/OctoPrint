@@ -27,7 +27,7 @@ import versioneer  # noqa: F401
 # ----------------------------------------------------------------------------------------
 
 # Supported python versions
-PYTHON_REQUIRES = ">=3.7, <3.12"
+PYTHON_REQUIRES = ">=3.7, <3.13"
 
 # Requirements for setup.py
 SETUP_REQUIRES = []
@@ -350,6 +350,7 @@ def params():
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: Implementation :: CPython",
         "Programming Language :: JavaScript",
