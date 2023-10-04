@@ -110,6 +110,9 @@ jobs:
     name: 🧪 E2E tests
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.7", "3.12"]
     steps:
       - name: ⬇ Checkout code
         uses: actions/checkout@v4
@@ -120,10 +123,10 @@ jobs:
           name: dist
           path: dist
 
-      - name: 🏗 Set up Python 3.7
+      - name: 🏗 Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: ${{ matrix.python }}
 
       - name: 🏗 Install OctoPrint build
         run: |
