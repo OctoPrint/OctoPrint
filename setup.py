@@ -69,6 +69,7 @@ core_deps = [
     "sarge==0.1.7.post1",
     "semantic_version>=2.10.0,<3",
     "sentry-sdk>=1.19.1,<2",
+    "setuptools",
     "tornado>=6.2,<7",
     "watchdog>=2.3.1,<3",
     "websocket-client>=1.5.1,<2",
