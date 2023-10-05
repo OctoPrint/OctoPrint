@@ -14,13 +14,13 @@ repos:
       - id: check-merge-conflict
       - id: fix-encoding-pragma
         args: ["--remove"]
-        exclude: "setup.py|versioneer.py|src/octoprint_setuptools/__init__.py"
+        exclude: "setup.py|src/octoprint_setuptools/__init__.py"
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.3.1
     hooks:
       - id: pyupgrade
         args: ["--py37-plus"]
-        exclude: "setup.py|versioneer.py|src/octoprint_setuptools/__init__.py"
+        exclude: "setup.py|src/octoprint_setuptools/__init__.py"
   - repo: https://github.com/OctoPrint/codemods
     rev: "0.6.3"
     hooks:
@@ -35,8 +35,6 @@ repos:
             "src/octoprint/vendor",
             "--ignore",
             "setup.py",
-            "--ignore",
-            "versioneer.py",
             "--ignore",
             "src/octoprint_setuptools/__init__.py"
           ]
