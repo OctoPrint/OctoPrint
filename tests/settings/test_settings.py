@@ -772,6 +772,10 @@ def _key(*path):
     return octoprint.settings._CHAINMAP_SEP.join(path)
 
 
+def _prefix(*path):
+    return _key(*path) + octoprint.settings._CHAINMAP_SEP
+
+
 @ddt.ddt
 class ChainmapTest(unittest.TestCase):
     def setUp(self):
@@ -915,3 +919,66 @@ class ChainmapTest(unittest.TestCase):
         self.assertEqual(
             expected, octoprint.settings.HierarchicalChainMap._unflatten(value)
         )
+
+    def test_prefix_caching_has_populates(self):
+        # this should populate the prefix cache
+        self.chainmap.has_path(["plugins", "foo"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 1)
+        self.assertTrue(_prefix("plugins", "foo") in self.chainmap._prefixed_keys)
+
+    def test_prefix_caching_get_populates(self):
+        # this should populate the prefix cache
+        self.chainmap.get_by_path(["plugins", "foo"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 1)
+        self.assertTrue(_prefix("plugins", "foo") in self.chainmap._prefixed_keys)
+
+    def test_prefix_caching_scalars_ignored(self):
+        # this shouldn't populate the prefix cache
+        self.chainmap.has_path(["api", "key"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 0)
+
+    def test_prefix_caching_set_invalidates(self):
+        # this should populate the prefix cache
+        self.chainmap.has_path(["plugins", "foo"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 1)
+        self.assertTrue(_prefix("plugins", "foo") in self.chainmap._prefixed_keys)
+
+        # this should extend the prefix cache
+        self.chainmap.get_by_path(["plugins", "foo", "bar"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 2)
+        self.chainmap.has_path(["plugins", "foo", "bar"])
+
+        # this should remove all plugins.foo keys in the prefix cache
+        self.chainmap.set_by_path(["plugins", "foo"], {})
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 0)
+
+    def test_prefix_caching_del_invalidates(self):
+        # this should populate the prefix cache
+        self.chainmap.has_path(["plugins", "baz", "d"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 1)
+        self.assertTrue(_prefix("plugins", "baz", "d") in self.chainmap._prefixed_keys)
+
+        # this should remove all plugins.baz keys in the prefix cache
+        self.chainmap.del_by_path(["plugins", "baz"])
+
+        # validate that
+        keys = [
+            key
+            for key in self.chainmap._prefixed_keys
+            if key.startswith(_prefix("plugins", "baz"))
+        ]
+        self.assertTrue(len(keys) == 0)

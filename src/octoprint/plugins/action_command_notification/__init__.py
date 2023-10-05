@@ -1,6 +1,7 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2020 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import re
 import time
 
 import flask
@@ -21,6 +22,7 @@ class ActionCommandNotificationPlugin(
 ):
     def __init__(self):
         self._notifications = []
+        self._filter = ""
 
     # Additional permissions hook
 
@@ -60,7 +62,20 @@ class ActionCommandNotificationPlugin(
     # ~ SettingsPlugin
 
     def get_settings_defaults(self):
-        return {"enable": True, "enable_popups": False}
+        return {"enable": True, "enable_popups": False, "filter": ""}
+
+    def on_settings_initialized(self):
+        try:
+            self._filter = re.compile(self._settings.get(["filter"]))
+        except re.error:
+            self._filter = ""
+
+    def on_settings_save(self, data):
+        octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
+        try:
+            self._filter = re.compile(self._settings.get(["filter"]))
+        except re.error:
+            self._filter = ""
 
     # ~ SimpleApiPlugin
 
@@ -90,7 +105,7 @@ class ActionCommandNotificationPlugin(
             {
                 "type": "settings",
                 "name": gettext("Printer Notifications"),
-                "custom_bindings": False,
+                "custom_bindings": True,
             },
             {
                 "type": "sidebar",
@@ -120,6 +135,11 @@ class ActionCommandNotificationPlugin(
             return
 
         message = parameter.strip()
+
+        if self._filter.search(message):
+            self._logger.debug(f"Notification matches filter regex: {message}")
+            return
+
         self._notifications.append((time.time(), message))
         self._plugin_manager.send_plugin_message(self._identifier, {"message": message})
 
