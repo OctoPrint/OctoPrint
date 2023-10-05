@@ -12,6 +12,17 @@ $(function () {
             self._toLocalStorage();
         });
 
+        self.regexValid = function () {
+            try {
+                new RegExp(
+                    self.settings.settings.plugins.action_command_notification.filter()
+                );
+                return true;
+            } catch (e) {
+                return false;
+            }
+        };
+
         self.toDateTimeString = function (timestamp) {
             return formatDate(timestamp);
         };
@@ -106,6 +117,9 @@ $(function () {
     OCTOPRINT_VIEWMODELS.push({
         construct: ActionCommandNotificationViewModel,
         dependencies: ["loginStateViewModel", "accessViewModel", "settingsViewModel"],
-        elements: ["#sidebar_plugin_action_command_notification_wrapper"]
+        elements: [
+            "#sidebar_plugin_action_command_notification_wrapper",
+            "#settings_plugin_action_command_notification"
+        ]
     });
 });

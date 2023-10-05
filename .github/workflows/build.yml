@@ -11,7 +11,7 @@ jobs:
     name: 🔨 Build distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: 🏗 Set up Python 3.8
@@ -34,7 +34,7 @@ jobs:
     name: 🧹 Pre-commit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: 🏗 Set up Python 3.8
         uses: actions/setup-python@v4
         with:
@@ -50,10 +50,10 @@ jobs:
     name: 🧪 Unit tests
     strategy:
       matrix:
-        python: ["3.8", "3.9", "3.10", "3.11"]
+        python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: 🏗 Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
@@ -70,7 +70,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: 🏗 Set up test dependencies
         run: |
           npm -g install node-qunit-puppeteer@2.1.2
@@ -84,7 +84,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        python: ["3.8", "3.9", "3.10", "3.11"]
+        python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         installable: ["wheel", "sdist"]
     runs-on: ubuntu-latest
     steps:
@@ -110,9 +110,12 @@ jobs:
     name: 🧪 E2E tests
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.8", "3.12"]
     steps:
       - name: ⬇ Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ⬇ Download build result
         uses: actions/download-artifact@v3
@@ -120,10 +123,10 @@ jobs:
           name: dist
           path: dist
 
-      - name: 🏗 Set up Python 3.8
+      - name: 🏗 Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: ${{ matrix.python }}
 
       - name: 🏗 Install OctoPrint build
         run: |

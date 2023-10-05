@@ -41,7 +41,7 @@ def join_words(words, separator, max_length=None):
 
 # uppercase letters to translate to uppercase letters, NOT camelcase
 UPPER_TO_UPPER_LETTERS_RE = \
-    u'''
+    r'''
     (
             \p{Uppercase_Letter} {2,}                          # 2 or more adjacent letters - UP always
         |
@@ -95,7 +95,7 @@ class Slugify(object):
                 convert_dict[letter_upper] = translation.capitalize()
 
         self.convert_dict = convert_dict
-        PRETRANSLATE = re.compile(u'(\L<options>)', options=convert_dict)
+        PRETRANSLATE = re.compile(r'(\L<options>)', options=convert_dict)
 
         # translate some letters before translating
         return lambda text: PRETRANSLATE.sub(lambda m: convert_dict[m.group(1)], text)
@@ -137,11 +137,11 @@ class Slugify(object):
     stop_words = property(fset=set_stop_words)
 
     def calc_unwanted_chars_re(self):
-        unwanted_chars_re = u'[^\p{{AlNum}}{safe_chars}]+'.format(safe_chars=re.escape(self._safe_chars or ''))
+        unwanted_chars_re = r'[^\p{{AlNum}}{safe_chars}]+'.format(safe_chars=re.escape(self._safe_chars or ''))
         self.unwanted_chars_re = re.compile(unwanted_chars_re, re.IGNORECASE)
 
         if self._stop_words:
-            unwanted_chars_and_words_re = unwanted_chars_re + u'|(?<!\p{AlNum})(?:\L<stop_words>)(?!\p{AlNum})'
+            unwanted_chars_and_words_re = unwanted_chars_re + r'|(?<!\p{AlNum})(?:\L<stop_words>)(?!\p{AlNum})'
             self.unwanted_chars_and_words_re = re.compile(unwanted_chars_and_words_re, re.IGNORECASE, stop_words=self._stop_words)
         else:
             self.unwanted_chars_and_words_re = None

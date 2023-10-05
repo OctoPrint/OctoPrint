@@ -111,6 +111,7 @@ def test_deprecated_forwarded_getter(
     called_method.__name__ = forwarded
     called_method.__qualname__ = forwarded
     called_method.__annotations__ = {}
+    called_method.__type_params__ = ()
 
     method = getattr(plugin_settings, deprecated)
     assert callable(method)
@@ -330,6 +331,7 @@ def test_deprecated_forwarded_setter(
     called_method.__name__ = forwarded
     called_method.__qualname__ = forwarded
     called_method.__annotations__ = {}
+    called_method.__type_params__ = ()
 
     method = getattr(plugin_settings, deprecated)
     assert callable(method)

@@ -179,6 +179,7 @@ date of first contribution):
   * [Shyam Sunder](https://github.com/sgsunder)
   * [Conny Rasch](https://github.com/CMR-DEV)
   * [Christopher Perrin](https://github.com/cperrin88)
+  * [Jatin Saini](https://github.com/jatin-47)
   * [Martin Bartsch](https://github.com/kaenguruhs)
   * [Matthias Weis](https://github.com/mad73923)
   * [Anna Bocharova](https://github.com/RobinTail)
