@@ -646,9 +646,10 @@ class Settings:
         return folder
 
     def _init_script_templating(self):
-        from jinja2 import BaseLoader, ChoiceLoader, Environment, TemplateNotFound
+        from jinja2 import BaseLoader, ChoiceLoader, TemplateNotFound
         from jinja2.ext import Extension
         from jinja2.nodes import Include
+        from jinja2.sandbox import SandboxedEnvironment
 
         from octoprint.util.jinja import FilteredFileSystemLoader
 
@@ -717,9 +718,9 @@ class Settings:
             def list_templates(self):
                 return self._default.list_templates()
 
-        class RelEnvironment(Environment):
+        class RelEnvironment(SandboxedEnvironment):
             def __init__(self, prefix_sep=":", *args, **kwargs):
-                Environment.__init__(self, *args, **kwargs)
+                super().__init__(*args, **kwargs)
                 self._prefix_sep = prefix_sep
 
             def join_path(self, template, parent):
