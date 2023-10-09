@@ -61,7 +61,7 @@ core_deps = [
     "pathvalidate>=2.5.2,<3",
     "pkginfo>=1.9.6,<2",
     "psutil>=5.9.4,<6",
-    "pydantic>=1.10.7,<2",
+    "pydantic==1.10.12",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
     "pylru>=1.2.1,<2",
     "pyserial>=3.5,<4",
     "PyYAML>=6.0.1,<7",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
