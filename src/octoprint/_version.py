@@ -149,9 +149,12 @@ def _get_dirty():
 
 
 def _get_distance(ref):
+    distance = _git("rev-list", f"{ref}..HEAD", "--count")
+    if distance is None:
+        return None
     try:
-        return int(_git("rev-list", "--count", "HEAD", f"^{ref}"))
-    except ValueError:
+        return int(distance)
+    except Exception:
         return None
 
 
