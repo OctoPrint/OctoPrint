@@ -214,8 +214,13 @@ def _get_data_from_git():
             if not matcher.match(branch):
                 continue
 
-            tag = virtual_tag
+            # might fail if ref_commit is not reachable from HEAD
             distance = _get_distance(ref_commit)
+            if distance is None:
+                tag = None
+                break
+
+            tag = virtual_tag
             template = "{tag}.dev{distance}+g{short}"
             dirty = ".dirty"
             break
