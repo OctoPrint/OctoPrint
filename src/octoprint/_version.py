@@ -80,6 +80,9 @@ branch = "{branch}"
 revision = "{revision}"
 """.strip()
 
+FALLBACK = "0+unknown"
+FALLBACK_WITH_SHA = "0+unknown.g{short}"
+
 _verbose = False
 
 
@@ -186,6 +189,16 @@ def _parse_branch_versions():
     return branch_versions
 
 
+def _validate_version(version):
+    from packaging.version import parse
+
+    try:
+        parse(version)
+        return True
+    except Exception:
+        return False
+
+
 def _get_data_from_git():
     branch = _get_branch()
     if _verbose:
@@ -214,13 +227,8 @@ def _get_data_from_git():
             if not matcher.match(branch):
                 continue
 
-            # might fail if ref_commit is not reachable from HEAD
-            distance = _get_distance(ref_commit)
-            if distance is None:
-                tag = None
-                break
-
             tag = virtual_tag
+            distance = _get_distance(ref_commit)
             template = "{tag}.dev{distance}+g{short}"
             dirty = ".dirty"
             break
@@ -235,16 +243,27 @@ def _get_data_from_git():
         "short": short,
     }
 
-    if tag is None:
+    if any([vars[x] is None and "{" + x + "}" in template for x in vars]):
         if short is None:
-            template = "0+unknown"
+            template = FALLBACK
         else:
-            template = "0+unknown.g{short}"
+            template = FALLBACK_WITH_SHA
         if is_dirty:
             template += ".dirty"
 
+    for t in (
+        template,
+        FALLBACK_WITH_SHA + ".dirty" if is_dirty else FALLBACK_WITH_SHA,
+        FALLBACK + ".dirty" if is_dirty else FALLBACK,
+    ):
+        version = t.format(**vars)
+        if _validate_version(version):
+            break
+    else:
+        version = FALLBACK
+
     return {
-        "version": template.format(**vars),
+        "version": version,
         "branch": branch,
         "revision": sha,
     }
