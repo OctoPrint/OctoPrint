@@ -33,7 +33,8 @@ import re
 import subprocess
 import sys
 
-# Adjust this on every release (candidate)
+# Adjust this on every release (candidate) ----------------------------------------------
+
 BRANCH_VERSIONS = """
 # Configuration for the branch versions, manually mapping tags based on branches
 #
@@ -68,6 +69,8 @@ dev/* 2.0.0 2da7aa358d950b4567aaab8f18d6b5779193e077
 feature/* 2.0.0 2da7aa358d950b4567aaab8f18d6b5779193e077
 """
 
+# ---------------------------------------------------------------------------------------
+
 package_root = os.path.dirname(os.path.realpath(__file__))
 package_name = os.path.basename(package_root)
 
@@ -82,6 +85,48 @@ revision = "{revision}"
 
 FALLBACK = "0+unknown"
 FALLBACK_WITH_SHA = "0+unknown.g{short}"
+FALLBACK_DICT = {
+    "version": FALLBACK,
+    "branch": None,
+    "revision": None,
+}
+
+PEP440_REGEX = re.compile(
+    r"""
+    ^\s*
+    v?
+    (?:
+        (?:(?P<epoch>[0-9]+)!)?                           # epoch
+        (?P<release>[0-9]+(?:\.[0-9]+)*)                  # release segment
+        (?P<pre>                                          # pre-release
+            [-_\.]?
+            (?P<pre_l>(a|b|c|rc|alpha|beta|pre|preview))
+            [-_\.]?
+            (?P<pre_n>[0-9]+)?
+        )?
+        (?P<post>                                         # post release
+            (?:-(?P<post_n1>[0-9]+))
+            |
+            (?:
+                [-_\.]?
+                (?P<post_l>post|rev|r)
+                [-_\.]?
+                (?P<post_n2>[0-9]+)?
+            )
+        )?
+        (?P<dev>                                          # dev release
+            [-_\.]?
+            (?P<dev_l>dev)
+            [-_\.]?
+            (?P<dev_n>[0-9]+)?
+        )?
+    )
+    (?:\+(?P<local>[a-z0-9]+(?:[-_\.][a-z0-9]+)*))?       # local version
+    \s*$
+""",
+    re.VERBOSE | re.IGNORECASE,
+)
+# Taken from the sources of packaging.version, https://github.com/pypa/packaging/blob/21.3/packaging/version.py#L225-L254
 
 _verbose = False
 
@@ -162,6 +207,7 @@ def _get_distance(ref):
 
 
 def _parse_branch_versions():
+    # parses rules for branches with virtual tags as defined in BRANCH_VERSIONS
     if not BRANCH_VERSIONS:
         return []
 
@@ -190,16 +236,12 @@ def _parse_branch_versions():
 
 
 def _validate_version(version):
-    from packaging.version import parse
-
-    try:
-        parse(version)
-        return True
-    except Exception:
-        return False
+    # validates a version string against PEP440
+    return PEP440_REGEX.search(version) is not None
 
 
 def _get_data_from_git():
+    # retrieves version info from git checkout, taking virtual tags into account
     branch = _get_branch()
     if _verbose:
         print(f"Branch: {branch}")
@@ -251,17 +293,9 @@ def _get_data_from_git():
         if is_dirty:
             template += ".dirty"
 
-    for t in (
-        template,
-        FALLBACK_WITH_SHA + ".dirty" if is_dirty else FALLBACK_WITH_SHA,
-        FALLBACK + ".dirty" if is_dirty else FALLBACK,
-    ):
-        version = t.format(**vars)
-        if _validate_version(version):
-            break
-    else:
-        version = FALLBACK
-
+    version = template.format(**vars)
+    if not _validate_version(version):
+        return None
     return {
         "version": version,
         "branch": branch,
@@ -270,19 +304,23 @@ def _get_data_from_git():
 
 
 def _get_data_from_static_file():
+    # retrieves version info from _static_version.py
     data = {}
     with open(os.path.join(package_root, STATIC_FILE)) as f:
         exec(f.read(), {}, data)
     if data["version"] == "__use_git__":
         return None
+    if not _validate_version(data["version"]):
+        return None
     return data
 
 
 def _get_data_from_keywords():
+    # retrieves version info from expanded git keywords
     git_refnames = "$Format:%d$"
     git_full = "$Format:%H$"
     if git_refnames.startswith("$Format") or git_full.startswith("$Format"):
-        # keywords not extended, method not applicable
+        # keywords not expanded, method not applicable
         return None
 
     refs = {
@@ -303,18 +341,23 @@ def _get_data_from_keywords():
     branch = branches[0] if branches else None
 
     if tag is None:
-        template = "0+unknown.g{short}"
+        template = FALLBACK_WITH_SHA
     else:
         template = "{tag}"
 
+    version = template.format(short=git_full[:8], tag=tag)
+    if not _validate_version(version):
+        return None
+
     return {
-        "version": template.format(short=git_full[:8], tag=tag),
+        "version": version,
         "branch": branch,
         "revision": git_full,
     }
 
 
 def _write_static_file(path, data=None):
+    # writes version data to _static_version.py
     if data is None:
         data = get_data()
 
@@ -328,6 +371,7 @@ def _write_static_file(path, data=None):
 
 
 def get_data():
+    # returns version data
     for method in (
         _get_data_from_static_file,
         _get_data_from_keywords,
@@ -337,11 +381,7 @@ def get_data():
         if data is not None:
             return data
 
-    return {
-        "version": "0+unknown",
-        "branch": None,
-        "revision": None,
-    }
+    return FALLBACK_DICT
 
 
 def get_cmdclass(pkg_source_path):

@@ -53,7 +53,6 @@ core_deps = [
     "markdown>=3.4.3,<4",
     "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
     "netifaces2>=0.0.14,<0.1",
-    "packaging>=23.2,<24",
     "passlib>=1.7.4,<2",
     "pathvalidate>=2.5.2,<3",
     "pkginfo>=1.9.6,<2",
