@@ -75,7 +75,7 @@ copyright = (
 # built documents.
 #
 # The short X.Y version.
-version = octoprint._version.get_versions()["version"]
+version = octoprint.__version__
 # The full version, including alpha/beta/rc tags.
 release = version
 

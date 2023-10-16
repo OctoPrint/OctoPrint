@@ -16,12 +16,11 @@ backwards compatibility on the documented APIs (both internal and external). Exa
 Finally, the **MAJOR** version number increases if there are breaking API changes that concern any of the
 documented interfaces (REST API, plugin interfaces, ...). Example: ``1.x.y`` to ``2.0.0``.
 
-OctoPrint's version numbers are automatically generated using a customized version of
-`versioneer <https://github.com/warner/python-versioneer>`_ and depend on the selected git branch, nearest
-git tag and commits. Unless a git tag is used for version number determination, the version number will
-also contain the git hash within the local version identifier to allow for an exact determination of the
-active code base (e.g. ``1.2.9.dev68+g46c7a9c``). Additionally, instances with active uncommitted changes
-will contain ``.dirty`` in the local version identifier.
+OctoPrint's version numbers are automatically generated using a custom versioning tool and depend on
+the selected git branch, nearest git tag and commits. Unless a git tag is used for version number
+determination, the version number will also contain the git hash within the local version identifier to
+allow for an exact determination of the active code base (e.g. ``1.2.9.dev68+g46c7a9c``). Additionally,
+instances with active uncommitted changes will contain ``.dirty`` in the local version identifier.
 
 .. rubric:: Footnotes
 
