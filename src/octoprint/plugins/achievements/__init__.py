@@ -7,6 +7,7 @@ import datetime
 import json
 import os
 import threading
+from typing import Dict
 
 from flask import abort, jsonify
 from flask_babel import gettext
@@ -74,7 +75,7 @@ class InstanceStats(BaseModel):
 
 class Data(BaseModel):
     stats: InstanceStats
-    achievements: dict[str, int]
+    achievements: Dict[str, int]
 
 
 class Achievement(BaseModel):
