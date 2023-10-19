@@ -73,6 +73,15 @@ $(function () {
             });
         };
 
+        self.onAllBound = function (allViewModels) {
+            self.aboutDialog.on("show", function () {
+                callViewModels(allViewModels, "onAboutShown");
+            });
+            self.aboutDialog.on("hidden", function () {
+                callViewModels(allViewModels, "onAboutHidden");
+            });
+        };
+
         self.showTab = function (tab) {
             $('a[href="#' + tab + '"]', self.aboutTabs).tab("show");
         };
