@@ -1186,7 +1186,8 @@ $(function () {
                 data.archive,
                 data.title,
                 self.installed(data) ? data.id : undefined,
-                data.follow_dependency_links || self.followDependencyLinks()
+                data.follow_dependency_links || self.followDependencyLinks(),
+                true
             );
         };
 
@@ -1206,7 +1207,13 @@ $(function () {
             );
         };
 
-        self.installPlugin = function (url, name, reinstall, followDependencyLinks) {
+        self.installPlugin = function (
+            url,
+            name,
+            reinstall,
+            followDependencyLinks,
+            fromRepo
+        ) {
             if (
                 !self.loginState.hasPermission(
                     self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL
@@ -1323,12 +1330,12 @@ $(function () {
 
             if (reinstall) {
                 OctoPrint.plugins.pluginmanager
-                    .reinstall(reinstall, url, followDependencyLinks)
+                    .reinstall(reinstall, url, followDependencyLinks, fromRepo)
                     .done(onSuccess)
                     .fail(onError);
             } else {
                 OctoPrint.plugins.pluginmanager
-                    .install(url, followDependencyLinks)
+                    .install(url, followDependencyLinks, fromRepo)
                     .done(onSuccess)
                     .fail(onError);
             }

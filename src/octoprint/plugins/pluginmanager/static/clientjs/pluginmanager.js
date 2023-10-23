@@ -76,11 +76,17 @@
     OctoPrintPluginManagerClient.prototype.install = function (
         pluginUrl,
         dependencyLinks,
+        fromRepo,
         opts
     ) {
+        if (typeof fromRepo === "object") {
+            opts = fromRepo;
+            fromRepo = false;
+        }
         var data = {
             url: pluginUrl,
-            dependency_links: !!dependencyLinks
+            dependency_links: !!dependencyLinks,
+            from_repo: !!from_repo
         };
         return this.base.simpleApiCommand("pluginmanager", "install", data, opts);
     };
@@ -89,11 +95,17 @@
         plugin,
         pluginUrl,
         dependencyLinks,
+        fromRepo,
         opts
     ) {
+        if (typeof fromRepo === "object") {
+            opts = fromRepo;
+            fromRepo = false;
+        }
         var data = {
             url: pluginUrl,
             dependency_links: !!dependencyLinks,
+            from_repo: !!from_repo,
             reinstall: plugin,
             force: true
         };
