@@ -246,6 +246,7 @@ FileAdded
      * ``name``: the file's name
      * ``type``: the file's type, a list of the path within the type hierarchy, e.g. ``["machinecode", "gcode"]`` or
        ``["model", "stl"]``
+     * ``operation``: the operation that triggered the event, either ``add``, ``copy`` or ``move``.
 
    .. note::
 
@@ -263,6 +264,7 @@ FileRemoved
      * ``name``: the file's name
      * ``type``: the file's type, a list of the path within the type hierarchy, e.g. ``["machinecode", "gcode"]`` or
        ``["model", "stl"]``
+     * ``operation``: the operation that triggered the event, either ``remove`` or ``move``
 
    .. note::
 

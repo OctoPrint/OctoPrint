@@ -769,6 +769,7 @@ class FileManager:
                 "path": path,
                 "name": name,
                 "type": get_file_type(name),
+                "operation": "remove",
             },
         )
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
@@ -814,6 +815,7 @@ class FileManager:
                 "path": source_path_in_storage,
                 "name": source_name,
                 "type": get_file_type(source_name),
+                "operation": "move",
             },
         )
         eventManager().fire(
