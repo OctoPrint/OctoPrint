@@ -1,0 +1,35 @@
+#plugin_achievements_list {
+  @achievementCols: 2;
+
+  columns: @achievementCols;
+  -webkit-columns: @achievementCols;
+  -moz-columns: @achievementCols;
+}
+
+.achievement-list {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+
+  .achievement-item {
+    display: flex;
+    flex: 1 1 30%;
+    padding: 0.5em;
+    border: 1px dotted #999;
+    color: #999;
+    margin: 0.5em;
+    border-radius: 0.5em;
+
+    &.achieved {
+      border-style: solid;
+      color: #000;
+    }
+
+    .achievement-logo {
+      width: 50px;
+      height: 50px;
+      background-color: #aaa;
+      margin-right: 0.5em;
+    }
+  }
+}

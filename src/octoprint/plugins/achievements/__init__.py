@@ -7,7 +7,7 @@ import datetime
 import json
 import os
 import threading
-from typing import Dict
+from typing import Dict, List
 
 from flask import abort, jsonify
 from flask_babel import gettext
@@ -82,6 +82,18 @@ class Achievement(BaseModel):
     key: str = ""
     name: str = ""
     description: str = ""
+    hidden: bool = False
+    nag: bool = False
+
+
+class AchievedAchievement(Achievement):
+    achieved: int
+
+
+class ApiResponse(BaseModel):
+    stats: InstanceStats
+    achievements: List[Achievement]
+    hidden_achievements: int
 
 
 class AchievementsMetaClass(type):
@@ -97,44 +109,182 @@ class AchievementsMetaClass(type):
 
         return cls
 
+    def all(cls):
+        return cls.achievements.values()
+
 
 class Achievements(metaclass=AchievementsMetaClass):
     THE_WIZARD = Achievement(
-        name="The wizard",
+        name="The Wizard",
         description="Complete the first run setup wizard.",
     )
 
-    HANG_IN_THERE = Achievement(
-        name="Hang in there!",
-        description="Pause the same print ten times.",
-    )
-
     ONE_SMALL_STEP_FOR_MAN = Achievement(
-        name="That's one small step for man", description="Finish your first print."
+        name="That's One Small Step For Man", description="Finish your first print."
     )
 
     ALL_BEGINNINGS_ARE_HARD = Achievement(
-        name="All beginnings are hard", description="Cancel your first print."
+        name="All Beginnings Are Hard", description="Cancel your first print."
     )
 
-    CROSSOVER_EPISODE = Achievement(
-        name="What is this, a crossover episode?",
-        description="Connect to a printer running Klipper.",
+    ONE_OF_THOSE_DAYS = Achievement(
+        name="Must Be One Of Those Days",
+        description="Cancel ten consecutive prints.",
     )
 
     ADVENTURER = Achievement(
-        name="Adventurer",
+        name="The Adventurer",
         description="Install a plugin.",
     )
 
     TINKERER = Achievement(
-        name="Tinkerer",
+        name="The Tinkerer",
         description="Install a plugin from a URL.",
     )
 
     BETTER_SAFE_THAN_SORRY = Achievement(
-        name="Better safe than sorry",
+        name="Better Safe Than Sorry",
         description="Create a backup.",
+    )
+
+    CLEAN_HOUSE_I = Achievement(
+        name="Clean House I",
+        description="Delete one hundred files.",
+        hidden=True,
+    )
+
+    CLEAN_HOUSE_II = Achievement(
+        name="Clean House II",
+        description="Delete five hundred files.",
+        hidden=True,
+    )
+
+    CLEAN_HOUSE_III = Achievement(
+        name="Clean House III",
+        description="Delete one thousand files.",
+        hidden=True,
+    )
+
+    THE_COLLECTOR_I = Achievement(
+        name="The Collector I",
+        description="Upload one hundred files.",
+        hidden=True,
+        nag=True,
+    )
+
+    THE_COLLECTOR_II = Achievement(
+        name="The Collector II",
+        description="Upload five hundred files.",
+        hidden=True,
+        nag=True,
+    )
+
+    THE_COLLECTOR_III = Achievement(
+        name="The Collector III",
+        description="Upload one thousand files.",
+        hidden=True,
+        nag=True,
+    )
+
+    THE_HOUSEKEEPER = Achievement(
+        name="The Housekeeper",
+        description="Create a folder.",
+        hidden=True,
+    )
+
+    HANG_IN_THERE = Achievement(
+        name="Hang In There!",
+        description="Pause the same print ten times.",
+        hidden=True,
+    )
+
+    CROSSOVER_EPISODE = Achievement(
+        name="What Is This, A Crossover Episode?",
+        description="Connect to a printer running Klipper.",
+        hidden=True,
+    )
+
+    HAPPY_BIRTHDAY_FOOSEL = Achievement(
+        name="Happy Birthday, foosel",
+        description="Start a print on foosel's birthday.",
+        hidden=True,
+    )
+
+    HAPPY_BIRTHDAY_OCTOPRINT = Achievement(
+        name="Happy Birthday, OctoPrint",
+        description="Start a print on OctoPrint's birthday.",
+        hidden=True,
+    )
+
+    EARLY_BIRD = Achievement(
+        name="Early Bird",
+        description="Start a print between 03:00 and 07:00.",
+    )
+
+    NIGHT_OWL = Achievement(
+        name="Night Owl",
+        description="Start a print between 23:00 and 03:00.",
+    )
+
+    TGIF = Achievement(
+        name="TGIF",
+        description="Start a print on a Friday.",
+    )
+
+    MARATHON = Achievement(
+        name="Marathon",
+        description="Finish a print that took longer than 24 hours.",
+        nag=True,
+    )
+
+    HALF_MARATHON = Achievement(
+        name="Half Marathon",
+        description="Finish a print that took longer than 12 hours.",
+        nag=True,
+    )
+
+    SPRINT = Achievement(
+        name="Sprint",
+        description="Finish a print that took less than 10 minutes.",
+    )
+
+    CANT_GET_ENOUGH = Achievement(
+        name="Can't Get Enough",
+        description="Finish ten prints in one day.",
+        nag=True,
+    )
+
+    SANTAS_LITTLE_HELPER = Achievement(
+        name="Santa's Little Helper",
+        description="Start a print between December 1st and December 24th.",
+    )
+
+    SO_CLOSE = Achievement(
+        name="So Close",
+        description="Cancel a print job at 95% progress or more.",
+    )
+
+    HEAVY_CHONKER = Achievement(
+        name="Heavy Chonker",
+        description="Upload a GCODE file larger than 500MB.",
+    )
+
+    THE_MANUFACTURER_I = Achievement(
+        name="The Manufacturer I", description="Finish 10 prints.", nag=True
+    )
+
+    THE_MANUFACTURER_II = Achievement(
+        name="The Manufacturer II",
+        description="Finish 100 prints.",
+        hidden=True,
+        nag=True,
+    )
+
+    THE_MANUFACTURER_III = Achievement(
+        name="The Manufacturer I",
+        description="Finish 1000 prints.",
+        hidden=True,
+        nag=True,
     )
 
 
@@ -152,6 +302,8 @@ class AchievementsPlugin(
         self._data_mutex = threading.Lock()
 
         self._pause_counter = 0
+        self._today = None
+        self._prints_today = 0
 
     def initialize(self):
         self._load_data_file()
@@ -187,6 +339,8 @@ class AchievementsPlugin(
         ) and not self._settings.get_boolean(["server", "firstRun"]):
             self._trigger_achievement(Achievements.THE_WIZARD, write=False)
 
+        self._today = datetime.datetime.now().date()
+
         self._write_data_file()
 
     ##~~ EventHandlerPlugin
@@ -195,10 +349,29 @@ class AchievementsPlugin(
         from octoprint.events import Events
 
         changed = False
+        now = datetime.datetime.now()
 
         if event == Events.PRINT_STARTED:
             self._pause_counter = 0
             self._data.stats.prints_started += 1
+
+            if now.month == 3 and now.day == 21:
+                self._trigger_achievement(Achievements.HAPPY_BIRTHDAY_FOOSEL, write=False)
+            elif now.month == 12 and now.day >= 1 and now.day <= 24:
+                self._trigger_achievement(Achievements.SANTAS_LITTLE_HELPER, write=False)
+            elif now.month == 12 and now.day == 25:
+                self._trigger_achievement(
+                    Achievements.HAPPY_BIRTHDAY_OCTOPRINT, write=False
+                )
+
+            if 23 <= now.hour or now.hour < 3:
+                self._trigger_achievement(Achievements.NIGHT_OWL, write=False)
+            elif 3 <= now.hour < 7:
+                self._trigger_achievement(Achievements.EARLY_BIRD, write=False)
+
+            if now.weekday() == 4:
+                self._trigger_achievement(Achievements.TGIF, write=False)
+
             changed = True
 
         elif event == Events.PRINT_DONE:
@@ -212,6 +385,27 @@ class AchievementsPlugin(
 
             self._trigger_achievement(Achievements.ONE_SMALL_STEP_FOR_MAN, write=False)
 
+            if self._data.stats.prints_finished >= 1000:
+                self._trigger_achievement(Achievements.THE_MANUFACTURER_III)
+            elif self._data.stats.prints_finished >= 100:
+                self._trigger_achievement(Achievements.THE_MANUFACTURER_II)
+            elif self._data.stats.prints_finished >= 10:
+                self._trigger_achievement(Achievements.THE_MANUFACTURER_I)
+
+            if payload["time"] > 24 * 60 * 60:
+                self._trigger_achievement(Achievements.MARATHON, write=False)
+            if payload["time"] > 12 * 60 * 60:
+                self._trigger_achievement(Achievements.HALF_MARATHON, write=False)
+            if payload["time"] < 10 * 60:
+                self._trigger_achievement(Achievements.SPRINT, write=False)
+
+            if now.date() != self._today:
+                self._today = now.date()
+                self._prints_today = 0
+            self._prints_today += 1
+            if self._prints_today >= 10:
+                self._trigger_achievement(Achievements.CANT_GET_ENOUGH, write=False)
+
             changed = True
 
         elif event == Events.PRINT_FAILED or event == Events.PRINT_CANCELLED:
@@ -222,6 +416,9 @@ class AchievementsPlugin(
                     Achievements.ALL_BEGINNINGS_ARE_HARD, write=False
                 )
 
+                if payload["progress"] > 95:
+                    self._trigger_achievement(Achievements.SO_CLOSE, write=False)
+
             changed = True
 
         elif event == Events.PRINT_PAUSED:
@@ -229,11 +426,40 @@ class AchievementsPlugin(
             if self._pause_counter >= 10:
                 self._trigger_achievement(Achievements.HANG_IN_THERE, write=False)
 
+        elif event == Events.FILE_ADDED:
+            if payload.get("operation") == "add":
+                self._data.stats.files_uploaded += 1
+                if self._data.stats.files_uploaded >= 1000:
+                    self._trigger_achievement(Achievements.THE_COLLECTOR_III)
+                elif self._data.stats.files_uploaded >= 500:
+                    self._trigger_achievement(Achievements.THE_COLLECTOR_II)
+                elif self._data.stats.files_uploaded >= 100:
+                    self._trigger_achievement(Achievements.THE_COLLECTOR_I)
+
+                if payload.get("size", 0) > 500 * 1024 * 1024:
+                    self._trigger_achievement(Achievements.HEAVY_CHONKER)
+
+        elif event == Events.FILE_REMOVED:
+            if payload.get("operation") == "remove":
+                self._data.stats.files_removed += 1
+                if self._data.stats.files_removed >= 1000:
+                    self._trigger_achievement(Achievements.CLEAN_HOUSE_III)
+                elif self._data.stats.files_removed >= 500:
+                    self._trigger_achievement(Achievements.CLEAN_HOUSE_II)
+                elif self._data.stats.files_removed >= 100:
+                    self._trigger_achievement(Achievements.CLEAN_HOUSE_I)
+
+        elif event == Events.FOLDER_ADDED:
+            self._trigger_achievement(Achievements.THE_HOUSEKEEPER)
+
         elif event == Events.PLUGIN_BACKUP_BACKUP_CREATED:
             self._trigger_achievement(Achievements.BETTER_SAFE_THAN_SORRY)
 
         elif event == Events.PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN:
-            self._trigger_achievement(Achievements.ADVENTURER)
+            if payload.get("from_repo"):
+                self._trigger_achievement(Achievements.ADVENTURER)
+            else:
+                self._trigger_achievement(Achievements.TINKERER)
 
         if changed:
             self._write_data_file()
@@ -243,7 +469,38 @@ class AchievementsPlugin(
     def on_api_get(self, request, *args, **kwargs):
         if not Permissions.PLUGIN_ACHIEVEMENTS_VIEW.can():
             abort(403)
-        return jsonify(self._data.dict())
+
+        achievements = [
+            AchievedAchievement(
+                **achievement.dict(), achieved=self._data.achievements[achievement.key]
+            )
+            if self._has_achievement(achievement)
+            else achievement
+            for achievement in Achievements.all()
+        ]
+
+        response = ApiResponse(
+            stats=self._data.stats,
+            achievements=sorted(
+                [
+                    achievement
+                    for achievement in achievements
+                    if not achievement.hidden
+                    or isinstance(achievement, AchievedAchievement)
+                ],
+                key=lambda a: a.name,
+            ),
+            hidden_achievements=len(
+                [
+                    achievement
+                    for achievement in achievements
+                    if achievement.hidden
+                    and not isinstance(achievement, AchievedAchievement)
+                ]
+            ),
+        )
+
+        return jsonify(response.dict())
 
     ##~~ AssetPlugin
 
@@ -251,6 +508,8 @@ class AchievementsPlugin(
         return {
             "clientjs": ["clientjs/achievements.js"],
             "js": ["js/achievements.js"],
+            "less": ["less/achievements.less"],
+            "css": ["css/achievements.css"],
         }
 
     ##~~ TemplatePlugin
@@ -282,7 +541,9 @@ class AchievementsPlugin(
 
         self._logger.info(f"New achievement unlocked: {achievement.name}!")
 
-        # TODO: trigger notification
+        payload = achievement.dict()
+        payload["type"] = "achievement"
+        self._plugin_manager.send_plugin_message(self._identifier, payload)
 
     @property
     def _data_path(self):
