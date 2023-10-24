@@ -41,11 +41,14 @@ $(function () {
                 $("a:first", self.aboutTabs).tab("show");
             }
             self.aboutContent.scrollTop(0);
+
+            const maxHeight = $.fn.modal.defaults.maxHeight() - 80 - 60;
             self.aboutDialog
                 .modal({
                     minHeight: function () {
-                        return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
-                    }
+                        return Math.max(maxHeight, 250);
+                    },
+                    maxHeight: maxHeight
                 })
                 .css({
                     "margin-left": function () {
