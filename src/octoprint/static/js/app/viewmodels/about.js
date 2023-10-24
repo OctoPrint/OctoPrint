@@ -89,7 +89,12 @@ $(function () {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: AboutViewModel,
-        elements: ["#about_dialog", "#footer_about", "#footer_systeminfo"],
+        elements: [
+            "#about_dialog",
+            "#footer_about",
+            "#footer_achievements",
+            "#footer_systeminfo"
+        ],
         dependencies: ["loginStateViewModel", "accessViewModel"]
     });
 });
