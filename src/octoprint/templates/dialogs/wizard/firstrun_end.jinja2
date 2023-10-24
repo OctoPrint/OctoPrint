@@ -42,16 +42,21 @@
     </div>
 </div>
 
-<h4>{{ _('If you enjoy OctoPrint...') }}</h4>
+<h4>{{ _('Support OctoPrint\'s ongoing development!') }}</h4>
 
 <div class="row-fluid">
     <div class="span1 text-center"><img src="{{ url_for('static', filename='img/tentacle-56x56.png') }}"></div>
     <div class="span11">
-        <p>{% trans url='https://octoprint.org/support-octoprint/?utm_source=octoprint&utm_medium=first_run_wizard' %}
-            Please consider <strong><a href="{{ url }}" target="_blank">supporting OctoPrint's ongoing development</a></strong>,
-            which can only continue with funding by users like you! You can also find this link in the "About" dialog.<br>
+        <p>{% trans url='https://octoprint.org/support-octoprint/?utm_source=octoprint&utm_medium=first_run_wizard&campaign=funding' %}
+            Work on OctoPrint is only possible through continued financial support by people like you!
+            If you enjoy OctoPrint, please <strong><a href="{{ url }}" target="_blank">click here to learn how to help with its funding</a></strong> -
+            every bit helps!<br>
             <strong>Thank you!</strong>
         {% endtrans %}</p>
+        <p><label class="checkbox" data-bind="style: { border: !fundingRequestAcknowledged() && error() ? '1px dashed red' : 'inherit' }">
+            <input type="checkbox" data-bind="checked: fundingRequestAcknowledged">
+            <strong>{{ _('I have read and understood this') }}</strong>
+        </label></p>
     </div>
 </div>
 

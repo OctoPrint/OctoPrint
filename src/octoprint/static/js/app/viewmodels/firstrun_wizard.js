@@ -4,12 +4,14 @@ $(function () {
 
         self.dontPrintUnattendedAcknowledged = ko.observable(false);
         self.dontPortForwardAcknowledged = ko.observable(false);
+        self.fundingRequestAcknowledged = ko.observable(false);
         self.error = ko.observable(false);
 
         self.allAcknowledged = ko.pureComputed(function () {
             return (
                 self.dontPrintUnattendedAcknowledged() &&
-                self.dontPortForwardAcknowledged()
+                self.dontPortForwardAcknowledged() &&
+                self.fundingRequestAcknowledged()
             );
         });
 
@@ -34,9 +36,11 @@ $(function () {
         self._showAcknowledgementNeededDialog = function () {
             self.error(true);
             showMessageDialog({
-                title: gettext("Please acknowledge the safety warnings"),
+                title: gettext(
+                    "Please acknowledge the safety warnings and call for funding"
+                ),
                 message: gettext(
-                    "You haven't yet acknowledged all safety warnings. Please do so first."
+                    "You haven't yet acknowledged all safety warnings and the call for funding. Please do so first."
                 )
             });
         };
