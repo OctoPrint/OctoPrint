@@ -48,6 +48,9 @@ class InstanceStats(BaseModel):
     prints_finished: int = 0
     """Number of prints finished."""
 
+    prints_started_per_weekday: Dict[int, int] = {}
+    """Number of prints started per weekday."""
+
     print_duration_total: float = 0
     """Total print duration."""
 
@@ -219,11 +222,13 @@ class Achievements(metaclass=AchievementsMetaClass):
     EARLY_BIRD = Achievement(
         name="Early Bird",
         description="Start a print between 03:00 and 07:00.",
+        hidden=True,
     )
 
     NIGHT_OWL = Achievement(
         name="Night Owl",
         description="Start a print between 23:00 and 03:00.",
+        hidden=True,
     )
 
     TGIF = Achievement(
@@ -257,6 +262,7 @@ class Achievements(metaclass=AchievementsMetaClass):
     SANTAS_LITTLE_HELPER = Achievement(
         name="Santa's Little Helper",
         description="Start a print between December 1st and December 24th.",
+        hidden=True,
     )
 
     SO_CLOSE = Achievement(
@@ -285,6 +291,11 @@ class Achievements(metaclass=AchievementsMetaClass):
         description="Finish 1000 prints.",
         hidden=True,
         nag=True,
+    )
+
+    WEEKEND_WARRIOR = Achievement(
+        name="Weekend Warrior",
+        description="Print on four consecutive weekends.",
     )
 
 
@@ -371,6 +382,10 @@ class AchievementsPlugin(
 
             if now.weekday() == 4:
                 self._trigger_achievement(Achievements.TGIF, write=False)
+
+            self._data.stats.prints_started_per_weekday[now.weekday()] = (
+                self._data.stats.prints_started_per_weekday.get(now.weekday(), 0) + 1
+            )
 
             changed = True
 

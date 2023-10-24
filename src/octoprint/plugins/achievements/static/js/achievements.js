@@ -123,7 +123,9 @@ $(function () {
                     "<hr><p>" +
                     _.sprintf(
                         callsToAction[Math.floor(Math.random() * callsToAction.length)],
-                        {url: "https://support.octoprint.org"}
+                        {
+                            url: "https://octoprint.org/support-octoprint/?utm_source=octoprint&utm_medium=achievement_popup&utm_campaign=funding"
+                        }
                     ) +
                     "</p>";
             }

@@ -1,12 +1,10 @@
-#plugin_achievements_list {
-  @achievementCols: 2;
-
-  columns: @achievementCols;
-  -webkit-columns: @achievementCols;
-  -moz-columns: @achievementCols;
-}
-
 .achievement-list {
+  @achievementColor: #fff;
+  @achievementBackgroundColor: #08c;
+  @achievementBorderColor: darken(@achievementBackgroundColor, 10%);
+
+  @achievementLogo: 50px;
+
   display: flex;
   width: 100%;
   flex-wrap: wrap;
@@ -15,20 +13,24 @@
     display: flex;
     flex: 1 1 30%;
     padding: 0.5em;
-    border: 1px dotted #999;
-    color: #999;
     margin: 0.5em;
+
+    border: 1px solid #666;
     border-radius: 0.5em;
+    opacity: 0.5;
 
     &.achieved {
-      border-style: solid;
-      color: #000;
+      color: @achievementColor;
+      background-color: @achievementBackgroundColor;
+      border: 1px solid @achievementBorderColor;
+      opacity: 1;
     }
 
     .achievement-logo {
-      width: 50px;
-      height: 50px;
-      background-color: #aaa;
+      width: @achievementLogo;
+      height: @achievementLogo;
+      min-width: @achievementLogo;
+      border: 1px dotted #666;
       margin-right: 0.5em;
     }
   }
