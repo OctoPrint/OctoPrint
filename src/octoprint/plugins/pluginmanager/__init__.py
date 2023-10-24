@@ -2348,10 +2348,11 @@ def _filter_relevant_notification(notification, plugin_version, octoprint_versio
         and (
             (version_ranges is None and versions is None)
             or (
-                version_ranges
+                plugin_version
+                and version_ranges
                 and (any(map(lambda v: plugin_version in v, version_ranges)))
             )
-            or (versions and plugin_version in versions)
+            or (plugin_version and versions and plugin_version in versions)
         )
         and (
             "octoversions" not in notification
