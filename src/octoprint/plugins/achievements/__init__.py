@@ -441,12 +441,12 @@ class AchievementsPlugin(
 
         elif event == Events.FILE_REMOVED:
             if payload.get("operation") == "remove":
-                self._data.stats.files_removed += 1
-                if self._data.stats.files_removed >= 1000:
+                self._data.stats.files_deleted += 1
+                if self._data.stats.files_deleted >= 1000:
                     self._trigger_achievement(Achievements.CLEAN_HOUSE_III)
-                elif self._data.stats.files_removed >= 500:
+                elif self._data.stats.files_deleted >= 500:
                     self._trigger_achievement(Achievements.CLEAN_HOUSE_II)
-                elif self._data.stats.files_removed >= 100:
+                elif self._data.stats.files_deleted >= 100:
                     self._trigger_achievement(Achievements.CLEAN_HOUSE_I)
 
         elif event == Events.FOLDER_ADDED:
