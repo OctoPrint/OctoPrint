@@ -86,7 +86,7 @@
         var data = {
             url: pluginUrl,
             dependency_links: !!dependencyLinks,
-            from_repo: !!from_repo
+            from_repo: !!fromRepo
         };
         return this.base.simpleApiCommand("pluginmanager", "install", data, opts);
     };
@@ -105,7 +105,7 @@
         var data = {
             url: pluginUrl,
             dependency_links: !!dependencyLinks,
-            from_repo: !!from_repo,
+            from_repo: !!fromRepo,
             reinstall: plugin,
             force: true
         };
