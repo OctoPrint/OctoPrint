@@ -1,17 +1,18 @@
+@achievementColor: #fff;
+@achievementBackgroundColor: #08c;
+@achievementBorderColor: darken(@achievementBackgroundColor, 10%);
+
+@achievementLogo: 48px;
+
 .achievement-list {
-  @achievementColor: #fff;
-  @achievementBackgroundColor: #08c;
-  @achievementBorderColor: darken(@achievementBackgroundColor, 10%);
-
-  @achievementLogo: 50px;
-
   display: flex;
   width: 100%;
   flex-wrap: wrap;
 
   .achievement-item {
     display: flex;
-    flex: 1 1 30%;
+    flex: 1 1 calc(50% - 2.5em);
+    max-width: calc(50% - 2.5em);
     padding: 0.5em;
     margin: 0.5em;
 
@@ -30,8 +31,37 @@
       width: @achievementLogo;
       height: @achievementLogo;
       min-width: @achievementLogo;
-      border: 1px dotted #666;
       margin-right: 0.5em;
+
+      svg {
+        fill: currentColor;
+      }
     }
+  }
+}
+
+.achievement-popup {
+  .achievement {
+    display: inline-flex;
+    margin-top: 1em;
+
+    .achievement-logo {
+      width: @achievementLogo;
+      height: @achievementLogo;
+      min-width: @achievementLogo;
+      margin-right: 0.5em;
+
+      svg {
+        fill: currentColor;
+      }
+    }
+
+    .achievement-description {
+      flex-grow: 1;
+    }
+  }
+
+  .achievement-nag {
+    margin-top: 1em;
   }
 }

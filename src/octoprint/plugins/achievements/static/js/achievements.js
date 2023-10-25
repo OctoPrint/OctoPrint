@@ -11,6 +11,8 @@ $(function () {
 
         self.achievements = ko.observableArray([]);
         self.hiddenAchievements = ko.observable();
+        self.achievedAchievements = ko.observable();
+        self.totalAchievements = ko.observable();
 
         self.collectingSince = ko.pureComputed(() => {
             self.dummy();
@@ -69,7 +71,7 @@ $(function () {
         });
 
         self.hiddenAchievementsText = ko.pureComputed(() => {
-            return _.sprintf(gettext("... and %(count)s secret achievements!"), {
+            return _.sprintf(gettext("... and %(count)s hidden achievements!"), {
                 count: self.hiddenAchievements()
             });
         });
@@ -88,7 +90,23 @@ $(function () {
         self.fromResponse = (response) => {
             self.fromStatsResponse(response.stats);
             self.fromAchievementsResponse(response.achievements);
-            self.hiddenAchievements(response.hidden_achievements);
+
+            let hidden = response.hidden_achievements;
+            let achieved = 0;
+            let achievedHidden = 0;
+            _.each(self.achievements(), (achievement) => {
+                if (achievement.achieved) {
+                    achieved++;
+                    if (achievement.hidden) {
+                        achievedHidden++;
+                    }
+                }
+            });
+            self.achievedAchievements(achieved);
+            self.hiddenAchievements(hidden - achievedHidden);
+            self.totalAchievements(
+                self.achievements().length + self.hiddenAchievements()
+            );
         };
 
         self.fromStatsResponse = (response) => {
@@ -104,43 +122,48 @@ $(function () {
             self.achievements(response);
         };
 
+        self.CALLS_TO_ACTION = [
+            gettext(
+                'Enjoying OctoPrint? Looks like it! <a href="%(url)s" target="_blank" rel="noopener noreferer">It might be time to give something back then</a> - thank you!'
+            ),
+            gettext(
+                'Getting value from OctoPrint? <a href="%(url)s" target="_blank" rel="noopener noreferer">Then please consider supporting its sole maintainer with a donation</a> - thank you!'
+            ),
+            gettext(
+                'Has OctoPrint helped you enjoy your printer more? <a href="%(url)s" target="_blank" rel="noopener noreferer">Then please consider supporting its continued development</a> - thank you!'
+            )
+        ];
         self.showAchievement = (achievement) => {
-            const callsToAction = [
-                gettext(
-                    'Enjoying OctoPrint? Looks like it! <a href="%(url)s" target="_blank" rel="noopener noreferer">It might be time to give something back then</a> - thank you!'
-                ),
-                gettext(
-                    'Getting value from OctoPrint? <a href="%(url)s" target="_blank" rel="noopener noreferer">Then please consider supporting its sole maintainer with a donation</a> - thank you!'
-                ),
-                gettext(
-                    'Has OctoPrint helped you enjoy your printer more? <a href="%(url)s" target="_blank" rel="noopener noreferer">Then please consider supporting its continued development</a> - thank you!'
-                )
-            ];
-
-            let html = `<p>${achievement.description}</p>`;
+            let html = `<div class="achievement"><div class="achievement-logo"><svg viewBox="0 0 24 24"><use href="#achievement-logo-${achievement.logo}"></use></svg></div><div class="achievement-content"><strong>${achievement.name}</strong><br />${achievement.description}</div></div>`;
             if (achievement.nag) {
+                const idx = Math.floor(Math.random() * self.CALLS_TO_ACTION.length);
+                const cta = self.CALLS_TO_ACTION[idx];
                 html +=
-                    "<hr><p>" +
-                    _.sprintf(
-                        callsToAction[Math.floor(Math.random() * callsToAction.length)],
-                        {
-                            url: "https://octoprint.org/support-octoprint/?utm_source=octoprint&utm_medium=achievement_popup&utm_campaign=funding"
-                        }
-                    ) +
+                    "<p class='achievement-nag'>" +
+                    _.sprintf(cta, {
+                        url: "https://octoprint.org/support-octoprint/?utm_source=octoprint&utm_medium=achievement_popup&utm_campaign=funding"
+                    }) +
                     "</p>";
             }
 
             const options = {
-                title: _.sprintf(
-                    gettext("New achievement unlocked: %(name)s!"),
-                    achievement
-                ),
+                title: gettext("Achievement unlocked!"),
                 text: html,
                 type: "success",
                 icon: "icon-star",
-                hide: false
+                hide: false,
+                addclass: "achievement-popup"
             };
             new PNotify(options);
+        };
+
+        self.triggerTestAchievement = (nag) => {
+            self.showAchievement({
+                name: "Test Achievement",
+                description: "I am a test achievement.",
+                logo: "trophy",
+                nag: !!nag
+            });
         };
 
         self.onDataUpdaterPluginMessage = function (plugin, data) {
@@ -185,6 +208,6 @@ $(function () {
     OCTOPRINT_VIEWMODELS.push({
         construct: AchievementsViewModel,
         dependencies: ["loginStateViewModel", "accessViewModel"],
-        elements: ["#about_plugin_achievements"]
+        elements: ["#about_plugin_achievements", "#about_plugin_achievements_2"]
     });
 });

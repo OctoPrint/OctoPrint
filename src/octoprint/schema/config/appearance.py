@@ -99,6 +99,9 @@ class ComponentOrderConfig(BaseModel):
         "license",
         "thirdparty",
         "plugin_pluginmanager",
+        "plugin_achievements",
+        "plugin_achievements_2",
+        "systeminfo",
     ]
     """Order of about dialog items."""
 

@@ -1,17 +1,3 @@
-<h3>{{ _('Achievements') }}</h3>
-
-<div class="achievement-list" data-bind="foreach: achievements">
-    <div class="achievement-item" data-bind="css: {achieved: $data.achieved}">
-        <div class="achievement-logo"></div>
-        <div class="achievement-info">
-            <strong data-bind="text: name"></strong><br>
-            <em data-bind="text: description"></em><br>
-            <small data-bind="visible: $data.achieved">{{ _('Unlocked:') }} <span data-bind="text: formatDate($data.achieved)"></span></small>
-        </div>
-    </div>
-</div>
-
-<p data-bind="visible: hiddenAchievements"><span data-bind="text: hiddenAchievementsText"></span> <i class="fa-solid fa-user-secret"></i></p>
 
 <h3>{{ _('Instance stats') }}</h3>
 
