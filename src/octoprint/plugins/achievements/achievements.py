@@ -103,7 +103,7 @@ class Achievements(metaclass=AchievementsMetaClass):
 
     CANT_GET_ENOUGH = Achievement(
         name="Can't Get Enough",
-        description="Finish ten prints in one day.",
+        description="Finish 10 prints in one day.",
         nag=True,
     )
 
@@ -181,19 +181,19 @@ class Achievements(metaclass=AchievementsMetaClass):
 
     CLEAN_HOUSE_I = Achievement(
         name="Clean House",
-        description="Delete one hundred files.",
+        description="Delete 100 files.",
         hidden=True,
     )
 
     CLEAN_HOUSE_II = Achievement(
         name="Clean House II",
-        description="Delete five hundred files.",
+        description="Delete 500 files.",
         hidden=True,
     )
 
     CLEAN_HOUSE_III = Achievement(
         name="Clean House III",
-        description="Delete one thousand files.",
+        description="Delete 1000 files.",
         hidden=True,
     )
 
@@ -204,21 +204,21 @@ class Achievements(metaclass=AchievementsMetaClass):
 
     THE_COLLECTOR_I = Achievement(
         name="The Collector",
-        description="Upload one hundred files.",
+        description="Upload 100 files.",
         hidden=True,
         nag=True,
     )
 
     THE_COLLECTOR_II = Achievement(
         name="The Collector II",
-        description="Upload five hundred files.",
+        description="Upload 500 files.",
         hidden=True,
         nag=True,
     )
 
     THE_COLLECTOR_III = Achievement(
         name="The Collector III",
-        description="Upload one thousand files.",
+        description="Upload 1000 files.",
         hidden=True,
         nag=True,
     )
@@ -266,4 +266,10 @@ class Achievements(metaclass=AchievementsMetaClass):
         description="Finish a print of the same file five times in a row.",
         hidden=True,
         nag=True,
+    )
+
+    WHAT_COULD_POSSIBLY_GO_WRONG = Achievement(
+        name="What Could Possibly Go Wrong?",
+        description="Start a print with an active undervoltage issue.",
+        hidden=True,
     )

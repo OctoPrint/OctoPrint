@@ -145,6 +145,10 @@ $(function () {
                     }) +
                     "</p>";
             }
+            html +=
+                `<small class="achievement-link"><a href="javascript:void(0)" onclick="OctoPrint.coreui.viewmodels.aboutViewModel.show('about_plugin_achievements')">` +
+                gettext("Show all achievements...") +
+                "</a></small>";
 
             const options = {
                 title: gettext("Achievement unlocked!"),

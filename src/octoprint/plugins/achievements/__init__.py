@@ -47,6 +47,8 @@ class AchievementsPlugin(
         self._data = None
         self._data_mutex = threading.Lock()
 
+        self._get_throttled = lambda: False
+
         self._pause_counter = 0  # not persisted, as it depends on the current print
 
     def initialize(self):
@@ -68,6 +70,14 @@ class AchievementsPlugin(
             }
         ]
 
+    ##~~ Firmware info hook
+
+    def firmware_info_hook(
+        self, comm_instance, firmware_name, firmware_data, *args, **kwargs
+    ):
+        if "klipper" in firmware_name.lower():
+            self._trigger_achievement(Achievements.CROSSOVER_EPISODE)
+
     ##~ StartupPlugin
 
     def on_startup(self, *args, **kwargs):
@@ -84,6 +94,13 @@ class AchievementsPlugin(
             self._trigger_achievement(Achievements.THE_WIZARD, write=False)
 
         self._write_data_file()
+
+    def on_after_startup(self):
+        helpers = self._plugin_manager.get_helpers("pi_support", "get_throttled")
+        if helpers and "get_throttled" in helpers:
+            self._get_throttled = helpers["get_throttled"]
+
+        return super().on_after_startup()
 
     ##~~ EventHandlerPlugin
 
@@ -142,6 +159,13 @@ class AchievementsPlugin(
             self._data.stats.prints_started_per_weekday[now.weekday()] = (
                 self._data.stats.prints_started_per_weekday.get(now.weekday(), 0) + 1
             )
+
+            ## other conditions
+            throttled = self._get_throttled()
+            if throttled and throttled.get("current_undervoltage"):
+                self._trigger_achievement(
+                    Achievements.WHAT_COULD_POSSIBLY_GO_WRONG, write=False
+                )
 
             changed = True
 
@@ -422,5 +446,6 @@ __plugin_license__ = "AGPLv3"
 __plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = AchievementsPlugin()
 __plugin_hooks__ = {
-    "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
+    "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+    "octoprint.comm.protocol.firmware.info": __plugin_implementation__.firmware_info_hook,
 }
