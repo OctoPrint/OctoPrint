@@ -1967,7 +1967,7 @@ msgstr "Fertig!"
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:700
 #: src/octoprint/static/js/app/viewmodels/files.js:1066
 msgid "Model size"
-msgstr "Modelgröße"
+msgstr "Modellgröße"
 
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:710
 msgid "Estimated layer height"
@@ -2128,7 +2128,7 @@ msgstr "Nächste Schicht"
 
 #: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:26
 msgid "Model info"
-msgstr "Modelinformationen"
+msgstr "Modellinformationen"
 
 #: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:29
 msgid "Layer info"
@@ -2148,7 +2148,7 @@ msgstr "Ausschnitt auf Modell zentrieren"
 
 #: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:45
 msgid "Zoom in on model"
-msgstr "Auf Model zoomen"
+msgstr "Auf Modell zoomen"
 
 #: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:51
 msgid "Show moves"
