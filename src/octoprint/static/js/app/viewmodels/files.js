@@ -1066,7 +1066,7 @@ $(function () {
                             gettext("Model size") +
                             ": " +
                             _.sprintf(
-                                "%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm",
+                                "%(width).2fmm (X) &times; %(depth).2fmm (Y) &times; %(height).2fmm (Z)",
                                 dimensions
                             );
                         output += "<br>";
