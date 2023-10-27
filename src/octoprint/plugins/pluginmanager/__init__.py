@@ -205,7 +205,7 @@ class PluginManagerPlugin(
             self.get_plugin_data_folder(), "notices.json"
         )
         self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
-        self._confirm_disable = self._settings.global_get_boolean(["confirm_disable"])
+        self._confirm_disable = self._settings.get_boolean(["confirm_disable"])
 
         self._pip_caller = create_pip_caller(
             command=self._settings.global_get(["server", "commands", "localPipCommand"]),
@@ -2348,10 +2348,11 @@ def _filter_relevant_notification(notification, plugin_version, octoprint_versio
         and (
             (version_ranges is None and versions is None)
             or (
-                version_ranges
+                plugin_version
+                and version_ranges
                 and (any(map(lambda v: plugin_version in v, version_ranges)))
             )
-            or (versions and plugin_version in versions)
+            or (plugin_version and versions and plugin_version in versions)
         )
         and (
             "octoversions" not in notification

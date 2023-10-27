@@ -13,7 +13,7 @@
                 <!-- /ko -->
             </div>
         </div>
-        <div data-bind="css: { webcam_rotated: settings.rotate90(), webcam_unrotated: !settings.rotate90() }">
+        <div data-bind="css: webcamClass">
             <div class="rotation_target">
                 <div data-bind="css: { flipH: settings.flipH(), flipV: settings.flipV() }">
                     <video id="webcam_webrtc" muted autoplay playsinline style="width: 100%" data-bind="visible: webcamWebRTCEnabled()"></video>

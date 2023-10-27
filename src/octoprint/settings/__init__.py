@@ -41,6 +41,7 @@ from octoprint.util import (
     fast_deepcopy,
     generate_api_key,
     is_hidden_path,
+    time_this,
     yaml,
 )
 
@@ -239,6 +240,40 @@ class HierarchicalChainMap:
 
     def __init__(self, *maps):
         self._chainmap = ChainMap(*map(self._flatten, maps))
+        self._prefixed_keys = {}
+
+    def _has_prefix(self, prefix, current=None):
+        if current is None:
+            current = self._chainmap
+        return any(map(lambda x: x in current, self._cached_prefixed_keys(prefix)))
+
+    def _with_prefix(self, prefix, current=None):
+        if current is None:
+            current = self._chainmap
+        return {k: current[k] for k in self._cached_prefixed_keys(prefix) if k in current}
+
+    def _cached_prefixed_keys(self, prefix):
+        if prefix not in self._prefixed_keys:
+            keys = [k for k in self._chainmap.keys() if k.startswith(prefix)]
+            if keys:
+                self._prefixed_keys[prefix] = keys
+        return self._prefixed_keys.get(prefix, [])
+
+    def _invalidate_prefixed_keys(self, prefix):
+        seps = []
+        for i, c in enumerate(prefix):
+            if c == _CHAINMAP_SEP:
+                seps.append(i)
+
+        for sep in reversed(seps):
+            try:
+                del self._prefixed_keys[prefix[: sep + 1]]
+            except KeyError:
+                pass
+
+        to_delete = [key for key in self._prefixed_keys.keys() if key.startswith(prefix)]
+        for prefix in to_delete:
+            del self._prefixed_keys[prefix]
 
     def deep_dict(self):
         return self._unflatten(self._chainmap)
@@ -253,8 +288,13 @@ class HierarchicalChainMap:
 
         key = self._path_to_key(path)
         prefix = key + _CHAINMAP_SEP
-        return key in current or any(map(lambda x: x.startswith(prefix), current.keys()))
+        return key in current or self._has_prefix(prefix, current)
 
+    @time_this(
+        logtarget="octoprint.settings.timings.HierarchicalChainMap.get_by_path",
+        message="{func}({func_args}) took {timing:.6f}ms",
+        incl_func_args=True,
+    )
     def get_by_path(self, path, only_local=False, only_defaults=False, merged=False):
         if only_defaults:
             current = self._chainmap.parents
@@ -266,7 +306,7 @@ class HierarchicalChainMap:
         key = self._path_to_key(path)
         prefix = key + _CHAINMAP_SEP
 
-        if key in current and not any(k.startswith(prefix) for k in current.keys()):
+        if key in current and not self._has_prefix(prefix, current):
             # found it, return
             return current[key]
 
@@ -278,13 +318,11 @@ class HierarchicalChainMap:
             # full contents of the key. Instead, we only include the contents of the key
             # on the first level where we find the value.
             for layer in current.maps:
-                if any(k.startswith(prefix) for k in layer):
+                if self._has_prefix(prefix, layer):
                     current = layer
                     break
 
-        result = self._unflatten(
-            {k: v for k, v in current.items() if k.startswith(prefix)}, prefix=prefix
-        )
+        result = self._unflatten(self._with_prefix(prefix, current), prefix=prefix)
         if not result:
             raise KeyError("Could not find entry for " + str(path))
         return result
@@ -292,16 +330,21 @@ class HierarchicalChainMap:
     def set_by_path(self, path, value):
         current = self._chainmap.maps[0]  # config only
         key = self._path_to_key(path)
-
-        # delete any subkeys
-        self._del_prefix(current, key)
+        prefix = key + _CHAINMAP_SEP
 
         if isinstance(value, dict):
             current.update(self._flatten(value, key))
+            self._invalidate_prefixed_keys(prefix)
+
         else:
+            # path might have had subkeys before, clean them up
+            self._del_prefix(current, prefix)
+
             # make sure to clear anything below the path (e.g. switching from dict
             # to something else, for whatever reason)
             self._clean_upward_path(current, path)
+
+            # finally set the new value
             current[key] = value
 
     def del_by_path(self, path):
@@ -309,15 +352,16 @@ class HierarchicalChainMap:
             raise ValueError("Invalid path")
 
         current = self._chainmap.maps[0]  # config only
-        delete_key = self._path_to_key(path)
+        key = self._path_to_key(path)
+        prefix = key + _CHAINMAP_SEP
         deleted = False
 
         # delete any subkeys
-        deleted = self._del_prefix(current, delete_key)
+        deleted = self._del_prefix(current, prefix)
 
         # delete the key itself if it's there
         try:
-            del current[delete_key]
+            del current[key]
             deleted = True
         except KeyError:
             pass
@@ -328,12 +372,13 @@ class HierarchicalChainMap:
         # clean anything that's now empty and above our path
         self._clean_upward_path(current, path)
 
-    def _del_prefix(self, current, key):
-        prefix = key + _CHAINMAP_SEP
-
-        to_delete = [k for k in current if k.startswith(prefix)]
+    def _del_prefix(self, current, prefix):
+        to_delete = self._with_prefix(prefix, current).keys()
         for k in to_delete:
             del current[k]
+
+        if len(to_delete) > 0:
+            self._invalidate_prefixed_keys(prefix)
 
         return len(to_delete) > 0
 
@@ -346,7 +391,7 @@ class HierarchicalChainMap:
 
             key = self._path_to_key(working_path)
             prefix = key + _CHAINMAP_SEP
-            if any(map(lambda k: k.startswith(prefix), current)):
+            if self._has_prefix(prefix, current):
                 # there's at least one subkey here, we're done
                 break
 
@@ -397,9 +442,15 @@ class HierarchicalChainMap:
         return self._unflatten(self._chainmap.maps[-1])
 
     def insert_map(self, pos, d):
-        self._chainmap.maps.insert(pos, self._flatten(d))
+        flattened = self._flatten(d)
+        for k in flattened:
+            self._invalidate_prefixed_keys(k + _CHAINMAP_SEP)
+        self._chainmap.maps.insert(pos, flattened)
 
     def delete_map(self, pos):
+        flattened = self._chainmap.maps[pos]
+        for k in flattened:
+            self._invalidate_prefixed_keys(k + _CHAINMAP_SEP)
         del self._chainmap.maps[pos]
 
     @property
@@ -493,6 +544,8 @@ class Settings:
         self._set_preprocessors = {}
         self._path_update_callbacks = defaultdict(list)
         self._deprecated_paths = defaultdict(dict)
+
+        self.flagged_basefolders = {}
 
         self._init_basedir(basedir)
 
@@ -1653,7 +1706,8 @@ class Settings:
                     if default_value is not None:
                         value = dict_merge(default_value, value)
                 except KeyError:
-                    raise NoSuchSettingsPath()
+                    # no default value, so nothing to merge
+                    pass
 
             if callable(preprocessor):
                 value = preprocessor(value)
@@ -1805,7 +1859,7 @@ class Settings:
                 check_writable=check_writable,
                 deep_check_writable=deep_check_writable,
             )
-        except Exception:
+        except Exception as exc:
             if folder != default_folder and allow_fallback:
                 self._logger.exception(
                     "Invalid configured {} folder at {}, attempting to "
@@ -1820,6 +1874,7 @@ class Settings:
                     deep_check_writable=deep_check_writable,
                 )
                 folder = default_folder
+                self.flagged_basefolders[type] = str(exc)
 
                 try:
                     self.remove(["folder", type])

@@ -9,6 +9,7 @@ import hashlib
 import logging
 import logging.handlers
 import os
+import sys
 import threading
 import time
 from concurrent import futures
@@ -491,9 +492,8 @@ class SoftwareUpdatePlugin(
                     )
                     return
 
-                from octoprint._version import get_versions
+                from octoprint import __version__ as octoprint_version
 
-                octoprint_version = get_versions()["version"]
                 if data_version != octoprint_version:
                     self._logger.info(
                         "Version cache was created for another version of OctoPrint, not using it"
@@ -508,10 +508,9 @@ class SoftwareUpdatePlugin(
                 self._logger.exception("Error parsing in version cache data")
 
     def _save_version_cache(self):
-        from octoprint._version import get_versions
+        from octoprint import __version__ as octoprint_version
         from octoprint.util import atomic_write
 
-        octoprint_version = get_versions()["version"]
         self._version_cache["__version"] = octoprint_version
 
         with atomic_write(
@@ -1913,6 +1912,14 @@ class SoftwareUpdatePlugin(
             except Exception:
                 self._logger.exception(f"Error while checking if {target} can be updated")
                 update_possible = False
+                error = "update"
+
+        if target == "octoprint" and sys.platform == "win32":
+            self._logger.info(
+                "OctoPrint is running on Windows, it cannot be updated through itself due to Windows' file locking behavior. Please update manually."
+            )
+            update_possible = False
+            error = "windows"
 
         self._version_cache[target] = {
             "timestamp": time.time(),

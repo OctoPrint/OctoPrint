@@ -51,10 +51,26 @@ $(function () {
             );
         });
         self.showKeycontrols = ko.pureComputed(function () {
-            return self.keycontrolActive() && self.keycontrolPossible();
+            return self.keycontrolPossible();
         });
 
         self._visibleWebcam = undefined;
+
+        self._dispatchWebcamRefresh = function (target) {
+            log.debug(`Webcam refresh triggered for #${target.id}`);
+            var vm = ko.dataFor(target.children[0]);
+            if (vm === self) {
+                log.debug(`VM for webcam #${target.id} is not bound, skipping refresh`);
+            } else if (vm === undefined) {
+                log.debug(`VM for webcam #${target.id} not found, skipping refresh`);
+            } else if (typeof vm.onWebcamRefresh === "function") {
+                vm.onWebcamRefresh();
+            } else {
+                log.debug(
+                    `VM for webcam #${target.id} does not declare 'onWebcamRefresh()', skipping refresh (vm=${vm.constructor.name})`
+                );
+            }
+        };
 
         self._dispatchWebcamVisibilityChange = function (target, visible) {
             log.debug(`Webcam visibility of #${target.id} changed to ${visible}`);
@@ -144,10 +160,16 @@ $(function () {
         };
 
         self.onBrowserTabVisibilityChange = function (tabVisible) {
-            // We also observe the the browser tab. If any webcam is currently visible, we will update
+            // We also observe the browser tab. If any webcam is currently visible, we will update
             // it with the tab status as well.
             if (self._visibleWebcam !== undefined) {
                 self._dispatchWebcamVisibilityChange(self._visibleWebcam, tabVisible);
+            }
+        };
+
+        self.refreshWebcam = function () {
+            if (self._visibleWebcam !== undefined) {
+                self._dispatchWebcamRefresh(self._visibleWebcam);
             }
         };
 

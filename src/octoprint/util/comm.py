@@ -36,6 +36,7 @@ from octoprint.util import (
     TypeAlreadyInQueue,
     TypedQueue,
     chunks,
+    dict_merge,
     filter_non_ascii,
     filter_non_utf8,
     get_bom,
@@ -90,7 +91,7 @@ regex_minMaxError = re.compile(r"Error:[0-9]\n")
 """Regex matching first line of min/max errors from the firmware."""
 
 regex_marlinKillError = re.compile(
-    r"Heating failed|Thermal Runaway|MAXTEMP triggered|MINTEMP triggered|Invalid extruder number|Watchdog barked|KILL caused"
+    r"Heating failed|Thermal Runaway|Thermal Malfunction|MAXTEMP triggered|MINTEMP triggered|Invalid extruder number|Watchdog barked|KILL caused"
 )
 """Regex matching first line of kill causing errors from Marlin."""
 
@@ -1380,7 +1381,7 @@ class MachineCom:
 
                 if len(retval) == 3:
                     variables = retval[2]
-                    context.update({"plugins": {name: variables}})
+                    context = dict_merge(context, {"plugins": {name: variables}})
 
         template = settings().loadScript("gcode", scriptName, context=context)
         if template is None:
@@ -2652,6 +2653,18 @@ class MachineCom:
                                 extra={"plugin": name},
                             )
 
+                    # log firmware capabilities
+                    capability_list = "\n  ".join(
+                        [
+                            f"{capability}: {'supported' if enabled else 'not supported'}"
+                            for capability, enabled in self._firmware_capabilities.items()
+                        ]
+                    )
+                    self._logger.info(
+                        "Firmware sent the following capability report:\n  "
+                        + capability_list
+                    )
+
                 ##~~ position report processing
                 if "X:" in line and "Y:" in line and "Z:" in line:
                     parsed = parse_position_line(line)
@@ -2861,6 +2874,7 @@ class MachineCom:
                         self._logger.info(
                             f'Printer reports firmware name "{firmware_name}"'
                         )
+                        self._logger.info(f"Firmware info line: {line}")
 
                         if self._firmware_detection:
                             if (

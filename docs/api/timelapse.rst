@@ -220,7 +220,7 @@ Timelapse configuration
    * - ``save``
      - 1
      - bool
-     - Optional flag to be included when when saving a configuration to make the configuration persist across restarts
+     - Optional flag to be included when saving a configuration to make the configuration persist across restarts
 
 Further fields are timelapse type specific, see below for details.
 

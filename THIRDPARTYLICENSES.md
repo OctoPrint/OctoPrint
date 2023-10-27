@@ -55,7 +55,7 @@
   * [futures](https://github.com/agronholm/pythonfutures): Python
   * [monotonic](https://github.com/atdt/monotonic): Apache License 2.0
   * [netaddr](https://github.com/drkjam/netaddr/): BSD
-  * [netifaces](https://bitbucket.org/al45tair/netifaces): MIT
+  * [netifaces2](https://github.com/SamuelYvon/netifaces-2): MIT
   * [pathvalidate](https://pathvalidate.readthedocs.io/en/latest/index.html): MIT
   * [pkginfo](http://pypi.python.org/pypi/pkginfo/): Python
   * [psutil](https://github.com/giampaolo/psutil): BSD

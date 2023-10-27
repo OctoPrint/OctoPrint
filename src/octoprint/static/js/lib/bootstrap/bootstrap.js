@@ -686,7 +686,7 @@
 
       if (!isActive) {
         if ('ontouchstart' in document.documentElement) {
-          // if mobile we we use a backdrop because click events don't delegate
+          // if mobile we use a backdrop because click events don't delegate
 
           // PATCH by foosel based on CapnBry's suggestion - see OctoPrint/OctoPrint#2059 for details
           //$('<div class="dropdown-backdrop"/>').insertBefore($(this)).on('click', clearMenus)

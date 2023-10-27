@@ -3228,7 +3228,7 @@
                 }
             }
             if (result !== null && result !== undefined) {
-                // Results that that are not nodes are cast as Anonymous nodes
+                // Results that are not nodes are cast as Anonymous nodes
                 // Falsy values or booleans are returned as empty nodes
                 if (!(result instanceof Node)) {
                     if (!result || result === true) {

@@ -50,7 +50,7 @@ jobs:
     name: 🧪 Unit tests
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,7 +73,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: 🏗 Set up test dependencies
         run: |
-          npm -g install node-qunit-puppeteer@2.1.0
+          npm -g install node-qunit-puppeteer@2.1.2
       - name: 🚀 Run helpers.js test suite
         run: |
           node-qunit-puppeteer tests/static/js/test-helpers.html
@@ -84,7 +84,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
         installable: ["wheel", "sdist"]
     runs-on: ubuntu-latest
     steps:
@@ -110,6 +110,9 @@ jobs:
     name: 🧪 E2E tests
     needs: build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.7", "3.12"]
     steps:
       - name: ⬇ Checkout code
         uses: actions/checkout@v4
@@ -120,10 +123,10 @@ jobs:
           name: dist
           path: dist
 
-      - name: 🏗 Set up Python 3.7
+      - name: 🏗 Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: ${{ matrix.python }}
 
       - name: 🏗 Install OctoPrint build
         run: |

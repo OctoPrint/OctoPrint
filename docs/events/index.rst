@@ -32,12 +32,15 @@ Example
        command: python ~/growl.py -t mygrowlserver -d "Lost connection to printer" -a OctoPrint -i http://raspi/Octoprint_logo.png
        type: system
        enabled: false
+       name: Disconnected
      - event: PrintStarted
        command: python ~/growl.py -t mygrowlserver -d "Starting {file}" -a OctoPrint -i http://raspi/Octoprint_logo.png
        type: system
+       name: Print Started
      - event: PrintDone
        command: python ~/growl.py -t mygrowlserver -d "Completed {file}" -a OctoPrint -i http://raspi/Octoprint_logo.png
        type: system
+       name: Print Done
      - event:
        - PrintStarted
        - PrintFailed
@@ -45,12 +48,14 @@ Example
        - PrintCancelled
        command: python ~/growl.py -t mygrowlserver -d "Event {__eventname} ({name})" -a OctoPrint -i http://raspi/Octoprint_logo.png
        type: system
+       name: Multiple Events
      - event: Connected
        command:
        - M115
        - M117 printer connected!
        - G28
        type: gcode
+       name: Connected
 
 .. _sec-events-placeholders:
 
@@ -241,6 +246,7 @@ FileAdded
      * ``name``: the file's name
      * ``type``: the file's type, a list of the path within the type hierarchy, e.g. ``["machinecode", "gcode"]`` or
        ``["model", "stl"]``
+     * ``operation``: the operation that triggered the event, either ``add``, ``copy`` or ``move``.
 
    .. note::
 
@@ -258,6 +264,7 @@ FileRemoved
      * ``name``: the file's name
      * ``type``: the file's type, a list of the path within the type hierarchy, e.g. ``["machinecode", "gcode"]`` or
        ``["model", "stl"]``
+     * ``operation``: the operation that triggered the event, either ``remove`` or ``move``
 
    .. note::
 
@@ -519,6 +526,8 @@ PrintCancelled
      * ``position.f``: last feedrate for move commands **sent through OctoPrint** (note that if you modified the
        feedrate outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will
        NOT be accurate)
+     * ``fileposition``: position in the file in bytes at the time of cancellation
+     * ``progress``: print progress as a percentage at the time of cancellation
 
    .. deprecated:: 1.3.0
 
@@ -550,6 +559,8 @@ PrintPaused
      * ``position.f``: last feedrate for move commands **sent through OctoPrint** (note that if you modified the
        feedrate outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will
        NOT be accurate)
+     * ``fileposition``: position in the file in bytes at the time of pausing
+     * ``progress``: print progress as a percentage at the time of pausing
 
    .. deprecated:: 1.3.0
 

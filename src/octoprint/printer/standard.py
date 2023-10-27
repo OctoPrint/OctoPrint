@@ -1453,6 +1453,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                             payload["time"] = self._comm.getPrintTime()
                             payload["reason"] = "error"
                             payload["error"] = self._comm.getErrorString()
+                            payload["progress"] = self._comm.getPrintProgress()
 
                             def finalize():
                                 self._fileManager.log_print(
@@ -1687,10 +1688,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._setCurrentZ(None)
         self._updateProgressData()
 
+        fileposition = self._comm.getFilePosition() if self._comm else None
+        progress = self._comm.getPrintProgress() if self._comm else None
         payload = self._payload_for_print_job_event(
             position=self._comm.cancel_position.as_dict()
             if self._comm and self._comm.cancel_position
             else None,
+            fileposition=fileposition["pos"] if fileposition else None,
+            progress=progress,
             action_user=user,
         )
         if payload:
@@ -1702,11 +1707,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 {"type": "cancel", "label": "Cancel"},
             )
             self._logger_job.info(
-                "Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(
+                "Print job cancelled - origin: {}, path: {}, owner: {}, user: {}, fileposition: {}, position: {}".format(
                     payload.get("origin"),
                     payload.get("path"),
                     payload.get("owner"),
                     payload.get("user"),
+                    payload.get("fileposition"),
+                    payload.get("position"),
                 )
             )
 
@@ -1736,20 +1743,26 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             thread.start()
 
     def on_comm_print_job_paused(self, suppress_script=False, user=None):
+        fileposition = self._comm.getFilePosition() if self._comm else None
+        progress = self._comm.getPrintProgress() if self._comm else None
         payload = self._payload_for_print_job_event(
             position=self._comm.pause_position.as_dict()
             if self._comm and self._comm.pause_position and not suppress_script
             else None,
+            fileposition=fileposition["pos"] if fileposition else None,
+            progress=progress,
             action_user=user,
         )
         if payload:
             eventManager().fire(Events.PRINT_PAUSED, payload)
             self._logger_job.info(
-                "Print job paused - origin: {}, path: {}, owner: {}, user: {}".format(
+                "Print job paused - origin: {}, path: {}, owner: {}, user: {}, fileposition: {}, position: {}".format(
                     payload.get("origin"),
                     payload.get("path"),
                     payload.get("owner"),
                     payload.get("user"),
+                    payload.get("fileposition"),
+                    payload.get("position"),
                 )
             )
             eventManager().fire(
@@ -1865,6 +1878,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         print_job_size=None,
         print_job_user=None,
         position=None,
+        fileposition=None,
+        progress=None,
         action_user=None,
     ):
         if print_job_file is None:
@@ -1906,6 +1921,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         if position is not None:
             result["position"] = position
+
+        if fileposition is not None:
+            result["fileposition"] = fileposition
+
+        if progress is not None:
+            result["progress"] = int(progress * 100)
 
         if print_job_user is not None:
             result["owner"] = print_job_user

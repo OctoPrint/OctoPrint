@@ -1025,7 +1025,7 @@ octoprint.comm.transport.serial.factory
        detection is to be performed.
    :param int read_timeout: The read timeout to set on the serial port.
    :return: The constructed serial object ready for use, or ``None`` if the handler could not construct the object.
-   :rtype: A serial instance implementing implementing the methods ``readline(...)``, ``write(...)``, ``close()`` and
+   :rtype: A serial instance implementing the methods ``readline(...)``, ``write(...)``, ``close()`` and
        optionally ``baudrate`` and ``timeout`` attributes as described above.
 
 .. _sec-plugins-hook-events-register_custom_events:

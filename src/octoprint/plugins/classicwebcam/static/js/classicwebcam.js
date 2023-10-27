@@ -25,6 +25,14 @@ $(function () {
             }
         });
 
+        self.webcamClass = ko.pureComputed(function () {
+            if (self.settings.rotate90()) {
+                return "webcam_rotated " + self.webcamRatioClass();
+            } else {
+                return "webcam_unrotated " + self.webcamRatioClass();
+            }
+        });
+
         self.onBeforeBinding = function () {
             // Subscribe to rotation event to ensure we update calculations.
             // We need to wait for the CSS to be updated by KO, thus we use a timeout to
@@ -62,6 +70,19 @@ $(function () {
             } else {
                 self._disableWebcam();
             }
+        };
+
+        self.onWebcamRefresh = function () {
+            var streamType = self.webcamStreamType();
+            if (streamType == "mjpg") {
+                if (OctoPrint.coreui.browser.safari) {
+                    // safari bug doesn't release the mjpeg stream, so no reload
+                    return;
+                }
+                $("#webcam_image").attr("src", "");
+                self._switchToMjpgWebcam();
+                log.info("Triggered refresh of mjpg webcam stream");
+            } // no other stream types support refresh yet
         };
 
         self.onEventSettingsUpdated = function (payload) {
@@ -289,11 +310,10 @@ $(function () {
             // accommodate the rotation). The target is centered in the container and
             // rotated around its center, so after we manually resized the container
             // everything will layout nicely.
-            if (rotationContainer && player.videoWidth && player.videoHeight) {
-                // Calculate the height the video will have in the UI, based on the
-                // video width and the aspect ratio.
-                var aspectRatio = player.videoWidth / player.videoHeight;
-                var height = aspectRatio * rotationContainer.offsetWidth;
+            if (rotationContainer) {
+                // we'll go with an aspect ration of 1:1 for rotated videos, same as
+                // for mjpg streams
+                var height = rotationContainer.offsetWidth;
 
                 // Enforce the height on the rotation container and the rotation target.
                 // Width of the container will be 100%, height will be calculated

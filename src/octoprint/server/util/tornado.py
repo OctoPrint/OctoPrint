@@ -1379,6 +1379,106 @@ class StaticDataHandler(
         self.finish()
 
 
+class GeneratingDataHandler(
+    RequestlessExceptionLoggingMixin, CorsSupportMixin, tornado.web.RequestHandler
+):
+    """
+    A `RequestHandler` that generates data from a generator function and returns it to the client.
+
+    Arguments:
+        generator (function): A generator function that returns the data to be written to the client. The function
+            will be called without any parameters.
+        content_type (str): The content type with which to respond. Defaults to `text/plain`
+        as_attachment (bool | str): Whether to serve files with `Content-Disposition: attachment` header (`True`)
+            or not. Defaults to `False`. If a string is given it will be used as the filename of the attachment.
+        access_validation (function): Callback to call in the `get` method to validate access to the resource. Will
+            be called with `self.request` as parameter which contains the full tornado request object. Should raise
+            a `tornado.web.HTTPError` if access is not allowed in which case the request will not be further processed.
+            Defaults to `None` and hence no access validation being performed.
+    """
+
+    def initialize(
+        self,
+        generator=None,
+        content_type="text/plain",
+        as_attachment=False,
+        access_validation=None,
+    ):
+        super().initialize()
+        self._generator = generator
+        self._content_type = content_type
+        self._as_attachment = as_attachment
+        self._access_validation = access_validation
+
+    @tornado.gen.coroutine
+    def get(self, *args, **kwargs):
+        if self._access_validation is not None:
+            self._access_validation(self.request)
+
+        self.set_status(200)
+        self.set_header("Content-Type", self._content_type)
+        self.set_content_disposition()
+        for data in self._generator():
+            self.write(data)
+            yield self.flush()
+        self.finish()
+
+    def set_content_disposition(self):
+        if self._as_attachment:
+            if isinstance(self._as_attachment, str):
+                self.set_header(
+                    "Content-Disposition", f"attachment; filename={self._as_attachment}"
+                )
+            else:
+                self.set_header("Content-Disposition", "attachment")
+
+
+class WebcamSnapshotHandler(GeneratingDataHandler):
+    """
+    `GeneratingDataHandler` that returns a snapshot from the configured webcam.
+
+    Arguments:
+        as_attachment (bool | str): Whether to serve files with `Content-Disposition: attachment` header (`True`)
+            or not. Defaults to `False`. If a string is given it will be used as the filename of the attachment.
+        access_validation (function): Callback to call in the `get` method to validate access to the resource. Will
+            be called with `self.request` as parameter which contains the full tornado request object. Should raise
+            a `tornado.web.HTTPError` if access is not allowed in which case the request will not be further processed.
+            Defaults to `None` and hence no access validation being performed.
+    """
+
+    def initialize(self, as_attachment=False, access_validation=None):
+        super().initialize(
+            content_type="image/jpeg",
+            as_attachment=as_attachment,
+            access_validation=access_validation,
+        )
+
+    @tornado.gen.coroutine
+    def get(self, *args, **kwargs):
+        if self._access_validation is not None:
+            self._access_validation(self.request)
+
+        import functools
+
+        from octoprint.webcams import get_snapshot_webcam
+
+        webcam = get_snapshot_webcam()
+        if not webcam:
+            raise tornado.web.HTTPError(404)
+
+        generator = functools.partial(
+            webcam.providerPlugin.take_webcam_snapshot, webcam.config.name
+        )
+
+        self.set_status(200)
+        self.set_header("Content-Type", self._content_type)
+        self.set_content_disposition()
+        for data in generator():
+            self.write(data)
+            yield self.flush()
+        self.finish()
+
+
 class DeprecatedEndpointHandler(CorsSupportMixin, tornado.web.RequestHandler):
     """
     `tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that redirects

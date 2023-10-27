@@ -115,7 +115,10 @@ def parse_plugin_metadata(path):
             for a in reversed(assignments):
                 targets = extract_target_ids(a)
                 if key in targets:
-                    if isinstance(a.value, ast.Str):
+                    if isinstance(a.value, ast.Constant):
+                        result[key] = a.value.value
+
+                    elif isinstance(a.value, ast.Str):
                         result[key] = a.value.s
 
                     elif (

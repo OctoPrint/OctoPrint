@@ -72,4 +72,4 @@ Those usually have one of the following prefixes:
 There are also a few older development branches that are slowly being migrated or deleted.
 
 All these branches and branch patterns are set up to automatically get a correct :ref:`version number <sec-development-versions>`
-generated through versioneer and thus should also be adhered to during development.
+generated through a custom versioning tool and thus should also be adhered to during development.

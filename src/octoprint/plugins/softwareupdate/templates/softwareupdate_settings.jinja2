@@ -46,7 +46,7 @@
     </ul>
 {% trans %}
     <p>
-        Please take a look at <a href="https://faq.octoprint.org/insuffienct-disk-space" target="_blank">this FAQ entry on how to proceed</a>.
+        Please take a look at <a href="https://faq.octoprint.org/insufficient-disk-space" target="_blank">this FAQ entry on how to proceed</a>.
     </p>
 {% endtrans %}</div>
 <div class="alert" data-bind="visible: throttled()">{% trans %}
@@ -115,7 +115,7 @@
                             <span class="line">{{ _('Installed:') }} <span data-bind="text: information.local.name"></span></span>
                             <span class="line">{{ _('Available:') }} <span data-bind="text: information.remote.name"></span></span>
                             <span class="line" data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank" rel="noreferrer noopener"></a></span>
-                            <span class="line text-error" data-bind="visible: error, text: $root.errorTextForEntry($data)"></span>
+                            <span class="line text-error" data-bind="visible: error, html: $root.errorTextForEntry($data)"></span>
                         </small>
                         <small data-bind="visible: !compatible">
                             <span class="line text-error">{{ _('Newer versions of this plugin are not compatible to this setup.') }}</span>
