@@ -35,7 +35,7 @@ bundled_plugins = [
     "OctoPrint-PiSupport>=2023.5.24",
 ]
 core_deps = [
-    "argon2_cffi>=21.3.0,<22",
+    "argon2-cffi>=21.3.0",
     "Babel>=2.12.1,<2.13",  # breaking changes can happen on minor version increases
     "cachelib>=0.10.2,<0.11",
     "Click>=8.1.3,<9",
