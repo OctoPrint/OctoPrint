@@ -6138,7 +6138,7 @@ def apply_temperature_offsets(line, offsets, current_tool=None):
         return line
 
     groups = match.groupdict()
-    if "temperature" not in groups or groups["temperature"] is None:
+    if "temperature" not in groups or not groups["temperature"]:
         return line
 
     offset = 0
