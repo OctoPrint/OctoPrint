@@ -6135,13 +6135,11 @@ def apply_temperature_offsets(line, offsets, current_tool=None):
         return line
 
     groups = match.groupdict()
-    if "temperature" not in groups or groups["temperature"] is None:
+    if not groups.get("temperature"):
         return line
 
     offset = 0
-    if current_tool is not None and (
-        groups["command"] == "104" or groups["command"] == "109"
-    ):
+    if current_tool is not None and groups["command"] in ("104", "109"):
         # extruder temperature, determine which one and retrieve corresponding offset
         tool_num = current_tool
         if "tool" in groups and groups["tool"] is not None:
@@ -6150,14 +6148,21 @@ def apply_temperature_offsets(line, offsets, current_tool=None):
         tool_key = "tool%d" % tool_num
         offset = offsets[tool_key] if tool_key in offsets and offsets[tool_key] else 0
 
-    elif groups["command"] == "140" or groups["command"] == "190":
+    elif groups["command"] in ("140", "190"):
         # bed temperature
         offset = offsets["bed"] if "bed" in offsets else 0
 
     if offset == 0:
         return line
 
-    temperature = float(groups["temperature"])
+    try:
+        temperature = float(groups["temperature"])
+    except ValueError:
+        _logger.warning(
+            f"Could not parse target temperature, ignoring line for offset application: {line}"
+        )
+        return line
+
     if temperature == 0:
         return line
 
