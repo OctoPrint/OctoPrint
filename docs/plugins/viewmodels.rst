@@ -122,7 +122,7 @@ gcodeViewModel
    View model for the gcode viewer tab.
 gcodeFilesViewModel
    Deprecated in favor of ``filesViewModel``.
-logViewModel
+logsViewModel
    View model for the logfile settings dialog.
 loginStateViewModel
    View model for the current login state of the user, very interesting for plugins that need to
