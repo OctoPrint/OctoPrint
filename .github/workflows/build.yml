@@ -195,8 +195,8 @@ jobs:
           name: octoprint-logs
           path: ${{ github.workspace }}/e2econfig/logs
 
-  publish-on-testpypi:
-    name: 📦 Publish on TestPyPI
+  publish-on-release:
+    name: 📦 Publish on GitHub release
     if: github.event_name == 'release' && github.repository == 'OctoPrint/OctoPrint'
     needs:
       - pre-commit
@@ -211,12 +211,39 @@ jobs:
         with:
           name: dist
           path: dist
-      - name: 📦 Publish to index
+
+      - name: ⬆ Upload to release
+        run: |
+          UPLOAD_URL="https://uploads.github.com/repos/${{ github.repository }}/releases/${{ github.event.release.id }}/assets"
+          for file in dist/*; do
+            [ -e "$file" ] || exit 1
+            echo "Uploading $file..."
+            response=$(curl -s -XPOST \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Content-Type: $(file -b --mime-type $file)" \
+              --data-binary @$file \
+              "$UPLOAD_URL?name=$(basename $file)")
+            echo "$response" | jq -e '.errors' >/dev/null && echo "Error uploading $file to release: $response" && exit 1 || true
+          done
+
+  publish-on-testpypi:
+    name: 📦 Publish on TestPyPI
+    if: github.event_name == 'release' && github.repository == 'OctoPrint/OctoPrint'
+    needs:
+      - publish-on-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇ Download build result
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist
+      - name: ⬆ Upload to index
         uses: pypa/gh-action-pypi-publish@release/v1
         continue-on-error: true
         with:
           password: ${{ secrets.testpypi_password }}
-          repository_url: https://test.pypi.org/legacy/
+          repository-url: https://test.pypi.org/legacy/
 
   publish-on-pypi:
     name: 📦 Publish tagged releases to PyPI
@@ -229,7 +256,7 @@ jobs:
         with:
           name: dist
           path: dist
-      - name: 📦 Publish to index
+      - name: ⬆ Publish to index
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.pypi_password }}
