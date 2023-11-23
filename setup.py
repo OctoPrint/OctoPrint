@@ -106,7 +106,7 @@ EXTRA_REQUIRES = {
         "pyinstrument",
     ],
     # Dependencies for developing OctoPrint plugins
-    "plugins": ["cookiecutter>=2.1.1,<3"],
+    "plugins": ["cookiecutter>=2.1.1,<3"],  # update plugin tutorial when updating this
     # Dependencies for building the documentation
     "docs": [
         "sphinx",
