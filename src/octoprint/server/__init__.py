@@ -677,7 +677,10 @@ class Server:
 
         ## Tornado initialization starts here
 
-        ioloop = IOLoop.current()
+        ioloop = (
+            IOLoop()
+        )  # TODO: This way to create the ioloop is deprecated and logs a warning
+        ioloop.install()
 
         enable_cors = settings().getBoolean(["api", "allowCrossOrigin"])
 
@@ -1017,18 +1020,13 @@ class Server:
 
         removed_headers = ["Server"]
 
-        from concurrent.futures import ThreadPoolExecutor
-
         server_routes.append(
             (
                 r".*",
                 util.tornado.UploadStorageFallbackHandler,
                 {
                     "fallback": util.tornado.WsgiInputContainer(
-                        app.wsgi_app,
-                        executor=ThreadPoolExecutor(),
-                        headers=headers,
-                        removed_headers=removed_headers,
+                        app.wsgi_app, headers=headers, removed_headers=removed_headers
                     ),
                     "file_prefix": "octoprint-file-upload-",
                     "file_suffix": ".tmp",
