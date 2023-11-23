@@ -20,6 +20,8 @@ import tornado.iostream
 import tornado.tcpserver
 import tornado.util
 import tornado.web
+from tornado.concurrent import dummy_executor
+from tornado.ioloop import IOLoop
 from zipstream.ng import ZIP_DEFLATED, ZipStream
 
 import octoprint.util
@@ -562,7 +564,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
                 self._new_body += value + b"\r\n"
         self._new_body += b"--%s--\r\n" % self._multipart_boundary
 
-    def _handle_method(self, *args, **kwargs):
+    async def _handle_method(self, *args, **kwargs):
         """
         Takes care of defining the new request body if necessary and forwarding
         the current request and changed body to the ``fallback``.
@@ -582,17 +584,24 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             # directly use data from buffer
             body = self._buffer
 
-        # rewrite content length
         self.request.headers["Content-Length"] = len(body)
 
         try:
             # call the configured fallback with request and body to use
-            self._fallback(self.request, body)
-            self._headers_written = True
+            result = self._fallback(self.request, body)
+            if result is not None:
+                await result
+            # self._headers_written = True
         finally:
             # make sure the temporary files are removed again
-            for f in self._files:
-                octoprint.util.silent_remove(f)
+            self._cleanup_files()
+
+    def _cleanup_files(self):
+        """
+        Removes all temporary files created by this handler.
+        """
+        for f in self._files:
+            octoprint.util.silent_remove(f)
 
     # make all http methods trigger _handle_method
     get = _handle_method
@@ -663,12 +672,21 @@ class WsgiInputContainer:
 
     The implementation logic is basically the same as ``tornado.wsgi.WSGIContainer`` but the ``__call__`` and ``environ``
     methods have been adjusted to allow for an optionally supplied ``body`` argument which is then used for ``wsgi.input``.
+
+    Additionally, some headers can be added or removed from the response by supplying ``forced_headers`` and
+    ``removed_headers`` arguments. ``forced_headers`` will be added to the response, ``removed_headers`` will be removed.
     """
 
     def __init__(
-        self, wsgi_application, headers=None, forced_headers=None, removed_headers=None
+        self,
+        wsgi_application,
+        executor=None,
+        headers=None,
+        forced_headers=None,
+        removed_headers=None,
     ):
         self.wsgi_application = wsgi_application
+        self.executor = dummy_executor if executor is None else executor
 
         if headers is None:
             headers = {}
@@ -682,11 +700,19 @@ class WsgiInputContainer:
         self.removed_headers = removed_headers
 
     def __call__(self, request, body=None):
+        future = tornado.concurrent.Future()
+        IOLoop.current().spawn_callback(
+            self.handle_request, request, body=body, future=future
+        )
+        return future
+
+    async def handle_request(self, request, body=None, future=None):
         """
         Wraps the call against the WSGI app, deriving the WSGI environment from the supplied Tornado ``HTTPServerRequest``.
 
         :param request: the ``tornado.httpserver.HTTPServerRequest`` to derive the WSGI environment from
         :param body: an optional body  to use as ``wsgi.input`` instead of ``request.body``, can be a string or a stream
+        :param future: a future to complete after the request has been handled
         """
 
         data = {}
@@ -697,48 +723,72 @@ class WsgiInputContainer:
             data["headers"] = response_headers
             return response.append
 
-        app_response = self.wsgi_application(
-            WsgiInputContainer.environ(request, body), start_response
-        )
         try:
-            response.extend(app_response)
+            loop = IOLoop.current()
+            app_response = await loop.run_in_executor(
+                self.executor,
+                self.wsgi_application,
+                self.environ(request, body),
+                start_response,
+            )
+            try:
+                app_response_iter = iter(app_response)
+
+                def next_chunk():
+                    try:
+                        return next(app_response_iter)
+                    except StopIteration:
+                        return None
+
+                while True:
+                    chunk = await loop.run_in_executor(self.executor, next_chunk)
+                    if chunk is None:
+                        break
+                    response.append(chunk)
+            finally:
+                if hasattr(app_response, "close"):
+                    app_response.close()
             body = b"".join(response)
-        finally:
-            if hasattr(app_response, "close"):
-                app_response.close()
-        if not data:
-            raise Exception("WSGI app did not call start_response")
+            if not data:
+                raise Exception("WSGI app did not call start_response")
 
-        status_code, reason = data["status"].split(" ", 1)
-        status_code = int(status_code)
-        headers = data["headers"]
-        header_set = {k.lower() for (k, v) in headers}
-        body = tornado.escape.utf8(body)
-        if status_code != 304:
-            if "content-length" not in header_set:
-                headers.append(("Content-Length", str(len(body))))
-            if "content-type" not in header_set:
-                headers.append(("Content-Type", "text/html; charset=UTF-8"))
+            status_code_str, reason = data["status"].split(" ", 1)
+            status_code = int(status_code_str)
+            headers = data["headers"]
+            header_set = {k.lower() for (k, v) in headers}
+            body = tornado.escape.utf8(body)
+            if status_code != 304:
+                if "content-length" not in header_set:
+                    headers.append(("Content-Length", str(len(body))))
+                if "content-type" not in header_set:
+                    headers.append(("Content-Type", "text/html; charset=UTF-8"))
 
-        header_set = {k.lower() for (k, v) in headers}
-        for header, value in self.headers.items():
-            if header.lower() not in header_set:
+            header_set = {k.lower() for (k, v) in headers}
+            for header, value in self.headers.items():
+                if header.lower() not in header_set:
+                    headers.append((header, value))
+            for header, value in self.forced_headers.items():
                 headers.append((header, value))
-        for header, value in self.forced_headers.items():
-            headers.append((header, value))
-        headers = [
-            (header, value)
-            for header, value in headers
-            if header.lower() not in self.removed_headers
-        ]
+            headers = [
+                (header, value)
+                for header, value in headers
+                if header.lower() not in self.removed_headers
+            ]
 
-        start_line = tornado.httputil.ResponseStartLine("HTTP/1.1", status_code, reason)
-        header_obj = tornado.httputil.HTTPHeaders()
-        for key, value in headers:
-            header_obj.add(key, value)
-        request.connection.write_headers(start_line, header_obj, chunk=body)
-        request.connection.finish()
-        self._log(status_code, request)
+            start_line = tornado.httputil.ResponseStartLine(
+                "HTTP/1.1", status_code, reason
+            )
+            header_obj = tornado.httputil.HTTPHeaders()
+            for key, value in headers:
+                header_obj.add(key, value)
+            assert request.connection is not None
+            request.connection.write_headers(start_line, header_obj, chunk=body)
+            request.connection.finish()
+            self._log(status_code, request)
+
+        finally:
+            if future is not None:
+                future.set_result(None)
 
     @staticmethod
     def environ(request, body=None):
