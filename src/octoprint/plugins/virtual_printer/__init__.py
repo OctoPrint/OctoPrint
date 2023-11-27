@@ -75,6 +75,12 @@ class VirtualPrinterPlugin(
             "resend_ratio": 0,
             "locked": False,
             "passcode": "1234",
+            "simulated_errors": [
+                "100:resend",
+                "105:resend_with_timeout",
+                "110:missing_lineno",
+                "115:checksum_mismatch",
+            ],
         }
 
     def get_settings_version(self):
