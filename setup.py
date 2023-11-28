@@ -71,7 +71,7 @@ core_deps = [
     "websocket-client>=1.5.1,<2",
     "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
     "wrapt>=1.15,<1.16",
-    "zeroconf==0.39.4",  # final version to include universal wheel, later takes ages to compiles on rpi, piwheels has no wheels for latest either
+    "zeroconf~=0.127",  # breaking changes can happen on minor version increases (despite semantic versioning)
     "zipstream-ng>=1.5.0,<2.0.0",
 ]
 vendored_deps = [
