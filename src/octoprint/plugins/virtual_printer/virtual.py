@@ -200,10 +200,18 @@ class VirtualPrinter:
 
         self._killed = False
 
-        self._triggerResendAt100 = True
-        self._triggerResendWithTimeoutAt105 = True
-        self._triggerResendWithMissingLinenoAt110 = True
-        self._triggerResendWithChecksumMismatchAt115 = True
+        self._simulated_errors = {}
+        for v in self._settings.get(["simulated_errors"]):
+            if ":" not in v:
+                continue
+            try:
+                k, v = v.split(":", 1)
+                k = int(k)
+                self._simulated_errors[k] = v
+            except ValueError:
+                # ignore this, it's not a valid entry
+                pass
+        self._already_simulated_errors = set()
 
         readThread = threading.Thread(
             target=self._processIncoming,
@@ -281,10 +289,7 @@ class VirtualPrinter:
 
             self._killed = False
 
-            self._triggerResendAt100 = True
-            self._triggerResendWithTimeoutAt105 = True
-            self._triggerResendWithMissingLinenoAt110 = True
-            self._triggerResendWithChecksumMismatchAt115 = True
+            self._already_simulated_errors.clear()
 
             if self._temperature_reporter is not None:
                 self._temperature_reporter.cancel()
@@ -401,50 +406,41 @@ class VirtualPrinter:
                 linenumber = int(re.search(b"N([0-9]+)", data).group(1))
                 self.lastN = linenumber
                 self.current_line = linenumber
-
-                self._triggerResendAt100 = True
-                self._triggerResendWithTimeoutAt105 = True
-
                 self._sendOk()
+                self._already_simulated_errors.clear()
                 continue
+
             elif data.startswith(b"N"):
                 linenumber = int(re.search(b"N([0-9]+)", data).group(1))
                 expected = self.lastN + 1
                 if linenumber != expected:
                     self._triggerResend(actual=linenumber)
                     continue
-                elif linenumber == 100 and self._triggerResendAt100:
-                    # simulate a resend at line 100
-                    self._triggerResendAt100 = False
-                    self._triggerResend(expected=100)
-                    continue
+
                 elif (
-                    linenumber == 105
-                    and self._triggerResendWithTimeoutAt105
-                    and not self._writingToSd
+                    linenumber in self._simulated_errors
+                    and linenumber not in self._already_simulated_errors
                 ):
-                    # simulate a resend with timeout at line 105
-                    self._triggerResendWithTimeoutAt105 = False
-                    self._triggerResend(expected=105)
-                    self._dont_answer = True
-                    self.lastN = linenumber
-                    continue
-                elif (
-                    linenumber == 110
-                    and self._triggerResendWithMissingLinenoAt110
-                    and not self._writingToSd
-                ):
-                    self._triggerResendWithMissingLinenoAt110 = False
-                    self._send(self._error("lineno_missing", self.lastN))
-                    continue
-                elif (
-                    linenumber == 115
-                    and self._triggerResendWithChecksumMismatchAt115
-                    and not self._writingToSd
-                ):
-                    self._triggerResendWithChecksumMismatchAt115 = False
-                    self._triggerResend(checksum=True)
-                    continue
+                    action = self._simulated_errors[linenumber]
+                    if action == "resend":
+                        self._triggerResend(expected=linenumber)
+                        self._already_simulated_errors.add(linenumber)
+                        continue
+                    elif action == "resend_with_timeout" and not self._writingToSd:
+                        self._triggerResend(expected=linenumber)
+                        self._dont_answer = True
+                        self.lastN = linenumber
+                        self._already_simulated_errors.add(linenumber)
+                        continue
+                    elif action == "missing_lineno" and not self._writingToSd:
+                        self._send(self._error("lineno_missing", self.lastN))
+                        self._already_simulated_errors.add(linenumber)
+                        continue
+                    elif action == "checksum_mismatch" and not self._writingToSd:
+                        self._triggerResend(checksum=True)
+                        self._already_simulated_errors.add(linenumber)
+                        continue
+
                 elif len(self._prepared_errors):
                     prepared = self._prepared_errors.pop(0)
                     if callable(prepared):
@@ -453,11 +449,14 @@ class VirtualPrinter:
                     elif isinstance(prepared, str):
                         self._send(prepared)
                         continue
+
                 elif self._rerequest_last:
                     self._triggerResend(actual=linenumber)
                     continue
+
                 else:
                     self.lastN = linenumber
+
                 data = data.split(None, 1)[1].strip()
 
             data += b"\n"

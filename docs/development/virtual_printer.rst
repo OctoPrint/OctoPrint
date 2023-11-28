@@ -210,8 +210,8 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
          EXTENDED_M20: false
          LFN_WRITE: false
 
-      # Whether to include area report in the M115 output (M115_GEOMETRY_REPORT in Marlin)
-      m115ReportArea: false
+       # Whether to include area report in the M115 output (M115_GEOMETRY_REPORT in Marlin)
+       m115ReportArea: false
 
        # Simulated ambient temperature in °C
        ambientTemperature: 21.3
@@ -240,6 +240,13 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
 
        # Resend ratio to simulate noise on the line
        resend_ratio: 0
+
+       # communication errors to simulate at specific line numbers
+       simulated_errors:
+       - 100:resend  # requests a simple resend at line 100
+       - 105:resend_with_timeout  # requests a resend at line 105 and simulates not responding to it
+       - 110:missing_lineno  # simulates a missing line number at line 110
+       - 115:checksum_mismatch  # simulates a checksum mismatch at line 115
 
 .. _sec-development-virtual-printer-log:
 

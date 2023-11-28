@@ -8,6 +8,6 @@
   "author": "Gina Häußge",
   "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.30.0"
+    "@playwright/test": "^1.40.0"
   }
 }
