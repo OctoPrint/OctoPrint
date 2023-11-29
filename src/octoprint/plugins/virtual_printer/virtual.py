@@ -345,7 +345,14 @@ class VirtualPrinter:
             pass
 
     def _processIncoming(self):
-        next_wait_timeout = time.monotonic() + self._waitInterval
+        next_wait_timeout = 0
+
+        def recalculate_next_wait_timeout():
+            nonlocal next_wait_timeout
+            next_wait_timeout = time.monotonic() + self._waitInterval
+
+        recalculate_next_wait_timeout()
+
         buf = b""
         while self.incoming is not None and not self._killed:
             self._simulateTemps()
@@ -361,7 +368,7 @@ class VirtualPrinter:
             except queue.Empty:
                 if self._sendWait and time.monotonic() > next_wait_timeout:
                     self._send("wait")
-                    next_wait_timeout = time.monotonic() + self._waitInterval
+                    recalculate_next_wait_timeout()
                 continue
             except Exception:
                 if self.incoming is None:
@@ -377,7 +384,7 @@ class VirtualPrinter:
                 else:
                     continue
 
-            next_wait_timeout = time.monotonic() + self._waitInterval
+            recalculate_next_wait_timeout()
 
             if data is None:
                 continue
@@ -527,6 +534,10 @@ class VirtualPrinter:
                             continue
 
                 finally:
+                    # recalculate the timeout again, as we might have just run a long
+                    # running command
+                    recalculate_next_wait_timeout()
+
                     # make sure that the debug sleepAfter and sleepAfterNext stuff works even
                     # if we continued above
                     if len(self._sleepAfter) or len(self._sleepAfterNext):

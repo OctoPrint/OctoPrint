@@ -703,12 +703,13 @@ class DiscoveryPlugin(
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
         sock.bind(("", self.__class__.ssdp_multicast_port))
 
-        sock.setsockopt(
-            socket.IPPROTO_IP,
-            socket.IP_ADD_MEMBERSHIP,
-            socket.inet_aton(self.__class__.ssdp_multicast_addr)
-            + socket.inet_aton("0.0.0.0"),
-        )
+        for address in self.get_interface_addresses():
+            sock.setsockopt(
+                socket.IPPROTO_IP,
+                socket.IP_ADD_MEMBERSHIP,
+                socket.inet_aton(self.__class__.ssdp_multicast_addr)
+                + socket.inet_aton(address),
+            )
 
         self._logger.info(f"Registered {self.get_instance_name()} for SSDP")
 
