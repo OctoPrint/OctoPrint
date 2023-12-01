@@ -365,13 +365,24 @@ $(function () {
 
             var temperature_cutoff = self.temperature_cutoff();
             if (temperature_cutoff !== undefined) {
+                const minTime = clientTime - temperature_cutoff * 60 * 1000;
+
                 var filterOld = function (item) {
-                    return item[0] >= clientTime - temperature_cutoff * 60 * 1000;
+                    return item[0] >= minTime;
                 };
 
                 _.each(_.keys(self.heaterOptions()), function (d) {
+                    const actualLen = result[d].actual.length;
                     result[d].actual = _.filter(result[d].actual, filterOld);
+                    if (actualLen && result[d].actual.length <= actualLen) {
+                        result[d].actual.unshift([minTime, undefined]);
+                    }
+
+                    const targetLen = result[d].target.length;
                     result[d].target = _.filter(result[d].target, filterOld);
+                    if (targetLen && result[d].target.length <= targetLen) {
+                        result[d].target.unshift([minTime, undefined]);
+                    }
                 });
             }
 
@@ -534,17 +545,31 @@ $(function () {
                     min: 0,
                     max: Math.max(Math.max.apply(null, plotInfo.max) * 1.1, 310),
                     ticks: 10,
-                    tickFormatter: function (val, axis) {
+                    tickFormatter: (val, axis) => {
                         if (val === undefined || val === 0) return "";
                         return val + "°C";
                     }
                 },
                 xaxis: {
                     mode: "time",
-                    minTickSize: [2, "minute"],
-                    tickFormatter: function (val, axis) {
-                        if (val === undefined || val === 0) return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
+                    ticks: (axis) => {
+                        if (
+                            axis.max === undefined ||
+                            axis.min === undefined ||
+                            axis.datamax === axis.datamin
+                        )
+                            return [];
 
+                        const tickSize = 5 * 60 * 1000; // 5 minutes
+                        const ticks = [];
+                        let val = axis.max;
+                        while (val > axis.min) {
+                            ticks.push(val);
+                            val -= tickSize;
+                        }
+                        return ticks;
+                    },
+                    tickFormatter: (val, axis) => {
                         // current time in milliseconds in UTC
                         var timestampUtc = Date.now();
 
@@ -553,12 +578,11 @@ $(function () {
 
                         // convert to minutes
                         var diffInMins = Math.round(diff / (60 * 1000));
-                        if (diffInMins === 0) {
-                            // don't write anything for "just now"
-                            return "";
-                        } else if (diffInMins < 0) {
+                        if (diffInMins < 0) {
                             // we can't look into the future
                             return "";
+                        } else if (diffInMins === 0) {
+                            return gettext("now");
                         } else {
                             return "- " + diffInMins + " " + gettext("min");
                         }

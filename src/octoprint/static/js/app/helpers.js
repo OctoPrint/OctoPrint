@@ -655,7 +655,7 @@ function cleanTemperature(temp, offThreshold) {
 }
 
 function formatTemperature(temp, showF, offThreshold, returnUnicode) {
-    if (temp === undefined || !_.isNumber(temp)) return "-";
+    if (temp === undefined || isNaN(temp)) return "-";
     if (offThreshold !== undefined && temp < offThreshold) return gettext("off");
 
     var degreeSymbol = "&deg;";

@@ -18,6 +18,10 @@ $(function () {
 
         self.onBeforeBinding = function () {
             self.snapshotUrl = self.settings.settings.plugins.classicwebcam.snapshot;
+            self.snapshotTimeout =
+                self.settings.settings.plugins.classicwebcam.snapshotTimeout;
+            self.snapshotSslValidation =
+                self.settings.settings.plugins.classicwebcam.snapshotSslValidation;
             self.flipH = self.settings.settings.plugins.classicwebcam.flipH;
             self.flipV = self.settings.settings.plugins.classicwebcam.flipV;
             self.rotate90 = self.settings.settings.plugins.classicwebcam.rotate90;

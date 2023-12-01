@@ -149,7 +149,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 filepos=None,
                 printTime=None,
                 printTimeLeft=None,
-                printTimeOrigin=None,
+                printTimeLeftOrigin=None,
             ),
             current_z=None,
             offsets=self._dict(),

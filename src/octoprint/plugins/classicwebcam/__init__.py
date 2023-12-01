@@ -159,6 +159,19 @@ class ClassicWebcamPlugin(
     def get_settings_version(self):
         return 1
 
+    def on_settings_save(self, data):
+        dirty = False
+        if "streamTimeout" in data:
+            self._settings.set_int(["streamTimeout"], data.pop("streamTimeout"))
+            dirty = True
+        if "snapshotTimeout" in data:
+            self._settings.set_int(["snapshotTimeout"], data.pop("snapshotTimeout"))
+            dirty = True
+        if dirty:
+            self._settings.save()
+
+        return super().on_settings_save(data)
+
     def on_settings_migrate(self, target, current):
         if current is None:
             config = self._settings.global_get(["webcam"])
