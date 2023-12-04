@@ -2,6 +2,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import asyncio
 import logging
 import mimetypes
 import os
@@ -926,8 +927,7 @@ class CustomHTTP1ServerConnection(tornado.http1connection.HTTP1ServerConnection)
     otherwise the same as ``tornado.http1connection.HTTP1ServerConnection``.
     """
 
-    @tornado.gen.coroutine
-    def _server_request_loop(self, delegate):
+    async def _server_request_loop(self, delegate):
         try:
             while True:
                 conn = CustomHTTP1Connection(
@@ -935,10 +935,11 @@ class CustomHTTP1ServerConnection(tornado.http1connection.HTTP1ServerConnection)
                 )
                 request_delegate = delegate.start_request(self, conn)
                 try:
-                    ret = yield conn.read_response(request_delegate)
+                    ret = await conn.read_response(request_delegate)
                 except (
                     tornado.iostream.StreamClosedError,
                     tornado.iostream.UnsatisfiableReadError,
+                    asyncio.CancelledError,
                 ):
                     return
                 except tornado.http1connection._QuietException:
@@ -953,7 +954,7 @@ class CustomHTTP1ServerConnection(tornado.http1connection.HTTP1ServerConnection)
                     return
                 if not ret:
                     return
-                yield tornado.gen.moment
+                await asyncio.sleep(0)
         finally:
             delegate.on_close(self)
 
@@ -977,7 +978,7 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
         self._max_body_sizes = list(
             map(
                 lambda x: (x[0], re.compile(x[1]), x[2]),
-                self.params.max_body_sizes or list(),
+                self.params.max_body_sizes or [],
             )
         )
         self._default_max_body_size = (
