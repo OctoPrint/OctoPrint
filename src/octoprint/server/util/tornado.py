@@ -311,6 +311,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         else:
             self._fallback(self.request, b"")
             self._finished = True
+            self.on_finish()
 
     def data_received(self, chunk):
         """
@@ -591,10 +592,12 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             result = self._fallback(self.request, body)
             if result is not None:
                 await result
-            # self._headers_written = True
         finally:
-            # make sure the temporary files are removed again
-            self._cleanup_files()
+            self._finished = True
+            self.on_finish()
+
+    def on_finish(self):
+        self._cleanup_files()
 
     def _cleanup_files(self):
         """
