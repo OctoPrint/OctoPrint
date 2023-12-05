@@ -337,6 +337,46 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                             ),
                             {error: _.escape(payload.error)}
                         );
+
+                        const modal = $("#firmwareErrorModal");
+                        if (modal.length) {
+                            $("#firmwareErrorModalError", modal).text(payload.error);
+
+                            if (payload.m112) {
+                                $("#firmwareErrorModalDisconnect", modal).hide();
+                                $("#firmwareErrorModalM112", modal).show();
+                            } else {
+                                $("#firmwareErrorModalDisconnect", modal).show();
+                                $("#firmwareErrorModalM112", modal).hide();
+                            }
+
+                            if (payload.faq) {
+                                $("#firmwareErrorModalFaq a", modal).attr(
+                                    "href",
+                                    "https://faq.octoprint.org/" + payload.faq
+                                );
+                                $("#firmwareErrorModalFaq", modal).show();
+                            } else {
+                                $("#firmwareErrorModalFaq", modal).hide();
+                            }
+
+                            const log = $("#firmwareErrorModalLog", modal);
+                            if (payload.log) {
+                                log.empty();
+                                _.each(payload.log, (line) => {
+                                    log.append(
+                                        '<span class="line">' +
+                                            _.escape(line) +
+                                            "\n" +
+                                            "</span>"
+                                    );
+                                });
+                            }
+
+                            modal.modal("show");
+                            log.scrollTop(log.prop("scrollHeight"));
+                        }
+
                         break;
                     }
                     case "resend":

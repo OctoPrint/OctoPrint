@@ -201,6 +201,14 @@ Error
    Payload:
 
      * ``error``: the error string
+     * ``reason``: the reason for the error, one of ``firmware``, ``resend``, ``resend_loop``, ``timeout``,
+       ``connection``, ``start_print``, ``autodetect`` or unset.
+     * ``m112``: whether this error will cause an emergency stop command ``M112`` to be sent to the printer
+
+   In case of errors with reason ``firmware``, the following additional fields might be present in the payload:
+
+     * ``faq``: a link to the FAQ entry for the error
+     * ``log``: the last lines from the communication log
 
 PrinterStateChanged
    The state of the printer changed.
