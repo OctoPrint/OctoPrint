@@ -106,6 +106,14 @@ QUnit.cases(
                 expected: "-"
             },
             {
+                title: "NaNTemperature",
+                input: NaN,
+                showF: undefined,
+                useUnicode: undefined,
+                offThreshold: undefined,
+                expected: "-"
+            },
+            {
                 title: "TemperatureUnderOffThreshold",
                 input: 1.0,
                 showF: undefined,
