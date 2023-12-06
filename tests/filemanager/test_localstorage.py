@@ -715,6 +715,31 @@ class LocalStorageTest(unittest.TestCase):
         self.assertEqual(1, len(stl_metadata["links"]))
 
     @data(
+        ("", ("", "")),
+        ("/", ("", "")),
+        ("some_file.gco", ("", "some_file.gco")),
+        ("/some_file.gco", ("", "some_file.gco")),
+        ("some/folder/and/some file.gco", ("some/folder/and", "some file.gco")),
+        ("/some/folder/and/some file.gco", ("some/folder/and", "some file.gco")),
+    )
+    @unpack
+    def test_split_path(self, input, expected):
+        actual = self.storage.split_path(input)
+        self.assertEqual(expected, actual)
+
+    @data(
+        (("", ""), ""),
+        (("", "some_file.gco"), "some_file.gco"),
+        (("/", "some_file.gco"), "some_file.gco"),
+        (("some/folder/and", "some file.gco"), "some/folder/and/some file.gco"),
+        (("/some/folder/and", "some file.gco"), "some/folder/and/some file.gco"),
+    )
+    @unpack
+    def test_join_path(self, input, expected):
+        actual = self.storage.join_path(*input)
+        self.assertEqual(expected, actual)
+
+    @data(
         ("some_file.gco", "some_file.gco", False),
         ("some file.gco", "some file.gco", False),
         (
