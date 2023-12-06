@@ -4072,17 +4072,52 @@ class MachineCom:
     def _trigger_error(self, text, reason, close=True):
         self._errorValue = text
         self._changeState(self.STATE_ERROR)
-        eventManager().fire(
-            Events.ERROR, {"error": self.getErrorString(), "reason": reason}
+
+        trigger_m112 = (
+            self._send_m112_on_error
+            and not self.isSdPrinting()
+            and reason not in ("connection", "autodetect")
         )
+
+        payload = self._payload_for_error(reason, close and trigger_m112)
+        eventManager().fire(Events.ERROR, payload)
+
         if close:
-            if (
-                self._send_m112_on_error
-                and not self.isSdPrinting()
-                and reason not in ("connection", "autodetect")
-            ):
+            if trigger_m112:
                 self._trigger_emergency_stop(close=False)
             self.close(is_error=True)
+
+    _error_faqs = {
+        "mintemp": ("mintemp",),
+        "maxtemp": ("maxtemp",),
+        "thermal-runaway": ("runaway",),
+        "heating-failed": ("heating failed",),
+        "probing-failed": (
+            "probing failed",
+            "bed leveling",
+            "reference point",
+            "bltouch",
+        ),
+    }
+
+    def _payload_for_error(self, reason, trigger_m112):
+        error = self.getErrorString()
+        payload = {
+            "error": error,
+            "reason": reason,
+            "m112": trigger_m112,
+        }
+
+        if reason == "firmware":
+            payload["log"] = list(self._terminal_log)
+
+            error_lower = error.lower()
+            for faq, triggers in self._error_faqs.items():
+                if any(trigger in error_lower for trigger in triggers):
+                    payload["faq"] = "firmware-" + faq
+                    break
+
+        return payload
 
     def _readline(self):
         if self._serial is None:
