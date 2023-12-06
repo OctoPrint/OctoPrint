@@ -722,14 +722,14 @@ class LocalStorageTest(unittest.TestCase):
             "some_file with (parentheses) and ümläuts and digits 123.gco",
             False,
         ),
-        ("pengüino pequeño.stl", "pengüino pequeño.stl", False),
+        ("there is no b in häußge.gco", "there is no b in häußge.gco", False),
         ("some file.gco", "some_file.gco", True),
         (
             "some_file with (parentheses) and ümläuts and digits 123.gco",
             "some_file_with_(parentheses)_and_umlauts_and_digits_123.gco",
             True,
         ),
-        ("pengüino pequeño.stl", "penguino_pequeno.stl", True),
+        ("there is no b in häußge.gco", "there_is_no_b_in_haussge.gco", True),
     )
     @unpack
     def test_sanitize_name(self, input, expected, really_universal):
