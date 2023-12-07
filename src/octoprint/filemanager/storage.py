@@ -1111,13 +1111,14 @@ class LocalFileStorage(StorageInterface):
     def split_path(self, path):
         path = to_unicode(path)
         split = path.split("/")
+
         if len(split) == 1:
             return "", split[0]
-        else:
-            return self.join_path(*split[:-1]), split[-1]
+
+        return self.path_in_storage(self.join_path(*split[:-1])), split[-1]
 
     def join_path(self, *path):
-        return "/".join(map(to_unicode, path))
+        return self.path_in_storage("/".join(map(to_unicode, path)))
 
     def sanitize(self, path):
         """
@@ -1233,7 +1234,7 @@ class LocalFileStorage(StorageInterface):
             if path.startswith(self.basefolder):
                 path = path[len(self.basefolder) :]
             path = path.replace(os.path.sep, "/")
-        if path.startswith("/"):
+        while path.startswith("/"):
             path = path[1:]
 
         return path

@@ -214,6 +214,7 @@ class FileManagerTest(unittest.TestCase):
         wrapper = object()
 
         self.local_storage.add_file.return_value = ("", "test.gcode")
+        self.local_storage.path_in_storage.return_value = "test.gcode"
         self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
         self.local_storage.split_path.return_value = ("", "test.gcode")
 
@@ -252,6 +253,7 @@ class FileManagerTest(unittest.TestCase):
         wrapper = object()
 
         self.local_storage.add_file.return_value = ("", "test.gcode")
+        self.local_storage.path_in_storage.return_value = "test.gcode"
         self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
         self.local_storage.split_path.return_value = ("", "test.gcode")
 
@@ -276,6 +278,7 @@ class FileManagerTest(unittest.TestCase):
         )
 
     def test_remove_file(self):
+        self.local_storage.path_in_storage.return_value = "test.gcode"
         self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
         self.local_storage.split_path.return_value = ("", "test.gcode")
 
@@ -354,6 +357,7 @@ class FileManagerTest(unittest.TestCase):
         )
 
     def test_remove_folder(self):
+        self.local_storage.path_in_storage.return_value = "test_folder"
         self.local_storage.split_path.return_value = ("", "test_folder")
 
         self.file_manager.remove_folder(
@@ -380,6 +384,7 @@ class FileManagerTest(unittest.TestCase):
         self.fire_event.call_args_list = expected_events
 
     def test_remove_folder_nonrecursive(self):
+        self.local_storage.path_in_storage.return_value = "test_folder"
         self.local_storage.split_path.return_value = ("", "test_folder")
 
         self.file_manager.remove_folder(
@@ -571,7 +576,17 @@ class FileManagerTest(unittest.TestCase):
         )
         self.printer_profile_manager.get.return_value = None
 
-        # mock get_absolute_path method on local storage
+        # mock path_in_storage method on local storage
+        def path_in_storage(path):
+            if isinstance(path, tuple):
+                path = "/".join(path)
+            while path.startswith("/"):
+                path = path[1:]
+            return path
+
+        self.local_storage.path_in_storage.side_effect = path_in_storage
+
+        # mock path_on_disk method on local storage
         def path_on_disk(path):
             if isinstance(path, tuple):
                 import os
