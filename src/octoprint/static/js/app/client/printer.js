@@ -11,6 +11,7 @@
     var bedUrl = url + "/bed";
     var chamberUrl = url + "/chamber";
     var sdUrl = url + "/sd";
+    var errorUrl = url + "/error";
 
     var OctoPrintPrinterClient = function (base) {
         this.base = base;
@@ -126,6 +127,10 @@
 
     OctoPrintPrinterClient.prototype.getSdState = function (opts) {
         return this.base.get(sdUrl, opts);
+    };
+
+    OctoPrintPrinterClient.prototype.getErrorInfo = function (opts) {
+        return this.base.get(errorUrl, opts);
     };
 
     OctoPrintPrinterClient.prototype.jog = function (params, opts) {

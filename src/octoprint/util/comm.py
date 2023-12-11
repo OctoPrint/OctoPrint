@@ -4056,7 +4056,20 @@ class MachineCom:
                         map(lambda x: x in lower_line, self._fatal_errors)
                     ):
                         self._trigger_error(stripped_error, "firmware")
+
                     elif self.isPrinting():
+                        consequence = "cancel"
+                        payload = self._payload_for_error(
+                            "firmware", consequence=consequence, error=stripped_error
+                        )
+                        self._callback.on_comm_error(
+                            stripped_error,
+                            "firmware",
+                            consequence=consequence,
+                            faq=payload.get("faq"),
+                            logs=payload.get("logs"),
+                        )
+
                         self.cancelPrint(firmware_error=stripped_error)
                         self._clear_to_send.set()
 
@@ -4082,7 +4095,21 @@ class MachineCom:
             and reason not in ("connection", "autodetect")
         )
 
-        payload = self._payload_for_error(reason, close and trigger_m112)
+        if close and trigger_m112:
+            consequence = "emergency"
+        elif close:
+            consequence = "disconnect"
+        else:
+            consequence = None
+
+        payload = self._payload_for_error(reason, consequence=consequence)
+        self._callback.on_comm_error(
+            text,
+            reason,
+            consequence=consequence,
+            faq=payload.get("faq"),
+            logs=payload.get("logs"),
+        )
         eventManager().fire(Events.ERROR, payload)
 
         if close:
@@ -4103,16 +4130,17 @@ class MachineCom:
         ),
     }
 
-    def _payload_for_error(self, reason, trigger_m112):
-        error = self.getErrorString()
-        payload = {
-            "error": error,
-            "reason": reason,
-            "m112": trigger_m112,
-        }
+    def _payload_for_error(self, reason, consequence=None, error=None):
+        if error is None:
+            error = self.getErrorString()
+
+        payload = {"error": error, "reason": reason}
+
+        if consequence:
+            payload["consequence"] = consequence
 
         if reason == "firmware":
-            payload["log"] = list(self._terminal_log)
+            payload["logs"] = list(self._terminal_log)
 
             error_lower = error.lower()
             for faq, triggers in self._error_faqs.items():
@@ -5658,6 +5686,9 @@ class MachineComPrintCallback:
         pass
 
     def on_comm_message(self, message):
+        pass
+
+    def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
         pass
 
     def on_comm_progress(self):
