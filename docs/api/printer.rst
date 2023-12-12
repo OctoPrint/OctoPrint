@@ -1054,6 +1054,65 @@ Retrieve the current SD state
    :statuscode 200: No error
    :statuscode 404: If SD support has been disabled in OctoPrint's config.
 
+.. _sec-api-printer-error:
+
+Retrieve information about the last error
+=========================================
+
+.. http:get:: /api/printer/error
+
+   Retrieves information about the last error that occurred on the printer.
+
+   Returns a :http:statuscode:`200` with an :ref:`Error Information <sec-api-printer-datamodel-errorinfo>` in the body
+   upon success.
+
+   Requires the ``STATUS`` permission and ``MONITOR_TERMINAL`` to also get access to the last terminal lines associated with the error.
+
+   **Example**
+
+   Read the last error that occurred on the printer.
+
+   .. sourcecode:: http
+
+      GET /api/printer/error HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "consequence": "emergency",
+        "error": "MINTEMP triggered, OMG, kill() called - Not SD printing",
+        "faq": "firmware-mintemp",
+        "logs": [
+          "Send: N2685 G1 X147.748 Y108.411 E627.83763*85",
+          "Recv: ok",
+          "Send: N2686 G1 X148.522 Y108.286 E627.8963*98",
+          "Recv: ok",
+          "Send: N2687 G1 X148.866 Y108.174 E627.92338*87",
+          "Recv: ok",
+          "Send: N2688 G1 X149.494 Y107.868 E627.97566*91",
+          "Recv: ok",
+          "Send: N2689 G1 X149.731 Y107.779 E627.9946*96",
+          "Recv: ok",
+          "Send: N2690 G1 X149.69 Y108.032 E628.01378*101",
+          "Recv: ok",
+          "Send: N2691 G1 X147.252 Y112.252 E628.3785*107",
+          "Recv: ok",
+          "Send: N2692 G1 X145.082 Y112.253 E628.54089*93",
+          "Recv: ok",
+          "Recv: Error: MINTEMP triggered, kill() called",
+          "Recv: Not SD printing",
+          "Changing monitoring state from \"Printing\" to \"Error\""
+        ],
+        "reason": "firmware"
+      }
+
+   :statuscode 200: No error
+
 .. _sec-api-printer-arbcommand:
 
 Send an arbitrary command to the printer
@@ -1259,3 +1318,42 @@ Custom Controls Response
      - 0..n
      - List of :ref:`custom controls <sec-features-custom_controls>`
      - A list of custom control definitions as defined in ``config.yaml``.
+
+.. _sec-api-printer-datamodel-errorinfo:
+
+Error Information
+-----------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``error``
+     - 1
+     - String
+     - The error message, will be empty if no error information is currently present.
+   * - ``reason``
+     - 1
+     - String
+     - The reason for the error, e.g. ``firmware`` in case of errors triggered by the firmware. Will be empty if no
+       error information is currently present.
+   * - ``consequence``
+     - 0..1
+     - String
+     - The consequence of the error, e.g. ``emergency`` if an emergency stop and disconnect was triggered, ``disconnect``
+       if just a disconnect was triggered, ``cancel`` if the ongoing print job was cancelled. Will be unset if
+       no consequence was triggered or no error information is currently present.
+   * - ``faq``
+     - 0..1
+     - String
+     - An FAQ id for the error, to be added to ``https://faq.octoprint.org/`` for a link to the FAQ entry. Will be unset
+       if no FAQ entry is available for the error or no error information is currently present.
+   * - ``logs``
+     - 0..*
+     - List of String
+     - A list of log lines that might be relevant for the error. Will be unset if no error information is currently
+       present or if the requesting user lacks the ``MONITOR_TERMINAL`` permission.
