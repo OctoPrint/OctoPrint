@@ -62,12 +62,13 @@ class AchievementsPlugin(
             import pytz
 
             timezone = self._settings.get(["timezone"])
-            try:
-                self._tz = pytz.timezone(timezone)
-            except Exception:
-                self._logger.exception(
-                    f"Cannot load timezone {timezone}, falling back to server timezone"
-                )
+            if timezone:
+                try:
+                    self._tz = pytz.timezone(timezone)
+                except Exception:
+                    self._logger.exception(
+                        f"Cannot load timezone {timezone}, falling back to server timezone"
+                    )
         return datetime.datetime.now(tz=self._tz)
 
     ##~~ Additional permissions hook
