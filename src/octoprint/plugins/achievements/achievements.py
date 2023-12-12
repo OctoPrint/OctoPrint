@@ -237,7 +237,7 @@ class Achievements(metaclass=AchievementsMetaClass):
 
     ONE_OF_THOSE_DAYS = Achievement(
         name="Must Be One Of Those Days",
-        description="Cancel ten consecutive prints.",
+        description="Cancel ten consecutive prints on the same day.",
         hidden=True,
     )
 

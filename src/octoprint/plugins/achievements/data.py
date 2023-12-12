@@ -66,6 +66,15 @@ class State(BaseModel):
     prints_today: int = 0
     """Number of prints finished today."""
 
+    date_last_cancelled_print: str = ""
+    """Date of the last cancelled print."""
+
+    prints_cancelled_today: int = 0
+    """Number of prints cancelled today."""
+
+    consecutive_prints_cancelled_today: int = 0
+    """Number of consecutive prints cancelled today."""
+
     file_last_print: str = ""
     """Name of the file of the last print."""
 

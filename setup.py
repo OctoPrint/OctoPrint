@@ -60,6 +60,7 @@ core_deps = [
     "pydantic==1.10.12",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
     "pylru>=1.2.1,<2",
     "pyserial>=3.5,<4",
+    "pytz",
     "PyYAML>=6.0.1,<7",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
     "requests>=2.28.2,<3",
     "sarge==0.1.7.post1",

@@ -51,9 +51,24 @@ class AchievementsPlugin(
 
         self._pause_counter = 0  # not persisted, as it depends on the current print
 
+        self._tz = None
+
     def initialize(self):
         self._load_data_file()
         return super().initialize()
+
+    def _now(self):
+        if self._tz is None:
+            import pytz
+
+            timezone = self._settings.get(["timezone"])
+            try:
+                self._tz = pytz.timezone(timezone)
+            except Exception:
+                self._logger.exception(
+                    f"Cannot load timezone {timezone}, falling back to server timezone"
+                )
+        return datetime.datetime.now(tz=self._tz)
 
     ##~~ Additional permissions hook
 
@@ -108,7 +123,7 @@ class AchievementsPlugin(
         from octoprint.events import Events
 
         changed = False
-        now = datetime.datetime.now()
+        now = self._now()
 
         if event == Events.PRINT_STARTED:
             self._pause_counter = 0
@@ -173,6 +188,7 @@ class AchievementsPlugin(
             self._data.stats.prints_finished += 1
             self._data.stats.print_duration_total += payload["time"]
             self._data.stats.print_duration_finished += payload["time"]
+            self._data.state.consecutive_prints_cancelled_today = 0
 
             if payload["time"] > self._data.stats.longest_print_duration:
                 self._data.stats.longest_print_duration = payload["time"]
@@ -218,6 +234,11 @@ class AchievementsPlugin(
                 self._data.state.consecutive_prints_of_same_file = 1
             self._data.state.file_last_print = loc
 
+            ## total finished print duration
+
+            if self._data.stats.print_duration_finished >= 404 * 60 * 60:
+                self._trigger_achievement(Achievements.ACHIEVEMENT_NOT_FOUND)
+
             changed = True
 
         elif event == Events.PRINT_FAILED or event == Events.PRINT_CANCELLED:
@@ -230,6 +251,17 @@ class AchievementsPlugin(
 
                 if payload["progress"] > 95:
                     self._trigger_achievement(Achievements.SO_CLOSE, write=False)
+
+                ## cancelled per day
+
+                if now.date().isoformat() != self._data.state.date_last_cancelled_print:
+                    self._data.state.date_last_cancelled_print = now.date().isoformat()
+                    self._data.state.prints_cancelled_today = 0
+                self._data.state.prints_cancelled_today += 1
+                self._data.state.consecutive_prints_cancelled_today += 1
+
+                if self._data.state.consecutive_prints_cancelled_today >= 10:
+                    self._trigger_achievement(Achievements.ONE_OF_THOSE_DAYS, write=False)
 
             changed = True
 
@@ -289,7 +321,7 @@ class AchievementsPlugin(
                 **a.dict(),
             )
             for a in Achievements.all()
-            if not a.hidden or self._has_achievement(a)
+            # if not a.hidden or self._has_achievement(a)
         ]
         achievements.sort(key=lambda a: a.name)
 
@@ -317,6 +349,18 @@ class AchievementsPlugin(
             "css": ["css/achievements.css"],
         }
 
+    ##~~ SettingsPlugin
+
+    def get_settings_defaults(self):
+        return {
+            "timezone": "",
+        }
+
+    def on_settings_save(self, data):
+        super().on_settings_save(data)
+        if "timezone" in data:
+            self._tz = None
+
     ##~~ TemplatePlugin
 
     def get_template_configs(self):
@@ -333,10 +377,24 @@ class AchievementsPlugin(
                 "template": "achievements_about_stats.jinja2",
                 "custom_bindings": True,
             },
+            {
+                "type": "settings",
+                "name": gettext("Achievements"),
+                "template": "achievements_settings.jinja2",
+                "custom_bindings": False,
+            },
         ]
 
     def get_template_vars(self):
-        return {"svgs": self._generate_svg()}
+        import datetime
+
+        import pytz
+
+        return {
+            "svgs": self._generate_svg(),
+            "timezones": pytz.common_timezones,
+            "server_timezone": datetime.datetime.utcnow().astimezone().tzname(),
+        }
 
     ##~~ Internal helpers
 
