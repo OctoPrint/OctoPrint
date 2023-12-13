@@ -1,0 +1,16 @@
+<h3>{{ _('Achievements Settings') }}</h3>
+
+<form class="form-horizontal" onsubmit="return false;">
+    <div class="control-group">
+        <label class="control-label"> {{ _('Timezone') }}</label>
+        <div class="controls">
+            <select data-bind="value: settings.plugins.achievements.timezone">
+                <option value="">{{ _('Server timezone (%%(server_time)s)')|format(server_time=plugin_achievements_server_timezone) }}</option>
+                {% for timezone in plugin_achievements_timezones %}
+                    <option value="{{ timezone }}">{{ timezone }}</option>
+                {% endfor %}
+            </select>
+            <span class="help-inline">{{ _('Select your local timezone here. It will be used for time and date based achievements.') }}</span>
+        </div>
+    </div>
+</form>

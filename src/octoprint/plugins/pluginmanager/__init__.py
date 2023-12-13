@@ -772,7 +772,8 @@ class PluginManagerPlugin(
             if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
                 abort(403)
             url = data["url"]
-            plugin_name = data["plugin"] if "plugin" in data else None
+            plugin_name = data.get("plugin")
+            from_repo = data.get("from_repo", False)
 
             with self._install_lock:
                 if self._install_task is not None:
@@ -786,6 +787,7 @@ class PluginManagerPlugin(
                         "dependency_links": "dependency_links" in data
                         and data["dependency_links"] in valid_boolean_trues,
                         "reinstall": plugin_name,
+                        "from_repo": from_repo,
                     },
                 )
                 self._install_task.daemon = True
@@ -901,6 +903,7 @@ class PluginManagerPlugin(
         reinstall=None,
         dependency_links=False,
         partial=False,
+        from_repo=False,
     ):
         folder = None
 
@@ -926,6 +929,7 @@ class PluginManagerPlugin(
                         reinstall=reinstall,
                         dependency_links=dependency_links,
                         partial=partial,
+                        from_repo=from_repo,
                     )
 
                 elif self._is_pythonfile(path):
@@ -935,6 +939,7 @@ class PluginManagerPlugin(
                         source_type=source_type,
                         name=name,
                         partial=partial,
+                        from_repo=from_repo,
                     )
 
                 elif self._is_jsonfile(path):
@@ -944,6 +949,7 @@ class PluginManagerPlugin(
                         source_type=source_type,
                         name=name,
                         partial=partial,
+                        from_repo=from_repo,
                     )
 
                 else:
@@ -1006,6 +1012,7 @@ class PluginManagerPlugin(
         reinstall=None,
         dependency_links=False,
         partial=False,
+        from_repo=False,
     ):
         throttled = self._get_throttled()
         if (
@@ -1218,6 +1225,7 @@ class PluginManagerPlugin(
                 "version": new_plugin.version,
                 "source": source,
                 "source_type": source_type,
+                "from_repo": from_repo,
             },
         )
 
@@ -1253,7 +1261,13 @@ class PluginManagerPlugin(
 
     # noinspection DuplicatedCode
     def _command_install_pythonfile(
-        self, path, source=None, source_type=None, name=None, partial=False
+        self,
+        path,
+        source=None,
+        source_type=None,
+        name=None,
+        partial=False,
+        from_repo=False,
     ):
         if name is None:
             name = os.path.basename(path)
@@ -1363,6 +1377,7 @@ class PluginManagerPlugin(
                 "version": new_plugin.version,
                 "source": source,
                 "source_type": source_type,
+                "from_repo": from_repo,
             },
         )
 
@@ -1380,7 +1395,13 @@ class PluginManagerPlugin(
         return result
 
     def _command_install_jsonfile(
-        self, path, source=None, source_type=None, name=None, partial=False
+        self,
+        path,
+        source=None,
+        source_type=None,
+        name=None,
+        partial=False,
+        from_repo=False,
     ):
         import json
 
@@ -1448,7 +1469,7 @@ class PluginManagerPlugin(
                     self._logger.info(message)
                     self._log_message(message)
                     sub_result = self.command_install(
-                        url=archive, name=name, partial=True
+                        url=archive, name=name, partial=True, from_repo=from_repo
                     )
                     sub_results.append(sub_result)
 

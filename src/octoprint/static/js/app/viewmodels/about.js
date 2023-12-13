@@ -73,6 +73,15 @@ $(function () {
             });
         };
 
+        self.onAllBound = function (allViewModels) {
+            self.aboutDialog.on("show", function () {
+                callViewModels(allViewModels, "onAboutShown");
+            });
+            self.aboutDialog.on("hidden", function () {
+                callViewModels(allViewModels, "onAboutHidden");
+            });
+        };
+
         self.showTab = function (tab) {
             $('a[href="#' + tab + '"]', self.aboutTabs).tab("show");
         };
@@ -80,7 +89,12 @@ $(function () {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: AboutViewModel,
-        elements: ["#about_dialog", "#footer_about", "#footer_systeminfo"],
+        elements: [
+            "#about_dialog",
+            "#footer_about",
+            "#footer_achievements",
+            "#footer_systeminfo"
+        ],
         dependencies: ["loginStateViewModel", "accessViewModel"]
     });
 });
