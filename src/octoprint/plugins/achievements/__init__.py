@@ -322,7 +322,7 @@ class AchievementsPlugin(
                 **a.dict(),
             )
             for a in Achievements.all()
-            # if not a.hidden or self._has_achievement(a)
+            if not a.hidden or self._has_achievement(a)
         ]
         achievements.sort(key=lambda a: a.name)
 
@@ -406,9 +406,7 @@ class AchievementsPlugin(
         if self._has_achievement(achievement):
             return
 
-        self._data.achievements[achievement.key] = int(
-            datetime.datetime.now().timestamp()
-        )
+        self._data.achievements[achievement.key] = int(self._now().timestamp())
         if write:
             self._write_data_file()
 
