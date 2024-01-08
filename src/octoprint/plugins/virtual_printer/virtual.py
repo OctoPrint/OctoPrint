@@ -1579,7 +1579,7 @@ class VirtualPrinter:
         self._newSdFilePos = pos
 
     def _reportSdStatus(self):
-        if self._sdPrinter is not None and self._sdPrintingSemaphore.is_set:
+        if self._sdPrinter is not None:
             self._send(
                 f"SD printing byte {self._selectedSdFilePos}/{self._selectedSdFileSize}"
             )
