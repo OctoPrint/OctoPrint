@@ -250,6 +250,7 @@ class VirtualPrinter:
 
             self._sdCardReady = True
             self._sdPrinting = False
+            self._sdCacnelled = False
             if self._sdPrinter:
                 self._sdPrinting = False
                 self._sdPrintingSemaphore.set()
@@ -681,6 +682,10 @@ class VirtualPrinter:
             file = self._getSdFileData(filename)
             if file is not None:
                 self._send(file["name"])
+
+    def _gcode_M524(self, data: str) -> None:
+        if self._sdCardReady:
+            self._cancelSdPrint()
 
     def _gcode_M113(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
@@ -1566,7 +1571,9 @@ class VirtualPrinter:
 
     def _startSdPrint(self):
         if self._selectedSdFile is not None:
+            self._sdPrinting = False
             if self._sdPrinter is None:
+                self._sdCancelled = False
                 self._sdPrinting = True
                 self._sdPrinter = threading.Thread(target=self._sdPrintingWorker)
                 self._sdPrinter.start()
@@ -1574,6 +1581,12 @@ class VirtualPrinter:
 
     def _pauseSdPrint(self):
         self._sdPrintingSemaphore.clear()
+
+    def _cancelSdPrint(self):
+        self._sdCancelled = True
+        self._sdPrinting = False
+        self._sdPrintingSemaphore.set()  # just in case it was cleared before
+        self._sdPrinter.join()
 
     def _setSdPos(self, pos):
         self._newSdFilePos = pos
@@ -1975,12 +1988,12 @@ class VirtualPrinter:
         self._finishSdPrint()
 
     def _finishSdPrint(self):
-        if not self._killed:
-            self._sdPrintingSemaphore.clear()
+        self._sdPrintingSemaphore.clear()
+        self._selectedSdFilePos = 0
+        self._sdPrinting = False
+        self._sdPrinter = None
+        if not self._killed and not self._sdCancelled:
             self._send("Done printing file")
-            self._selectedSdFilePos = 0
-            self._sdPrinting = False
-            self._sdPrinter = None
 
     def _waitForHeatup(self, heater: str, only_wait_if_higher: bool) -> None:
         delta = 1
