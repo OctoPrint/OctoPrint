@@ -506,7 +506,9 @@ $(function () {
                 });
                 return result;
             };
-            self.folderList(["/"].concat(createFolderList(files)));
+            const folders = createFolderList(files);
+            folders.sort();
+            self.folderList(["/"].concat(folders));
 
             // Sanity check file list - see #2572
             var nonrecursive = false;
