@@ -173,6 +173,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         eventManager().subscribe(
             Events.METADATA_STATISTICS_UPDATED, self._on_event_MetadataStatisticsUpdated
         )
+        eventManager().subscribe(Events.CONNECTED, self._on_event_Connected)
+        eventManager().subscribe(Events.DISCONNECTED, self._on_event_Disconnected)
         eventManager().subscribe(Events.CHART_MARKED, self._on_event_ChartMarked)
 
         self._handle_connect_hooks = plugin_manager().get_hooks(
@@ -320,6 +322,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     self._selectedFile["sd"],
                     self._selectedFile["user"],
                 )
+
+    # ~~ connection events
+
+    def _on_event_Connected(self, event, data):
+        self._markings.append(
+            {"type": "connected", "label": "Connected", "time": time.time()}
+        )
+
+    def _on_event_Disconnected(self, event, data):
+        self._markings.append(
+            {"type": "disconnected", "label": "Disconnected", "time": time.time()}
+        )
 
     # ~~ chart marking insertions
 

@@ -528,7 +528,9 @@ $(function () {
             gettext("Done"),
             gettext("Cancel"),
             gettext("Pause"),
-            gettext("Resume")
+            gettext("Resume"),
+            gettext("Connected"),
+            gettext("Disconnected")
         ];
 
         self._initializePlot = function (force, plotInfo) {
