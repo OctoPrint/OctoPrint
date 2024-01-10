@@ -664,7 +664,8 @@ $(function () {
                         ": " +
                         targetTemp,
                     color: pusher.color(heaterOptions[type].color).tint(0.5).html(),
-                    data: targets.length ? targets : [[now, undefined]]
+                    data: targets.length ? targets : [[now, undefined]],
+                    dashes: {show: true}
                 });
 
                 maxTemps.push(self.getMaxTemp(actuals, targets));
