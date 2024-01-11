@@ -5,6 +5,7 @@ $(function () {
         self.loginState = parameters[0];
         self.settingsViewModel = parameters[1];
         self.access = parameters[2];
+        self.printerState = parameters[3];
 
         self._createToolEntry = function () {
             var entry = {
@@ -115,6 +116,8 @@ $(function () {
         self._printerProfileInitialized = false;
         self._currentTemperatureDataBacklog = [];
         self._historyTemperatureDataBacklog = [];
+
+        self._graphUpdater = undefined;
 
         self._printerProfileUpdated = function () {
             var graphColors = ["red", "orange", "green", "brown", "purple"];
@@ -1115,6 +1118,24 @@ $(function () {
             }
 
             self.changeOffsetDialog = $("#change_offset_dialog");
+
+            self._graphUpdater = setInterval(() => {
+                if (self.printerState.isOperational()) return;
+
+                const now = Date.now() / 1000;
+                const entry = {};
+                _.each(_.keys(self.heaterOptions()), (type) => {
+                    entry[type] = {actual: undefined, target: undefined};
+                });
+                entry["time"] = now;
+
+                self.temperatures = self._processTemperatureData(
+                    now,
+                    [entry],
+                    self.temperatures
+                );
+                self.updatePlot();
+            }, 1000);
         };
 
         self.onStartupComplete = function () {
@@ -1132,7 +1153,12 @@ $(function () {
 
     OCTOPRINT_VIEWMODELS.push({
         construct: TemperatureViewModel,
-        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
+        dependencies: [
+            "loginStateViewModel",
+            "settingsViewModel",
+            "accessViewModel",
+            "printerStateViewModel"
+        ],
         elements: ["#temp", "#temp_link", "#change_offset_dialog"]
     });
 });
