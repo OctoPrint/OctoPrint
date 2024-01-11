@@ -528,7 +528,9 @@ $(function () {
             gettext("Done"),
             gettext("Cancel"),
             gettext("Pause"),
-            gettext("Resume")
+            gettext("Resume"),
+            gettext("Connected"),
+            gettext("Disconnected")
         ];
 
         self._initializePlot = function (force, plotInfo) {
@@ -664,7 +666,8 @@ $(function () {
                         ": " +
                         targetTemp,
                     color: pusher.color(heaterOptions[type].color).tint(0.5).html(),
-                    data: targets.length ? targets : [[now, undefined]]
+                    data: targets.length ? targets : [[now, undefined]],
+                    dashes: {show: true}
                 });
 
                 maxTemps.push(self.getMaxTemp(actuals, targets));

@@ -2266,6 +2266,7 @@ class Server:
             "js/lib/jquery/jquery.flot.js",
             "js/lib/jquery/jquery.flot.time.js",
             "js/lib/jquery/jquery.flot.crosshair.js",
+            "js/lib/jquery/jquery.flot.dashes.js",
             "js/lib/jquery/jquery.flot.resize.js",
             "js/lib/jquery/jquery.iframe-transport.js",
             "js/lib/jquery/jquery.fileupload.js",
