@@ -84,6 +84,7 @@
             </div>
             <div class="container octoprint-container">
                 <div class="row">
+                    <h1 class="sr-only">Sidebar</h1>
                     <!-- Sidebar -->
                     {% if templates.sidebar.order %}
                     <div id="sidebar" class="accordion {% if templates.tab.order %}span4{% else %}span12{% endif %}">
@@ -127,7 +128,7 @@
                     </div>
                     {% endif %}
 
-<h1 class="sr-only">Tabs</h1>
+                    <h1 class="sr-only">Tabs</h1>
                     <!-- Tabs -->
                     {% if templates.tab.order %}
                     <div class="tabbable {% if templates.sidebar.order %}span8{% else %}span12{% endif %}">
