@@ -165,7 +165,7 @@
             <pre class="pre-scrollable pre-output" style="height: 170px" data-bind="foreach: workLoglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message', error: stream == 'error'}"></span></pre>
         </div>
         <div class="modal-footer">
-            <button class="btn" data-dismiss="modal" data-bind="enable: !workInProgress()" aria-hidden="true">{{ _('Close') }}</button>
+            <button class="btn" data-dismiss="modal" data-bind="enable: !workInProgress()">{{ _('Close') }}</button>
         </div>
     </div>
 
