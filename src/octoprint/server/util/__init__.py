@@ -3,6 +3,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import base64
+import datetime
 import logging
 import sys
 
@@ -102,6 +103,18 @@ def loginUser(user, remember=False, login_mechanism=None):
         )
         if login_mechanism:
             _flask.session["login_mechanism"] = login_mechanism
+            _flask.session["credentials_seen"] = (
+                datetime.datetime.now().timestamp()
+                if login_mechanism
+                in (
+                    "password",
+                    "apikey",
+                    "authheader",
+                    "remote_user",
+                    "basic_auth",
+                )
+                else False
+            )
         return True
     return False
 
@@ -263,6 +276,7 @@ def get_user_for_remote_user_header(request):
 
     if user:
         _flask.session["login_mechanism"] = "remote_user"
+        _flask.session["credentials_seen"] = datetime.datetime.now().timestamp()
     return user
 
 
@@ -296,6 +310,7 @@ def get_user_for_authorization_header(header):
 
     if user:
         _flask.session["login_mechanism"] = "basic_auth"
+        _flask.session["credentials_seen"] = datetime.datetime.now().timestamp()
     return user
 
 

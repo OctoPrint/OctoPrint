@@ -27,7 +27,7 @@
             </table>
         </td>
         <td class="settings_groups_actions">
-            <a href="#" class="fas fa-pencil-alt" title="{{ _('Update group')|edq }}" data-bind="enable: changeable, css: {disabled: !changeable}, click: function() { $root.access.groups.showEditGroupDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="far fa-trash-alt" title="{{ _('Delete group') }}" data-bind="enable: removable, css: {disabled: !removable}, click: function() { $root.access.groups.removeGroup($data); }"></a>
+            <a href="javascript:void()" class="fas fa-pencil-alt" title="{{ _('Update group')|edq }}" data-bind="enable: changeable, css: {disabled: !changeable}, click: function() { $root.access.groups.showEditGroupDialog($data); }"></a>&nbsp;|&nbsp;<a href="javascript:void()" class="far fa-trash-alt" title="{{ _('Delete group') }}" data-bind="enable: removable, css: {disabled: !removable}, click: function() { $root.access.groups.confirmRemoveGroup($data); }"></a>
         </td>
     </tr>
     </tbody>

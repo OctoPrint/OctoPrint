@@ -6,6 +6,10 @@ $(function () {
         self.loginPass = ko.observable("");
         self.loginRemember = ko.observable(false);
 
+        self.reauthenticateDialog = undefined;
+        self.reauthenticatePass = ko.observable("");
+        self.reauthenticateFailed = ko.observable(false);
+
         self.loggedIn = ko.observable(undefined);
         self.username = ko.observable(undefined);
         self.userneeds = ko.observable(undefined);
@@ -17,6 +21,7 @@ $(function () {
 
         self.currentUser = ko.observable(undefined);
         self.currentLoginMechanism = ko.observable(undefined);
+        self.credentialsSeen = ko.observable(undefined);
 
         self.elementUsernameInput = undefined;
         self.elementPasswordInput = undefined;
@@ -74,6 +79,75 @@ $(function () {
                 .done(self.updateCurrentUserData);
         };
 
+        self._reauthenticated = false;
+
+        self.showReauthenticationDialog = () => {
+            const result = $.Deferred();
+
+            self._reauthenticated = false;
+            self.reauthenticateDialog.on("shown", function () {
+                $("input[type=password]", self.reauthenticateDialog).focus();
+            });
+            self.reauthenticateDialog.on("hidden", () => {
+                self.reauthenticatePass("");
+                self.reauthenticateFailed(false);
+                if (self._reauthenticated) {
+                    result.resolve();
+                } else {
+                    result.reject();
+                }
+            });
+            self.reauthenticateDialog.modal("show");
+
+            return result.promise();
+        };
+
+        self.reauthenticate = () => {
+            const user = self.currentUser().name;
+            const pass = self.reauthenticatePass();
+            return OctoPrint.browser
+                .login(user, pass)
+                .done((response) => {
+                    self.fromResponse(response);
+                    self.reauthenticateFailed(false);
+                    self._reauthenticated = self.credentialsSeen();
+                    $("#reauthenticate_dialog").modal("hide");
+                })
+                .fail((response) => {
+                    self.reauthenticatePass("");
+                    self.reauthenticateFailed(true);
+                });
+        };
+
+        self.reauthenticateIfNecessary = (callback, minutes) => {
+            minutes = minutes || 5;
+
+            if (!self.checkCredentialsSeen(minutes)) {
+                self.showReauthenticationDialog()
+                    .done(() => {
+                        callback();
+                    })
+                    .fail(() => {
+                        // Do nothing
+                    });
+            } else {
+                callback();
+            }
+        };
+
+        self.checkCredentialsSeen = (minutes) => {
+            minutes = minutes || 5;
+
+            const credentialsSeen = self.credentialsSeen();
+            if (!credentialsSeen) {
+                return false;
+            }
+
+            const now = new Date();
+            const seen = new Date(credentialsSeen);
+            return now - seen < minutes * 60 * 1000;
+        };
+
         self.requestData = function () {
             return OctoPrint.browser
                 .passiveLogin()
@@ -91,6 +165,7 @@ $(function () {
                 if (response && response.name) {
                     self.loggedIn(true);
                     self.currentLoginMechanism(response._login_mechanism);
+                    self.credentialsSeen(response._credentials_seen);
                     self.updateCurrentUserData(response);
                     if (!currentLoggedIn || currentLoggedIn === undefined) {
                         callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
@@ -242,6 +317,7 @@ $(function () {
                     self.loginUser("");
                     self.loginPass("");
                     self.loginRemember(false);
+                    self.reauthenticatePass("");
 
                     if (history && history.replaceState) {
                         history.replaceState(
@@ -322,6 +398,8 @@ $(function () {
         };
 
         self.onStartup = function () {
+            self.reauthenticateDialog = $("#reauthenticate_dialog");
+
             self.elementUsernameInput = $("#login_user");
             self.elementPasswordInput = $("#login_pass");
             self.elementLoginButton = $("#login_button");
@@ -476,6 +554,7 @@ $(function () {
     }
 
     OCTOPRINT_VIEWMODELS.push({
-        construct: LoginStateViewModel
+        construct: LoginStateViewModel,
+        elements: ["#reauthenticate_dialog"]
     });
 });

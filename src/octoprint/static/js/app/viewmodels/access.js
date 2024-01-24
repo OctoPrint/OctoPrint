@@ -35,6 +35,14 @@ $(function () {
 
             self.currentUser = ko.observable(self.emptyUser).extend({notify: "always"});
 
+            self.isCurrentUser = (user) => {
+                return user && user.name && user.name == access.loginState.username();
+            };
+
+            self.isDeleteUserEnabled = (user) => {
+                return !self.isCurrentUser(user);
+            };
+
             self.editor = {
                 name: ko.observable(undefined),
                 groups: ko.observableArray([]),
@@ -160,22 +168,28 @@ $(function () {
             self.showAddUserDialog = function () {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
-                self.currentUser(undefined);
+                access.loginState.reauthenticateIfNecessary(() => {
+                    self.currentUser(undefined);
 
-                $('ul.nav-pills a[data-toggle="tab"]:first', self.userEditorDialog).tab(
-                    "show"
-                );
-                self.userEditorDialog
-                    .modal({
-                        minHeight: function () {
-                            return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
-                        }
-                    })
-                    .css({
-                        "margin-left": function () {
-                            return -($(this).width() / 2);
-                        }
-                    });
+                    $(
+                        'ul.nav-pills a[data-toggle="tab"]:first',
+                        self.userEditorDialog
+                    ).tab("show");
+                    self.userEditorDialog
+                        .modal({
+                            minHeight: function () {
+                                return Math.max(
+                                    $.fn.modal.defaults.maxHeight() - 80,
+                                    250
+                                );
+                            }
+                        })
+                        .css({
+                            "margin-left": function () {
+                                return -($(this).width() / 2);
+                            }
+                        });
+                });
             };
 
             self.confirmAddUser = function () {
@@ -222,17 +236,19 @@ $(function () {
                         });
                 };
 
-                OctoPrint.users
-                    .get(user.name)
-                    .done(function (data) {
-                        process(data);
-                    })
-                    .fail(function () {
-                        log.warn(
-                            "Could not fetch current user data, proceeding with client side data copy"
-                        );
-                        process(user);
-                    });
+                access.loginState.reauthenticateIfNecessary(() => {
+                    OctoPrint.users
+                        .get(user.name)
+                        .done(function (data) {
+                            process(data);
+                        })
+                        .fail(function () {
+                            log.warn(
+                                "Could not fetch current user data, proceeding with client side data copy"
+                            );
+                            process(user);
+                        });
+                });
             };
 
             self.confirmEditUser = function () {
@@ -250,11 +266,49 @@ $(function () {
                 });
             };
 
+            self.confirmRemoveUser = (user) => {
+                if (!CONFIG_ACCESS_CONTROL) return;
+
+                if (user.name === access.loginState.username()) {
+                    // we do not allow to delete ourselves
+                    new PNotify({
+                        title: gettext("Not possible"),
+                        text: gettext("You may not delete your own account."),
+                        type: "error"
+                    });
+                    return $.Deferred()
+                        .reject("You may not delete your own account")
+                        .promise();
+                }
+
+                access.loginState.reauthenticateIfNecessary(() => {
+                    showConfirmationDialog({
+                        title: gettext("Are you sure?"),
+                        message: _.sprintf(
+                            gettext('You are about to delete the user "%(name)s".'),
+                            {name: _.escape(user.name)}
+                        ),
+                        proceed: gettext("Delete"),
+                        onproceed: () => {
+                            self.removeUser(user);
+                        }
+                    });
+                });
+            };
+
             self.showChangePasswordDialog = function (user) {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
-                self.currentUser(user);
-                self.changePasswordDialog.modal("show");
+                const proceed = () => {
+                    self.currentUser(user);
+                    self.changePasswordDialog.modal("show");
+                };
+
+                if (self.isCurrentUser(user)) {
+                    proceed();
+                } else {
+                    access.loginState.reauthenticateIfNecessary(proceed);
+                }
             };
 
             self.confirmChangePassword = function () {
@@ -315,10 +369,16 @@ $(function () {
                 if (!user) {
                     throw OctoPrint.InvalidArgumentError("user must be set");
                 }
-                if (!access.loginState.hasPermissionKo(access.permissions.ADMIN))
+                if (!access.loginState.hasPermissionKo(access.permissions.ADMIN)) {
                     return $.Deferred()
                         .reject("You are not authorized to perform this action")
                         .promise();
+                }
+                if (!access.loginState.credentialsSeen()) {
+                    return $.Deferred()
+                        .reject("You need to reauthenticate to perform this action")
+                        .promise();
+                }
 
                 return OctoPrint.access.users.add(user).done(self.fromResponse);
             };
@@ -327,39 +387,28 @@ $(function () {
                 if (!user) {
                     throw OctoPrint.InvalidArgumentError("user must be set");
                 }
-                if (!access.loginState.hasPermissionKo(access.permissions.ADMIN))
+                if (!access.loginState.hasPermissionKo(access.permissions.ADMIN)) {
                     return $.Deferred()
                         .reject("You are not authorized to perform this action")
                         .promise();
-
-                if (user.name === access.loginState.username()) {
-                    // we do not allow to delete ourselves
-                    new PNotify({
-                        title: gettext("Not possible"),
-                        text: gettext("You may not delete your own account."),
-                        type: "error"
-                    });
+                }
+                if (!access.loginState.credentialsSeen()) {
                     return $.Deferred()
-                        .reject("You may not delete your own account")
+                        .reject("You need to reauthenticate to perform this action")
                         .promise();
                 }
 
-                showConfirmationDialog({
-                    title: gettext("Are you sure?"),
-                    message: _.sprintf(
-                        gettext('You are about to delete the user "%(name)s".'),
-                        {name: _.escape(user.name)}
-                    ),
-                    proceed: gettext("Delete"),
-                    onproceed: function () {
-                        OctoPrint.access.users.delete(user.name).done(self.fromResponse);
-                    }
-                });
+                return OctoPrint.access.users.delete(user.name).done(self.fromResponse);
             };
 
             self.updateUser = function (user) {
                 if (!user) {
                     throw OctoPrint.InvalidArgumentError("user must be set");
+                }
+                if (!access.loginState.credentialsSeen()) {
+                    return $.Deferred()
+                        .reject("You need to reauthenticate to perform this action")
+                        .promise();
                 }
 
                 return OctoPrint.access.users
@@ -374,16 +423,31 @@ $(function () {
             };
 
             self.updatePassword = function (username, password, current) {
+                if (!access.loginState.credentialsSeen()) {
+                    return $.Deferred()
+                        .reject("You need to reauthenticate to perform this action")
+                        .promise();
+                }
                 return OctoPrint.access.users.changePassword(username, password, current);
             };
 
             self.generateApikey = function (username) {
+                if (!access.loginState.credentialsSeen()) {
+                    return $.Deferred()
+                        .reject("You need to reauthenticate to perform this action")
+                        .promise();
+                }
                 return OctoPrint.access.users.generateApiKey(username).done(function () {
                     self.requestData();
                 });
             };
 
             self.deleteApikey = function (username) {
+                if (!access.loginState.credentialsSeen()) {
+                    return $.Deferred()
+                        .reject("You need to reauthenticate to perform this action")
+                        .promise();
+                }
                 return OctoPrint.access.users.resetApiKey(username);
             };
 
@@ -576,21 +640,27 @@ $(function () {
             };
 
             self.showAddGroupDialog = function () {
-                self.currentGroup(undefined);
-                $('ul.nav-pills a[data-toggle="tab"]:first', self.groupEditorDialog).tab(
-                    "show"
-                );
-                self.groupEditorDialog
-                    .modal({
-                        minHeight: function () {
-                            return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
-                        }
-                    })
-                    .css({
-                        "margin-left": function () {
-                            return -($(this).width() / 2);
-                        }
-                    });
+                access.loginState.reauthenticateIfNecessary(() => {
+                    self.currentGroup(undefined);
+                    $(
+                        'ul.nav-pills a[data-toggle="tab"]:first',
+                        self.groupEditorDialog
+                    ).tab("show");
+                    self.groupEditorDialog
+                        .modal({
+                            minHeight: function () {
+                                return Math.max(
+                                    $.fn.modal.defaults.maxHeight() - 80,
+                                    250
+                                );
+                            }
+                        })
+                        .css({
+                            "margin-left": function () {
+                                return -($(this).width() / 2);
+                            }
+                        });
+                });
             };
 
             self.confirmAddGroup = function () {
@@ -617,21 +687,27 @@ $(function () {
             self.showEditGroupDialog = function (group) {
                 if (!group.changeable) return;
 
-                self.currentGroup(group);
-                $('ul.nav-pills a[data-toggle="tab"]:first', self.groupEditorDialog).tab(
-                    "show"
-                );
-                self.groupEditorDialog
-                    .modal({
-                        minHeight: function () {
-                            return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
-                        }
-                    })
-                    .css({
-                        "margin-left": function () {
-                            return -($(this).width() / 2);
-                        }
-                    });
+                access.loginState.reauthenticateIfNecessary(() => {
+                    self.currentGroup(group);
+                    $(
+                        'ul.nav-pills a[data-toggle="tab"]:first',
+                        self.groupEditorDialog
+                    ).tab("show");
+                    self.groupEditorDialog
+                        .modal({
+                            minHeight: function () {
+                                return Math.max(
+                                    $.fn.modal.defaults.maxHeight() - 80,
+                                    250
+                                );
+                            }
+                        })
+                        .css({
+                            "margin-left": function () {
+                                return -($(this).width() / 2);
+                            }
+                        });
+                });
             };
 
             self.confirmEditGroup = function () {
@@ -653,6 +729,24 @@ $(function () {
                 });
             };
 
+            self.confirmRemoveGroup = (group) => {
+                if (!group.removable) return;
+
+                access.loginState.reauthenticateIfNecessary(() => {
+                    showConfirmationDialog({
+                        title: gettext("Are you sure?"),
+                        message: _.sprintf(
+                            gettext('You are about to delete the group "%(name)s".'),
+                            {name: _.escape(group.name)}
+                        ),
+                        proceed: gettext("Delete"),
+                        onproceed: () => {
+                            self.removeGroup(group);
+                        }
+                    });
+                });
+            };
+
             //~~ Framework
 
             self.onStartup = function () {
@@ -665,6 +759,11 @@ $(function () {
                 if (!group) {
                     throw OctoPrint.InvalidArgumentError("group must be set");
                 }
+                if (!access.loginState.credentialsSeen()) {
+                    return $.Deferred()
+                        .reject("You need to reauthenticate to perform this action")
+                        .promise();
+                }
 
                 return OctoPrint.access.groups.add(group).done(self.fromResponse);
             };
@@ -673,30 +772,26 @@ $(function () {
                 if (!group) {
                     throw OctoPrint.InvalidArgumentError("group must be set");
                 }
+                if (!access.loginState.credentialsSeen()) {
+                    return $.Deferred()
+                        .reject("You need to reauthenticate to perform this action")
+                        .promise();
+                }
 
-                if (!group.removable) return;
-
-                showConfirmationDialog({
-                    title: gettext("Are you sure?"),
-                    message: _.sprintf(
-                        gettext('You are about to delete the group "%(name)s".'),
-                        {name: _.escape(group.name)}
-                    ),
-                    proceed: gettext("Delete"),
-                    onproceed: function () {
-                        OctoPrint.access.groups
-                            .delete(group.key)
-                            .done(function (response) {
-                                self.fromResponse(response);
-                                access.users.requestData();
-                            });
-                    }
+                OctoPrint.access.groups.delete(group.key).done((response) => {
+                    self.fromResponse(response);
+                    access.users.requestData();
                 });
             };
 
             self.updateGroup = function (group) {
                 if (!group) {
                     throw OctoPrint.InvalidArgumentError("group must be set");
+                }
+                if (!access.loginState.credentialsSeen()) {
+                    return $.Deferred()
+                        .reject("You need to reauthenticate to perform this action")
+                        .promise();
                 }
 
                 return OctoPrint.access.groups.update(group).done(self.fromResponse);

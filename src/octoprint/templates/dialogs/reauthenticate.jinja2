@@ -1,0 +1,25 @@
+<div id="reauthenticate_dialog" class="modal hide fade-in">
+    <div class="modal-header">
+        <a href="javascript:void()" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Please reauthenticate') }}</h3>
+    </div>
+    <div class="modal-body">
+        <p>{% trans %}
+            You need to reauthenticate to perform this action.
+            Please enter your password below.
+        {% endtrans %}</p>
+        <form class="form-horizontal" data-bind="event: {'submit': reauthenticate }" onsubmit="return false; // this gets overwritten on view model bind">
+            <div class="control-group">
+                <label class="control-label">{{ _('Password') }}</label>
+                <div class="controls">
+                    <input type="password" class="input-block-level" data-bind="value: reauthenticatePass" placeholder="{{ _("Password")|edq }}">
+                    <span class="help-block text-error" data-bind="visible: reauthenticateFailed">{{ _('Reauthentication failed. Wrong password?') }}</span>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal">{{ _('Abort') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { reauthenticate(); }">{{ _('Confirm') }}</button>
+    </div>
+</div>
