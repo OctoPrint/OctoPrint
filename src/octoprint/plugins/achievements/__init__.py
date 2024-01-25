@@ -30,9 +30,9 @@ class ApiAchievement(Achievement):
 
 class ApiResponse(BaseModel):
     stats: Stats
-    yearStats: YearlyStats
     achievements: List[ApiAchievement]
     hidden_achievements: int
+    current_year: YearlyStats
     available_years: List[int]
 
 
