@@ -8,11 +8,15 @@
     var OctoPrintAchievementsClient = function (base) {
         this.base = base;
 
-        this.baseUrl = this.base.getSimpleApiUrl("achievements");
+        this.baseUrl = this.base.getBlueprintUrl("achievements");
     };
 
     OctoPrintAchievementsClient.prototype.get = function (opts) {
         return this.base.get(this.baseUrl, opts);
+    };
+
+    OctoPrintAchievementsClient.prototype.getYear = function (year, opts) {
+        return this.base.get(this.baseUrl + "/year/" + year, opts);
     };
 
     // register plugin component

@@ -20,7 +20,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.util.version import get_octoprint_version
 
 from .achievements import Achievement, Achievements
-from .data import Data, State, Stats
+from .data import Data, State, Stats, YearlyStats
 
 
 class ApiAchievement(Achievement):
@@ -30,12 +30,15 @@ class ApiAchievement(Achievement):
 
 class ApiResponse(BaseModel):
     stats: Stats
+    yearStats: YearlyStats
     achievements: List[ApiAchievement]
     hidden_achievements: int
+    available_years: List[int]
 
 
 class AchievementsPlugin(
     octoprint.plugin.AssetPlugin,
+    octoprint.plugin.BlueprintPlugin,
     octoprint.plugin.EventHandlerPlugin,
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.SimpleApiPlugin,
@@ -47,6 +50,9 @@ class AchievementsPlugin(
         self._data = None
         self._data_mutex = threading.Lock()
 
+        self._year_data = None
+        self._year_data_mutex = threading.Lock()
+
         self._get_throttled = lambda: False
 
         self._pause_counter = 0  # not persisted, as it depends on the current print
@@ -55,6 +61,7 @@ class AchievementsPlugin(
 
     def initialize(self):
         self._load_data_file()
+        self._load_current_year_file()
         return super().initialize()
 
     def _now(self):
@@ -98,11 +105,18 @@ class AchievementsPlugin(
 
     def on_startup(self, *args, **kwargs):
         self._data.stats.server_starts += 1
+        self._year_data.server_starts += 1
 
         version = get_octoprint_version()
         if self._data.stats.last_version != version.base_version:
             self._data.stats.seen_versions += 1
             self._data.stats.last_version = version.base_version
+
+        if self._year_data.last_version != version.base_version:
+            self._year_data.seen_versions += 1
+            self._year_data.last_version = version.base_version
+
+        self._recheck_plugin_count()
 
         if not self._has_achievement(
             Achievements.THE_WIZARD
@@ -110,6 +124,7 @@ class AchievementsPlugin(
             self._trigger_achievement(Achievements.THE_WIZARD, write=False)
 
         self._write_data_file()
+        self._write_current_year_file()
 
     def on_after_startup(self):
         helpers = self._plugin_manager.get_helpers("pi_support", "get_throttled")
@@ -124,11 +139,13 @@ class AchievementsPlugin(
         from octoprint.events import Events
 
         changed = False
+        yearly_changed = False
         now = self._now()
 
         if event == Events.PRINT_STARTED:
             self._pause_counter = 0
             self._data.stats.prints_started += 1
+            self._year_data.prints_started += 1
 
             ## specific dates
 
@@ -175,6 +192,9 @@ class AchievementsPlugin(
             self._data.stats.prints_started_per_weekday[now.weekday()] = (
                 self._data.stats.prints_started_per_weekday.get(now.weekday(), 0) + 1
             )
+            self._year_data.prints_started_per_weekday[now.weekday()] = (
+                self._year_data.prints_started_per_weekday.get(now.weekday(), 0) + 1
+            )
 
             ## other conditions
             throttled = self._get_throttled()
@@ -184,16 +204,26 @@ class AchievementsPlugin(
                 )
 
             changed = True
+            yearly_changed = True
 
         elif event == Events.PRINT_DONE:
             self._data.stats.prints_finished += 1
             self._data.stats.print_duration_total += payload["time"]
             self._data.stats.print_duration_finished += payload["time"]
+
+            self._year_data.prints_finished += 1
+            self._year_data.print_duration_total += payload["time"]
+            self._year_data.print_duration_finished += payload["time"]
+
             self._data.state.consecutive_prints_cancelled_today = 0
 
             if payload["time"] > self._data.stats.longest_print_duration:
                 self._data.stats.longest_print_duration = payload["time"]
                 self._data.stats.longest_print_date = datetime.datetime.now().timestamp()
+
+            if payload["time"] > self._year_data.longest_print_duration:
+                self._year_data.longest_print_duration = payload["time"]
+                self._year_data.longest_print_date = datetime.datetime.now().timestamp()
 
             self._trigger_achievement(Achievements.ONE_SMALL_STEP_FOR_MAN, write=False)
 
@@ -241,9 +271,11 @@ class AchievementsPlugin(
                 self._trigger_achievement(Achievements.ACHIEVEMENT_NOT_FOUND)
 
             changed = True
+            yearly_changed = True
 
         elif event == Events.PRINT_FAILED or event == Events.PRINT_CANCELLED:
             self._data.stats.print_duration_total += payload["time"]
+            self._year_data.print_duration_total += payload["time"]
 
             if Events.PRINT_CANCELLED:
                 self._trigger_achievement(
@@ -265,6 +297,7 @@ class AchievementsPlugin(
                     self._trigger_achievement(Achievements.ONE_OF_THOSE_DAYS, write=False)
 
             changed = True
+            yearly_changed = True
 
         elif event == Events.PRINT_PAUSED:
             self._pause_counter += 1
@@ -274,6 +307,8 @@ class AchievementsPlugin(
         elif event == Events.FILE_ADDED:
             if payload.get("operation") == "add":
                 self._data.stats.files_uploaded += 1
+                self._year_data.files_uploaded += 1
+
                 if self._data.stats.files_uploaded >= 1000:
                     self._trigger_achievement(Achievements.THE_COLLECTOR_III)
                 elif self._data.stats.files_uploaded >= 500:
@@ -284,15 +319,21 @@ class AchievementsPlugin(
                 if payload.get("size", 0) > 500 * 1024 * 1024:
                     self._trigger_achievement(Achievements.HEAVY_CHONKER)
 
+                changed = yearly_changed = True
+
         elif event == Events.FILE_REMOVED:
             if payload.get("operation") == "remove":
                 self._data.stats.files_deleted += 1
+                self._year_data.files_deleted += 1
+
                 if self._data.stats.files_deleted >= 1000:
                     self._trigger_achievement(Achievements.CLEAN_HOUSE_III)
                 elif self._data.stats.files_deleted >= 500:
                     self._trigger_achievement(Achievements.CLEAN_HOUSE_II)
                 elif self._data.stats.files_deleted >= 100:
                     self._trigger_achievement(Achievements.CLEAN_HOUSE_I)
+
+                changed = yearly_changed = True
 
         elif event == Events.FOLDER_ADDED:
             self._trigger_achievement(Achievements.THE_ORGANIZER)
@@ -306,15 +347,33 @@ class AchievementsPlugin(
             else:
                 self._trigger_achievement(Achievements.TINKERER)
 
+            self._data.stats.plugins_installed += 1
+            self._year_data.plugins_installed += 1
+
+            self._recheck_plugin_count()
+
+            changed = yearly_changed = True
+
+        elif event == Events.PLUGIN_PLUGINMANAGER_UNINSTALL_PLUGIN:
+            self._data.stats.plugins_uninstalled += 1
+            self._year_data.plugins_uninstalled += 1
+
+            changed = yearly_changed = True
+
         if changed:
             self._write_data_file()
 
-    ##~~ SimpleApiPlugin
+        if yearly_changed:
+            self._write_current_year_file()
 
-    def on_api_get(self, request, *args, **kwargs):
-        if not Permissions.PLUGIN_ACHIEVEMENTS_VIEW.can():
-            abort(403)
+    ##~~ BlueprintPlugin
 
+    def is_blueprint_csrf_protected(self):
+        return True
+
+    @octoprint.plugin.BlueprintPlugin.route("/", methods=["GET"])
+    @Permissions.PLUGIN_ACHIEVEMENTS_VIEW.require(403)
+    def get_data(self):
         achievements = [
             ApiAchievement(
                 achieved=self._data.achievements.get(a.key, 0),
@@ -336,9 +395,23 @@ class AchievementsPlugin(
                     if achievement.hidden and not self._has_achievement(achievement)
                 ]
             ),
+            current_year=self._year_data,
+            available_years=self._available_years(),
         )
 
         return jsonify(response.dict())
+
+    @octoprint.plugin.BlueprintPlugin.route("/year/<int:year>", methods=["GET"])
+    @Permissions.PLUGIN_ACHIEVEMENTS_VIEW.require(403)
+    def get_year_data(self, year):
+        year_data = self._load_year_file(year=year)
+        if year_data is None:
+            if year == datetime.datetime.now().year:
+                year_data = self._year_data
+            else:
+                abort(404)
+
+        return jsonify(year_data.dict())
 
     ##~~ AssetPlugin
 
@@ -399,6 +472,17 @@ class AchievementsPlugin(
 
     ##~~ Internal helpers
 
+    def _recheck_plugin_count(self):
+        changed = yearly_changed = False
+
+        if len(self._plugin_manager.plugins) > self._data.stats.most_plugins:
+            self._data.stats.most_plugins = len(self._plugin_manager.plugins)
+
+        if len(self._plugin_manager.plugins) > self._year_data.most_plugins:
+            self._year_data.most_plugins = len(self._plugin_manager.plugins)
+
+        return changed, yearly_changed
+
     def _has_achievement(self, achievement):
         return achievement.key in self._data.achievements
 
@@ -409,6 +493,9 @@ class AchievementsPlugin(
         self._data.achievements[achievement.key] = int(self._now().timestamp())
         if write:
             self._write_data_file()
+
+        self._year_data.achievements += 1
+        self._write_current_year_file()
 
         self._logger.info(f"New achievement unlocked: {achievement.name}!")
 
@@ -452,6 +539,27 @@ class AchievementsPlugin(
     def _data_path(self):
         return os.path.join(self.get_plugin_data_folder(), "data.json")
 
+    def _year_path(self, year=None):
+        if year is None:
+            year = datetime.datetime.now().year
+        return os.path.join(self.get_plugin_data_folder(), f"{year}.json")
+
+    def _available_years(self):
+        years = []
+        for entry in os.scandir(self.get_plugin_data_folder()):
+            if not entry.is_file() or not entry.name.endswith(".json"):
+                continue
+
+            try:
+                years.append(int(entry.name[:-5]))
+            except Exception:
+                # not a year file
+                continue
+
+        if not years:
+            years.append(datetime.datetime.now().year)
+        return years
+
     def _reset_data(self):
         self._data = Data(
             stats=Stats(
@@ -491,6 +599,46 @@ class AchievementsPlugin(
                         json.dumps(self._data.dict(), indent=2, separators=(",", ": "))
                     )
                 )
+
+    def _reset_current_year_data(self):
+        self._year_data = YearlyStats()
+
+    def _load_current_year_file(self):
+        with self._year_data_mutex:
+            self._year_data = self._load_year_file()
+            if self._year_data is None:
+                self._logger.info(
+                    "No data file for the current year found, starting with empty data"
+                )
+                self._reset_current_year_data()
+
+    def _write_current_year_file(self):
+        with self._year_data_mutex:
+            path = self._year_path()
+            self._logger.debug(f"Writing data to {path}")
+            with octoprint.util.atomic_write(path, mode="wb") as f:
+                f.write(
+                    octoprint.util.to_bytes(
+                        json.dumps(
+                            self._year_data.dict(), indent=2, separators=(",", ": ")
+                        )
+                    )
+                )
+
+    def _load_year_file(self, year=None):
+        path = self._year_path(year=year)
+        if not os.path.exists(path):
+            return None
+
+        try:
+            with open(path) as f:
+                self._logger.info(f"Loading data for {year} from {path}")
+                data = json.load(f)
+
+            return YearlyStats(**data)
+        except Exception as e:
+            self._logger.exception(f"Error loading data for year {year} from {path}: {e}")
+            return None
 
 
 __plugin_name__ = "Achievements Plugin"
