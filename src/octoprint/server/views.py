@@ -417,6 +417,9 @@ def index():
     enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"])
     enable_temperature_graph = settings().get(["feature", "temperatureGraph"])
     sockjs_connect_timeout = settings().getInt(["devel", "sockJsConnectTimeout"])
+    reauthentication_timeout = settings().getInt(
+        ["accessControl", "defaultReauthenticationTimeout"]
+    )
 
     def default_template_filter(template_type, template_key):
         if template_type == "tab":
@@ -431,6 +434,7 @@ def index():
         enable_webcam,
         enable_temperature_graph,
         sockjs_connect_timeout,
+        reauthentication_timeout,
         connectivityChecker.online,
         wizard_active(_templates.get(locale)),
     ] + sorted(
@@ -647,6 +651,7 @@ def index():
                 "enableLoadingAnimation": enable_loading_animation,
                 "enableSdSupport": enable_sd_support,
                 "sockJsConnectTimeout": sockjs_connect_timeout * 1000,
+                "reauthenticationTimeout": reauthentication_timeout,
                 "wizard": wizard,
                 "online": connectivityChecker.online,
                 "now": now,

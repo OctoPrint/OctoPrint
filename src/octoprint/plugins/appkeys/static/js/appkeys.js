@@ -86,9 +86,10 @@ $(function () {
                 if (self.reauthenticationTimeout) {
                     window.clearTimeout(self.reauthenticationTimeout);
                 }
-                self.reauthenticationTimeout = window.setTimeout(() => {
-                    self.requestData();
-                }, (self.loginState.DEFAULT_REAUTHENTICATION_TIMEOUT * 60 + 10) * 1000); // timeout + 10s
+                self.reauthenticationTimeout =
+                    self.loginState.afterReauthenticationTimeout(() => {
+                        self.requestData();
+                    });
             }
         };
 
@@ -288,12 +289,10 @@ $(function () {
 
             self.keysVisible(self.loginState.checkCredentialsSeen());
             if (self.keysVisible()) {
-                if (self.reauthenticationTimeout) {
-                    window.clearTimeout(self.reauthenticationTimeout);
-                }
-                self.reauthenticationTimeout = window.setTimeout(() => {
-                    self.requestData();
-                }, (self.loginState.DEFAULT_REAUTHENTICATION_TIMEOUT * 60 + 10) * 1000); // timeout + 10s
+                self.reauthenticationTimeout =
+                    self.loginState.afterReauthenticationTimeout(() => {
+                        self.requestData();
+                    }, self.reauthenticationTimeout);
             }
         };
 

@@ -79,7 +79,7 @@ $(function () {
                 .done(self.updateCurrentUserData);
         };
 
-        self.DEFAULT_REAUTHENTICATION_TIMEOUT = 5; // minutes
+        self.DEFAULT_REAUTHENTICATION_TIMEOUT = CONFIG_REAUTHENTICATION_TIMEOUT;
 
         self._reauthenticated = false;
 
@@ -140,6 +140,8 @@ $(function () {
         self.checkCredentialsSeen = (minutes) => {
             minutes = minutes || self.DEFAULT_REAUTHENTICATION_TIMEOUT;
 
+            if (minutes <= 0) return true;
+
             const credentialsSeen = self.credentialsSeen();
             if (!credentialsSeen) {
                 return false;
@@ -148,6 +150,15 @@ $(function () {
             const now = new Date();
             const seen = new Date(credentialsSeen);
             return now - seen < minutes * 60 * 1000;
+        };
+
+        self.afterReauthenticationTimeout = (callback, timeout) => {
+            if (self.DEFAULT_REAUTHENTICATION_TIMEOUT <= 0) return;
+            if (timeout) window.clearTimeout(timeout);
+            return window.setTimeout(
+                callback,
+                (self.DEFAULT_REAUTHENTICATION_TIMEOUT * 60 + 10) * 1000
+            );
         };
 
         self.requestData = function () {

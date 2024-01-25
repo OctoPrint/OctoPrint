@@ -1287,12 +1287,10 @@ $(function () {
             // special delivery for the API key flag
             self.apiKeyVisible(self.loginState.checkCredentialsSeen());
             if (self.apiKeyVisible()) {
-                if (self.reauthenticationTimeout) {
-                    window.clearTimeout(self.reauthenticationTimeout);
-                }
-                self.reauthenticationTimeout = window.setTimeout(() => {
-                    self.requestData(); // re-request to remove the API key again from the available data
-                }, (self.loginState.DEFAULT_REAUTHENTICATION_TIMEOUT * 60 + 10) * 1000); // timeout + 10s
+                self.reauthenticationTimeout =
+                    self.loginState.afterReauthenticationTimeout(() => {
+                        self.requestData();
+                    }, self.reauthenticationTimeout);
             }
         };
 

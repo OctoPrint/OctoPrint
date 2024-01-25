@@ -1651,10 +1651,13 @@ def firstrun_only_access(func):
     return decorated_view
 
 
-DEFAULT_REAUTHENTICATION_TIMEOUT = 5
+def credentials_checked_recently(minutes=-1):
+    if minutes < 0:
+        minutes = settings().getInt(["accessControl", "defaultReauthenticationTimeout"])
 
+    if not minutes:
+        return True
 
-def credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOUT):
     credentials_seen = flask.session.get("credentials_seen")
     now = datetime.now()
 
@@ -1671,12 +1674,15 @@ def credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOUT):
     return False
 
 
-def ensure_credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOUT):
+def ensure_credentials_checked_recently(minutes=-1):
+    if minutes < 0:
+        minutes = settings().getInt(["accessControl", "defaultReauthenticationTimeout"])
+
     if not credentials_checked_recently(minutes=minutes):
         flask.abort(403, description="Please reauthenticate with your credentials")
 
 
-def require_credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOUT):
+def require_credentials_checked_recently(minutes=-1):
     """
     If you decorate a view with this, it will ensure that only users who entered their password
     in this login session are allowed to proceed. Otherwise it will cause a HTTP 403 status code
@@ -1684,6 +1690,9 @@ def require_credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOU
 
     :param minutes: The number of minutes after which the credentials are considered stale
     """
+
+    if minutes < 0:
+        minutes = settings().getInt(["accessControl", "defaultReauthenticationTimeout"])
 
     def decorator(func):
         @functools.wraps(func)
