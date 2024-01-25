@@ -364,7 +364,7 @@ class PluginManagerPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/upload_file", methods=["POST"])
     @no_firstrun_access
-    @require_credentials_checked_recently()
+    @require_credentials_checked_recently
     @Permissions.PLUGIN_PLUGINMANAGER_INSTALL.require(403)
     def upload_file(self):
         import flask

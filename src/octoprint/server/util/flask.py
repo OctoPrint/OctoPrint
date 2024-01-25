@@ -1651,10 +1651,8 @@ def firstrun_only_access(func):
     return decorated_view
 
 
-def credentials_checked_recently(minutes=-1):
-    if minutes < 0:
-        minutes = settings().getInt(["accessControl", "defaultReauthenticationTimeout"])
-
+def credentials_checked_recently():
+    minutes = settings().getInt(["accessControl", "defaultReauthenticationTimeout"])
     if not minutes:
         return True
 
@@ -1674,35 +1672,24 @@ def credentials_checked_recently(minutes=-1):
     return False
 
 
-def ensure_credentials_checked_recently(minutes=-1):
-    if minutes < 0:
-        minutes = settings().getInt(["accessControl", "defaultReauthenticationTimeout"])
-
-    if not credentials_checked_recently(minutes=minutes):
+def ensure_credentials_checked_recently():
+    if not credentials_checked_recently():
         flask.abort(403, description="Please reauthenticate with your credentials")
 
 
-def require_credentials_checked_recently(minutes=-1):
+def require_credentials_checked_recently(func):
     """
     If you decorate a view with this, it will ensure that only users who entered their password
-    in this login session are allowed to proceed. Otherwise it will cause a HTTP 403 status code
+    recently in this login session are allowed to proceed. Otherwise it will cause a HTTP 403 status code
     to be returned by the decorated resource.
-
-    :param minutes: The number of minutes after which the credentials are considered stale
     """
 
-    if minutes < 0:
-        minutes = settings().getInt(["accessControl", "defaultReauthenticationTimeout"])
+    @functools.wraps(func)
+    def decorated_view(*args, **kwargs):
+        ensure_credentials_checked_recently()
+        return func(*args, **kwargs)
 
-    def decorator(func):
-        @functools.wraps(func)
-        def decorated_view(*args, **kwargs):
-            ensure_credentials_checked_recently(minutes=minutes)
-            return func(*args, **kwargs)
-
-        return decorated_view
-
-    return decorator
+    return decorated_view
 
 
 def get_remote_address(request):

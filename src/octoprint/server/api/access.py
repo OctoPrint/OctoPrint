@@ -36,7 +36,7 @@ def get_groups():
 
 @api.route("/access/groups", methods=["POST"])
 @no_firstrun_access
-@require_credentials_checked_recently()
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def add_group():
     data = request.get_json()
@@ -82,7 +82,7 @@ def get_group(key):
 
 @api.route("/access/groups/<key>", methods=["PUT"])
 @no_firstrun_access
-@require_credentials_checked_recently()
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def update_group(key):
     data = request.get_json()
@@ -113,7 +113,7 @@ def update_group(key):
 
 @api.route("/access/groups/<key>", methods=["DELETE"])
 @no_firstrun_access
-@require_credentials_checked_recently()
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def remove_group(key):
     try:
@@ -137,7 +137,7 @@ def get_users():
 
 @api.route("/access/users", methods=["POST"])
 @no_firstrun_access
-@require_credentials_checked_recently()
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def add_user():
     data = request.get_json()
@@ -187,7 +187,7 @@ def get_user(username):
 
 @api.route("/access/users/<username>", methods=["PUT"])
 @no_firstrun_access
-@require_credentials_checked_recently()
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def update_user(username):
     user = userManager.find_user(username)
@@ -217,7 +217,7 @@ def update_user(username):
 
 @api.route("/access/users/<username>", methods=["DELETE"])
 @no_firstrun_access
-@require_credentials_checked_recently()
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def remove_user(username):
     if not userManager.enabled:

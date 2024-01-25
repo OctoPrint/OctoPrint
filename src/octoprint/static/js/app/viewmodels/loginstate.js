@@ -79,8 +79,6 @@ $(function () {
                 .done(self.updateCurrentUserData);
         };
 
-        self.DEFAULT_REAUTHENTICATION_TIMEOUT = CONFIG_REAUTHENTICATION_TIMEOUT;
-
         self._reauthenticated = false;
 
         self.showReauthenticationDialog = () => {
@@ -121,10 +119,8 @@ $(function () {
                 });
         };
 
-        self.reauthenticateIfNecessary = (callback, minutes) => {
-            minutes = minutes || self.DEFAULT_REAUTHENTICATION_TIMEOUT;
-
-            if (!self.checkCredentialsSeen(minutes)) {
+        self.reauthenticateIfNecessary = (callback) => {
+            if (!self.checkCredentialsSeen()) {
                 self.showReauthenticationDialog()
                     .done(() => {
                         callback();
@@ -137,10 +133,8 @@ $(function () {
             }
         };
 
-        self.checkCredentialsSeen = (minutes) => {
-            minutes = minutes || self.DEFAULT_REAUTHENTICATION_TIMEOUT;
-
-            if (minutes <= 0) return true;
+        self.checkCredentialsSeen = () => {
+            if (CONFIG_REAUTHENTICATION_TIMEOUT <= 0) return true;
 
             const credentialsSeen = self.credentialsSeen();
             if (!credentialsSeen) {
@@ -149,15 +143,15 @@ $(function () {
 
             const now = new Date();
             const seen = new Date(credentialsSeen);
-            return now - seen < minutes * 60 * 1000;
+            return now - seen < CONFIG_REAUTHENTICATION_TIMEOUT * 60 * 1000;
         };
 
         self.afterReauthenticationTimeout = (callback, timeout) => {
-            if (self.DEFAULT_REAUTHENTICATION_TIMEOUT <= 0) return;
+            if (CONFIG_REAUTHENTICATION_TIMEOUT <= 0) return;
             if (timeout) window.clearTimeout(timeout);
             return window.setTimeout(
                 callback,
-                (self.DEFAULT_REAUTHENTICATION_TIMEOUT * 60 + 10) * 1000
+                (CONFIG_REAUTHENTICATION_TIMEOUT * 60 + 10) * 1000
             );
         };
 
