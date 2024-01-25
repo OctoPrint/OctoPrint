@@ -1651,7 +1651,10 @@ def firstrun_only_access(func):
     return decorated_view
 
 
-def ensure_credentials_checked_recently(minutes=5):
+DEFAULT_REAUTHENTICATION_TIMEOUT = 5
+
+
+def ensure_credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOUT):
     credentials_seen = flask.session.get("credentials_seen")
     now = datetime.now()
 
@@ -1668,7 +1671,7 @@ def ensure_credentials_checked_recently(minutes=5):
     flask.abort(403, description="Please reauthenticate with your credentials")
 
 
-def require_credentials_checked_recently(minutes=5):
+def require_credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOUT):
     """
     If you decorate a view with this, it will ensure that only users who entered their password
     in this login session are allowed to proceed. Otherwise it will cause a HTTP 403 status code

@@ -79,6 +79,8 @@ $(function () {
                 .done(self.updateCurrentUserData);
         };
 
+        const DEFAULT_REAUTHENTICATION_TIMEOUT = 5; // minutes
+
         self._reauthenticated = false;
 
         self.showReauthenticationDialog = () => {
@@ -120,7 +122,7 @@ $(function () {
         };
 
         self.reauthenticateIfNecessary = (callback, minutes) => {
-            minutes = minutes || 5;
+            minutes = minutes || DEFAULT_REAUTHENTICATION_TIMEOUT;
 
             if (!self.checkCredentialsSeen(minutes)) {
                 self.showReauthenticationDialog()
@@ -136,7 +138,7 @@ $(function () {
         };
 
         self.checkCredentialsSeen = (minutes) => {
-            minutes = minutes || 5;
+            minutes = minutes || DEFAULT_REAUTHENTICATION_TIMEOUT;
 
             const credentialsSeen = self.credentialsSeen();
             if (!credentialsSeen) {
