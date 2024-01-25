@@ -1654,7 +1654,7 @@ def firstrun_only_access(func):
 DEFAULT_REAUTHENTICATION_TIMEOUT = 5
 
 
-def ensure_credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOUT):
+def credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOUT):
     credentials_seen = flask.session.get("credentials_seen")
     now = datetime.now()
 
@@ -1663,12 +1663,17 @@ def ensure_credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOUT
             credentials_seen
         ) > now - timedelta(minutes=minutes):
             # credentials seen less than the set minutes ago, proceed
-            return
+            return True
     except Exception:
         logging.getLogger(__name__).exception("Error while checking for seen credentials")
         pass
 
-    flask.abort(403, description="Please reauthenticate with your credentials")
+    return False
+
+
+def ensure_credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOUT):
+    if not credentials_checked_recently(minutes=minutes):
+        flask.abort(403, description="Please reauthenticate with your credentials")
 
 
 def require_credentials_checked_recently(minutes=DEFAULT_REAUTHENTICATION_TIMEOUT):

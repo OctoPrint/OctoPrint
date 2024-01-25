@@ -127,6 +127,8 @@ $(function () {
         self.api_key = ko.observable(undefined);
         self.api_allowCrossOrigin = ko.observable(undefined);
 
+        self.apiKeyVisible = ko.observable(false);
+
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
@@ -703,8 +705,34 @@ $(function () {
             );
         };
 
+        self.deleteApiKey = () => {
+            if (!CONFIG_ACCESS_CONTROL) return;
+            if (!self.api_key()) return;
+
+            showConfirmationDialog(
+                gettext(
+                    "This will delete the API Key. It will cease to to function immediately."
+                ),
+                function () {
+                    OctoPrint.settings.deleteApiKey().done(() => {
+                        self.api_key(undefined);
+                    });
+                }
+            );
+        };
+
         self.copyApiKey = function () {
             copyToClipboard(self.api_key());
+        };
+
+        self.revealingApiKey = ko.observable(false);
+        self.revealApiKey = () => {
+            self.loginState.reauthenticateIfNecessary(() => {
+                self.revealingApiKey(true);
+                self.requestData().always(() => {
+                    self.revealingApiKey(false);
+                });
+            });
         };
 
         self.showTranslationManager = function () {
@@ -1067,6 +1095,7 @@ $(function () {
             return data;
         };
 
+        self.reauthenticationTimeout = undefined;
         self.fromResponse = function (response, local) {
             // server side changes to set
             var serverChangedData;
@@ -1254,6 +1283,17 @@ $(function () {
             mapToObservables(serverChangedData, specialMappings, clientChangedData);
 
             firstRequest.resolve();
+
+            // special delivery for the API key flag
+            self.apiKeyVisible(self.loginState.checkCredentialsSeen());
+            if (self.apiKeyVisible()) {
+                if (self.reauthenticationTimeout) {
+                    window.clearTimeout(self.reauthenticationTimeout);
+                }
+                self.reauthenticationTimeout = window.setTimeout(() => {
+                    self.requestData(); // re-request to remove the API key again from the available data
+                }, (self.loginState.DEFAULT_REAUTHENTICATION_TIMEOUT * 60 + 10) * 1000); // timeout + 10s
+            }
         };
 
         self.cancelData = function () {

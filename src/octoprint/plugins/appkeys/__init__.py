@@ -13,6 +13,7 @@ from octoprint.server import NO_CONTENT, admin_permission, current_user
 from octoprint.server.util import require_login_with
 from octoprint.server.util.flask import (
     add_non_caching_response_headers,
+    credentials_checked_recently,
     no_firstrun_access,
     restricted_access,
 )
@@ -309,7 +310,14 @@ class AppKeysPlugin(
             keys = self._api_keys_for_user(user_id)
 
         return flask.jsonify(
-            keys=list(map(lambda x: x.external(), keys)),
+            keys=list(
+                map(
+                    lambda x: x | {"api_key": ""}
+                    if not credentials_checked_recently()
+                    else x,
+                    map(lambda x: x.external(), keys),
+                )
+            ),
             pending={
                 x.user_token: x.external() for x in self._get_pending_by_user_id(user_id)
             },

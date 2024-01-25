@@ -65,19 +65,31 @@ $(function () {
         );
         self.pending = {};
         self.openRequests = {};
+        self.keysVisible = ko.observable(false);
 
         self.editorApp = ko.observable();
 
         self.requestData = function () {
-            OctoPrint.plugins.appkeys.getKeys().done(self.fromResponse);
+            return OctoPrint.plugins.appkeys.getKeys().done(self.fromResponse);
         };
 
+        self.reauthenticationTimeout = undefined;
         self.fromResponse = function (response) {
             self.keys.updateItems(response.keys);
             self.pending = response.pending;
             _.each(self.pending, function (data, token) {
                 self.openRequests[token] = self.promptForAccess(data.app_id, token);
             });
+
+            self.keysVisible(self.loginState.checkCredentialsSeen());
+            if (self.keysVisible()) {
+                if (self.reauthenticationTimeout) {
+                    window.clearTimeout(self.reauthenticationTimeout);
+                }
+                self.reauthenticationTimeout = window.setTimeout(() => {
+                    self.requestData();
+                }, (self.loginState.DEFAULT_REAUTHENTICATION_TIMEOUT * 60 + 10) * 1000); // timeout + 10s
+            }
         };
 
         self.generateKey = function () {
@@ -101,6 +113,12 @@ $(function () {
                 ),
                 perform
             );
+        };
+
+        self.revealKeys = () => {
+            self.loginState.reauthenticateIfNecessary(() => {
+                self.requestData();
+            });
         };
 
         self.allowApp = function (token) {
@@ -226,6 +244,7 @@ $(function () {
         );
         self.users = ko.observableArray([]);
         self.apps = ko.observableArray([]);
+        self.keysVisible = ko.observable(false);
 
         self.editorApp = ko.observable();
         self.editorUser = ko.observable();
@@ -245,9 +264,10 @@ $(function () {
         };
 
         self.requestData = function () {
-            OctoPrint.plugins.appkeys.getAllKeys().done(self.fromResponse);
+            return OctoPrint.plugins.appkeys.getAllKeys().done(self.fromResponse);
         };
 
+        self.reauthenticationTimeout = undefined;
         self.fromResponse = function (response) {
             self.keys.updateItems(response.keys);
 
@@ -265,6 +285,22 @@ $(function () {
             apps = _.uniq(apps);
             apps.sort();
             self.apps(apps);
+
+            self.keysVisible(self.loginState.checkCredentialsSeen());
+            if (self.keysVisible()) {
+                if (self.reauthenticationTimeout) {
+                    window.clearTimeout(self.reauthenticationTimeout);
+                }
+                self.reauthenticationTimeout = window.setTimeout(() => {
+                    self.requestData();
+                }, (self.loginState.DEFAULT_REAUTHENTICATION_TIMEOUT * 60 + 10) * 1000); // timeout + 10s
+            }
+        };
+
+        self.revealKeys = () => {
+            self.loginState.reauthenticateIfNecessary(() => {
+                self.requestData();
+            });
         };
 
         self.generateKey = function () {
