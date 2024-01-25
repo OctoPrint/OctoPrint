@@ -203,10 +203,12 @@ $(function () {
                     active: self.editor.active()
                 };
 
-                self.addUser(user).done(function () {
-                    // close dialog
-                    self.currentUser(undefined);
-                    self.userEditorDialog.modal("hide");
+                access.loginState.reauthenticateIfNecessary(() => {
+                    self.addUser(user).done(function () {
+                        // close dialog
+                        self.currentUser(undefined);
+                        self.userEditorDialog.modal("hide");
+                    });
                 });
             };
 
@@ -259,10 +261,12 @@ $(function () {
                 user.groups = self.editor.groups();
                 user.permissions = self.editor.permissions();
 
-                self.updateUser(user).done(function () {
-                    // close dialog
-                    self.currentUser(undefined);
-                    self.userEditorDialog.modal("hide");
+                access.loginState.reauthenticateIfNecessary(() => {
+                    self.updateUser(user).done(function () {
+                        // close dialog
+                        self.currentUser(undefined);
+                        self.userEditorDialog.modal("hide");
+                    });
                 });
             };
 
@@ -314,28 +318,40 @@ $(function () {
             self.confirmChangePassword = function () {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
-                self.updatePassword(
-                    self.currentUser().name,
-                    self.editor.password(),
-                    self.editor.currentPassword()
-                )
-                    .done(function () {
-                        // close dialog
-                        self.currentUser(undefined);
-                        self.changePasswordDialog.modal("hide");
-                    })
-                    .fail(function (xhr) {
-                        if (xhr.status === 403) {
-                            self.currentPasswordMismatch(true);
-                        }
-                    });
+                const proceed = () => {
+                    self.updatePassword(
+                        self.currentUser().name,
+                        self.editor.password(),
+                        self.editor.currentPassword()
+                    )
+                        .done(function () {
+                            // close dialog
+                            self.currentUser(undefined);
+                            self.changePasswordDialog.modal("hide");
+                        })
+                        .fail(function (xhr) {
+                            if (xhr.status === 403) {
+                                self.currentPasswordMismatch(true);
+                            }
+                        });
+                };
+
+                if (self.isCurrentUser()) {
+                    proceed();
+                } else {
+                    access.loginState.reauthenticateIfNecessary(proceed);
+                }
             };
 
             self.confirmGenerateApikey = function () {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
-                self.generateApikey(self.currentUser().name).done(function (response) {
-                    self._updateApikey(response.apikey);
+                access.loginState.reauthenticateIfNecessary(() => {
+                    self.generateApikey(self.currentUser().name).done(function (
+                        response
+                    ) {
+                        self._updateApikey(response.apikey);
+                    });
                 });
             };
 
@@ -351,8 +367,10 @@ $(function () {
             self.confirmDeleteApikey = function () {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
-                self.deleteApikey(self.currentUser().name).done(function () {
-                    self._updateApikey(undefined);
+                access.loginState.reauthenticateIfNecessary(() => {
+                    self.deleteApikey(self.currentUser().name).done(function () {
+                        self._updateApikey(undefined);
+                    });
                 });
             };
 
