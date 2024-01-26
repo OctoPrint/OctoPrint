@@ -3,13 +3,7 @@ from typing import Dict
 from pydantic import BaseModel
 
 
-class Stats(BaseModel):
-    created: int = 0
-    """Timestamp of when stats collection was started."""
-
-    created_version: str = ""
-    """Version of OctoPrint when stats collection was started."""
-
+class StatsBase(BaseModel):
     last_version: str = ""
     """Version of OctoPrint during last start, used for keeping track of updates."""
 
@@ -57,6 +51,28 @@ class Stats(BaseModel):
 
     files_deleted: int = 0
     """Number of files deleted."""
+
+    plugins_installed: int = 0
+    """Number of plugins installed."""
+
+    plugins_uninstalled: int = 0
+    """Number of plugins uninstalled."""
+
+    most_plugins: int = 0
+    """Most plugins installed at once."""
+
+
+class Stats(StatsBase):
+    created: int = 0
+    """Timestamp of when stats collection was started."""
+
+    created_version: str = ""
+    """Version of OctoPrint when stats collection was started."""
+
+
+class YearlyStats(StatsBase):
+    achievements: int = 0
+    """Number of achievements unlocked."""
 
 
 class State(BaseModel):
