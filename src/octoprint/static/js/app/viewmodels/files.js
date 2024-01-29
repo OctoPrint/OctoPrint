@@ -1412,6 +1412,12 @@ $(function () {
             });
 
             self.uploadExistsDialog = $("#upload_exists_dialog");
+            self.uploadExistsDialog.on("shown", () => {
+                self._uploadExistsOpen = true;
+            });
+            self.uploadExistsDialog.on("hidden", () => {
+                self._uploadExistsOpen = false;
+            });
 
             //~~ Gcode upload
 
@@ -1666,7 +1672,6 @@ $(function () {
 
             const hideAndSubmit = function (data) {
                 self.uploadExistsDialog.modal("hide");
-                self._uploadExistsOpen = false;
                 data.submit();
                 // Recursively move on to process the queue every time a dialog is closed
                 if (self._uploadExistsQueue.length > 0) {
@@ -1685,25 +1690,25 @@ $(function () {
             }
 
             // Build and show a dialog
-            self._uploadExistsOpen = true;
-
             $("h3", self.uploadExistsDialog).text(
                 _.sprintf(gettext("File already exists: %(name)s"), {
                     name: file.name
                 })
             );
             $("span.existing_size", self.uploadExistsDialog).text(
-                response.size ? formatSize(response.size) : "-"
+                response.size ? formatSize(response.size) : "unknown"
             );
             $("span.existing_date", self.uploadExistsDialog).text(
-                response.date ? new Date(response.date * 1000).toLocaleString() : "?"
+                response.date
+                    ? new Date(response.date * 1000).toLocaleString()
+                    : "unknown"
             );
             $("span.new_size", self.uploadExistsDialog).text(formatSize(file.size));
             $("span.new_date", self.uploadExistsDialog).text(
                 new Date(file.lastModified).toLocaleString()
             );
-            $("p, form", self.uploadExistsDialog).toggle(!fileSizeTooBig);
-            $("span", self.uploadExistsDialog).toggle(fileSizeTooBig);
+            $("p, form, .file_data", self.uploadExistsDialog).toggle(!fileSizeTooBig);
+            $("span.not_enough_space", self.uploadExistsDialog).toggle(fileSizeTooBig);
             $("input", self.uploadExistsDialog)
                 .val("")
                 .prop("placeholder", response.suggestion);
