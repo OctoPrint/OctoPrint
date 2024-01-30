@@ -205,7 +205,6 @@ class PluginManagerPlugin(
             self.get_plugin_data_folder(), "notices.json"
         )
         self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
-        self._confirm_disable = self._settings.get_boolean(["confirm_disable"])
 
         self._pip_caller = create_pip_caller(
             command=self._settings.global_get(["server", "commands", "localPipCommand"]),
@@ -310,7 +309,6 @@ class PluginManagerPlugin(
         self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
         self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
         self._pip_caller.force_user = self._settings.get_boolean(["pip_force_user"])
-        self._confirm_disable = self._settings.global_get_boolean(["confirm_disable"])
 
     ##~~ AssetPlugin
 
