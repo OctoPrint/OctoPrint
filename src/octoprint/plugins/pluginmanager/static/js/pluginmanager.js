@@ -974,7 +974,7 @@ $(function () {
                         onproceed: performDisabling
                     });
                 }
-                // warn if global "warn disabling" setting is set"
+                // warn if "confirm disabling" setting is set
                 else if (
                     self.settingsViewModel.settings.plugins.pluginmanager.confirm_disable()
                 ) {
