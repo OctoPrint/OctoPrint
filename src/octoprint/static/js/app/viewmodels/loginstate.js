@@ -121,16 +121,20 @@ $(function () {
 
         self.reauthenticateIfNecessary = (callback) => {
             if (!self.checkCredentialsSeen()) {
-                self.showReauthenticationDialog()
-                    .done(() => {
-                        callback();
-                    })
-                    .fail(() => {
-                        // Do nothing
-                    });
+                self.forceReauthentication(callback);
             } else {
                 callback();
             }
+        };
+
+        self.forceReauthentication = (callback) => {
+            self.showReauthenticationDialog()
+                .done(() => {
+                    callback();
+                })
+                .fail(() => {
+                    // Do nothing
+                });
         };
 
         self.checkCredentialsSeen = () => {
