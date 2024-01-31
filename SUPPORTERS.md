@@ -8,24 +8,53 @@ thanks to everyone who contributed!
 
   * 3D-TECH
   * 3DPrinterOS
+  * Accalia Elementia
   * Al Mucci
+  * Alex Young
+  * Anthony Gainsborough
   * Ash King
   * BigTreeTech
   * Boris Hussein
   * Brad Jackson
+  * Bradford Benn
+  * Bruce Meyer
+  * Chloe Martin
+  * Chris Heerschap
   * Christian Petropolis
   * Christian Wolf
   * Christian Würthner
   * Christoph Sigrist
+  * Christopher Heiny
+  * Cognite Solutions
+  * Colorado Four Wheeler
+  * Coltarus Halo
+  * CooperSpartan
+  * cyber alchemist
+  * Dave
+  * David OMeara
+  * David Pitman
   * DeltaMaker 3D Printers
   * Dennis Breining
   * Dima Gorbenko
+  * Doc
+  * Doug Craig
+  * Dr. Frank Wester
   * Ed Crump
+  * Erik Ableson
   * Ernesto Martinez
   * Fiberpunk
   * Franziska Kunsmann
+  * George Jeng
+  * German
+  * Greg Bickel
   * Hog Duske
+  * IOHK
   * Jacob Renstrom
+  * James Fryman
+  * Jason Kitchens
+  * Jay Moran
+  * jaystar2242
+  * JCsGotThis
   * Jeff Green
   * Jeff Moe
   * Jeremy Cole
@@ -33,35 +62,48 @@ thanks to everyone who contributed!
   * Julian Melo
   * Justin Kaufman
   * Kaile Riser
+  * kantlivelong@gmail.com
   * Kazuhiro Ogura
+  * Keenan Newton
   * Kenneth Jiang
+  * Kevin Luff
+  * Khaled Allen
+  * Kureemii
   * Kurt Wubbels
   * Lachlan Bell
+  * Laser-Lance
   * Lefteris Lertas
   * LulzBot
   * Makespace Madrid
   * Mark Greenwald
+  * Mark Robards
   * Mark Walker
-  * Martin Majewski
+  * Martin Schmitt
+  * mcbriers
   * Michael Aumock
   * Michael Badagliacco
+  * Michael Duergner
   * Mike Labanov
   * Mosaic Manufacturing
+  * Nick Chestnut
   * Norman Jaffe
   * Obico
-  * Ory Weaver
+  * Patrick Mischler
+  * Paul McMaster
   * Pete Barnwell
-  * Raise3D
   * Randy C. Will
   * Ranjib Dey
   * Richard McGuire
   * Richard Stocks
+  * Rik KM
   * Robert Gusek
   * SimplyPrint
+  * Sinie47
   * Stefan Krister
   * Steve Dougherty
-  * Steve Thompson
+  * TheWebMachine
+  * Thomas Gangi
   * Tideline 3D
   * Ulrich Kempken
 
-and 1918 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel) or via [GitHub Sponsors](https://github.com/users/foosel/sponsorship)!
+and 3272 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
