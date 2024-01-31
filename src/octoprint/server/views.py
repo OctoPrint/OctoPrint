@@ -45,6 +45,7 @@ from octoprint.server.util import (
     validate_local_redirect,
 )
 from octoprint.server.util.csrf import add_csrf_cookie
+from octoprint.server.util.flask import credentials_checked_recently
 from octoprint.settings import settings
 from octoprint.util import sv, to_bytes, to_unicode
 from octoprint.util.version import get_python_version_string
@@ -225,9 +226,12 @@ def login():
         permissions = [Permissions.STATUS, Permissions.SETTINGS_READ]
 
     user_id = request.args.get("user_id", "")
+    reauthenticate = request.args.get("reauthenticate", "false").lower() == "true"
 
-    if (not user_id or current_user.get_id() == user_id) and has_permissions(
-        *permissions
+    if (
+        (not user_id or current_user.get_id() == user_id)
+        and has_permissions(*permissions)
+        and (not reauthenticate or credentials_checked_recently())
     ):
         return redirect(redirect_url)
 
@@ -237,6 +241,7 @@ def login():
         "permission_names": map(lambda x: x.get_name(), permissions),
         "user_id": user_id,
         "logged_in": not current_user.is_anonymous,
+        "reauthenticate": reauthenticate,
     }
 
     try:
