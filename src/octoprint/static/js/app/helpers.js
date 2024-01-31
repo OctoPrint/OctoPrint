@@ -685,6 +685,14 @@ function formatNumberK(num) {
     }
 }
 
+function rsplit(str, sep, limit) {
+    // copy of Python's rsplit in JS
+    // adapted from https://stackoverflow.com/a/5202185
+    // caution: other than split in JS, this limit does limit the splits, NOT the number of parts
+    const parts = str.split(sep);
+    return limit ? [parts.slice(0, -limit).join(sep)].concat(parts.slice(-limit)) : parts;
+}
+
 function pnotifyAdditionalInfo(inner) {
     return (
         '<div class="pnotify_additional_info">' +
