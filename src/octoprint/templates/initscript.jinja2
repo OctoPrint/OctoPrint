@@ -15,6 +15,7 @@
     var CONFIG_FIRST_RUN = {%  if firstRun -%} true; {% else %} false; {%- endif %}
     var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
     var CONFIG_WIZARD = {% if wizard -%} true; {% else %} false; {%- endif %}
+    var CONFIG_REAUTHENTICATION_TIMEOUT = {{ reauthenticationTimeout }};
 
     var SOCKJS_URI = "{{ url_for('index') }}" + "sockjs";
     var SOCKJS_DEBUG = CONFIG_DEBUG;

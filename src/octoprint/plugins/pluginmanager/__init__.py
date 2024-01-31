@@ -29,7 +29,9 @@ from octoprint.events import Events
 from octoprint.server import safe_mode
 from octoprint.server.util.flask import (
     check_etag,
+    ensure_credentials_checked_recently,
     no_firstrun_access,
+    require_credentials_checked_recently,
     with_revalidation_checking,
 )
 from octoprint.settings import valid_boolean_trues
@@ -360,6 +362,7 @@ class PluginManagerPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/upload_file", methods=["POST"])
     @no_firstrun_access
+    @require_credentials_checked_recently
     @Permissions.PLUGIN_PLUGINMANAGER_INSTALL.require(403)
     def upload_file(self):
         import flask
@@ -752,6 +755,9 @@ class PluginManagerPlugin(
             # do not update while a print job is running
             # store targets to be run later on print done event
             if command == "install" and data not in self._queued_installs:
+                if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
+                    abort(403)
+                ensure_credentials_checked_recently()
                 self._logger.debug(f"Queuing install of {data}")
                 self._queued_installs.append(data)
             if len(self._queued_installs) > 0:
@@ -769,6 +775,7 @@ class PluginManagerPlugin(
         elif command == "install":
             if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
                 abort(403)
+            ensure_credentials_checked_recently()
             url = data["url"]
             plugin_name = data.get("plugin")
             from_repo = data.get("from_repo", False)

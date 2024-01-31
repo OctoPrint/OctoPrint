@@ -11,7 +11,7 @@ def auth_log(message):
 
 
 login_mechanisms = login_mechanism_lut = {
-    "http": "credentials",
+    "password": "credentials",
     "autologin": "autologin",
     "remember_me": "Remember Me cookie",
     "basic_auth": "Basic Authorization header",

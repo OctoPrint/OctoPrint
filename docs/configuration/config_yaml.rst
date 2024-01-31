@@ -72,6 +72,10 @@ Use the following settings to enable access control:
      # If a remote user is not found, add them. Use this only if all users from the remote system can use OctoPrint.
      addRemoteUsers: false
 
+     # Default timeout after which to require reauthentication by a user for dangerous changes, in minutes.
+     # Defaults to 5 minutes. Set to 0 to disable reauthentication requirements (SECURITY IMPACT!).
+     defaultReauthenticationTimeout: 5
+
 .. _sec-configuration-config_yaml-api:
 
 API

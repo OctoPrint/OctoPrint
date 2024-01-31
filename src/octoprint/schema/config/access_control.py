@@ -50,3 +50,6 @@ class AccessControlConfig(BaseModel):
 
     addRemoteUsers: bool = False
     """If a remote user is not found, add them. Use this only if all users from the remote system can use OctoPrint."""
+
+    defaultReauthenticationTimeout: int = 5
+    """Default timeout after which to require reauthentication by a user for dangerous changes, in minutes. Defaults to 5 minutes. Set to 0 to disable reauthentication requirements (SECURITY IMPACT!)."""

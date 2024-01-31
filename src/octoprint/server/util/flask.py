@@ -11,7 +11,7 @@ import logging
 import os
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Union
 
 import flask
@@ -732,6 +732,7 @@ def passive_login():
                             f"Logging in user {autologin_as} from {remote_address} via autologin"
                         )
                         flask.session["login_mechanism"] = "autologin"
+                        flask.session["credentials_seen"] = False
                         return autologin_user
             except Exception:
                 logger.exception(
@@ -753,7 +754,21 @@ def passive_login():
     )
     if flask.session.get("login_mechanism") is not None:
         response["_login_mechanism"] = flask.session.get("login_mechanism")
+    response["_credentials_seen"] = to_api_credentials_seen(
+        flask.session.get("credentials_seen", False)
+    )
     return flask.jsonify(response)
+
+
+def to_api_credentials_seen(credentials_seen):
+    if not credentials_seen:
+        return False
+
+    return (
+        datetime.fromtimestamp(credentials_seen, tz=timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+    )
 
 
 # ~~ rate limiting helper
@@ -1632,6 +1647,47 @@ def firstrun_only_access(func):
             return func(*args, **kwargs)
         else:
             flask.abort(403)
+
+    return decorated_view
+
+
+def credentials_checked_recently():
+    minutes = settings().getInt(["accessControl", "defaultReauthenticationTimeout"])
+    if not minutes:
+        return True
+
+    credentials_seen = flask.session.get("credentials_seen")
+    now = datetime.now()
+
+    try:
+        if credentials_seen and datetime.fromtimestamp(
+            credentials_seen
+        ) > now - timedelta(minutes=minutes):
+            # credentials seen less than the set minutes ago, proceed
+            return True
+    except Exception:
+        logging.getLogger(__name__).exception("Error while checking for seen credentials")
+        pass
+
+    return False
+
+
+def ensure_credentials_checked_recently():
+    if not credentials_checked_recently():
+        flask.abort(403, description="Please reauthenticate with your credentials")
+
+
+def require_credentials_checked_recently(func):
+    """
+    If you decorate a view with this, it will ensure that only users who entered their password
+    recently in this login session are allowed to proceed. Otherwise it will cause a HTTP 403 status code
+    to be returned by the decorated resource.
+    """
+
+    @functools.wraps(func)
+    def decorated_view(*args, **kwargs):
+        ensure_credentials_checked_recently()
+        return func(*args, **kwargs)
 
     return decorated_view
 

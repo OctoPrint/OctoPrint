@@ -195,6 +195,7 @@ def on_user_logged_out(sender, user=None):
 def on_user_loaded_from_cookie(sender, user=None):
     if user:
         session["login_mechanism"] = "remember_me"
+        session["credentials_seen"] = False
 
 
 def load_user(id):

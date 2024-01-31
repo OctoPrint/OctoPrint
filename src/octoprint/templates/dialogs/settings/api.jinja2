@@ -25,13 +25,17 @@
         </div>
         <div class="control-group">
             <label class="control-label" for="settings-apikey">{{ _('Global API Key') }}</label>
-            <div class="controls">
+            <div class="controls" data-bind="visible: apiKeyVisible">
                 <div class="input-append input-block-level">
                     <input type="text" readonly="readonly" id="settings-apikey" data-bind="value: api_key, attr: {placeholder: '{{ _('N/A')|esq }}'}">
                     <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: copyApiKey, css: {'disabled': !api_key()}"><i class="fas fa-copy"></i></a>
                     <a class="btn add-on" title="Generate new API Key" data-bind="click: generateApiKey"><i class="fas fa-sync"></i></a>
+                    <a class="btn btn-danger add-on" title="Delete API Key" data-bind="click: deleteApiKey, css: {'disabled': !api_key()}"><i class="far fa-trash-alt"></i></a>
                 </div>
                 <span class="help-block">{{ _('Please note that changes to the API key are applied immediately, without having to "Save" first.') }}</span>
+            </div>
+            <div class="controls" data-bind="visible: !apiKeyVisible()">
+                <button class="btn" data-bind="click: revealApiKey, enabled: !revealingApiKey(), css: {disabled: revealingApiKey}"><i class="fas fa-spinner fa-spin" data-bind="visible: revealingApiKey"></i> {{ _('Reveal API Key') }}</button>
             </div>
         </div>
         <div class="control-group" data-bind="visible: api_key">
