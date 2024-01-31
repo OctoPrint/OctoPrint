@@ -29,9 +29,6 @@
         </div>
         <button class="btn btn-small" data-bind="click: revokeMarked, enable: markedForDeletion().length > 0">{{ _('Revoke selected') }}</button>
     </div>
-    <div class="pull-right" data-bind="visible: !keysVisible()">
-        <button class="btn btn-small" data-bind="click: revealKeys"><i class="fas fa-eye"></i> {{ _('Reveal all keys') }}</button>
-    </div>
     <table class="table table-condensed table-hover" id="settings_plugin_appkeys_allkeys_table">
         <thead>
         <tr>
@@ -43,10 +40,10 @@
         </thead>
         <tbody data-bind="foreach: keys.paginatedItems">
         <tr>
-            <td class="settings_plugin_appkeys_checkbox"><input type="checkbox" data-bind="value: api_key, checked: $root.markedForDeletion"></td>
+            <td class="settings_plugin_appkeys_checkbox"><input type="checkbox" data-bind="value: user_id + ':' + app_id, checked: $root.markedForDeletion"></td>
             <td class="settings_plugin_appkeys_user"><span data-bind="text: user_id"></span></td>
-            <td class="settings_plugin_appkeys_app"><span data-bind="text: app_id"></span><br /><small class="muted">{{ _('API Key') }}: <span data-bind="visible: $parent.keysVisible"><span data-bind="text: api_key"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard')|edq }}" data-bind="click: function() { copyToClipboard(api_key) }"><i class="fas fa-copy"></i></a></span><span data-bind="visible: !$parent.keysVisible()">{{ _("hidden") }}</span></small></td>
-            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke')|edq }}" class="fa fa-trash-o" data-bind="click: function() { $parent.revokeKey($data.api_key, $data.user_id) }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Details')|edq }}" class="fas fa-search" data-bind="click: function() { $parent.dialog.showDialog(gettext('Details'), $data) }"></a></td>
+            <td class="settings_plugin_appkeys_app"><span data-bind="text: app_id"></span></td>
+            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke')|edq }}" class="fa fa-trash-o" data-bind="click: function() { $parent.revokeKey($data) }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Details')|edq }}" class="fas fa-search" data-bind="click: function() { $parent.showKeyDetails($data) }"></a></td>
         </tr>
         </tbody>
     </table>
@@ -74,12 +71,12 @@
     <div class="control-group">
         <label class="control-label">{{ _('Application identifier') }}</label>
         <div class="controls">
-            <input type="text" data-bind="value: editorApp">
+            <input type="text" data-bind="value: editorApp, valueUpdate: 'input'">
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
-            <button class="btn btn-primary" data-bind="click: generateKey">{{ _('Generate') }}</button>
+            <button class="btn btn-primary" data-bind="click: generateKey, enabled: editorApp, css: {disabled: !editorApp()}">{{ _('Generate') }}</button>
         </div>
     </div>
 </form>
