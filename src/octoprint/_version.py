@@ -44,11 +44,11 @@ BRANCH_VERSIONS = """
 #
 # The data is processed from top to bottom, the first matching line wins.
 
-# maintenance is currently the branch for preparation of maintenance release 1.10.0
+# maintenance is currently the branch for preparation of maintenance release 1.11.0
 # so are any fix/... and improve/... branches
-maintenance 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
-fix/.* 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
-improve/.* 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
+maintenance 1.11.0 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
+fix/.* 1.11.0 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
+improve/.* 1.11.0 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
 
 # staging/bugfix is the branch for preparation of the 1.9.x bugfix releases
 # so are any bug/... branches
