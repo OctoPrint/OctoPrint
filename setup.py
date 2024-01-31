@@ -67,7 +67,7 @@ core_deps = [
     "semantic_version>=2.10.0,<3",
     "sentry-sdk>=1.40.0,<2",
     "setuptools",
-    "tornado>=6.4,<7",
+    "tornado>=6.2,<6.3",  # later versions require Python 3.8+
     "watchdog>=2.3.1,<3",
     "websocket-client>=1.7.0,<2",
     "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
@@ -76,7 +76,7 @@ core_deps = [
     "zipstream-ng>=1.7.1,<2.0.0",
 ]
 vendored_deps = [
-    "blinker>=1.6.3,<2",  # dependency of flask_principal, >=1.7.0 drops Python 3.7 support
+    "blinker>=1.6.3,<1.7.0",  # dependency of flask_principal, later versions require Python 3.8+
     "class-doc>=0.2.6,<0.3",  # dependency of with_attrs_docs
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
