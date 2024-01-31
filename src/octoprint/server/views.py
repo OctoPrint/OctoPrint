@@ -41,6 +41,7 @@ from octoprint.server import (  # noqa: F401
 )
 from octoprint.server.util import (
     has_permissions,
+    require_fresh_login_with,
     require_login_with,
     validate_local_redirect,
 )
@@ -262,7 +263,7 @@ def login():
 @app.route("/recovery")
 @app.route("/recovery/")
 def recovery():
-    response = require_login_with(permissions=[Permissions.ADMIN])
+    response = require_fresh_login_with(permissions=[Permissions.ADMIN])
     if response:
         return response
 
