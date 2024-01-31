@@ -91,21 +91,14 @@ $(function () {
             self.fromStatsResponse(response.stats);
             self.fromAchievementsResponse(response.achievements);
 
-            let hidden = response.hidden_achievements;
-            let achieved = 0;
-            let achievedHidden = 0;
-            _.each(self.achievements(), (achievement) => {
-                if (achievement.achieved) {
-                    achieved++;
-                    if (achievement.hidden) {
-                        achievedHidden++;
-                    }
-                }
-            });
+            const achieved = _.filter(
+                self.achievements(),
+                (achievement) => achievement.achieved
+            ).length;
             self.achievedAchievements(achieved);
-            self.hiddenAchievements(hidden - achievedHidden);
+            self.hiddenAchievements(response.hidden_achievements);
             self.totalAchievements(
-                self.achievements().length + self.hiddenAchievements()
+                response.achievements.length + response.hidden_achievements
             );
         };
 
