@@ -50,7 +50,7 @@ core_deps = [
     "flask>=2.2.3,<2.3",  # breaking changes can happen on minor version increases (with deprecation warnings)
     "frozendict>=2.4.0,<3",
     "future>=0.18.3,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
-    "markdown>=3.5.2,<4",
+    "markdown>=3.4.4,<3.5",  # later versions require Python 3.8+
     "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
     "netifaces2>=0.0.21,<0.1",
     "passlib>=1.7.4,<2",
@@ -69,7 +69,7 @@ core_deps = [
     "setuptools",
     "tornado>=6.2,<6.3",  # later versions require Python 3.8+
     "watchdog>=2.3.1,<3",
-    "websocket-client>=1.7.0,<2",
+    "websocket-client==1.5.3",  # later versions require Python 3.8+, breaking changes can happen on patch version increases, changelog incomplete
     "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
     "wrapt>=1.15,<1.16",
     "zeroconf~=0.127",  # breaking changes can happen on minor version increases (despite semantic versioning)
