@@ -76,7 +76,7 @@ core_deps = [
     "zipstream-ng>=1.7.1,<2.0.0",
 ]
 vendored_deps = [
-    "blinker>=1.7.0,<2",  # dependency of flask_principal
+    "blinker>=1.6.3,<2",  # dependency of flask_principal, >=1.7.0 drops Python 3.7 support
     "class-doc>=0.2.6,<0.3",  # dependency of with_attrs_docs
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
