@@ -384,6 +384,9 @@ def get_data():
     return FALLBACK_DICT
 
 
+get_versions = get_data  # compatibility layer for OctoPi's welcome banner
+
+
 def get_cmdclass(pkg_source_path):
     from setuptools import Command
     from setuptools.command.build_py import build_py as build_py_orig
