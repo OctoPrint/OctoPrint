@@ -1,5 +1,20 @@
 <div class="alert alert-block">
-    <strong>{{ _('Note: ') }}</strong>{{ _('Please note that OctoPrint merely embeds a webcam stream & access a snapshot URL. It does not actually run its own webcam server or interact directly with your camera. It thus can\'t impose access restrictions on it or enable/disable the stream for you. Please see <a href="%(url)s" target="_blank">this FAQ entry</a> for more explanation.', url="http://faq.octoprint.org/external-webcam-server") }}
+    <p>
+        <strong>{{ _('Security Advice: ') }}</strong>
+        {% trans %}
+            Please note that OctoPrint merely embeds a webcam stream & accesses a snapshot URL. It does not actually run its own webcam server
+            or interact directly with your camera. It thus can't impose access restrictions on it or enable/disable the stream for you. The
+            stream might be accessible for everyone who can connect to your OctoPrint instance, even unauthenticated.
+        {% endtrans %}
+    </p>
+    <p>
+        {{ _('Please see <a href="%(url)s" target="_blank">this FAQ entry</a> for more information.', url="http://faq.octoprint.org/external-webcam-server") }}
+    </p>
+    <p>
+        {% trans %}
+            And as always: Do not directly expose your OctoPrint instance on the public internet or any other hostile networks!
+        {% endtrans %}
+    </p>
 </div>
 
 <h3>{{ _('Webcam Streaming') }}</h3>
@@ -22,8 +37,6 @@
             {% include "snippets/settings/webcam/ffmpegCommandline.jinja2" %}
             {% include "snippets/settings/webcam/ffmpegBitrate.jinja2" %}
             {% include "snippets/settings/webcam/ffmpegThreads.jinja2" %}
-            {% include "snippets/settings/webcam/webcamSnapshotTimeout.jinja2" %}
-            {% include "snippets/settings/webcam/webcamSnapshotSslValidation.jinja2" %}
             {% include "snippets/settings/webcam/ffmpegVideoCodec.jinja2" %}
         </div>
     </div>

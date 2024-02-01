@@ -61,7 +61,7 @@ used for the ``serial.log`` and the ``console`` handler used for the output to s
      console:
        class: logging.StreamHandler
        level: DEBUG
-       formatter: simple
+       formatter: colored
        stream: ext://sys.stdout
 
      # octoprint.log
@@ -81,6 +81,12 @@ used for the ``serial.log`` and the ``console`` handler used for the output to s
        maxBytes: 2097152 # 2 * 1024 * 1024 = 2 MB in bytes
        filename: /path/to/octoprints/logs/serial.log
 
+.. note::
+
+   If OctoPrint is instructed to not color its logging output (e.g. via the ``--no-color`` command
+   line option or the ``NO_COLOR`` environment variable), the ``colored`` formatter will be replaced
+   with the ``simple`` formatter.
+
 You can find more information on the used logging handlers in the Python documentation on
 :py:mod:`logging.handlers`.
 
@@ -95,6 +101,20 @@ expressed in YAML as follows:
    formatters:
      simple:
        format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+     colored:
+       format: "%(log_color)s%(asctime)s - %(name)s - %(levelname)s - %(message)s%(reset)s"
+
+As example, if you want to change the format to include the full file and line number in which the logging statement was issued, you
+could redefine the formatters as follows:
+
+
+.. code-block:: yaml
+
+   formatters:
+   simple:
+     format: "%(asctime)s - %(name)s - %(pathname)s%(filename)s#%(lineno)d - %(levelname)s - %(message)s"
+   colored:
+     format: "%(log_color)s%(asctime)s - %(name)s - %(pathname)s%(filename)s#%(lineno)d - %(levelname)s - %(message)s%(reset)s"
 
 The possible keys for the logging format can be found in the
 :ref:`Python documentation on LogRecord attributes <logrecord-attributes>`.

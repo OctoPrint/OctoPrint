@@ -608,6 +608,12 @@ table {
 .temperature-mark-type-done {
   background-color: #1b72f9;
 }
+.temperature-mark-type-connected {
+  background-color: #666666;
+}
+.temperature-mark-type-disconnected {
+  background-color: #333333;
+}
 
 /** Various */
 
@@ -700,6 +706,7 @@ ul.dropdown-menu li a {
   margin-top: 6px;
   overflow: hidden;
   min-height: 300px;
+  min-width: 100%;
   background-color: #000;
 
   .tab-content {
@@ -1094,7 +1101,6 @@ ul.dropdown-menu li a {
 
 .funding-banner {
   display: flex;
-  flex-grow: 1;
   flex-direction: row;
   align-items: center;
   padding: 1em;
@@ -1105,12 +1111,11 @@ ul.dropdown-menu li a {
   background-color: #85ba8066;
 
   .banner-icon {
-    display: inline-block;
-    font-size: 4em;
-    line-height: 1em;
+    flex-shrink: 0;
   }
 
   .banner-text {
+    flex-grow: 1;
     font-size: 1em;
     margin: 0 0 0 1.5em;
   }

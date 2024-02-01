@@ -472,6 +472,20 @@ def _get_temperature_data(preprocessor):
     return preprocessor(tempData)
 
 
+@api.route("/printer/error", methods=["GET"])
+@no_firstrun_access
+@Permissions.STATUS.require(403)
+def getLastPrinterError():
+    error_info = printer.error_info
+    if error_info is None:
+        return jsonify(error="", reason="")
+
+    if not Permissions.MONITOR_TERMINAL.can() and "logs" in error_info:
+        del error_info["logs"]
+
+    return jsonify(**error_info)
+
+
 def _keep_tools(x):
     return _delete_from_data(x, lambda k: not k.startswith("tool") and k != "history")
 

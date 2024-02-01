@@ -32,50 +32,51 @@ SETUP_REQUIRES = []
 bundled_plugins = [
     "OctoPrint-FileCheck>=2021.2.23",
     "OctoPrint-FirmwareCheck>=2021.10.11",
-    "OctoPrint-PiSupport>=2023.5.24",
+    "OctoPrint-PiSupport>=2023.10.10",
 ]
 core_deps = [
-    "argon2_cffi>=21.3.0,<22",
+    "argon2-cffi>=23.1.0",
     "Babel>=2.12.1,<2.13",  # breaking changes can happen on minor version increases
     "cachelib>=0.10.2,<0.11",
-    "Click>=8.1.3,<9",
+    "Click>=8.1.7,<9",
     "colorlog>=6.7.0,<7",
-    "emoji>=2.2.0,<3",
-    "feedparser>=6.0.10,<7",
+    "emoji>=2.10.1,<3",
+    "feedparser>=6.0.11,<7",
     "filetype>=1.2.0,<2",
-    "Flask-Assets>=2.0,<3",
+    "Flask-Assets>=2.1.0,<3",
     "Flask-Babel>=3.1.0,<4",
-    "Flask-Login>=0.6.2,<0.7",  # breaking changes can happen on minor version increases
-    "Flask-Limiter>=3.3.0,<4",
+    "Flask-Login>=0.6.3,<0.7",  # breaking changes can happen on minor version increases
+    "Flask-Limiter>=3.5.0,<4",
     "flask>=2.2.3,<2.3",  # breaking changes can happen on minor version increases (with deprecation warnings)
-    "frozendict>=2.3.7,<3",
+    "frozendict>=2.4.0,<3",
     "future>=0.18.3,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
-    "markdown>=3.4.3,<4",
+    "markdown>=3.4.4,<3.5",  # later versions require Python 3.8+
     "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
-    "netifaces2>=0.0.14,<0.1",
+    "netifaces2>=0.0.21,<0.1",
     "passlib>=1.7.4,<2",
     "pathvalidate>=2.5.2,<3",
     "pkginfo>=1.9.6,<2",
-    "psutil>=5.9.4,<6",
+    "psutil>=5.9.8,<6",
     "pydantic==1.10.12",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
     "pylru>=1.2.1,<2",
     "pyserial>=3.5,<4",
+    "pytz",
     "PyYAML>=6.0.1,<7",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
-    "requests>=2.28.2,<3",
+    "requests>=2.31.0,<3",
     "sarge==0.1.7.post1",
     "semantic_version>=2.10.0,<3",
-    "sentry-sdk>=1.19.1,<2",
+    "sentry-sdk>=1.40.0,<2",
     "setuptools",
-    "tornado>=6.2,<7",
+    "tornado>=6.2,<6.3",  # later versions require Python 3.8+
     "watchdog>=2.3.1,<3",
-    "websocket-client>=1.5.1,<2",
+    "websocket-client==1.5.3",  # later versions require Python 3.8+, breaking changes can happen on patch version increases, changelog incomplete
     "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
     "wrapt>=1.15,<1.16",
-    "zeroconf==0.39.4",  # final version to include universal wheel, later takes ages to compiles on rpi, piwheels has no wheels for latest either
-    "zipstream-ng>=1.5.0,<2.0.0",
+    "zeroconf~=0.127",  # breaking changes can happen on minor version increases (despite semantic versioning)
+    "zipstream-ng>=1.7.1,<2.0.0",
 ]
 vendored_deps = [
-    "blinker>=1.6.1,<2",  # dependency of flask_principal
+    "blinker>=1.6.3,<1.7.0",  # dependency of flask_principal, later versions require Python 3.8+
     "class-doc>=0.2.6,<0.3",  # dependency of with_attrs_docs
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
@@ -97,7 +98,7 @@ EXTRA_REQUIRES = {
     "develop": [
         # Testing dependencies
         "ddt",
-        "mock>=5.0.1,<6",
+        "mock>=5.1.0,<6",
         "pytest-doctest-custom>=1.0.0,<2",
         "pytest>=7.3.0,<8",
         # pre-commit
@@ -106,7 +107,7 @@ EXTRA_REQUIRES = {
         "pyinstrument",
     ],
     # Dependencies for developing OctoPrint plugins
-    "plugins": ["cookiecutter>=2.1.1,<3"],
+    "plugins": ["cookiecutter>=2.5.0,<3"],  # update plugin tutorial when updating this
     # Dependencies for building the documentation
     "docs": [
         "sphinx",

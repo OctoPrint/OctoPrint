@@ -126,6 +126,8 @@ $(function () {
 
         self.api_allowCrossOrigin = ko.observable(undefined);
 
+        self.apiKeyVisible = ko.observable(false);
+
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
@@ -1046,6 +1048,7 @@ $(function () {
             return data;
         };
 
+        self.reauthenticationTimeout = undefined;
         self.fromResponse = function (response, local) {
             // server side changes to set
             var serverChangedData;
@@ -1233,6 +1236,15 @@ $(function () {
             mapToObservables(serverChangedData, specialMappings, clientChangedData);
 
             firstRequest.resolve();
+
+            // special delivery for the API key flag
+            self.apiKeyVisible(self.loginState.checkCredentialsSeen());
+            if (self.apiKeyVisible()) {
+                self.reauthenticationTimeout =
+                    self.loginState.afterReauthenticationTimeout(() => {
+                        self.requestData();
+                    }, self.reauthenticationTimeout);
+            }
         };
 
         self.cancelData = function () {

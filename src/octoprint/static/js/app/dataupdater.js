@@ -337,6 +337,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                             ),
                             {error: _.escape(payload.error)}
                         );
+
                         break;
                     }
                     case "resend":

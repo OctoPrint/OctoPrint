@@ -200,10 +200,18 @@ class VirtualPrinter:
 
         self._killed = False
 
-        self._triggerResendAt100 = True
-        self._triggerResendWithTimeoutAt105 = True
-        self._triggerResendWithMissingLinenoAt110 = True
-        self._triggerResendWithChecksumMismatchAt115 = True
+        self._simulated_errors = {}
+        for v in self._settings.get(["simulated_errors"]):
+            if ":" not in v:
+                continue
+            try:
+                k, v = v.split(":", 1)
+                k = int(k)
+                self._simulated_errors[k] = v
+            except ValueError:
+                # ignore this, it's not a valid entry
+                pass
+        self._already_simulated_errors = set()
 
         readThread = threading.Thread(
             target=self._processIncoming,
@@ -242,6 +250,7 @@ class VirtualPrinter:
 
             self._sdCardReady = True
             self._sdPrinting = False
+            self._sdCacnelled = False
             if self._sdPrinter:
                 self._sdPrinting = False
                 self._sdPrintingSemaphore.set()
@@ -281,10 +290,7 @@ class VirtualPrinter:
 
             self._killed = False
 
-            self._triggerResendAt100 = True
-            self._triggerResendWithTimeoutAt105 = True
-            self._triggerResendWithMissingLinenoAt110 = True
-            self._triggerResendWithChecksumMismatchAt115 = True
+            self._already_simulated_errors.clear()
 
             if self._temperature_reporter is not None:
                 self._temperature_reporter.cancel()
@@ -340,7 +346,14 @@ class VirtualPrinter:
             pass
 
     def _processIncoming(self):
-        next_wait_timeout = time.monotonic() + self._waitInterval
+        next_wait_timeout = 0
+
+        def recalculate_next_wait_timeout():
+            nonlocal next_wait_timeout
+            next_wait_timeout = time.monotonic() + self._waitInterval
+
+        recalculate_next_wait_timeout()
+
         buf = b""
         while self.incoming is not None and not self._killed:
             self._simulateTemps()
@@ -356,7 +369,7 @@ class VirtualPrinter:
             except queue.Empty:
                 if self._sendWait and time.monotonic() > next_wait_timeout:
                     self._send("wait")
-                    next_wait_timeout = time.monotonic() + self._waitInterval
+                    recalculate_next_wait_timeout()
                 continue
             except Exception:
                 if self.incoming is None:
@@ -372,7 +385,7 @@ class VirtualPrinter:
                 else:
                     continue
 
-            next_wait_timeout = time.monotonic() + self._waitInterval
+            recalculate_next_wait_timeout()
 
             if data is None:
                 continue
@@ -401,50 +414,41 @@ class VirtualPrinter:
                 linenumber = int(re.search(b"N([0-9]+)", data).group(1))
                 self.lastN = linenumber
                 self.current_line = linenumber
-
-                self._triggerResendAt100 = True
-                self._triggerResendWithTimeoutAt105 = True
-
                 self._sendOk()
+                self._already_simulated_errors.clear()
                 continue
+
             elif data.startswith(b"N"):
                 linenumber = int(re.search(b"N([0-9]+)", data).group(1))
                 expected = self.lastN + 1
                 if linenumber != expected:
                     self._triggerResend(actual=linenumber)
                     continue
-                elif linenumber == 100 and self._triggerResendAt100:
-                    # simulate a resend at line 100
-                    self._triggerResendAt100 = False
-                    self._triggerResend(expected=100)
-                    continue
+
                 elif (
-                    linenumber == 105
-                    and self._triggerResendWithTimeoutAt105
-                    and not self._writingToSd
+                    linenumber in self._simulated_errors
+                    and linenumber not in self._already_simulated_errors
                 ):
-                    # simulate a resend with timeout at line 105
-                    self._triggerResendWithTimeoutAt105 = False
-                    self._triggerResend(expected=105)
-                    self._dont_answer = True
-                    self.lastN = linenumber
-                    continue
-                elif (
-                    linenumber == 110
-                    and self._triggerResendWithMissingLinenoAt110
-                    and not self._writingToSd
-                ):
-                    self._triggerResendWithMissingLinenoAt110 = False
-                    self._send(self._error("lineno_missing", self.lastN))
-                    continue
-                elif (
-                    linenumber == 115
-                    and self._triggerResendWithChecksumMismatchAt115
-                    and not self._writingToSd
-                ):
-                    self._triggerResendWithChecksumMismatchAt115 = False
-                    self._triggerResend(checksum=True)
-                    continue
+                    action = self._simulated_errors[linenumber]
+                    if action == "resend":
+                        self._triggerResend(expected=linenumber)
+                        self._already_simulated_errors.add(linenumber)
+                        continue
+                    elif action == "resend_with_timeout" and not self._writingToSd:
+                        self._triggerResend(expected=linenumber)
+                        self._dont_answer = True
+                        self.lastN = linenumber
+                        self._already_simulated_errors.add(linenumber)
+                        continue
+                    elif action == "missing_lineno" and not self._writingToSd:
+                        self._send(self._error("lineno_missing", self.lastN))
+                        self._already_simulated_errors.add(linenumber)
+                        continue
+                    elif action == "checksum_mismatch" and not self._writingToSd:
+                        self._triggerResend(checksum=True)
+                        self._already_simulated_errors.add(linenumber)
+                        continue
+
                 elif len(self._prepared_errors):
                     prepared = self._prepared_errors.pop(0)
                     if callable(prepared):
@@ -453,11 +457,14 @@ class VirtualPrinter:
                     elif isinstance(prepared, str):
                         self._send(prepared)
                         continue
+
                 elif self._rerequest_last:
                     self._triggerResend(actual=linenumber)
                     continue
+
                 else:
                     self.lastN = linenumber
+
                 data = data.split(None, 1)[1].strip()
 
             data += b"\n"
@@ -528,6 +535,10 @@ class VirtualPrinter:
                             continue
 
                 finally:
+                    # recalculate the timeout again, as we might have just run a long
+                    # running command
+                    recalculate_next_wait_timeout()
+
                     # make sure that the debug sleepAfter and sleepAfterNext stuff works even
                     # if we continued above
                     if len(self._sleepAfter) or len(self._sleepAfterNext):
@@ -671,6 +682,10 @@ class VirtualPrinter:
             file = self._getSdFileData(filename)
             if file is not None:
                 self._send(file["name"])
+
+    def _gcode_M524(self, data: str) -> None:
+        if self._sdCardReady:
+            self._cancelSdPrint()
 
     def _gcode_M113(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
@@ -1556,7 +1571,9 @@ class VirtualPrinter:
 
     def _startSdPrint(self):
         if self._selectedSdFile is not None:
+            self._sdPrinting = False
             if self._sdPrinter is None:
+                self._sdCancelled = False
                 self._sdPrinting = True
                 self._sdPrinter = threading.Thread(target=self._sdPrintingWorker)
                 self._sdPrinter.start()
@@ -1565,11 +1582,17 @@ class VirtualPrinter:
     def _pauseSdPrint(self):
         self._sdPrintingSemaphore.clear()
 
+    def _cancelSdPrint(self):
+        self._sdCancelled = True
+        self._sdPrinting = False
+        self._sdPrintingSemaphore.set()  # just in case it was cleared before
+        self._sdPrinter.join()
+
     def _setSdPos(self, pos):
         self._newSdFilePos = pos
 
     def _reportSdStatus(self):
-        if self._sdPrinter is not None and self._sdPrintingSemaphore.is_set:
+        if self._sdPrinter is not None:
             self._send(
                 f"SD printing byte {self._selectedSdFilePos}/{self._selectedSdFileSize}"
             )
@@ -1965,12 +1988,12 @@ class VirtualPrinter:
         self._finishSdPrint()
 
     def _finishSdPrint(self):
-        if not self._killed:
-            self._sdPrintingSemaphore.clear()
+        self._sdPrintingSemaphore.clear()
+        self._selectedSdFilePos = 0
+        self._sdPrinting = False
+        self._sdPrinter = None
+        if not self._killed and not self._sdCancelled:
             self._send("Done printing file")
-            self._selectedSdFilePos = 0
-            self._sdPrinting = False
-            self._sdPrinter = None
 
     def _waitForHeatup(self, heater: str, only_wait_if_higher: bool) -> None:
         delta = 1

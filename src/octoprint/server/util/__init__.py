@@ -3,6 +3,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import base64
+import datetime
 import logging
 import sys
 
@@ -104,6 +105,18 @@ def loginUser(user, remember=False, login_mechanism=None):
         )
         if login_mechanism:
             _flask.session["login_mechanism"] = login_mechanism
+            _flask.session["credentials_seen"] = (
+                datetime.datetime.now().timestamp()
+                if login_mechanism
+                in (
+                    "password",
+                    "apikey",
+                    "authheader",
+                    "remote_user",
+                    "basic_auth",
+                )
+                else False
+            )
         return True
     return False
 
@@ -270,6 +283,7 @@ def get_user_for_remote_user_header(request):
 
     if user:
         _flask.session["login_mechanism"] = "remote_user"
+        _flask.session["credentials_seen"] = datetime.datetime.now().timestamp()
     return user
 
 
@@ -303,6 +317,7 @@ def get_user_for_authorization_header(header):
 
     if user:
         _flask.session["login_mechanism"] = "basic_auth"
+        _flask.session["credentials_seen"] = datetime.datetime.now().timestamp()
     return user
 
 
@@ -387,6 +402,39 @@ def has_permissions(*permissions):
 
     flask.passive_login()
     return all(map(lambda p: p.can(), permissions))
+
+
+def require_fresh_login_with(permissions=None, user_id=None):
+    """
+    Requires a login with fresh credentials.
+
+    Args:
+        permissions: list of all permissions required to pass the check
+        user_id: required user to pass the check
+
+    Returns: a flask redirect response to return if a login is required, or None
+    """
+
+    from octoprint.server import current_user, userManager
+    from octoprint.server.util.flask import credentials_checked_recently
+
+    response = require_login_with(permissions=permissions, user_id=user_id)
+    if response is not None:
+        return response
+
+    login_kwargs = {
+        "redirect": _flask.request.script_root + _flask.request.full_path,
+        "reauthenticate": "true",
+        "user_id": current_user.get_id(),
+    }
+    if (
+        _flask.request.headers.get("X-Preemptive-Recording", "no") == "no"
+        and userManager.has_been_customized()
+    ):
+        if not credentials_checked_recently():
+            return _flask.redirect(_flask.url_for("login", **login_kwargs))
+
+    return None
 
 
 def require_login_with(permissions=None, user_id=None):

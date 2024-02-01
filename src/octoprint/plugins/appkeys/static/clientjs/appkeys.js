@@ -14,8 +14,15 @@
     };
 
     OctoPrintAppKeysClient.prototype.getAllKeys = function (opts) {
+        return this.base.get(this.base.getSimpleApiUrl("appkeys") + "?all=true", opts);
+    };
+
+    OctoPrintAppKeysClient.prototype.getKey = function (app, user, opts) {
         return this.base.get(
-            OctoPrintClient.prototype.getSimpleApiUrl("appkeys") + "?all=true",
+            this.base.getSimpleApiUrl("appkeys") +
+                "?app=" +
+                encodeURIComponent(app) +
+                (user ? "&user=" + encodeURIComponent(user) : ""),
             opts
         );
     };
@@ -34,7 +41,18 @@
     };
 
     OctoPrintAppKeysClient.prototype.revokeKey = function (key, opts) {
+        console.log(
+            "revokeKey should be considered deprecated, use revokeKeyForApp instead"
+        );
         return this.base.simpleApiCommand("appkeys", "revoke", {key: key}, opts);
+    };
+
+    OctoPrintAppKeysClient.prototype.revokeKeyForApp = function (app, user, opts) {
+        const params = {app: app};
+        if (user) {
+            params.user = user;
+        }
+        return this.base.simpleApiCommand("appkeys", "revoke", params, opts);
     };
 
     OctoPrintAppKeysClient.prototype.decide = function (token, decision, opts) {

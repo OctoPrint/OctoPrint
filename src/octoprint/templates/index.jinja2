@@ -84,6 +84,7 @@
             </div>
             <div class="container octoprint-container">
                 <div class="row">
+                    <h1 class="sr-only">Sidebar</h1>
                     <!-- Sidebar -->
                     {% if templates.sidebar.order %}
                     <div id="sidebar" class="accordion {% if templates.tab.order %}span4{% else %}span12{% endif %}">
@@ -97,7 +98,7 @@
                                     >
                                 <div class="accordion-heading">
 
-                                    <a class="accordion-toggle" data-toggle="collapse" data-test-id="sidebar-{{ data._div }}-toggle" data-target="#{{ data._div }}">
+                                    <a role="heading" aria-level="2" class="accordion-toggle" data-toggle="collapse" data-test-id="sidebar-{{ data._div }}-toggle" data-target="#{{ data._div }}">
                                         {% if "icon" in data %}
                                             {% if data.icon.startswith("fa") %}
                                                 {# Fontawesome 5 allows using fas, far, fab etc. (FA6 also has fa-solid, fa-regular) so plugins should use the prefix they want #}
@@ -127,6 +128,7 @@
                     </div>
                     {% endif %}
 
+                    <h1 class="sr-only">Tabs</h1>
                     <!-- Tabs -->
                     {% if templates.tab.order %}
                     <div class="tabbable {% if templates.sidebar.order %}span8{% else %}span12{% endif %}">
@@ -174,6 +176,8 @@
             {% include 'dialogs/files.jinja2' %}
             {% include 'dialogs/temperature.jinja2' %}
             {% include 'dialogs/timelapse.jinja2' %}
+            {% include 'dialogs/firmwareerror.jinja2' %}
+            {% include 'dialogs/reauthenticate.jinja2' %}
             <!-- End of dialogs -->
 
             <!-- Overlays -->

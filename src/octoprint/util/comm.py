@@ -4053,7 +4053,20 @@ class MachineCom:
                         map(lambda x: x in lower_line, self._fatal_errors)
                     ):
                         self._trigger_error(stripped_error, "firmware")
+
                     elif self.isPrinting():
+                        consequence = "cancel"
+                        payload = self._payload_for_error(
+                            "firmware", consequence=consequence, error=stripped_error
+                        )
+                        self._callback.on_comm_error(
+                            stripped_error,
+                            "firmware",
+                            consequence=consequence,
+                            faq=payload.get("faq"),
+                            logs=payload.get("logs"),
+                        )
+
                         self.cancelPrint(firmware_error=stripped_error)
                         self._clear_to_send.set()
 
@@ -4072,17 +4085,67 @@ class MachineCom:
     def _trigger_error(self, text, reason, close=True):
         self._errorValue = text
         self._changeState(self.STATE_ERROR)
-        eventManager().fire(
-            Events.ERROR, {"error": self.getErrorString(), "reason": reason}
+
+        trigger_m112 = (
+            self._send_m112_on_error
+            and not self.isSdPrinting()
+            and reason not in ("connection", "autodetect")
         )
+
+        if close and trigger_m112:
+            consequence = "emergency"
+        elif close:
+            consequence = "disconnect"
+        else:
+            consequence = None
+
+        payload = self._payload_for_error(reason, consequence=consequence)
+        self._callback.on_comm_error(
+            text,
+            reason,
+            consequence=consequence,
+            faq=payload.get("faq"),
+            logs=payload.get("logs"),
+        )
+        eventManager().fire(Events.ERROR, payload)
+
         if close:
-            if (
-                self._send_m112_on_error
-                and not self.isSdPrinting()
-                and reason not in ("connection", "autodetect")
-            ):
+            if trigger_m112:
                 self._trigger_emergency_stop(close=False)
             self.close(is_error=True)
+
+    _error_faqs = {
+        "mintemp": ("mintemp",),
+        "maxtemp": ("maxtemp",),
+        "thermal-runaway": ("runaway",),
+        "heating-failed": ("heating failed",),
+        "probing-failed": (
+            "probing failed",
+            "bed leveling",
+            "reference point",
+            "bltouch",
+        ),
+    }
+
+    def _payload_for_error(self, reason, consequence=None, error=None):
+        if error is None:
+            error = self.getErrorString()
+
+        payload = {"error": error, "reason": reason}
+
+        if consequence:
+            payload["consequence"] = consequence
+
+        if reason == "firmware":
+            payload["logs"] = list(self._terminal_log)
+
+            error_lower = error.lower()
+            for faq, triggers in self._error_faqs.items():
+                if any(trigger in error_lower for trigger in triggers):
+                    payload["faq"] = "firmware-" + faq
+                    break
+
+        return payload
 
     def _readline(self):
         if self._serial is None:
@@ -5622,6 +5685,9 @@ class MachineComPrintCallback:
     def on_comm_message(self, message):
         pass
 
+    def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
+        pass
+
     def on_comm_progress(self):
         pass
 
@@ -6135,13 +6201,11 @@ def apply_temperature_offsets(line, offsets, current_tool=None):
         return line
 
     groups = match.groupdict()
-    if "temperature" not in groups or groups["temperature"] is None:
+    if not groups.get("temperature"):
         return line
 
     offset = 0
-    if current_tool is not None and (
-        groups["command"] == "104" or groups["command"] == "109"
-    ):
+    if current_tool is not None and groups["command"] in ("104", "109"):
         # extruder temperature, determine which one and retrieve corresponding offset
         tool_num = current_tool
         if "tool" in groups and groups["tool"] is not None:
@@ -6150,14 +6214,21 @@ def apply_temperature_offsets(line, offsets, current_tool=None):
         tool_key = "tool%d" % tool_num
         offset = offsets[tool_key] if tool_key in offsets and offsets[tool_key] else 0
 
-    elif groups["command"] == "140" or groups["command"] == "190":
+    elif groups["command"] in ("140", "190"):
         # bed temperature
         offset = offsets["bed"] if "bed" in offsets else 0
 
     if offset == 0:
         return line
 
-    temperature = float(groups["temperature"])
+    try:
+        temperature = float(groups["temperature"])
+    except ValueError:
+        _logger.warning(
+            f"Could not parse target temperature, ignoring line for offset application: {line}"
+        )
+        return line
+
     if temperature == 0:
         return line
 

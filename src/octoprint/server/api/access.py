@@ -10,7 +10,11 @@ import octoprint.access.users as users
 from octoprint.access.permissions import Permissions
 from octoprint.server import SUCCESS, groupManager, userManager
 from octoprint.server.api import api, valid_boolean_trues
-from octoprint.server.util.flask import no_firstrun_access
+from octoprint.server.util.flask import (
+    ensure_credentials_checked_recently,
+    no_firstrun_access,
+    require_credentials_checked_recently,
+)
 
 # ~~ permission api
 
@@ -32,6 +36,7 @@ def get_groups():
 
 @api.route("/access/groups", methods=["POST"])
 @no_firstrun_access
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def add_group():
     data = request.get_json()
@@ -77,6 +82,7 @@ def get_group(key):
 
 @api.route("/access/groups/<key>", methods=["PUT"])
 @no_firstrun_access
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def update_group(key):
     data = request.get_json()
@@ -107,6 +113,7 @@ def update_group(key):
 
 @api.route("/access/groups/<key>", methods=["DELETE"])
 @no_firstrun_access
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def remove_group(key):
     try:
@@ -130,6 +137,7 @@ def get_users():
 
 @api.route("/access/users", methods=["POST"])
 @no_firstrun_access
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def add_user():
     data = request.get_json()
@@ -179,6 +187,7 @@ def get_user(username):
 
 @api.route("/access/users/<username>", methods=["PUT"])
 @no_firstrun_access
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def update_user(username):
     user = userManager.find_user(username)
@@ -208,8 +217,15 @@ def update_user(username):
 
 @api.route("/access/users/<username>", methods=["DELETE"])
 @no_firstrun_access
+@require_credentials_checked_recently
 @Permissions.ADMIN.require(403)
 def remove_user(username):
+    if not userManager.enabled:
+        return jsonify(SUCCESS)
+
+    if current_user.get_name() == username:
+        abort(400, description="You cannot delete yourself")
+
     try:
         userManager.remove_user(username)
         return get_users()
@@ -236,12 +252,19 @@ def change_password_for_user(username):
         if "password" not in data or not data["password"]:
             abort(400, description="new password is missing")
 
-        if not current_user.has_permission(Permissions.ADMIN) or "current" in data:
+        if current_user.get_name() == username:
             if "current" not in data or not data["current"]:
                 abort(400, description="current password is missing")
 
             if not userManager.check_password(username, data["current"]):
                 abort(403, description="Invalid current password")
+
+        elif current_user.has_permission(Permissions.ADMIN):
+            ensure_credentials_checked_recently()
+
+        else:
+            # this should never happen
+            abort(403, description="You are not allowed to change this user's password")
 
         try:
             userManager.change_user_password(username, data["password"])
@@ -285,6 +308,10 @@ def change_settings_for_user(username):
     ):
         abort(403)
 
+    if current_user.get_name() != username:
+        # this must be an admin, so we need to ensure credentials were checked
+        ensure_credentials_checked_recently()
+
     data = request.get_json()
 
     try:
@@ -305,6 +332,10 @@ def delete_apikey_for_user(username):
             or current_user.has_permission(Permissions.ADMIN)
         )
     ):
+        if current_user.get_name() != username:
+            # this must be an admin, so we need to ensure credentials were checked
+            ensure_credentials_checked_recently()
+
         try:
             userManager.delete_api_key(username)
         except users.UnknownUser:
@@ -328,6 +359,10 @@ def generate_apikey_for_user(username):
             or current_user.has_permission(Permissions.ADMIN)
         )
     ):
+        if current_user.get_name() != username:
+            # this must be an admin, so we need to ensure credentials were checked
+            ensure_credentials_checked_recently()
+
         try:
             apikey = userManager.generate_api_key(username)
         except users.UnknownUser:

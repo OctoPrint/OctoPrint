@@ -197,6 +197,7 @@ def on_user_logged_out(sender, user=None):
 def on_user_loaded_from_cookie(sender, user=None):
     if user:
         session["login_mechanism"] = "remember_me"
+        session["credentials_seen"] = False
 
 
 def load_user(id):
@@ -681,10 +682,7 @@ class Server:
 
         ## Tornado initialization starts here
 
-        ioloop = (
-            IOLoop()
-        )  # TODO: This way to create the ioloop is deprecated and logs a warning
-        ioloop.install()
+        ioloop = IOLoop.current()
 
         enable_cors = settings().getBoolean(["api", "allowCrossOrigin"])
 
@@ -1024,13 +1022,20 @@ class Server:
 
         removed_headers = ["Server"]
 
+        from concurrent.futures import ThreadPoolExecutor
+
         server_routes.append(
             (
                 r".*",
                 util.tornado.UploadStorageFallbackHandler,
                 {
                     "fallback": util.tornado.WsgiInputContainer(
-                        app.wsgi_app, headers=headers, removed_headers=removed_headers
+                        app.wsgi_app,
+                        executor=ThreadPoolExecutor(
+                            thread_name_prefix="WsgiRequestHandler"
+                        ),
+                        headers=headers,
+                        removed_headers=removed_headers,
                     ),
                     "file_prefix": "octoprint-file-upload-",
                     "file_suffix": ".tmp",
@@ -2262,6 +2267,7 @@ class Server:
             "js/lib/jquery/jquery.flot.js",
             "js/lib/jquery/jquery.flot.time.js",
             "js/lib/jquery/jquery.flot.crosshair.js",
+            "js/lib/jquery/jquery.flot.dashes.js",
             "js/lib/jquery/jquery.flot.resize.js",
             "js/lib/jquery/jquery.iframe-transport.js",
             "js/lib/jquery/jquery.fileupload.js",

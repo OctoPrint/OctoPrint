@@ -59,7 +59,7 @@ Add a new group
 
    Will return a :ref:`group list response <sec-api-access-datamodel-groups-list>` on success.
 
-   Requires the ``SETTINGS`` permission.
+   Requires the ``SETTINGS`` permission and a recent credentials check.
 
    :json key:         The group's identifier
    :json name:        The user's name
@@ -101,7 +101,7 @@ Update a group
 
    Will return a :ref:`group list response <sec-api-access-datamodel-groups-list>` on success.
 
-   Requires the ``SETTINGS`` permission.
+   Requires the ``SETTINGS`` permission and a recent credentials check.
 
    :json description: A human readable description of the group
    :json permissions: The permissions to assign to the group
@@ -122,7 +122,7 @@ Delete a group
 
    Will return a :ref:`group list response <sec-api-access-datamodel-groups-list>` on success.
 
-   Requires the ``SETTINGS`` permission.
+   Requires the ``SETTINGS`` permission and a recent credentials check.
 
    :status 200:       No error
 
@@ -179,7 +179,7 @@ Add a new user
 
    Returns a list of registered users on success, see :ref:`Retrieve a list of users <sec-api-access-users-list>`.
 
-   Requires the ``SETTINGS`` permission.
+   Requires the ``SETTINGS`` permission and a recent credentials check.
 
    :json name:     The user's name
    :json password: The user's password
@@ -204,7 +204,7 @@ Update a user
 
    Returns a list of registered users on success, see :ref:`Retrieve a list of users <sec-api-access-users-list>`.
 
-   Requires the ``SETTINGS`` permission.
+   Requires the ``SETTINGS`` permission and a recent credentials check.
 
    :param username: Name of the user to update
    :json admin:     Whether to mark the user as admin (true) or not (false), can be left out (no change)
@@ -223,7 +223,7 @@ Delete a user
 
    Returns a list of registered users on success, see :ref:`Retrieve a list of users <sec-api-access-users-list>`.
 
-   Requires the ``SETTINGS`` permission.
+   Requires the ``SETTINGS`` permission and a recent credentials check.
 
    :param username: Name of the user to delete
    :status 200:     No error
@@ -242,7 +242,7 @@ Change a user's password
    request body. Without the ``SETTINGS`` permission, an additional property ``current``
    is also required to be set on the request body, containing the user's current password.
 
-   Requires the ``SETTINGS`` permission or to be logged in as the user. Note that ``current``
+   Requires the ``SETTINGS`` permission or to be logged in as the user, and a recent credentials check. Note that ``current``
    will be evaluated even in presence of the ``SETTINGS`` permission, if set.
 
    :param username: Name of the user to change the password for
@@ -252,7 +252,7 @@ Change a user's password
    :status 400:     If the request doesn't contain a ``password`` property, doesn't
                     contain a ``current`` property even though required, or the request
                     is otherwise invalid
-   :status 403:     No admin rights, not logged in as the user or a current password
+   :status 403:     No admin rights, not logged in as the user, no recent credentials check or a current password
                     mismatch
    :status 404:     The user is unknown
 
@@ -287,11 +287,11 @@ Update a user's settings
    Expects a new settings JSON object to merge with the current settings as
    request body.
 
-   Requires the ``SETTINGS`` permission or to be logged in as the user.
+   Requires the ``SETTINGS`` permission or to be logged in as the user,  and a recent credentials check.
 
    :param username: Name of the user to retrieve the settings for
    :status 204:     No error
-   :status 403:     No admin rights and not logged in as the user
+   :status 403:     No admin rights and not logged in as the user, or no recent credentials check
    :status 404:     The user is unknown
 
 .. _sec-api-access-users-apikey-generate:
@@ -306,11 +306,11 @@ Regenerate a user's api key
    Does not expect a body. Will return the generated API key as ``apikey``
    property in the JSON object contained in the response body.
 
-   Requires the ``SETTINGS`` permission or to be logged in as the user.
+   Requires the ``SETTINGS`` permission or to be logged in as the user, and a recent credentials check.
 
    :param username: Name of the user to retrieve the settings for
    :status 200:     No error
-   :status 403:     No admin rights and not logged in as the user
+   :status 403:     No admin rights and not logged in as the user, or no recent credentials check
    :status 404:     The user is unknown
 
 .. _sec-api-access-users-apikey-delete:
@@ -322,11 +322,11 @@ Delete a user's api key
 
    Deletes a user's personal API key.
 
-   Requires the ``SETTINGS`` permission or to be logged in as the user.
+   Requires the ``SETTINGS`` permission or to be logged in as the user, and a recent credentials check.
 
    :param username: Name of the user to retrieve the settings for
    :status 204:     No error
-   :status 403:     No admin rights and not logged in as the user
+   :status 403:     No admin rights and not logged in as the user, or no recent credentials check
    :status 404:     The user is unknown
 
 .. _sec-api-access-datamodel:

@@ -44,21 +44,21 @@ BRANCH_VERSIONS = """
 #
 # The data is processed from top to bottom, the first matching line wins.
 
-# maintenance is currently the branch for preparation of maintenance release 1.10.0
+# maintenance is currently the branch for preparation of maintenance release 1.11.0
 # so are any fix/... and improve/... branches
-maintenance 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
-fix/.* 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
-improve/.* 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
+maintenance 1.11.0 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
+fix/.* 1.11.0 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
+improve/.* 1.11.0 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
 
 # staging/bugfix is the branch for preparation of the 1.9.x bugfix releases
 # so are any bug/... branches
 staging/bugfix 1.9.4 506648c152681bf4b1416cf2b5aaf97d526ee752 pep440-dev
 bug/.* 1.9.4 506648c152681bf4b1416cf2b5aaf97d526ee752 pep440-dev
 
-# staging/maintenance is currently the branch for preparation of 1.9.0rc7
+# staging/maintenance is currently the branch for preparation of 1.10.0rc2
 # so is regressionfix/...
-staging/maintenance 1.9.0rc7 9ba981a2ea789030927fc49b6ad166bc68f6b5f9
-regressionfix/.* 1.9.0rc7 9ba981a2ea789030927fc49b6ad166bc68f6b5f9
+staging/maintenance 1.10.0rc2 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
+regressionfix/.* 1.10.0rc2 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
 
 # staging/devel is currently inactive (but has the 1.4.1rc4 namespace)
 staging/devel 1.4.1rc4 650d54d1885409fa1d411eb54b9e8c7ff428910f

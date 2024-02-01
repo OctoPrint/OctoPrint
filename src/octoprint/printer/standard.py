@@ -11,6 +11,7 @@ import logging
 import os
 import threading
 import time
+from typing import List
 
 from frozendict import frozendict
 
@@ -27,11 +28,20 @@ from octoprint.printer import (
     UnknownScript,
 )
 from octoprint.printer.estimation import PrintTimeEstimator
+from octoprint.schema import BaseModel
 from octoprint.settings import settings
 from octoprint.util import InvariantContainer
 from octoprint.util import comm as comm
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import to_unicode
+
+
+class ErrorInformation(BaseModel):
+    error: str
+    reason: str
+    consequence: str = None
+    faq: str = None
+    logs: List[str] = None
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -74,6 +84,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._posAfterSelect = None
 
         self._firmware_info = None
+        self._error_info = None
 
         # sd handling
         self._sdPrinting = False
@@ -149,7 +160,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 filepos=None,
                 printTime=None,
                 printTimeLeft=None,
-                printTimeOrigin=None,
+                printTimeLeftOrigin=None,
             ),
             current_z=None,
             offsets=self._dict(),
@@ -162,6 +173,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         eventManager().subscribe(
             Events.METADATA_STATISTICS_UPDATED, self._on_event_MetadataStatisticsUpdated
         )
+        eventManager().subscribe(Events.CONNECTED, self._on_event_Connected)
+        eventManager().subscribe(Events.DISCONNECTED, self._on_event_Disconnected)
         eventManager().subscribe(Events.CHART_MARKED, self._on_event_ChartMarked)
 
         self._handle_connect_hooks = plugin_manager().get_hooks(
@@ -184,6 +197,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
     @property
     def firmware_info(self):
         return frozendict(self._firmware_info) if self._firmware_info else None
+
+    @property
+    def error_info(self):
+        return self._error_info.dict() if self._error_info else None
 
     # ~~ handling of PrinterCallbacks
 
@@ -306,6 +323,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     self._selectedFile["user"],
                 )
 
+    # ~~ connection events
+
+    def _on_event_Connected(self, event, data):
+        self._markings.append(
+            {"type": "connected", "label": "Connected", "time": time.time()}
+        )
+
+    def _on_event_Disconnected(self, event, data):
+        self._markings.append(
+            {"type": "disconnected", "label": "Disconnected", "time": time.time()}
+        )
+
     # ~~ chart marking insertions
 
     def _on_event_ChartMarked(self, event, data):
@@ -369,6 +398,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     f"Exception while handling connect in plugin {name}",
                     extra={"plugin": name},
                 )
+
+        self._error_info = None
 
         eventManager().fire(Events.CONNECTING)
         self._printerProfileManager.select(profile)
@@ -1506,6 +1537,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         self._setState(state, state_string=state_string, error_string=error_string)
 
+    def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
+        # store error info
+        self._error_info = ErrorInformation(
+            error=error, reason=reason, consequence=consequence, faq=faq, logs=logs
+        )
+
     def on_comm_message(self, message):
         """
         Callback method for the comm object, called upon message exchanges via serial.
@@ -1584,6 +1621,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             self.start_print(pos=self._posAfterSelect, user=user)
 
     def on_comm_print_job_started(self, suppress_script=False, user=None):
+        # clear error info
+        self._error_info = None
+
         self._updateJobUser(
             user
         )  # the final job owner should always be whoever _started_ the job

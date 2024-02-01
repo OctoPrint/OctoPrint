@@ -1,0 +1,39 @@
+<div id="firmwareErrorModal" class="modal hide fade-in">
+	<div class="modal-header">
+		<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+		<h3>{{ _('There was an error reported by your printer') }}</h3>
+	</div>
+	<div class="modal-body">
+		<p>{% trans %}
+			Your printer's firmware reported an error:
+		{% endtrans %}</p>
+		<p style="text-align: center"><strong class="text-error" id="firmwareErrorModalError"></strong></p>
+		<p id="firmwareErrorModalM112">{% trans %}
+			Due to this error, OctoPrint was not able to continue to communicate with your printer and
+			sent an emergency stop command <code>M112</code> to ensure all heaters are turned off, then disconnected.
+		{% endtrans %}</p>
+		<p id="firmwareErrorModalDisconnect">{% trans %}
+			Due to this error, OctoPrint was not able to continue to communicate with your printer and
+			had to disconnect.
+		{% endtrans %}</p>
+		<p id="firmwareErrorModalCancel">{% trans %}
+			Due to this error, OctoPrint cancelled the ongoing print job.
+		{% endtrans %}</p>
+		<p id="firmwareErrorModalFaq">{% trans %}
+			You might be able to find more information on this error and how to solve it
+			<a target="_blank" rel="noreferrer noopener">in this FAQ entry</a>!
+		{% endtrans %}</p>
+		<div id="firmwareErrorModalLogs">
+			<p>{% trans %}
+				Here's the last communication with your printer before this error occurred:
+			{% endtrans %}</p>
+			<pre id="firmwareErrorModalLogsOutput" class="pre-scrollable pre-output" style="min-height: 200px; max-height: 200px"></pre>
+			<p><strong>{% trans %}
+				This error is not caused by OctoPrint, it is a problem that was reported by your printer's firmware to which OctoPrint reacted!
+			{% endtrans %}</strong></p>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</a>
+	</div>
+</div>
