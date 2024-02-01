@@ -32,11 +32,12 @@ jobs:
           # create source tarball
           prefix=$(basename ${sdist%.tar.gz})
           git archive --prefix $prefix/ HEAD > dist/$prefix.source.tar.gz
-
-          # create sha512sums
-          sha512sum dist/OctoPrint-*-py2.py3-none-any.whl > dist/sha512sums.txt
-          sha512sum dist/OctoPrint-*.sdist.tar.gz >> dist/sha512sums.txt
-          sha512sum dist/OctoPrint-*.source.tar.gz >> dist/sha512sums.txt
+      - name: 🔨 Create sha512sums of dist files
+        run: |
+          cd dist
+          sha512sum OctoPrint-*-py2.py3-none-any.whl > sha512sums.txt
+          sha512sum OctoPrint-*.sdist.tar.gz >> sha512sums.txt
+          sha512sum OctoPrint-*.source.tar.gz >> sha512sums.txt
       - name: ⬆ Upload build result
         uses: actions/upload-artifact@v3
         with:
