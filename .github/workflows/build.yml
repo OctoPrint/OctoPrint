@@ -199,14 +199,14 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
+          name: playwright-report-py${{ matrix.python }}
           path: tests/playwright/playwright-report
 
       - name: ⬆ Upload OctoPrint logs
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: octoprint-logs
+          name: octoprint-logs-py${{ matrix.python }}
           path: ${{ github.workspace }}/e2econfig/logs
 
   publish-on-release:
