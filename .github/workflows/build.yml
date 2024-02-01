@@ -25,15 +25,15 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
 
-          // rename sdist .tar.gz to .sdist.tar.gz
+          # rename sdist .tar.gz to .sdist.tar.gz
           sdist=$(ls dist/OctoPrint-*.tar.gz)
           mv "$sdist" "${sdist/.tar.gz/.sdist.tar.gz}"
 
-          // create source tarball
+          # create source tarball
           prefix=$(basename ${sdist%.tar.gz})
           git archive --prefix $prefix/ HEAD > dist/$prefix.source.tar.gz
 
-          // create sha512sums
+          # create sha512sums
           sha512sum dist/OctoPrint-*-py2.py3-none-any.whl > dist/sha512sums.txt
           sha512sum dist/OctoPrint-*.sdist.tar.gz >> dist/sha512sums.txt
           sha512sum dist/OctoPrint-*.source.tar.gz >> dist/sha512sums.txt
