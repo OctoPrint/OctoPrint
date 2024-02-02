@@ -31,7 +31,7 @@ jobs:
 
           # create source tarball
           prefix=$(basename ${sdist%.tar.gz})
-          git archive --prefix $prefix/ HEAD > dist/$prefix.source.tar.gz
+          git archive --prefix $prefix/ HEAD --output dist/$prefix.source.tar.gz
       - name: 🔨 Create sha512sums of dist files
         run: |
           cd dist
