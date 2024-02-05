@@ -242,7 +242,7 @@ jobs:
           OCTOPRINT_VERSION=$(echo $GITHUB_REF | cut -d/ -f3)
           echo "OCTOPRINT_VERSION=$OCTOPRINT_VERSION" >> $GITHUB_ENV
       - name: 🚀 Repository Dispatch
-        uses: peter-evans/repository-dispatch@v2
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.REPODISPATCH_TOKEN }}
           repository: OctoPrint/OctoPi-UpToDate

@@ -16,7 +16,7 @@ jobs:
     if: github.repository == 'OctoPrint/OctoPrint'
     steps:
       - name: 🚀 Repository Dispatch
-        uses: peter-evans/repository-dispatch@v2
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.REPODISPATCH_TOKEN }}
           repository: OctoPrint/docs.octoprint.org
