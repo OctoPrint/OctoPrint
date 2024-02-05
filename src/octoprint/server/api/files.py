@@ -190,7 +190,7 @@ def runFilesTest():
 
         sanitized_path, _, sanitized = sanitize(storage, path, filename)
 
-        exists = _getFileDetails(storage, filename)
+        exists = _getFileDetails(storage, sanitized)
         if exists:
             suggestion = filename
             name, ext = os.path.splitext(filename)
