@@ -33,3 +33,6 @@ devel:
     enabled: true
     capabilities:
       autoreport_temp: false
+empty:
+  value:
+    a: true
