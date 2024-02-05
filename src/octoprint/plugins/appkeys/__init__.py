@@ -78,8 +78,11 @@ class ActiveKey:
         self.api_key = api_key
         self.user_id = user_id
 
-    def external(self):
-        return {"app_id": self.app_id, "api_key": self.api_key, "user_id": self.user_id}
+    def external(self, incl_key=False):
+        result = {"app_id": self.app_id, "user_id": self.user_id}
+        if incl_key:
+            result["api_key"] = self.api_key
+        return result
 
     def internal(self):
         return {"app_id": self.app_id, "api_key": self.api_key}
@@ -319,9 +322,7 @@ class AppKeysPlugin(
                 return flask.abort(404)
 
             return flask.jsonify(
-                key=key.external() | {"api_key": ""}
-                if not credentials_checked_recently()
-                else key.external()
+                key=key.external(incl_key=credentials_checked_recently())
             )
 
         # GET ?all=true (admin only)
@@ -336,10 +337,7 @@ class AppKeysPlugin(
 
         return flask.jsonify(
             keys=list(
-                map(
-                    lambda x: x | {"api_key": ""},
-                    map(lambda x: x.external(), keys),
-                )
+                map(lambda x: x.external(), keys),
             ),
             pending={
                 x.user_token: x.external() for x in self._get_pending_by_user_id(user_id)
