@@ -41,6 +41,7 @@ import sarge
 from flask_babel import gettext
 
 from octoprint.plugins.pluginmanager import DEFAULT_PLUGIN_REPOSITORY
+from octoprint.server.util.flask import credentials_checked_recently
 from octoprint.settings import valid_boolean_trues
 from octoprint.util import get_formatted_size
 from octoprint.util.text import sanitize
@@ -70,13 +71,12 @@ class BackupPlugin(
     def get_additional_permissions(self):
         return [
             {
-                "key": "ACCESS",
-                "name": "Backup access",
-                "description": gettext("Allows access to backups and restores"),
-                "roles": ["access"],
-                "dangerous": True,
+                "key": "CREATE",
+                "name": "Create backup",
+                "description": gettext("Allows to trigger the creation of backups"),
+                "roles": ["create"],
                 "default_groups": [ADMIN_GROUP],
-            }
+            },
         ]
 
     # Socket emit hook
@@ -85,7 +85,7 @@ class BackupPlugin(
         if message != "event" or payload["type"] != Events.PLUGIN_BACKUP_BACKUP_CREATED:
             return True
 
-        return user and user.has_permission(Permissions.PLUGIN_BACKUP_ACCESS)
+        return user and user.has_permission(Permissions.PLUGIN_BACKUP_CREATE)
 
     ##~~ StartupPlugin
 
@@ -125,7 +125,7 @@ class BackupPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/", methods=["GET"])
     @no_firstrun_access
-    @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
+    @Permissions.ADMIN.require(403)
     def get_state(self):
         backups = self._get_backups()
         unknown_plugins = self._get_unknown_plugins()
@@ -139,7 +139,7 @@ class BackupPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/unknown_plugins", methods=["GET"])
     @no_firstrun_access
-    @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
+    @Permissions.ADMIN.require(403)
     def get_unknown_plugins(self):
         # TODO add caching
         unknown_plugins = self._get_unknown_plugins()
@@ -147,7 +147,7 @@ class BackupPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/unknown_plugins", methods=["DELETE"])
     @no_firstrun_access
-    @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
+    @Permissions.ADMIN.require(403)
     def delete_unknown_plugins(self):
         data_file = os.path.join(self.get_plugin_data_folder(), UNKNOWN_PLUGINS_FILE)
         try:
@@ -158,14 +158,14 @@ class BackupPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/backup", methods=["GET"])
     @no_firstrun_access
-    @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
+    @Permissions.ADMIN.require(403)
     def get_backups(self):
         backups = self._get_backups()
         return flask.jsonify(backups=backups)
 
     @octoprint.plugin.BlueprintPlugin.route("/backup", methods=["POST"])
     @no_firstrun_access
-    @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
+    @Permissions.PLUGIN_BACKUP_CREATE.require(403)
     def create_backup(self):
         data = flask.request.json
         exclude = data.get("exclude", [])
@@ -179,7 +179,7 @@ class BackupPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/backup/<filename>", methods=["DELETE"])
     @no_firstrun_access
-    @Permissions.PLUGIN_BACKUP_ACCESS.require(403)
+    @Permissions.ADMIN.require(403)
     def delete_backup(self, filename):
         self._delete_backup(filename)
 
@@ -187,9 +187,9 @@ class BackupPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/restore", methods=["POST"])
     def perform_restore(self):
-        if not Permissions.PLUGIN_BACKUP_ACCESS.can() and not self._settings.global_get(
-            ["server", "firstRun"]
-        ):
+        if not (
+            Permissions.ADMIN.can() and credentials_checked_recently()
+        ) and not self._settings.global_get(["server", "firstRun"]):
             flask.abort(403)
 
         if not self._restore_supported(self._settings):
@@ -369,7 +369,7 @@ class BackupPlugin(
 
     def route_hook(self, *args, **kwargs):
         from octoprint.server import app
-        from octoprint.server.util.flask import permission_validator
+        from octoprint.server.util.flask import permission_and_fresh_credentials_validator
         from octoprint.server.util.tornado import (
             LargeResponseHandler,
             access_validation_factory,
@@ -395,7 +395,7 @@ class BackupPlugin(
                         status_code=404,
                     ),
                     "access_validation": access_validation_factory(
-                        app, permission_validator, Permissions.PLUGIN_BACKUP_ACCESS
+                        app, permission_and_fresh_credentials_validator, Permissions.ADMIN
                     ),
                 },
             )
