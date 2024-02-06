@@ -1527,6 +1527,21 @@ def permission_validator(request, permission):
         raise tornado.web.HTTPError(403)
 
 
+def permission_and_fresh_credentials_validator(request, permission):
+    """
+    Validates that the given request is made by an authorized user, identified either by API key or existing Flask
+    session, and that the credentials have been checked recently if it's a Flask session.
+
+    Must be executed in an existing Flask request context!
+
+    :param request: The Flask request object
+    :param request: The required permission
+    """
+
+    permission_validator(request, permission)
+    ensure_credentials_checked_recently()
+
+
 @deprecated(
     "admin_validator is deprecated, please use new permission_validator", since=""
 )
