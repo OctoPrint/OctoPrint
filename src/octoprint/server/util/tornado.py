@@ -75,13 +75,15 @@ def fix_websocket_check_origin():
             return (
                 scheme,
                 parsed.hostname,
-                parsed.port
-                if parsed.port
-                else 80
-                if scheme == "http"
-                else 443
-                if scheme == "https"
-                else None,
+                (
+                    parsed.port
+                    if parsed.port
+                    else 80
+                    if scheme == "http"
+                    else 443
+                    if scheme == "https"
+                    else None
+                ),
             )
 
         return get_check_tuple(origin) == get_check_tuple(self.request.full_url())
@@ -1828,6 +1830,7 @@ def access_validation_factory(app, validator, *args):
         :param request: The Tornado request for which to create the environment and context
         """
         import flask
+        from werkzeug.exceptions import HTTPException
 
         wsgi_environ = WsgiInputContainer.environ(request)
         with app.request_context(wsgi_environ):
@@ -1843,7 +1846,10 @@ def access_validation_factory(app, validator, *args):
                 user = app.login_manager._user_callback(user_id)
             app.login_manager._update_request_context_with_user(user)
 
-            validator(flask.request, *args)
+            try:
+                validator(flask.request, *args)
+            except HTTPException as e:
+                raise tornado.web.HTTPError(e.code)
 
     return f
 
