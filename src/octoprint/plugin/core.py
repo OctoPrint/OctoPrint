@@ -23,33 +23,51 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import fnmatch
+import importlib.machinery
+import importlib.util
 import inspect
 import logging
 import os
+import sys
 from collections import OrderedDict, defaultdict, namedtuple
 from os import scandir
 
 import pkg_resources
 import pkginfo
 
-import octoprint.vendor.imp as imp
 from octoprint.util import sv, time_this, to_unicode
 from octoprint.util.version import get_python_version_string, is_python_compatible
 
+SUFFIXES = importlib.machinery.SOURCE_SUFFIXES + importlib.machinery.BYTECODE_SUFFIXES
+
 
 # noinspection PyDeprecation
-def _find_module(name, path=None):
+def _find_spec(module_name, name=None, path=None):
     if path is not None:
-        spec = imp.find_module(name, [path])
+        if name is None:
+            name = module_name
+
+        candidates = [os.path.join(path, name, f"__init__{ext}") for ext in SUFFIXES] + [
+            os.path.join(path, f"{name}{ext}") for ext in SUFFIXES
+        ]
+
+        for p in candidates:
+            if os.path.exists(p):
+                return importlib.util.spec_from_file_location(module_name, p)
+        else:
+            return None
+
     else:
-        spec = imp.find_module(name)
-    return spec[1], spec
+        return importlib.util.find_spec(module_name)
 
 
 # noinspection PyDeprecation
-def _load_module(name, spec):
-    f, filename, details = spec
-    return imp.load_module(name, f, filename, details)
+def _load_module(spec):
+    module = importlib.util.module_from_spec(spec)
+    if spec.name not in sys.modules:
+        sys.modules[spec.name] = module
+    spec.loader.exec_module(sys.modules[spec.name])
+    return sys.modules[spec.name]
 
 
 def parse_plugin_metadata(path):
@@ -1206,14 +1224,18 @@ class PluginManager:
         # TODO error handling
         try:
             if folder:
-                location, spec = _find_module(key, path=folder)
+                spec = _find_spec(module_name, name=key, path=folder)
             elif module_name:
-                location, spec = _find_module(module_name)
+                spec = _find_spec(module_name)
             else:
                 return None
         except Exception:
             self.logger.exception(f"Could not locate plugin {key}")
             return None
+
+        location = spec.origin
+        if os.path.basename(location).startswith("__init__."):
+            location = os.path.dirname(location)
 
         # Create a simple dummy entry first ...
         plugin = PluginInfo(
@@ -1265,7 +1287,6 @@ class PluginManager:
         return self._import_plugin(
             key,
             spec,
-            module_name=module_name,
             name=name,
             location=plugin.location,
             version=version,
@@ -1281,7 +1302,6 @@ class PluginManager:
         self,
         key,
         spec,
-        module_name=None,
         name=None,
         location=None,
         version=None,
@@ -1293,10 +1313,7 @@ class PluginManager:
         parsed_metadata=None,
     ):
         try:
-            if module_name:
-                module = _load_module(module_name, spec)
-            else:
-                module = _load_module(key, spec)
+            module = _load_module(spec)
 
             plugin = PluginInfo(
                 key,
