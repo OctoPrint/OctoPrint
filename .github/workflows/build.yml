@@ -20,7 +20,7 @@ jobs:
           python-version: 3.12
       - name: 🏗 Install build dependencies
         run: |
-          python -m pip install wheel --user
+          python -m pip install setuptools wheel --user
       - name: 🔨 Build a binary wheel, an sdist tarball and a source tarball
         run: |
           python setup.py sdist bdist_wheel
