@@ -1221,6 +1221,9 @@ class PluginManager:
         license=None,
         bundled=False,
     ):
+        if module_name is None:
+            module_name = key
+
         # TODO error handling
         try:
             if folder:
