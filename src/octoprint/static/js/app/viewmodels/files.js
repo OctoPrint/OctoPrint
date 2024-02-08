@@ -1609,15 +1609,6 @@ $(function () {
             self.requestData();
         };
 
-        self.onServerConnect = self.onServerReconnect = function (payload) {
-            self._enableDragNDrop(true);
-            self.requestData();
-        };
-
-        self.onServerDisconnect = function (payload) {
-            self._enableDragNDrop(false);
-        };
-
         self._setDropzone = function (dropzone, enable) {
             var button = dropzone === "local" ? self.uploadButton : self.uploadSdButton;
             var drop = dropzone === "local" ? self.localTarget : self.sdTarget;
@@ -1640,16 +1631,25 @@ $(function () {
             });
         };
 
-        self._enableDragNDrop = function (enable) {
-            if (enable && self.settingsViewModel.feature_enableDragDropUpload()) {
-                $(document).bind("dragenter", self._handleDragEnter);
-                $(document).bind("dragleave", self._handleDragLeave);
-                log.debug("Enabled drag-n-drop");
-            } else {
-                $(document).unbind("dragenter", self._handleDragEnter);
-                $(document).unbind("dragleave", self._handleDragLeave);
-                log.debug("Disabled drag-n-drop");
-            }
+        self._dragNDropEnabled = false;
+        self._enableDragNDrop = () => {
+            if (!self.settingsViewModel.feature_enableDragDropUpload()) return;
+
+            if (self._dragNDropEnabled) return;
+            self._dragNDropEnabled = true;
+
+            $(document).bind("dragenter", self._handleDragEnter);
+            $(document).bind("dragleave", self._handleDragLeave);
+            log.debug("Enabled drag-n-drop");
+        };
+
+        self._disableDragNDrop = () => {
+            if (!self._dragNDropEnabled) return;
+            self._dragNDropEnabled = false;
+
+            $(document).unbind("dragenter", self._handleDragEnter);
+            $(document).unbind("dragleave", self._handleDragLeave);
+            log.debug("Disabled drag-n-drop");
         };
 
         self._setProgressBar = function (percentage, text, active) {
@@ -1986,18 +1986,46 @@ $(function () {
             self._dragNDropTarget = e.target;
             self._dragNDropLastOver = Date.now();
         };
-        self.onEventSettingsUpdated = function () {
-            self.showInternalFilename(
-                self.settingsViewModel.settings.appearance.showInternalFilename()
-            );
+
+        self.onServerConnect = self.onServerReconnect = function (payload) {
+            self._enableDragNDrop();
+            self.requestData();
         };
+
+        self.onServerDisconnect = function (payload) {
+            self._disableDragNDrop();
+        };
+
         self.onBeforeBinding = function () {
             self.showInternalFilename(
                 self.settingsViewModel.settings.appearance.showInternalFilename()
             );
         };
+
         self.onAllBound = function (allViewModels) {
             self.allViewModels = allViewModels;
+        };
+
+        self.onStartupComplete = () => {
+            self.showInternalFilename(
+                self.settingsViewModel.settings.appearance.showInternalFilename()
+            );
+            self.settingsViewModel.settings.appearance.showInternalFilename.subscribe(
+                (value) => {
+                    self.showInternalFilename(value);
+                }
+            );
+
+            self._enableDragNDrop();
+            self.settingsViewModel.settings.feature.enableDragDropUpload.subscribe(
+                (value) => {
+                    if (value) {
+                        self._enableDragNDrop();
+                    } else {
+                        self._disableDragNDrop();
+                    }
+                }
+            );
         };
     }
 

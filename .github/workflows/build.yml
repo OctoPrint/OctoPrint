@@ -21,11 +21,25 @@ jobs:
       - name: 🏗 Install build dependencies
         run: |
           python -m pip install wheel --user
-      - name: 🔨 Build a binary wheel and a source tarball
+      - name: 🔨 Build a binary wheel, an sdist tarball and a source tarball
         run: |
           python setup.py sdist bdist_wheel
+
+          # rename sdist .tar.gz to .sdist.tar.gz
+          sdist=$(ls dist/OctoPrint-*.tar.gz)
+          mv "$sdist" "${sdist/.tar.gz/.sdist.tar.gz}"
+
+          # create source tarball
+          prefix=$(basename ${sdist%.tar.gz})
+          git archive --prefix $prefix/ HEAD --output dist/$prefix.source.tar.gz
+      - name: 🔨 Create sha512sums of dist files
+        run: |
+          cd dist
+          sha512sum OctoPrint-*-py2.py3-none-any.whl > sha512sums.txt
+          sha512sum OctoPrint-*.sdist.tar.gz >> sha512sums.txt
+          sha512sum OctoPrint-*.source.tar.gz >> sha512sums.txt
       - name: ⬆ Upload build result
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist
@@ -89,7 +103,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
@@ -104,7 +118,7 @@ jobs:
       - name: 🚀 Install source tarball
         if: matrix.installable == 'sdist'
         run: |
-          pip install dist/OctoPrint-*.tar.gz
+          pip install dist/OctoPrint-*.sdist.tar.gz
 
   test-e2e:
     name: 🧪 E2E tests
@@ -118,7 +132,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
@@ -182,21 +196,21 @@ jobs:
           fi
 
       - name: ⬆ Upload Playwright report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
+          name: playwright-report-py${{ matrix.python }}
           path: tests/playwright/playwright-report
 
       - name: ⬆ Upload OctoPrint logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: octoprint-logs
+          name: octoprint-logs-py${{ matrix.python }}
           path: ${{ github.workspace }}/e2econfig/logs
 
   publish-on-release:
-    name: 📦 Publish on GitHub release
+    name: 📦 Publish build & source on GitHub release
     if: github.event_name == 'release' && github.repository == 'OctoPrint/OctoPrint'
     needs:
       - pre-commit
@@ -207,7 +221,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
@@ -215,6 +229,7 @@ jobs:
       - name: ⬆ Upload to release
         run: |
           UPLOAD_URL="https://uploads.github.com/repos/${{ github.repository }}/releases/${{ github.event.release.id }}/assets"
+
           for file in dist/*; do
             [ -e "$file" ] || exit 1
             echo "Uploading $file..."
@@ -234,7 +249,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
@@ -252,7 +267,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist

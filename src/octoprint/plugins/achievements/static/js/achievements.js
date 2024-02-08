@@ -49,10 +49,16 @@ $(function () {
             if (!self.statsFetched()) {
                 return "n/a";
             }
-            return _.sprintf(gettext("%(total)s (%(finished)s finished)"), {
-                total: formatDuration(self.stats.print_duration_total()),
-                finished: formatDuration(self.stats.print_duration_finished())
-            });
+            if (!self.stats.print_duration_finished()) {
+                return _.sprintf(gettext("%(total)s"), {
+                    total: formatDuration(self.stats.print_duration_total())
+                });
+            } else {
+                return _.sprintf(gettext("%(total)s (%(finished)s finished)"), {
+                    total: formatDuration(self.stats.print_duration_total()),
+                    finished: formatDuration(self.stats.print_duration_finished())
+                });
+            }
         });
 
         self.longestPrint = ko.pureComputed(() => {

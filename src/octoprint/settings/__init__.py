@@ -332,14 +332,14 @@ class HierarchicalChainMap:
         key = self._path_to_key(path)
         prefix = key + _CHAINMAP_SEP
 
+        # path might have had subkeys before, clean them up
+        self._del_prefix(current, prefix)
+
         if isinstance(value, dict):
             current.update(self._flatten(value, key))
             self._invalidate_prefixed_keys(prefix)
 
         else:
-            # path might have had subkeys before, clean them up
-            self._del_prefix(current, prefix)
-
             # make sure to clear anything below the path (e.g. switching from dict
             # to something else, for whatever reason)
             self._clean_upward_path(current, path)
