@@ -20,10 +20,6 @@
                     <th class="settings_users_details_key">{{ _('Permissions') }}</th>
                     <td class="settings_users_details_value" data-bind="text: $root.access.permissionList($data)"></td>
                 </tr>
-                <tr data-bind="visible: apikey">
-                    <th class="settings_users_details_key">{{ _('API Key') }}</th>
-                    <td class="settings_users_details_value"><span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard')|edq }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fas fa-copy"></i></a></td>
-                </tr>
             </table>
         </td>
         <td class="settings_users_active"><i class="far" data-bind="css: { 'fa-check-square': active, 'fa-square': !active }"></i></td>

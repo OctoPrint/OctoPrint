@@ -267,7 +267,10 @@ def recovery():
     if response:
         return response
 
-    render_kwargs = {"theming": []}
+    reauthentication_timeout = settings().getInt(
+        ["accessControl", "defaultReauthenticationTimeout"]
+    )
+    render_kwargs = {"theming": [], "reauthenticationTimeout": reauthentication_timeout}
 
     try:
         additional_assets = _add_additional_assets("octoprint.theming.recovery")

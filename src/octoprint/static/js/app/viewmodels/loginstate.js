@@ -85,9 +85,7 @@ $(function () {
             const result = $.Deferred();
 
             self._reauthenticated = false;
-            self.reauthenticateDialog.on("shown", function () {
-                $("input[type=password]", self.reauthenticateDialog).focus();
-            });
+            self.reauthenticateDialog.off("hidden");
             self.reauthenticateDialog.on("hidden", () => {
                 self.reauthenticatePass("");
                 self.reauthenticateFailed(false);
@@ -410,6 +408,9 @@ $(function () {
 
         self.onStartup = function () {
             self.reauthenticateDialog = $("#reauthenticate_dialog");
+            self.reauthenticateDialog.on("shown", function () {
+                $("input[type=password]", self.reauthenticateDialog).focus();
+            });
 
             self.elementUsernameInput = $("#login_user");
             self.elementPasswordInput = $("#login_pass");

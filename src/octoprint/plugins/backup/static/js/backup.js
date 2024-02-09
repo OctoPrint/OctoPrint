@@ -31,32 +31,39 @@ $(function () {
 
         self.backupUploadData = undefined;
         self.backupUploadName = ko.observable();
+        self.backupUploadSource = undefined;
 
         self.isAboveUploadSize = function (data) {
             return data.size > self.maxUploadSize();
         };
 
-        var backupFileuploadOptions = {
-            dataType: "json",
-            maxNumberOfFiles: 1,
-            autoUpload: false,
-            add: function (e, data) {
-                if (data.files.length === 0) {
-                    // no files? ignore
-                    return false;
-                }
+        const backupFileuploadOptionsFactory = (source) => {
+            return {
+                dataType: "json",
+                maxNumberOfFiles: 1,
+                autoUpload: false,
+                add: (e, data) => {
+                    if (data.files.length === 0) {
+                        // no files? ignore
+                        return false;
+                    }
 
-                self.backupUploadName(data.files[0].name);
-                self.backupUploadData = data;
-            },
-            done: function (e, data) {
-                self.backupUploadName(undefined);
-                self.backupUploadData = undefined;
-            }
+                    self.backupUploadName(data.files[0].name);
+                    self.backupUploadData = data;
+                    self.backupUploadSource = source;
+                },
+                done: (e, data) => {
+                    self.backupUploadName(undefined);
+                    self.backupUploadData = undefined;
+                    self.backupUploadSource = undefined;
+                }
+            };
         };
 
-        $("#settings-backup-upload").fileupload(backupFileuploadOptions);
-        $("#wizard-backup-upload").fileupload(backupFileuploadOptions);
+        $("#settings-backup-upload").fileupload(
+            backupFileuploadOptionsFactory("settings")
+        );
+        $("#wizard-backup-upload").fileupload(backupFileuploadOptionsFactory("wizard"));
 
         self.restoreInProgress = ko.observable(false);
         self.restoreTitle = ko.observable();
@@ -75,6 +82,17 @@ $(function () {
             self.unknownPlugins(response.unknown_plugins);
             self.restoreSupported(response.restore_supported);
             self.maxUploadSize(response.max_upload_size);
+        };
+
+        self.reauthenticateDownload = (url) => {
+            self.loginState.reauthenticateIfNecessary(() => {
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
         };
 
         self.createBackup = function () {
@@ -101,19 +119,6 @@ $(function () {
         self.restoreBackup = function (backup) {
             if (!self.restoreSupported()) return;
 
-            var perform = function () {
-                self.restoreInProgress(true);
-                self.loglines.removeAll();
-                self.loglines.push({line: "Preparing to restore...", stream: "message"});
-                self.loglines.push({line: " ", stream: "message"});
-                self.restoreDialog.modal({
-                    keyboard: false,
-                    backdrop: "static",
-                    show: true
-                });
-
-                OctoPrint.plugins.backup.restoreBackup(backup);
-            };
             showConfirmationDialog(
                 _.sprintf(
                     gettext(
@@ -121,14 +126,31 @@ $(function () {
                     ),
                     {name: _.escape(backup)}
                 ),
-                perform
+                () => {
+                    self.loginState.reauthenticateIfNecessary(() => {
+                        self.restoreInProgress(true);
+                        self.loglines.removeAll();
+                        self.loglines.push({
+                            line: "Preparing to restore...",
+                            stream: "message"
+                        });
+                        self.loglines.push({line: " ", stream: "message"});
+                        self.restoreDialog.modal({
+                            keyboard: false,
+                            backdrop: "static",
+                            show: true
+                        });
+
+                        OctoPrint.plugins.backup.restoreBackup(backup);
+                    });
+                }
             );
         };
 
         self.performRestoreFromUpload = function () {
             if (self.backupUploadData === undefined) return;
 
-            var perform = function () {
+            const proceed = () => {
                 self.restoreInProgress(true);
                 self.loglines.removeAll();
                 self.loglines.push({
@@ -144,6 +166,7 @@ $(function () {
 
                 self.backupUploadData.submit();
             };
+
             showConfirmationDialog(
                 _.sprintf(
                     gettext(
@@ -151,7 +174,13 @@ $(function () {
                     ),
                     {name: _.escape(self.backupUploadName())}
                 ),
-                perform
+                () => {
+                    if (self.backupUploadSource === "wizard") {
+                        proceed();
+                    } else {
+                        self.loginState.reauthenticateIfNecessary(proceed);
+                    }
+                }
             );
         };
 

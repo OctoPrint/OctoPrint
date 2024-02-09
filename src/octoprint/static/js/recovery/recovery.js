@@ -37,6 +37,7 @@ $(function () {
         self.known = ko.observable(false);
         self.permitted = ko.observable(false);
         self.username = ko.observable(undefined);
+        self.credentialsSeen = ko.observable(undefined);
 
         // system commands
         self.systemCommands = ko.observableArray([]);
@@ -64,10 +65,20 @@ $(function () {
         self.workLoglines = ko.observableArray([]);
         self.workTitle = ko.observable("");
 
+        // reauthentication dialog
+        self.reauthenticateDialog = $("#reauthenticate_dialog");
+        self.reauthenticateDialog.on("shown", function () {
+            $("input[type=password]", self.reauthenticateDialog).focus();
+        });
+        self.reauthenticatePass = ko.observable("");
+        self.reauthenticateFailed = ko.observable(false);
+        self._reauthenticated = false;
+
         self.request = () => {
             OctoPrint.browser.passiveLogin().done((resp) => {
                 self.username(resp.name);
                 self.permitted(_.includes(resp.needs.role, "admin"));
+                self.credentialsSeen(resp._credentials_seen);
                 self.known(true);
 
                 OctoPrint.socket.sendAuth(resp.name, resp.session);
@@ -110,6 +121,73 @@ $(function () {
                 self.backupSupported(false);
                 self.restoreSupported(false);
                 self.backups([]);
+            }
+        };
+
+        self.showReauthenticationDialog = () => {
+            const result = $.Deferred();
+
+            self._reauthenticated = false;
+            self.reauthenticateDialog.off("hidden");
+            self.reauthenticateDialog.on("hidden", () => {
+                self.reauthenticatePass("");
+                self.reauthenticateFailed(false);
+                if (self._reauthenticated) {
+                    result.resolve();
+                } else {
+                    result.reject();
+                }
+            });
+            self.reauthenticateDialog.modal("show");
+
+            return result.promise();
+        };
+
+        self.reauthenticate = () => {
+            const user = self.username();
+            const pass = self.reauthenticatePass();
+            return OctoPrint.browser
+                .login(user, pass)
+                .done((response) => {
+                    self.credentialsSeen(response._credentials_seen);
+                    self.reauthenticateFailed(false);
+                    self._reauthenticated = self.credentialsSeen();
+                    $("#reauthenticate_dialog").modal("hide");
+                })
+                .fail((response) => {
+                    self.reauthenticatePass("");
+                    self.reauthenticateFailed(true);
+                });
+        };
+
+        self.forceReauthentication = (callback) => {
+            self.showReauthenticationDialog()
+                .done(() => {
+                    callback();
+                })
+                .fail(() => {
+                    // Do nothing
+                });
+        };
+
+        self.checkCredentialsSeen = () => {
+            if (CONFIG_REAUTHENTICATION_TIMEOUT <= 0) return true;
+
+            const credentialsSeen = self.credentialsSeen();
+            if (!credentialsSeen) {
+                return false;
+            }
+
+            const now = new Date();
+            const seen = new Date(credentialsSeen);
+            return now - seen < CONFIG_REAUTHENTICATION_TIMEOUT * 60 * 1000;
+        };
+
+        self.reauthenticateIfNecessary = (callback) => {
+            if (!self.checkCredentialsSeen()) {
+                self.forceReauthentication(callback);
+            } else {
+                callback();
             }
         };
 
@@ -166,28 +244,44 @@ $(function () {
         self.restoreBackup = (backup) => {
             if (!self.restoreSupported()) return;
 
-            var perform = () => {
-                self.workInProgress(true);
-                self.workTitle(gettext("Restoring backup..."));
-                self.workLoglines.removeAll();
-                self.workLoglines.push({
-                    line: "Preparing to restore...",
-                    stream: "message"
-                });
-                self.workLoglines.push({line: " ", stream: "message"});
-                self.workDialog.modal({keyboard: false, backdrop: "static", show: true});
-
-                OctoPrint.plugins.backup.restoreBackup(backup);
-            };
             showConfirmationDialog(
                 _.sprintf(
                     gettext(
                         'You are about to restore the backup file "%(name)s". This cannot be undone.'
                     ),
-                    {name: _.escape(backup.name)}
+                    {name: _.escape(backup)}
                 ),
-                perform
+                () => {
+                    this.reauthenticateIfNecessary(() => {
+                        self.workInProgress(true);
+                        self.workTitle(gettext("Restoring backup..."));
+                        self.workLoglines.removeAll();
+                        self.workLoglines.push({
+                            line: "Preparing to restore...",
+                            stream: "message"
+                        });
+                        self.workLoglines.push({line: " ", stream: "message"});
+                        self.workDialog.modal({
+                            keyboard: false,
+                            backdrop: "static",
+                            show: true
+                        });
+
+                        OctoPrint.plugins.backup.restoreBackup(backup);
+                    });
+                }
             );
+        };
+
+        self.reauthenticateDownload = (url) => {
+            self.reauthenticateIfNecessary(() => {
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
         };
 
         self.logout = () => {
@@ -315,4 +409,5 @@ $(function () {
     ko.applyBindings(viewModel, document.getElementById("navbar"));
     ko.applyBindings(viewModel, document.getElementById("recovery"));
     ko.applyBindings(viewModel, document.getElementById("workdialog"));
+    ko.applyBindings(viewModel, document.getElementById("reauthenticate_dialog"));
 });

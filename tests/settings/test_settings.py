@@ -845,6 +845,13 @@ class ChainmapTest(unittest.TestCase):
 
         self.assertEqual(flattened, self.chainmap._chainmap.maps[0])
 
+    def test_set_empty_dict(self):
+        self.assertTrue(_key("empty", "value", "a") in self.chainmap._chainmap.maps[0])
+
+        self.chainmap.set_by_path(["empty", "value"], {})
+
+        self.assertFalse(_key("empty", "value", "a") in self.chainmap._chainmap.maps[0])
+
     def test_del_by_path(self):
         self.chainmap.del_by_path(
             ["devel", "virtualPrinter", "capabilities", "autoreport_temp"]
