@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.10.0rc1\n"
+"Project-Id-Version: OctoPrint 1.10.0rc2\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2024-01-31 13:20+0100\n"
+"POT-Creation-Date: 2024-02-12 10:10+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -156,22 +156,27 @@ msgstr ""
 msgid "%(prints)s (%(finished)s finished)"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:52
+#: src/octoprint/plugins/achievements/static/js/achievements.js:53
+#, python-format
+msgid "%(total)s"
+msgstr ""
+
+#: src/octoprint/plugins/achievements/static/js/achievements.js:57
 #, python-format
 msgid "%(total)s (%(finished)s finished)"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:64
+#: src/octoprint/plugins/achievements/static/js/achievements.js:70
 #, python-format
 msgid "%(duration)s (finished on %(date)s, %(timeSince)s)"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:74
+#: src/octoprint/plugins/achievements/static/js/achievements.js:80
 #, python-format
 msgid "... and %(count)s hidden achievements!"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:126
+#: src/octoprint/plugins/achievements/static/js/achievements.js:125
 #, python-format
 msgid ""
 "Enjoying OctoPrint? Looks like it! <a href=\"%(url)s\" target=\"_blank\" "
@@ -179,7 +184,7 @@ msgid ""
 "then</a> - thank you!"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:129
+#: src/octoprint/plugins/achievements/static/js/achievements.js:128
 #, python-format
 msgid ""
 "Getting value from OctoPrint? <a href=\"%(url)s\" target=\"_blank\" "
@@ -187,7 +192,7 @@ msgid ""
 "maintainer with a donation</a> - thank you!"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:132
+#: src/octoprint/plugins/achievements/static/js/achievements.js:131
 #, python-format
 msgid ""
 "Has OctoPrint helped you enjoy your printer more? <a href=\"%(url)s\" "
@@ -195,11 +200,11 @@ msgid ""
 "supporting its continued development</a> - thank you!"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:150
+#: src/octoprint/plugins/achievements/static/js/achievements.js:149
 msgid "Show all achievements..."
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:154
+#: src/octoprint/plugins/achievements/static/js/achievements.js:153
 msgid "Achievement unlocked!"
 msgstr ""
 
@@ -456,7 +461,7 @@ msgstr ""
 
 #: src/octoprint/plugins/announcements/static/js/announcements.js:411
 #: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:2139
-#: src/octoprint/static/js/app/viewmodels/loginstate.js:242
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:240
 msgid "Later"
 msgstr ""
 
@@ -499,7 +504,7 @@ msgstr ""
 #: src/octoprint/templates/dialogs/settings.jinja2:53
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:139
 #: src/octoprint/templates/dialogs/timelapse.jinja2:10
-#: src/octoprint/templates/recovery.jinja2:168
+#: src/octoprint/templates/recovery.jinja2:169
 msgid "Close"
 msgstr ""
 
@@ -515,7 +520,7 @@ msgstr ""
 #: src/octoprint/plugins/logging/templates/logging_settings.jinja2:70
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:139
 #: src/octoprint/templates/dialogs/settings/terminalfilters.jinja2:4
-#: src/octoprint/templates/recovery.jinja2:123
+#: src/octoprint/templates/recovery.jinja2:124
 #: src/octoprint/templates/snippets/settings/accesscontrol/groups.jinja2:5
 #: src/octoprint/templates/snippets/settings/accesscontrol/groups.jinja2:73
 #: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:4
@@ -528,7 +533,7 @@ msgstr ""
 #: src/octoprint/plugins/announcements/templates/announcements_settings.jinja2:7
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:140
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:185
-#: src/octoprint/templates/recovery.jinja2:126
+#: src/octoprint/templates/recovery.jinja2:127
 msgid "Actions"
 msgstr ""
 
@@ -536,20 +541,20 @@ msgstr ""
 msgid "Refresh Announcements"
 msgstr ""
 
-#: src/octoprint/plugins/appkeys/__init__.py:126
+#: src/octoprint/plugins/appkeys/__init__.py:129
 msgid "Allows administrating all application keys"
 msgstr ""
 
-#: src/octoprint/plugins/appkeys/__init__.py:134
+#: src/octoprint/plugins/appkeys/__init__.py:137
 msgid "Allows to grant app access"
 msgstr ""
 
-#: src/octoprint/plugins/appkeys/__init__.py:144
-#: src/octoprint/plugins/appkeys/__init__.py:145
+#: src/octoprint/plugins/appkeys/__init__.py:147
+#: src/octoprint/plugins/appkeys/__init__.py:148
 msgid "Application Keys"
 msgstr ""
 
-#: src/octoprint/plugins/appkeys/__init__.py:258
+#: src/octoprint/plugins/appkeys/__init__.py:261
 #: src/octoprint/plugins/appkeys/static/js/appkeys.js:145
 #, python-format
 msgid ""
@@ -557,7 +562,7 @@ msgid ""
 "through the API."
 msgstr ""
 
-#: src/octoprint/plugins/appkeys/__init__.py:619
+#: src/octoprint/plugins/appkeys/__init__.py:617
 msgid ""
 "Without this plugin third party clients will no longer be able to obtain "
 "an API key without you manually copy-pasting it."
@@ -653,12 +658,10 @@ msgstr ""
 
 #: src/octoprint/plugins/appkeys/templates/appkeys.jinja2:21
 #: src/octoprint/templates/dialogs/usersettings/access.jinja2:32
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:24
 msgid "API Key"
 msgstr ""
 
 #: src/octoprint/plugins/appkeys/templates/appkeys.jinja2:24
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:25
 msgid "Copy API Key to clipboard"
 msgstr ""
 
@@ -778,12 +781,12 @@ msgstr ""
 msgid "Generate"
 msgstr ""
 
-#: src/octoprint/plugins/backup/__init__.py:75
-msgid "Allows access to backups and restores"
+#: src/octoprint/plugins/backup/__init__.py:76
+msgid "Allows to trigger the creation of backups"
 msgstr ""
 
 #: src/octoprint/plugins/backup/__init__.py:114
-#: src/octoprint/templates/recovery.jinja2:92
+#: src/octoprint/templates/recovery.jinja2:93
 msgid "Backup & Restore"
 msgstr ""
 
@@ -797,95 +800,95 @@ msgid ""
 "OctoPrint settings and data."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:94
+#: src/octoprint/plugins/backup/static/js/backup.js:112
 #, python-format
 msgid "You are about to delete backup file \"%(name)s\"."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:119
+#: src/octoprint/plugins/backup/static/js/backup.js:124
 #, python-format
 msgid ""
 "You are about to restore the backup file \"%(name)s\". This cannot be "
 "undone."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:149
+#: src/octoprint/plugins/backup/static/js/backup.js:172
 #, python-format
 msgid ""
 "You are about to upload and restore the backup file \"%(name)s\". This "
 "cannot be undone."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:165
+#: src/octoprint/plugins/backup/static/js/backup.js:194
 msgid ""
 "You are about to delete the record of plugins unknown during the last "
 "restore."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:198
+#: src/octoprint/plugins/backup/static/js/backup.js:227
 #, python-format
 msgid "You are about to delete %(count)d backups."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:221
+#: src/octoprint/plugins/backup/static/js/backup.js:250
 msgid "Backup created successfully"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:230
+#: src/octoprint/plugins/backup/static/js/backup.js:259
 msgid "Creating the backup failed"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:232
+#: src/octoprint/plugins/backup/static/js/backup.js:261
 #, python-format
 msgid ""
 "OctoPrint could not create your backup. Please consult "
 "<code>octoprint.log</code> for details. Error: %(error)s"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:242
+#: src/octoprint/plugins/backup/static/js/backup.js:271
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:120
 msgid "Restoring from backup..."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:249
+#: src/octoprint/plugins/backup/static/js/backup.js:278
 msgid ""
 "Restore failed! Check the above output and octoprint.log for reasons as "
 "to why."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:258
+#: src/octoprint/plugins/backup/static/js/backup.js:287
 msgid "Restore successful! The server will now be restarted!"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:267
+#: src/octoprint/plugins/backup/static/js/backup.js:296
 #, python-format
 msgid "Installing plugin \"%(plugin)s\"..."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:276
+#: src/octoprint/plugins/backup/static/js/backup.js:305
 #, python-format
 msgid ""
 "Cannot install plugin \"%(plugin)s\" due to it being incompatible to this"
 " OctoPrint version and/or underlying operating system"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:288
+#: src/octoprint/plugins/backup/static/js/backup.js:317
 #, python-format
 msgid ""
 "There are %(count)d plugins you'll need to install manually since they "
 "aren't registered on the repository:"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:330
+#: src/octoprint/plugins/backup/static/js/backup.js:359
 msgid "Deleting backups"
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:331
+#: src/octoprint/plugins/backup/static/js/backup.js:360
 #, python-format
 msgid "Deleting %(count)d backups..."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:339
+#: src/octoprint/plugins/backup/static/js/backup.js:368
 #: src/octoprint/plugins/logging/static/js/logging.js:349
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:507
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:539
@@ -893,7 +896,7 @@ msgstr ""
 msgid "Deleted %(filename)s..."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:347
+#: src/octoprint/plugins/backup/static/js/backup.js:376
 #: src/octoprint/plugins/logging/static/js/logging.js:357
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:515
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:548
@@ -901,7 +904,7 @@ msgstr ""
 msgid "Deletion of %(filename)s failed, continuing..."
 msgstr ""
 
-#: src/octoprint/plugins/backup/static/js/backup.js:351
+#: src/octoprint/plugins/backup/static/js/backup.js:380
 #: src/octoprint/plugins/logging/static/js/logging.js:361
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:519
 #, python-format
@@ -923,7 +926,7 @@ msgid "Delete record of unknown plugins"
 msgstr ""
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:13
-#: src/octoprint/templates/recovery.jinja2:120
+#: src/octoprint/templates/recovery.jinja2:121
 msgid "Existing backups"
 msgstr ""
 
@@ -948,7 +951,7 @@ msgstr ""
 #: src/octoprint/plugins/logging/templates/logging_settings.jinja2:32
 #: src/octoprint/templates/dialogs/files.jinja2:78
 #: src/octoprint/templates/dialogs/files.jinja2:86
-#: src/octoprint/templates/recovery.jinja2:125
+#: src/octoprint/templates/recovery.jinja2:126
 msgid "Date"
 msgstr ""
 
@@ -956,7 +959,7 @@ msgstr ""
 #: src/octoprint/plugins/logging/templates/logging_settings.jinja2:31
 #: src/octoprint/templates/dialogs/files.jinja2:77
 #: src/octoprint/templates/dialogs/files.jinja2:85
-#: src/octoprint/templates/recovery.jinja2:124
+#: src/octoprint/templates/recovery.jinja2:125
 #: src/octoprint/templates/sidebar/files.jinja2:23
 #: src/octoprint/templates/sidebar/files.jinja2:38
 #: src/octoprint/templates/sidebar/files.jinja2:52
@@ -976,19 +979,19 @@ msgid "Delete"
 msgstr ""
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:49
-#: src/octoprint/templates/recovery.jinja2:137
+#: src/octoprint/templates/recovery.jinja2:138
 #: src/octoprint/templates/sidebar/files.jinja2:26
 #: src/octoprint/templates/sidebar/files.jinja2:40
 msgid "Download"
 msgstr ""
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:49
-#: src/octoprint/templates/recovery.jinja2:136
+#: src/octoprint/templates/recovery.jinja2:137
 msgid "Restore"
 msgstr ""
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:66
-#: src/octoprint/templates/recovery.jinja2:143
+#: src/octoprint/templates/recovery.jinja2:144
 msgid "Note:"
 msgstr ""
 
@@ -1009,7 +1012,7 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:77
-#: src/octoprint/templates/recovery.jinja2:95
+#: src/octoprint/templates/recovery.jinja2:96
 msgid "Create backup"
 msgstr ""
 
@@ -1018,7 +1021,7 @@ msgid "Create a new backup of the current state."
 msgstr ""
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:82
-#: src/octoprint/templates/recovery.jinja2:97
+#: src/octoprint/templates/recovery.jinja2:98
 msgid ""
 "All files in the uploads folder and subfolders. These are the files in "
 "the Files List, plus any metadata that has been generated for those "
@@ -1026,17 +1029,17 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:85
-#: src/octoprint/templates/recovery.jinja2:100
+#: src/octoprint/templates/recovery.jinja2:101
 msgid "Exclude uploaded files (& associated metadata) from backup"
 msgstr ""
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:93
-#: src/octoprint/templates/recovery.jinja2:108
+#: src/octoprint/templates/recovery.jinja2:109
 msgid "Exclude timelapses from backup"
 msgstr ""
 
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:100
-#: src/octoprint/templates/recovery.jinja2:115
+#: src/octoprint/templates/recovery.jinja2:116
 msgid "Create backup now"
 msgstr ""
 
@@ -1361,7 +1364,7 @@ msgstr ""
 
 #: src/octoprint/plugins/corewizard/subwizards.py:52
 #: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:1
-#: src/octoprint/server/views.py:1119
+#: src/octoprint/server/views.py:1122
 #: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:1
 msgid "Access Control"
 msgstr ""
@@ -1426,12 +1429,12 @@ msgstr ""
 #: src/octoprint/templates/login.jinja2:86
 #: src/octoprint/templates/navbar/login.jinja2:7
 #: src/octoprint/templates/navbar/login.jinja2:8
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:83
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:79
 msgid "Username"
 msgstr ""
 
 #: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:14
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:86
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:82
 msgid "Invalid username"
 msgstr ""
 
@@ -1442,7 +1445,9 @@ msgstr ""
 #: src/octoprint/templates/login.jinja2:87
 #: src/octoprint/templates/navbar/login.jinja2:10
 #: src/octoprint/templates/navbar/login.jinja2:11
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:90
+#: src/octoprint/templates/recovery.jinja2:185
+#: src/octoprint/templates/recovery.jinja2:187
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:86
 msgid "Password"
 msgstr ""
 
@@ -1453,8 +1458,8 @@ msgstr ""
 #: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:27
 #: src/octoprint/templates/dialogs/usersettings/access.jinja2:11
 #: src/octoprint/templates/dialogs/usersettings/access.jinja2:24
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:99
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:157
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:95
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:153
 msgid "Passwords do not match"
 msgstr ""
 
@@ -1610,7 +1615,7 @@ msgstr ""
 #: src/octoprint/plugins/corewizard/templates/corewizard_printerprofile_wizard.jinja2:7
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:7
 #: src/octoprint/templates/snippets/settings/accesscontrol/groups.jinja2:60
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:70
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:66
 #: src/octoprint/templates/snippets/settings/printerprofiles/profileEditor.jinja2:9
 #: src/octoprint/templates/tabs/control.jinja2:148
 msgid "General"
@@ -1675,7 +1680,7 @@ msgstr ""
 #: src/octoprint/plugins/errortracking/static/js/errortracking.js:53
 #: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:584
 #: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:615
-#: src/octoprint/static/js/app/viewmodels/loginstate.js:232
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:230
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:563
 msgid "Ignore"
 msgstr ""
@@ -2853,7 +2858,7 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:47
-#: src/octoprint/server/views.py:885
+#: src/octoprint/server/views.py:888
 msgid "Plugins"
 msgstr ""
 
@@ -3289,7 +3294,7 @@ msgid "Update?"
 msgstr ""
 
 #: src/octoprint/plugins/softwareupdate/__init__.py:2347
-#: src/octoprint/server/views.py:1117
+#: src/octoprint/server/views.py:1120
 #: src/octoprint/static/js/app/viewmodels/appearance.js:106
 #: src/octoprint/static/js/app/viewmodels/appearance.js:110
 #: src/octoprint/static/js/app/viewmodels/appearance.js:111
@@ -4132,107 +4137,107 @@ msgid ""
 " for development."
 msgstr ""
 
-#: src/octoprint/server/views.py:973
+#: src/octoprint/server/views.py:976
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:16
 msgid "Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:984
+#: src/octoprint/server/views.py:987
 #: src/octoprint/templates/sidebar/state.jinja2:1
 msgid "State"
 msgstr ""
 
-#: src/octoprint/server/views.py:994
+#: src/octoprint/server/views.py:997
 msgid "Files"
 msgstr ""
 
-#: src/octoprint/server/views.py:1011
+#: src/octoprint/server/views.py:1014
 msgid "Temperature"
 msgstr ""
 
-#: src/octoprint/server/views.py:1020
+#: src/octoprint/server/views.py:1023
 msgid "Control"
 msgstr ""
 
-#: src/octoprint/server/views.py:1029
+#: src/octoprint/server/views.py:1032
 msgid "Terminal"
 msgstr ""
 
-#: src/octoprint/server/views.py:1038
+#: src/octoprint/server/views.py:1041
 #: src/octoprint/templates/sidebar/state.jinja2:11
 msgid "Timelapse"
 msgstr ""
 
-#: src/octoprint/server/views.py:1051
+#: src/octoprint/server/views.py:1054
 msgid "Printer"
 msgstr ""
 
-#: src/octoprint/server/views.py:1053
+#: src/octoprint/server/views.py:1056
 msgid "Serial Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:1061
+#: src/octoprint/server/views.py:1064
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:1
 msgid "Printer Profiles"
 msgstr ""
 
-#: src/octoprint/server/views.py:1069
+#: src/octoprint/server/views.py:1072
 msgid "Temperatures"
 msgstr ""
 
-#: src/octoprint/server/views.py:1077
+#: src/octoprint/server/views.py:1080
 #: src/octoprint/templates/dialogs/settings/terminalfilters.jinja2:1
 msgid "Terminal Filters"
 msgstr ""
 
-#: src/octoprint/server/views.py:1085
+#: src/octoprint/server/views.py:1088
 #: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:1
 msgid "GCODE Scripts"
 msgstr ""
 
-#: src/octoprint/server/views.py:1092 src/octoprint/server/views.py:1094
+#: src/octoprint/server/views.py:1095 src/octoprint/server/views.py:1097
 #: src/octoprint/templates/dialogs/settings/features.jinja2:1
 msgid "Features"
 msgstr ""
 
-#: src/octoprint/server/views.py:1102
+#: src/octoprint/server/views.py:1105
 msgid "Webcam & Timelapse"
 msgstr ""
 
-#: src/octoprint/server/views.py:1110
+#: src/octoprint/server/views.py:1113
 msgid "API"
 msgstr ""
 
-#: src/octoprint/server/views.py:1127
+#: src/octoprint/server/views.py:1130
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:2
 #: src/octoprint/templates/sidebar/files_header.jinja2:13
 msgid "Folders"
 msgstr ""
 
-#: src/octoprint/server/views.py:1135
+#: src/octoprint/server/views.py:1138
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:1
 msgid "Appearance"
 msgstr ""
 
-#: src/octoprint/server/views.py:1143
+#: src/octoprint/server/views.py:1146
 #: src/octoprint/templates/dialogs/settings/server.jinja2:1
 msgid "Server"
 msgstr ""
 
-#: src/octoprint/server/views.py:1156
+#: src/octoprint/server/views.py:1159
 msgid "Access"
 msgstr ""
 
-#: src/octoprint/server/views.py:1164
+#: src/octoprint/server/views.py:1167
 msgid "Interface"
 msgstr ""
 
-#: src/octoprint/server/views.py:1194
+#: src/octoprint/server/views.py:1197
 #: src/octoprint/static/js/app/viewmodels/temperature.js:530
 msgid "Start"
 msgstr ""
 
-#: src/octoprint/server/views.py:1201
+#: src/octoprint/server/views.py:1204
 #: src/octoprint/templates/dialogs/wizard.jinja2:57
 msgid "Finish"
 msgstr ""
@@ -4633,7 +4638,7 @@ msgid "This user may not have dangerous permissions."
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/access.js:133
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:48
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:44
 msgid "Add user"
 msgstr ""
 
@@ -5006,7 +5011,7 @@ msgstr ""
 msgid "Logout of OctoPrint"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/loginstate.js:205
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:203
 #, python-format
 msgid ""
 "<p>It seems that you are connecting to OctoPrint over the public "
@@ -5021,32 +5026,32 @@ msgid ""
 " to ignore it.</small></p>"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/loginstate.js:224
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:222
 msgid "Possible external access detected"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/loginstate.js:318
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:316
 msgid "Login successful"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/loginstate.js:320
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:318
 #, python-format
 msgid "You are now logged in as \"%(username)s\""
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/loginstate.js:349
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:347
 msgid "Login failed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/loginstate.js:350
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:348
 msgid "User unknown, wrong password or account deactivated"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/loginstate.js:374
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:372
 msgid "Logout successful"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/loginstate.js:375
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:373
 msgid "You are now logged out"
 msgstr ""
 
@@ -5712,6 +5717,7 @@ msgstr ""
 
 #: src/octoprint/templates/dialogs/reauthenticate.jinja2:4
 #: src/octoprint/templates/login.jinja2:68
+#: src/octoprint/templates/recovery.jinja2:176
 msgid "Please reauthenticate"
 msgstr ""
 
@@ -5728,12 +5734,12 @@ msgid "You have made too many failed login attempts. Please try again later."
 msgstr ""
 
 #: src/octoprint/templates/login.jinja2:76
-#: src/octoprint/templates/recovery.jinja2:70
+#: src/octoprint/templates/recovery.jinja2:71
 msgid "Server is currently offline."
 msgstr ""
 
 #: src/octoprint/templates/login.jinja2:76
-#: src/octoprint/templates/recovery.jinja2:70
+#: src/octoprint/templates/recovery.jinja2:71
 msgid "Reconnect..."
 msgstr ""
 
@@ -5765,51 +5771,51 @@ msgstr ""
 msgid "Log in"
 msgstr ""
 
-#: src/octoprint/templates/recovery.jinja2:62
+#: src/octoprint/templates/recovery.jinja2:63
 msgid "Navigation"
 msgstr ""
 
-#: src/octoprint/templates/recovery.jinja2:63
-#: src/octoprint/templates/recovery.jinja2:74
+#: src/octoprint/templates/recovery.jinja2:64
+#: src/octoprint/templates/recovery.jinja2:75
 msgid "System commands"
 msgstr ""
 
-#: src/octoprint/templates/recovery.jinja2:64
-#: src/octoprint/templates/recovery.jinja2:81
+#: src/octoprint/templates/recovery.jinja2:65
+#: src/octoprint/templates/recovery.jinja2:82
 msgid "System info bundle"
 msgstr ""
 
-#: src/octoprint/templates/recovery.jinja2:65
-#: src/octoprint/templates/recovery.jinja2:86
+#: src/octoprint/templates/recovery.jinja2:66
+#: src/octoprint/templates/recovery.jinja2:87
 msgid "Printer control"
 msgstr ""
 
-#: src/octoprint/templates/recovery.jinja2:66
+#: src/octoprint/templates/recovery.jinja2:67
 msgid "Backups"
 msgstr ""
 
-#: src/octoprint/templates/recovery.jinja2:71
+#: src/octoprint/templates/recovery.jinja2:72
 msgid "You lack admin permissions."
 msgstr ""
 
 #: src/octoprint/templates/dialogs/about/systeminfo.jinja2:9
-#: src/octoprint/templates/recovery.jinja2:82
+#: src/octoprint/templates/recovery.jinja2:83
 msgid "Download Systeminfo Bundle"
 msgstr ""
 
-#: src/octoprint/templates/recovery.jinja2:87
+#: src/octoprint/templates/recovery.jinja2:88
 msgid "Cancel print"
 msgstr ""
 
-#: src/octoprint/templates/recovery.jinja2:88
+#: src/octoprint/templates/recovery.jinja2:89
 msgid "Disconnect printer"
 msgstr ""
 
-#: src/octoprint/templates/recovery.jinja2:93
+#: src/octoprint/templates/recovery.jinja2:94
 msgid "Online restore is not supported on your system."
 msgstr ""
 
-#: src/octoprint/templates/recovery.jinja2:144
+#: src/octoprint/templates/recovery.jinja2:145
 #, python-format
 msgid ""
 "\n"
@@ -5825,8 +5831,41 @@ msgid ""
 "                        "
 msgstr ""
 
-#: src/octoprint/templates/recovery.jinja2:153
+#: src/octoprint/templates/recovery.jinja2:154
 msgid "There are no backups yet."
+msgstr ""
+
+#: src/octoprint/templates/recovery.jinja2:179
+msgid ""
+"\n"
+"                You need to reauthenticate to perform this action.\n"
+"                Please enter your password below.\n"
+"            "
+msgstr ""
+
+#: src/octoprint/templates/dialogs/reauthenticate.jinja2:16
+#: src/octoprint/templates/recovery.jinja2:188
+msgid "Reauthentication failed. Wrong password?"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/reauthenticate.jinja2:22
+#: src/octoprint/templates/dialogs/usersettings.jinja2:46
+#: src/octoprint/templates/recovery.jinja2:194
+#: src/octoprint/templates/snippets/settings/accesscontrol/groups.jinja2:112
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:125
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:174
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditor.jinja2:37
+msgid "Abort"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/reauthenticate.jinja2:23
+#: src/octoprint/templates/dialogs/usersettings.jinja2:47
+#: src/octoprint/templates/recovery.jinja2:195
+#: src/octoprint/templates/snippets/settings/accesscontrol/groups.jinja2:113
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:126
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:175
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditor.jinja2:38
+msgid "Confirm"
 msgstr ""
 
 #: src/octoprint/templates/dialogs/about.jinja2:4
@@ -5977,28 +6016,6 @@ msgid ""
 "            You need to reauthenticate to perform this action.\n"
 "            Please enter your password below.\n"
 "        "
-msgstr ""
-
-#: src/octoprint/templates/dialogs/reauthenticate.jinja2:16
-msgid "Reauthentication failed. Wrong password?"
-msgstr ""
-
-#: src/octoprint/templates/dialogs/reauthenticate.jinja2:22
-#: src/octoprint/templates/dialogs/usersettings.jinja2:46
-#: src/octoprint/templates/snippets/settings/accesscontrol/groups.jinja2:112
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:129
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:178
-#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditor.jinja2:37
-msgid "Abort"
-msgstr ""
-
-#: src/octoprint/templates/dialogs/reauthenticate.jinja2:23
-#: src/octoprint/templates/dialogs/usersettings.jinja2:47
-#: src/octoprint/templates/snippets/settings/accesscontrol/groups.jinja2:113
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:130
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:179
-#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditor.jinja2:38
-msgid "Confirm"
 msgstr ""
 
 #: src/octoprint/templates/dialogs/settings.jinja2:4
@@ -6193,7 +6210,7 @@ msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:7
 #: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:16
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:73
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:69
 msgid "Groups"
 msgstr ""
 
@@ -6241,7 +6258,7 @@ msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/api.jinja2:30
 #: src/octoprint/templates/dialogs/usersettings/access.jinja2:37
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:166
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:162
 msgid "N/A"
 msgstr ""
 
@@ -7537,18 +7554,18 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/templates/dialogs/usersettings/access.jinja2:8
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:142
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:138
 msgid "Current Password"
 msgstr ""
 
 #: src/octoprint/templates/dialogs/usersettings/access.jinja2:15
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:148
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:144
 msgid "New Password"
 msgstr ""
 
 #: src/octoprint/templates/dialogs/usersettings/access.jinja2:21
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:96
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:154
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:92
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:150
 msgid "Repeat Password"
 msgstr ""
 
@@ -7562,7 +7579,7 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/templates/dialogs/usersettings/access.jinja2:34
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:163
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:159
 msgid "Current API Key"
 msgstr ""
 
@@ -8020,31 +8037,31 @@ msgid "Fixed groups can't be added or removed to other groups."
 msgstr ""
 
 #: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:6
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:105
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:101
 msgid "Active"
 msgstr ""
 
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:31
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:27
 msgid "Update User"
 msgstr ""
 
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:31
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:27
 msgid "Change password"
 msgstr ""
 
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:31
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:27
 msgid "Delete user"
 msgstr ""
 
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:48
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:44
 msgid "Add user..."
 msgstr ""
 
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:76
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:72
 msgid "Additional permissions"
 msgstr ""
 
-#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:137
+#: src/octoprint/templates/snippets/settings/accesscontrol/users.jinja2:133
 #, python-format
 msgid "Change password for user \"%(user)s\""
 msgstr ""
