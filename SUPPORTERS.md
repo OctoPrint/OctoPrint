@@ -17,6 +17,7 @@ thanks to everyone who contributed!
   * Boris Hussein
   * Brad Jackson
   * Bradford Benn
+  * Brandon Robertson
   * Bruce Meyer
   * Chloe Martin
   * Chris Heerschap
@@ -26,11 +27,8 @@ thanks to everyone who contributed!
   * Christoph Sigrist
   * Christopher Heiny
   * Cognite Solutions
-  * Colorado Four Wheeler
   * Coltarus Halo
   * CooperSpartan
-  * cyber alchemist
-  * Dave
   * David OMeara
   * David Pitman
   * DeltaMaker 3D Printers
@@ -45,7 +43,6 @@ thanks to everyone who contributed!
   * Fiberpunk
   * Franziska Kunsmann
   * George Jeng
-  * German
   * Greg Bickel
   * Hog Duske
   * IOHK
@@ -75,6 +72,7 @@ thanks to everyone who contributed!
   * Lefteris Lertas
   * LulzBot
   * Makespace Madrid
+  * Marco van Dijk
   * Mark Greenwald
   * Mark Robards
   * Mark Walker
@@ -96,14 +94,12 @@ thanks to everyone who contributed!
   * Richard McGuire
   * Richard Stocks
   * Rik KM
-  * Robert Gusek
   * SimplyPrint
   * Sinie47
   * Stefan Krister
-  * Steve Dougherty
   * TheWebMachine
   * Thomas Gangi
   * Tideline 3D
   * Ulrich Kempken
 
-and 3272 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 3258 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
