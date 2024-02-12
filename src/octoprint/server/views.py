@@ -49,7 +49,7 @@ from octoprint.server.util.csrf import add_csrf_cookie
 from octoprint.server.util.flask import credentials_checked_recently
 from octoprint.settings import settings
 from octoprint.util import sv, to_bytes, to_unicode
-from octoprint.util.version import get_python_version_string
+from octoprint.util.version import get_octoprint_version, get_python_version_string
 
 from . import util
 
@@ -785,7 +785,12 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
     render_kwargs = {
         "debug": debug,
         "firstRun": first_run,
-        "version": {"number": VERSION, "display": DISPLAY_VERSION, "branch": BRANCH},
+        "version": {
+            "number": VERSION,
+            "display": DISPLAY_VERSION,
+            "branch": BRANCH,
+            "base": get_octoprint_version().base_version,
+        },
         "python_version": get_python_version_string(),
         "templates": templates,
         "pluginNames": plugin_names,
