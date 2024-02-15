@@ -182,6 +182,7 @@ date of first contribution):
   * [Martin Bartsch](https://github.com/kaenguruhs)
   * [Matthias Weis](https://github.com/mad73923)
   * [Rob Emery](https://github.com/mintsoft)
+  * [lauren n. liberda](https://selfisekai.rocks/)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
