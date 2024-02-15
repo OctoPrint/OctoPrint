@@ -258,15 +258,34 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 showReloadOverlay();
             } else if (pluginsChanged || configChanged) {
                 if (self._reloadPopup) self._reloadPopup.remove();
+
+                let text;
+                if (pluginsChanged && configChanged) {
+                    text = gettext(
+                        "A client reconnect happened and the configuration of the server and the active UI relevant plugins have changed."
+                    );
+                } else if (pluginsChanged) {
+                    text = gettext(
+                        "A client reconnect happened and the active UI relevant plugins have changed."
+                    );
+                } else if (configChanged) {
+                    text = gettext(
+                        "A client reconnect happened and the configuration of the server has changed."
+                    );
+                }
+
                 self._reloadPopup = new PNotify({
                     title: gettext("Page reload recommended"),
                     text:
                         "<p>" +
+                        text +
+                        "</p>" +
+                        "<p>" +
                         gettext(
-                            "There is a new version of the server active now, a reload " +
-                                "of the user interface is recommended. This will not interrupt " +
-                                "any print jobs you might have ongoing. Please reload the " +
-                                'web interface now by clicking the "Reload" button below.'
+                            "Due to this a reload of the UI is recommended. " +
+                                "Please reload the UI now by clicking " +
+                                'the "Reload" button below. This will not interrupt ' +
+                                "any print jobs you might have ongoing."
                         ) +
                         "</p>",
                     hide: false,
