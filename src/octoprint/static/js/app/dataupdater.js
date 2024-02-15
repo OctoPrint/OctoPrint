@@ -18,6 +18,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
     self._lastProcessingTimesSize = 20;
 
     self._safeModePopup = undefined;
+    self._reloadPopup = undefined;
 
     self.increaseThrottle = function () {
         self.setThrottle(self._throttleFactor + 1);
@@ -247,13 +248,52 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
 
             // if the version, the plugin hash or the config hash changed, we
             // want the user to reload the UI since it might be stale now
-            var versionChanged = oldVersion !== VERSION;
-            var pluginsChanged =
+            const versionChanged = oldVersion !== VERSION;
+            const pluginsChanged =
                 oldPluginHash !== undefined && oldPluginHash !== self._pluginHash;
-            var configChanged =
+            const configChanged =
                 oldConfigHash !== undefined && oldConfigHash !== self._configHash;
-            if (versionChanged || pluginsChanged || configChanged) {
+
+            if (versionChanged) {
                 showReloadOverlay();
+            } else if (pluginsChanged || configChanged) {
+                if (self._reloadPopup) self._reloadPopup.remove();
+                self._reloadPopup = new PNotify({
+                    title: gettext("Page reload recommended"),
+                    text:
+                        "<p>" +
+                        gettext(
+                            "There is a new version of the server active now, a reload " +
+                                "of the user interface is recommended. This will not interrupt " +
+                                "any print jobs you might have ongoing. Please reload the " +
+                                'web interface now by clicking the "Reload" button below.'
+                        ) +
+                        "</p>",
+                    hide: false,
+                    confirm: {
+                        confirm: true,
+                        buttons: [
+                            {
+                                text: gettext("Ignore"),
+                                click: function () {
+                                    self._reloadPopup.remove();
+                                }
+                            },
+                            {
+                                text: gettext("Reload"),
+                                addClass: "btn-primary",
+                                click: function () {
+                                    self._reloadPopup.remove();
+                                    location.reload(true);
+                                }
+                            }
+                        ]
+                    },
+                    buttons: {
+                        closer: false,
+                        sticker: false
+                    }
+                });
             }
 
             log.info("Server (re)connect processed");
