@@ -469,6 +469,8 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 });
             } else if (type === "ConnectivityChanged") {
                 ONLINE = payload.new;
+            } else if (type === "SettingsUpdated") {
+                self.config_hash = payload.config_hash;
             }
 
             var legacyEventHandlers = {
