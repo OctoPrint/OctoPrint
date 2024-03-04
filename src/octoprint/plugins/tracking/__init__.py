@@ -273,6 +273,8 @@ class TrackingPlugin(
             )
         )
 
+        payload["printer_profile_count"] = len(self._printer_profile_manager.get_all())
+
         self._track("pong", body=True, **payload)
 
     def _track_startup(self):
@@ -473,6 +475,13 @@ class TrackingPlugin(
             if self._printer_connection_parameters:
                 args["printer_port"] = self._printer_connection_parameters["port"]
                 args["printer_baudrate"] = self._printer_connection_parameters["baudrate"]
+
+            profile = self._printer_profile_manager.get_current().copy()
+            for k in ["id", "name", "model"]:
+                # Scrub these out since they could be identifiable information
+                profile.pop(k)
+            args["printer_profile"] = profile
+
             self._track("printer_connected", **args)
 
     def _track_printer_safety_event(self, event, payload):
