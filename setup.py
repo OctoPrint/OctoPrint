@@ -69,7 +69,7 @@ core_deps = [
     "setuptools",
     "tornado>=6.2,<6.3",  # later versions require Python 3.8+
     "watchdog>=2.3.1,<3",
-    "websocket-client==1.5.3",  # later versions require Python 3.8+, breaking changes can happen on patch version increases, changelog incomplete
+    "websocket-client==1.6.1",  # later versions require Python 3.8+, breaking changes can happen on patch version increases, changelog incomplete
     "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
     "wrapt>=1.15,<1.16",
     "zeroconf~=0.127",  # breaking changes can happen on minor version increases (despite semantic versioning)
