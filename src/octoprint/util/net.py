@@ -10,6 +10,7 @@ import netaddr
 import netifaces
 import requests
 import werkzeug.http
+from werkzeug.utils import secure_filename
 
 _cached_check_v6 = None
 
@@ -270,6 +271,7 @@ def download_file(url, folder, max_length=None, connect_timeout=3.05, read_timeo
         if filename is None:
             filename = url.split("/")[-1]
 
+        filename = secure_filename(filename)
         assert len(filename) > 0
 
         # TODO check content-length against safety limit
