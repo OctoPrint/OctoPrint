@@ -22,7 +22,7 @@ class ActionCommandNotificationPlugin(
 ):
     def __init__(self):
         self._notifications = []
-        self._filter = ""
+        self._filter = None
 
     # Additional permissions hook
 
@@ -65,17 +65,21 @@ class ActionCommandNotificationPlugin(
         return {"enable": True, "enable_popups": False, "filter": ""}
 
     def on_settings_initialized(self):
-        try:
-            self._filter = re.compile(self._settings.get(["filter"]))
-        except re.error:
-            self._filter = ""
+        self._set_filter_pattern()
 
     def on_settings_save(self, data):
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
-        try:
-            self._filter = re.compile(self._settings.get(["filter"]))
-        except re.error:
-            self._filter = ""
+        self._set_filter_pattern()
+
+    def _set_filter_pattern(self):
+        pattern = self._settings.get(["filter"])
+        if pattern:
+            try:
+                self._filter = re.compile(pattern)
+            except re.error:
+                self._logger.exception("Invalid regular expression in filter, ignoring")
+        else:
+            self._filter = None
 
     # ~ SimpleApiPlugin
 
@@ -136,7 +140,7 @@ class ActionCommandNotificationPlugin(
 
         message = parameter.strip()
 
-        if self._filter.search(message):
+        if self._filter and self._filter.search(message):
             self._logger.debug(f"Notification matches filter regex: {message}")
             return
 
