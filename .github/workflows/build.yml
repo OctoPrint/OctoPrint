@@ -253,6 +253,10 @@ jobs:
         with:
           name: dist
           path: dist
+      - name: 🧹 Remove some stuff that won't make it through twine check
+        run: |
+          rm dist/OctoPrint-*.source.tar.gz
+          rm dist/sha512sums.txt
       - name: ⬆ Upload to index
         uses: pypa/gh-action-pypi-publish@release/v1
         continue-on-error: true
@@ -271,6 +275,10 @@ jobs:
         with:
           name: dist
           path: dist
+      - name: 🧹 Remove some stuff that won't make it through twine check
+        run: |
+          rm dist/OctoPrint-*.source.tar.gz
+          rm dist/sha512sums.txt
       - name: ⬆ Publish to index
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

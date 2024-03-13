@@ -49,14 +49,19 @@ $(function () {
 
         self.logoutSupported = ko.pureComputed(function () {
             var mechanism = self.currentLoginMechanism();
-            return !(mechanism === "apikey" || mechanism === "authheader");
+            return !(
+                mechanism === "apikey" ||
+                mechanism === "authheader" ||
+                mechanism === "remote_user"
+            );
         });
         self.logoutTooltip = ko.pureComputed(function () {
             var mechanism = self.currentLoginMechanism();
             if (!self.logoutSupported()) {
                 var methodMap = {
                     apikey: gettext("API key based login"),
-                    authheader: gettext("Authorization header based login")
+                    authheader: gettext("Authorization header based login"),
+                    remote_user: gettext("remote user based login")
                 };
                 return _.sprintf(
                     gettext(

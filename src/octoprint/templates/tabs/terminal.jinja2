@@ -1,4 +1,3 @@
-<h2 class="sr-only">Terminal</h2>
 <div class="terminal">
     <pre id="terminal-output" class="pre-scrollable pre-output" data-bind="foreach: displayedLines, visible: fancyFunctionality(), click: function(){ gotoTerminalCommand(); }, event: { scroll: terminalScrollEvent }"><span data-bind="text: line + '\n', css: {muted: display == 'filtered' || display == 'cut', 'text-error': type == 'warn'}"></span></pre>
     <pre id="terminal-output-lowfi" style="display: none" class="pre-scrollable" data-bind="text: plainLogOutput, visible: !fancyFunctionality()"></pre>

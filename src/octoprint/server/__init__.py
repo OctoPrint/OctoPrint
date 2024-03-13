@@ -196,7 +196,7 @@ def on_user_logged_out(sender, user=None):
 @user_loaded_from_cookie.connect_via(app)
 def on_user_loaded_from_cookie(sender, user=None):
     if user:
-        session["login_mechanism"] = "remember_me"
+        session["login_mechanism"] = util.LoginMechanism.REMEMBER_ME
         session["credentials_seen"] = False
 
 
@@ -1155,9 +1155,11 @@ class Server:
                     printer.connect(
                         port=port,
                         baudrate=baudrate,
-                        profile=printer_profile["id"]
-                        if "id" in printer_profile
-                        else "_default",
+                        profile=(
+                            printer_profile["id"]
+                            if "id" in printer_profile
+                            else "_default"
+                        ),
                     )
                 else:
                     self._logger.info(
@@ -2303,8 +2305,8 @@ class Server:
             "css/bootstrap-slider.css",
             "css/bootstrap-tabdrop.css",
             "vendor/font-awesome-3.2.1/css/font-awesome.min.css",
-            "vendor/fontawesome-6.1.1/css/all.min.css",
-            "vendor/fontawesome-6.1.1/css/v4-shims.min.css",
+            "vendor/fontawesome-6.5.1/css/all.min.css",
+            "vendor/fontawesome-6.5.1/css/v4-shims.min.css",
             "vendor/fa5-power-transforms.min.css",
             "css/jquery.fileupload-ui.css",
             "css/pnotify.core.min.css",

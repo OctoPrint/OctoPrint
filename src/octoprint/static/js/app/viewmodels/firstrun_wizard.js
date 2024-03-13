@@ -6,6 +6,7 @@ $(function () {
         self.dontPortForwardAcknowledged = ko.observable(false);
         self.fundingRequestAcknowledged = ko.observable(false);
         self.error = ko.observable(false);
+        self.acknowledgementNeeded = false;
 
         self.allAcknowledged = ko.pureComputed(function () {
             return (
@@ -16,6 +17,9 @@ $(function () {
         });
 
         self.onBeforeWizardTabChange = function (next, current) {
+            if (!self.acknowledgementNeeded) {
+                return true;
+            }
             if (!current || current !== "wizard_firstrun_end" || self.allAcknowledged()) {
                 return true;
             }
@@ -25,12 +29,17 @@ $(function () {
         };
 
         self.onBeforeWizardFinish = function () {
-            if (self.allAcknowledged()) {
+            if (!self.acknowledgementNeeded || self.allAcknowledged()) {
                 return true;
             }
 
             self._showAcknowledgementNeededDialog();
             return false;
+        };
+
+        self.onAfterBinding = function () {
+            self.acknowledgementNeeded =
+                document.getElementById("wizard_firstrun_end") !== null;
         };
 
         self._showAcknowledgementNeededDialog = function () {

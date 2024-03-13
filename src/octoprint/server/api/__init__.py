@@ -28,6 +28,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.events import Events, eventManager
 from octoprint.server import NO_CONTENT
 from octoprint.server.util import (
+    LoginMechanism,
     corsRequestHandler,
     corsResponseHandler,
     csrfRequestHandler,
@@ -331,7 +332,7 @@ def login():
                 identity_changed.send(
                     current_app._get_current_object(), identity=Identity(user.get_id())
                 )
-                session["login_mechanism"] = "password"
+                session["login_mechanism"] = LoginMechanism.PASSWORD
                 session["credentials_seen"] = datetime.datetime.now().timestamp()
 
                 logging.getLogger(__name__).info(

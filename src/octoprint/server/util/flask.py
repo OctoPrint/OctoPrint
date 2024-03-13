@@ -36,7 +36,7 @@ import octoprint.access.users
 import octoprint.plugin
 import octoprint.server
 import octoprint.vendor.flask_principal as flask_principal
-from octoprint.access import auth_log, login_mechanisms
+from octoprint.access import auth_log
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated, yaml
@@ -679,8 +679,8 @@ def passive_login():
         if not u.is_anonymous:
             if not flask.g.identity or not flask.g.identity.id:
                 # the user was just now found
-                login_mechanism = login_mechanisms.get(
-                    flask.session.get("login_mechanism", "unknown"), "unknown mechanism"
+                login_mechanism = octoprint.server.util.LoginMechanism.to_log(
+                    flask.session.get("login_mechanism", "unknown")
                 )
                 auth_log(
                     f"Logging in user {u.get_id()} from {remote_address} via {login_mechanism}"
@@ -731,7 +731,9 @@ def passive_login():
                         logger.info(
                             f"Logging in user {autologin_as} from {remote_address} via autologin"
                         )
-                        flask.session["login_mechanism"] = "autologin"
+                        flask.session[
+                            "login_mechanism"
+                        ] = octoprint.server.util.LoginMechanism.AUTOLOGIN
                         flask.session["credentials_seen"] = False
                         return autologin_user
             except Exception:
@@ -1672,6 +1674,10 @@ def firstrun_only_access(func):
 def credentials_checked_recently():
     minutes = settings().getInt(["accessControl", "defaultReauthenticationTimeout"])
     if not minutes:
+        return True
+
+    login_mechanism = flask.session.get("login_mechanism")
+    if not octoprint.server.util.LoginMechanism.reauthentication_enabled(login_mechanism):
         return True
 
     credentials_seen = flask.session.get("credentials_seen")
