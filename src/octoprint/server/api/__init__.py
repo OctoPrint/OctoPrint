@@ -38,7 +38,6 @@ from octoprint.server.util import (
 )
 from octoprint.server.util.flask import (
     get_json_command_from_request,
-    get_remote_address,
     limit,
     no_firstrun_access,
     passive_login,
@@ -302,7 +301,7 @@ def login():
     if "user" in data and "pass" in data:
         username = data["user"]
         password = data["pass"]
-        remote_addr = get_remote_address(request)
+        remote_addr = request.remote_addr
 
         if "remember" in data and data["remember"] in valid_boolean_trues:
             remember = True
@@ -398,7 +397,7 @@ def logout():
 
     if username:
         eventManager().fire(Events.USER_LOGGED_OUT, payload={"username": username})
-        auth_log(f"Logging out user {username} from {get_remote_address(request)}")
+        auth_log(f"Logging out user {username} from {request.remote_addr}")
 
     return r
 
@@ -774,7 +773,7 @@ def _test_address(data):
 
     remote_addr = data.get("address")
     if not remote_addr:
-        remote_addr = get_remote_address(request)
+        remote_addr = request.remote_addr
 
     remote_addr = sanitize_address(remote_addr)
     ip = netaddr.IPAddress(remote_addr)

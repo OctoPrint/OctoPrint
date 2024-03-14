@@ -369,9 +369,9 @@ def in_cache():
 @app.route("/reverse_proxy_test")
 @app.route("/reverse_proxy_test/")
 def reverse_proxy_test():
-    from octoprint.server.util.flask import get_cookie_suffix, get_remote_address
+    from octoprint.server.util.flask import get_cookie_suffix
 
-    remote_address = get_remote_address(request)
+    remote_address = request.remote_addr
     cookie_suffix = get_cookie_suffix(request)
 
     return render_template(

@@ -666,7 +666,7 @@ def passive_login():
 
     user = flask_login.current_user
 
-    remote_address = get_remote_address(flask.request)
+    remote_address = flask.request.remote_addr
     ip_check_enabled = settings().getBoolean(["server", "ipCheck", "enabled"])
     ip_check_trusted = settings().get(["server", "ipCheck", "trustedSubnets"])
 

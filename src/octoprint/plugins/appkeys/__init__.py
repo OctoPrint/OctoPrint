@@ -356,12 +356,8 @@ class AppKeysPlugin(
                 # deprecated key based revoke?
                 from flask import request
 
-                from octoprint.server.util import get_remote_address
-
                 self._logger.warning(
-                    "Deprecated key based revoke command sent to /api/plugin/appkeys by {}, should be migrated to use app id/user tuple".format(
-                        get_remote_address(request)
-                    )
+                    f"Deprecated key based revoke command sent to /api/plugin/appkeys by {request.remote_addr}, should be migrated to use app id/user tuple"
                 )
 
             else:
