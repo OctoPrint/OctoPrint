@@ -283,3 +283,13 @@ def download_file(url, folder, max_length=None, connect_timeout=3.05, read_timeo
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
     return path
+
+
+def get_http_client_ip(remote_addr, forwarded_for, trusted_proxies):
+    if forwarded_for is not None and sanitize_address(remote_addr) in trusted_proxies:
+        for addr in (
+            sanitize_address(addr.strip()) for addr in reversed(forwarded_for.split(","))
+        ):
+            if addr not in trusted_proxies:
+                return addr
+    return remote_addr

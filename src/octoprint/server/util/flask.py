@@ -1713,10 +1713,11 @@ def require_credentials_checked_recently(func):
     return decorated_view
 
 
+@deprecated(
+    "get_remote_address is no longer required and deprecated, you can just use flask.request.remote_addr instead",
+    since="1.10.0",
+)
 def get_remote_address(request):
-    forwardedFor = request.headers.get("X-Forwarded-For", None)
-    if forwardedFor is not None:
-        return forwardedFor.split(",")[0]
     return request.remote_addr
 
 
