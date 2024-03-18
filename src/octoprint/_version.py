@@ -55,10 +55,10 @@ improve/.* 1.11.0 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
 staging/bugfix 1.9.4 506648c152681bf4b1416cf2b5aaf97d526ee752 pep440-dev
 bug/.* 1.9.4 506648c152681bf4b1416cf2b5aaf97d526ee752 pep440-dev
 
-# staging/maintenance is currently the branch for preparation of 1.10.0rc3
+# staging/maintenance is currently the branch for preparation of 1.10.0rc4
 # so is regressionfix/...
-staging/maintenance 1.10.0rc3 c8bd98ce78b899901091f74369d780fd1c806a10
-regressionfix/.* 1.10.0rc2 c8bd98ce78b899901091f74369d780fd1c806a10
+staging/maintenance 1.10.0rc4 929ed14dea1701eadc19e4fd21b069c074e5844e
+regressionfix/.* 1.10.0rc3 929ed14dea1701eadc19e4fd21b069c074e5844e
 
 # staging/devel is currently inactive (but has the 1.4.1rc4 namespace)
 staging/devel 1.4.1rc4 650d54d1885409fa1d411eb54b9e8c7ff428910f
