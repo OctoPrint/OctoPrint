@@ -35,7 +35,6 @@ thanks to everyone who contributed!
   * Dennis Breining
   * Dima Gorbenko
   * Doc
-  * Doug Craig
   * Dr. Frank Wester
   * Ed Crump
   * Erik Ableson
@@ -46,13 +45,11 @@ thanks to everyone who contributed!
   * Greg Bickel
   * Hog Duske
   * IOHK
-  * Jacob Renstrom
   * James Fryman
   * Jason Kitchens
   * Jay Moran
   * jaystar2242
   * JCsGotThis
-  * Jeff Green
   * Jeff Moe
   * Jeremy Cole
   * John Cassel
@@ -86,20 +83,18 @@ thanks to everyone who contributed!
   * Nick Chestnut
   * Norman Jaffe
   * Obico
-  * Patrick Mischler
   * Paul McMaster
   * Pete Barnwell
   * Randy C. Will
   * Ranjib Dey
-  * Richard McGuire
   * Richard Stocks
   * Rik KM
+  * Robert Gusek
   * SimplyPrint
   * Sinie47
   * Stefan Krister
   * TheWebMachine
-  * Thomas Gangi
   * Tideline 3D
   * Ulrich Kempken
 
-and 3258 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 3233 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
