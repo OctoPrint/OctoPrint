@@ -42,7 +42,7 @@ class ReverseProxyConfig(BaseModel):
 
     portFallback: Optional[str] = None
 
-    trustedDownstream: List[str] = ["127.0.0.1"]
+    trustedDownstream: List[str] = ["127.0.0.1", "::1"]
     """List of trusted downstream servers for which to ignore the IP address when trying to determine the connecting client's IP address. A reverse proxy on the same machine as OctoPrint (e.g. as found on OctoPi) will be handled correctly by default, further proxies in front of that you'll have to add yourself."""
 
 
