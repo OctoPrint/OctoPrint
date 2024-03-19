@@ -286,10 +286,23 @@ def download_file(url, folder, max_length=None, connect_timeout=3.05, read_timeo
 
 
 def get_http_client_ip(remote_addr, forwarded_for, trusted_proxies):
-    if forwarded_for is not None and sanitize_address(remote_addr) in trusted_proxies:
+    try:
+        trusted_ip_set = netaddr.IPSet(trusted_proxies)
+    except netaddr.AddrFormatError:
+        # something's wrong with one of these addresses, let's add them one by one
+        trusted_ip_set = netaddr.IPSet()
+        for trusted_proxy in trusted_proxies:
+            try:
+                trusted_ip_set.add(trusted_proxy)
+            except netaddr.AddrFormatError:
+                logging.getLogger(__name__).error(
+                    f"Trusted proxy {trusted_proxy} is not a correctly formatted IP address or subnet"
+                )
+
+    if forwarded_for is not None and sanitize_address(remote_addr) in trusted_ip_set:
         for addr in (
             sanitize_address(addr.strip()) for addr in reversed(forwarded_for.split(","))
         ):
-            if addr not in trusted_proxies:
+            if addr not in trusted_ip_set:
                 return addr
-    return remote_addr
+    return sanitize_address(remote_addr)
