@@ -87,38 +87,90 @@ def test_unmap_v4_in_v6(address, expected):
 @pytest.mark.parametrize(
     "remote_addr,header,trusted_proxies,expected",
     [
-        ("127.0.0.1", None, ["127.0.0.1"], "127.0.0.1"),  # direct access via localhost
-        ("192.168.1.10", None, ["127.0.0.1"], "192.168.1.10"),  # direct access via lan
+        (
+            "127.0.0.1",
+            None,
+            ["127.0.0.1", "::1"],
+            "127.0.0.1",
+        ),  # direct access via ipv4 localhost
+        (
+            "::1",
+            None,
+            ["127.0.0.1", "::1"],
+            "::1",
+        ),  # direct access via ipv6 localhost
+        (
+            "192.168.1.10",
+            None,
+            ["127.0.0.1", "::1"],
+            "192.168.1.10",
+        ),  # direct access via lan
         (
             "127.0.0.1",
             "192.168.1.10",
-            ["127.0.0.1"],
+            ["127.0.0.1", "::1"],
             "192.168.1.10",
         ),  # access through reverse proxy on 127.0.0.1
         (
             "127.0.0.1",
             "10.1.2.3, 192.168.1.10",
-            ["127.0.0.1", "192.168.1.10"],
+            ["127.0.0.1", "::1", "192.168.1.10"],
             "10.1.2.3",
         ),  # access through trusted reverse proxies on 127.0.0.1 and 192.168.1.10
         (
+            "127.0.0.1",
+            "10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            "10.1.2.3",
+        ),  # access through trusted reverse proxies on 127.0.0.1 and something on 192.168.1.0/24
+        (
+            "127.0.0.1",
+            "10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "unknown", "192.168.1.0/24"],
+            "10.1.2.3",
+        ),  # access through trusted reverse proxies on 127.0.0.1 and something on 192.168.1.0/24, invalid proxy in between
+        (
+            "::1",
+            "fd12:3456:789a:2::1, fd12:3456:789a:1::1",
+            ["127.0.0.1", "::1", "fd12:3456:789a:1::/64"],
+            "fd12:3456:789a:2::1",
+        ),  # access through trusted reverse proxies on ::1 and something on fd12:3456:789a:1::/64
+        (
             "192.168.1.10",
             "127.0.0.1",
-            ["127.0.0.1"],
+            ["127.0.0.1", "::1"],
             "192.168.1.10",
         ),  # spoofing attempt #1: direct access via lan, spoofed to 127.0.0.1
         (
+            "::ffff:192.168.1.10",
+            "::1",
+            ["127.0.0.1", "::1"],
+            "192.168.1.10",
+        ),  # spoofing attempt #2: direct access via lan, spoofed to ::1
+        (
             "127.0.0.1",
             "127.0.0.1, 192.168.1.10",
-            ["127.0.0.1"],
+            ["127.0.0.1", "::1"],
             "192.168.1.10",
-        ),  # spoofing attempt #2: access through reverse proxy on 127.0.0.1, real ip 192.168.1.10, spoofed to 127.0.0.1
+        ),  # spoofing attempt #3: access through reverse proxy on 127.0.0.1, real ip 192.168.1.10, spoofed to 127.0.0.1
+        (
+            "::1",
+            "::1, ::ffff:192.168.1.10",
+            ["127.0.0.1", "::1"],
+            "192.168.1.10",
+        ),  # spoofing attempt #4: access through reverse proxy on ::1, real ip 192.168.1.10, spoofed to ::1
         (
             "127.0.0.1",
             "127.0.0.1, 10.1.2.3, 192.168.1.10",
-            ["127.0.0.1", "192.168.1.10"],
+            ["127.0.0.1", "::1", "192.168.1.10"],
             "10.1.2.3",
-        ),  # spoofing attempt #3: access through trusted reverse proxies on 127.0.0.1 and 192.168.1.10, real ip 10.1.2.3, spoofed to 127.0.0.1
+        ),  # spoofing attempt #5: access through trusted reverse proxies on 127.0.0.1 and 192.168.1.10, real ip 10.1.2.3, spoofed to 127.0.0.1
+        (
+            "::1",
+            "::1, fd12:3456:789a:2::1, fd12:3456:789a:1::1",
+            ["127.0.0.1", "::1", "fd12:3456:789a:1::/64"],
+            "fd12:3456:789a:2::1",
+        ),  # spoofing attempt #6: access through trusted reverse proxies on ::1 and something on fd12:3456:789a:1::/64, spoofed to ::1
     ],
 )
 def test_get_http_client_ip(remote_addr, header, trusted_proxies, expected):
