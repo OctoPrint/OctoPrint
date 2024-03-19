@@ -392,7 +392,13 @@ class gcode:
                 comment = line[line.find(";") + 1 :].strip()
                 if comment.startswith("filament_diameter"):
                     # Slic3r
-                    filamentValue = comment.split("=", 1)[1].strip()
+                    try:
+                        filamentValue = comment.split("=", 1)[1].strip()
+                    except IndexError:
+                        try:
+                            filamentValue = comment.split(":", 1)[1].strip()
+                        except IndexError:
+                            filamentValue = "0"
                     try:
                         self._filamentDiameter = float(filamentValue)
                     except ValueError:
