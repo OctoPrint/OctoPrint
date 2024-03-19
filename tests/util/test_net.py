@@ -136,6 +136,12 @@ def test_unmap_v4_in_v6(address, expected):
             "fd12:3456:789a:2::1",
         ),  # access through trusted reverse proxies on ::1 and something on fd12:3456:789a:1::/64
         (
+            "127.100.100.1",
+            "10.1.2.3, 192.168.1.10",
+            ["0.0.0.0/0"],
+            "127.100.100.1",
+        ),  # everything is trusted (BAD IDEA!)
+        (
             "192.168.1.10",
             "127.0.0.1",
             ["127.0.0.1", "::1"],
