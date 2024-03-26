@@ -88,7 +88,7 @@ class AchievementsPlugin(
                 "description": gettext(
                     "Allows to view the instance achievements & stats."
                 ),
-                "default_groups": [[READONLY_GROUP, USER_GROUP, ADMIN_GROUP]],
+                "default_groups": [READONLY_GROUP, USER_GROUP, ADMIN_GROUP],
                 "roles": ["view"],
             }
         ]
