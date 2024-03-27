@@ -17,6 +17,7 @@ import octoprint.plugin
 import octoprint.util
 from octoprint.access import ADMIN_GROUP, READONLY_GROUP, USER_GROUP
 from octoprint.access.permissions import Permissions
+from octoprint.events import Events
 from octoprint.util.version import get_octoprint_version
 
 from .achievements import Achievement, Achievements
@@ -93,6 +94,17 @@ class AchievementsPlugin(
             }
         ]
 
+    ##~~ socket emit hook
+
+    def socket_emit_hook(self, socket, user, message, payload, *args, **kwargs):
+        if (
+            message != "event"
+            or payload["type"] != Events.PLUGIN_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKED
+        ):
+            return True
+
+        return user and user.has_permission(Permissions.PLUGIN_ACHIEVEMENTS_VIEW)
+
     ##~~ Firmware info hook
 
     def firmware_info_hook(
@@ -101,7 +113,7 @@ class AchievementsPlugin(
         if "klipper" in firmware_name.lower():
             self._trigger_achievement(Achievements.CROSSOVER_EPISODE)
 
-    ##~ StartupPlugin
+    ##~~ StartupPlugin
 
     def on_startup(self, *args, **kwargs):
         self._data.stats.server_starts += 1
@@ -136,8 +148,6 @@ class AchievementsPlugin(
     ##~~ EventHandlerPlugin
 
     def on_event(self, event, payload, *args, **kwargs):
-        from octoprint.events import Events
-
         changed = False
         yearly_changed = False
         now = self._now()
@@ -502,7 +512,7 @@ class AchievementsPlugin(
         payload = achievement.dict()
         payload["type"] = "achievement"
         payload["logo"] = achievement.icon
-        self._plugin_manager.send_plugin_message(self._identifier, payload)
+        self._event_bus.fire(Events.PLUGIN_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKED, payload)
 
     def _generate_svg(self):
         import os
@@ -641,6 +651,10 @@ class AchievementsPlugin(
             return None
 
 
+def _register_custom_events(*args, **kwargs):
+    return ["achievement_unlocked"]
+
+
 __plugin_name__ = "Achievements Plugin"
 __plugin_author__ = "Gina Häußge"
 __plugin_description__ = "Achievements & stats about your OctoPrint instance"
@@ -653,4 +667,6 @@ __plugin_implementation__ = AchievementsPlugin()
 __plugin_hooks__ = {
     "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
     "octoprint.comm.protocol.firmware.info": __plugin_implementation__.firmware_info_hook,
+    "octoprint.events.register_custom_events": _register_custom_events,
+    "octoprint.server.sockjs.emit": __plugin_implementation__.socket_emit_hook,
 }

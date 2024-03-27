@@ -169,11 +169,7 @@ $(function () {
             });
         };
 
-        self.onDataUpdaterPluginMessage = function (plugin, data) {
-            if (plugin !== "achievements") {
-                return;
-            }
-
+        self.onEventPluginAchievementsAchievementUnlocked = (payload) => {
             if (
                 !self.loginState.hasPermission(
                     self.access.permissions.PLUGIN_ACHIEVEMENTS_VIEW
@@ -182,14 +178,8 @@ $(function () {
                 return;
             }
 
-            if (!data.type) {
-                return;
-            }
-
-            if (data.type === "achievement") {
-                self.showAchievement(data);
-                self.requestData();
-            }
+            self.showAchievement(payload);
+            self.requestData();
         };
 
         self.onServerReconnect = self.onUserLoggedIn = () => {
