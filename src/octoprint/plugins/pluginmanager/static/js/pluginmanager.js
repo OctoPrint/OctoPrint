@@ -1892,7 +1892,7 @@ $(function () {
                                 click: function () {
                                     if (refreshClicked) return;
                                     refreshClicked = true;
-                                    location.reload(true);
+                                    OctoPrint.coreui.reload(true);
                                 }
                             }
                         ]

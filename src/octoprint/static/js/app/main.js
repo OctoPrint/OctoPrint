@@ -194,6 +194,11 @@ $(function () {
                 selectTab(firstTab[0]);
             }
         };
+        exports.reload = (force) => {
+            $("#page-container-loading-header").html(gettext("Reloading..."));
+            $("#page-container-loading").show();
+            location.reload(force);
+        };
 
         return exports;
     })();
@@ -720,7 +725,7 @@ $(function () {
 
     // reload overlay
     $("#reloadui_overlay_reload").click(function () {
-        location.reload();
+        OctoPrint.coreui.reload();
     });
 
     //~~ final initialization - passive login, settings fetch, view model binding

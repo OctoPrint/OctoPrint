@@ -303,7 +303,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                                 addClass: "btn-primary",
                                 click: function () {
                                     self._reloadPopup.remove();
-                                    location.reload(true);
+                                    OctoPrint.coreui.reload(true);
                                 }
                             }
                         ]
