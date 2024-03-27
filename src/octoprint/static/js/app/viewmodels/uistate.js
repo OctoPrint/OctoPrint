@@ -22,15 +22,29 @@ $(function () {
                 .addClass("fa-exclamation-triangle text-error");
             $("#page-container-loading-error")
                 .html(
-                    error +
-                        " " +
+                    "<p><strong>" +
+                        error +
+                        "</strong></p><p>" +
                         _.sprintf(
-                            "Please check your <a href='%(browser)s' target='_blank' rel='noopener noreferrer'>browser's error console</a> and <code><a href='%(octoprint)s' target='_blank' rel='noopener noreferrer'>octoprint.log</a></code> for possible reasons.Also make sure that the server is actually running by reloading this page.",
+                            "Please check your <a href='%(browser)s' target='_blank' rel='noopener noreferrer'>browser's error console</a> and " +
+                                "<code><a href='%(octoprint)s' target='_blank' rel='noopener noreferrer'>octoprint.log</a></code> for possible reasons. " +
+                                "Also make sure that the server is actually running by reloading this page.",
                             {
                                 browser: "https://faq.octoprint.org/browser-console",
                                 octoprint: "https://faq.octoprint.org/logs"
                             }
-                        )
+                        ) +
+                        "</p><p>" +
+                        _.sprintf(
+                            "Make sure all checks on the <a href='%(reverse_proxy_test)s' target='_blank'>Reverse Proxy Check page</a> are green. " +
+                                "Try starting in safe mode via the <a href='%(recovery)s' target='_blank'>Recovery page</a> to rule out issues with third " +
+                                "party plugins.",
+                            {
+                                recovery: BASEURL + "recovery/",
+                                reverse_proxy_test: BASEURL + "reverse_proxy_test/"
+                            }
+                        ) +
+                        "</p>"
                 )
                 .show();
         };
