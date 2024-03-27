@@ -480,6 +480,16 @@ class AchievementsPlugin(
             "server_timezone": datetime.datetime.utcnow().astimezone().tzname(),
         }
 
+    ##~~ External helpers
+
+    def get_unlocked_achievements(self):
+        return list(
+            filter(
+                lambda x: x is not None,
+                [Achievements.get(key) for key in self._data.achievements.keys()],
+            )
+        )
+
     ##~~ Internal helpers
 
     def _recheck_plugin_count(self):
@@ -664,6 +674,10 @@ __plugin_disabling_discouraged__ = gettext(
 __plugin_license__ = "AGPLv3"
 __plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = AchievementsPlugin()
+__plugin_helpers__ = {
+    "get_unlocked_achievements": __plugin_implementation__.get_unlocked_achievements,
+    "has_achievement": __plugin_implementation__._has_achievement,
+}
 __plugin_hooks__ = {
     "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
     "octoprint.comm.protocol.firmware.info": __plugin_implementation__.firmware_info_hook,

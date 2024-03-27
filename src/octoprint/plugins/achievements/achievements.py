@@ -31,6 +31,7 @@ class Achievement(BaseModel):
 
 class AchievementsMetaClass(type):
     achievements = {}
+    key_to_attr = {}
 
     def __new__(mcs, name, bases, args):
         cls = type.__new__(mcs, name, bases, args)
@@ -39,11 +40,19 @@ class AchievementsMetaClass(type):
             if isinstance(value, Achievement):
                 value.key = key.lower()
                 mcs.achievements[key] = value
+                mcs.key_to_attr[key.lower()] = key
 
         return cls
 
     def all(cls):
         return cls.achievements.values()
+
+    def get(cls, key):
+        attr = cls.key_to_attr.get(key)
+        if not attr:
+            return None
+
+        return cls.achievements.get(attr)
 
 
 class Achievements(metaclass=AchievementsMetaClass):
