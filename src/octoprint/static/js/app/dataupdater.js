@@ -500,8 +500,17 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 SlicingCancelled: "onSlicingCancelled",
                 SlicingFailed: "onSlicingFailed"
             };
+            const camelCaseType = type
+                .split("_")
+                .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
+                .join("");
             _.each(self.allViewModels, function (viewModel) {
-                if (viewModel.hasOwnProperty("onEvent" + type)) {
+                if (viewModel.hasOwnProperty("onEvent" + camelCaseType)) {
+                    viewModel["onEvent" + camelCaseType](payload);
+                } else if (
+                    type !== camelCaseType &&
+                    viewModel.hasOwnProperty("onEvent" + type)
+                ) {
                     viewModel["onEvent" + type](payload);
                 } else if (
                     legacyEventHandlers.hasOwnProperty(type) &&
