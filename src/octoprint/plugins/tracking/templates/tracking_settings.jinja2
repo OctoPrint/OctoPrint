@@ -23,7 +23,7 @@
                 <input type="checkbox" checked="checked" disabled="disabled"> {{ _('Regular ping every 15min (incl. uptime)') }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.pong"> {{ _('Regular pong every 24h (incl. plugin list)') }}
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.pong"> {{ _('Regular pong every 24h (incl. plugin list, and achievements if enabled)') }}
             </label>
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.startup"> {{ _('Server startup & shutdown') }}
@@ -48,6 +48,9 @@
             </label>
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.throttled"> {{ _('System got throttled/unthrottled (currently only detected on RPis)') }}
+            </label>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.achievements"> {{ _('Achievements & achievement unlock events') }}
             </label>
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.slicing"> {{ _('Onboard slicing actions') }}
