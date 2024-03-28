@@ -136,8 +136,8 @@ def run_server(
     except FatalStartupError as exc:
         from traceback import format_exc
 
-        logging.getLogger("octoprint.startup").exception(
-            "There was a fatal error initializing OctoPrint:"
+        logging.getLogger("octoprint.startup").fatal(
+            "There was a fatal error initializing OctoPrint:", exc_info=True
         )
         click.echo(format_exc(), err=True)
         click.echo(
