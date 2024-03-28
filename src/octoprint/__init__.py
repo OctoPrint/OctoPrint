@@ -800,8 +800,8 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
         return []
 
     def format_blacklist(entries):
-        format_entry = (
-            lambda x: f"{x[0]} ({x[1]})"
+        format_entry = lambda x: (
+            f"{x[0]} ({x[1]})"
             if isinstance(x, (list, tuple)) and len(x) == 2
             else f"{x} (any)"
         )

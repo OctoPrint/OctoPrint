@@ -96,9 +96,14 @@ def cli(ctx, apikey, host, port, httpuser, httppass, https, prefix):
             prefix=prefix,
         )
 
-    except FatalStartupError as e:
-        click.echo(str(e), err=True)
-        click.echo("There was a fatal error initializing the client.", err=True)
+    except FatalStartupError as exc:
+        from traceback import format_exc
+
+        click.echo(format_exc(), err=True)
+        click.echo(
+            f"There was a fatal error initializing the client: {str(exc)}",
+            err=True,
+        )
         ctx.exit(-1)
 
 
