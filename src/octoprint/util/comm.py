@@ -535,7 +535,10 @@ class MachineCom:
         self._currentTool = 0
         self._toolBeforeChange = None
         self._toolBeforeHeatup = None
-        self._knownInvalidTools = set()
+
+        self._known_invalid_tools = set()
+        self._known_invalid_custom_temps = set()
+        self._known_broken_temperature_hooks = set()
 
         self._long_running_command = False
         self._heating = False
@@ -2181,12 +2184,19 @@ class MachineCom:
         for name, hook in self._temperature_hooks.items():
             try:
                 parsedTemps = hook(self, parsedTemps)
+                self._known_broken_temperature_hooks.discard(name)
                 if parsedTemps is None or not parsedTemps:
                     return
             except Exception:
-                self._logger.exception(
-                    f"Error while processing temperatures in {name}, skipping",
+                level = logging.DEBUG
+                if name not in self._known_broken_temperature_hooks:
+                    level = logging.ERROR
+                    self._known_broken_temperature_hooks.add(name)
+                self._logger.log(
+                    level,
+                    f"Error while processing temperatures in {name}",
                     extra={"plugin": name},
+                    exc_info=True,
                 )
 
         if current_tool_key in parsedTemps or "T0" in parsedTemps:
@@ -2228,13 +2238,17 @@ class MachineCom:
 
         # all other injected temperatures or temperature-like entries
         for key, data in parsedTemps.items():
+            if key in self._known_invalid_custom_temps:
+                continue
             try:
                 actual, target = data
                 self.last_temperature.set_custom(key, actual=actual, target=target)
             except Exception as ex:
-                self._logger.warning(
-                    f"Could not add custom temperature record {key}: {ex}"
-                )
+                if key not in self._known_invalid_custom_temps:
+                    self._known_invalid_custom_temps.add(key)
+                    self._logger.warning(
+                        f"Could not add custom temperature record {key}, skipping it from now on: {ex}",
+                    )
 
     ##~~ Serial monitor processing received messages
 
@@ -2990,7 +3004,7 @@ class MachineCom:
                                 {"tool": invalid_tool, "fallback": fallback_tool},
                             )
 
-                            self._knownInvalidTools.add(invalid_tool)
+                            self._known_invalid_tools.add(invalid_tool)
 
                             # we actually do send a T command here instead of just settings self._currentTool just in case
                             # we had any scripts or plugins modify stuff due to the prior tool change
@@ -5567,7 +5581,7 @@ class MachineCom:
         return not self._sanity_check_tools or (
             tool
             < self._printerProfileManager.get_current_or_default()["extruder"]["count"]
-            and tool not in self._knownInvalidTools
+            and tool not in self._known_invalid_tools
         )
 
     def _reset_position_timers(self):
