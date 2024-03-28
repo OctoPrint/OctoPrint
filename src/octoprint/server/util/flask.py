@@ -12,7 +12,7 @@ import os
 import threading
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any, Union
+from typing import Any, Dict, List, Union
 
 import flask
 import flask.json
@@ -29,6 +29,7 @@ from cachelib import BaseCache
 from flask import current_app
 from flask_login import COOKIE_NAME as REMEMBER_COOKIE_NAME
 from flask_login.utils import decode_cookie, encode_cookie
+from pydantic import BaseModel
 from werkzeug.local import LocalProxy
 from werkzeug.utils import cached_property
 
@@ -2013,3 +2014,50 @@ def session_signature(user, session):
 def validate_session_signature(sig, user, session):
     user_sig = session_signature(user, session)
     return len(user_sig) == len(sig) and hmac.compare_digest(sig, user_sig)
+
+
+##~~ Reverse proxy info
+
+
+class ReverseProxyInfo(BaseModel):
+    client_ip: str
+    server_protocol: str
+    server_name: str
+    server_port: int
+    server_path: str
+    cookie_suffix: str
+    trusted_proxies: List[str] = []
+    headers: Dict[str, str] = {}
+
+
+def get_reverse_proxy_info():
+    headers = {}
+    for header in sorted(
+        (
+            "X-Forwarded-For",
+            "X-Forwarded-Protocol",
+            "X-Scheme",
+            "X-Forwarded-Host",
+            "X-Forwarded-Port",
+            "X-Forwarded-Server",
+            "Host",
+            "X-Script-Name",
+        )
+    ):
+        if header in flask.request.headers:
+            headers[header] = flask.request.headers[header]
+
+    trusted_downstreams = settings().get(["server", "reverseProxy", "trustedDownstream"])
+    if not trusted_downstreams:
+        trusted_downstreams = []
+
+    return ReverseProxyInfo(
+        client_ip=flask.request.remote_addr,
+        server_protocol=flask.request.environ.get("wsgi.url_scheme"),
+        server_name=flask.request.environ.get("SERVER_NAME"),
+        server_port=int(flask.request.environ.get("SERVER_PORT")),
+        server_path=flask.request.script_root if flask.request.script_root else "/",
+        cookie_suffix=get_cookie_suffix(flask.request),
+        trusted_proxies=trusted_downstreams,
+        headers=headers,
+    )
