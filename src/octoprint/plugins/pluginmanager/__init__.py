@@ -399,35 +399,32 @@ class PluginManagerPlugin(
                 description="File doesn't have a valid extension for a plugin archive or a single file plugin",
             )
 
-        ext = exts[0]
-        archive = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
-        archive.close()
-        shutil.copy(upload_path, archive.name)
-
-        def perform_install(source, name, force=False):
-            try:
-                self.command_install(
-                    path=source,
-                    name=name,
-                    force=force,
-                )
-            finally:
-                try:
-                    os.remove(archive.name)
-                except Exception as e:
-                    self._logger.warning(
-                        "Could not remove temporary file {path} again: {message}".format(
-                            path=archive.name, message=str(e)
-                        )
-                    )
-
         with self._install_lock:
             if self._install_task is not None:
                 abort(409, description="There's already a plugin being installed")
 
+            tmp_folder = tempfile.TemporaryDirectory()
+            archive = os.path.join(tmp_folder.name, upload_name)
+            shutil.copy(upload_path, archive)
+
+            def perform_install(source, name, force=False):
+                try:
+                    self.command_install(
+                        path=source,
+                        name=name,
+                        force=force,
+                    )
+                finally:
+                    try:
+                        shutil.rmtree(tmp_folder)
+                    except Exception as e:
+                        self._logger.warning(
+                            f"Could not remove temporary folder {tmp_folder} again: {str(e)}"
+                        )
+
             self._install_task = threading.Thread(
                 target=perform_install,
-                args=(archive.name, upload_name),
+                args=(archive, upload_name),
                 kwargs={
                     "force": "force" in flask.request.values
                     and flask.request.values["force"] in valid_boolean_trues
@@ -2268,9 +2265,11 @@ class PluginManagerPlugin(
             "key": plugin.key,
             "name": plugin.name,
             "description": plugin.description,
-            "disabling_discouraged": gettext(plugin.disabling_discouraged)
-            if plugin.disabling_discouraged
-            else False,
+            "disabling_discouraged": (
+                gettext(plugin.disabling_discouraged)
+                if plugin.disabling_discouraged
+                else False
+            ),
             "author": plugin.author,
             "version": plugin.version,
             "url": plugin.url,
