@@ -536,7 +536,7 @@ $(function () {
         };
 
         self.editor = self.createProfileEditor();
-        self.currentProfileData = ko.observable(ko.mapping.fromJS(cleanProfile()));
+        self.currentProfileData = ko.observable();
 
         self.enableEditorSubmitButton = ko.pureComputed(function () {
             return self.editor.valid() && !self.requestInProgress();
