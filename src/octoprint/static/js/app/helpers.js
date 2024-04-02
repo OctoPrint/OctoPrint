@@ -1375,7 +1375,7 @@ function setOnViewModelIf(viewModel, key, value, condition) {
             "on view model",
             viewModel.constructor.name,
             ":",
-            exc.stack || exc
+            `${exc.message}\n${exc.stack || exc}`
         );
     }
 }
@@ -1400,7 +1400,7 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
                 "on view model",
                 viewModel.constructor.name,
                 ":",
-                exc.stack || exc
+                `${exc.message}\n${exc.stack || exc}`
             );
         }
     });
@@ -1484,7 +1484,7 @@ function callViewModelIf(viewModel, method, condition, callback, raiseErrors) {
                 "on view model",
                 viewModel.constructor.name,
                 ":",
-                exc.stack || exc
+                `${exc.message}\n${exc.stack || exc}`
             );
         }
     }

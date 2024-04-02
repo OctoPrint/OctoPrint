@@ -172,7 +172,7 @@ _PLUGIN_BUNDLE_WRAPPER_PREFIX = """// JS assets for plugin {plugin}
         """
 _PLUGIN_BUNDLE_WRAPPER_SUFFIX = """
     }} catch (error) {{
-        log.error("Error in JS assets for plugin {plugin}:", (error.stack || error));
+        log.error("Error in JS assets for plugin {plugin}:", `${{exc.message}}\n${{exc.stack || exc}}`);
     }}
 }})();
 """
