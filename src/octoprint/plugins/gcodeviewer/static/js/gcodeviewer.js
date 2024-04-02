@@ -511,9 +511,9 @@ $(function () {
             if (
                 self.status === "idle" &&
                 (force ||
-                    (self.cachedPath !== path &&
-                        self.cachedDate !== date &&
-                        self.cachedSize !== size))
+                    self.cachedPath !== path ||
+                    self.cachedDate !== date ||
+                    self.cachedSize !== size)
             ) {
                 self.status = "request";
 
