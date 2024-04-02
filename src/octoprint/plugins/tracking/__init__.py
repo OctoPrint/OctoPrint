@@ -34,6 +34,7 @@ class TrackingPlugin(
         self._environment = None
         self._throttle_state = None
         self._helpers_get_throttle_state = None
+        self._helpers_get_unlocked_achievements = None
         self._printer_connection_parameters = None
         self._url = None
         self._ping_worker = None
@@ -66,6 +67,7 @@ class TrackingPlugin(
                 "printer": True,
                 "printer_safety_check": True,
                 "throttled": True,
+                "achievements": True,
                 "slicing": True,
                 "webui_load": True,
             },
@@ -181,6 +183,11 @@ class TrackingPlugin(
         ):
             self._track_printer_safety_event(event, payload)
 
+        elif hasattr(Events, "PLUGIN_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKED") and event in (
+            Events.PLUGIN_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKED,
+        ):
+            self._track_achievement_unlocked_event(event, payload)
+
     ##~~ TemplatePlugin
 
     def get_template_configs(self):
@@ -223,6 +230,22 @@ class TrackingPlugin(
         if not self._settings.get_boolean(["enabled"]):
             return
 
+        if self._helpers_get_throttle_state is None:
+            # cautiously look for the get_throttled helper from pi_support
+            pi_helper = self._plugin_manager.get_helpers("pi_support", "get_throttled")
+            if pi_helper and "get_throttled" in pi_helper:
+                self._helpers_get_throttle_state = pi_helper["get_throttled"]
+
+        if self._helpers_get_unlocked_achievements is None:
+            # cautiously look for the get_unlocked_achievements helper from achievements
+            achievements_helper = self._plugin_manager.get_helpers(
+                "achievements", "get_unlocked_achievements"
+            )
+            if achievements_helper and "get_unlocked_achievements" in achievements_helper:
+                self._helpers_get_unlocked_achievements = achievements_helper[
+                    "get_unlocked_achievements"
+                ]
+
         if self._ping_worker is None:
             ping_interval = self._settings.get_int(["ping"])
             if ping_interval:
@@ -238,12 +261,6 @@ class TrackingPlugin(
                     pong_interval, self._track_pong, run_first=True
                 )
                 self._pong_worker.start()
-
-        if self._helpers_get_throttle_state is None:
-            # cautiously look for the get_throttled helper from pi_support
-            pi_helper = self._plugin_manager.get_helpers("pi_support", "get_throttled")
-            if pi_helper and "get_throttled" in pi_helper:
-                self._helpers_get_throttle_state = pi_helper["get_throttled"]
 
         # now that we have everything set up, phone home.
         self._track_startup()
@@ -272,6 +289,16 @@ class TrackingPlugin(
                 plugins_thirdparty,
             )
         )
+
+        if self._helpers_get_unlocked_achievements and self._settings.get_boolean(
+            ["events", "achievements"]
+        ):
+            payload["achievements"] = ",".join(
+                map(
+                    lambda x: x.key.lower(),
+                    self._helpers_get_unlocked_achievements(),
+                )
+            )
 
         self._track("pong", body=True, **payload)
 
@@ -483,6 +510,15 @@ class TrackingPlugin(
             "printer_safety_warning",
             printer_safety_warning_type=payload.get("warning_type", "unknown"),
             printer_safety_check_name=payload.get("check_name", "unknown"),
+        )
+
+    def _track_achievement_unlocked_event(self, event, payload):
+        if not self._settings.get_boolean(["events", "achievements"]):
+            return
+
+        self._track(
+            "achievement_unlocked",
+            achievement=payload.get("key", "unknown"),
         )
 
     def _track_slicing_event(self, event, payload):

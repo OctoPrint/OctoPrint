@@ -20,7 +20,7 @@ $(function () {
                 ) &&
                 (!CONFIG_FIRST_RUN || (self.coreWizardAcl && self.coreWizardAcl.setup()))
             ) {
-                location.reload();
+                OctoPrint.coreui.reload();
             }
         };
     }

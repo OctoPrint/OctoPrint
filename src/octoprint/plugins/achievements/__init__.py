@@ -17,6 +17,7 @@ import octoprint.plugin
 import octoprint.util
 from octoprint.access import ADMIN_GROUP, READONLY_GROUP, USER_GROUP
 from octoprint.access.permissions import Permissions
+from octoprint.events import Events
 from octoprint.util.version import get_octoprint_version
 
 from .achievements import Achievement, Achievements
@@ -88,10 +89,21 @@ class AchievementsPlugin(
                 "description": gettext(
                     "Allows to view the instance achievements & stats."
                 ),
-                "default_groups": [[READONLY_GROUP, USER_GROUP, ADMIN_GROUP]],
+                "default_groups": [READONLY_GROUP, USER_GROUP, ADMIN_GROUP],
                 "roles": ["view"],
             }
         ]
+
+    ##~~ socket emit hook
+
+    def socket_emit_hook(self, socket, user, message, payload, *args, **kwargs):
+        if (
+            message != "event"
+            or payload["type"] != Events.PLUGIN_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKED
+        ):
+            return True
+
+        return user and user.has_permission(Permissions.PLUGIN_ACHIEVEMENTS_VIEW)
 
     ##~~ Firmware info hook
 
@@ -101,7 +113,7 @@ class AchievementsPlugin(
         if "klipper" in firmware_name.lower():
             self._trigger_achievement(Achievements.CROSSOVER_EPISODE)
 
-    ##~ StartupPlugin
+    ##~~ StartupPlugin
 
     def on_startup(self, *args, **kwargs):
         self._data.stats.server_starts += 1
@@ -136,8 +148,6 @@ class AchievementsPlugin(
     ##~~ EventHandlerPlugin
 
     def on_event(self, event, payload, *args, **kwargs):
-        from octoprint.events import Events
-
         changed = False
         yearly_changed = False
         now = self._now()
@@ -316,7 +326,10 @@ class AchievementsPlugin(
                 elif self._data.stats.files_uploaded >= 100:
                     self._trigger_achievement(Achievements.THE_COLLECTOR_I)
 
-                if payload.get("size", 0) > 500 * 1024 * 1024:
+                size = self._file_manager.get_size(
+                    payload.get("storage"), payload.get("path")
+                )
+                if size > 500 * 1024 * 1024:
                     self._trigger_achievement(Achievements.HEAVY_CHONKER)
 
                 changed = yearly_changed = True
@@ -470,6 +483,16 @@ class AchievementsPlugin(
             "server_timezone": datetime.datetime.utcnow().astimezone().tzname(),
         }
 
+    ##~~ External helpers
+
+    def get_unlocked_achievements(self):
+        return list(
+            filter(
+                lambda x: x is not None,
+                [Achievements.get(key) for key in self._data.achievements.keys()],
+            )
+        )
+
     ##~~ Internal helpers
 
     def _recheck_plugin_count(self):
@@ -502,7 +525,7 @@ class AchievementsPlugin(
         payload = achievement.dict()
         payload["type"] = "achievement"
         payload["logo"] = achievement.icon
-        self._plugin_manager.send_plugin_message(self._identifier, payload)
+        self._event_bus.fire(Events.PLUGIN_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKED, payload)
 
     def _generate_svg(self):
         import os
@@ -641,6 +664,10 @@ class AchievementsPlugin(
             return None
 
 
+def _register_custom_events(*args, **kwargs):
+    return ["achievement_unlocked"]
+
+
 __plugin_name__ = "Achievements Plugin"
 __plugin_author__ = "Gina Häußge"
 __plugin_description__ = "Achievements & stats about your OctoPrint instance"
@@ -650,7 +677,13 @@ __plugin_disabling_discouraged__ = gettext(
 __plugin_license__ = "AGPLv3"
 __plugin_pythoncompat__ = ">=3.7,<4"
 __plugin_implementation__ = AchievementsPlugin()
+__plugin_helpers__ = {
+    "get_unlocked_achievements": __plugin_implementation__.get_unlocked_achievements,
+    "has_achievement": __plugin_implementation__._has_achievement,
+}
 __plugin_hooks__ = {
     "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
     "octoprint.comm.protocol.firmware.info": __plugin_implementation__.firmware_info_hook,
+    "octoprint.events.register_custom_events": _register_custom_events,
+    "octoprint.server.sockjs.emit": __plugin_implementation__.socket_emit_hook,
 }

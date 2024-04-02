@@ -133,13 +133,17 @@ def run_server(
             environment_detector,
         ) = components
 
-    except FatalStartupError as e:
-        logger = logging.getLogger("octoprint.startup").fatal
-        echo = lambda x: click.echo(x, err=True)
+    except FatalStartupError as exc:
+        from traceback import format_exc
 
-        for method in logger, echo:
-            method(str(e))
-            method("There was a fatal error starting up OctoPrint.")
+        logging.getLogger("octoprint.startup").fatal(
+            "There was a fatal error initializing OctoPrint:", exc_info=True
+        )
+        click.echo(format_exc(), err=True)
+        click.echo(
+            f"There was a fatal error initializing OctoPrint: {str(exc)}",
+            err=True,
+        )
 
     else:
         from octoprint.server import CannotStartServerException, Server
@@ -262,9 +266,9 @@ def enable_safemode(ctx, **kwargs):
     from octoprint import FatalStartupError, init_settings
 
     logging.basicConfig(
-        level=logging.DEBUG
-        if get_ctx_obj_option(ctx, "verbosity", 0) > 0
-        else logging.WARN
+        level=(
+            logging.DEBUG if get_ctx_obj_option(ctx, "verbosity", 0) > 0 else logging.WARN
+        )
     )
     try:
         settings = init_settings(
@@ -272,10 +276,15 @@ def enable_safemode(ctx, **kwargs):
             get_ctx_obj_option(ctx, "configfile", None),
             overlays=get_ctx_obj_option(ctx, "overlays", None),
         )
-    except FatalStartupError as e:
-        click.echo(str(e), err=True)
-        click.echo("There was a fatal error initializing the settings manager.", err=True)
+    except FatalStartupError as exc:
+        from traceback import format_exc
+
         ctx.exit(-1)
+        click.echo(format_exc(), err=True)
+        click.echo(
+            f"There was a fatal error initializing the settings manager: {str(exc)}",
+            err=True,
+        )
     else:
         settings.setBoolean(["server", "startOnceInSafeMode"], True)
         settings.save()

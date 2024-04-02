@@ -261,6 +261,12 @@ def login():
 
 
 @app.route("/recovery")
+@app.route("/rescue/")
+@app.route("/rescue")
+def recovery_redirect():
+    return redirect(url_for("recovery"))
+
+
 @app.route("/recovery/")
 def recovery():
     response = require_fresh_login_with(permissions=[Permissions.ADMIN])
@@ -367,6 +373,24 @@ def in_cache():
 
 
 @app.route("/reverse_proxy_test")
+@app.route("/reverse_proxy_check")
+@app.route("/reverse_proxy_check/")
+@app.route("/reverse-proxy-test")
+@app.route("/reverse-proxy-test/")
+@app.route("/reverse-proxy-check")
+@app.route("/reverse-proxy-check/")
+@app.route("/proxy_test")
+@app.route("/proxy_test/")
+@app.route("/proxy_check")
+@app.route("/proxy_check/")
+@app.route("/proxy-test")
+@app.route("/proxy-test/")
+@app.route("/proxy-check")
+@app.route("/proxy-check/")
+def reverse_proxy_test_redirect():
+    return redirect(url_for("reverse_proxy_test"))
+
+
 @app.route("/reverse_proxy_test/")
 def reverse_proxy_test():
     from octoprint.server.util.flask import get_cookie_suffix, get_remote_address

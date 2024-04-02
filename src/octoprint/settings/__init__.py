@@ -106,21 +106,14 @@ class InvalidSettings(Exception):
 
 
 class InvalidYaml(InvalidSettings):
-    def __init__(self, file, line=None, column=None, details=None):
+    def __init__(self, file, error=None):
         self.file = file
-        self.line = line
-        self.column = column
-        self.details = details
+        self.error = error
 
     def __str__(self):
-        message = (
-            "Error parsing the configuration file {}, "
-            "it is invalid YAML.".format(self.file)
-        )
-        if self.line and self.column:
-            message += " The parser reported an error on line {}, column {}.".format(
-                self.line, self.column
-            )
+        message = f"Error parsing the configuration file {self.file}, it is invalid YAML"
+        if self.error:
+            message += f": {self.error}"
         return message
 
 
@@ -915,21 +908,7 @@ class Settings:
                     mtime = self.last_modified
 
                 except YAMLError as e:
-                    details = str(e)
-
-                    if hasattr(e, "problem_mark"):
-                        line = e.problem_mark.line
-                        column = e.problem_mark.column
-                    else:
-                        line = None
-                        column = None
-
-                    raise InvalidYaml(
-                        self._configfile,
-                        details=details,
-                        line=line,
-                        column=column,
-                    )
+                    raise InvalidYaml(self._configfile, error=str(e))
 
         # changed from else to handle cases where the file exists, but is empty / 0 bytes
         if not config or not isinstance(config, dict):

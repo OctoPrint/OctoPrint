@@ -506,11 +506,11 @@ class FileManager:
                 "stl_location": source_location,
                 "gcode": dest_path,
                 "gcode_location": dest_location,
-                "progressAvailable": slicer.get_slicer_properties().get(
-                    "progress_report", False
-                )
-                if slicer
-                else False,
+                "progressAvailable": (
+                    slicer.get_slicer_properties().get("progress_report", False)
+                    if slicer
+                    else False
+                ),
             },
         )
 
@@ -929,6 +929,12 @@ class FileManager:
         )
 
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
+
+    def get_size(self, location, path):
+        try:
+            return self._storage(location).get_size(path)
+        except Exception:
+            return -1
 
     def has_analysis(self, location, path):
         return self._storage(location).has_analysis(path)

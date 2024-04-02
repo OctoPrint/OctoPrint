@@ -82,7 +82,7 @@ $(function () {
                                         .done(function () {
                                             notification.remove();
                                             notification = undefined;
-                                            location.reload(true);
+                                            OctoPrint.coreui.reload(true);
                                         });
                                 }
                             }
