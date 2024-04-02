@@ -22,4 +22,5 @@ server:
   seenWizards:
     backup: null
     corewizard: 3
+    file_check: 1
     tracking: null

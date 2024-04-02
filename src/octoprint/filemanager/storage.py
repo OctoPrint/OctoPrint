@@ -63,6 +63,18 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
+    def get_size(self, path=None, recursive=False) -> int:
+        """
+        Get the size of the specified ``path`` or ``path``'s subtree.
+
+        Args:
+            path (str or None): Path for which to determine the subtree's size. If left out or
+                set to None, defaults to storage root.
+            recursive (bool): Whether to determine only the size of the specified ``path`` (False, default) or
+                the whole ``path``'s subtree (True).
+        """
+        raise NotImplementedError()
+
     def file_in_path(self, path, filepath):
         """
         Returns whether the file indicated by ``file`` is inside ``path`` or not.
@@ -589,6 +601,26 @@ class LocalFileStorage(StorageInterface):
             return max(last_modified_for_path(root) for root, _, _ in walk(path))
         else:
             return last_modified_for_path(path)
+
+    def get_size(self, path=None, recursive=False):
+        if path is None:
+            path = self.basefolder
+
+        path, name = self.sanitize(path)
+        path = os.path.join(path, name)
+
+        # shortcut for individual files
+        if os.path.isfile(path):
+            return os.stat(path).st_size
+
+        size = 0
+        for entry in os.scandir(path):
+            if entry.is_file():
+                size += entry.stat().st_size
+            elif recursive and entry.is_dir():
+                size += self.get_size(entry.path, recursive=recursive)
+
+        return size
 
     def file_in_path(self, path, filepath):
         filepath = self.sanitize_path(filepath)

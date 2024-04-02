@@ -326,7 +326,10 @@ class AchievementsPlugin(
                 elif self._data.stats.files_uploaded >= 100:
                     self._trigger_achievement(Achievements.THE_COLLECTOR_I)
 
-                if payload.get("size", 0) > 500 * 1024 * 1024:
+                size = self._file_manager.get_size(
+                    payload.get("storage"), payload.get("path")
+                )
+                if size > 500 * 1024 * 1024:
                     self._trigger_achievement(Achievements.HEAVY_CHONKER)
 
                 changed = yearly_changed = True
