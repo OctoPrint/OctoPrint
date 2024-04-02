@@ -122,9 +122,12 @@ $(function () {
             var tools = [];
             var color;
 
-            // tools
-            var currentProfileData =
+            // make sure we only update if we have a printer profile loaded
+            const currentProfileData =
                 self.settingsViewModel.printerProfiles.currentProfileData();
+            if (!currentProfileData) return;
+
+            // tools
             var numExtruders = currentProfileData
                 ? currentProfileData.extruder.count()
                 : 0;

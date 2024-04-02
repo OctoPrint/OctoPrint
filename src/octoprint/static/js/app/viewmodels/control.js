@@ -154,11 +154,27 @@ $(function () {
         self.settings.printerProfiles.currentProfileData.subscribe(function () {
             self._updateExtruderCount();
             self._updateExtrusionAmount();
+
+            const data = self.settings.printerProfiles.currentProfileData();
+            if (data && data.extruder) {
+                if (data.extruder.defaultExtrusionLength) {
+                    data.extruder.defaultExtrusionLength.subscribe(
+                        self._updateExtrusionAmount
+                    );
+                }
+                if (data.extruder.count) {
+                    data.extruder.count.subscribe(self._updateExtruderCount);
+                }
+            }
             self.settings.printerProfiles
                 .currentProfileData()
                 .extruder.count.subscribe(self._updateExtruderCount);
         });
         self._updateExtrusionAmount = function () {
+            const data = self.settings.printerProfiles.currentProfileData();
+            if (!data || !data.extruder) {
+                return;
+            }
             self.extrusionAmount(
                 self.settings.printerProfiles
                     .currentProfileData()
@@ -166,6 +182,10 @@ $(function () {
             );
         };
         self._updateExtruderCount = function () {
+            const data = self.settings.printerProfiles.currentProfileData();
+            if (!data || !data.extruder || !data.extruder.count) {
+                return;
+            }
             var tools = [];
 
             var numExtruders = self.settings.printerProfiles
@@ -589,12 +609,6 @@ $(function () {
                 self.additionalControls = additionalControls;
                 self.rerenderControls();
             }
-
-            self.extrusionAmount(
-                self.settings.printerProfiles
-                    .currentProfileData()
-                    .extruder.defaultExtrusionLength()
-            );
         };
 
         self.onFocus = function (data, event) {
