@@ -15,7 +15,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: 🏗 Set up Python 3.7
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.7
       - name: 🏗 Install build dependencies
@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: 🏗 Set up Python 3.7
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.7
       - name: 🏗 Set up dev dependencies
@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: 🏗 Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - name: 🏗 Set up test dependencies
@@ -94,7 +94,7 @@ jobs:
           name: dist
           path: dist
       - name: 🏗 Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - name: 🚀 Install wheel
@@ -121,7 +121,7 @@ jobs:
           path: dist
 
       - name: 🏗 Set up Python 3.7
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: 3.7
 
@@ -142,7 +142,7 @@ jobs:
           echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
 
       - name: 🧰 Cache Playwright browser binaries
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         id: playwright-cache
         with:
           path: "~/.cache/ms-playwright"
