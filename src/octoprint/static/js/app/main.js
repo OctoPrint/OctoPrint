@@ -511,7 +511,12 @@ $(function () {
                 if (typeof Sentry !== "undefined") {
                     Sentry.captureException(exc);
                 }
-                log.error("Error instantiating", viewModel.name, ":", exc.stack || exc);
+                log.error(
+                    "Error instantiating",
+                    viewModel.name,
+                    ":",
+                    `${exc.message}\n${exc.stack || exc}`
+                );
                 continue;
             }
 
@@ -800,7 +805,7 @@ $(function () {
                                 "Error calling onBeforeBinding on view model",
                                 viewModel.constructor.name,
                                 ":",
-                                exc.stack || exc
+                                `${exc.message}\n${exc.stack || exc}`
                             );
                             return;
                         }
@@ -835,7 +840,7 @@ $(function () {
                                             "of view model",
                                             viewModel.constructor.name,
                                             ":",
-                                            exc.stack || exc
+                                            `${exc.message}\n${exc.stack || exc}`
                                         );
                                         return;
                                     }
@@ -893,7 +898,7 @@ $(function () {
                                         "to target",
                                         target,
                                         ":",
-                                        exc.stack || exc
+                                        `${exc.message}\n${exc.stack || exc}`
                                     );
                                 }
                             });
@@ -917,7 +922,7 @@ $(function () {
                             "Error while processing view model",
                             name,
                             "for binding:",
-                            exc.stack || exc
+                            `${exc.message}\n${exc.stack || exc}`
                         );
                     }
                 });
