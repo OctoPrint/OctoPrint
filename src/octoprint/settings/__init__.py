@@ -407,9 +407,14 @@ class HierarchicalChainMap:
         Builds a new map with the following layers: provided config + any intermediary
         parents + provided defaults + regular defaults
 
-        :param config:
-        :param defaults:
-        :return:
+        Args:
+            config (dict): The config to use as the top layer. May be None in which case
+                it will be set to the current config.
+            defaults (dict): The defaults to use above the bottom layer. May be None in
+                which case it will be set to an empty layer.
+
+        Returns:
+            HierarchicalChainMap: A new chain map with the provided layers.
         """
         if config is None and defaults is None:
             return self
@@ -425,7 +430,24 @@ class HierarchicalChainMap:
             defaults = []
 
         layers = [config] + self._middle_layers() + defaults + [self._chainmap.maps[-1]]
-        return HierarchicalChainMap.from_layers(*layers)
+        return self.with_layers(*layers)
+
+    def with_layers(self, *layers):
+        """
+        Builds a new map with the provided layers. Makes sure to copy the current prefix cache
+        to the new map.
+
+        Args:
+            layers: The layers to use in the new map.
+
+        Returns:
+            HierarchicalChainMap: A new chain map with the provided layers.
+        """
+        chain = HierarchicalChainMap.from_layers(*layers)
+        chain._prefixed_keys = (
+            self._prefixed_keys
+        )  # be sure to copy the cache or it will lose sync
+        return chain
 
     @property
     def top_map(self):

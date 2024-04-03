@@ -36,3 +36,9 @@ devel:
 empty:
   value:
     a: true
+swu:
+  checks:
+    one:
+      foo: 1
+    another:
+      foo: 2

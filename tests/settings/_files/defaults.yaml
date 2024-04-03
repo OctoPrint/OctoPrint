@@ -22,3 +22,7 @@ test:
 empty:
   value:
     a: false
+swu:
+  checks:
+    octoprint:
+      foo: bar
