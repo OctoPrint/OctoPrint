@@ -282,3 +282,20 @@ class Achievements(metaclass=AchievementsMetaClass):
         description="Start a print with an active undervoltage issue.",
         hidden=True,
     )
+
+
+if __name__ == "__main__":
+    import json
+
+    achievements = Achievements.all()
+
+    print("const ACHIEVEMENTS = ", end="")
+    print(
+        json.dumps(
+            {
+                a.key: {"name": a.name, "hidden": a.hidden}
+                for a in sorted(achievements, key=lambda x: x.key)
+            },
+            indent=2,
+        )
+    )
