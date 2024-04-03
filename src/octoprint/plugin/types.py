@@ -119,8 +119,7 @@ class OctoPrintPlugin(Plugin):
 
         import os
 
-        if not os.path.isdir(self._data_folder):
-            os.makedirs(self._data_folder)
+        os.makedirs(self._data_folder, exist_ok=True)
         return self._data_folder
 
     def on_plugin_pending_uninstall(self):
