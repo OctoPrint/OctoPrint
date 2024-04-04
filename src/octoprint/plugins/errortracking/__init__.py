@@ -200,11 +200,8 @@ def _enable_errortracking():
 
             if event.get("exception") and event["exception"].get("values"):
                 handled = not any(
-                    map(
-                        lambda x: x.get("mechanism")
-                        and not x["mechanism"].get("handled", True),
-                        event["exception"]["values"],
-                    )
+                    x.get("mechanism") and not x["mechanism"].get("handled", True)
+                    for x in event["exception"]["values"]
                 )
 
             if handled:

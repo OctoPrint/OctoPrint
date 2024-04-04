@@ -109,12 +109,9 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                 # plugin translations
                 plugins = octoprint.plugin.plugin_manager().enabled_plugins
                 for name, plugin in plugins.items():
-                    dirs = list(
-                        map(
-                            lambda x: os.path.join(x, "_plugins", name),
-                            additional_folders,
-                        )
-                    ) + [os.path.join(plugin.location, "translations")]
+                    dirs = [
+                        os.path.join(x, "_plugins", name) for x in additional_folders
+                    ] + [os.path.join(plugin.location, "translations")]
                     for dirname in dirs:
                         if not os.path.isdir(dirname):
                             continue
@@ -370,7 +367,7 @@ class ReverseProxiedEnvironment:
             # Scheme might be something like "https,https" if doubly-reverse-proxied
             # without stripping original scheme header first, make sure to only use
             # the first entry in such a case. See #1391.
-            scheme, _ = map(lambda x: x.strip(), scheme.split(",", 1))
+            scheme, _ = (x.strip() for x in scheme.split(",", 1))
         if scheme is not None:
             environ["wsgi.url_scheme"] = scheme
 
@@ -569,7 +566,7 @@ class OctoPrintFlaskResponse(flask.Response):
 
         # add request specific cookie suffix to name
         flask.Response.set_cookie(
-            self, key + flask.request.cookie_suffix, value=value, *args, **kwargs
+            self, key + flask.request.cookie_suffix, *args, value=value, **kwargs
         )
 
     def delete_cookie(self, key, path="/", domain=None):
@@ -731,9 +728,9 @@ def passive_login():
                         logger.info(
                             f"Logging in user {autologin_as} from {remote_address} via autologin"
                         )
-                        flask.session[
-                            "login_mechanism"
-                        ] = octoprint.server.util.LoginMechanism.AUTOLOGIN
+                        flask.session["login_mechanism"] = (
+                            octoprint.server.util.LoginMechanism.AUTOLOGIN
+                        )
                         flask.session["credentials_seen"] = False
                         return autologin_user
             except Exception:
@@ -1107,7 +1104,7 @@ class PreemptiveCache:
 
     def get_data(self, root):
         cache_data = self.get_all_data()
-        return cache_data.get(root, list())
+        return cache_data.get(root, [])
 
     def set_all_data(self, data):
         from octoprint.util import atomic_write
@@ -1727,7 +1724,7 @@ def get_json_command_from_request(request, valid_commands):
         flask.abort(400, description="command is invalid")
 
     command = data["command"]
-    if any(map(lambda x: x not in data, valid_commands[command])):
+    if any(x not in data for x in valid_commands[command]):
         flask.abort(400, description="Mandatory parameters missing")
 
     return command, data, None
@@ -1939,12 +1936,10 @@ def collect_plugin_assets(preferred_stylesheet="css"):
             continue
 
         def asset_exists(category, asset):
-            exists = os.path.exists(os.path.join(basefolder, asset))
+            exists = os.path.exists(os.path.join(basefolder, asset))  # noqa: B023
             if not exists:
                 logger.warning(
-                    "Plugin {} is referring to non existing {} asset {}".format(
-                        name, category, asset
-                    )
+                    f"Plugin {name} is referring to non existing {category} asset {asset}"  # noqa: B023
                 )
             return exists
 

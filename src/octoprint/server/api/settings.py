@@ -622,7 +622,7 @@ def _saveSettings(data):
         if "ffmpegCommandline" in data["webcam"]:
             commandline = data["webcam"]["ffmpegCommandline"]
             if not all(
-                map(lambda x: "{" + x + "}" in commandline, ("ffmpeg", "input", "output"))
+                "{" + x + "}" in commandline for x in ("ffmpeg", "input", "output")
             ):
                 abort(
                     400,
@@ -1026,7 +1026,7 @@ def _saveSettings(data):
             s.setBoolean(
                 ["serial", "capabilities", "extended_m20"],
                 data["serial"]["capExtendedM20"],
-            ),
+            )
         if "capLfnWrite" in data["serial"]:
             s.setBoolean(
                 ["serial", "capabilities", "lfn_write"],

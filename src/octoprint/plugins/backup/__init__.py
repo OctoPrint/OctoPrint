@@ -546,9 +546,9 @@ class BackupPlugin(
             plugin_info = plugin_manager.get_plugin_info("pluginmanager")
             if plugin_info and plugin_info.implementation:
                 default_settings_overlay = {"plugins": {}}
-                default_settings_overlay["plugins"][
-                    "pluginmanager"
-                ] = plugin_info.implementation.get_settings_defaults()
+                default_settings_overlay["plugins"]["pluginmanager"] = (
+                    plugin_info.implementation.get_settings_defaults()
+                )
                 settings.add_overlay(default_settings_overlay, at_end=True)
 
             if not os.path.isabs(path):
@@ -749,13 +749,8 @@ class BackupPlugin(
 
                 assert isinstance(unknown_plugins, list)
                 assert all(
-                    map(
-                        lambda x: isinstance(x, dict)
-                        and "key" in x
-                        and "name" in x
-                        and "url" in x,
-                        unknown_plugins,
-                    )
+                    isinstance(x, dict) and "key" in x and "name" in x and "url" in x
+                    for x in unknown_plugins
                 )
 
                 installed_plugins = self._plugin_manager.plugins
@@ -933,7 +928,7 @@ class BackupPlugin(
                     exclude.append("timelapse_tmp")
 
                 current_excludes = list(exclude)
-                additional_excludes = list()
+                additional_excludes = []
                 plugin_data = settings.global_get_basefolder("data")
                 for plugin, hook in plugin_manager.get_hooks(
                     "octoprint.plugin.backup.additional_excludes"
@@ -947,12 +942,12 @@ class BackupPlugin(
                                     os.path.join(plugin_data, plugin)
                                 )
                             else:
-                                current_excludes += map(
-                                    lambda x: os.path.join("data", plugin, x), additional
+                                current_excludes += (
+                                    os.path.join("data", plugin, x) for x in additional
                                 )
-                                additional_excludes += map(
-                                    lambda x: os.path.join(plugin_data, plugin, x),
-                                    additional,
+                                additional_excludes += (
+                                    os.path.join(plugin_data, plugin, x)
+                                    for x in additional
                                 )
                     except Exception:
                         logger.exception(
@@ -1289,19 +1284,14 @@ class BackupPlugin(
                                     if known_plugins:
                                         on_log_progress(
                                             "Known and installable plugins: {}".format(
-                                                ", ".join(
-                                                    map(lambda x: x["id"], known_plugins)
-                                                )
+                                                ", ".join(x["id"] for x in known_plugins)
                                             )
                                         )
                                     if unknown_plugins:
                                         on_log_progress(
                                             "Unknown plugins: {}".format(
                                                 ", ".join(
-                                                    map(
-                                                        lambda x: x["key"],
-                                                        unknown_plugins,
-                                                    )
+                                                    x["key"] for x in unknown_plugins
                                                 )
                                             )
                                         )

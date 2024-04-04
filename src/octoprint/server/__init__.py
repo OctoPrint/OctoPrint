@@ -444,13 +444,13 @@ class Server:
         )
 
         storage_managers = {}
-        storage_managers[
-            octoprint.filemanager.FileDestinations.LOCAL
-        ] = octoprint.filemanager.storage.LocalFileStorage(
-            self._settings.getBaseFolder("uploads"),
-            really_universal=self._settings.getBoolean(
-                ["feature", "enforceReallyUniversalFilenames"]
-            ),
+        storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = (
+            octoprint.filemanager.storage.LocalFileStorage(
+                self._settings.getBaseFolder("uploads"),
+                really_universal=self._settings.getBoolean(
+                    ["feature", "enforceReallyUniversalFilenames"]
+                ),
+            )
         )
 
         fileManager = octoprint.filemanager.FileManager(
@@ -1394,7 +1394,13 @@ class Server:
             self._logger.warn(f"Could not write safe mode file {self_mode_file}: {ex}")
 
     def _create_socket_connection(self, session):
-        global printer, fileManager, analysisQueue, userManager, eventManager, connectivityChecker
+        global \
+            printer, \
+            fileManager, \
+            analysisQueue, \
+            userManager, \
+            eventManager, \
+            connectivityChecker
         return util.sockjs.PrinterStateConnection(
             printer,
             fileManager,
@@ -1694,12 +1700,12 @@ class Server:
         app.jinja_env.filters["offset_html_headers"] = offset_html_headers
         app.jinja_env.filters["offset_markdown_headers"] = offset_markdown_headers
         app.jinja_env.filters["externalize_links"] = externalize_links
-        app.jinja_env.filters["escape_single_quote"] = app.jinja_env.filters[
-            "esq"
-        ] = escape_single_quote
-        app.jinja_env.filters["escape_double_quote"] = app.jinja_env.filters[
-            "edq"
-        ] = escape_double_quote
+        app.jinja_env.filters["escape_single_quote"] = app.jinja_env.filters["esq"] = (
+            escape_single_quote
+        )
+        app.jinja_env.filters["escape_double_quote"] = app.jinja_env.filters["edq"] = (
+            escape_double_quote
+        )
 
         # configure additional template folders for jinja2
         import jinja2
@@ -1776,7 +1782,7 @@ class Server:
         def filter_entries(entry):
             """Combined filter."""
             filters = (filter_current_entries, filter_http_entries)
-            return all([f(entry) for f in filters])
+            return all(f(entry) for f in filters)
 
         # filter out all old and non-http entries
         cache_data = preemptive_cache.clean_all_data(
@@ -1789,8 +1795,8 @@ class Server:
             logger = logging.getLogger(__name__ + ".preemptive_cache")
 
             for route in sorted(cache_data.keys(), key=lambda x: (x.count("/"), x)):
-                entries = reversed(
-                    sorted(cache_data[route], key=lambda x: x.get("_count", 0))
+                entries = sorted(
+                    cache_data[route], key=lambda x: x.get("_count", 0), reverse=True
                 )
                 for kwargs in entries:
                     plugin = kwargs.get("plugin", None)
@@ -1949,7 +1955,7 @@ class Server:
 
         @app.errorhandler(HTTPException)
         def _handle_api_error(ex):
-            if any(map(lambda x: request.path.startswith(x), api_endpoints)):
+            if any(request.path.startswith(x) for x in api_endpoints):
                 return make_api_error(ex.description, ex.code)
             else:
                 return ex
@@ -1980,9 +1986,7 @@ class Server:
             blueprint, prefix = self._prepare_blueprint_plugin(plugin)
 
             blueprints.append(blueprint)
-            api_endpoints += map(
-                lambda x: prefix + x, plugin.get_blueprint_api_prefixes()
-            )
+            api_endpoints += (prefix + x for x in plugin.get_blueprint_api_prefixes())
             registrators.append(
                 functools.partial(
                     register_plugin_blueprint, plugin._identifier, blueprint, prefix
@@ -2692,7 +2696,7 @@ class Server:
                     "contain only ASCII characters, or take a look at "
                     "https://github.com/OctoPrint/OctoPrint/issues/3963 for "
                     "other options."
-                )
+                ) from exc
             else:
                 raise
 

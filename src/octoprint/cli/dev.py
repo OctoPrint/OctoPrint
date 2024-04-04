@@ -57,7 +57,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
         return result
 
     def list_commands(self, ctx):
-        result = [name for name in self._get_commands()]
+        result = list(self._get_commands())
         result.sort()
         return result
 
@@ -322,7 +322,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
                     [less, "--clean-css"], logged=False
                 )
                 clean_css = not any(
-                    map(lambda x: "Unable to load plugin clean-css" in x, stderr)
+                    "Unable to load plugin clean-css" in x for x in stderr
                 )
             else:
                 clean_css = False

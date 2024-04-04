@@ -217,7 +217,7 @@ def executeSystemCommand(source, command):
 
 
 def _to_client_specs(specs):
-    result = list()
+    result = []
     for spec in specs.values():
         if "action" not in spec or "source" not in spec:
             continue

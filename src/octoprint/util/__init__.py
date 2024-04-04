@@ -3,7 +3,6 @@ This module bundles commonly used utility methods or helper classes that are use
 OctoPrint's source code.
 """
 
-
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 
@@ -130,7 +129,7 @@ def pp(value):
     if isinstance(value, dict):
         # sort by keys
         r = "dict("
-        r += ", ".join(map(lambda i: i[0] + "=" + pp(i[1]), sorted(value.items())))
+        r += ", ".join(i[0] + "=" + pp(i[1]) for i in sorted(value.items()))
         r += ")"
         return r
     elif isinstance(value, set):
@@ -423,7 +422,7 @@ def get_class(name):
     try:
         return getattr(m, cls_name)
     except AttributeError:
-        raise ImportError("No module named " + name)
+        raise ImportError("No module named " + name) from None
 
 
 def get_fully_qualified_classname(o):
@@ -900,7 +899,7 @@ class DefaultOrderedDict(collections.OrderedDict):
 
     def __reduce__(self):
         if self.default_factory is None:
-            args = tuple()
+            args = ()
         else:
             args = (self.default_factory,)
         return type(self), args, None, None, list(self.items())
@@ -1674,9 +1673,7 @@ def time_this(
             if incl_func_args and logger.isEnabledFor(logging.DEBUG):
                 data.update(
                     func_args=",".join(map(repr, args)),
-                    func_kwargs=",".join(
-                        map(lambda x: f"{x[0]}={x[1]!r}", kwargs.items())
-                    ),
+                    func_kwargs=",".join(f"{x[0]}={x[1]!r}" for x in kwargs.items()),
                 )
             if log_enter:
                 logger.debug(message_enter.format(**data), extra=data)

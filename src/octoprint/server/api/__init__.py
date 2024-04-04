@@ -202,8 +202,9 @@ def wizardState():
             )
         except Exception:
             logging.getLogger(__name__).exception(
-                "There was an error fetching wizard "
-                "details for {}, ignoring".format(name),
+                "There was an error fetching wizard " "details for {}, ignoring".format(
+                    name
+                ),
                 extra={"plugin": name},
             )
         else:
@@ -255,8 +256,9 @@ def wizardFinish():
                 seen_wizards[name] = implementation.get_wizard_version()
         except Exception:
             logging.getLogger(__name__).exception(
-                "There was an error finishing the "
-                "wizard for {}, ignoring".format(name),
+                "There was an error finishing the " "wizard for {}, ignoring".format(
+                    name
+                ),
                 extra={"plugin": name},
             )
 
@@ -538,7 +540,7 @@ def _test_path(data):
     access_mapping = {"r": os.R_OK, "w": os.W_OK, "x": os.X_OK}
     if check_access:
         mode = 0
-        for a in map(lambda x: access_mapping[x], check_access):
+        for a in (access_mapping[x] for x in check_access):
             mode |= a
         access = os.access(path, mode)
     else:
@@ -665,7 +667,7 @@ def _test_url(data):
             method=method, url=url, timeout=timeout, verify=valid_ssl, stream=True
         ) as response:
             status = response.status_code
-            outcome = outcome and any(map(lambda x: status in x, check_status))
+            outcome = outcome and any(status in x for x in check_status)
             content_type = response.headers.get("content-type")
 
             response_result = {
@@ -685,16 +687,12 @@ def _test_url(data):
             parsed_content_type = util.parse_mime_type(content_type)
 
             in_whitelist = content_type_whitelist is None or any(
-                map(
-                    lambda x: util.mime_type_matches(parsed_content_type, x),
-                    content_type_whitelist,
-                )
+                util.mime_type_matches(parsed_content_type, x)
+                for x in content_type_whitelist
             )
             in_blacklist = content_type_blacklist is not None and any(
-                map(
-                    lambda x: util.mime_type_matches(parsed_content_type, x),
-                    content_type_blacklist,
-                )
+                util.mime_type_matches(parsed_content_type, x)
+                for x in content_type_blacklist
             )
 
             if not in_whitelist or in_blacklist:

@@ -16,7 +16,6 @@ import octoprint.util
 
 
 class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
-
     """
     Takes care of automatically "uploading" files that get added to the watched folder.
     """
@@ -24,9 +23,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
     def __init__(self, file_manager, printer):
         watchdog.events.PatternMatchingEventHandler.__init__(
             self,
-            patterns=list(
-                map(lambda x: "*.%s" % x, octoprint.filemanager.get_all_extensions())
-            ),
+            patterns=["*.%s" % x for x in octoprint.filemanager.get_all_extensions()],
         )
 
         self._logger = logging.getLogger(__name__)

@@ -1015,7 +1015,7 @@ class FileManager:
             data = yaml.load_from_file(path=self._recovery_file)
 
             if not isinstance(data, dict) or not all(
-                map(lambda x: x in data, ("origin", "path", "pos", "date"))
+                x in data for x in ("origin", "path", "pos", "date")
             ):
                 raise ValueError("Invalid recovery data structure")
             return data

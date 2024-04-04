@@ -104,12 +104,7 @@ def parse_plugin_metadata(path):
         all_relevant = assignments + function_defs
 
         def extract_target_ids(node):
-            return list(
-                map(
-                    lambda x: x.id,
-                    filter(lambda x: isinstance(x, ast.Name), node.targets),
-                )
-            )
+            return [x.id for x in filter(lambda x: isinstance(x, ast.Name), node.targets)]
 
         def extract_names(node):
             if isinstance(node, ast.Assign):
@@ -164,7 +159,7 @@ def parse_plugin_metadata(path):
 
         for a in reversed(all_relevant):
             targets = extract_names(a)
-            if any(map(lambda x: x in targets, ControlProperties.all())):
+            if any(x in targets for x in ControlProperties.all()):
                 result["has_control_properties"] = True
                 break
 
@@ -529,9 +524,7 @@ class PluginInfo:
             object: The plugin's implementation if it matches all of the requested ``types``, None otherwise.
         """
 
-        if self.implementation and all(
-            map(lambda t: isinstance(self.implementation, t), types)
-        ):
+        if self.implementation and all(isinstance(self.implementation, t) for t in types):
             return self.implementation
         else:
             return None
@@ -959,7 +952,7 @@ class PluginManager:
                 (dict) dictionary of registered hooks and their handlers
         """
         return {
-            key: list(map(lambda v: (v[1], v[2]), value))
+            key: [(v[1], v[2]) for v in value]
             for key, value in self._plugin_hooks.items()
         }
 
@@ -1382,10 +1375,7 @@ class PluginManager:
         self.logger.info(
             "Loading plugins from {folders} and installed plugin packages...".format(
                 folders=", ".join(
-                    map(
-                        lambda x: x[0] if isinstance(x, tuple) else str(x),
-                        self.plugin_folders,
-                    )
+                    x[0] if isinstance(x, tuple) else str(x) for x in self.plugin_folders
                 )
             )
         )
@@ -1482,7 +1472,7 @@ class PluginManager:
                 "Found {count} plugin(s) providing {implementations} mixin implementations, {hooks} hook handlers".format(
                     count=len(self.enabled_plugins) + len(self.disabled_plugins),
                     implementations=len(self.plugin_implementations),
-                    hooks=sum(map(lambda x: len(x), self.plugin_hooks.values())),
+                    hooks=sum(len(x) for x in self.plugin_hooks.values()),
                 )
             )
 
@@ -1818,10 +1808,7 @@ class PluginManager:
         plugin_hooks = plugin.hooks.keys()
 
         return any(
-            map(
-                lambda hook: PluginManager.hook_matches_hooks(hook, *hooks),
-                plugin_hooks,
-            )
+            PluginManager.hook_matches_hooks(hook, *hooks) for hook in plugin_hooks
         )
 
     @staticmethod
@@ -1853,7 +1840,7 @@ class PluginManager:
         if not hook:
             return False
 
-        return any(map(lambda h: fnmatch.fnmatch(hook, h), hooks))
+        return any(fnmatch.fnmatch(hook, h) for h in hooks)
 
     @staticmethod
     def mixins_matching_bases(klass, *bases):
@@ -2055,18 +2042,16 @@ class PluginManager:
             _log("No plugins available")
         else:
             formatted_plugins = "\n".join(
-                map(
-                    lambda x: "| "
-                    + x.long_str(
-                        show_bundled=show_bundled,
-                        bundled_strs=bundled_str,
-                        show_location=show_location,
-                        location_str=location_str,
-                        show_enabled=show_enabled,
-                        enabled_strs=enabled_str,
-                    ),
-                    sorted(self.plugins.values(), key=lambda x: str(x).lower()),
+                "| "
+                + x.long_str(
+                    show_bundled=show_bundled,
+                    bundled_strs=bundled_str,
+                    show_location=show_location,
+                    location_str=location_str,
+                    show_enabled=show_enabled,
+                    enabled_strs=enabled_str,
                 )
+                for x in sorted(self.plugins.values(), key=lambda x: str(x).lower())
             )
             legend = "Prefix legend: {1} = disabled, {2} = blacklisted, {3} = incompatible".format(
                 *enabled_str
@@ -2309,7 +2294,7 @@ class PluginManager:
             try:
                 int(order)
             except ValueError:
-                raise ValueError("Hook order is not a number")
+                raise ValueError(f"Hook order is not a number: {order}") from None
 
             return callback, order
 

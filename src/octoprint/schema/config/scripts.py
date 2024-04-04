@@ -12,9 +12,9 @@ class GcodeScriptsConfig(BaseModel):
     afterPrinterConnected: Optional[str] = None
     beforePrinterDisconnected: Optional[str] = None
     beforePrintStarted: Optional[str] = None
-    afterPrintCancelled: Optional[
-        str
-    ] = "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0"
+    afterPrintCancelled: Optional[str] = (
+        "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0"
+    )
     afterPrintDone: Optional[str] = None
     beforePrintPaused: Optional[str] = None
     afterPrintResumed: Optional[str] = None

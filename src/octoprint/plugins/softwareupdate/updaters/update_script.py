@@ -108,7 +108,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
         )
         raise UpdateError(
             "Error while executing update script for %s", (e.stdout, e.stderr)
-        )
+        ) from e
 
     ### post update
 

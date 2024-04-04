@@ -28,7 +28,7 @@ def _get_latest_commit(user, repo, branch, apikey=None):
             headers=headers,
         )
     except requests.ConnectionError as exc:
-        raise NetworkError(cause=exc)
+        raise NetworkError(cause=exc) from exc
 
     from . import check_github_apiresponse, check_github_ratelimit
 

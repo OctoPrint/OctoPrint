@@ -17,7 +17,7 @@ click.disable_unicode_literals_warning = True
 
 def _to_settings_path(path):
     if not isinstance(path, (list, tuple)):
-        path = list(filter(lambda x: x, map(lambda x: x.strip(), path.split("."))))
+        path = list(filter(lambda x: x, (x.strip() for x in path.split("."))))
     return path
 
 

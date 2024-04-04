@@ -345,7 +345,7 @@ class PrinterStateConnection(
                     try:
                         return re.compile(value)
                     except Exception:
-                        raise ValueError("value must be a valid regex")
+                        raise ValueError("value must be a valid regex") from None
                 elif isinstance(value, bool):
                     return value
                 else:
@@ -503,9 +503,7 @@ class PrinterStateConnection(
     def sendEvent(self, type, payload=None):
         permissions = self._event_permissions.get(type, self._event_permissions["*"])
         permissions = [x(self._user) if callable(x) else x for x in permissions]
-        if not self._user or not all(
-            map(lambda p: self._user.has_permission(p), permissions)
-        ):
+        if not self._user or not all(self._user.has_permission(p) for p in permissions):
             return
 
         processors = self._event_payload_processors.get(
@@ -688,14 +686,10 @@ class PrinterStateConnection(
         if permissions is None:
             permissions = self._emit_permissions.get(type, self._emit_permissions["*"])
             permissions = (
-                permissions(payload)
-                if callable(permissions)
-                else [x for x in permissions]
+                permissions(payload) if callable(permissions) else list(permissions)
             )
 
-        if not self._user or not all(
-            map(lambda p: self._user.has_permission(p), permissions)
-        ):
+        if not self._user or not all(self._user.has_permission(p) for p in permissions):
             if not self._authed:
                 with self._unauthed_backlog_mutex:
                     if len(self._unauthed_backlog) < self._unauthed_backlog_max:

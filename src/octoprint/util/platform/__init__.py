@@ -105,9 +105,9 @@ def is_os_compatible(compatibility_entries, current_os=None):
     if current_os is None:
         current_os = get_os()
 
-    negative_entries = list(
-        map(lambda x: x[1:], filter(lambda x: x.startswith("!"), compatibility_entries))
-    )
+    negative_entries = [
+        x[1:] for x in filter(lambda x: x.startswith("!"), compatibility_entries)
+    ]
     positive_entries = list(
         filter(lambda x: not x.startswith("!"), compatibility_entries)
     )
@@ -116,14 +116,14 @@ def is_os_compatible(compatibility_entries, current_os=None):
     if negative_entries:
         # check if we are blacklisted
         negative_match = current_os in negative_entries or any(
-            map(lambda x: sys.platform.startswith(x), negative_entries)
+            sys.platform.startswith(x) for x in negative_entries
         )
 
     positive_match = True
     if positive_entries:
         # check if we are whitelisted
         positive_match = current_os in positive_entries or any(
-            map(lambda x: sys.platform.startswith(x), positive_entries)
+            sys.platform.startswith(x) for x in positive_entries
         )
 
     return positive_match and not negative_match

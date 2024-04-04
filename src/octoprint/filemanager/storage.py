@@ -580,9 +580,11 @@ class LocalFileStorage(StorageInterface):
                     yield entry.name, entry.path, printer_profile_id
             elif os.path.isdir(entry.path):
                 for sub_entry in self._analysis_backlog_generator(entry.path):
-                    yield self.join_path(entry.name, sub_entry[0]), sub_entry[
-                        1
-                    ], sub_entry[2]
+                    yield (
+                        self.join_path(entry.name, sub_entry[0]),
+                        sub_entry[1],
+                        sub_entry[2],
+                    )
 
     def last_modified(self, path=None, recursive=False):
         if path is None:
@@ -847,7 +849,7 @@ class LocalFileStorage(StorageInterface):
                     destination_data["path"],
                 ),
                 cause=e,
-            )
+            ) from e
 
         self._set_display_metadata(destination_data, source_data=source_data)
 
@@ -875,7 +877,7 @@ class LocalFileStorage(StorageInterface):
                     destination_data["path"],
                 ),
                 cause=e,
-            )
+            ) from e
 
         self._set_display_metadata(destination_data, source_data=source_data)
         self._remove_metadata_entry(source_data["path"], source_data["name"])
@@ -976,7 +978,7 @@ class LocalFileStorage(StorageInterface):
         try:
             os.remove(file_path)
         except Exception as e:
-            raise StorageError(f"Could not delete {name} in {path}", cause=e)
+            raise StorageError(f"Could not delete {name} in {path}", cause=e) from e
 
         self._remove_metadata_entry(path, name)
 
@@ -1003,7 +1005,7 @@ class LocalFileStorage(StorageInterface):
                     destination_data["path"],
                 ),
                 cause=e,
-            )
+            ) from e
 
         self._copy_metadata_entry(
             source_data["path"],
@@ -1043,7 +1045,7 @@ class LocalFileStorage(StorageInterface):
                     destination_data["path"],
                 ),
                 cause=e,
-            )
+            ) from e
 
         self._copy_metadata_entry(
             source_data["path"],

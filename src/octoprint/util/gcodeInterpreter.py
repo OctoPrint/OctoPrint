@@ -805,13 +805,12 @@ class gcode:
         self.totalMoveTimeMinute = totalMoveTimeMinute
 
     def _parseCuraProfileString(self, comment, prefix):
-        return {
-            key: value
-            for (key, value) in map(
+        return dict(
+            map(
                 lambda x: x.split(b"=", 1),
                 zlib.decompress(base64.b64decode(comment[len(prefix) :])).split(b"\b"),
             )
-        }
+        )
 
     def _intersectsAngle(self, start, end, angle):
         if end < start and angle == 0:

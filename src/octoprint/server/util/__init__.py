@@ -265,8 +265,9 @@ def get_user_for_apikey(apikey):
                     return user
             except Exception:
                 logging.getLogger(__name__).exception(
-                    "Error running api key validator "
-                    "for plugin {} and key {}".format(name, apikey),
+                    "Error running api key validator " "for plugin {} and key {}".format(
+                        name, apikey
+                    ),
                     extra={"plugin": name},
                 )
     return None
@@ -408,7 +409,7 @@ def has_permissions(*permissions):
         loginUserFromAuthorizationHeader()
 
     flask.passive_login()
-    return all(map(lambda p: p.can(), permissions))
+    return all(p.can() for p in permissions)
 
 
 def require_fresh_login_with(permissions=None, user_id=None):
@@ -530,13 +531,7 @@ def validate_local_redirect(url, allowed_paths):
         parsed.scheme == ""
         and parsed.netloc == ""
         and any(
-            map(
-                lambda x: (
-                    parsed.path.startswith(x[:-1])
-                    if x.endswith("*")
-                    else parsed.path == x
-                ),
-                allowed_paths,
-            )
+            (parsed.path.startswith(x[:-1]) if x.endswith("*") else parsed.path == x)
+            for x in allowed_paths
         )
     )

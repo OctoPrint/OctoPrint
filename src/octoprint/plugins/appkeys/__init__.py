@@ -336,9 +336,7 @@ class AppKeysPlugin(
             keys = self._api_keys_for_user(user_id)
 
         return flask.jsonify(
-            keys=list(
-                map(lambda x: x.external(), keys),
-            ),
+            keys=[x.external() for x in keys],
             pending={
                 x.user_token: x.external() for x in self._get_pending_by_user_id(user_id)
             },

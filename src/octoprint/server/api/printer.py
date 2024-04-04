@@ -30,7 +30,7 @@ def printerState():
             excludes = list(
                 filter(
                     lambda x: x in ["temperature", "sd", "state"],
-                    map(lambda x: x.strip(), excludeStr.split(",")),
+                    (x.strip() for x in excludeStr.split(",")),
                 )
             )
 
@@ -465,9 +465,7 @@ def _get_temperature_data(preprocessor):
 
         limit = min(limit, len(history))
 
-        tempData.update(
-            {"history": list(map(lambda x: preprocessor(x), history[-limit:]))}
-        )
+        tempData.update({"history": [preprocessor(x) for x in history[-limit:]]})
 
     return preprocessor(tempData)
 

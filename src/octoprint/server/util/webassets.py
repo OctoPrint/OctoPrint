@@ -137,8 +137,7 @@ class GzipFile(Filter):
                     f.write(data.encode("utf8"))
             except Exception:
                 logging.getLogger(__name__).exception(
-                    "Error writing gzipped "
-                    "output of {} to {}".format(output_path, gzipped_output_path)
+                    f"Error writing gzipped output of {output_path} to {gzipped_output_path}"
                 )
                 try:
                     os.remove(gzipped_output_path)

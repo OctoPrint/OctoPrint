@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 import pytest
 
 DEFAULT_ALLOWED_PATHS = ["/", "/recovery/", "/plugin/appkeys/auth/*"]
-PREFIXED_ALLOWED_PATHS = list(map(lambda x: "/octoprint" + x, DEFAULT_ALLOWED_PATHS))
+PREFIXED_ALLOWED_PATHS = ["/octoprint" + x for x in DEFAULT_ALLOWED_PATHS]
 
 
 @pytest.mark.parametrize(

@@ -49,7 +49,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
             folder = tempfile.TemporaryDirectory()
             path = download_file(url, folder.name)
         except Exception as exc:
-            raise exceptions.NetworkError(cause=exc)
+            raise exceptions.NetworkError(cause=exc) from exc
 
         filename = os.path.basename(path)
         _, ext = os.path.splitext(filename)
@@ -63,7 +63,7 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
             logger.exception(f"Could not parse {path} as python file", None)
             raise exceptions.UpdateError(
                 f"Could not parse {filename} as python file.", None
-            )
+            ) from None
 
         destination = os.path.join(settings().getBaseFolder("plugins"), filename)
 
@@ -72,7 +72,9 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
             shutil.copy(path, destination)
         except Exception:
             logger.exception(f"Could not copy {path} to {destination}")
-            raise exceptions.UpdateError(f"Could not copy {path} to {destination}", None)
+            raise exceptions.UpdateError(
+                f"Could not copy {path} to {destination}", None
+            ) from None
 
         return "ok"
     finally:

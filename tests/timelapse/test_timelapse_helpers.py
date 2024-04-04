@@ -80,8 +80,8 @@ class TimelapseTest(unittest.TestCase):
         octoprint.timelapse.delete_unrendered_timelapse("b")
 
         ## verify
-        expected_deletions = map(
-            lambda x: os.path.join(mocked_path, x), ["b-0.jpg", "b-1.jpg"]
+        expected_deletions = (
+            os.path.join(mocked_path, x) for x in ["b-0.jpg", "b-1.jpg"]
         )
         expected_deletion_calls = list(map(mock.call, expected_deletions))
         self.assertListEqual(mock_remove.mock_calls, expected_deletion_calls)
@@ -120,9 +120,15 @@ class TimelapseTest(unittest.TestCase):
         octoprint.timelapse.delete_old_unrendered_timelapses()
 
         ## verify
-        expected_deletions = map(
-            lambda x: os.path.join(mocked_path, x),
-            ["tmp_00000.jpg", "tmp_00001.jpg", "old-0.jpg", "old-1.jpg", "old-2.jpg"],
+        expected_deletions = (
+            os.path.join(mocked_path, x)
+            for x in [
+                "tmp_00000.jpg",
+                "tmp_00001.jpg",
+                "old-0.jpg",
+                "old-1.jpg",
+                "old-2.jpg",
+            ]
         )
         expected_deletion_calls = list(map(mock.call, expected_deletions))
         self.assertListEqual(mock_remove.mock_calls, expected_deletion_calls)

@@ -115,7 +115,7 @@ def _get_latest_release(
             RELEASE_URL.format(user=user, repo=repo), timeout=(3.05, 30), headers=headers
         )
     except requests.ConnectionError as exc:
-        raise NetworkError(cause=exc)
+        raise NetworkError(cause=exc) from exc
 
     from . import check_github_apiresponse, check_github_ratelimit
 

@@ -209,7 +209,7 @@ class ScanDepsCommand(setuptools.Command):
             versions = list(
                 filter(
                     lambda x: x and not x.is_prerelease and not x.is_devrelease,
-                    map(lambda x: safe_parse_version(x), data.get("versions", [])),
+                    (safe_parse_version(x) for x in data.get("versions", [])),
                 )
             )
             if not versions:

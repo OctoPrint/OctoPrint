@@ -126,7 +126,7 @@ def is_lan_address(address, additional_private=None):
         ip = netaddr.IPAddress(address)
         subnets = get_lan_ranges(additional_private=additional_private)
 
-        if any(map(lambda subnet: ip in subnet, subnets)):
+        if any(ip in subnet for subnet in subnets):
             return True
 
         return False

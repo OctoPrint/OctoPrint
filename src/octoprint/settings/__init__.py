@@ -238,7 +238,7 @@ class HierarchicalChainMap:
     def _has_prefix(self, prefix, current=None):
         if current is None:
             current = self._chainmap
-        return any(map(lambda x: x in current, self._cached_prefixed_keys(prefix)))
+        return any(x in current for x in self._cached_prefixed_keys(prefix))
 
     def _with_prefix(self, prefix, current=None):
         if current is None:
@@ -606,7 +606,7 @@ class Settings:
         if path and isinstance(path[-1], (list, tuple)):
             prefix = path[:-1]
             return any(
-                map(lambda x: bool(self._deprecated_paths[tuple(prefix + [x])]), path[-1])
+                bool(self._deprecated_paths[tuple(prefix + [x])]) for x in path[-1]
             )
 
         if (
@@ -685,11 +685,9 @@ class Settings:
                 templates = []
                 for key in scripts:
                     if isinstance(scripts[key], dict):
-                        templates += list(
-                            map(
-                                lambda x: key + "/" + x, self._get_templates(scripts[key])
-                            )
-                        )
+                        templates += [
+                            key + "/" + x for x in self._get_templates(scripts[key])
+                        ]
                     elif isinstance(scripts[key], str):
                         templates.append(key)
                 return templates
@@ -913,7 +911,7 @@ class Settings:
                     mtime = self.last_modified
 
                 except YAMLError as e:
-                    raise InvalidYaml(self._configfile, error=str(e))
+                    raise InvalidYaml(self._configfile, error=str(e)) from e
 
         # changed from else to handle cases where the file exists, but is empty / 0 bytes
         if not config or not isinstance(config, dict):
@@ -1507,11 +1505,9 @@ class Settings:
         if "temperature" in config and "profiles" in config["temperature"]:
             profiles = config["temperature"]["profiles"]
             if any(
-                map(
-                    lambda x: not isinstance(x.get("extruder", 0), int)
-                    or not isinstance(x.get("bed", 0), int),
-                    profiles,
-                )
+                not isinstance(x.get("extruder", 0), int)
+                or not isinstance(x.get("bed", 0), int)
+                for x in profiles
             ):
                 result = []
                 for profile in profiles:
@@ -1667,7 +1663,7 @@ class Settings:
         if asdict:
             results = {}
         else:
-            results = list()
+            results = []
 
         for key in keys:
             try:
@@ -1675,7 +1671,7 @@ class Settings:
                     parent_path + [key], only_local=not incl_defaults, merged=merged
                 )
             except KeyError:
-                raise NoSuchSettingsPath()
+                raise NoSuchSettingsPath() from None
 
             if isinstance(value, dict) and merged:
                 try:
@@ -1866,15 +1862,13 @@ class Settings:
         return folder
 
     def listScripts(self, script_type):
-        return list(
-            map(
-                lambda x: x[len(script_type + "/") :],
-                filter(
-                    lambda x: x.startswith(script_type + "/"),
-                    self._get_scripts(script_type),
-                ),
+        return [
+            x[len(script_type + "/") :]
+            for x in filter(
+                lambda x: x.startswith(script_type + "/"),
+                self._get_scripts(script_type),
             )
-        )
+        ]
 
     def loadScript(self, script_type, name, context=None, source=False):
         if context is None:
@@ -1914,7 +1908,7 @@ class Settings:
                 self._mark_dirty()
         except KeyError:
             if error_on_path:
-                raise NoSuchSettingsPath()
+                raise NoSuchSettingsPath() from None
             pass
 
     # ~~ setter
@@ -1969,7 +1963,7 @@ class Settings:
             default_value = chain.get_by_path(path, only_defaults=True)
         except KeyError:
             if error_on_path:
-                raise NoSuchSettingsPath()
+                raise NoSuchSettingsPath() from None
             default_value = None
 
         with self._lock:
@@ -1983,7 +1977,7 @@ class Settings:
                     self._path_modified(path, current, value)
                 except KeyError:
                     if error_on_path:
-                        raise NoSuchSettingsPath()
+                        raise NoSuchSettingsPath() from None
                     pass
             elif (
                 force
@@ -2119,13 +2113,13 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
             # non existing, but we are allowed to create it
             try:
                 os.makedirs(folder)
-            except Exception:
+            except Exception as exc:
                 logger.exception(f"Could not create {folder}")
                 raise OSError(
                     "Folder for type {} at {} does not exist and creation failed".format(
                         type, folder
                     )
-                )
+                ) from exc
 
         else:
             # not extisting, not allowed to create it
@@ -2151,9 +2145,9 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
                 with open(testfile, "w", encoding="utf-8") as f:
                     f.write("test")
                 os.remove(testfile)
-            except Exception:
+            except Exception as exc:
                 logger.exception(f"Could not write test file to {testfile}")
-                raise OSError(error)
+                raise OSError(error) from exc
 
 
 def _paths(prefix, data):

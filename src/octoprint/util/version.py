@@ -212,7 +212,7 @@ def is_prerelease(version):
 
     if isinstance(version, tuple):
         # old setuptools
-        return any(map(lambda x: x in version, ("*a", "*b", "*c", "*rc")))
+        return any(x in version for x in ("*a", "*b", "*c", "*rc"))
     else:
         # new setuptools
         return version.is_prerelease

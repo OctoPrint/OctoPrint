@@ -1161,9 +1161,7 @@ class PluginManagerPlugin(
             self._send_result_notification("install", result, partial=partial)
             return result
 
-        installed = list(
-            map(lambda x: x.strip(), result_line[len(OUTPUT_SUCCESS) :].split(" "))
-        )
+        installed = [x.strip() for x in result_line[len(OUTPUT_SUCCESS) :].split(" ")]
         all_plugins_after = self._plugin_manager.find_plugins(
             existing={}, ignore_uninstalled=False
         )
@@ -1694,7 +1692,7 @@ class PluginManagerPlugin(
         result = {
             "result": True,
             "needs_restart": len(cleaned_up) > 0,
-            "cleaned_up": sorted(list(cleaned_up)),
+            "cleaned_up": sorted(cleaned_up),
         }
         self._send_result_notification("cleanup_all", result)
         self._logger.info(f"Cleaned up all data, {len(cleaned_up)} left overs removed")
@@ -1846,7 +1844,7 @@ class PluginManagerPlugin(
 
         if additional_args is not None:
             inapplicable_arguments = self.__class__.PIP_INAPPLICABLE_ARGUMENTS.get(
-                args[0], list()
+                args[0], []
             )
             for inapplicable_argument in inapplicable_arguments:
                 additional_args = re.sub(
@@ -1880,7 +1878,7 @@ class PluginManagerPlugin(
 
     def _log(self, lines, prefix=None, stream=None, strip=True):
         if strip:
-            lines = list(map(lambda x: x.strip(), lines))
+            lines = [x.strip() for x in lines]
 
         self._plugin_manager.send_plugin_message(
             self._identifier,
@@ -2354,12 +2352,10 @@ def _filter_relevant_notification(notification, plugin_version, octoprint_versio
         pluginversions = notification["pluginversions"]
 
         is_range = lambda x: "=" in x or ">" in x or "<" in x
-        version_ranges = list(
-            map(
-                lambda x: parse_requirement(notification["plugin"] + x),
-                filter(is_range, pluginversions),
-            )
-        )
+        version_ranges = [
+            parse_requirement(notification["plugin"] + x)
+            for x in filter(is_range, pluginversions)
+        ]
         versions = list(filter(lambda x: not is_range(x), pluginversions))
     elif "versions" in notification:
         version_ranges = []
@@ -2375,7 +2371,7 @@ def _filter_relevant_notification(notification, plugin_version, octoprint_versio
             or (
                 plugin_version
                 and version_ranges
-                and (any(map(lambda v: plugin_version in v, version_ranges)))
+                and (any(plugin_version in v for v in version_ranges))
             )
             or (plugin_version and versions and plugin_version in versions)
         )

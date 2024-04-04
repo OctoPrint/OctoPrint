@@ -475,7 +475,7 @@ class PluginSettings:
 
     def _prefix_path(self, path=None):
         if path is None:
-            path = list()
+            path = []
         return ["plugins", self.plugin_key] + path
 
     def global_has(self, path, **kwargs):

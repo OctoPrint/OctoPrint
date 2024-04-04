@@ -24,7 +24,7 @@ def get_latest(target, check, online=True, *args, **kwargs):
         with requests.get(url, timeout=(3.05, 7)) as r:
             data = r.json()
     except Exception as exc:
-        raise NetworkError(cause=exc)
+        raise NetworkError(cause=exc) from exc
 
     latest = data.get("version")
 

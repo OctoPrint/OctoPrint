@@ -61,7 +61,7 @@ def _save_to_file_base(data, file=None, path=None, pretty=False, **kwargs):
         stream=file,
         Dumper=SafeDumper,
         allow_unicode=True,  # no good reason not to allow it these days
-        **kwargs
+        **kwargs,
     )
 
 

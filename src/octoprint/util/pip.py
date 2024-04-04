@@ -483,7 +483,7 @@ class PipCaller(CommandlineCaller):
                     )
                 )
 
-            split_output = list(map(lambda x: x.strip(), output.split()))
+            split_output = [x.strip() for x in output.split()]
             if len(split_output) < 2:
                 self._logger.warning(
                     "pip command returned unparsable output, can't determine version: {}".format(

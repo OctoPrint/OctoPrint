@@ -8,7 +8,7 @@ from emoji import demojize
 from octoprint.util import to_unicode
 from octoprint.vendor.awesome_slugify import Slugify
 
-_UNICODE_VARIATIONS = re.compile("[\uFE00-\uFE0F]", re.U)
+_UNICODE_VARIATIONS = re.compile("[\ufe00-\ufe0f]", re.U)
 _SLUGIFIES = {}
 
 

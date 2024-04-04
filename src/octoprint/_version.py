@@ -222,7 +222,7 @@ def _parse_branch_versions():
             continue
 
         try:
-            split_line = list(map(lambda x: x.strip(), line.split()))
+            split_line = [x.strip() for x in line.split()]
             if not len(split_line):
                 continue
             if len(split_line) != 3:
@@ -285,7 +285,7 @@ def _get_data_from_git():
         "short": short,
     }
 
-    if any([vars[x] is None and "{" + x + "}" in template for x in vars]):
+    if any(vars[x] is None and "{" + x + "}" in template for x in vars):
         if short is None:
             template = FALLBACK
         else:
@@ -423,7 +423,7 @@ def get_cmdclass(pkg_source_path):
         def run(self):
             print(get_data()["version"])
 
-    return dict(sdist=_sdist, build_py=_build_py, version=version)
+    return {"sdist": _sdist, "build_py": _build_py, "version": version}
 
 
 if __name__ == "__main__":

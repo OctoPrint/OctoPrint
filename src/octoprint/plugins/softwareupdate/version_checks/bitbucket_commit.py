@@ -51,7 +51,7 @@ def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
     try:
         r = requests.get(url, headers=headers, timeout=(3.05, 7))
     except requests.ConnectionError as exc:
-        raise NetworkError(cause=exc)
+        raise NetworkError(cause=exc) from exc
 
     check_bitbucket_api_response(logger, r)
 

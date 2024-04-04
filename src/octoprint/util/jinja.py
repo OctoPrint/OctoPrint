@@ -55,10 +55,10 @@ class FilteredFileSystemLoader(FileSystemLoader):
         return result
 
     def _combined_filter(self, path):
-        filter_results = map(
-            lambda x: not os.path.exists(os.path.join(x, path))
-            or self.path_filter(os.path.join(x, path)),
-            self.searchpath,
+        filter_results = (
+            not os.path.exists(os.path.join(x, path))
+            or self.path_filter(os.path.join(x, path))
+            for x in self.searchpath
         )
         return all(filter_results)
 
