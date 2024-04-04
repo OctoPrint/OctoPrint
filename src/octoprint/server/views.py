@@ -1469,7 +1469,7 @@ def fetch_template_data(refresh=False):
                 )
 
             sorted_missing = sorted(
-                missing_in_order, key=partial(key_func, extractor, sort_key, t)
+                missing_in_order, key=partial(key_func, t, extractor, sort_key)
             )
         else:
 
