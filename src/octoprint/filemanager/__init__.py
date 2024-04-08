@@ -937,6 +937,12 @@ class FileManager:
         except Exception:
             return -1
 
+    def get_lastmodified(self, location: str, path: str) -> int:
+        try:
+            return self._storage(location).get_lastmodified(path)
+        except Exception:
+            return -1
+
     def has_analysis(self, location, path):
         return self._storage(location).has_analysis(path)
 
