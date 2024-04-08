@@ -34,7 +34,6 @@ thanks to everyone who contributed!
   * DeltaMaker 3D Printers
   * Dennis Breining
   * Dima Gorbenko
-  * Doc
   * Dr. Frank Wester
   * Ed Crump
   * Erik Ableson
@@ -42,9 +41,9 @@ thanks to everyone who contributed!
   * Fiberpunk
   * Franziska Kunsmann
   * George Jeng
-  * Greg Bickel
   * Hog Duske
   * IOHK
+  * Jacob Renstrom
   * James Fryman
   * Jason Kitchens
   * Jay Moran
@@ -84,7 +83,6 @@ thanks to everyone who contributed!
   * Norman Jaffe
   * Obico
   * Paul McMaster
-  * Pete Barnwell
   * Randy C. Will
   * Ranjib Dey
   * Richard Stocks
@@ -97,4 +95,4 @@ thanks to everyone who contributed!
   * Tideline 3D
   * Ulrich Kempken
 
-and 3233 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 3201 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
