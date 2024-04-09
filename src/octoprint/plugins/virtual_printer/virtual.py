@@ -752,7 +752,7 @@ class VirtualPrinter:
             return ""
 
         volume = profile["volume"]
-        if any([x not in volume for x in ["width", "depth", "height", "origin"]]):
+        if any(x not in volume for x in ["width", "depth", "height", "origin"]):
             return ""
 
         origin_ll = volume["origin"] == "lowerleft"
@@ -1507,7 +1507,7 @@ class VirtualPrinter:
                     line += " {name}"
 
         self._send("Begin file list")
-        for item in map(lambda x: line.format(**x), self._getSdFiles()):
+        for item in (line.format(**x) for x in self._getSdFiles()):
             self._send(item)
         self._send("End file list")
 
@@ -1601,7 +1601,7 @@ class VirtualPrinter:
 
     def _generatePositionOutput(self) -> str:
         m114FormatString = self._settings.get(["m114FormatString"])
-        e = {index: value for index, value in enumerate(self._lastE)}
+        e = dict(enumerate(self._lastE))
         e["current"] = self._lastE[self.currentExtruder]
         e["all"] = " ".join(
             [
@@ -1666,10 +1666,8 @@ class VirtualPrinter:
                 temps["C"] = (self.chamberTemp, self.chamberTargetTemp)
 
         output = " ".join(
-            map(
-                lambda x: template.format(heater=x[0], actual=x[1][0], target=x[1][1]),
-                temps.items(),
-            )
+            template.format(heater=x[0], actual=x[1][0], target=x[1][1])
+            for x in temps.items()
         )
         output += " @:64\n"
         return output
@@ -2162,7 +2160,7 @@ class VirtualPrinter:
                 self._logger.info(
                     "Incoming queue is full, raising SerialTimeoutException"
                 )
-                raise SerialTimeoutException()
+                raise SerialTimeoutException() from None
 
     def readline(self) -> bytes:
         if self._debug_awol:

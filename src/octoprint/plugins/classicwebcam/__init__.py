@@ -103,13 +103,13 @@ class ClassicWebcamPlugin(
                     snapshotTimeout=snapshotTimeout,
                     snapshotSslValidation=snapshotSslValidation,
                 ),
-                extras=dict(
-                    stream=stream,
-                    streamTimeout=streamTimeout,
-                    streamRatio=streamRatio,
-                    streamWebrtcIceServers=webRtcServers,
-                    cacheBuster=cacheBuster,
-                ),
+                extras={
+                    "stream": stream,
+                    "streamTimeout": streamTimeout,
+                    "streamRatio": streamRatio,
+                    "streamWebrtcIceServers": webRtcServers,
+                    "cacheBuster": cacheBuster,
+                },
             ),
         ]
 
@@ -142,19 +142,19 @@ class ClassicWebcamPlugin(
     # ~~ SettingsPlugin API
 
     def get_settings_defaults(self):
-        return dict(
-            flipH=False,
-            flipV=False,
-            rotate90=False,
-            stream="",
-            streamTimeout=5,
-            streamRatio="16:9",
-            streamWebrtcIceServers=["stun:stun.l.google.com:19302"],
-            snapshot="",
-            cacheBuster=False,
-            snapshotSslValidation=True,
-            snapshotTimeout=5,
-        )
+        return {
+            "flipH": False,
+            "flipV": False,
+            "rotate90": False,
+            "stream": "",
+            "streamTimeout": 5,
+            "streamRatio": "16:9",
+            "streamWebrtcIceServers": ["stun:stun.l.google.com:19302"],
+            "snapshot": "",
+            "cacheBuster": False,
+            "snapshotSslValidation": True,
+            "snapshotTimeout": 5,
+        }
 
     def get_settings_version(self):
         return 1

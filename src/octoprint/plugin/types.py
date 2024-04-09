@@ -20,6 +20,8 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+from functools import partial
+
 from .core import Plugin, RestartNeedingPlugin, SortablePlugin
 
 
@@ -119,8 +121,7 @@ class OctoPrintPlugin(Plugin):
 
         import os
 
-        if not os.path.isdir(self._data_folder):
-            os.makedirs(self._data_folder)
+        os.makedirs(self._data_folder, exist_ok=True)
         return self._data_folder
 
     def on_plugin_pending_uninstall(self):
@@ -1771,8 +1772,11 @@ class SettingsPlugin(OctoPrintPlugin):
 
         for level, paths in restricted_paths.items():
             if isinstance(level, OctoPrintPermission):
-                condition = lambda: (
-                    current_user is not None and current_user.has_permission(level)
+                condition = partial(
+                    lambda p: (
+                        current_user is not None and current_user.has_permission(p)
+                    ),
+                    level,
                 )
             else:
                 condition = conditions.get(level, lambda: False)

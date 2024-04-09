@@ -28,7 +28,7 @@ class EventManagerPlugin(
         return my_settings
 
     def on_settings_save(self, data):
-        if type(data.get("subscriptions")) == list:
+        if isinstance(data.get("subscriptions"), list):
             self._settings.global_set(
                 ["events", "subscriptions"], data.get("subscriptions", [])
             )

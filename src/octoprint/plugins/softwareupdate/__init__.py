@@ -391,7 +391,7 @@ class SoftwareUpdatePlugin(
             storage_info[key] = info
 
         if len(storage_info):
-            free_storage = min(*list(map(lambda x: x["free"], storage_info.values())))
+            free_storage = min(*[x["free"] for x in storage_info.values()])
         else:
             free_storage = None
 
@@ -545,11 +545,9 @@ class SoftwareUpdatePlugin(
                 - datetime.timedelta(minutes=self._settings.get_int(["updatelog_cutoff"]))
             ).strftime(DATETIME_FORMAT)
             data = sorted(
-                list(
-                    filter(
-                        lambda x: x.get("datetime") and x["datetime"] > cutoff,
-                        data,
-                    )
+                filter(
+                    lambda x: x.get("datetime") and x["datetime"] > cutoff,
+                    data,
                 ),
                 key=lambda x: x["datetime"],
             )
@@ -1130,12 +1128,12 @@ class SoftwareUpdatePlugin(
         request_data = flask.request.values
 
         if "targets" in request_data or "check" in request_data:
-            check_targets = list(
-                map(
-                    lambda x: x.strip(),
-                    request_data.get("targets", request_data.get("check", "")).split(","),
+            check_targets = [
+                x.strip()
+                for x in request_data.get("targets", request_data.get("check", "")).split(
+                    ","
                 )
-            )
+            ]
         else:
             check_targets = None
 
@@ -1153,7 +1151,7 @@ class SoftwareUpdatePlugin(
                     update_possible,
                 ) = self.get_current_versions(check_targets=check_targets, force=force)
 
-                storage = list()
+                storage = []
                 for key, name in (
                     ("python", gettext("Python package installation folder")),
                     ("plugins", gettext("Plugin folder")),
@@ -1318,12 +1316,9 @@ class SoftwareUpdatePlugin(
             flask.abort(400, description="Invalid JSON")
 
         if "targets" in json_data or "checks" in json_data:
-            targets = list(
-                map(
-                    lambda x: x.strip(),
-                    json_data.get("targets", json_data.get("check", [])),
-                )
-            )
+            targets = [
+                x.strip() for x in json_data.get("targets", json_data.get("check", []))
+            ]
         else:
             targets = None
 
@@ -1427,10 +1422,8 @@ class SoftwareUpdatePlugin(
                     valid_channel = data["channel"] == populated_check[
                         "stable_branch"
                     ].get("branch") or any(
-                        map(
-                            lambda x: data["channel"] == x.get("branch"),
-                            populated_check["prerelease_branches"],
-                        )
+                        data["channel"] == x.get("branch")
+                        for x in populated_check["prerelease_branches"]
                     )
                     prerelease = data["channel"] != populated_check["stable_branch"].get(
                         "branch"
@@ -2329,7 +2322,7 @@ class SoftwareUpdatePlugin(
             self._logger.exception(f"Error while restarting of type {restart_type}")
             self._logger.warning(f"Restart stdout:\n{e.stdout}")
             self._logger.warning(f"Restart stderr:\n{e.stderr}")
-            raise exceptions.RestartFailed()
+            raise exceptions.RestartFailed() from e
 
     def _populated_check(self, target, check):
         from flask_babel import gettext
@@ -2450,7 +2443,7 @@ class SoftwareUpdatePlugin(
 
     def _log(self, lines, prefix=None, stream=None, strip=True):
         if strip:
-            lines = list(map(lambda x: x.strip(), lines))
+            lines = [x.strip() for x in lines]
 
         self._send_client_message(
             "loglines",

@@ -282,22 +282,15 @@ class TrackingPlugin(
         plugins = self._plugin_manager.enabled_plugins
         plugins_thirdparty = [plugin for plugin in plugins.values() if not plugin.bundled]
         payload["plugins"] = ",".join(
-            map(
-                lambda x: "{}:{}".format(
-                    x.key.lower(), x.version.lower() if x.version else "?"
-                ),
-                plugins_thirdparty,
-            )
+            "{}:{}".format(x.key.lower(), x.version.lower() if x.version else "?")
+            for x in plugins_thirdparty
         )
 
         if self._helpers_get_unlocked_achievements and self._settings.get_boolean(
             ["events", "achievements"]
         ):
             payload["achievements"] = ",".join(
-                map(
-                    lambda x: x.key.lower(),
-                    self._helpers_get_unlocked_achievements(),
-                )
+                x.key.lower() for x in self._helpers_get_unlocked_achievements()
             )
 
         self._track("pong", body=True, **payload)

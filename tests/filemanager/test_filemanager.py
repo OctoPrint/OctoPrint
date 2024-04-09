@@ -21,8 +21,8 @@ class FilemanagerMethodTest(unittest.TestCase):
         self.plugin_manager = mock.MagicMock()
 
         hook_extensions = {
-            "some_plugin": lambda: dict({"machinecode": {"foo": ["foo", "f"]}}),
-            "other_plugin": lambda: dict({"model": {"amf": ["amf"]}}),
+            "some_plugin": lambda: {"machinecode": {"foo": ["foo", "f"]}},
+            "other_plugin": lambda: {"model": {"amf": ["amf"]}},
             "mime_map": lambda: {
                 "mime_map": {
                     "mime_map_yes": octoprint.filemanager.ContentTypeMapping(
@@ -30,18 +30,16 @@ class FilemanagerMethodTest(unittest.TestCase):
                     )
                 }
             },
-            "mime_detect": lambda: dict(
-                {
-                    "machinecode": {
-                        "mime_detect_yes": octoprint.filemanager.ContentTypeDetector(
-                            ["mime_detect_yes"], lambda x: "application/mime_detect_yes"
-                        ),
-                        "mime_detect_no": octoprint.filemanager.ContentTypeDetector(
-                            ["mime_detect_no"], lambda x: None
-                        ),
-                    }
+            "mime_detect": lambda: {
+                "machinecode": {
+                    "mime_detect_yes": octoprint.filemanager.ContentTypeDetector(
+                        ["mime_detect_yes"], lambda x: "application/mime_detect_yes"
+                    ),
+                    "mime_detect_no": octoprint.filemanager.ContentTypeDetector(
+                        ["mime_detect_no"], lambda x: None
+                    ),
                 }
-            ),
+            },
         }
         self.plugin_manager.get_hooks.return_value = hook_extensions
 
@@ -194,9 +192,9 @@ class FileManagerTest(unittest.TestCase):
         self.local_storage.analysis_backlog = iter([])
 
         self.storage_managers = {}
-        self.storage_managers[
-            octoprint.filemanager.FileDestinations.LOCAL
-        ] = self.local_storage
+        self.storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = (
+            self.local_storage
+        )
 
         self.file_manager = octoprint.filemanager.FileManager(
             self.analysis_queue,

@@ -94,7 +94,7 @@ def init_platform(
     try:
         settings = init_settings(basedir, configfile, overlays=overlays)
     except Exception as ex:
-        raise FatalStartupError("Could not initialize settings manager", cause=ex)
+        raise FatalStartupError("Could not initialize settings manager", cause=ex) from ex
     kwargs["settings"] = settings
     if callable(after_settings_init):
         after_settings_init(**kwargs)
@@ -112,7 +112,7 @@ def init_platform(
             disable_color=disable_color,
         )
     except Exception as ex:
-        raise FatalStartupError("Could not initialize logging", cause=ex)
+        raise FatalStartupError("Could not initialize logging", cause=ex) from ex
 
     kwargs["logger"] = logger
     if callable(after_logging):
@@ -140,14 +140,16 @@ def init_platform(
     try:
         settings.sanity_check_folders()
     except Exception as ex:
-        raise FatalStartupError("Configured folders didn't pass sanity check", cause=ex)
+        raise FatalStartupError(
+            "Configured folders didn't pass sanity check", cause=ex
+        ) from ex
     if callable(after_settings_valid):
         after_settings_valid(**kwargs)
 
     try:
         event_manager = init_event_manager(settings)
     except Exception as ex:
-        raise FatalStartupError("Could not initialize event manager", cause=ex)
+        raise FatalStartupError("Could not initialize event manager", cause=ex) from ex
 
     kwargs["event_manager"] = event_manager
     if callable(after_event_manager):
@@ -156,7 +158,9 @@ def init_platform(
     try:
         connectivity_checker = init_connectivity_checker(settings, event_manager)
     except Exception as ex:
-        raise FatalStartupError("Could not initialize connectivity checker", cause=ex)
+        raise FatalStartupError(
+            "Could not initialize connectivity checker", cause=ex
+        ) from ex
 
     kwargs["connectivity_checker"] = connectivity_checker
     if callable(after_connectivity_checker):
@@ -170,7 +174,7 @@ def init_platform(
             connectivity_checker=connectivity_checker,
         )
     except Exception as ex:
-        raise FatalStartupError("Could not initialize plugin manager", cause=ex)
+        raise FatalStartupError("Could not initialize plugin manager", cause=ex) from ex
 
     kwargs["plugin_manager"] = plugin_manager
     if callable(after_plugin_manager):
@@ -179,7 +183,9 @@ def init_platform(
     try:
         environment_detector = init_environment_detector(plugin_manager)
     except Exception as ex:
-        raise FatalStartupError("Could not initialize environment detector", cause=ex)
+        raise FatalStartupError(
+            "Could not initialize environment detector", cause=ex
+        ) from ex
 
     kwargs["environment_detector"] = environment_detector
     if callable(after_environment_detector):
@@ -206,7 +212,7 @@ def init_settings(basedir, configfile, overlays=None):
             init=True, basedir=basedir, configfile=configfile, overlays=overlays
         )
     except InvalidSettings as e:
-        raise FatalStartupError(str(e))
+        raise FatalStartupError(str(e)) from e
 
 
 def preinit_logging(

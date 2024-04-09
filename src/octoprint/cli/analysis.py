@@ -18,7 +18,7 @@ area = ("maxX", "maxY", "maxZ", "minX", "minY", "minZ")
 
 def empty_result(result):
     dims = result.get("dimensions", {})
-    return all(map(lambda x: dims.get(x) == 0.0, dimensions))
+    return all(dims.get(x) == 0.0 for x in dimensions)
 
 
 def validate_result(result):

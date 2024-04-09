@@ -107,7 +107,11 @@ def getTimelapseData():
     force = request.values.get("force", "false") in valid_boolean_trues
     unrendered = request.values.get("unrendered", "false") in valid_boolean_trues
 
-    global _timelapse_cache_finished_lastmodified, _timelapse_cache_finished, _timelapse_cache_unrendered_lastmodified, _timelapse_cache_unrendered
+    global \
+        _timelapse_cache_finished_lastmodified, \
+        _timelapse_cache_finished, \
+        _timelapse_cache_unrendered_lastmodified, \
+        _timelapse_cache_unrendered
     with _timelapse_cache_mutex:
         current_lastmodified_finished = octoprint.timelapse.last_modified_finished()
         current_lastmodified_unrendered = octoprint.timelapse.last_modified_unrendered()

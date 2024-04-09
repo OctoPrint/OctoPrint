@@ -18,6 +18,7 @@ import re
 import threading
 import time
 from collections import deque, namedtuple
+from functools import partial
 
 import serial
 import wrapt
@@ -930,7 +931,7 @@ class MachineCom:
 
     def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
         log = "Last lines in terminal:\n" + "\n".join(
-            map(lambda x: f"| {x}", list(self._terminal_log))
+            f"| {x}" for x in list(self._terminal_log)
         )
         if message is not None:
             log = message + "\n| " + log
@@ -1362,10 +1363,10 @@ class MachineCom:
 
                 def to_list(data, t):
                     if isinstance(data, str):
-                        data = list(s.strip() for s in data.split("\n"))
+                        data = [s.strip() for s in data.split("\n")]
 
                     if isinstance(data, (list, tuple)):
-                        return list(map(lambda x: (x, t), data))
+                        return [(x, t) for x in data]
                     else:
                         return None
 
@@ -1373,7 +1374,7 @@ class MachineCom:
                 if len(retval) == 4:
                     additional_tags |= set(retval[3])
 
-                prefix, suffix = map(lambda x: to_list(x, additional_tags), retval[0:2])
+                prefix, suffix = (to_list(x, additional_tags) for x in retval[0:2])
                 if prefix:
                     scriptLinesPrefix = list(prefix) + scriptLinesPrefix
                 if suffix:
@@ -1441,7 +1442,7 @@ class MachineCom:
 
             self.sendCommand(line, part_of_job=part_of_job, tags=ttu)
 
-        return "\n".join(map(lambda x: x if isinstance(x, str) else x[0], scriptLines))
+        return "\n".join(x if isinstance(x, str) else x[0] for x in scriptLines)
 
     def startPrint(self, pos=None, tags=None, external_sd=False, user=None):
         if not self.isOperational() or self.isPrinting():
@@ -1536,7 +1537,7 @@ class MachineCom:
         ):
             # figure out remote filename
             self.refreshSdFiles(blocking=True)
-            existingSdFiles = list(map(lambda x: x[0], self.getSdFiles()))
+            existingSdFiles = [x[0] for x in self.getSdFiles()]
             remote_name = get_dos_filename(
                 filename,
                 existing_filenames=existingSdFiles,
@@ -2007,17 +2008,15 @@ class MachineCom:
                     )
 
     def getSdFiles(self):
-        return list(
-            map(
-                lambda x: (
-                    x.name,
-                    x.size,
-                    x.longname if x.longname else x.name,
-                    x.timestamp,
-                ),
-                self._sdFiles.values(),
+        return [
+            (
+                x.name,
+                x.size,
+                x.longname if x.longname else x.name,
+                x.timestamp,
             )
-        )
+            for x in self._sdFiles.values()
+        ]
 
     def deleteSdFile(self, filename, tags=None):
         if not self._sdEnabled:
@@ -2343,7 +2342,7 @@ class MachineCom:
                             1,
                         )
 
-                        def busyIntervalSet():
+                        def busyIntervalSet(busy_interval):
                             self._logger.info(
                                 "Telling the printer to set the busy interval to our "
                                 '"communicationBusy" timeout - 1s = {}s'.format(
@@ -2356,7 +2355,8 @@ class MachineCom:
                             )
 
                         self._set_busy_protocol_interval(
-                            interval=busy_interval, callback=busyIntervalSet
+                            interval=busy_interval,
+                            callback=partial(busyIntervalSet, busy_interval),
                         )
 
                     if self._state not in (
@@ -3419,15 +3419,9 @@ class MachineCom:
             self._detection_retry = self.DETECTION_RETRIES
 
             log(
-                "Performing autodetection with {} "
-                "port/baudrate candidates: {}".format(
+                "Performing autodetection with {} " "port/baudrate candidates: {}".format(
                     len(self._detection_candidates),
-                    ", ".join(
-                        map(
-                            lambda x: f"{x[0]}@{x[1]}",
-                            self._detection_candidates,
-                        )
-                    ),
+                    ", ".join(f"{x[0]}@{x[1]}" for x in self._detection_candidates),
                 )
             )
 
@@ -4064,7 +4058,7 @@ class MachineCom:
 
                 if not self._ignore_errors:
                     if self._disconnect_on_errors or any(
-                        map(lambda x: x in lower_line, self._fatal_errors)
+                        x in lower_line for x in self._fatal_errors
                     ):
                         self._trigger_error(stripped_error, "firmware")
 
@@ -4876,8 +4870,7 @@ class MachineCom:
 
             except Exception:
                 self._logger.exception(
-                    "Error while processing hook {name} for phase "
-                    "{phase}:".format(
+                    "Error while processing hook {name} for phase " "{phase}:".format(
                         name=name,
                         phase=phase,
                     ),
@@ -5623,8 +5616,8 @@ class MachineCom:
                 return self._emergency_force_send(
                     cmd,
                     f"Force-sending {gcode} to the printer",
-                    gcode=gcode,
                     *args,
+                    gcode=gcode,
                     **kwargs,
                 )
 
@@ -6303,9 +6296,7 @@ def convert_pause_triggers(configured_triggers):
     result = {}
     for t in triggers.keys():
         if len(triggers[t]) > 0:
-            result[t] = re.compile(
-                "|".join(map(lambda pattern: f"({pattern})", triggers[t]))
-            )
+            result[t] = re.compile("|".join(f"({pattern})" for pattern in triggers[t]))
     return result
 
 

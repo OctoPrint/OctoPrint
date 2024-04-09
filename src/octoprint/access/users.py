@@ -16,9 +16,8 @@ from werkzeug.local import LocalProxy
 from octoprint.access.groups import Group, GroupChangeListener
 from octoprint.access.permissions import OctoPrintPermission, Permissions
 from octoprint.settings import settings as s
-from octoprint.util import atomic_write, deprecated, generate_api_key
+from octoprint.util import atomic_write, deprecated, generate_api_key, to_bytes, yaml
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import to_bytes, yaml
 
 password_hashers = []
 
@@ -634,7 +633,7 @@ class FilebasedUserManager(UserManager):
             return [self._group_manager.user_group]
 
     def _refresh_groups(self, user):
-        user._groups = self._to_groups(*map(lambda g: g.key, user.groups))
+        user._groups = self._to_groups(*(g.key for g in user.groups))
 
     def add_user(
         self,
@@ -813,11 +812,9 @@ class FilebasedUserManager(UserManager):
 
     def cleanup_legacy_hashes(self):
         no_legacy = all(
-            map(
-                lambda u: u._passwordHash.startswith("$argon2id$")
-                or u._passwordHash.startswith("$pbkdf2-"),
-                self._users.values(),
-            )
+            u._passwordHash.startswith("$argon2id$")
+            or u._passwordHash.startswith("$pbkdf2-")
+            for u in self._users.values()
         )
         salt = self._settings.get(["accessControl"], asdict=True, merged=True).get(
             "salt", None
@@ -1176,8 +1173,8 @@ class User(UserMixin):
         return {
             "name": self._username,
             "active": bool(self.is_active),
-            "permissions": list(map(lambda p: p.key, self._permissions)),
-            "groups": list(map(lambda g: g.key, self._groups)),
+            "permissions": [p.key for p in self._permissions],
+            "groups": [g.key for g in self._groups],
             "needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
             "apikey": self._apikey,
             "settings": self._settings,
@@ -1267,7 +1264,7 @@ class User(UserMixin):
         if not isinstance(permissions, list):
             permissions = [permissions]
 
-        assert all(map(lambda p: isinstance(p, OctoPrintPermission), permissions))
+        assert all(isinstance(p, OctoPrintPermission) for p in permissions)
 
         dirty = False
         for permission in permissions:
@@ -1282,7 +1279,7 @@ class User(UserMixin):
         if not isinstance(permissions, list):
             permissions = [permissions]
 
-        assert all(map(lambda p: isinstance(p, OctoPrintPermission), permissions))
+        assert all(isinstance(p, OctoPrintPermission) for p in permissions)
 
         dirty = False
         for permission in permissions:
@@ -1297,7 +1294,7 @@ class User(UserMixin):
         if not isinstance(groups, list):
             groups = [groups]
 
-        assert all(map(lambda p: isinstance(p, Group), groups))
+        assert all(isinstance(p, Group) for p in groups)
 
         dirty = False
         for group in groups:
@@ -1312,7 +1309,7 @@ class User(UserMixin):
         if not isinstance(groups, list):
             groups = [groups]
 
-        assert all(map(lambda p: isinstance(p, Group), groups))
+        assert all(isinstance(p, Group) for p in groups)
 
         dirty = False
         for group in groups:

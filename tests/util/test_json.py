@@ -11,12 +11,10 @@ from frozendict import frozendict
 from octoprint.util import json
 
 
-class SomeClass:
-    ...
+class SomeClass: ...
 
 
-class SomeSubclass(frozendict):
-    ...
+class SomeSubclass(frozendict): ...
 
 
 def test_deprecated_dump():

@@ -1,7 +1,9 @@
 from typing import Union
 
-from octoprint.logging import filters  # noqa: F401
-from octoprint.logging import handlers  # noqa: F401
+from octoprint.logging import (
+    filters,  # noqa: F401
+    handlers,  # noqa: F401
+)
 
 
 def log_to_handler(logger, handler, level, msg, exc_info=None, extra=None, *args):
@@ -157,5 +159,5 @@ def prefix_multilines(text: Union[str, bytes], prefix: str = ": ") -> str:
     return (
         to_unicode(lines[0])
         + "\n"
-        + "\n".join(map(lambda line: prefix + to_unicode(line), lines[1:]))
+        + "\n".join(prefix + to_unicode(line) for line in lines[1:])
     )

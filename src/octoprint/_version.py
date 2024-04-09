@@ -55,10 +55,10 @@ improve/.* 1.11.0 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
 staging/bugfix 1.9.4 506648c152681bf4b1416cf2b5aaf97d526ee752 pep440-dev
 bug/.* 1.9.4 506648c152681bf4b1416cf2b5aaf97d526ee752 pep440-dev
 
-# staging/maintenance is currently the branch for preparation of 1.10.0rc4
+# staging/maintenance is currently the branch for preparation of 1.10.0rc5
 # so is regressionfix/...
-staging/maintenance 1.10.0rc4 929ed14dea1701eadc19e4fd21b069c074e5844e
-regressionfix/.* 1.10.0rc3 929ed14dea1701eadc19e4fd21b069c074e5844e
+staging/maintenance 1.10.0rc5 https://data.octoprint.org/#achievements
+regressionfix/.* 1.10.0rc5 https://data.octoprint.org/#achievements
 
 # staging/devel is currently inactive (but has the 1.4.1rc4 namespace)
 staging/devel 1.4.1rc4 650d54d1885409fa1d411eb54b9e8c7ff428910f
@@ -222,7 +222,7 @@ def _parse_branch_versions():
             continue
 
         try:
-            split_line = list(map(lambda x: x.strip(), line.split()))
+            split_line = [x.strip() for x in line.split()]
             if not len(split_line):
                 continue
             if len(split_line) != 3:
@@ -285,7 +285,7 @@ def _get_data_from_git():
         "short": short,
     }
 
-    if any([vars[x] is None and "{" + x + "}" in template for x in vars]):
+    if any(vars[x] is None and "{" + x + "}" in template for x in vars):
         if short is None:
             template = FALLBACK
         else:
@@ -423,7 +423,7 @@ def get_cmdclass(pkg_source_path):
         def run(self):
             print(get_data()["version"])
 
-    return dict(sdist=_sdist, build_py=_build_py, version=version)
+    return {"sdist": _sdist, "build_py": _build_py, "version": version}
 
 
 if __name__ == "__main__":

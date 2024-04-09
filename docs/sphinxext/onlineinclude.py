@@ -5,7 +5,6 @@ __license__ = "The MIT License <http://opensource.org/licenses/MIT>"
 __copyright__ = "Copyright (C) 2015 Gina Häußge - Released under terms of the MIT License"
 
 
-import codecs
 from contextlib import closing
 from typing import Any
 
@@ -14,7 +13,6 @@ from sphinx.directives.code import (
     LiteralInclude,
     LiteralIncludeReader,
     container_wrapper,
-    dedent_lines,
     logger,
     nodes,
     parselinenos,
@@ -41,12 +39,14 @@ class OnlineIncludeReader(LiteralIncludeReader):
 
             return lines
         except OSError:
-            raise OSError("Include file %r not found or reading it failed" % filename)
+            raise OSError(
+                "Include file %r not found or reading it failed" % filename
+            ) from None
         except UnicodeError:
             raise UnicodeError(
                 "Encoding %r used for reading included file %r seems to "
                 "be wrong, try giving an :encoding: option" % (self.encoding, filename)
-            )
+            ) from None
 
 
 class OnlineIncludeDirective(LiteralInclude):

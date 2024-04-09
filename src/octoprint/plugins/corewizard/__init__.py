@@ -35,7 +35,7 @@ class CoreWizardPlugin(
                 if not firstrunonly.get(key, lambda: False)()
             }
 
-        result = list()
+        result = []
         for key, method in required.items():
             if not callable(method):
                 continue
@@ -91,7 +91,7 @@ class CoreWizardPlugin(
                 for key, value in required.items()
                 if not firstrunonly.get(key, lambda: False)()
             }
-        any_required = any(map(lambda m: m(), required.values()))
+        any_required = any(m() for m in required.values())
 
         return any_required
 

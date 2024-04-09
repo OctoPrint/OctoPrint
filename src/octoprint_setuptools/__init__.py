@@ -158,10 +158,10 @@ class CleanCommand(_clean):
             )
 
 
-def _normalize_locale(l):
+def _normalize_locale(locale):
     from babel.core import Locale
 
-    return str(Locale.parse(l))
+    return str(Locale.parse(locale))
 
 
 class NewTranslation(Command):
@@ -526,7 +526,7 @@ def get_babel_commandclasses(
     copyright_holder="The OctoPrint Project",
 ):
     try:
-        import babel
+        import babel  # noqa: F401
     except ImportError:
         return {}
 
@@ -589,16 +589,16 @@ def create_plugin_setup_parameters(
         package = "octoprint_{identifier}".format(**locals())
 
     if additional_data is None:
-        additional_data = list()
+        additional_data = []
 
     if additional_packages is None:
-        additional_packages = list()
+        additional_packages = []
 
     if ignored_packages is None:
-        ignored_packages = list()
+        ignored_packages = []
 
     if dependency_links is None:
-        dependency_links = list()
+        dependency_links = []
 
     if requires is None:
         requires = ["OctoPrint"]

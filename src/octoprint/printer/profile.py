@@ -553,7 +553,9 @@ class PrinterProfileManager:
             self._logger.exception(
                 "Error while trying to save profile %s" % profile["id"]
             )
-            raise SaveError("Cannot save profile {}: {}".format(profile["id"], str(e)))
+            raise SaveError(
+                "Cannot save profile {}: {}".format(profile["id"], str(e))
+            ) from e
 
     def _remove_from_path(self, path):
         try:

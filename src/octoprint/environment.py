@@ -166,9 +166,7 @@ class EnvironmentDetector:
             environment = copy.deepcopy(self._cache)
 
         dumped_environment = yaml.dump(environment, pretty=True).strip()
-        environment_lines = "\n".join(
-            map(lambda x: f"|  {x}", dumped_environment.split("\n"))
-        )
+        environment_lines = "\n".join(f"|  {x}" for x in dumped_environment.split("\n"))
         return "Detected environment is Python {} under {} ({}). Details:\n{}".format(
             environment["python"]["version"],
             environment["os"]["id"].title(),

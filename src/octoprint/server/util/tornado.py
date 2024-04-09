@@ -977,12 +977,9 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 
         import re
 
-        self._max_body_sizes = list(
-            map(
-                lambda x: (x[0], re.compile(x[1]), x[2]),
-                self.params.max_body_sizes or [],
-            )
-        )
+        self._max_body_sizes = [
+            (x[0], re.compile(x[1]), x[2]) for x in self.params.max_body_sizes or []
+        ]
         self._default_max_body_size = (
             self.params.default_max_body_size or self.stream.max_buffer_size
         )
@@ -1022,7 +1019,7 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
                 raise tornado.httputil.HTTPInputError(
                     "Only integer Content-Length is allowed: %s"
                     % headers["Content-Length"]
-                )
+                ) from None
 
             max_content_length = self._get_max_content_length(
                 self._request_start_line.method, self._request_start_line.path
@@ -1080,7 +1077,7 @@ class CustomHTTP1ConnectionParameters(tornado.http1connection.HTTP1ConnectionPar
     """
 
     def __init__(self, *args, **kwargs):
-        max_body_sizes = kwargs.pop("max_body_sizes", list())
+        max_body_sizes = kwargs.pop("max_body_sizes", [])
         default_max_body_size = kwargs.pop("default_max_body_size", None)
 
         tornado.http1connection.HTTP1ConnectionParameters.__init__(self, *args, **kwargs)
@@ -1359,7 +1356,7 @@ class UrlProxyHandler(
             if hasattr(e, "response") and e.response:
                 self.handle_response(e.response)
             else:
-                raise tornado.web.HTTPError(500)
+                raise tornado.web.HTTPError(500) from e
 
     def handle_response(self, response):
         if response.error and not isinstance(response.error, tornado.web.HTTPError):
@@ -1400,7 +1397,7 @@ class UrlProxyHandler(
         if not self._basename:
             return None
 
-        typeValue = list(x.strip() for x in content_type.split(";"))
+        typeValue = [x.strip() for x in content_type.split(";")]
         if len(typeValue) == 0:
             return None
 
@@ -1683,8 +1680,8 @@ class DynamicZipBundleHandler(StaticZipBundleHandler):
                 data = json.loads(self.request.body)
             else:
                 data = self.request.body_arguments
-        except Exception:
-            raise tornado.web.HTTPError(400)
+        except Exception as exc:
+            raise tornado.web.HTTPError(400) from exc
 
         return self._get_files_zip(
             list(map(octoprint.util.to_unicode, data.get("files", [])))
@@ -1849,7 +1846,7 @@ def access_validation_factory(app, validator, *args):
             try:
                 validator(flask.request, *args)
             except HTTPException as e:
-                raise tornado.web.HTTPError(e.code)
+                raise tornado.web.HTTPError(e.code) from e
 
     return f
 

@@ -209,7 +209,7 @@ class ScanDepsCommand(setuptools.Command):
             versions = list(
                 filter(
                     lambda x: x and not x.is_prerelease and not x.is_devrelease,
-                    map(lambda x: safe_parse_version(x), data.get("versions", [])),
+                    (safe_parse_version(x) for x in data.get("versions", [])),
                 )
             )
             if not versions:
@@ -323,7 +323,7 @@ def package_data_dirs(source, sub_folders):
 
 
 if __name__ == "__main__":
-    version, cmdclass = get_version_and_cmdclass("src/octoprint")
+    version, cmdclass = get_version_and_cmdclass(os.path.join("src", "octoprint"))
     setuptools.setup(
         name="OctoPrint",
         version=version,

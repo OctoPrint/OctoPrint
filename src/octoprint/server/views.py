@@ -8,6 +8,7 @@ import logging
 import os
 import re
 from collections import defaultdict
+from functools import partial
 
 from flask import (
     Response,
@@ -216,9 +217,9 @@ def login():
     permissions = sorted(
         filter(
             lambda x: x is not None and isinstance(x, OctoPrintPermission),
-            map(
-                lambda x: getattr(Permissions, x.strip()),
-                request.args.get("permissions", "").split(","),
+            (
+                getattr(Permissions, x.strip())
+                for x in request.args.get("permissions", "").split(",")
             ),
         ),
         key=lambda x: x.get_name(),
@@ -239,7 +240,7 @@ def login():
     render_kwargs = {
         "theming": [],
         "redirect_url": redirect_url,
-        "permission_names": map(lambda x: x.get_name(), permissions),
+        "permission_names": (x.get_name() for x in permissions),
         "user_id": user_id,
         "logged_in": not current_user.is_anonymous,
         "reauthenticate": reauthenticate,
@@ -726,9 +727,9 @@ def index():
                     if _logger.isEnabledFor(logging.DEBUG) and isinstance(
                         response, Response
                     ):
-                        response.headers[
-                            "X-Ui-Plugin"
-                        ] = plugin.implementation._identifier
+                        response.headers["X-Ui-Plugin"] = (
+                            plugin.implementation._identifier
+                        )
         else:
             response = require_login_with(permissions=default_permissions)
             if not response:
@@ -801,8 +802,8 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
             _logger.exception("Error while collecting available locales")
 
     permissions = [permission.as_dict() for permission in Permissions.all()]
-    filetypes = list(sorted(full_extension_tree().keys()))
-    extensions = list(map(lambda ext: f".{ext}", get_all_extensions()))
+    filetypes = sorted(full_extension_tree().keys())
+    extensions = [f".{ext}" for ext in get_all_extensions()]
 
     # ~~ prepare full set of template vars for rendering
 
@@ -955,11 +956,11 @@ def fetch_template_data(refresh=False):
                 if "div" not in rule:
                     # default div name: <hook plugin>_<template_key>_plugin_<plugin>
                     div = f"{name}_{key}_plugin_"
-                    rule["div"] = lambda x: div + x
+                    rule["div"] = partial(lambda d, x: d + x, div)
                 if "template" not in rule:
                     # default template name: <plugin>_plugin_<hook plugin>_<template key>.jinja2
                     template = f"_plugin_{name}_{key}.jinja2"
-                    rule["template"] = lambda x: x + template
+                    rule["template"] = partial(lambda t, x: x + t, template)
                 if "to_entry" not in rule:
                     # default to_entry assumes existing "name" property to be used as label for 2-tuple entry data structure (<name>, <properties>)
                     rule["to_entry"] = lambda data: (data["name"], data)
@@ -1345,7 +1346,7 @@ def fetch_template_data(refresh=False):
             )
 
         if not wizard_required or wizard_ignored:
-            includes["wizard"] = list()
+            includes["wizard"] = []
 
         for t in template_types:
             plugin_aliases[t] = {}
@@ -1440,25 +1441,25 @@ def fetch_template_data(refresh=False):
                 template_sorting[t]["key_extractor"]
             ):
 
-                def create_safe_extractor(extractor):
+                def create_safe_extractor(t, extractor):
                     def f(x, k):
                         try:
-                            return extractor(x, k)
+                            return extractor(x, k)  # noqa: B023
                         except Exception:
                             _logger.exception(
-                                "Error while extracting sorting keys for template {}".format(
-                                    t
-                                )
+                                f"Error while extracting sorting keys for template {t}"
                             )
                             return None
 
                     return f
 
-                extractor = create_safe_extractor(template_sorting[t]["key_extractor"])
+                extractor = partial(create_safe_extractor, t, x)(
+                    template_sorting[t]["key_extractor"]
+                )
 
             sort_key = template_sorting[t]["key"]
 
-            def key_func(x):
+            def key_func(t, extractor, sort_key, x):
                 config = templates[t]["entries"][x]
                 entry_order = config_extractor(config, "order", default_value=None)
                 return (
@@ -1467,15 +1468,17 @@ def fetch_template_data(refresh=False):
                     sv(extractor(config, sort_key)),
                 )
 
-            sorted_missing = sorted(missing_in_order, key=key_func)
+            sorted_missing = sorted(
+                missing_in_order, key=partial(key_func, t, extractor, sort_key)
+            )
         else:
 
-            def key_func(x):
+            def key_func(t, x):
                 config = templates[t]["entries"][x]
                 entry_order = config_extractor(config, "order", default_value=None)
                 return entry_order is None, sv(entry_order)
 
-            sorted_missing = sorted(missing_in_order, key=key_func)
+            sorted_missing = sorted(missing_in_order, key=partial(key_func, t))
 
         if template_sorting[t]["add"] == "prepend":
             templates[t]["order"] = sorted_missing + templates[t]["order"]

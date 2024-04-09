@@ -242,7 +242,7 @@ class FilebasedGroupManager(GroupManager):
                     self._dirty = True
 
                 groups = data.get("groups", {})
-                tracked_permissions = data.get("tracked", list())
+                tracked_permissions = data.get("tracked", [])
 
                 for key, attributes in groups.items():
                     if key in self._default_groups:
@@ -379,10 +379,10 @@ class FilebasedGroupManager(GroupManager):
             permissions = []
 
         permissions = self._to_permissions(*permissions)
-        assert all(map(lambda p: isinstance(p, OctoPrintPermission), permissions))
+        assert all(isinstance(p, OctoPrintPermission) for p in permissions)
 
         subgroups = self._to_groups(*subgroups)
-        assert all(map(lambda g: isinstance(g, Group), subgroups))
+        assert all(isinstance(g, Group) for g in subgroups)
 
         group = Group(
             key,
@@ -447,7 +447,7 @@ class FilebasedGroupManager(GroupManager):
 
         if permissions is not None:
             permissions = self._to_permissions(*permissions)
-            assert all(map(lambda p: isinstance(p, OctoPrintPermission), permissions))
+            assert all(isinstance(p, OctoPrintPermission) for p in permissions)
 
             removed_permissions = list(set(group._permissions) - set(permissions))
             added_permissions = list(set(permissions) - set(group._permissions))
@@ -466,7 +466,7 @@ class FilebasedGroupManager(GroupManager):
 
         if subgroups is not None:
             subgroups = self._to_groups(*subgroups)
-            assert all(map(lambda g: isinstance(g, Group), subgroups))
+            assert all(isinstance(g, Group) for g in subgroups)
 
             removed_subgroups = list(set(group._subgroups) - set(subgroups))
             added_subgroups = list(set(subgroups) - set(group._subgroups))
@@ -556,8 +556,8 @@ class Group:
             "key": self.key,
             "name": self.get_name(),
             "description": self._description,
-            "permissions": list(map(lambda p: p.key, self._permissions)),
-            "subgroups": list(map(lambda g: g.key, self._subgroups)),
+            "permissions": [p.key for p in self._permissions],
+            "subgroups": [g.key for g in self._subgroups],
             "needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
             "default": self._default,
             "removable": self._removable,
@@ -590,8 +590,8 @@ class Group:
 
     @property
     def dangerous(self):
-        return any(map(lambda p: p.dangerous, self._permissions)) or any(
-            map(lambda g: g.dangerous, self._subgroups)
+        return any(p.dangerous for p in self._permissions) or any(
+            g.dangerous for g in self._subgroups
         )
 
     def add_permissions_to_group(self, permissions):
@@ -603,7 +603,7 @@ class Group:
         if not isinstance(permissions, list):
             permissions = [permissions]
 
-        assert all(map(lambda p: isinstance(p, OctoPrintPermission), permissions))
+        assert all(isinstance(p, OctoPrintPermission) for p in permissions)
 
         if self.key == GUEST_GROUP:
             # don't allow dangerous permissions on the guests group
@@ -626,7 +626,7 @@ class Group:
         if not isinstance(permissions, list):
             permissions = [permissions]
 
-        assert all(map(lambda p: isinstance(p, OctoPrintPermission), permissions))
+        assert all(isinstance(p, OctoPrintPermission) for p in permissions)
 
         dirty = False
         for permission in permissions:
@@ -645,7 +645,7 @@ class Group:
         if not isinstance(subgroups, list):
             subgroups = [subgroups]
 
-        assert all(map(lambda g: isinstance(g, Group), subgroups))
+        assert all(isinstance(g, Group) for g in subgroups)
 
         if self.key == GUEST_GROUP:
             # don't allow dangerous subgroups on the guests group
@@ -668,7 +668,7 @@ class Group:
         if not isinstance(subgroups, list):
             subgroups = [subgroups]
 
-        assert all(map(lambda g: isinstance(g, Group), subgroups))
+        assert all(isinstance(g, Group) for g in subgroups)
 
         dirty = False
         for group in subgroups:

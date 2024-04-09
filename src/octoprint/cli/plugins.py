@@ -103,7 +103,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 
     def list_commands(self, ctx):
         self._initialize(ctx)
-        result = [name for name in self._get_commands()]
+        result = list(self._get_commands())
         result.sort()
         return result
 

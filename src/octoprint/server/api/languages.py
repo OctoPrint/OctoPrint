@@ -179,12 +179,10 @@ def _validate_and_install_language_pack(path, target):
         with zipfile.ZipFile(path, mode="r") as zip:
             # protect against path traversal
             if any(
-                map(
-                    lambda x: not os.path.abspath(os.path.join(temp_dir, x)).startswith(
-                        temp_dir + os.path.sep
-                    ),
-                    zip.namelist(),
+                not os.path.abspath(os.path.join(temp_dir, x)).startswith(
+                    temp_dir + os.path.sep
                 )
+                for x in zip.namelist()
             ):
                 return False
             zip.extractall(temp_dir)

@@ -946,12 +946,10 @@ def gcodeFileCommand(filename, target):
                 abort(404)
 
             if not any(
-                [
-                    octoprint.filemanager.valid_file_type(filename, type=source_file_type)
-                    for source_file_type in slicer_instance.get_slicer_properties().get(
-                        "source_file_types", ["model"]
-                    )
-                ]
+                octoprint.filemanager.valid_file_type(filename, type=source_file_type)
+                for source_file_type in slicer_instance.get_slicer_properties().get(
+                    "source_file_types", ["model"]
+                )
             ):
                 abort(415, description="Cannot slice file, not a model file")
 
@@ -1366,7 +1364,7 @@ def _validate(target, filename):
         return True
     else:
         return filename == "/".join(
-            map(lambda x: fileManager.sanitize_name(target, x), filename.split("/"))
+            fileManager.sanitize_name(target, x) for x in filename.split("/")
         )
 
 

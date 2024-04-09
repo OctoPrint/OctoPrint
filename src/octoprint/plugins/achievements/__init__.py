@@ -266,7 +266,10 @@ class AchievementsPlugin(
 
             ## consecutive prints of same file
 
-            loc = f"{payload['origin']}:{payload['path']}"
+            lastmodified = self._file_manager.get_lastmodified(
+                payload.get("origin"), payload.get("path")
+            )
+            loc = f"{payload['origin']}:{payload['path']}:{lastmodified}"
             if loc == self._data.state.file_last_print:
                 self._data.state.consecutive_prints_of_same_file += 1
                 if self._data.state.consecutive_prints_of_same_file >= 5:

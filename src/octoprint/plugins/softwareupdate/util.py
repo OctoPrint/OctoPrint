@@ -31,7 +31,7 @@ def execute(command, cwd=None, evaluate_returncode=True, **kwargs):
         returncode = p.returncode if p is not None else None
         stdout = p.stdout.text if p is not None and p.stdout is not None else ""
         stderr = p.stderr.text if p is not None and p.stderr is not None else ""
-        raise ScriptError(returncode, stdout, stderr)
+        raise ScriptError(returncode, stdout, stderr) from None
 
     if evaluate_returncode and p.returncode != 0:
         raise ScriptError(p.returncode, p.stdout.text, p.stderr.text)

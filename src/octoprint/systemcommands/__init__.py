@@ -52,7 +52,7 @@ class SystemCommandManager:
             raise
         except Exception:
             self._logger.exception(f"Error while executing command: {command}")
-            raise CommandlineError(None, "", "")
+            raise CommandlineError(None, "", "") from None
 
         return True
 
