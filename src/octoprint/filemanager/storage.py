@@ -75,6 +75,18 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
+    def get_lastmodified(self, path: str = None, recursive: bool = False) -> int:
+        """
+        Get the modification date of the specified ``path`` or ``path``'s subtree.
+
+        Args:
+            path (str or None): Path for which to determine the modification date. If left our or
+                set to None, defaults to storage root.
+            recursive (bool): Whether to determine only the date of the specified ``path`` (False, default) or
+                the whole ``path``'s subtree (True).
+        """
+        raise NotImplementedError()
+
     def file_in_path(self, path, filepath):
         """
         Returns whether the file indicated by ``file`` is inside ``path`` or not.
@@ -623,6 +635,29 @@ class LocalFileStorage(StorageInterface):
                 size += self.get_size(entry.path, recursive=recursive)
 
         return size
+
+    def get_lastmodified(self, path: str = None, recursive: bool = False) -> int:
+        if path is None:
+            path = self.basefolder
+
+        path, name = self.sanitize(path)
+        path = os.path.join(path, name)
+
+        # shortcut for individual files
+        if os.path.isfile(path):
+            return int(os.stat(path).st_mtime)
+
+        last_modified = 0
+        for entry in os.scandir(path):
+            if entry.is_file():
+                last_modified = max(last_modified, entry.stat().st_mtime)
+            elif recursive and entry.is_dir():
+                last_modified = max(
+                    last_modified,
+                    self.get_lastmodified(entry.path, recursive=recursive),
+                )
+
+        return int(last_modified)
 
     def file_in_path(self, path, filepath):
         filepath = self.sanitize_path(filepath)

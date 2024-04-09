@@ -323,7 +323,7 @@ def package_data_dirs(source, sub_folders):
 
 
 if __name__ == "__main__":
-    version, cmdclass = get_version_and_cmdclass("src/octoprint")
+    version, cmdclass = get_version_and_cmdclass(os.path.join("src", "octoprint"))
     setuptools.setup(
         name="OctoPrint",
         version=version,

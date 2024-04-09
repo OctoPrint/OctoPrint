@@ -347,8 +347,6 @@ class SettingsTest(unittest.TestCase):
             except octoprint.settings.NoSuchSettingsPath:
                 pass
 
-    ##~~ test setters
-
     def test_set(self):
         with self.settings() as settings:
             settings.set(["server", "host"], "127.0.0.1")
@@ -985,3 +983,24 @@ class ChainmapTest(unittest.TestCase):
             if key.startswith(_prefix("plugins", "baz"))
         ]
         self.assertTrue(len(keys) == 0)
+
+    def test_prefix_caching_custom_defaults(self):
+        # this should populate the prefix cache
+        self.chainmap.has_path(["swu", "checks"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 1)
+        self.assertTrue(_prefix("swu", "checks") in self.chainmap._prefixed_keys)
+
+        # this should save a new key for some custom defaults
+        path = ["swu", "checks", "yetanother"]
+        defaults = {"swu": {"checks": {"yetanother": {}}}}
+        self.chainmap.with_config_defaults(defaults=defaults).set_by_path(
+            path, {"foo": 3}
+        )
+
+        # getting the first path now should include our new data
+        data = self.chainmap.get_by_path(["swu", "checks"], merged=True)
+
+        # validate that
+        self.assertTrue("yetanother" in data)

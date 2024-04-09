@@ -3,10 +3,10 @@
 # This file is distributed under the same license as the OctoPrint project.
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.10.0rc3\n"
+"Project-Id-Version: OctoPrint 1.10.0rc4\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2024-03-18 10:26+0100\n"
-"PO-Revision-Date: 2024-03-18 10:26+0100\n"
+"POT-Creation-Date: 2024-04-08 15:05+0200\n"
+"PO-Revision-Date: 2024-04-08 15:05+0200\n"
 "Last-Translator: Gina Häußge <gina@octoprint.org>\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
@@ -153,24 +153,24 @@ msgstr ""
 msgid "Allows to manage settings and also to read sensitive settings"
 msgstr "Erlaubt vollen Zugriff auf alle Einstellungen"
 
-#: src/octoprint/plugins/achievements/__init__.py:88
+#: src/octoprint/plugins/achievements/__init__.py:89
 msgid "Allows to view the instance achievements & stats."
 msgstr ""
 "Erlaubt die Anzeige der Achievements & Instanz-Statistiken und "
 "Achievements."
 
-#: src/octoprint/plugins/achievements/__init__.py:444
-#: src/octoprint/plugins/achievements/__init__.py:456
+#: src/octoprint/plugins/achievements/__init__.py:460
+#: src/octoprint/plugins/achievements/__init__.py:472
 #: src/octoprint/plugins/achievements/templates/achievements_about_achievements.jinja2:1
 #: src/octoprint/templates/footer.jinja2:10
 msgid "Achievements"
 msgstr "Achievements"
 
-#: src/octoprint/plugins/achievements/__init__.py:450
+#: src/octoprint/plugins/achievements/__init__.py:466
 msgid "Instance Stats"
 msgstr "Instanz-Statistiken"
 
-#: src/octoprint/plugins/achievements/__init__.py:647
+#: src/octoprint/plugins/achievements/__init__.py:677
 msgid ""
 "Without this plugin you will no longer be able to earn achievements and "
 "track stats about your OctoPrint instance."
@@ -2200,12 +2200,12 @@ msgid "Filament"
 msgstr "Filament"
 
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:771
-#: src/octoprint/static/js/app/viewmodels/control.js:200
+#: src/octoprint/static/js/app/viewmodels/control.js:220
 #: src/octoprint/static/js/app/viewmodels/files.js:1098
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:360
-#: src/octoprint/static/js/app/viewmodels/temperature.js:150
-#: src/octoprint/static/js/app/viewmodels/temperature.js:161
-#: src/octoprint/static/js/app/viewmodels/temperature.js:408
+#: src/octoprint/static/js/app/viewmodels/temperature.js:153
+#: src/octoprint/static/js/app/viewmodels/temperature.js:164
+#: src/octoprint/static/js/app/viewmodels/temperature.js:411
 msgid "Tool"
 msgstr "Tool"
 
@@ -2745,7 +2745,7 @@ msgstr ""
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:458
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:205
 #: src/octoprint/static/js/app/helpers.js:824
-#: src/octoprint/static/js/app/viewmodels/temperature.js:532
+#: src/octoprint/static/js/app/viewmodels/temperature.js:535
 #: src/octoprint/templates/dialogs/files.jinja2:18
 #: src/octoprint/templates/dialogs/files.jinja2:48
 #: src/octoprint/templates/dialogs/files.jinja2:95
@@ -4631,8 +4631,8 @@ msgstr "Getrackter Branch"
 msgid "OctoPrint version tracking"
 msgstr "OctoPrint Versionstracking"
 
-#: src/octoprint/plugins/tracking/__init__.py:190
-#: src/octoprint/plugins/tracking/__init__.py:196
+#: src/octoprint/plugins/tracking/__init__.py:197
+#: src/octoprint/plugins/tracking/__init__.py:203
 #: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:1
 msgid "Anonymous Usage Tracking"
 msgstr "Anonymous Usage Tracking"
@@ -4681,8 +4681,8 @@ msgid "Regular ping every 15min (incl. uptime)"
 msgstr "Ping alle 15min (inkl. Uptime)"
 
 #: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:26
-msgid "Regular pong every 24h (incl. plugin list)"
-msgstr "Pong alle 24h (inkl. Pluginliste)"
+msgid "Regular pong every 24h (incl. plugin list, and achievements if enabled)"
+msgstr "Pong alle 24h (inkl. Pluginliste, und Achievements falls aktiviert)"
 
 #: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:29
 msgid "Server startup & shutdown"
@@ -4721,10 +4721,15 @@ msgid "System got throttled/unthrottled (currently only detected on RPis)"
 msgstr "Systemleistung wurde begrenzt/freigegeben (aktuell nur auf RPis erkannt)"
 
 #: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:53
+#, fuzzy
+msgid "Achievements & achievement unlock events"
+msgstr "Achievement freigeschaltet!"
+
+#: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:56
 msgid "Onboard slicing actions"
 msgstr "Onboard Slicing"
 
-#: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:56
+#: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:59
 msgid "Web interface load"
 msgstr "Laden des Webinterfaces"
 
@@ -4929,7 +4934,7 @@ msgid "Interface"
 msgstr "Interface"
 
 #: src/octoprint/server/views.py:1197
-#: src/octoprint/static/js/app/viewmodels/temperature.js:530
+#: src/octoprint/static/js/app/viewmodels/temperature.js:533
 msgid "Start"
 msgstr "Start"
 
@@ -5101,9 +5106,9 @@ msgid ""
 "by clicking the \"Reload\" button below. This will not interrupt any "
 "print jobs you might have ongoing."
 msgstr ""
-"Deswegen wird ein Neuladen der Seite empfohlen. Bitte lade die Seite jetzt "
-"neu, indem du den \"Neu laden\" Button unten klickst. Das wird keine "
-"möglicherweise laufenden Druckaufträge unterbrechen."
+"Deswegen wird ein Neuladen der Seite empfohlen. Bitte lade die Seite "
+"jetzt neu, indem du den \"Neu laden\" Button unten klickst. Das wird "
+"keine möglicherweise laufenden Druckaufträge unterbrechen."
 
 #: src/octoprint/static/js/app/dataupdater.js:339
 #: src/octoprint/static/js/app/viewmodels/files.js:1488
@@ -5417,7 +5422,7 @@ msgstr "Breche ab"
 msgid "Finishing"
 msgstr "Beende"
 
-#: src/octoprint/static/js/app/main.js:1067
+#: src/octoprint/static/js/app/main.js:1072
 msgid "Loading OctoPrint's UI, please wait..."
 msgstr "Lade OctoPrints Userinterface, bitte warten..."
 
@@ -5506,7 +5511,7 @@ msgstr "Bist Du sicher, dass du die Verbindung zum Drucker trennen willst?"
 msgid "Stay Connected"
 msgstr "Verbunden bleiben"
 
-#: src/octoprint/static/js/app/viewmodels/control.js:206
+#: src/octoprint/static/js/app/viewmodels/control.js:226
 msgid "Hotend"
 msgstr "Hotend"
 
@@ -6086,7 +6091,7 @@ msgid "Continue"
 msgstr "Fortsetzen"
 
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:228
-#: src/octoprint/static/js/app/viewmodels/temperature.js:533
+#: src/octoprint/static/js/app/viewmodels/temperature.js:536
 #: src/octoprint/templates/sidebar/state.jinja2:30
 msgid "Pause"
 msgstr "Pause"
@@ -6297,61 +6302,61 @@ msgstr ""
 "\"%(name)s\", die aus zu druckenden Dateien gesendet werden"
 
 #: src/octoprint/static/js/app/viewmodels/temperature.js:96
-#: src/octoprint/static/js/app/viewmodels/temperature.js:168
-#: src/octoprint/static/js/app/viewmodels/temperature.js:410
+#: src/octoprint/static/js/app/viewmodels/temperature.js:171
+#: src/octoprint/static/js/app/viewmodels/temperature.js:413
 #: src/octoprint/templates/dialogs/settings/temperatures.jinja2:35
 msgid "Bed"
 msgstr "Bett"
 
 #: src/octoprint/static/js/app/viewmodels/temperature.js:100
-#: src/octoprint/static/js/app/viewmodels/temperature.js:176
-#: src/octoprint/static/js/app/viewmodels/temperature.js:413
+#: src/octoprint/static/js/app/viewmodels/temperature.js:179
+#: src/octoprint/static/js/app/viewmodels/temperature.js:416
 msgid "Chamber"
 msgstr "Kammer"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:396
+#: src/octoprint/static/js/app/viewmodels/temperature.js:399
 #, python-format
 msgid "Set %(name)s (%(value)s)"
 msgstr "Setze %(name)s (%(value)s)"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:400
+#: src/octoprint/static/js/app/viewmodels/temperature.js:403
 #: src/octoprint/templates/tabs/temperature.jinja2:30
 #: src/octoprint/templates/tabs/temperature.jinja2:68
 #: src/octoprint/templates/tabs/timelapse.jinja2:14
 msgid "Off"
 msgstr "Aus"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:531
+#: src/octoprint/static/js/app/viewmodels/temperature.js:534
 msgid "Done"
 msgstr "Fertig"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:534
+#: src/octoprint/static/js/app/viewmodels/temperature.js:537
 #: src/octoprint/templates/sidebar/state.jinja2:30
 msgid "Resume"
 msgstr "Weiter"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:535
+#: src/octoprint/static/js/app/viewmodels/temperature.js:538
 msgid "Connected"
 msgstr "Verbindunden"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:536
+#: src/octoprint/static/js/app/viewmodels/temperature.js:539
 msgid "Disconnected"
 msgstr "Getrennt"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:590
+#: src/octoprint/static/js/app/viewmodels/temperature.js:593
 msgid "now"
 msgstr "jetzt"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:592
+#: src/octoprint/static/js/app/viewmodels/temperature.js:595
 msgid "min"
 msgstr "Min"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:656
+#: src/octoprint/static/js/app/viewmodels/temperature.js:659
 #: src/octoprint/templates/tabs/temperature.jinja2:23
 msgid "Actual"
 msgstr "Ist"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:666
+#: src/octoprint/static/js/app/viewmodels/temperature.js:669
 #: src/octoprint/templates/tabs/temperature.jinja2:25
 msgid "Target"
 msgstr "Soll"
