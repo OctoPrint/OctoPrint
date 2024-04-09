@@ -293,7 +293,7 @@ if __name__ == "__main__":
     print(
         json.dumps(
             {
-                a.key: {"name": a.name, "hidden": a.hidden}
+                a.key: {"name": a.name, "description": a.description, "hidden": a.hidden}
                 for a in sorted(achievements, key=lambda x: x.key)
             },
             indent=2,
