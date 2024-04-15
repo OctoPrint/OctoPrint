@@ -21,22 +21,24 @@ jobs:
       - name: 🏗 Install build dependencies
         run: |
           python -m pip install setuptools wheel --user
-      - name: 🔨 Build a binary wheel, an sdist tarball and a source tarball
+      - name: 🔨 Build a binary wheel & an sdist tarball
         run: |
           python setup.py sdist bdist_wheel
+      - name: 🔨 Build a source tarball
+        run: |
+          # find the wheel
+          wheel=$(ls dist/OctoPrint-*-py2.py3-none-any.whl)
 
-          # rename sdist .tar.gz to .sdist.tar.gz
-          sdist=$(ls dist/OctoPrint-*.tar.gz)
-          mv "$sdist" "${sdist/.tar.gz/.sdist.tar.gz}"
+          # strip the suffix to get the prefix
+          prefix=$(basename ${wheel%-py2.py3-none-any.whl})
 
-          # create source tarball
-          prefix=$(basename ${sdist%.tar.gz})
+          # create the source tarball
           git archive --prefix $prefix/ HEAD --output dist/$prefix.source.tar.gz
       - name: 🔨 Create sha512sums of dist files
         run: |
           cd dist
           sha512sum OctoPrint-*-py2.py3-none-any.whl > sha512sums.txt
-          sha512sum OctoPrint-*.sdist.tar.gz >> sha512sums.txt
+          sha512sum octoprint-*.tar.gz >> sha512sums.txt
           sha512sum OctoPrint-*.source.tar.gz >> sha512sums.txt
       - name: ⬆ Upload build result
         uses: actions/upload-artifact@v4
