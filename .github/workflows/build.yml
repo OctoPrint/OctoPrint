@@ -118,7 +118,7 @@ jobs:
       - name: 🚀 Install source tarball
         if: matrix.installable == 'sdist'
         run: |
-          pip install dist/octoprint-*.tar.gz.tar.gz
+          pip install dist/octoprint-*.tar.gz
 
   test-e2e:
     name: 🧪 E2E tests
