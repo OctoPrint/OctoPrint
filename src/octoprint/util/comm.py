@@ -4964,7 +4964,7 @@ class MachineCom:
                 )
 
         # trigger built-in handler if available
-        handler = getattr(self, f"_atcommand_{atcommand}_{phase}", None)
+        handler = getattr(self, f"_atcommand_{atcommand.lower()}_{phase}", None)
         if callable(handler):
             try:
                 handler(atcommand, parameters, tags=tags)
