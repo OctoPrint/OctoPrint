@@ -26,6 +26,8 @@ jobs:
           python setup.py sdist bdist_wheel
       - name: 🔨 Build a source tarball
         run: |
+          shopt -s nocaseglob
+
           # find the wheel
           wheel=$(ls dist/OctoPrint-*-py2.py3-none-any.whl)
 
@@ -34,12 +36,19 @@ jobs:
 
           # create the source tarball
           git archive --prefix $prefix/ HEAD --output dist/$prefix.source.tar.gz
+
+          # list the files
+          ls dist
       - name: 🔨 Create sha512sums of dist files
         run: |
+          shopt -s nocaseglob
+
           cd dist
           sha512sum OctoPrint-*-py2.py3-none-any.whl > sha512sums.txt
-          sha512sum octoprint-*.tar.gz >> sha512sums.txt
+          sha512sum OctoPrint-*[!.source].tar.gz >> sha512sums.txt
           sha512sum OctoPrint-*.source.tar.gz >> sha512sums.txt
+
+          cat sha512sums.txt
       - name: ⬆ Upload build result
         uses: actions/upload-artifact@v4
         with:
@@ -116,11 +125,13 @@ jobs:
       - name: 🚀 Install wheel
         if: matrix.installable == 'wheel'
         run: |
+          shopt -s nocaseglob
           pip install dist/OctoPrint-*-py2.py3-none-any.whl
       - name: 🚀 Install source tarball
         if: matrix.installable == 'sdist'
         run: |
-          pip install dist/octoprint-*.tar.gz
+          shopt -s nocaseglob
+          pip install dist/OctoPrint-*[!.source].tar.gz
 
   test-e2e:
     name: 🧪 E2E tests
@@ -146,6 +157,7 @@ jobs:
 
       - name: 🏗 Install OctoPrint build
         run: |
+          shopt -s nocaseglob
           pip install dist/OctoPrint-*-py2.py3-none-any.whl
 
       - name: 🏗 Create base config for test server
@@ -259,6 +271,7 @@ jobs:
           path: dist
       - name: 🧹 Remove some stuff that won't make it through twine check
         run: |
+          shopt -s nocaseglob
           rm dist/OctoPrint-*.source.tar.gz
           rm dist/sha512sums.txt
       - name: ⬆ Upload to index
@@ -281,6 +294,7 @@ jobs:
           path: dist
       - name: 🧹 Remove some stuff that won't make it through twine check
         run: |
+          shopt -s nocaseglob
           rm dist/OctoPrint-*.source.tar.gz
           rm dist/sha512sums.txt
       - name: ⬆ Publish to index
