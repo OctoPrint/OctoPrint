@@ -295,6 +295,7 @@ class PluginManagerPlugin(
         return {
             "repository": DEFAULT_PLUGIN_REPOSITORY,
             "repository_ttl": 24 * 60,
+            "repository_restricted": True,
             "notices": DEFAULT_PLUGIN_NOTICES,
             "notices_ttl": 6 * 60,
             "pip_args": None,
