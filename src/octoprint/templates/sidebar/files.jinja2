@@ -78,7 +78,7 @@
                 <span>{{ _('Upload to SD') }}</span>
                 <input id="gcode_upload_sd" data-test-id="upload-sd" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: isSdReady()">
             </span>
-        {% endif }
+        {% endif %}
     </div>
     <div id="gcode_upload_progress" class="progress progress-text-centered">
         <div class="bar"></div>
