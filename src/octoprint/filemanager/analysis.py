@@ -428,6 +428,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 
         self._aborted = False
         self._reenqueue = False
+        self._command = None
 
     def _do_analysis(self, high_priority=False):
         import sys
@@ -482,7 +483,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
                 command += ["--g90-extruder"]
             command.append(self._current.absolute_path)
 
-            self._logger.info("Invoking analysis command: {}".format(" ".join(command)))
+            self._logger.info(f"Invoking analysis command: {' '.join(command)}")
 
             self._aborted = False
             p = sarge.run(
@@ -496,28 +497,27 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
                 # thread
                 time.sleep(0.01)
 
-            # by now we should have a command, let's wait for its
-            # process to have been prepared
-            p.commands[0].process_ready.wait()
-
-            if not p.commands[0].process:
-                # the process might have been set to None in case of any exception
-                raise RuntimeError(
-                    "Error while trying to run command {}".format(" ".join(command))
-                )
-
             try:
-                # let's wait for stuff to finish
-                while p.returncode is None:
-                    if self._aborted:
-                        # oh, we shall abort, let's do so!
-                        p.commands[0].terminate()
-                        raise AnalysisAborted(reenqueue=self._reenqueue)
+                # by now we should have a command, let's wait for its
+                # process to have been prepared
+                self._command = p.commands[0]
+                self._command.process_ready.wait()
 
-                    # else continue
-                    p.commands[0].poll()
+                if not self._command.process:
+                    # the process might have been set to None in case of any exception
+                    raise RuntimeError(
+                        "Error while trying to run command {}".format(" ".join(command))
+                    )
+
+                try:
+                    # let's wait for stuff to finish
+                    self._command.wait()
+                    if self._aborted:
+                        raise AnalysisAborted(reenqueue=self._reenqueue)
+                finally:
+                    p.close()
             finally:
-                p.close()
+                self._command = None
 
             output = p.stdout.text
             self._logger.debug(f"Got output: {output!r}")
@@ -559,3 +559,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
     def _do_abort(self, reenqueue=True):
         self._aborted = True
         self._reenqueue = reenqueue
+
+        if self._command:
+            self._logger.info(f"Terminating analysis subprocess for {self._current}...")
+            self._command.terminate()
