@@ -163,6 +163,7 @@ class CommandlineCaller:
         delimiter: bytes = b"\n",
         buffer_size: int = -1,
         logged: bool = True,
+        output_timeout: float = 0.5,
         **kwargs,
     ) -> Tuple[Optional[int], List[str], List[str]]:
         """
@@ -203,10 +204,11 @@ class CommandlineCaller:
             return process_lines(lines, self._log_stderr)
 
         try:
-            while p.returncode is None:
-                all_stderr += process_stderr(p.stderr.readlines(timeout=0.5))
-                all_stdout += process_stdout(p.stdout.readlines(timeout=0.5))
-                p.commands[0].poll()
+            # read lines from stdout and stderr until the process is finished
+            while p.commands[0].poll() is None:
+                # this won't be a busy loop, the readline calls will block up to the timeout
+                all_stderr += process_stderr(p.stderr.readlines(timeout=output_timeout))
+                all_stdout += process_stdout(p.stdout.readlines(timeout=output_timeout))
 
         finally:
             p.close()
