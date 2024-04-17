@@ -67,23 +67,17 @@
         </span>
     </div>
     <div class="row-fluid upload-buttons">
+        <span class="btn btn-primary fileinput-button span{% if enableSdSupport %}6{% else %}12{% endif %}" style="margin-bottom: 10px">
+            <i class="fas fa-upload"></i>
+            <span>{{ _('Upload') }}</span>
+            <input id="gcode_upload" data-test-id="upload-local" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" multiple>
+        </span>
         {% if enableSdSupport %}
-            <span class="btn btn-primary fileinput-button span6" style="margin-bottom: 10px">
-                                <i class="fas fa-upload"></i>
-                                <span>{{ _('Upload') }}</span>
-                                <input id="gcode_upload" data-test-id="upload-local" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" multiple>
-                            </span>
             <span class="btn btn-primary fileinput-button span6" data-bind="enable: $root.isSdReady() && !$root.isPrinting(), css: {disabled: !$root.isSdReady() || $root.isPrinting()}" style="margin-bottom: 10px">
-                                <i class="fas fa-upload"></i>
-                                <span>{{ _('Upload to SD') }}</span>
-                                <input id="gcode_upload_sd" data-test-id="upload-sd" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: isSdReady()">
-                            </span>
-        {% else %}
-            <span class="btn btn-primary fileinput-button span12" style="margin-bottom: 10px">
-                                <i class="icon-upload-alt icon-white"></i>
-                                <span>{{ _('Upload') }}</span>
-                                <input id="gcode_upload" data-test-id="upload-local" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button">
-                            </span>
+                <i class="fas fa-upload"></i>
+                <span>{{ _('Upload to SD') }}</span>
+                <input id="gcode_upload_sd" data-test-id="upload-sd" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: isSdReady()">
+            </span>
         {% endif %}
     </div>
     <div id="gcode_upload_progress" class="progress progress-text-centered">

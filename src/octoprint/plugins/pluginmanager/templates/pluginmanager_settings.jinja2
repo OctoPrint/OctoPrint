@@ -218,6 +218,54 @@
     </div>
 </div>
 
+<div id="settings_plugin_pluginmanager_restricted" class="modal hide fade-in">
+    <div class="modal-header">
+        <a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('A word on third-party plugins...') }}</h3>
+    </div>
+    <div class="modal-body">
+        {% trans %}
+        <p>
+            Third-party plugins, like all software that you install, can potentially break things, negatively impact performance or even cause security issues.
+        </p>
+        <p>
+            As they aren't part of the core installation and developed elsewhere, we can't guarantee the quality & security of third-party plugins.
+            Here's what we do to make things as stable and safe as possible:
+        </p>
+        <ul>
+            <li>
+                <strong>Initial code review:</strong>
+                All plugins in OctoPrint's repository are reviewed by a trusted team member before they are initially published on the repository.
+            </li>
+            <li>
+                <strong>Open source:</strong>
+                All plugins in OctoPrint's repository are open source, so you and anyone else from the community can look at their published source code and see what they do for yourself.
+            </li>
+            <li>
+                <strong>Plugin blacklist:</strong>
+                We maintain a blacklist of plugins/plugin versions that are known to cause issues. Unless you have disabled the blacklist, OctoPrint will refuse to load and run any plugins installed in your system matching an entry on it.
+            </li>
+            <li>
+                <strong>Report mechanism:</strong>
+                If you encounter suspicious activity of a plugin, you can report it to us. We will then investigate and potentially remove it from the repository and/or add it to the blacklist.
+            </li>
+            <li>
+                <strong>Safe mode & recovery page:</strong>
+                If you encounter a problem with a plugin, you can start OctoPrint in safe mode to disable all third-party plugins. Even if the UI has been rendered
+                inaccessible through a malfunctioning third-party plugin, you can still access the recovery page at <code>/recovery/</code> to restart in safe mode.
+            </li>
+        </ul>
+        <p>
+            <strong>By proceeding, you acknowledge that you understand and accept the risks associated with installing third-party plugins.</strong>
+        </p>
+        {% endtrans %}
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
+        <button class="btn btn-danger" data-bind="click: unlockRepository"><i class="fas fa-spinner fa-spin" data-bind="visible: unlockingRepository"></i> {{ _('Proceed') }}</button>
+    </div>
+</div>
+
 <div id="settings_plugin_pluginmanager_repositorydialog" class="modal hide fade-in">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
