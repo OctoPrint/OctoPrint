@@ -445,12 +445,9 @@ def configure_timelapse(config=None, persist=False):
         if "fps" in config and config["fps"] > 0:
             fps = config["fps"]
 
-        renderAfterPrint = True
+        renderAfterPrint = "always"
         if "renderAfterPrint" in config:
             renderAfterPrint = config["renderAfterPrint"]
-        renderFailedPrint = True
-        if "renderFailedPrint" in config:
-            renderFailedPrint = config["renderFailedPrint"]
 
         if "zchange" == type:
             retractionZHop = 0
@@ -475,7 +472,6 @@ def configure_timelapse(config=None, persist=False):
                 min_delay=minDelay,
                 fps=fps,
                 render_after_print=renderAfterPrint,
-                render_failed_print=renderFailedPrint,
             )
 
         elif "timed" == type:
@@ -487,7 +483,7 @@ def configure_timelapse(config=None, persist=False):
             ):
                 interval = config["options"]["interval"]
 
-            current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, render_after_print=renderAfterPrint, render_failed_print=renderFailedPrint)
+            current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, render_after_print=renderAfterPrint)
 
     notify_callbacks(current)
 
@@ -500,7 +496,7 @@ class Timelapse:
     QUEUE_ENTRY_TYPE_CAPTURE = "capture"
     QUEUE_ENTRY_TYPE_CALLBACK = "callback"
 
-    def __init__(self, post_roll=0, fps=25, render_after_print=True, render_failed_print=True):
+    def __init__(self, post_roll=0, fps=25, render_after_print="always"):
         self._logger = logging.getLogger(__name__)
         self._image_number = None
         self._in_timelapse = False
@@ -525,7 +521,6 @@ class Timelapse:
         self._fps = fps
 
         self._render_after_print = render_after_print
-        self._render_failed_print = render_failed_print
 
         self._pluginManager = octoprint.plugin.plugin_manager()
         self._pre_capture_hooks = self._pluginManager.get_hooks(
@@ -567,10 +562,6 @@ class Timelapse:
     def render_after_print(self):
         return self._render_after_print
 
-    @property
-    def render_failed_print(self):
-        return self._render_failed_print
-
     def unload(self):
         if self._in_timelapse:
             self.stop_timelapse(do_create_movie=False)
@@ -593,7 +584,7 @@ class Timelapse:
         """
         Override this to perform additional actions upon the stop of a print job.
         """
-        self.stop_timelapse(success=(event == Events.PRINT_DONE), do_create_movie=self.render_after_print)
+        self.stop_timelapse(success=(event == Events.PRINT_DONE), do_create_movie=(self.render_after_print != "never"))
 
     def on_print_resumed(self, event, payload):
         """
@@ -655,7 +646,7 @@ class Timelapse:
 
         def reset_and_create():
             reset_image_number()
-            if self.render_failed_print or success:
+            if self.render_failed_print!="successful" or success:
                 create_movie()
             else:
                 self._logger.debug("Not rendering timelapse of failed prints")
@@ -867,8 +858,8 @@ class Timelapse:
 
 
 class ZTimelapse(Timelapse):
-    def __init__(self, retraction_zhop=0, min_delay=5.0, post_roll=0, fps=25, render_after_print=True, render_failed_print=True):
-        Timelapse.__init__(self, post_roll=post_roll, fps=fps, render_after_print=render_after_print, render_failed_print=render_failed_print)
+    def __init__(self, retraction_zhop=0, min_delay=5.0, post_roll=0, fps=25, render_after_print="always"):
+        Timelapse.__init__(self, post_roll=post_roll, fps=fps, render_after_print=render_after_print)
 
         if min_delay < 0:
             min_delay = 0
@@ -925,8 +916,8 @@ class ZTimelapse(Timelapse):
 
 
 class TimedTimelapse(Timelapse):
-    def __init__(self, interval=1, post_roll=0, fps=25, render_after_print=True, render_failed_print=True):
-        Timelapse.__init__(self, post_roll=post_roll, fps=fps, render_after_print=render_after_print, render_failed_print=render_failed_print)
+    def __init__(self, interval=1, post_roll=0, fps=25, render_after_print="always"):
+        Timelapse.__init__(self, post_roll=post_roll, fps=fps, render_after_print=render_after_print)
         self._interval = interval
         if self._interval < 1:
             self._interval = 1  # force minimum interval of 1s

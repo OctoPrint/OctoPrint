@@ -14,8 +14,7 @@ $(function () {
         self.defaultInterval = 10;
         self.defaultRetractionZHop = 0;
         self.defaultMinDelay = 5.0;
-        self.defaultRenderAfterPrint = true;
-        self.defaultRenderFailedPrint = true;
+        self.defaultRenderAfterPrint = "always";
 
         self.timelapseType = ko.observable(undefined);
         self.timelapseTimedInterval = ko.observable(self.defaultInterval);
@@ -24,7 +23,6 @@ $(function () {
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
         self.timelapseRenderAfterPrint = ko.observable(self.defaultRenderAfterPrint);
-        self.timelapseRenderFailedPrint = ko.observable(self.defaultRenderFailedPrint);
         self.snapshotWebcam = ko.pureComputed(function () {
             var snapshotWebcamName = self.settings.webcam_snapshotWebcam();
             return self.settings.webcam_webcams().find(function (w) {
@@ -145,9 +143,6 @@ $(function () {
             self.isDirty(true);
         });
         self.timelapseRenderAfterPrint.subscribe(function () {
-            self.isDirty(true);
-        });
-        self.timelapseRenderFailedPrint.subscribe(function () {
             self.isDirty(true);
         });
         self.persist.subscribe(function () {
@@ -291,12 +286,6 @@ $(function () {
                 self.timelapseRenderAfterPrint(config.renderAfterPrint);
             } else {
                 self.timelapseRenderAfterPrint(self.defaultRenderAfterPrint);
-            }
-
-            if (config.renderFailedPrint !== undefined) {
-                self.timelapseRenderFailedPrint(config.renderFailedPrint);
-            } else {
-                self.timelapseRenderFailedPrint(self.defaultRenderFailedPrint);
             }
 
             self.persist(false);
@@ -621,7 +610,6 @@ $(function () {
                 postRoll: self.timelapsePostRoll(),
                 fps: self.timelapseFps(),
                 renderAfterPrint: self.timelapseRenderAfterPrint(),
-                renderFailedPrint: self.timelapseRenderFailedPrint(),
                 save: self.persist()
             };
 
