@@ -41,6 +41,8 @@ def _config_for_timelapse(timelapse):
             "fps": timelapse.fps,
             "retractionZHop": timelapse.retraction_zhop,
             "minDelay": timelapse.min_delay,
+            "renderAfterPrint": timelapse.render_after_print,
+            "renderFailedPrint": timelapse.render_failed_print,
         }
     elif timelapse is not None and isinstance(
         timelapse, octoprint.timelapse.TimedTimelapse
@@ -50,6 +52,8 @@ def _config_for_timelapse(timelapse):
             "postRoll": timelapse.post_roll,
             "fps": timelapse.fps,
             "interval": timelapse.interval,
+            "renderAfterPrint": timelapse.render_after_print,
+            "renderFailedPrint": timelapse.render_failed_print,
         }
     else:
         return {"type": "off"}
@@ -249,7 +253,7 @@ def setTimelapseConfig():
         data = request.values
 
     if "type" in data:
-        config = {"type": data["type"], "postRoll": 0, "fps": 25, "options": {}}
+        config = {"type": data["type"], "postRoll": 0, "fps": 25, "renderAfterPrint": True, "renderFailedPrint": True, "options": {}}
 
         if "postRoll" in data:
             try:
@@ -305,6 +309,22 @@ def setTimelapseConfig():
                     config["options"]["minDelay"] = minDelay
                 else:
                     abort(400, description="minDelay is invalid")
+
+        if "renderAfterPrint" in data:
+            try:
+                renderAfterPrint = bool(data["renderAfterPrint"])
+            except ValueError:
+                abort(400, description="renderAfterPrint is invalid")
+            else:
+                config["renderAfterPrint"] = renderAfterPrint
+
+        if "renderFailedPrint" in data:
+            try:
+                renderFailedPrint = bool(data["renderFailedPrint"])
+            except ValueError:
+                abort(400, description="renderFailedPrint is invalid")
+            else:
+                config["renderFailedPrint"] = renderFailedPrint
 
         if (
             admin_permission.can()

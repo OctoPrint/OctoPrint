@@ -75,6 +75,24 @@
             <div class="control-group">
                 <div class="controls">
                     <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: timelapseRenderAfterPrint, valueUpdate: 'afterkeydown'"> {{ _('Render Timelapse automatically') }}
+                        <span class="help-block">{{ _('Start the rendering of the timelapse automatically after finishing the print.') }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: timelapseRenderFailedPrint, valueUpdate: 'afterkeydown', enable: timelapseRenderAfterPrint"> {{ _('Render Timelapse for failed prints automatically') }}
+                        <span class="help-block">{{ _('Start the rendering of the timelapse automatically for failed prints.') }}</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
                         <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}
                         <span class="help-block">{{ _('Check this to make your selected timelapse mode and options persist across restarts.') }}</span>
                     </label>
