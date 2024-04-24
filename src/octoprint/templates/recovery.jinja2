@@ -27,6 +27,7 @@
         var BASE_URL = "{{ url_for('index') }}";
         var LOGIN_URL = "{{ url_for('login', redirect=url_for('recovery'), permissions="ADMIN") }}";
         var LOCALE = "";
+        var CONFIG_REAUTHENTICATION_TIMEOUT = {{ reauthenticationTimeout }};
     </script>
     <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
     <script src="{{ url_for("static", filename="js/lib/knockout.js") }}"></script>
@@ -133,8 +134,8 @@
                                 </td>
                                 <td style="text-align: center" data-bind="text: formatDate(date)"></td>
                                 <td style="text-align: center">
-                                    <button class="btn btn-small" data-bind="visible: $root.restoreSupported, click: $root.restoreBackup">{{ _('Restore') }}</button>
-                                    <a class="btn btn-small" data-bind="attr: {href: url}">{{ _('Download') }}</a>
+                                    <button class="btn btn-small" data-bind="visible: $root.restoreSupported, click: function() { $root.restoreBackup($data.name) }">{{ _('Restore') }}</button>
+                                    <a class="btn btn-small" data-bind="click: function() { $root.reauthenticateDownload($data.url) }">{{ _('Download') }}</a>
                                 </td>
                             </tr>
                         </tbody>
@@ -165,7 +166,33 @@
             <pre class="pre-scrollable pre-output" style="height: 170px" data-bind="foreach: workLoglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message', error: stream == 'error'}"></span></pre>
         </div>
         <div class="modal-footer">
-            <button class="btn" data-dismiss="modal" data-bind="enable: !workInProgress()" aria-hidden="true">{{ _('Close') }}</button>
+            <button class="btn" data-dismiss="modal" data-bind="enable: !workInProgress()">{{ _('Close') }}</button>
+        </div>
+    </div>
+
+    <div id="reauthenticate_dialog" class="modal hide fade-in">
+        <div class="modal-header">
+            <a href="javascript:void()" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+            <h3>{{ _('Please reauthenticate') }}</h3>
+        </div>
+        <div class="modal-body">
+            <p>{% trans %}
+                You need to reauthenticate to perform this action.
+                Please enter your password below.
+            {% endtrans %}</p>
+            <form class="form-horizontal" data-bind="event: {'submit': reauthenticate }" onsubmit="return false; // this gets overwritten on view model bind">
+                <div class="control-group">
+                    <label class="control-label">{{ _('Password') }}</label>
+                    <div class="controls">
+                        <input type="password" class="input-block-level" data-bind="value: reauthenticatePass" placeholder="{{ _("Password")|edq }}">
+                        <span class="help-block text-error" data-bind="visible: reauthenticateFailed">{{ _('Reauthentication failed. Wrong password?') }}</span>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" data-dismiss="modal">{{ _('Abort') }}</button>
+            <button class="btn btn-primary" data-bind="click: function() { reauthenticate(); }">{{ _('Confirm') }}</button>
         </div>
     </div>
 

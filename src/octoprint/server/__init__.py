@@ -9,6 +9,7 @@ import logging
 import logging.config
 import mimetypes
 import os
+import pathlib
 import re
 import signal
 import sys
@@ -193,7 +194,8 @@ def on_user_logged_out(sender, user=None):
 @user_loaded_from_cookie.connect_via(app)
 def on_user_loaded_from_cookie(sender, user=None):
     if user:
-        session["login_mechanism"] = "remember_me"
+        session["login_mechanism"] = util.LoginMechanism.REMEMBER_ME
+        session["credentials_seen"] = False
 
 
 def load_user(id):
@@ -300,9 +302,14 @@ class Server:
         if self._settings is None:
             self._settings = settings()
 
+        incomplete_startup_flag = (
+            pathlib.Path(self._settings._basedir) / ".incomplete_startup"
+        )
         if not self._settings.getBoolean(["server", "ignoreIncompleteStartup"]):
-            self._settings.setBoolean(["server", "incompleteStartup"], True)
-            self._settings.save()
+            try:
+                incomplete_startup_flag.touch()
+            except Exception:
+                self._logger.exception("Could not create startup triggered safemode flag")
 
         if self._plugin_manager is None:
             self._plugin_manager = octoprint.plugin.plugin_manager()
@@ -671,10 +678,7 @@ class Server:
 
         ## Tornado initialization starts here
 
-        ioloop = (
-            IOLoop()
-        )  # TODO: This way to create the ioloop is deprecated and logs a warning
-        ioloop.install()
+        ioloop = IOLoop.current()
 
         enable_cors = settings().getBoolean(["api", "allowCrossOrigin"])
 
@@ -928,11 +932,10 @@ class Server:
             # camera snapshot
             (
                 r"/downloads/camera/current",
-                util.tornado.UrlProxyHandler,
+                util.tornado.WebcamSnapshotHandler,
                 joined_dict(
                     {
-                        "url": self._settings.get(["webcam", "snapshot"]),
-                        "as_attachment": True,
+                        "as_attachment": "snapshot",
                     },
                     camera_permission_validator,
                 ),
@@ -1015,13 +1018,20 @@ class Server:
 
         removed_headers = ["Server"]
 
+        from concurrent.futures import ThreadPoolExecutor
+
         server_routes.append(
             (
                 r".*",
                 util.tornado.UploadStorageFallbackHandler,
                 {
                     "fallback": util.tornado.WsgiInputContainer(
-                        app.wsgi_app, headers=headers, removed_headers=removed_headers
+                        app.wsgi_app,
+                        executor=ThreadPoolExecutor(
+                            thread_name_prefix="WsgiRequestHandler"
+                        ),
+                        headers=headers,
+                        removed_headers=removed_headers,
                     ),
                     "file_prefix": "octoprint-file-upload-",
                     "file_suffix": ".tmp",
@@ -1294,8 +1304,13 @@ class Server:
 
                 # if there was a rogue plugin we wouldn't even have made it here, so remove startup triggered safe mode
                 # flag again...
-                self._settings.setBoolean(["server", "incompleteStartup"], False)
-                self._settings.save()
+                try:
+                    if incomplete_startup_flag.exists():
+                        incomplete_startup_flag.unlink()
+                except Exception:
+                    self._logger.exception(
+                        "Could not clear startup triggered safe mode flag"
+                    )
 
                 # make a backup of the current config
                 self._settings.backup(ext="backup")
@@ -1362,7 +1377,7 @@ class Server:
             pass
         except Exception:
             self._logger.fatal(
-                "Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!"
+                "Now that is embarrassing... Something went really really wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!"
             )
             self._logger.exception("Stacktrace follows:")
 
@@ -2040,6 +2055,10 @@ class Server:
 
         url_prefix = f"/plugin/{name}"
         blueprint = Blueprint(name, name, static_folder=plugin.get_asset_folder())
+
+        blueprint.before_request(corsRequestHandler)
+        blueprint.after_request(corsResponseHandler)
+
         return blueprint, url_prefix
 
     def _add_plugin_request_handlers_to_blueprints(self, *blueprints):
@@ -2234,6 +2253,7 @@ class Server:
             "js/lib/jquery/jquery.flot.js",
             "js/lib/jquery/jquery.flot.time.js",
             "js/lib/jquery/jquery.flot.crosshair.js",
+            "js/lib/jquery/jquery.flot.dashes.js",
             "js/lib/jquery/jquery.flot.resize.js",
             "js/lib/jquery/jquery.iframe-transport.js",
             "js/lib/jquery/jquery.fileupload.js",

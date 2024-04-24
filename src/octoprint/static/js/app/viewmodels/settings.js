@@ -127,6 +127,8 @@ $(function () {
         self.api_key = ko.observable(undefined);
         self.api_allowCrossOrigin = ko.observable(undefined);
 
+        self.apiKeyVisible = ko.observable(false);
+
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
@@ -164,6 +166,7 @@ $(function () {
         self.feature_uploadOverwriteConfirmation = ko.observable(undefined);
         self.feature_g90InfluencesExtruder = ko.observable(undefined);
         self.feature_autoUppercaseBlacklist = ko.observable(undefined);
+        self.feature_enableDragDropUpload = ko.observable(undefined);
 
         self.gcodeAnalysis_runAt = ko.observable(undefined);
 
@@ -702,8 +705,34 @@ $(function () {
             );
         };
 
+        self.deleteApiKey = () => {
+            if (!CONFIG_ACCESS_CONTROL) return;
+            if (!self.api_key()) return;
+
+            showConfirmationDialog(
+                gettext(
+                    "This will delete the API Key. It will cease to to function immediately."
+                ),
+                function () {
+                    OctoPrint.settings.deleteApiKey().done(() => {
+                        self.api_key(undefined);
+                    });
+                }
+            );
+        };
+
         self.copyApiKey = function () {
             copyToClipboard(self.api_key());
+        };
+
+        self.revealingApiKey = ko.observable(false);
+        self.revealApiKey = () => {
+            self.loginState.reauthenticateIfNecessary(() => {
+                self.revealingApiKey(true);
+                self.requestData().always(() => {
+                    self.revealingApiKey(false);
+                });
+            });
         };
 
         self.showTranslationManager = function () {
@@ -740,7 +769,7 @@ $(function () {
                         "Error calling settings callback",
                         callback,
                         ":",
-                        exc.stack || exc.stacktrace || exc
+                        `${exc.message}\n${exc.stack || exc}`
                     );
                 }
             };
@@ -1066,6 +1095,7 @@ $(function () {
             return data;
         };
 
+        self.reauthenticationTimeout = undefined;
         self.fromResponse = function (response, local) {
             // server side changes to set
             var serverChangedData;
@@ -1253,6 +1283,15 @@ $(function () {
             mapToObservables(serverChangedData, specialMappings, clientChangedData);
 
             firstRequest.resolve();
+
+            // special delivery for the API key flag
+            self.apiKeyVisible(self.loginState.checkCredentialsSeen());
+            if (self.apiKeyVisible()) {
+                self.reauthenticationTimeout =
+                    self.loginState.afterReauthenticationTimeout(() => {
+                        self.requestData();
+                    }, self.reauthenticationTimeout);
+            }
         };
 
         self.cancelData = function () {

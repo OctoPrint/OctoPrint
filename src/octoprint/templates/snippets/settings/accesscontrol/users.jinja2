@@ -20,15 +20,11 @@
                     <th class="settings_users_details_key">{{ _('Permissions') }}</th>
                     <td class="settings_users_details_value" data-bind="text: $root.access.permissionList($data)"></td>
                 </tr>
-                <tr data-bind="visible: apikey">
-                    <th class="settings_users_details_key">{{ _('API Key') }}</th>
-                    <td class="settings_users_details_value"><span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard')|edq }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fas fa-copy"></i></a></td>
-                </tr>
             </table>
         </td>
         <td class="settings_users_active"><i class="far" data-bind="css: { 'fa-check-square': active, 'fa-square': !active }"></i></td>
         <td class="settings_users_actions">
-            <a href="#" class="fas fa-pencil-alt" title="{{ _('Update User')|edq }}" data-bind="click: function() { $root.access.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fas fa-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.access.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="far fa-trash-alt" title="{{ _('Delete user') }}" data-bind="click: function() { $root.access.users.removeUser($data); }"></a>
+            <a href="javascript:void()" class="fas fa-pencil-alt" title="{{ _('Update User')|edq }}" data-bind="click: function() { $root.access.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="javascript:void()" class="fas fa-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.access.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="javascript:void()" class="far fa-trash-alt" title="{{ _('Delete user') }}" data-bind="css: { disabled: !$root.access.users.isDeleteUserEnabled($data)}, enabled: $root.access.users.isDeleteUserEnabled($data), click: function() { if ($root.access.users.isDeleteUserEnabled($data)) { $root.access.users.confirmRemoveUser($data); } }"></a>
         </td>
     </tr>
     </tbody>
@@ -138,6 +134,12 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal" onsubmit="return false;">
+            <div class="control-group" data-bind="visible: $root.access.loginState.username() == $root.access.users.editor.name()">
+                <label class="control-label" for="settings-usersDialogChangePasswordPasswordC">{{ _('Current Password') }}</label>
+                <div class="controls">
+                    <input type="password" class="input-block-level" id="settings-usersDialogChangePasswordPasswordC" data-bind="value: $root.access.users.editor.currentPassword" required>
+                </div>
+            </div>
             <div class="control-group">
                 <label class="control-label" for="settings-usersDialogChangePasswordPassword1">{{ _('New Password') }}</label>
                 <div class="controls">

@@ -4,20 +4,20 @@ import logging as log
 import os
 import sys
 
-from ._version import get_versions
+from ._version import get_data as get_version_data
 
 # ~~ version
 
 
-versions = get_versions()
+version_data = get_version_data()
 
-__version__ = versions["version"]
-__branch__ = versions.get("branch", None)
+__version__ = version_data["version"]
+__branch__ = version_data["branch"]
 __display_version__ = __version__
-__revision__ = versions.get("full-revisionid", versions.get("full", None))
+__revision__ = version_data["revision"]
 
-del versions
-del get_versions
+del version_data
+del get_version_data
 
 # figure out current umask - sadly only doable by setting a new one and resetting it, no query method
 UMASK = os.umask(0)
@@ -124,7 +124,7 @@ def init_platform(
     )
     settings_incomplete_startup_safemode = (
         "incomplete_startup"
-        if settings.getBoolean(["server", "incompleteStartup"])
+        if os.path.exists(os.path.join(settings._basedir, ".incomplete_startup"))
         and not settings.getBoolean(["server", "ignoreIncompleteStartup"])
         else None
     )

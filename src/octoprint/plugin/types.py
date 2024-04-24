@@ -119,8 +119,7 @@ class OctoPrintPlugin(Plugin):
 
         import os
 
-        if not os.path.isdir(self._data_folder):
-            os.makedirs(self._data_folder)
+        os.makedirs(self._data_folder, exist_ok=True)
         return self._data_folder
 
     def on_plugin_pending_uninstall(self):
@@ -1606,11 +1605,28 @@ class SettingsPlugin(OctoPrintPlugin):
     Including the ``SettingsPlugin`` mixin allows plugins to store and retrieve their own settings within OctoPrint's
     configuration.
 
-    Plugins including the mixing will get injected an additional property ``self._settings`` which is an instance of
+    Plugins including the mixin will get injected an additional property ``self._settings`` which is an instance of
     :class:`PluginSettingsManager` already properly initialized for use by the plugin. In order for the manager to
     know about the available settings structure and default values upon initialization, implementing plugins will need
     to provide a dictionary with the plugin's default settings through overriding the method :func:`get_settings_defaults`.
     The defined structure will then be available to access through the settings manager available as ``self._settings``.
+
+    .. note::
+
+       Use the settings only to store configuration data or information that is relevant to the UI. Anything in the settings
+       is part of the hash that is used to determine whether a client's copy of the UI is still up to date or not. If you
+       store unrelated and possibly often changing information in the settings, you will force the client to reload the
+       UI without visible changes, which will lead to a bad user experience.
+
+       You may store additional data in your plugin's data folder instead, which is not part of the hash and whose path
+       can be retrieved through :func:`~
+       octoprint.plugin.types.OctoPrintPlugin.get_plugin_data_folder`, e.g.:
+
+       .. code-block:: python
+
+          data_folder = self.get_plugin_data_folder()
+          with open(os.path.join(data_folder, "some_file.txt"), "w") as f:
+            f.write("some data")
 
     If your plugin needs to react to the change of specific configuration values on the fly, e.g. to adjust the log level
     of a logger when the user changes a corresponding flag via the settings dialog, you can override the

@@ -3,16 +3,16 @@
     <p><strong>{{ _('Warning:') }}</strong> {{ _('For changes to take effect you must restart OctoPrint after saving.') }}</p>
 </div>
 <div class="row-fluid">
-    <div class="span4">{{ _('Event') }}</div>
-    <div class="span6">{{ _('Name') }}</div>
+    <div class="span4">{{ _('Name') }}</div>
+    <div class="span6">{{ _('Event(s)') }}</div>
     <div class="span2 btn-group">
         <button class="btn btn-mini" data-bind="click: addEvent"><i class="fa fa-plus"></i> {{ _('Add') }}</button>
     </div>
 </div>
 <div data-bind="foreach: settingsViewModel.settings.plugins.eventmanager.subscriptions" class="row-fluid">
     <div class="row-fluid">
-        <div class="span4" data-bind="text: event"></div>
-        <div class="span6" data-bind="attr: {title: command}, text: name() ? name() : command()"></div>
+        <div class="span4" data-bind="attr: {title: command}, text: name() ? name() : command()"></div>
+        <div class="span6" data-bind="text: event"></div>
         <div class="span2 btn-group">
             <button class="btn btn-mini" data-bind="click: $root.editEvent"><i class="fa fa-pencil"></i></button>
             <button class="btn btn-mini btn-danger" data-bind="click: $root.removeEvent"><i class="fa fa-trash-alt"></i></button>
@@ -27,16 +27,15 @@
     </div>
     <div class="modal-body">
         <div class="control-group">
-            <label class="control-label">{{ _('Event') }}</label>
-            <div class="controls">
-                <select class="input-block-level" data-bind="value: event, options: $root.settingsViewModel.settings.plugins.eventmanager.availableEvents().sort(), optionsCaption: 'Select Event', valueAllowUnset: true"></select>
-            </div>
-        </div>
-
-        <div class="control-group">
             <label class="control-label">{{ _('Name') }}</label>
             <div class="controls">
                 <input type="text" class="input-block-level" data-bind="value: name" />
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label">{{ _('Event(s)') }}</label>
+            <div class="controls">
+                <select class="input-block-level" data-bind="selectedOptions: event, options: $root.settingsViewModel.settings.plugins.eventmanager.availableEvents().sort(), valueAllowUnset: true" multiple="multiple" size="5"></select>
             </div>
         </div>
         <div class="control-group">

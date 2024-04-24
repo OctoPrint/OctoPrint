@@ -1,0 +1,27 @@
+
+<h3>{{ _('Instance stats') }}</h3>
+
+<!-- ko if: statsFetched() -->
+<dl class="dl-horizontal">
+    <dt>{{ _('Collecting since') }}</dt>
+    <dd data-bind="text: collectingSince"></dd>
+
+    <dt>{{ _('Collection started on') }}</dt>
+    <dd data-bind="text: collectionVersion"></dd>
+
+    <dt>{{ _('Versions seen') }}</dt>
+    <dd data-bind="text: stats.seen_versions"></dd>
+
+    <dt>{{ _('Number of server starts') }}</dt>
+    <dd data-bind="text: stats.server_starts"></dd>
+
+    <dt>{{ _('Prints') }}</dt>
+    <dd data-bind="text: prints"></dd>
+
+    <dt data-bind="visible: stats.print_duration_total">{{ _('Total print duration') }}</dt>
+    <dd data-bind="visible: stats.print_duration_total, text: duration"></dd>
+
+    <dt data-bind="visible: stats.longest_print_duration">{{ _('Longest print') }}</dt>
+    <dd data-bind="visible: stats.longest_print_duration, text: longestPrint"></dd>
+</dl>
+<!-- /ko -->

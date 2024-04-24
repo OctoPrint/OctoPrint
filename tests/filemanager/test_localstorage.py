@@ -715,6 +715,31 @@ class LocalStorageTest(unittest.TestCase):
         self.assertEqual(1, len(stl_metadata["links"]))
 
     @data(
+        ("", ("", "")),
+        ("/", ("", "")),
+        ("some_file.gco", ("", "some_file.gco")),
+        ("/some_file.gco", ("", "some_file.gco")),
+        ("some/folder/and/some file.gco", ("some/folder/and", "some file.gco")),
+        ("/some/folder/and/some file.gco", ("some/folder/and", "some file.gco")),
+    )
+    @unpack
+    def test_split_path(self, input, expected):
+        actual = self.storage.split_path(input)
+        self.assertEqual(expected, actual)
+
+    @data(
+        (("", ""), ""),
+        (("", "some_file.gco"), "some_file.gco"),
+        (("/", "some_file.gco"), "some_file.gco"),
+        (("some/folder/and", "some file.gco"), "some/folder/and/some file.gco"),
+        (("/some/folder/and", "some file.gco"), "some/folder/and/some file.gco"),
+    )
+    @unpack
+    def test_join_path(self, input, expected):
+        actual = self.storage.join_path(*input)
+        self.assertEqual(expected, actual)
+
+    @data(
         ("some_file.gco", "some_file.gco", False),
         ("some file.gco", "some file.gco", False),
         (
@@ -722,14 +747,14 @@ class LocalStorageTest(unittest.TestCase):
             "some_file with (parentheses) and ümläuts and digits 123.gco",
             False,
         ),
-        ("pengüino pequeño.stl", "pengüino pequeño.stl", False),
+        ("there is no b in häußge.gco", "there is no b in häußge.gco", False),
         ("some file.gco", "some_file.gco", True),
         (
             "some_file with (parentheses) and ümläuts and digits 123.gco",
             "some_file_with_(parentheses)_and_umlauts_and_digits_123.gco",
             True,
         ),
-        ("pengüino pequeño.stl", "penguino_pequeno.stl", True),
+        ("there is no b in häußge.gco", "there_is_no_b_in_haussge.gco", True),
     )
     @unpack
     def test_sanitize_name(self, input, expected, really_universal):

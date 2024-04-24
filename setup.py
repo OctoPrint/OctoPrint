@@ -13,8 +13,6 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from distutils.command.build_py import build_py as _build_py
-
 import setuptools  # noqa: F401,E402
 
 try:
@@ -22,12 +20,10 @@ try:
 except ImportError:
     octoprint_setuptools = None
 
-import versioneer  # noqa: F401
-
 # ----------------------------------------------------------------------------------------
 
 # Supported python versions
-PYTHON_REQUIRES = ">=3.7, <3.12"
+PYTHON_REQUIRES = ">=3.7, <3.13"
 
 # Requirements for setup.py
 SETUP_REQUIRES = []
@@ -36,49 +32,51 @@ SETUP_REQUIRES = []
 bundled_plugins = [
     "OctoPrint-FileCheck>=2021.2.23",
     "OctoPrint-FirmwareCheck>=2021.10.11",
-    "OctoPrint-PiSupport>=2023.5.24",
+    "OctoPrint-PiSupport>=2023.10.10",
 ]
 core_deps = [
-    "argon2_cffi>=21.3.0,<22",
+    "argon2-cffi>=23.1.0",
     "Babel>=2.12.1,<2.13",  # breaking changes can happen on minor version increases
     "cachelib>=0.10.2,<0.11",
-    "Click>=8.1.3,<9",
+    "Click>=8.1.7,<9",
     "colorlog>=6.7.0,<7",
-    "emoji>=2.2.0,<3",
-    "feedparser>=6.0.10,<7",
+    "emoji>=2.10.1,<3",
+    "feedparser>=6.0.11,<7",
     "filetype>=1.2.0,<2",
-    "Flask-Assets>=2.0,<3",
+    "Flask-Assets>=2.1.0,<3",
     "Flask-Babel>=3.1.0,<4",
-    "Flask-Login>=0.6.2,<0.7",  # breaking changes can happen on minor version increases
-    "Flask-Limiter>=3.3.0,<4",
+    "Flask-Login>=0.6.3,<0.7",  # breaking changes can happen on minor version increases
+    "Flask-Limiter>=3.5.0,<4",
     "flask>=2.2.3,<2.3",  # breaking changes can happen on minor version increases (with deprecation warnings)
-    "frozendict>=2.3.7,<3",
+    "frozendict>=2.4.0,<3",
     "future>=0.18.3,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
-    "markdown>=3.4.3,<4",
+    "markdown>=3.4.4,<3.5",  # later versions require Python 3.8+
     "netaddr>=0.8,<0.9",  # changelog hints at breaking changes on minor version increases
-    "netifaces>=0.11,<1",
+    "netifaces2>=0.0.21,<0.1",
     "passlib>=1.7.4,<2",
     "pathvalidate>=2.5.2,<3",
     "pkginfo>=1.9.6,<2",
-    "psutil>=5.9.4,<6",
+    "psutil>=5.9.8,<6",
     "pydantic==1.10.12",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
     "pylru>=1.2.1,<2",
     "pyserial>=3.5,<4",
+    "pytz",
     "PyYAML>=6.0.1,<7",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
-    "requests>=2.28.2,<3",
+    "requests>=2.31.0,<3",
     "sarge==0.1.7.post1",
     "semantic_version>=2.10.0,<3",
-    "sentry-sdk>=1.19.1,<2",
-    "tornado>=6.2,<7",
+    "sentry-sdk>=1.40.0,<2",
+    "setuptools",
+    "tornado>=6.2,<6.3",  # later versions require Python 3.8+
     "watchdog>=2.3.1,<3",
-    "websocket-client>=1.5.1,<2",
+    "websocket-client==1.6.1",  # later versions require Python 3.8+, breaking changes can happen on patch version increases, changelog incomplete
     "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
     "wrapt>=1.15,<1.16",
-    "zeroconf==0.39.4",  # final version to include universal wheel, later takes ages to compiles on rpi, piwheels has no wheels for latest either
-    "zipstream-ng>=1.5.0,<2.0.0",
+    "zeroconf~=0.127",  # breaking changes can happen on minor version increases (despite semantic versioning)
+    "zipstream-ng>=1.7.1,<2.0.0",
 ]
 vendored_deps = [
-    "blinker>=1.6.1,<2",  # dependency of flask_principal
+    "blinker>=1.6.3,<1.7.0",  # dependency of flask_principal, later versions require Python 3.8+
     "class-doc>=0.2.6,<0.3",  # dependency of with_attrs_docs
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
@@ -100,7 +98,7 @@ EXTRA_REQUIRES = {
     "develop": [
         # Testing dependencies
         "ddt",
-        "mock>=5.0.1,<6",
+        "mock>=5.1.0,<6",
         "pytest-doctest-custom>=1.0.0,<2",
         "pytest>=7.3.0,<8",
         # pre-commit
@@ -109,7 +107,7 @@ EXTRA_REQUIRES = {
         "pyinstrument",
     ],
     # Dependencies for developing OctoPrint plugins
-    "plugins": ["cookiecutter>=2.1.1,<3"],
+    "plugins": ["cookiecutter>=2.5.0,<3"],  # update plugin tutorial when updating this
     # Dependencies for building the documentation
     "docs": [
         "sphinx",
@@ -250,11 +248,23 @@ class ScanDepsCommand(setuptools.Command):
             print_update(update)
 
 
-def get_cmdclass():
-    # make sure these are always available, even when run by dependabot
-    global versioneer, octoprint_setuptools, md_to_html_build_py_factory
+def get_version_and_cmdclass(pkg_path):
+    import os
+    from importlib.util import module_from_spec, spec_from_file_location
 
-    cmdclass = versioneer.get_cmdclass()
+    spec = spec_from_file_location("version", os.path.join(pkg_path, "_version.py"))
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    data = module.get_data()
+    return data["version"], module.get_cmdclass(pkg_path)
+
+
+def get_cmdclass(cmdclass):
+    # make sure these are always available, even when run by dependabot
+    global octoprint_setuptools, md_to_html_build_py_factory
+
+    from setuptools.command.build_py import build_py as _build_py
 
     if octoprint_setuptools:
         # add clean command
@@ -288,7 +298,7 @@ def get_cmdclass():
                 "THIRDPARTYLICENSES.md",
             ]
         },
-        cmdclass["build_py"] if "build_py" in cmdclass else _build_py,
+        cmdclass.get("build_py", _build_py),
     )
 
     cmdclass["scan_deps"] = ScanDepsCommand
@@ -312,85 +322,67 @@ def package_data_dirs(source, sub_folders):
     return dirs
 
 
-def params():
-    # make sure these are always available, even when run by dependabot
-    global versioneer, get_cmdclass, read_file_contents, here, PYTHON_REQUIRES, SETUP_REQUIRES, INSTALL_REQUIRES, EXTRA_REQUIRES
-
-    name = "OctoPrint"
-    version = versioneer.get_version()
-    cmdclass = get_cmdclass()
-
-    description = "The snappy web interface for your 3D printer"
-    long_description = read_file_contents(os.path.join(here, "README.md"))
-    long_description_content_type = "text/markdown"
-
-    python_requires = PYTHON_REQUIRES
-    setup_requires = SETUP_REQUIRES
-    install_requires = INSTALL_REQUIRES
-    extras_require = EXTRA_REQUIRES
-
-    classifiers = [
-        "Development Status :: 5 - Production/Stable",
-        "Environment :: Web Environment",
-        "Framework :: Flask",
-        "Intended Audience :: Developers",
-        "Intended Audience :: Education",
-        "Intended Audience :: End Users/Desktop",
-        "Intended Audience :: Manufacturing",
-        "Intended Audience :: Other Audience",
-        "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: GNU Affero General Public License v3",
-        "Natural Language :: English",
-        "Natural Language :: German",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
-        "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: Implementation :: CPython",
-        "Programming Language :: JavaScript",
-        "Topic :: Printing",
-        "Topic :: System :: Monitoring",
-    ]
-    author = "Gina Häußge"
-    author_email = "gina@octoprint.org"
-    url = "https://octoprint.org"
-    license = "GNU Affero General Public License v3"
-    keywords = "3dprinting 3dprinter 3d-printing 3d-printer octoprint"
-
-    project_urls = {
-        "Community Forum": "https://community.octoprint.org",
-        "Bug Reports": "https://github.com/OctoPrint/OctoPrint/issues",
-        "Source": "https://github.com/OctoPrint/OctoPrint",
-        "Funding": "https://support.octoprint.org",
-    }
-
-    packages = setuptools.find_packages(where="src")
-    package_dir = {
-        "": "src",
-    }
-    package_data = {
-        "octoprint": package_data_dirs(
-            "src/octoprint", ["static", "templates", "plugins", "translations"]
-        )
-        + ["util/piptestballoon/setup.py"]
-    }
-
-    include_package_data = True
-    zip_safe = False
-
-    if os.environ.get("READTHEDOCS", None) == "True":
-        # we can't tell read the docs to please perform a pip install -e .[docs], so we help
-        # it a bit here by explicitly adding the docs dependencies
-        install_requires = install_requires + extras_require["docs"]
-
-    entry_points = {"console_scripts": ["octoprint = octoprint:main"]}
-
-    return locals()
-
-
-setuptools.setup(**params())
+if __name__ == "__main__":
+    version, cmdclass = get_version_and_cmdclass(os.path.join("src", "octoprint"))
+    setuptools.setup(
+        name="OctoPrint",
+        version=version,
+        cmdclass=get_cmdclass(cmdclass),
+        description="The snappy web interface for your 3D printer",
+        long_description=read_file_contents(os.path.join(here, "README.md")),
+        long_description_content_type="text/markdown",
+        python_requires=PYTHON_REQUIRES,
+        setup_requires=SETUP_REQUIRES,
+        install_requires=INSTALL_REQUIRES,
+        extras_require=EXTRA_REQUIRES,
+        classifiers=[
+            "Development Status :: 5 - Production/Stable",
+            "Environment :: Web Environment",
+            "Framework :: Flask",
+            "Intended Audience :: Developers",
+            "Intended Audience :: Education",
+            "Intended Audience :: End Users/Desktop",
+            "Intended Audience :: Manufacturing",
+            "Intended Audience :: Other Audience",
+            "Intended Audience :: Science/Research",
+            "License :: OSI Approved :: GNU Affero General Public License v3",
+            "Natural Language :: English",
+            "Natural Language :: German",
+            "Operating System :: OS Independent",
+            "Programming Language :: Python",
+            "Programming Language :: Python :: 3",
+            "Programming Language :: Python :: 3.7",
+            "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
+            "Programming Language :: Python :: 3.10",
+            "Programming Language :: Python :: 3.11",
+            "Programming Language :: Python :: 3.12",
+            "Programming Language :: Python :: 3 :: Only",
+            "Programming Language :: Python :: Implementation :: CPython",
+            "Programming Language :: JavaScript",
+            "Topic :: Printing",
+            "Topic :: System :: Monitoring",
+        ],
+        author="Gina Häußge",
+        author_email="gina@octoprint.org",
+        url="https://octoprint.org",
+        license="GNU Affero General Public License v3",
+        keywords="3dprinting 3dprinter 3d-printing 3d-printer octoprint",
+        project_urls={
+            "Community Forum": "https://community.octoprint.org",
+            "Bug Reports": "https://github.com/OctoPrint/OctoPrint/issues",
+            "Source": "https://github.com/OctoPrint/OctoPrint",
+            "Funding": "https://support.octoprint.org",
+        },
+        packages=setuptools.find_packages(where="src"),
+        package_dir={"": "src"},
+        package_data={
+            "octoprint": package_data_dirs(
+                "src/octoprint", ["static", "templates", "plugins", "translations"]
+            )
+            + ["util/piptestballoon/setup.py"]
+        },
+        include_package_data=True,
+        zip_safe=False,
+        entry_points={"console_scripts": ["octoprint = octoprint:main"]},
+    )

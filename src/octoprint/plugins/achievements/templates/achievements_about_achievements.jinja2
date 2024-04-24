@@ -1,0 +1,18 @@
+<h3>{{ _('Achievements') }} (<span data-bind="text: achievedAchievements"></span>/<span data-bind="text: totalAchievements"></span>)</h3>
+
+<div class="achievement-list" data-bind="foreach: achievements">
+    <div class="achievement-item" data-bind="css: {achieved: $data.achieved}">
+        <div class="achievement-logo">
+            <svg viewBox="0 0 24 24">
+                <use data-bind="attr: {'href': '#achievement-logo-' + $data.logo}"></use>
+            </svg>
+        </div>
+        <div class="achievement-info">
+            <strong data-bind="text: name"></strong> <i class="fa-solid fa-user-secret" data-bind="visible: hidden"></i><br>
+            <small><em data-bind="text: description"></em></small><br>
+            <small data-bind="visible: $data.achieved">{{ _('Unlocked:') }} <span data-bind="text: formatDate($data.achieved)"></span></small>
+        </div>
+    </div>
+</div>
+
+<p data-bind="visible: hiddenAchievements"><span data-bind="text: hiddenAchievementsText"></span> <i class="fa-solid fa-user-secret"></i></p>

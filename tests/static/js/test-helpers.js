@@ -106,6 +106,14 @@ QUnit.cases(
                 expected: "-"
             },
             {
+                title: "NaNTemperature",
+                input: NaN,
+                showF: undefined,
+                useUnicode: undefined,
+                offThreshold: undefined,
+                expected: "-"
+            },
+            {
                 title: "TemperatureUnderOffThreshold",
                 input: 1.0,
                 showF: undefined,
@@ -1081,4 +1089,46 @@ QUnit.cases(
 ).test("formatDate", function (params, assert) {
     var result = formatDate(params.unixTimestamp, params.options);
     assert.equal(result, params.expected, "As expected: " + String(params.expected));
+});
+
+QUnit.module("rsplit");
+QUnit.cases(
+    (function () {
+        var cases = [];
+
+        var params = [
+            {
+                title: "Basic",
+                text: "a:b:c",
+                sep: ":",
+                limit: undefined,
+                expected: ["a", "b", "c"]
+            },
+            {
+                title: "With Limit",
+                text: "a:b:c",
+                sep: ":",
+                limit: 1,
+                expected: ["a:b", "c"]
+            },
+            {
+                title: "No Match",
+                text: "a-b-c",
+                sep: ":",
+                limit: undefined,
+                expected: ["a-b-c"]
+            }
+        ];
+
+        var param, i;
+        for (i = 0; i < params.length; i++) {
+            param = params[i];
+            cases.push(param);
+        }
+
+        return cases;
+    })()
+).test("rsplit", function (params, assert) {
+    var result = rsplit(params.text, params.sep, params.limit);
+    assert.deepEqual(result, params.expected, "As expected: " + String(params.expected));
 });

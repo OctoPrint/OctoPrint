@@ -13,7 +13,11 @@ import octoprint.util
 from octoprint.access.permissions import Permissions
 from octoprint.server import pluginManager, printer, userManager
 from octoprint.server.api import NO_CONTENT, api
-from octoprint.server.util.flask import no_firstrun_access, with_revalidation_checking
+from octoprint.server.util.flask import (
+    credentials_checked_recently,
+    no_firstrun_access,
+    with_revalidation_checking,
+)
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.timelapse import configure_timelapse
 from octoprint.webcams import (
@@ -91,6 +95,9 @@ def _etag(lm=None):
     # and likewise if the role of the user changes
     hash_update(repr(roles))
 
+    # of if the user reauthenticates
+    hash_update(repr(credentials_checked_recently()))
+
     return hash.hexdigest()
 
 
@@ -118,7 +125,9 @@ def getSettings():
 
     data = {
         "api": {
-            "key": s.get(["api", "key"]) if Permissions.ADMIN.can() else None,
+            "key": s.get(["api", "key"])
+            if Permissions.ADMIN.can() and credentials_checked_recently()
+            else None,
             "allowCrossOrigin": s.get(["api", "allowCrossOrigin"]),
         },
         "appearance": {
@@ -148,6 +157,7 @@ def getSettings():
             ),
             "g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
             "autoUppercaseBlacklist": s.get(["feature", "autoUppercaseBlacklist"]),
+            "enableDragDropUpload": s.getBoolean(["feature", "enableDragDropUpload"]),
         },
         "gcodeAnalysis": {
             "runAt": s.get(["gcodeAnalysis", "runAt"]),
@@ -457,7 +467,7 @@ def setSettings():
 
 @api.route("/settings/apikey", methods=["POST"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
+@Permissions.ADMIN.require(403)
 def generateApiKey():
     apikey = settings().generateApiKey()
     return jsonify(apikey=apikey)
@@ -465,7 +475,7 @@ def generateApiKey():
 
 @api.route("/settings/apikey", methods=["DELETE"])
 @no_firstrun_access
-@Permissions.SETTINGS.require(403)
+@Permissions.ADMIN.require(403)
 def deleteApiKey():
     settings().deleteApiKey()
     return NO_CONTENT
@@ -708,6 +718,11 @@ def _saveSettings(data):
             s.set(
                 ["feature", "autoUppercaseBlacklist"],
                 data["feature"]["autoUppercaseBlacklist"],
+            )
+        if "enableDragDropUpload" in data["feature"]:
+            s.setBoolean(
+                ["feature", "enableDragDropUpload"],
+                data["feature"]["enableDragDropUpload"],
             )
 
     if "gcodeAnalysis" in data:

@@ -64,13 +64,15 @@ We'll start at the most basic form a plugin can take - just a few simple lines o
 Saving this as ``helloworld.py`` in ``~/.octoprint/plugins`` yields you something resembling these log entries upon server startup::
 
    (venv) $ octoprint serve
-   2015-01-27 11:14:35,124 - octoprint.server - INFO - Starting OctoPrint 1.2.0-dev-448-gd96e56e (devel branch)
+   2023-11-20 11:14:35,122 - octoprint.startup - INFO - ******************************************************************************
+   2023-11-20 11:14:35,124 - octoprint.startup - INFO - Starting OctoPrint 1.9.3
+   2023-11-20 11:14:35,124 - octoprint.startup - INFO - ******************************************************************************
    [...]
-   2015-01-27 11:14:35,124 - octoprint.plugin.core - INFO - Loading plugins from /home/pi/.octoprint/plugins, /home/pi/OctoPrint/src/octoprint/plugins and installed plugin packages...
+   2023-11-20 11:14:35,124 - octoprint.plugin.core - INFO - Loading plugins from /home/gina/.octoprint/plugins, /home/gina/devel/OctoPrint/src/octoprint/plugins and installed plugin packages...
    [...]
-   2015-01-27 11:14:36,135 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
+   2023-11-20 11:14:36,135 - octoprint.plugin.core - INFO - 19 plugin(s) registered with the system:
    [...]
-   | Hello World (1.0.0) = /home/pi/.octoprint/plugins/helloworld.py
+   | Hello World (1.0.0) = /home/gina/.octoprint/plugins/helloworld.py
    [...]
 
 OctoPrint found that plugin in the folder and took a look into it. The name and the version it displays in that log
@@ -106,7 +108,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
 
 and restart OctoPrint. You now get this output in the log::
 
-   2015-01-27 11:17:10,792 - octoprint.plugins.helloworld - INFO - Hello World!
+   2023-11-20 11:17:10,792 - octoprint.plugins.helloworld - INFO - Hello World!
 
 Neat, isn't it? We added a custom class that subclasses one of OctoPrint's :ref:`plugin mixins <sec-plugins-mixins>`
 with :class:`~octoprint.plugin.StartupPlugin` and another control property, ``__plugin_implementation__``, that instantiates
@@ -143,7 +145,7 @@ So let's begin. We'll use the `cookiecutter <https://github.com/audreyr/cookiecu
 here. This should already be installed if you used the ``plugins`` extra while installing OctoPrint.  However,
 you may install it with::
 
-   (venv) $ pip install "cookiecutter>=1.4,<1.7"
+   (venv) $ pip install "cookiecutter>=2.1.1,<3"
 
 Then we can use the ``octoprint dev plugin:new`` command [#f1]_ to generate a new OctoPrint plugin skeleton for us::
 
@@ -229,15 +231,74 @@ configuration parameters for you:
 
 .. code-block:: python
 
+   # coding=utf-8
+
+   ########################################################################################################################
+   ### Do not forget to adjust the following variables to your own plugin.
+
+   # The plugin's identifier, has to be unique
    plugin_identifier = "helloworld"
+
+   # The plugin's python package, should be "octoprint_<plugin identifier>", has to be unique
    plugin_package = "octoprint_helloworld"
+
+   # The plugin's human readable name. Can be overwritten within OctoPrint's internal data via __plugin_name__ in the
+   # plugin module
    plugin_name = "OctoPrint-Helloworld"
+
+   # The plugin's version. Can be overwritten within OctoPrint's internal data via __plugin_version__ in the plugin module
    plugin_version = "1.0.0"
+
+   # The plugin's description. Can be overwritten within OctoPrint's internal data via __plugin_description__ in the plugin
+   # module
    plugin_description = """A quick "Hello World" example plugin for OctoPrint"""
-   plugin_author = "Your Name"
+
+   # The plugin's author. Can be overwritten within OctoPrint's internal data via __plugin_author__ in the plugin module
+   plugin_author = "Your name"
+
+   # The plugin's author's mail address.
    plugin_author_email = "you@somewhere.net"
+
+   # The plugin's homepage URL. Can be overwritten within OctoPrint's internal data via __plugin_url__ in the plugin module
    plugin_url = "https://github.com/yourGithubName/OctoPrint-Helloworld"
+
+   # The plugin's license. Can be overwritten within OctoPrint's internal data via __plugin_license__ in the plugin module
    plugin_license = "AGPLv3"
+
+   # Any additional requirements besides OctoPrint should be listed here
+   plugin_requires = []
+
+   ### --------------------------------------------------------------------------------------------------------------------
+   ### More advanced options that you usually shouldn't have to touch follow after this point
+   ### --------------------------------------------------------------------------------------------------------------------
+
+   # Additional package data to install for this plugin. The subfolders "templates", "static" and "translations" will
+   # already be installed automatically if they exist. Note that if you add something here you'll also need to update
+   # MANIFEST.in to match to ensure that python setup.py sdist produces a source distribution that contains all your
+   # files. This is sadly due to how python's setup.py works, see also http://stackoverflow.com/a/14159430/2028598
+   plugin_additional_data = []
+
+   # Any additional python packages you need to install with your plugin that are not contained in <plugin_package>.*
+   plugin_additional_packages = []
+
+   # Any python packages within <plugin_package>.* you do NOT want to install with your plugin
+   plugin_ignored_packages = []
+
+   # Additional parameters for the call to setuptools.setup. If your plugin wants to register additional entry points,
+   # define dependency links or other things like that, this is the place to go. Will be merged recursively with the
+   # default setup parameters as provided by octoprint_setuptools.create_plugin_setup_parameters using
+   # octoprint.util.dict_merge.
+   #
+   # Example:
+   #     plugin_requires = ["someDependency==dev"]
+   #     additional_setup_parameters = {"dependency_links": ["https://github.com/someUser/someRepo/archive/master.zip#egg=someDependency-dev"]}
+   # "python_requires": ">=3,<4" blocks installation on Python 2 systems, to prevent confused users and provide a helpful error.
+   # Remove it if you would like to support Python 2 as well as 3 (not recommended).
+   additional_setup_parameters = {"python_requires": ">=3,<4"}
+
+   ########################################################################################################################
+
+   # ... remaining setup.py content ...
 
 Now all that's left to do is to move our ``helloworld.py`` into the ``octoprint_helloworld`` folder and renaming it to
 ``__init__.py``. Make sure to delete the copy under ``~/.octoprint/plugins`` in the process, including the ``.pyc`` file!
@@ -249,23 +310,34 @@ discoverable by OctoPrint, however we don't have to reinstall it after any chang
 to your OctoPrint installation::
 
    (venv) $ octoprint dev plugin:install
-   running develop
-   running egg_info
-   creating OctoPrint_HelloWorld.egg-info
+   >> /home/gina/.pyenv/versions/3.11.2/envs/octoprint-py311/bin/python -m pip install -e .
+   Obtaining file:///home/gina/devel/OctoPrint-Helloworld
+
+     Preparing metadata (setup.py): started
+
+     Preparing metadata (setup.py): finished with status 'done'
+
    [...]
-   Finished processing dependencies for OctoPrint-HelloWorld==1.0.0
+
+   Installing collected packages: OctoPrint-Helloworld
+
+     Running setup.py develop for OctoPrint-Helloworld
+
+   Successfully installed OctoPrint-Helloworld-0.1.0
 
 Restart OctoPrint. Your plugin should still be properly discovered and the log line should be printed::
 
-   2015-01-27 13:43:34,134 - octoprint.server - INFO - Starting OctoPrint 1.2.0-dev-448-gd96e56e (devel branch)
+   2023-11-20 13:43:34,132 - octoprint.startup - INFO - ******************************************************************************
+   2023-11-20 13:43:34,134 - octoprint.startup - INFO - Starting OctoPrint 1.9.3
+   2023-11-20 13:43:34,134 - octoprint.startup - INFO - ******************************************************************************
    [...]
-   2015-01-27 13:43:34,134 - octoprint.plugin.core - INFO - Loading plugins from /home/pi/.octoprint/plugins, /home/pi/OctoPrint/src/octoprint/plugins and installed plugin packages...
+   2023-11-20 13:43:34,134 - octoprint.plugin.core - INFO - Loading plugins from /home/gina/.octoprint/plugins, /home/gina/devel/OctoPrint/src/octoprint/plugins and installed plugin packages...
    [...]
-   2015-01-27 13:43:34,818 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
+   2023-11-20 13:43:34,818 - octoprint.plugin.core - INFO - 19 plugin(s) registered with the system:
    [...]
-   | Hello World (1.0.0) = /home/pi/devel/OctoPrint-HelloWorld/octoprint_helloworld
+   | Hello World (1.0.0) = /home/gina/devel/OctoPrint-HelloWorld/octoprint_helloworld
    [...]
-   2015-01-27 13:43:38,997 - octoprint.plugins.helloworld - INFO - Hello World!
+   2023-11-20 13:43:38,997 - octoprint.plugins.helloworld - INFO - Hello World!
 
 Looks like it still works!
 
@@ -282,9 +354,20 @@ of information now defined twice:
 .. code-block:: python
    :caption: setup.py
 
-   plugin_name = "OctoPrint-HelloWorld"
+   # ...
+
+   # The plugin's human readable name. Can be overwritten within OctoPrint's internal data via __plugin_name__ in the
+   # plugin module
+   plugin_name = "OctoPrint-Helloworld"
+
+   # The plugin's version. Can be overwritten within OctoPrint's internal data via __plugin_version__ in the plugin module
    plugin_version = "1.0.0"
-   plugin_description = "A quick \"Hello World\" example plugin for OctoPrint"
+
+   # The plugin's description. Can be overwritten within OctoPrint's internal data via __plugin_description__ in the plugin
+   # module
+   plugin_description = """A quick "Hello World" example plugin for OctoPrint"""
+
+   # ...
 
 The nice thing about our plugin now being a proper Python package is that OctoPrint can and will access the metadata defined
 within ``setup.py``! So, we don't really need to define all this data twice. Remove ``__plugin_name__``, ``__plugin_version__``
@@ -303,9 +386,9 @@ and ``__plugin_description__`` from ``__init__.py``, but leave ``__plugin_implem
 
 and restart OctoPrint::
 
-   2015-01-27 13:46:33,786 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
+   2023-11-20 13:46:33,786 - octoprint.plugin.core - INFO - 19 plugin(s) registered with the system:
    [...]
-   | OctoPrint-HelloWorld (1.0.0) = /home/pi/devel/OctoPrint-HelloWorld/octoprint_helloworld
+   | OctoPrint-HelloWorld (1.0.0) = /home/gina/devel/OctoPrint-HelloWorld/octoprint_helloworld
    [...]
 
 Our "Hello World" Plugin still gets detected fine, but it's now listed under the same name it's installed under,
@@ -327,9 +410,9 @@ Our "Hello World" Plugin still gets detected fine, but it's now listed under the
 
 Restart OctoPrint again::
 
-   2015-01-27 13:48:54,122 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
+   2023-11-20 13:48:54,122 - octoprint.plugin.core - INFO - 19 plugin(s) registered with the system:
    [...]
-   | Hello World (1.0.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
+   | Hello World (1.0.0) = /home/gina/devel/OctoPrint-HelloWorld/octoprint_helloworld
    [...]
 
 Much better! You can override pretty much all of the metadata defined within ``setup.py`` from within your Plugin itself --
@@ -339,7 +422,7 @@ overrides.
 Following the README of the `Plugin Skeleton <https://github.com/OctoPrint/OctoPrint-PluginSkeleton>`_ you could now
 already publish your plugin on Github and it would be directly installable by others using pip::
 
-   (venv) $ pip install https://github.com/yourGithubName/OctoPrint-HelloWorld/archive/master.zip
+   (venv) $ pip install https://github.com/yourGithubName/OctoPrint-HelloWorld/archive/main.zip
 
 But let's add some more features instead.
 
@@ -532,7 +615,7 @@ settings view model into the ``href`` attribute of the link tag:
 
 .. code-block:: html
 
-   <a href="#" data-bind="attr: {href: settings.settings.plugins.helloworld.url}">Hello World!</a>
+   <a href="javascript:void()" data-bind="attr: {href: settings.settings.plugins.helloworld.url}">Hello World!</a>
 
 You might have noticed the quite ugly way to access our plugin's ``url`` property here: ``settings.settings.plugins.helloworld.url``.
 The reason for this is that we'll make our plugin use the existing ``NavigationViewModel`` which holds the
@@ -677,7 +760,7 @@ like so:
 
 Note how we did not add another entry to the return value of :func:`~octoprint.plugin.TemplatePlugin.get_template_configs`.
 Remember how we only added those since we wanted OctoPrint to use existing bindings on our navigation bar and settings
-menu entries? We don't want this this time, and we named our tab template such that OctoPrint will pick it up automatically
+menu entries? We don't want this time, and we named our tab template such that OctoPrint will pick it up automatically
 so we don't have to do anything here.
 
 Then we'll create our custom `Knockout <http://knockoutjs.com/documentation/introduction.html>`_ view model in ``helloworld.js``

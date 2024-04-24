@@ -2,6 +2,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import datetime
 import logging
 
 from flask import (
@@ -27,6 +28,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.events import Events, eventManager
 from octoprint.server import NO_CONTENT
 from octoprint.server.util import (
+    LoginMechanism,
     corsRequestHandler,
     corsResponseHandler,
     csrfRequestHandler,
@@ -41,6 +43,7 @@ from octoprint.server.util.flask import (
     no_firstrun_access,
     passive_login,
     session_signature,
+    to_api_credentials_seen,
 )
 from octoprint.settings import settings as s
 from octoprint.settings import valid_boolean_trues
@@ -329,7 +332,8 @@ def login():
                 identity_changed.send(
                     current_app._get_current_object(), identity=Identity(user.get_id())
                 )
-                session["login_mechanism"] = "http"
+                session["login_mechanism"] = LoginMechanism.PASSWORD
+                session["credentials_seen"] = datetime.datetime.now().timestamp()
 
                 logging.getLogger(__name__).info(
                     "Actively logging in user {} from {}".format(
@@ -345,6 +349,9 @@ def login():
                     additional_private=s().get(["server", "ipCheck", "trustedSubnets"]),
                 )
                 response["_login_mechanism"] = session["login_mechanism"]
+                response["_credentials_seen"] = to_api_credentials_seen(
+                    session["credentials_seen"]
+                )
 
                 r = make_response(jsonify(response))
                 r.delete_cookie("active_logout")

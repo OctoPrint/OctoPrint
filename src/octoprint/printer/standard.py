@@ -11,6 +11,7 @@ import logging
 import os
 import threading
 import time
+from typing import List
 
 from frozendict import frozendict
 
@@ -27,11 +28,20 @@ from octoprint.printer import (
     UnknownScript,
 )
 from octoprint.printer.estimation import PrintTimeEstimator
+from octoprint.schema import BaseModel
 from octoprint.settings import settings
 from octoprint.util import InvariantContainer
 from octoprint.util import comm as comm
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import to_unicode
+
+
+class ErrorInformation(BaseModel):
+    error: str
+    reason: str
+    consequence: str = None
+    faq: str = None
+    logs: List[str] = None
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -74,6 +84,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._posAfterSelect = None
 
         self._firmware_info = None
+        self._error_info = None
 
         # sd handling
         self._sdPrinting = False
@@ -149,7 +160,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 filepos=None,
                 printTime=None,
                 printTimeLeft=None,
-                printTimeOrigin=None,
+                printTimeLeftOrigin=None,
             ),
             current_z=None,
             offsets=self._dict(),
@@ -162,6 +173,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         eventManager().subscribe(
             Events.METADATA_STATISTICS_UPDATED, self._on_event_MetadataStatisticsUpdated
         )
+        eventManager().subscribe(Events.CONNECTED, self._on_event_Connected)
+        eventManager().subscribe(Events.DISCONNECTED, self._on_event_Disconnected)
         eventManager().subscribe(Events.CHART_MARKED, self._on_event_ChartMarked)
 
         self._handle_connect_hooks = plugin_manager().get_hooks(
@@ -184,6 +197,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
     @property
     def firmware_info(self):
         return frozendict(self._firmware_info) if self._firmware_info else None
+
+    @property
+    def error_info(self):
+        return self._error_info.dict() if self._error_info else None
 
     # ~~ handling of PrinterCallbacks
 
@@ -306,6 +323,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     self._selectedFile["user"],
                 )
 
+    # ~~ connection events
+
+    def _on_event_Connected(self, event, data):
+        self._markings.append(
+            {"type": "connected", "label": "Connected", "time": time.time()}
+        )
+
+    def _on_event_Disconnected(self, event, data):
+        self._markings.append(
+            {"type": "disconnected", "label": "Disconnected", "time": time.time()}
+        )
+
     # ~~ chart marking insertions
 
     def _on_event_ChartMarked(self, event, data):
@@ -369,6 +398,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                     f"Exception while handling connect in plugin {name}",
                     extra={"plugin": name},
                 )
+
+        self._error_info = None
 
         eventManager().fire(Events.CONNECTING)
         self._printerProfileManager.select(profile)
@@ -1453,6 +1484,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                             payload["time"] = self._comm.getPrintTime()
                             payload["reason"] = "error"
                             payload["error"] = self._comm.getErrorString()
+                            payload["progress"] = self._comm.getPrintProgress()
 
                             def finalize():
                                 self._fileManager.log_print(
@@ -1504,6 +1536,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             eventManager().fire(Events.DISCONNECTED)
 
         self._setState(state, state_string=state_string, error_string=error_string)
+
+    def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
+        # store error info
+        self._error_info = ErrorInformation(
+            error=error, reason=reason, consequence=consequence, faq=faq, logs=logs
+        )
 
     def on_comm_message(self, message):
         """
@@ -1583,6 +1621,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             self.start_print(pos=self._posAfterSelect, user=user)
 
     def on_comm_print_job_started(self, suppress_script=False, user=None):
+        # clear error info
+        self._error_info = None
+
         self._updateJobUser(
             user
         )  # the final job owner should always be whoever _started_ the job
@@ -1687,10 +1728,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self._setCurrentZ(None)
         self._updateProgressData()
 
+        fileposition = self._comm.getFilePosition() if self._comm else None
+        progress = self._comm.getPrintProgress() if self._comm else None
         payload = self._payload_for_print_job_event(
             position=self._comm.cancel_position.as_dict()
             if self._comm and self._comm.cancel_position
             else None,
+            fileposition=fileposition["pos"] if fileposition else None,
+            progress=progress,
             action_user=user,
         )
         if payload:
@@ -1702,11 +1747,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 {"type": "cancel", "label": "Cancel"},
             )
             self._logger_job.info(
-                "Print job cancelled - origin: {}, path: {}, owner: {}, user: {}".format(
+                "Print job cancelled - origin: {}, path: {}, owner: {}, user: {}, fileposition: {}, position: {}".format(
                     payload.get("origin"),
                     payload.get("path"),
                     payload.get("owner"),
                     payload.get("user"),
+                    payload.get("fileposition"),
+                    payload.get("position"),
                 )
             )
 
@@ -1736,20 +1783,26 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             thread.start()
 
     def on_comm_print_job_paused(self, suppress_script=False, user=None):
+        fileposition = self._comm.getFilePosition() if self._comm else None
+        progress = self._comm.getPrintProgress() if self._comm else None
         payload = self._payload_for_print_job_event(
             position=self._comm.pause_position.as_dict()
             if self._comm and self._comm.pause_position and not suppress_script
             else None,
+            fileposition=fileposition["pos"] if fileposition else None,
+            progress=progress,
             action_user=user,
         )
         if payload:
             eventManager().fire(Events.PRINT_PAUSED, payload)
             self._logger_job.info(
-                "Print job paused - origin: {}, path: {}, owner: {}, user: {}".format(
+                "Print job paused - origin: {}, path: {}, owner: {}, user: {}, fileposition: {}, position: {}".format(
                     payload.get("origin"),
                     payload.get("path"),
                     payload.get("owner"),
                     payload.get("user"),
+                    payload.get("fileposition"),
+                    payload.get("position"),
                 )
             )
             eventManager().fire(
@@ -1865,6 +1918,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         print_job_size=None,
         print_job_user=None,
         position=None,
+        fileposition=None,
+        progress=None,
         action_user=None,
     ):
         if print_job_file is None:
@@ -1906,6 +1961,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         if position is not None:
             result["position"] = position
+
+        if fileposition is not None:
+            result["fileposition"] = fileposition
+
+        if progress is not None:
+            result["progress"] = int(progress * 100)
 
         if print_job_user is not None:
             result["owner"] = print_job_user

@@ -6,6 +6,9 @@ $(function () {
 
         self.onStartup = function () {
             self.dialog = $("#plugin_appkeys_keygenerated");
+            self.dialog.on("hidden", () => {
+                self.resetDialog();
+            });
         };
 
         self.showDialog = function (title, data) {
@@ -40,6 +43,17 @@ $(function () {
 
             self.dialog.modal("show");
         };
+
+        self.resetDialog = () => {
+            if (self.dialog === undefined) return;
+
+            self.dialog.find("#plugin_appkeys_keygenerated_title").text("");
+            self.dialog.find("#plugin_appkeys_keygenerated_user").text("");
+            self.dialog.find("#plugin_appkeys_keygenerated_app").text("");
+            self.dialog.find("#plugin_appkeys_keygenerated_key_text").text("");
+            self.dialog.find("#plugin_appkeys_keygenerated_key_copy").off();
+            self.dialog.find("#plugin_appkeys_keygenerated_key_qrcode").empty();
+        };
     }
 
     function UserAppKeysViewModel(parameters) {
@@ -69,7 +83,7 @@ $(function () {
         self.editorApp = ko.observable();
 
         self.requestData = function () {
-            OctoPrint.plugins.appkeys.getKeys().done(self.fromResponse);
+            return OctoPrint.plugins.appkeys.getKeys().done(self.fromResponse);
         };
 
         self.fromResponse = function (response) {
@@ -81,26 +95,42 @@ $(function () {
         };
 
         self.generateKey = function () {
-            return OctoPrint.plugins.appkeys
-                .generateKey(self.editorApp())
-                .done(self.requestData)
-                .done(function () {
-                    self.editorApp("");
-                });
+            self.loginState.reauthenticateIfNecessary(() => {
+                OctoPrint.plugins.appkeys
+                    .generateKey(self.editorApp())
+                    .done(self.requestData)
+                    .done(function () {
+                        self.editorApp("");
+                    });
+            });
         };
 
-        self.revokeKey = function (key) {
-            var perform = function () {
-                OctoPrint.plugins.appkeys.revokeKey(key).done(self.requestData);
-            };
+        self.revokeKey = (data) => {
+            const app = data.app_id;
 
-            showConfirmationDialog(
-                _.sprintf(
-                    gettext('You are about to revoke the application key "%(key)s".'),
-                    {key: _.escape(key)}
-                ),
-                perform
-            );
+            self.loginState.reauthenticateIfNecessary(() => {
+                showConfirmationDialog(
+                    _.sprintf(
+                        gettext(
+                            "You are about to revoke the application key for %(app)s."
+                        ),
+                        {app: _.escape(app)}
+                    ),
+                    () => {
+                        OctoPrint.plugins.appkeys
+                            .revokeKeyForApp(app)
+                            .done(self.requestData);
+                    }
+                );
+            });
+        };
+
+        self.showKeyDetails = (data) => {
+            self.loginState.reauthenticateIfNecessary(() => {
+                OctoPrint.plugins.appkeys.getKey(data.app_id).done((response) => {
+                    self.dialog.showDialog(gettext("Details"), response.key);
+                });
+            });
         };
 
         self.allowApp = function (token) {
@@ -135,8 +165,10 @@ $(function () {
                         {
                             text: gettext("Allow"),
                             click: function (notice) {
-                                self.allowApp(token);
-                                notice.remove();
+                                self.loginState.reauthenticateIfNecessary(() => {
+                                    self.allowApp(token);
+                                    notice.remove();
+                                });
                             }
                         },
                         {
@@ -245,7 +277,7 @@ $(function () {
         };
 
         self.requestData = function () {
-            OctoPrint.plugins.appkeys.getAllKeys().done(self.fromResponse);
+            return OctoPrint.plugins.appkeys.getAllKeys().done(self.fromResponse);
         };
 
         self.fromResponse = function (response) {
@@ -267,46 +299,65 @@ $(function () {
             self.apps(apps);
         };
 
-        self.generateKey = function () {
-            return OctoPrint.plugins.appkeys
-                .generateKeyForUser(self.editorUser(), self.editorApp())
-                .done(self.requestData)
-                .done(function () {
-                    self.editorUser(self.loginState.username());
-                    self.editorApp("");
-                })
-                .done(function (data) {
-                    self.dialog.showDialog(gettext("New key generated!"), data);
-                });
+        self.showKeyDetails = (data) => {
+            self.loginState.reauthenticateIfNecessary(() => {
+                OctoPrint.plugins.appkeys
+                    .getKey(data.app_id, data.user_id)
+                    .done((response) => {
+                        self.dialog.showDialog(gettext("Details"), response.key);
+                    });
+            });
         };
 
-        self.revokeKey = function (key) {
-            var perform = function () {
-                OctoPrint.plugins.appkeys.revokeKey(key).done(self.requestData);
-            };
+        self.generateKey = function () {
+            self.loginState.reauthenticateIfNecessary(() => {
+                OctoPrint.plugins.appkeys
+                    .generateKeyForUser(self.editorUser(), self.editorApp())
+                    .done(self.requestData)
+                    .done(function () {
+                        self.editorUser(self.loginState.username());
+                        self.editorApp("");
+                    })
+                    .done(function (data) {
+                        self.dialog.showDialog(gettext("New key generated!"), data);
+                    });
+            });
+        };
+
+        self.revokeKey = function (data) {
+            const app = data.app_id;
+            const user = data.user_id;
 
             showConfirmationDialog(
                 _.sprintf(
-                    gettext('You are about to revoke the application key "%(key)s".'),
-                    {key: _.escape(key)}
+                    gettext(
+                        "You are about to revoke the application key for %(app)s for user %(user)s."
+                    ),
+                    {app: _.escape(app), user: _.escape(user)}
                 ),
-                perform
+                () => {
+                    self.loginState.reauthenticateIfNecessary(() => {
+                        OctoPrint.plugins.appkeys
+                            .revokeKeyForApp(app, user)
+                            .done(self.requestData);
+                    });
+                }
             );
         };
 
         self.revokeMarked = function () {
-            var perform = function () {
-                self._bulkRevoke(self.markedForDeletion()).done(function () {
-                    self.markedForDeletion.removeAll();
-                });
-            };
-
             showConfirmationDialog(
                 _.sprintf(
                     gettext("You are about to revoke %(count)d application keys."),
                     {count: self.markedForDeletion().length}
                 ),
-                perform
+                () => {
+                    self.loginState.forceReauthentication(() => {
+                        self._bulkRevoke(self.markedForDeletion()).done(() => {
+                            self.markedForDeletion.removeAll();
+                        });
+                    });
+                }
             );
         };
 
@@ -315,13 +366,22 @@ $(function () {
                 _.uniq(
                     self
                         .markedForDeletion()
-                        .concat(_.map(self.keys.paginatedItems(), "api_key"))
+                        .concat(
+                            _.map(
+                                self.keys.paginatedItems(),
+                                (item) => `${item.user_id}:${item.app_id}`
+                            )
+                        )
                 )
             );
         };
 
         self.markAllForDeletion = function () {
-            self.markedForDeletion(_.uniq(_.map(self.keys.allItems, "api_key")));
+            self.markedForDeletion(
+                _.uniq(
+                    _.map(self.keys.allItems, (item) => `${item.user_id}:${item.app_id}`)
+                )
+            );
         };
 
         self.markAllByUserForDeletion = function (user) {
@@ -341,7 +401,12 @@ $(function () {
                 _.uniq(
                     self
                         .markedForDeletion()
-                        .concat(_.map(_.filter(self.keys.allItems, filter), "api_key"))
+                        .concat(
+                            _.map(
+                                _.filter(self.keys.allItems, filter),
+                                (item) => `${item.user_id}:${item.app_id}`
+                            )
+                        )
                 )
             );
         };
@@ -351,31 +416,49 @@ $(function () {
         };
 
         self._bulkRevoke = function (keys) {
+            /*
+             * TODO: This still has a risk of running into reauthentication for REALLY large numbers of keys
+             * whose bulk removal takes longer than the reauthentication timeout.
+             */
+
             var title, message, handler;
 
             title = gettext("Revoking application keys");
             message = _.sprintf(gettext("Revoking %(count)d application keys..."), {
                 count: keys.length
             });
-            handler = function (key) {
+            handler = function (id) {
+                const [user, app] = rsplit(id, ":", 1);
                 return OctoPrint.plugins.appkeys
-                    .revokeKey(key)
+                    .revokeKeyForApp(app, user)
                     .done(function () {
                         deferred.notify(
-                            _.sprintf(gettext("Revoked %(key)s..."), {
-                                key: _.escape(key)
+                            _.sprintf(gettext("Revoked %(app)s for %(user)s..."), {
+                                app: _.escape(app),
+                                user: _.escape(user)
                             }),
                             true
                         );
                     })
                     .fail(function (jqXHR) {
                         var short = _.sprintf(
-                            gettext("Revocation of %(key)s failed, continuing..."),
-                            {key: _.escape(key)}
+                            gettext(
+                                "Revocation of %(app)s for user %(user)s failed, continuing..."
+                            ),
+                            {
+                                app: _.escape(app),
+                                user: _.escape(user)
+                            }
                         );
                         var long = _.sprintf(
-                            gettext("Deletion of %(key)s failed: %(error)s"),
-                            {key: _.escape(key), error: _.escape(jqXHR.responseText)}
+                            gettext(
+                                "Deletion of %(app)s for user %(user)s failed: %(error)s"
+                            ),
+                            {
+                                app: _.escape(app),
+                                user: _.escape(user),
+                                error: _.escape(jqXHR.responseText)
+                            }
                         );
                         deferred.notify(short, long, false);
                     });

@@ -70,12 +70,29 @@
                 </div>
             </div>
         </form>
-        <span hidden>
+        <div class="row-fluid file_data">
+            <div class="span6">
+                <strong>{{ _('Existing file') }}</strong>
+                <ul>
+                    <li>{{ _('Size') }}: <span class="existing_size"></span></li>
+                    <li>{{ _('Date') }}: <span class="existing_date"></span></li>
+                </ul>
+            </div>
+
+            <div class="span6">
+                <strong>{{ _('New file') }}</strong>
+                <ul>
+                    <li>{{ _('Size') }}: <span class="new_size"></span></li>
+                    <li>{{ _('Date') }}: <span class="new_date"></span></li>
+                </ul>
+            </div>
+        </div>
+        <span class="not_enough_space">
             {{ _('There is not enough free disk space to keep the existing file and upload this one.') }}
         </span>
     </div>
     <div class="modal-footer">
-        <a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
+        <a href="javascript:void(0)" class="btn" data-dismiss="modal">{{ _('Cancel') }}</a>
         <a href="javascript:void(0)" class="btn btn-primary upload-rename">{{ _('Upload (rename)') }}</a>
         <a href="javascript:void(0)" class="btn btn-danger upload-overwrite">{{ _('Upload (overwrite)') }}</a>
     </div>

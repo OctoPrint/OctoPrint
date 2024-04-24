@@ -19,5 +19,13 @@
 
     <form class="form-horizontal" onsubmit="return false;">
         {% include "snippets/classicwebcamSnapshotUrl.jinja2" %}
+
+        <div>
+            <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+            <div class="hide">
+                {% include "snippets/classicwebcamSnapshotTimeout.jinja2" %}
+                {% include "snippets/classicwebcamSnapshotSslValidation.jinja2" %}
+            </div>
+        </div>
     </form>
 </div>

@@ -482,18 +482,20 @@ $(function () {
                 self.uploadButton.unbind("click");
                 self.uploadButton.bind("click", function () {
                     const proceed = () => {
-                        self._markWorking(
-                            isJsonFile
-                                ? gettext("Installing plugins...")
-                                : gettext("Installing plugin..."),
-                            isJsonFile
-                                ? gettext("Installing plugins from uploaded file...")
-                                : gettext("Installing plugin from uploaded file...")
-                        );
-                        data.formData = {
-                            dependency_links: self.followDependencyLinks()
-                        };
-                        data.submit();
+                        self.loginState.reauthenticateIfNecessary(() => {
+                            self._markWorking(
+                                isJsonFile
+                                    ? gettext("Installing plugins...")
+                                    : gettext("Installing plugin..."),
+                                isJsonFile
+                                    ? gettext("Installing plugins from uploaded file...")
+                                    : gettext("Installing plugin from uploaded file...")
+                            );
+                            data.formData = {
+                                dependency_links: self.followDependencyLinks()
+                            };
+                            data.submit();
+                        });
                     };
 
                     if (isJsonFile) {
@@ -974,7 +976,7 @@ $(function () {
                         onproceed: performDisabling
                     });
                 }
-                // warn if global "warn disabling" setting is set"
+                // warn if "confirm disabling" setting is set
                 else if (
                     self.settingsViewModel.settings.plugins.pluginmanager.confirm_disable()
                 ) {
@@ -1160,12 +1162,14 @@ $(function () {
             self.selectedPlugins([]);
         };
 
-        self.showRepository = function () {
-            self.repositoryDialog.modal({
-                minHeight: function () {
-                    return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
-                },
-                show: true
+        self.showRepository = () => {
+            self.loginState.reauthenticateIfNecessary(() => {
+                self.repositoryDialog.modal({
+                    minHeight: function () {
+                        return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
+                    },
+                    show: true
+                });
             });
         };
 
@@ -1174,19 +1178,12 @@ $(function () {
         };
 
         self.installFromRepository = function (data) {
-            if (
-                !self.loginState.hasPermission(
-                    self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL
-                )
-            ) {
-                return;
-            }
-
             self.installPlugin(
                 data.archive,
                 data.title,
                 self.installed(data) ? data.id : undefined,
-                data.follow_dependency_links || self.followDependencyLinks()
+                data.follow_dependency_links || self.followDependencyLinks(),
+                true
             );
         };
 
@@ -1206,7 +1203,13 @@ $(function () {
             );
         };
 
-        self.installPlugin = function (url, name, reinstall, followDependencyLinks) {
+        self.installPlugin = function (
+            url,
+            name,
+            reinstall,
+            followDependencyLinks,
+            fromRepo
+        ) {
             if (
                 !self.loginState.hasPermission(
                     self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL
@@ -1228,110 +1231,117 @@ $(function () {
                 followDependencyLinks = self.followDependencyLinks();
             }
 
-            var workTitle, workText;
-            if (!reinstall) {
-                workTitle = gettext("Installing plugin...");
-                if (name) {
-                    workText = _.sprintf(
-                        gettext('Installing plugin "%(name)s" from %(url)s...'),
-                        {url: _.escape(url), name: _.escape(name)}
-                    );
-                } else {
-                    workText = _.sprintf(gettext("Installing plugin from %(url)s..."), {
-                        url: _.escape(url)
-                    });
-                }
-            } else {
-                workTitle = gettext("Reinstalling plugin...");
-                workText = _.sprintf(
-                    gettext('Reinstalling plugin "%(name)s" from %(url)s...'),
-                    {url: _.escape(url), name: _.escape(name)}
-                );
-            }
-
-            if (self.multiInstallRunning()) {
-                workTitle =
-                    _.sprintf("[%(index)d/%(total)d] ", {
-                        index:
-                            this.multiInstallInitialSize() -
-                            self.multiInstallQueue().length,
-                        total: this.multiInstallInitialSize()
-                    }) + workTitle;
-            }
-
-            self._markWorking(workTitle, workText);
-
-            var onSuccess = function (response) {
-                    self.installUrl("");
-                    if (response.hasOwnProperty("queued_installs")) {
-                        self.queuedInstalls(response.queued_installs);
-                        var text =
-                            '<div class="row-fluid"><p>' +
-                            gettext("The following plugins are queued to be installed.") +
-                            "</p><ul><li>" +
-                            _.map(response.queued_installs, function (info) {
-                                var plugin = ko.utils.arrayFirst(
-                                    self.repositoryplugins.paginatedItems(),
-                                    function (item) {
-                                        return item.archive === info.url;
-                                    }
-                                );
-                                return plugin.title;
-                            }).join("</li><li>") +
-                            "</li></ul></div>";
-                        if (typeof self.installQueuePopup !== "undefined") {
-                            self.installQueuePopup.update({
-                                text: text
-                            });
-                            if (self.installQueuePopup.state === "closed") {
-                                self.installQueuePopup.open();
-                            }
-                        } else {
-                            self.installQueuePopup = new PNotify({
-                                title: gettext("Plugin installs queued"),
-                                text: text,
-                                type: "notice"
-                            });
-                        }
-                        if (self.multiInstallQueue().length > 0) {
-                            self.performMultiInstallJob();
-                        } else {
-                            self.multiInstallRunning(false);
-                            self.workingDialog.modal("hide");
-                            self._markDone();
-                        }
-                    }
-                },
-                onError = function (jqXHR) {
-                    if (jqXHR.status === 409) {
-                        // there's already a plugin being installed
-                        self._markDone(
-                            "There's already another plugin install in progress."
+            self.loginState.reauthenticateIfNecessary(() => {
+                var workTitle, workText;
+                if (!reinstall) {
+                    workTitle = gettext("Installing plugin...");
+                    if (name) {
+                        workText = _.sprintf(
+                            gettext('Installing plugin "%(name)s" from %(url)s...'),
+                            {url: _.escape(url), name: _.escape(name)}
                         );
                     } else {
-                        self._markDone(
-                            "Could not install plugin, unknown error, please consult octoprint.log for details"
+                        workText = _.sprintf(
+                            gettext("Installing plugin from %(url)s..."),
+                            {
+                                url: _.escape(url)
+                            }
                         );
-                        new PNotify({
-                            title: gettext("Something went wrong"),
-                            text: gettext("Please consult octoprint.log for details"),
-                            type: "error",
-                            hide: false
-                        });
                     }
-                };
+                } else {
+                    workTitle = gettext("Reinstalling plugin...");
+                    workText = _.sprintf(
+                        gettext('Reinstalling plugin "%(name)s" from %(url)s...'),
+                        {url: _.escape(url), name: _.escape(name)}
+                    );
+                }
 
-            if (reinstall) {
-                OctoPrint.plugins.pluginmanager
-                    .reinstall(reinstall, url, followDependencyLinks)
-                    .done(onSuccess)
-                    .fail(onError);
-            } else {
-                OctoPrint.plugins.pluginmanager
-                    .install(url, followDependencyLinks)
-                    .done(onSuccess)
-                    .fail(onError);
-            }
+                if (self.multiInstallRunning()) {
+                    workTitle =
+                        _.sprintf("[%(index)d/%(total)d] ", {
+                            index:
+                                this.multiInstallInitialSize() -
+                                self.multiInstallQueue().length,
+                            total: this.multiInstallInitialSize()
+                        }) + workTitle;
+                }
+
+                self._markWorking(workTitle, workText);
+
+                var onSuccess = function (response) {
+                        self.installUrl("");
+                        if (response.hasOwnProperty("queued_installs")) {
+                            self.queuedInstalls(response.queued_installs);
+                            var text =
+                                '<div class="row-fluid"><p>' +
+                                gettext(
+                                    "The following plugins are queued to be installed."
+                                ) +
+                                "</p><ul><li>" +
+                                _.map(response.queued_installs, function (info) {
+                                    var plugin = ko.utils.arrayFirst(
+                                        self.repositoryplugins.paginatedItems(),
+                                        function (item) {
+                                            return item.archive === info.url;
+                                        }
+                                    );
+                                    return plugin.title;
+                                }).join("</li><li>") +
+                                "</li></ul></div>";
+                            if (typeof self.installQueuePopup !== "undefined") {
+                                self.installQueuePopup.update({
+                                    text: text
+                                });
+                                if (self.installQueuePopup.state === "closed") {
+                                    self.installQueuePopup.open();
+                                }
+                            } else {
+                                self.installQueuePopup = new PNotify({
+                                    title: gettext("Plugin installs queued"),
+                                    text: text,
+                                    type: "notice"
+                                });
+                            }
+                            if (self.multiInstallQueue().length > 0) {
+                                self.performMultiInstallJob();
+                            } else {
+                                self.multiInstallRunning(false);
+                                self.workingDialog.modal("hide");
+                                self._markDone();
+                            }
+                        }
+                    },
+                    onError = function (jqXHR) {
+                        if (jqXHR.status === 409) {
+                            // there's already a plugin being installed
+                            self._markDone(
+                                "There's already another plugin install in progress."
+                            );
+                        } else {
+                            self._markDone(
+                                "Could not install plugin, unknown error, please consult octoprint.log for details"
+                            );
+                            new PNotify({
+                                title: gettext("Something went wrong"),
+                                text: gettext("Please consult octoprint.log for details"),
+                                type: "error",
+                                hide: false
+                            });
+                        }
+                    };
+
+                if (reinstall) {
+                    OctoPrint.plugins.pluginmanager
+                        .reinstall(reinstall, url, followDependencyLinks, fromRepo)
+                        .done(onSuccess)
+                        .fail(onError);
+                } else {
+                    OctoPrint.plugins.pluginmanager
+                        .install(url, followDependencyLinks, fromRepo)
+                        .done(onSuccess)
+                        .fail(onError);
+                }
+            });
         };
 
         self.uninstallPlugin = function (data) {

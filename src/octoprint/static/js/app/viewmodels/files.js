@@ -180,13 +180,10 @@ $(function () {
         // initialize list helper
         var listHelperFilters = {
             printed: function (data) {
-                return (
-                    !(
-                        data["prints"] &&
-                        data["prints"]["success"] &&
-                        data["prints"]["success"] > 0
-                    ) ||
-                    (data["type"] && data["type"] === "folder")
+                return !(
+                    data["prints"] &&
+                    data["prints"]["success"] &&
+                    data["prints"]["success"] > 0
                 );
             },
             sd: function (data) {
@@ -509,7 +506,9 @@ $(function () {
                 });
                 return result;
             };
-            self.folderList(["/"].concat(createFolderList(files)));
+            const folders = createFolderList(files);
+            folders.sort();
+            self.folderList(["/"].concat(folders));
 
             // Sanity check file list - see #2572
             var nonrecursive = false;
@@ -1066,7 +1065,7 @@ $(function () {
                             gettext("Model size") +
                             ": " +
                             _.sprintf(
-                                "%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm",
+                                "%(width).2fmm (X) &times; %(depth).2fmm (Y) &times; %(height).2fmm (Z)",
                                 dimensions
                             );
                         output += "<br>";
@@ -1413,6 +1412,12 @@ $(function () {
             });
 
             self.uploadExistsDialog = $("#upload_exists_dialog");
+            self.uploadExistsDialog.on("shown", () => {
+                self._uploadExistsOpen = true;
+            });
+            self.uploadExistsDialog.on("hidden", () => {
+                self._uploadExistsOpen = false;
+            });
 
             //~~ Gcode upload
 
@@ -1604,15 +1609,6 @@ $(function () {
             self.requestData();
         };
 
-        self.onServerConnect = self.onServerReconnect = function (payload) {
-            self._enableDragNDrop(true);
-            self.requestData();
-        };
-
-        self.onServerDisconnect = function (payload) {
-            self._enableDragNDrop(false);
-        };
-
         self._setDropzone = function (dropzone, enable) {
             var button = dropzone === "local" ? self.uploadButton : self.uploadSdButton;
             var drop = dropzone === "local" ? self.localTarget : self.sdTarget;
@@ -1635,16 +1631,25 @@ $(function () {
             });
         };
 
-        self._enableDragNDrop = function (enable) {
-            if (enable) {
-                $(document).bind("dragenter", self._handleDragEnter);
-                $(document).bind("dragleave", self._handleDragLeave);
-                log.debug("Enabled drag-n-drop");
-            } else {
-                $(document).unbind("dragenter", self._handleDragEnter);
-                $(document).unbind("dragleave", self._handleDragLeave);
-                log.debug("Disabled drag-n-drop");
-            }
+        self._dragNDropEnabled = false;
+        self._enableDragNDrop = () => {
+            if (!self.settingsViewModel.feature_enableDragDropUpload()) return;
+
+            if (self._dragNDropEnabled) return;
+            self._dragNDropEnabled = true;
+
+            $(document).bind("dragenter", self._handleDragEnter);
+            $(document).bind("dragleave", self._handleDragLeave);
+            log.debug("Enabled drag-n-drop");
+        };
+
+        self._disableDragNDrop = () => {
+            if (!self._dragNDropEnabled) return;
+            self._dragNDropEnabled = false;
+
+            $(document).unbind("dragenter", self._handleDragEnter);
+            $(document).unbind("dragleave", self._handleDragLeave);
+            log.debug("Disabled drag-n-drop");
         };
 
         self._setProgressBar = function (percentage, text, active) {
@@ -1667,7 +1672,6 @@ $(function () {
 
             const hideAndSubmit = function (data) {
                 self.uploadExistsDialog.modal("hide");
-                self._uploadExistsOpen = false;
                 data.submit();
                 // Recursively move on to process the queue every time a dialog is closed
                 if (self._uploadExistsQueue.length > 0) {
@@ -1686,15 +1690,25 @@ $(function () {
             }
 
             // Build and show a dialog
-            self._uploadExistsOpen = true;
-
             $("h3", self.uploadExistsDialog).text(
                 _.sprintf(gettext("File already exists: %(name)s"), {
                     name: file.name
                 })
             );
-            $("p, form", self.uploadExistsDialog).toggle(!fileSizeTooBig);
-            $("span", self.uploadExistsDialog).toggle(fileSizeTooBig);
+            $("span.existing_size", self.uploadExistsDialog).text(
+                response.size ? formatSize(response.size) : "unknown"
+            );
+            $("span.existing_date", self.uploadExistsDialog).text(
+                response.date
+                    ? new Date(response.date * 1000).toLocaleString()
+                    : "unknown"
+            );
+            $("span.new_size", self.uploadExistsDialog).text(formatSize(file.size));
+            $("span.new_date", self.uploadExistsDialog).text(
+                new Date(file.lastModified).toLocaleString()
+            );
+            $("p, form, .file_data", self.uploadExistsDialog).toggle(!fileSizeTooBig);
+            $("span.not_enough_space", self.uploadExistsDialog).toggle(fileSizeTooBig);
             $("input", self.uploadExistsDialog)
                 .val("")
                 .prop("placeholder", response.suggestion);
@@ -1923,6 +1937,17 @@ $(function () {
         };
 
         self._handleDragEnter = function (e) {
+            if (!self.settingsViewModel.feature_enableDragDropUpload()) {
+                return;
+            }
+
+            const draggedFiles = Array.from(e.originalEvent.dataTransfer.items).filter(
+                (item) => item.kind === "file"
+            );
+            if (!draggedFiles.length) {
+                return;
+            }
+
             self.dropOverlay.addClass("in");
 
             var foundLocal = false;
@@ -1961,18 +1986,46 @@ $(function () {
             self._dragNDropTarget = e.target;
             self._dragNDropLastOver = Date.now();
         };
-        self.onEventSettingsUpdated = function () {
-            self.showInternalFilename(
-                self.settingsViewModel.settings.appearance.showInternalFilename()
-            );
+
+        self.onServerConnect = self.onServerReconnect = function (payload) {
+            self._enableDragNDrop();
+            self.requestData();
         };
+
+        self.onServerDisconnect = function (payload) {
+            self._disableDragNDrop();
+        };
+
         self.onBeforeBinding = function () {
             self.showInternalFilename(
                 self.settingsViewModel.settings.appearance.showInternalFilename()
             );
         };
+
         self.onAllBound = function (allViewModels) {
             self.allViewModels = allViewModels;
+        };
+
+        self.onStartupComplete = () => {
+            self.showInternalFilename(
+                self.settingsViewModel.settings.appearance.showInternalFilename()
+            );
+            self.settingsViewModel.settings.appearance.showInternalFilename.subscribe(
+                (value) => {
+                    self.showInternalFilename(value);
+                }
+            );
+
+            self._enableDragNDrop();
+            self.settingsViewModel.settings.feature.enableDragDropUpload.subscribe(
+                (value) => {
+                    if (value) {
+                        self._enableDragNDrop();
+                    } else {
+                        self._disableDragNDrop();
+                    }
+                }
+            );
         };
     }
 

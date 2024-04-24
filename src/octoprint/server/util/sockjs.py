@@ -381,10 +381,12 @@ class PrinterStateConnection(
                 self._subscriptions["plugins"] = plugins
                 self._subscriptions["events"] = events
 
-                if state and not old_state:
-                    # trigger initial data
+                if state and state != old_state:
+                    # state is requested and was changed from previous state
+                    # we should send a history message to send the update data
                     self._printer.send_initial_callback(self)
                 elif old_state and not state:
+                    # we no longer should send state updates
                     self._initial_data_sent = False
 
     def on_printer_send_current_data(self, data):

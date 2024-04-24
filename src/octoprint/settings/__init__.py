@@ -29,6 +29,7 @@ import threading
 import time
 from collections import ChainMap, defaultdict
 from collections.abc import KeysView
+from typing import Any, Dict, List
 
 from yaml import YAMLError
 
@@ -41,6 +42,7 @@ from octoprint.util import (
     fast_deepcopy,
     generate_api_key,
     is_hidden_path,
+    time_this,
     yaml,
 )
 
@@ -171,11 +173,28 @@ class HierarchicalChainMap:
         'd'
         >>> hcm.get_by_path(["b", "c"])
         'c'
+
+    Internally, the chainmap is flattened, without any contained dictionaries. Combined with
+    a prefix cache, this allows for fast lookups of nested values. The chainmap is also
+    unflattened when needed, for example when returning sub trees or the full dictionary.
+
+    For flattening, the path to each value is joined with a special separator character
+    that is unlikely to appear in a normal key, ``\x1f``. Unflattening is then done
+    by splitting the keys on this character and recreating the nested structure.
     """
 
     @staticmethod
-    def _flatten(d: dict, parent_key: str = "") -> dict:
-        """Flattens a hierarchical dictionary."""
+    def _flatten(d: Dict[str, Any], parent_key: str = "") -> Dict[str, Any]:
+        """
+        Recursively flattens a hierarchical dictionary.
+
+        Args:
+            d (dict): The hierarchical dictionary to flatten.
+            parent_key (str): The parent key to use for the current level.
+
+        Returns:
+            dict: The flattened dictionary.
+        """
 
         if d is None:
             return {}
@@ -190,8 +209,18 @@ class HierarchicalChainMap:
         return dict(items)
 
     @staticmethod
-    def _unflatten(d: dict, prefix: str = "") -> dict:
-        """Unflattens a flattened dictionary."""
+    def _unflatten(d: Dict[str, Any], prefix: str = "") -> Dict[str, Any]:
+        """
+        Unflattens a flattened dictionary.
+
+        Args:
+            d (dict): The flattened dictionary.
+            prefix (str): The prefix to use for the top level keys. If provided, only keys
+                starting with this prefix will be unflattened and part of the result.
+
+        Returns:
+            dict: The unflattened dictionary.
+        """
 
         if d is None:
             return {}
@@ -225,25 +254,92 @@ class HierarchicalChainMap:
         return result
 
     @staticmethod
-    def _path_to_key(path):
-        """
-        :type path: List[str]
-        """
+    def _path_to_key(path: List[str]) -> str:
+        """Converts a path to a key."""
         return _CHAINMAP_SEP.join(path)
 
     @staticmethod
-    def from_layers(*layers):
+    def from_layers(*layers: Dict[str, Any]) -> "HierarchicalChainMap":
+        """Generates a new chain map from the provided layers."""
         result = HierarchicalChainMap()
         result._chainmap.maps = layers
         return result
 
-    def __init__(self, *maps):
+    def __init__(self, *maps: Dict[str, Any]):
         self._chainmap = ChainMap(*map(self._flatten, maps))
+        self._prefixed_keys = {}
 
-    def deep_dict(self):
+    def _has_prefix(self, prefix: str, current: ChainMap = None) -> bool:
+        """
+        Check if the given prefix is in the current map. This utilizes the cached
+        prefix keys to avoid recomputing the list every time.
+        """
+        if current is None:
+            current = self._chainmap
+        return any(map(lambda x: x in current, self._cached_prefixed_keys(prefix)))
+
+    def _with_prefix(self, prefix: str, current: ChainMap = None) -> Dict[str, Any]:
+        """
+        Get a dict with all keys that start with the given prefix. This utilizes the
+        cached prefix keys to avoid recomputing the list every time.
+        """
+        if current is None:
+            current = self._chainmap
+        return {k: current[k] for k in self._cached_prefixed_keys(prefix) if k in current}
+
+    def _cached_prefixed_keys(self, prefix: str) -> List[str]:
+        """
+        Get a list of keys that start with the given prefix. This is cached to avoid
+        recomputing the list every time.
+        """
+        if prefix not in self._prefixed_keys:
+            keys = [k for k in self._chainmap.keys() if k.startswith(prefix)]
+            if keys:
+                self._prefixed_keys[prefix] = keys
+        return self._prefixed_keys.get(prefix, [])
+
+    def _invalidate_prefixed_keys(self, prefix: str) -> None:
+        """
+        Invalidate the cache of prefixed keys for the given prefix.
+
+        This is done the following way:
+
+        - Iterate backwards through all prefixes of the given prefix
+          and delete any cached keys for them.
+        - Delete all keys that start with the given prefix.
+        """
+        seps = []
+        for i, c in enumerate(prefix):
+            if c == _CHAINMAP_SEP:
+                seps.append(i)
+
+        for sep in reversed(seps):
+            try:
+                del self._prefixed_keys[prefix[: sep + 1]]
+            except KeyError:
+                pass
+
+        to_delete = [key for key in self._prefixed_keys.keys() if key.startswith(prefix)]
+        for prefix in to_delete:
+            del self._prefixed_keys[prefix]
+
+    def deep_dict(self) -> Dict[str, Any]:
+        """Returns an unflattened copy of the current chainmap."""
         return self._unflatten(self._chainmap)
 
-    def has_path(self, path, only_local=False, only_defaults=False):
+    def has_path(
+        self, path: List[str], only_local: bool = False, only_defaults: bool = False
+    ) -> bool:
+        """
+        Checks if the given path exists in the current map.
+
+        Args:
+            only_local (bool): Only check the top most map.
+            only_defaults (bool): Only check everything but the top most map.
+
+        Returns:
+            bool: True if the path exists, False otherwise.
+        """
         if only_defaults:
             current = self._chainmap.parents
         elif only_local:
@@ -253,9 +349,34 @@ class HierarchicalChainMap:
 
         key = self._path_to_key(path)
         prefix = key + _CHAINMAP_SEP
-        return key in current or any(map(lambda x: x.startswith(prefix), current.keys()))
+        return key in current or self._has_prefix(prefix, current)
 
-    def get_by_path(self, path, only_local=False, only_defaults=False, merged=False):
+    @time_this(
+        logtarget="octoprint.settings.timings.HierarchicalChainMap.get_by_path",
+        message="{func}({func_args}) took {timing:.6f}ms",
+        incl_func_args=True,
+    )
+    def get_by_path(
+        self,
+        path: List[str],
+        only_local: bool = False,
+        only_defaults: bool = False,
+        merged: bool = False,
+    ) -> Any:
+        """
+        Retrieves the value at the given path. If the path is not found, a KeyError is raised.
+
+        Makes heavy use of the prefix cache to avoid recomputing the list of keys every time.
+
+        Args:
+            path (list): The path to the value to retrieve.
+            only_local (bool): Only check the top most map.
+            only_defaults (bool): Only check everything but the top most map.
+            merged (bool): If true and the value is a dict, merge all values from all layers.
+
+        Returns:
+            The value at the given path.
+        """
         if only_defaults:
             current = self._chainmap.parents
         elif only_local:
@@ -266,7 +387,7 @@ class HierarchicalChainMap:
         key = self._path_to_key(path)
         prefix = key + _CHAINMAP_SEP
 
-        if key in current and not any(k.startswith(prefix) for k in current.keys()):
+        if key in current and not self._has_prefix(prefix, current):
             # found it, return
             return current[key]
 
@@ -278,46 +399,74 @@ class HierarchicalChainMap:
             # full contents of the key. Instead, we only include the contents of the key
             # on the first level where we find the value.
             for layer in current.maps:
-                if any(k.startswith(prefix) for k in layer):
+                if self._has_prefix(prefix, layer):
                     current = layer
                     break
 
-        result = self._unflatten(
-            {k: v for k, v in current.items() if k.startswith(prefix)}, prefix=prefix
-        )
+        result = self._unflatten(self._with_prefix(prefix, current), prefix=prefix)
         if not result:
             raise KeyError("Could not find entry for " + str(path))
         return result
 
-    def set_by_path(self, path, value):
+    def set_by_path(self, path: List[str], value: Any) -> None:
+        """
+        Sets the value at the given path.
+
+        Only the top most map is written to.
+
+        Takes care of invalidating the prefix cache as needed.
+
+        Args:
+            path (list): The path to the value to set.
+            value: The value to set.
+        """
         current = self._chainmap.maps[0]  # config only
         key = self._path_to_key(path)
+        prefix = key + _CHAINMAP_SEP
 
-        # delete any subkeys
-        self._del_prefix(current, key)
+        # path might have had subkeys before, clean them up
+        self._del_prefix(current, prefix)
 
         if isinstance(value, dict):
             current.update(self._flatten(value, key))
+            self._invalidate_prefixed_keys(prefix)
+
         else:
             # make sure to clear anything below the path (e.g. switching from dict
             # to something else, for whatever reason)
             self._clean_upward_path(current, path)
+
+            # finally set the new value
             current[key] = value
 
-    def del_by_path(self, path):
+    def del_by_path(self, path: List[str]) -> None:
+        """
+        Deletes the value at the given path.
+
+        Only the top most map is written to.
+
+        Takes care of invalidating the prefix cache as needed.
+
+        Args:
+            path (list): The path to the value to delete.
+
+        Raises:
+            KeyError: If the path does not exist.
+        """
         if not path:
             raise ValueError("Invalid path")
 
         current = self._chainmap.maps[0]  # config only
-        delete_key = self._path_to_key(path)
+        key = self._path_to_key(path)
+        prefix = key + _CHAINMAP_SEP
         deleted = False
 
         # delete any subkeys
-        deleted = self._del_prefix(current, delete_key)
+        deleted = self._del_prefix(current, prefix)
 
         # delete the key itself if it's there
         try:
-            del current[delete_key]
+            del current[key]
             deleted = True
         except KeyError:
             pass
@@ -328,16 +477,36 @@ class HierarchicalChainMap:
         # clean anything that's now empty and above our path
         self._clean_upward_path(current, path)
 
-    def _del_prefix(self, current, key):
-        prefix = key + _CHAINMAP_SEP
+    def _del_prefix(self, current: ChainMap, prefix: str) -> bool:
+        """
+        Deletes all keys that start with the given prefix.
 
-        to_delete = [k for k in current if k.startswith(prefix)]
+        Takes care of invalidating the prefix cache as needed.
+
+        Args:
+            current (ChainMap): The map to delete from.
+            prefix (str): The prefix to delete.
+
+        Returns:
+            bool: True if any keys were deleted, False otherwise.
+        """
+        to_delete = self._with_prefix(prefix, current).keys()
         for k in to_delete:
             del current[k]
 
+        if len(to_delete) > 0:
+            self._invalidate_prefixed_keys(prefix)
+
         return len(to_delete) > 0
 
-    def _clean_upward_path(self, current, path):
+    def _clean_upward_path(self, current: ChainMap, path: List[str]) -> None:
+        """
+        Cleans up the path upwards from the given path, getting rid of any empty dicts.
+
+        Args:
+            current (ChainMap): The map to clean up.
+            path (list): The path to clean up from.
+        """
         working_path = path
         while len(working_path):
             working_path = working_path[:-1]
@@ -346,7 +515,7 @@ class HierarchicalChainMap:
 
             key = self._path_to_key(working_path)
             prefix = key + _CHAINMAP_SEP
-            if any(map(lambda k: k.startswith(prefix), current)):
+            if self._has_prefix(prefix, current):
                 # there's at least one subkey here, we're done
                 break
 
@@ -357,14 +526,21 @@ class HierarchicalChainMap:
                 # key itself wasn't in there
                 pass
 
-    def with_config_defaults(self, config=None, defaults=None):
+    def with_config_defaults(
+        self, config: Dict[str, Any] = None, defaults: Dict[str, Any] = None
+    ) -> "HierarchicalChainMap":
         """
         Builds a new map with the following layers: provided config + any intermediary
-        parents + provided defaults + regular defaults
+        parents + provided defaults + regular defaults.
 
-        :param config:
-        :param defaults:
-        :return:
+        Args:
+            config (dict): The config to use as the top layer. May be None in which case
+                it will be set to the current config. May be unflattened.
+            defaults (dict): The defaults to use above the bottom layer. May be None in
+                which case it will be set to an empty layer. May be unflattened.
+
+        Returns:
+            HierarchicalChainMap: A new chain map with the provided layers.
         """
         if config is None and defaults is None:
             return self
@@ -380,11 +556,29 @@ class HierarchicalChainMap:
             defaults = []
 
         layers = [config] + self._middle_layers() + defaults + [self._chainmap.maps[-1]]
-        return HierarchicalChainMap.from_layers(*layers)
+        return self.with_layers(*layers)
+
+    def with_layers(self, *layers: Dict[str, Any]) -> "HierarchicalChainMap":
+        """
+        Builds a new map with the provided layers. Makes sure to copy the current prefix cache
+        to the new map.
+
+        Args:
+            layers: The layers to use in the new map. May be unflattened.
+
+        Returns:
+            HierarchicalChainMap: A new chain map with the provided layers.
+        """
+
+        chain = HierarchicalChainMap.from_layers(*layers)
+        chain._prefixed_keys = (
+            self._prefixed_keys
+        )  # be sure to copy the cache or it will lose sync
+        return chain
 
     @property
-    def top_map(self):
-        """This is the layer that is written to"""
+    def top_map(self) -> Dict[str, Any]:
+        """This is the layer that is written to, unflattened"""
         return self._unflatten(self._chainmap.maps[0])
 
     @top_map.setter
@@ -392,22 +586,50 @@ class HierarchicalChainMap:
         self._chainmap.maps[0] = self._flatten(value)
 
     @property
-    def bottom_map(self):
-        """The very bottom layer is the default layer"""
+    def bottom_map(self) -> Dict[str, Any]:
+        """The very bottom layer is the default layer, unflattened"""
         return self._unflatten(self._chainmap.maps[-1])
 
-    def insert_map(self, pos, d):
-        self._chainmap.maps.insert(pos, self._flatten(d))
+    def insert_map(self, pos: int, d: Dict[str, Any]) -> None:
+        """
+        Inserts a new map at the given position into the chainmap.
 
-    def delete_map(self, pos):
+        The map is flattened before being inserted.
+
+        Takes care of invalidating the prefix cache as needed.
+
+        Args:
+            pos (int): The position to insert the map at.
+            d (dict): The unflattened map to insert. May be unflattened.
+        """
+
+        flattened = self._flatten(d)
+        for k in flattened:
+            self._invalidate_prefixed_keys(k + _CHAINMAP_SEP)
+        self._chainmap.maps.insert(pos, flattened)
+
+    def delete_map(self, pos: int) -> None:
+        """
+        Deletes the map at the given position from the chainmap.
+
+        Takes care of invalidating the prefix cache as needed.
+
+        Args:
+            pos (int): The position to delete the map from.
+        """
+
+        flattened = self._chainmap.maps[pos]
+        for k in flattened:
+            self._invalidate_prefixed_keys(k + _CHAINMAP_SEP)
         del self._chainmap.maps[pos]
 
     @property
-    def all_layers(self):
-        """A list of all layers in this map. read-only"""
+    def all_layers(self) -> List[Dict[str, Any]]:
+        """A list of all layers in this map, flattened."""
         return self._chainmap.maps
 
-    def _middle_layers(self):
+    def _middle_layers(self) -> List[dict]:
+        """Returns all layers between the top and bottom layer, flattened."""
         if len(self._chainmap.maps) > 2:
             return self._chainmap.maps[1:-1]
         else:
@@ -493,6 +715,8 @@ class Settings:
         self._set_preprocessors = {}
         self._path_update_callbacks = defaultdict(list)
         self._deprecated_paths = defaultdict(dict)
+
+        self.flagged_basefolders = {}
 
         self._init_basedir(basedir)
 
@@ -1653,7 +1877,8 @@ class Settings:
                     if default_value is not None:
                         value = dict_merge(default_value, value)
                 except KeyError:
-                    raise NoSuchSettingsPath()
+                    # no default value, so nothing to merge
+                    pass
 
             if callable(preprocessor):
                 value = preprocessor(value)
@@ -1805,7 +2030,7 @@ class Settings:
                 check_writable=check_writable,
                 deep_check_writable=deep_check_writable,
             )
-        except Exception:
+        except Exception as exc:
             if folder != default_folder and allow_fallback:
                 self._logger.exception(
                     "Invalid configured {} folder at {}, attempting to "
@@ -1820,6 +2045,7 @@ class Settings:
                     deep_check_writable=deep_check_writable,
                 )
                 folder = default_folder
+                self.flagged_basefolders[type] = str(exc)
 
                 try:
                     self.remove(["folder", type])

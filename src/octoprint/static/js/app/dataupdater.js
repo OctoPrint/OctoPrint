@@ -18,6 +18,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
     self._lastProcessingTimesSize = 20;
 
     self._safeModePopup = undefined;
+    self._reloadPopup = undefined;
 
     self.increaseThrottle = function () {
         self.setThrottle(self._throttleFactor + 1);
@@ -247,13 +248,71 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
 
             // if the version, the plugin hash or the config hash changed, we
             // want the user to reload the UI since it might be stale now
-            var versionChanged = oldVersion !== VERSION;
-            var pluginsChanged =
+            const versionChanged = oldVersion !== VERSION;
+            const pluginsChanged =
                 oldPluginHash !== undefined && oldPluginHash !== self._pluginHash;
-            var configChanged =
+            const configChanged =
                 oldConfigHash !== undefined && oldConfigHash !== self._configHash;
-            if (versionChanged || pluginsChanged || configChanged) {
+
+            if (versionChanged) {
                 showReloadOverlay();
+            } else if (pluginsChanged || configChanged) {
+                if (self._reloadPopup) self._reloadPopup.remove();
+
+                let text;
+                if (pluginsChanged && configChanged) {
+                    text = gettext(
+                        "A client reconnect happened and the configuration of the server and the active UI relevant plugins have changed."
+                    );
+                } else if (pluginsChanged) {
+                    text = gettext(
+                        "A client reconnect happened and the active UI relevant plugins have changed."
+                    );
+                } else if (configChanged) {
+                    text = gettext(
+                        "A client reconnect happened and the configuration of the server has changed."
+                    );
+                }
+
+                self._reloadPopup = new PNotify({
+                    title: gettext("Page reload recommended"),
+                    text:
+                        "<p>" +
+                        text +
+                        "</p>" +
+                        "<p>" +
+                        gettext(
+                            "Due to this a reload of the UI is recommended. " +
+                                "Please reload the UI now by clicking " +
+                                'the "Reload" button below. This will not interrupt ' +
+                                "any print jobs you might have ongoing."
+                        ) +
+                        "</p>",
+                    hide: false,
+                    confirm: {
+                        confirm: true,
+                        buttons: [
+                            {
+                                text: gettext("Ignore"),
+                                click: function () {
+                                    self._reloadPopup.remove();
+                                }
+                            },
+                            {
+                                text: gettext("Reload"),
+                                addClass: "btn-primary",
+                                click: function () {
+                                    self._reloadPopup.remove();
+                                    location.reload(true);
+                                }
+                            }
+                        ]
+                    },
+                    buttons: {
+                        closer: false,
+                        sticker: false
+                    }
+                });
             }
 
             log.info("Server (re)connect processed");
@@ -337,6 +396,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                             ),
                             {error: _.escape(payload.error)}
                         );
+
                         break;
                     }
                     case "resend":
@@ -428,6 +488,8 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 });
             } else if (type === "ConnectivityChanged") {
                 ONLINE = payload.new;
+            } else if (type === "SettingsUpdated") {
+                self._configHash = payload.config_hash;
             }
 
             var legacyEventHandlers = {
@@ -438,8 +500,17 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 SlicingCancelled: "onSlicingCancelled",
                 SlicingFailed: "onSlicingFailed"
             };
+            const camelCaseType = type
+                .split("_")
+                .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
+                .join("");
             _.each(self.allViewModels, function (viewModel) {
-                if (viewModel.hasOwnProperty("onEvent" + type)) {
+                if (viewModel.hasOwnProperty("onEvent" + camelCaseType)) {
+                    viewModel["onEvent" + camelCaseType](payload);
+                } else if (
+                    type !== camelCaseType &&
+                    viewModel.hasOwnProperty("onEvent" + type)
+                ) {
                     viewModel["onEvent" + type](payload);
                 } else if (
                     legacyEventHandlers.hasOwnProperty(type) &&

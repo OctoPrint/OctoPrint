@@ -357,21 +357,20 @@ var gCodeLineGenerator = async function* (fileURL) {
     // the download failed.
     if (!response.ok) return;
 
-    // create a reader object that will read the incoming data
-    const reader = response.body.getReader();
-
     // we use these two variables to calculate the percentage.
     var totalDownloadLength = response.headers.get("X-Original-Content-Length");
     var currentDownloadLength = 0;
 
-    // lets read a first data chunk
-    let {value: chunk, done: readerDone} = await reader.read();
-    chunk = chunk ? utf8Decoder.decode(chunk) : "";
-
     // some init
     const re = /\n|\r|\r\n/gm;
     let startIndex = 0;
-    let result;
+
+    // create a reader object that will read the incoming data
+    const reader = response.body.getReader();
+
+    // lets read a first data chunk
+    let {value: chunk, done: readerDone} = await reader.read();
+    chunk = chunk ? utf8Decoder.decode(chunk) : "";
 
     // now continue until all the downloaded data is processed.
     for (;;) {
@@ -386,7 +385,11 @@ var gCodeLineGenerator = async function* (fileURL) {
             }
             // lets read a new chunk
             let remainder = chunk.substr(startIndex);
+
+            //console.log("reading chunk..."); // debug for #4879
             ({value: chunk, done: readerDone} = await reader.read());
+            //console.log("read chunk"); // debug for #4879
+
             // concatenate with our leftovers from the previous chunk
             chunk = remainder + (chunk ? utf8Decoder.decode(chunk) : "");
             // reset the indexes
@@ -405,6 +408,7 @@ var gCodeLineGenerator = async function* (fileURL) {
         // move to after the line we just returned
         startIndex = re.lastIndex;
     }
+
     if (startIndex < chunk.length) {
         // last line didn't end in a newline char
         currentDownloadLength += chunk.length - startIndex;

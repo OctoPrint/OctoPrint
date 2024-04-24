@@ -63,13 +63,21 @@
 
     <div id="login" class="container">
         <form class="form-signin">
-            <h2 class="form-signin-heading" data-test-id="login-title">{{ _('Please log in') }}</h2>
+            <h2 class="form-signin-heading" data-test-id="login-title">
+                {% if reauthenticate %}
+                    {{ _('Please reauthenticate') }}
+                {% else %}
+                    {{ _('Please log in') }}
+                {% endif %}
+            </h2>
 
             <div id="login-error-credentials" class="alert alert-error" data-test-id="login-error">{{ _('Incorrect username or password. Hint: Both are case sensitive!') }}</div>
             <div id="login-error-rate" class="alert alert-error" data-test-id="login-error-rate">{{ _('You have made too many failed login attempts. Please try again later.') }}</div>
             <div id="login-offline" class="alert alert-error">{{ _('Server is currently offline.') }} <a id="login-reconnect" href="javascript:void(0)">{{ _('Reconnect...') }}</a></div>
 
-            {% if user_id %}<p>
+            {% if reauthenticate %}<p>
+                {{ _('You need to reauthenticate before you can continue. Please enter your password below.') }}
+            </p>{% elif user_id %}<p>
                 {{ _('The following account is required:') }} {{ user_id|e }}
             </p>{% elif logged_in %}<p>
                 {{ _('An account with the following permissions is required:') }} {{ permission_names|join(", ") }}
@@ -77,10 +85,12 @@
 
             <input type="text" id="login-user" data-test-id="login-username" class="input-block-level" placeholder="{{ _('Username')|edq }}" {% if user_id %}value="{{ user_id|edq }}" disabled{% endif %} autofocus autocapitalize="none">
             <input type="password" id="login-password" data-test-id="login-password" class="input-block-level" placeholder="{{ _('Password')|edq }}">
+            {% if not reauthenticate %}
             <span class="pull-right"><small><a href="https://faq.octoprint.org/forgotten-password" id="login-forgotpassword" target="_blank" tabindex="-1">{{ _('Forgot password?') }}</a></small></span>
             <label class="checkbox">
                 <input type="checkbox" id="login-remember" data-test-id="login-remember-me"> {{ _('Remember me') }}
             </label>
+            {% endif %}
             <button class="btn btn-block btn-large btn-primary" id="login-button" data-test-id="login-submit" type="submit">{{ _('Log in') }}</button>
         </form>
     </div>

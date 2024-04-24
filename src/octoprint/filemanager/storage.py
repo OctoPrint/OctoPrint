@@ -63,6 +63,30 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
+    def get_size(self, path=None, recursive=False) -> int:
+        """
+        Get the size of the specified ``path`` or ``path``'s subtree.
+
+        Args:
+            path (str or None): Path for which to determine the subtree's size. If left out or
+                set to None, defaults to storage root.
+            recursive (bool): Whether to determine only the size of the specified ``path`` (False, default) or
+                the whole ``path``'s subtree (True).
+        """
+        raise NotImplementedError()
+
+    def get_lastmodified(self, path: str = None, recursive: bool = False) -> int:
+        """
+        Get the modification date of the specified ``path`` or ``path``'s subtree.
+
+        Args:
+            path (str or None): Path for which to determine the modification date. If left our or
+                set to None, defaults to storage root.
+            recursive (bool): Whether to determine only the date of the specified ``path`` (False, default) or
+                the whole ``path``'s subtree (True).
+        """
+        raise NotImplementedError()
+
     def file_in_path(self, path, filepath):
         """
         Returns whether the file indicated by ``file`` is inside ``path`` or not.
@@ -568,9 +592,11 @@ class LocalFileStorage(StorageInterface):
                     yield entry.name, entry.path, printer_profile_id
             elif os.path.isdir(entry.path):
                 for sub_entry in self._analysis_backlog_generator(entry.path):
-                    yield self.join_path(entry.name, sub_entry[0]), sub_entry[
-                        1
-                    ], sub_entry[2]
+                    yield (
+                        self.join_path(entry.name, sub_entry[0]),
+                        sub_entry[1],
+                        sub_entry[2],
+                    )
 
     def last_modified(self, path=None, recursive=False):
         if path is None:
@@ -589,6 +615,49 @@ class LocalFileStorage(StorageInterface):
             return max(last_modified_for_path(root) for root, _, _ in walk(path))
         else:
             return last_modified_for_path(path)
+
+    def get_size(self, path=None, recursive=False):
+        if path is None:
+            path = self.basefolder
+
+        path, name = self.sanitize(path)
+        path = os.path.join(path, name)
+
+        # shortcut for individual files
+        if os.path.isfile(path):
+            return os.stat(path).st_size
+
+        size = 0
+        for entry in os.scandir(path):
+            if entry.is_file():
+                size += entry.stat().st_size
+            elif recursive and entry.is_dir():
+                size += self.get_size(entry.path, recursive=recursive)
+
+        return size
+
+    def get_lastmodified(self, path: str = None, recursive: bool = False) -> int:
+        if path is None:
+            path = self.basefolder
+
+        path, name = self.sanitize(path)
+        path = os.path.join(path, name)
+
+        # shortcut for individual files
+        if os.path.isfile(path):
+            return int(os.stat(path).st_mtime)
+
+        last_modified = 0
+        for entry in os.scandir(path):
+            if entry.is_file():
+                last_modified = max(last_modified, entry.stat().st_mtime)
+            elif recursive and entry.is_dir():
+                last_modified = max(
+                    last_modified,
+                    self.get_lastmodified(entry.path, recursive=recursive),
+                )
+
+        return int(last_modified)
 
     def file_in_path(self, path, filepath):
         filepath = self.sanitize_path(filepath)
@@ -1111,13 +1180,14 @@ class LocalFileStorage(StorageInterface):
     def split_path(self, path):
         path = to_unicode(path)
         split = path.split("/")
+
         if len(split) == 1:
             return "", split[0]
-        else:
-            return self.join_path(*split[:-1]), split[-1]
+
+        return self.path_in_storage(self.join_path(*split[:-1])), split[-1]
 
     def join_path(self, *path):
-        return "/".join(map(to_unicode, path))
+        return self.path_in_storage("/".join(map(to_unicode, path)))
 
     def sanitize(self, path):
         """
@@ -1233,7 +1303,7 @@ class LocalFileStorage(StorageInterface):
             if path.startswith(self.basefolder):
                 path = path[len(self.basefolder) :]
             path = path.replace(os.path.sep, "/")
-        if path.startswith("/"):
+        while path.startswith("/"):
             path = path[1:]
 
         return path
@@ -1653,6 +1723,8 @@ class LocalFileStorage(StorageInterface):
                                 "type": "folder",
                                 "typePath": ["folder"],
                             }
+                            if entry_stat:
+                                entry_data["date"] = int(entry_stat.st_mtime)
 
                             result[entry_name] = entry_data
                     except Exception:

@@ -1,6 +1,6 @@
 {% if enableTemperatureGraph %}
     <div class="row-fluid">
-        <div class="dropdown pull-right">
+        <div class="dropdown pull-right" aria-hidden="true">
             <div class="btn-group">
                 <button class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="javascript:void(0)">
                     <i class="fas fa-wrench"></i>
@@ -12,7 +12,7 @@
         </div>
     </div>
     <div class="row-fluid">
-        <div id="temperature-graph" style="width: 100%"></div>
+        <div id="temperature-graph" style="width: 100%" aria-hidden="true"></div>
     </div>
 {% endif %}
 <div class="row-fluid">

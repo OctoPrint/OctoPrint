@@ -178,7 +178,7 @@ def deleteTimelapse(filename):
     thumb_path = octoprint.timelapse.create_thumbnail_path(full_path)
     if (
         octoprint.timelapse.valid_timelapse(full_path)
-        and full_path.startswith(timelapse_folder)
+        and full_path.startswith(os.path.realpath(timelapse_folder))
         and os.path.exists(full_path)
         and not util.is_hidden_path(full_path)
     ):
@@ -192,7 +192,7 @@ def deleteTimelapse(filename):
 
     if (
         octoprint.timelapse.valid_timelapse_thumbnail(thumb_path)
-        and thumb_path.startswith(timelapse_folder)
+        and thumb_path.startswith(os.path.realpath(timelapse_folder))
         and os.path.exists(thumb_path)
         and not util.is_hidden_path(thumb_path)
     ):

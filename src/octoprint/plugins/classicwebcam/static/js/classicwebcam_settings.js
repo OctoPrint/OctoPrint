@@ -18,6 +18,10 @@ $(function () {
 
         self.onBeforeBinding = function () {
             self.snapshotUrl = self.settings.settings.plugins.classicwebcam.snapshot;
+            self.snapshotTimeout =
+                self.settings.settings.plugins.classicwebcam.snapshotTimeout;
+            self.snapshotSslValidation =
+                self.settings.settings.plugins.classicwebcam.snapshotSslValidation;
             self.flipH = self.settings.settings.plugins.classicwebcam.flipH;
             self.flipV = self.settings.settings.plugins.classicwebcam.flipV;
             self.rotate90 = self.settings.settings.plugins.classicwebcam.rotate90;
@@ -189,28 +193,25 @@ $(function () {
                         return;
                     }
 
-                    var content = response.response.content;
-                    var contentType = response.response.assumed_content_type;
+                    const content = response.response.content;
+                    const contentType = response.response.assumed_content_type;
 
-                    var mimeType = "image/jpeg";
-                    if (contentType) {
-                        mimeType = contentType.split(";")[0];
-                    }
-
-                    var text = gettext(
+                    const text = gettext(
                         "If you see your webcam snapshot picture below, the entered snapshot URL is ok."
                     );
+                    const mimeType = contentType
+                        ? contentType.split(";")[0]
+                        : "image/jpeg";
+
+                    const textElement = $("<p></p>").text(text);
+                    const imgElement = $("<img>")
+                        .attr("src", "data:" + mimeType + ";base64," + content)
+                        .css("border", "1px solid black");
+                    const message = $("<p></p>").append(textElement).append(imgElement);
+
                     showMessageDialog({
                         title: gettext("Snapshot test"),
-                        message: $(
-                            "<p>" +
-                                text +
-                                '</p><p><img src="data:' +
-                                mimeType +
-                                ";base64," +
-                                content +
-                                '" style="border: 1px solid black" /></p>'
-                        ),
+                        message: message,
                         onclose: function () {
                             self.testWebcamSnapshotUrlBusy(false);
                         }

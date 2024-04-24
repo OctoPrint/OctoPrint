@@ -41,10 +41,12 @@ from octoprint.server import (  # noqa: F401
 )
 from octoprint.server.util import (
     has_permissions,
+    require_fresh_login_with,
     require_login_with,
     validate_local_redirect,
 )
 from octoprint.server.util.csrf import add_csrf_cookie
+from octoprint.server.util.flask import credentials_checked_recently
 from octoprint.settings import settings
 from octoprint.util import sv, to_bytes, to_unicode
 from octoprint.util.version import get_python_version_string
@@ -225,9 +227,12 @@ def login():
         permissions = [Permissions.STATUS, Permissions.SETTINGS_READ]
 
     user_id = request.args.get("user_id", "")
+    reauthenticate = request.args.get("reauthenticate", "false").lower() == "true"
 
-    if (not user_id or current_user.get_id() == user_id) and has_permissions(
-        *permissions
+    if (
+        (not user_id or current_user.get_id() == user_id)
+        and has_permissions(*permissions)
+        and (not reauthenticate or credentials_checked_recently())
     ):
         return redirect(redirect_url)
 
@@ -237,6 +242,7 @@ def login():
         "permission_names": map(lambda x: x.get_name(), permissions),
         "user_id": user_id,
         "logged_in": not current_user.is_anonymous,
+        "reauthenticate": reauthenticate,
     }
 
     try:
@@ -257,11 +263,14 @@ def login():
 @app.route("/recovery")
 @app.route("/recovery/")
 def recovery():
-    response = require_login_with(permissions=[Permissions.ADMIN])
+    response = require_fresh_login_with(permissions=[Permissions.ADMIN])
     if response:
         return response
 
-    render_kwargs = {"theming": []}
+    reauthentication_timeout = settings().getInt(
+        ["accessControl", "defaultReauthenticationTimeout"]
+    )
+    render_kwargs = {"theming": [], "reauthenticationTimeout": reauthentication_timeout}
 
     try:
         additional_assets = _add_additional_assets("octoprint.theming.recovery")
@@ -417,6 +426,9 @@ def index():
     enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"])
     enable_temperature_graph = settings().get(["feature", "temperatureGraph"])
     sockjs_connect_timeout = settings().getInt(["devel", "sockJsConnectTimeout"])
+    reauthentication_timeout = settings().getInt(
+        ["accessControl", "defaultReauthenticationTimeout"]
+    )
 
     def default_template_filter(template_type, template_key):
         if template_type == "tab":
@@ -431,6 +443,7 @@ def index():
         enable_webcam,
         enable_temperature_graph,
         sockjs_connect_timeout,
+        reauthentication_timeout,
         connectivityChecker.online,
         wizard_active(_templates.get(locale)),
     ] + sorted(
@@ -647,6 +660,7 @@ def index():
                 "enableLoadingAnimation": enable_loading_animation,
                 "enableSdSupport": enable_sd_support,
                 "sockJsConnectTimeout": sockjs_connect_timeout * 1000,
+                "reauthenticationTimeout": reauthentication_timeout,
                 "wizard": wizard,
                 "online": connectivityChecker.online,
                 "now": now,

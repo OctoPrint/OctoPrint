@@ -13,8 +13,10 @@
         </thead>
         <tbody data-bind="foreach: keys.paginatedItems">
         <tr>
-            <td class="settings_plugin_appkeys_app"><span data-bind="text: app_id"></span><br /><small class="muted">{{ _('API Key') }}: <span data-bind="text: api_key"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard')|edq }}" data-bind="click: function() { copyToClipboard(api_key) }"><i class="fas fa-copy"></i></a></small></td>
-            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.revokeKey($data.api_key) }"></a></td>
+            <td class="settings_plugin_appkeys_app">
+                <span data-bind="text: app_id"></span>
+            </td>
+            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.revokeKey($data) }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Details')|edq }}" class="fas fa-search" data-bind="click: function() { $parent.showKeyDetails($data) }"></a></td>
         </tr>
         </tbody>
     </table>
@@ -37,13 +39,13 @@
     <div class="control-group">
         <label class="control-label">{{ _('Application identifier') }}</label>
         <div class="controls">
-            <input type="text" data-bind="value: editorApp">
+            <input type="text" data-bind="value: editorApp, valueUpdate: 'input'">
         </div>
     </div>
 
     <div class="control-group">
         <div class="controls">
-            <button class="btn btn-primary" data-bind="click: generateKey">{{ _('Generate') }}</button>
+            <button class="btn btn-primary" data-bind="click: generateKey, enabled: editorApp, css: {disabled: !editorApp()}">{{ _('Generate') }}</button>
         </div>
     </div>
 </form>

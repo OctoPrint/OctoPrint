@@ -655,7 +655,7 @@ function cleanTemperature(temp, offThreshold) {
 }
 
 function formatTemperature(temp, showF, offThreshold, returnUnicode) {
-    if (temp === undefined || !_.isNumber(temp)) return "-";
+    if (temp === undefined || !_.isNumber(temp) || isNaN(temp)) return "-";
     if (offThreshold !== undefined && temp < offThreshold) return gettext("off");
 
     var degreeSymbol = "&deg;";
@@ -683,6 +683,14 @@ function formatNumberK(num) {
     } else {
         return _.sprintf("%i", num);
     }
+}
+
+function rsplit(str, sep, limit) {
+    // copy of Python's rsplit in JS
+    // adapted from https://stackoverflow.com/a/5202185
+    // caution: other than split in JS, this limit does limit the splits, NOT the number of parts
+    const parts = str.split(sep);
+    return limit ? [parts.slice(0, -limit).join(sep)].concat(parts.slice(-limit)) : parts;
 }
 
 function pnotifyAdditionalInfo(inner) {
@@ -1367,7 +1375,7 @@ function setOnViewModelIf(viewModel, key, value, condition) {
             "on view model",
             viewModel.constructor.name,
             ":",
-            exc.stack || exc
+            `${exc.message}\n${exc.stack || exc}`
         );
     }
 }
@@ -1392,7 +1400,7 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
                 "on view model",
                 viewModel.constructor.name,
                 ":",
-                exc.stack || exc
+                `${exc.message}\n${exc.stack || exc}`
             );
         }
     });
@@ -1476,7 +1484,7 @@ function callViewModelIf(viewModel, method, condition, callback, raiseErrors) {
                 "on view model",
                 viewModel.constructor.name,
                 ":",
-                exc.stack || exc
+                `${exc.message}\n${exc.stack || exc}`
             );
         }
     }

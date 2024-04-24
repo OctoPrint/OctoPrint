@@ -608,6 +608,12 @@ table {
 .temperature-mark-type-done {
   background-color: #1b72f9;
 }
+.temperature-mark-type-connected {
+  background-color: #666666;
+}
+.temperature-mark-type-disconnected {
+  background-color: #333333;
+}
 
 /** Various */
 
@@ -700,6 +706,7 @@ ul.dropdown-menu li a {
   margin-top: 6px;
   overflow: hidden;
   min-height: 300px;
+  min-width: 100%;
   background-color: #000;
 
   .tab-content {
@@ -707,7 +714,9 @@ ul.dropdown-menu li a {
     padding: 0px;
   }
 
-  &:hover .nav {
+  &:hover .nav,
+  &:hover .refresh_overlay,
+  &:hover .keycontrol_overlay {
     opacity: 1;
   }
 
@@ -741,6 +750,28 @@ ul.dropdown-menu li a {
     }
   }
 
+  .refresh_overlay {
+    position: absolute;
+    padding: @side-padding;
+    left: @side-padding;
+    top: @side-padding;
+    border-radius: @border-radius;
+    background: @overlay-color;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+
+    a {
+      padding: @side-padding;
+      border-radius: @border-radius;
+      color: white;
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+    }
+  }
+
   .keycontrol_overlay {
     position: absolute;
     left: @side-padding;
@@ -752,6 +783,8 @@ ul.dropdown-menu li a {
     font-size: 85%;
     color: white;
     padding: 0;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
 
     kbd {
       border: 1px solid #eeeeee;
@@ -1063,6 +1096,28 @@ ul.dropdown-menu li a {
     columns: @authorCols;
     -webkit-columns: @authorCols;
     -moz-columns: @authorCols;
+  }
+}
+
+.funding-banner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 1em;
+  height: 60px;
+
+  border-top: 1px solid #85ba80;
+  border-bottom: 1px solid #85ba80;
+  background-color: #85ba8066;
+
+  .banner-icon {
+    flex-shrink: 0;
+  }
+
+  .banner-text {
+    flex-grow: 1;
+    font-size: 1em;
+    margin: 0 0 0 1.5em;
   }
 }
 
@@ -1479,6 +1534,14 @@ _:future,
       -moz-border-radius: 0;
       border-radius: 0;
     }
+  }
+}
+
+label.checkbox,
+label.radio {
+  input[type="radio"],
+  input[type="checkbox"] {
+    margin-top: 2px;
   }
 }
 

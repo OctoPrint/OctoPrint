@@ -5,6 +5,5 @@ src/octoprint/static/less/bootstrap/* linguist-vendored
 src/octoprint/static/less/font-awesome.less linguist-vendored
 src/octoprint/static/less/mixins.less linguist-vendored
 src/octoprint/static/less/variables.less linguist-vendored
-versioneer.py linguist-vendored
 
 docs/* linguist-documentation

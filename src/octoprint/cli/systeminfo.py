@@ -81,6 +81,25 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None
         if hasattr(printer, "_log"):
             z.add(to_bytes("\n".join(printer._log)), arcname="terminal.txt")
 
+        # Add reconstructed M115 response, if available
+        if printer._comm and printer._comm._firmware_info:
+            comm = printer._comm
+            m115 = "Reconstructed M115 response:\n\n>>> M115\n<<< "
+            m115 += " ".join([f"{k}:{v}" for k, v in comm._firmware_info.items()])
+
+            if comm._firmware_capabilities:
+                m115 += (
+                    "\n<<< "
+                    + "\n<<< ".join(
+                        [
+                            f"Cap:{k}:{'1' if v else '0'}"
+                            for k, v in comm._firmware_capabilities.items()
+                        ]
+                    )
+                    + "\n\n"
+                )
+            z.add(to_bytes(m115), arcname="m115.txt")
+
     # add systeminfo
     systeminfotxt = []
     for k in sorted(systeminfo.keys()):
@@ -148,6 +167,11 @@ def cli():
 
 @cli.command(name="systeminfo")
 @standard_options()
+@click.option(
+    "--short",
+    is_flag=True,
+    help="Only output an abridged version of the systeminfo.",
+)
 @click.argument(
     "path",
     nargs=1,
@@ -155,8 +179,16 @@ def cli():
     type=click.Path(writable=True, dir_okay=True, resolve_path=True),
 )
 @click.pass_context
-def systeminfo_command(ctx, path, **kwargs):
-    """Retrieves and prints the system info."""
+def systeminfo_command(ctx, short, path, **kwargs):
+    """
+    Creates a system info bundle at PATH.
+
+    If PATH is not provided, the system info bundle will be created in the
+    current working directory.
+
+    If --short is provided, only an abridged version of the systeminfo will be
+    output to the console.
+    """
     logging.disable(logging.ERROR)
     try:
         (
@@ -174,12 +206,25 @@ def systeminfo_command(ctx, path, **kwargs):
         ctx.exit(-1)
     else:
         systeminfo = get_systeminfo(
-            environment_detector, connectivity_checker, {"systeminfo.generator": "cli"}
+            environment_detector,
+            connectivity_checker,
+            settings,
+            additional_fields={"systeminfo.generator": "cli"},
         )
 
-        if path:
+        if short:
+            # output abridged systeminfo to console
+            for k in sorted(systeminfo.keys()):
+                click.echo(f"{k}: {systeminfo[k]}")
+
+        else:
+            if not path:
+                path = "."
+
             # create zip at path
-            zipfilename = os.path.join(path, get_systeminfo_bundle_name())
+            zipfilename = os.path.abspath(
+                os.path.join(path, get_systeminfo_bundle_name())
+            )
             click.echo(f"Writing systeminfo bundle to {zipfilename}...")
 
             z = get_systeminfo_bundle(
@@ -196,8 +241,4 @@ def systeminfo_command(ctx, path, **kwargs):
             click.echo("Done!")
             click.echo(zipfilename)
 
-        else:
-            # output systeminfo to console
-            for k in sorted(systeminfo.keys()):
-                click.echo(f"{k}: {systeminfo[k]}")
     ctx.exit(0)

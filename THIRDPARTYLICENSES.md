@@ -12,6 +12,10 @@
   * [css-element-queries](https://github.com/marcj/css-element-queries): MIT
   * [Detect Mobile Browser](http://detectmobilebrowsers.com/): Public Domain
   * [Flot](http://www.flotcharts.org/): MIT
+  * [Flot Crosshair Plugin](http://www.flotcharts.org/): MIT
+  * [Flot Dashes Plugin](https://github.com/cquartier/flot.dashes): Unlicense
+  * [Flot Resize Plugin](http://www.flotcharts.org/): MIT
+  * [Flot Time Plugin](http://www.flotcharts.org/): MIT
   * [HLS.js](https://github.com/video-dev/hls.js): Apache License 2.0
   * [JavaScript MD5](https://github.com/blueimp/JavaScript-MD5): MIT
   * [JQuery](http://jquery.com/): MIT
@@ -55,7 +59,7 @@
   * [futures](https://github.com/agronholm/pythonfutures): Python
   * [monotonic](https://github.com/atdt/monotonic): Apache License 2.0
   * [netaddr](https://github.com/drkjam/netaddr/): BSD
-  * [netifaces](https://bitbucket.org/al45tair/netifaces): MIT
+  * [netifaces2](https://github.com/SamuelYvon/netifaces-2): MIT
   * [pathvalidate](https://pathvalidate.readthedocs.io/en/latest/index.html): MIT
   * [pkginfo](http://pypi.python.org/pypi/pkginfo/): Python
   * [psutil](https://github.com/giampaolo/psutil): BSD

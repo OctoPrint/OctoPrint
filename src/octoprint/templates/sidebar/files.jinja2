@@ -17,9 +17,9 @@
     <script type="text/html" id="files_template_machinecode">
         <div class="btn btn-mini toggleAdditionalData pull-right" data-bind="visible: origin != 'sdcard',click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }" title="{{ _('Additional data')|edq }}"><i class="fas fa-chevron-down"></i></div>
         <div class="btn btn-mini pull-right disabled" data-bind="visible: origin == 'sdcard'" title="{{ _('On SD Card')|edq }}"><i class="fas fa-sd-card"></i></div>
-        <div class="title clickable" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, false); } else { return; } }, css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: display"></div>
+        <div role="heading" aria-level="3" class="title clickable" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, false); } else { return; } }, css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: display"></div>
         <div class="internal" data-bind="visible: display && name != display && $root.showInternalFilename">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
-        <div class="uploaded">{{ _('Uploaded') }}: <span data-bind="text: formatTimeAgo(date, '?'), attr: {title: formatDate(date, {placeholder:'{{ _('unknown') | esq }}'})}"></span></div>
+        <div class="uploaded">{{ _('Updated') }}: <span data-bind="text: formatTimeAgo(date, '?'), attr: {title: formatDate(date, {placeholder:'{{ _('unknown') | esq }}'})}"></span></div>
         <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
         <div class="additionalInfo hide" data-bind="html: $root.getAdditionalData($data)"></div>
         <div class="btn-group action-buttons">
@@ -34,7 +34,7 @@
     <script type="text/html" id="files_template_model">
         <div class="title muted" data-bind="text: display"></div>
         <div class="internal" data-bind="visible: name != display">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
-        <div class="uploaded">{{ _('Uploaded') }}: <span data-bind="text: formatTimeAgo(date, '?'), attr: {title: formatDate(date, {placeholder:'{{ _('unknown') | esq }}'})}"></span></div>
+        <div class="uploaded">{{ _('Updated') }}: <span data-bind="text: formatTimeAgo(date, '?'), attr: {title: formatDate(date, {placeholder:'{{ _('unknown') | esq }}'})}"></span></div>
         <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
         <div class="btn-group action-buttons">
             <a class="btn btn-mini" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_DOWNLOAD), attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}" title="{{ _('Download')|edq }}" aria-label="{{ _('Download')|edq }}" role="link"><i class="fas fa-download"></i></a>
@@ -45,9 +45,12 @@
     </script>
 
     <script type="text/html" id="files_template_folder">
+        <div class="btn btn-mini toggleAdditionalData pull-right" data-bind="visible: origin != 'sdcard',click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }" title="{{ _('Additional data')|edq }}"><i class="fas fa-chevron-down"></i></div>
         <div class="title clickable" data-bind="click: $root.changeFolder, style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }"><i class="fas fa-folder-open"></i> <span data-bind="text: display"></span></div>
         <div class="internal" data-bind="visible: name != display">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
+        <div class="uploaded">{{ _('Updated') }}: <span data-bind="text: formatTimeAgo(date, '?'), attr: {title: formatDate(date, {placeholder:'{{ _('unknown') | esq }}'})}"></span></div>
         <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
+        <div class="additionalInfo hide" data-bind="html: $root.getAdditionalData($data)"></div>
         <div class="btn-group action-buttons">
             <div class="btn btn-mini" data-bind="visible: $root.loginState.hasAllPermissionsKo($root.access.permissions.FILES_UPLOAD, $root.access.permissions.FILES_DELETE), click: function(data, event) { if ($root.enableMove($data)) { $root.showMoveDialog($data, event); } else { return; } }, css: {disabled: !$root.enableMove($data)}" title="{{ _('Move')|edq }}" aria-label="{{ _('Move')|edq }}" role="link"><i class="fas fa-cut"></i></div>
             <div class="btn btn-mini" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_DELETE), click: function(data, event) { if ($root.enableRemove($data)) { $root.removeFolder($data, event); } else { return; } }, css: {disabled: !$root.enableRemove($data)}" title="{{ _('Remove') }}" aria-label="{{ _('Remove') }}" role="link"><i class="far fa-trash-alt"></i></div>

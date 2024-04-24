@@ -58,7 +58,7 @@
 
         <div class="page-container" id="page-container-main" {% if enableLoadingAnimation %}style="display: none"{% endif %} data-bind="visible: visible">
             <!-- ko allowBindings: false -->
-            <div id="navbar" class="navbar navbar-static-top">
+            <div id="navbar" class="navbar navbar-static-top" aria-label="Navigation">
                 <div class="navbar-inner" data-bind="css: appearanceClasses">
                     <div class="container">
                         <a class="brand" href="javascript:void(0)" data-bind="attr: {title: appearance.fullbrand}"><span data-bind="text: appearance.brand">OctoPrint</span></a>
@@ -86,7 +86,7 @@
                 <div class="row">
                     <!-- Sidebar -->
                     {% if templates.sidebar.order %}
-                    <div id="sidebar" class="accordion {% if templates.tab.order %}span4{% else %}span12{% endif %}">
+                    <div id="sidebar" class="accordion {% if templates.tab.order %}span4{% else %}span12{% endif %}" aria-label="Sidebar">
                         {% for key in templates.sidebar.order %}
                             {% set entry, data = templates.sidebar.entries[key] %}
                             {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
@@ -97,7 +97,7 @@
                                     >
                                 <div class="accordion-heading">
 
-                                    <a class="accordion-toggle" data-toggle="collapse" data-test-id="sidebar-{{ data._div }}-toggle" data-target="#{{ data._div }}">
+                                    <a role="heading" aria-level="2" aria-label="{{ entry|edq }}" class="accordion-toggle" data-toggle="collapse" data-test-id="sidebar-{{ data._div }}-toggle" data-target="#{{ data._div }}">
                                         {% if "icon" in data %}
                                             {% if data.icon.startswith("fa") %}
                                                 {# Fontawesome 5 allows using fas, far, fab etc. (FA6 also has fa-solid, fa-regular) so plugins should use the prefix they want #}
@@ -129,8 +129,8 @@
 
                     <!-- Tabs -->
                     {% if templates.tab.order %}
-                    <div class="tabbable {% if templates.sidebar.order %}span8{% else %}span12{% endif %}">
-                        <ul class="nav nav-tabs" id="tabs">
+                    <div class="tabbable {% if templates.sidebar.order %}span8{% else %}span12{% endif %}" aria-label="Tabs">
+                        <ul class="nav nav-tabs" id="tabs" role="tablist">
                             {% for key in templates.tab.order %}
                                 {% set entry, data = templates.tab.entries[key] %}
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
@@ -139,7 +139,7 @@
                                     {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
                                     {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                         >
-                                        <a href="#{{ data._div }}" data-toggle="tab">{{ entry|e }}</a>
+                                        <a href="#{{ data._div }}" data-toggle="tab" role="tab" aria-label="{{ entry|edq }}">{{ entry|e }}</a>
                                 </li>
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
                             {% endfor %}
@@ -149,7 +149,7 @@
                             {% for key in templates.tab.order %}
                                 {% set entry, data = templates.tab.entries[key] %}
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
-                                <div id="{{ data._div }}"
+                                <div id="{{ data._div }}" role="tabpanel" aria-label="{{ entry|edq }}"
                                      class="tab-pane{% if loop.first %} active{% endif %}{% if "additional_classes" in data %} {{ data.additional_classes|join(' ') }}{% endif %}"
                                      {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
                                      {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
@@ -174,6 +174,8 @@
             {% include 'dialogs/files.jinja2' %}
             {% include 'dialogs/temperature.jinja2' %}
             {% include 'dialogs/timelapse.jinja2' %}
+            {% include 'dialogs/firmwareerror.jinja2' %}
+            {% include 'dialogs/reauthenticate.jinja2' %}
             <!-- End of dialogs -->
 
             <!-- Overlays -->

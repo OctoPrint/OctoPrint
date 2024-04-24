@@ -3,6 +3,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import base64
+import datetime
 import logging
 import sys
 
@@ -19,6 +20,37 @@ from octoprint.settings import settings
 from octoprint.util import deprecated, to_unicode
 
 from . import flask, sockjs, tornado, watchdog  # noqa: F401
+
+
+class LoginMechanism:
+    PASSWORD = "password"
+    REMEMBER_ME = "remember_me"
+    AUTOLOGIN = "autologin"
+    APIKEY = "apikey"
+    AUTHHEADER = "authheader"
+    REMOTE_USER = "remote_user"
+
+    _REAUTHENTICATION_ENABLED = (PASSWORD, REMEMBER_ME, AUTOLOGIN)
+
+    @classmethod
+    def reauthentication_enabled(cls, login_mechanism):
+        return login_mechanism in cls._REAUTHENTICATION_ENABLED
+
+    @classmethod
+    def to_log(cls, login_mechanism):
+        if login_mechanism == cls.PASSWORD:
+            return "credentials"
+        elif login_mechanism == cls.REMEMBER_ME:
+            return "Remember Me cookie"
+        elif login_mechanism == cls.AUTOLOGIN:
+            return "autologin"
+        elif login_mechanism == cls.APIKEY:
+            return "API Key"
+        elif login_mechanism == cls.AUTHHEADER:
+            return "Basic Authorization header"
+        elif login_mechanism == cls.REMOTE_USER:
+            return "Remote User header"
+        return "unknown method"
 
 
 @deprecated(
@@ -38,6 +70,8 @@ def loginFromApiKeyRequestHandler():
     ``before_request`` handler for blueprints which creates a login session for the provided api key (if available)
 
     App session keys are handled as anonymous keys here and ignored.
+
+    TODO 1.11.0: Do we still need this with load_user_from_request in place?
     """
     try:
         if loginUserFromApiKey():
@@ -49,6 +83,8 @@ def loginFromApiKeyRequestHandler():
 def loginFromAuthorizationHeaderRequestHandler():
     """
     ``before_request`` handler for creating login sessions based on the Authorization header.
+
+    TODO 1.11.0: Do we still need this with load_user_from_request in place?
     """
     try:
         if loginUserFromAuthorizationHeader():
@@ -71,30 +107,20 @@ def loginUserFromApiKey():
         # invalid API key = no API key
         raise InvalidApiKeyException("Invalid API key")
 
-    return loginUser(user, login_mechanism="apikey")
+    return _loginHelper(user, login_mechanism=LoginMechanism.APIKEY)
 
 
 def loginUserFromAuthorizationHeader():
     authorization_header = get_authorization_header(_flask.request)
     user = get_user_for_authorization_header(authorization_header)
-    return loginUser(user, login_mechanism="authheader")
+    return _loginHelper(user, login_mechanism=LoginMechanism.AUTHHEADER)
 
 
-def loginUser(user, remember=False, login_mechanism=None):
-    """
-    Logs the provided ``user`` into Flask Login and Principal if not None and active
-
-    Args:
-            user: the User to login. May be None in which case the login will fail
-            remember: Whether to set the ``remember`` flag on the Flask Login operation
-
-    Returns: (bool) True if the login succeeded, False otherwise
-
-    """
+def _loginHelper(user, login_mechanism=None):
     if (
         user is not None
         and user.is_active
-        and flask_login.login_user(user, remember=remember)
+        and flask_login.login_user(user, remember=False)
     ):
         flask_principal.identity_changed.send(
             _flask.current_app._get_current_object(),
@@ -102,6 +128,7 @@ def loginUser(user, remember=False, login_mechanism=None):
         )
         if login_mechanism:
             _flask.session["login_mechanism"] = login_mechanism
+            _flask.session["credentials_seen"] = False
         return True
     return False
 
@@ -256,13 +283,14 @@ def get_user_for_remote_user_header(request):
     user = octoprint.server.userManager.findUser(userid=header)
 
     if user is None and settings().getBoolean(["accessControl", "addRemoteUsers"]):
-        octoprint.server.userManager.addUser(
+        octoprint.server.userManager.add_user(
             header, settings().generateApiKey(), active=True
         )
         user = octoprint.server.userManager.findUser(userid=header)
 
     if user:
-        _flask.session["login_mechanism"] = "remote_user"
+        _flask.session["login_mechanism"] = LoginMechanism.REMOTE_USER
+        _flask.session["credentials_seen"] = datetime.datetime.now().timestamp()
     return user
 
 
@@ -295,7 +323,8 @@ def get_user_for_authorization_header(header):
         return None
 
     if user:
-        _flask.session["login_mechanism"] = "basic_auth"
+        _flask.session["login_mechanism"] = LoginMechanism.AUTHHEADER
+        _flask.session["credentials_seen"] = datetime.datetime.now().timestamp()
     return user
 
 
@@ -380,6 +409,39 @@ def has_permissions(*permissions):
 
     flask.passive_login()
     return all(map(lambda p: p.can(), permissions))
+
+
+def require_fresh_login_with(permissions=None, user_id=None):
+    """
+    Requires a login with fresh credentials.
+
+    Args:
+        permissions: list of all permissions required to pass the check
+        user_id: required user to pass the check
+
+    Returns: a flask redirect response to return if a login is required, or None
+    """
+
+    from octoprint.server import current_user, userManager
+    from octoprint.server.util.flask import credentials_checked_recently
+
+    response = require_login_with(permissions=permissions, user_id=user_id)
+    if response is not None:
+        return response
+
+    login_kwargs = {
+        "redirect": _flask.request.script_root + _flask.request.full_path,
+        "reauthenticate": "true",
+        "user_id": current_user.get_id(),
+    }
+    if (
+        _flask.request.headers.get("X-Preemptive-Recording", "no") == "no"
+        and userManager.has_been_customized()
+    ):
+        if not credentials_checked_recently():
+            return _flask.redirect(_flask.url_for("login", **login_kwargs))
+
+    return None
 
 
 def require_login_with(permissions=None, user_id=None):
@@ -469,9 +531,11 @@ def validate_local_redirect(url, allowed_paths):
         and parsed.netloc == ""
         and any(
             map(
-                lambda x: parsed.path.startswith(x[:-1])
-                if x.endswith("*")
-                else parsed.path == x,
+                lambda x: (
+                    parsed.path.startswith(x[:-1])
+                    if x.endswith("*")
+                    else parsed.path == x
+                ),
                 allowed_paths,
             )
         )

@@ -29,7 +29,9 @@ from octoprint.events import Events
 from octoprint.server import safe_mode
 from octoprint.server.util.flask import (
     check_etag,
+    ensure_credentials_checked_recently,
     no_firstrun_access,
+    require_credentials_checked_recently,
     with_revalidation_checking,
 )
 from octoprint.settings import valid_boolean_trues
@@ -205,7 +207,6 @@ class PluginManagerPlugin(
             self.get_plugin_data_folder(), "notices.json"
         )
         self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
-        self._confirm_disable = self._settings.global_get_boolean(["confirm_disable"])
 
         self._pip_caller = create_pip_caller(
             command=self._settings.global_get(["server", "commands", "localPipCommand"]),
@@ -310,7 +311,6 @@ class PluginManagerPlugin(
         self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
         self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
         self._pip_caller.force_user = self._settings.get_boolean(["pip_force_user"])
-        self._confirm_disable = self._settings.global_get_boolean(["confirm_disable"])
 
     ##~~ AssetPlugin
 
@@ -362,6 +362,7 @@ class PluginManagerPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/upload_file", methods=["POST"])
     @no_firstrun_access
+    @require_credentials_checked_recently
     @Permissions.PLUGIN_PLUGINMANAGER_INSTALL.require(403)
     def upload_file(self):
         import flask
@@ -754,6 +755,9 @@ class PluginManagerPlugin(
             # do not update while a print job is running
             # store targets to be run later on print done event
             if command == "install" and data not in self._queued_installs:
+                if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
+                    abort(403)
+                ensure_credentials_checked_recently()
                 self._logger.debug(f"Queuing install of {data}")
                 self._queued_installs.append(data)
             if len(self._queued_installs) > 0:
@@ -771,8 +775,10 @@ class PluginManagerPlugin(
         elif command == "install":
             if not Permissions.PLUGIN_PLUGINMANAGER_INSTALL.can():
                 abort(403)
+            ensure_credentials_checked_recently()
             url = data["url"]
-            plugin_name = data["plugin"] if "plugin" in data else None
+            plugin_name = data.get("plugin")
+            from_repo = data.get("from_repo", False)
 
             with self._install_lock:
                 if self._install_task is not None:
@@ -786,6 +792,7 @@ class PluginManagerPlugin(
                         "dependency_links": "dependency_links" in data
                         and data["dependency_links"] in valid_boolean_trues,
                         "reinstall": plugin_name,
+                        "from_repo": from_repo,
                     },
                 )
                 self._install_task.daemon = True
@@ -901,6 +908,7 @@ class PluginManagerPlugin(
         reinstall=None,
         dependency_links=False,
         partial=False,
+        from_repo=False,
     ):
         folder = None
 
@@ -926,6 +934,7 @@ class PluginManagerPlugin(
                         reinstall=reinstall,
                         dependency_links=dependency_links,
                         partial=partial,
+                        from_repo=from_repo,
                     )
 
                 elif self._is_pythonfile(path):
@@ -935,6 +944,7 @@ class PluginManagerPlugin(
                         source_type=source_type,
                         name=name,
                         partial=partial,
+                        from_repo=from_repo,
                     )
 
                 elif self._is_jsonfile(path):
@@ -944,6 +954,7 @@ class PluginManagerPlugin(
                         source_type=source_type,
                         name=name,
                         partial=partial,
+                        from_repo=from_repo,
                     )
 
                 else:
@@ -1006,6 +1017,7 @@ class PluginManagerPlugin(
         reinstall=None,
         dependency_links=False,
         partial=False,
+        from_repo=False,
     ):
         throttled = self._get_throttled()
         if (
@@ -1218,6 +1230,7 @@ class PluginManagerPlugin(
                 "version": new_plugin.version,
                 "source": source,
                 "source_type": source_type,
+                "from_repo": from_repo,
             },
         )
 
@@ -1253,7 +1266,13 @@ class PluginManagerPlugin(
 
     # noinspection DuplicatedCode
     def _command_install_pythonfile(
-        self, path, source=None, source_type=None, name=None, partial=False
+        self,
+        path,
+        source=None,
+        source_type=None,
+        name=None,
+        partial=False,
+        from_repo=False,
     ):
         if name is None:
             name = os.path.basename(path)
@@ -1363,6 +1382,7 @@ class PluginManagerPlugin(
                 "version": new_plugin.version,
                 "source": source,
                 "source_type": source_type,
+                "from_repo": from_repo,
             },
         )
 
@@ -1380,7 +1400,13 @@ class PluginManagerPlugin(
         return result
 
     def _command_install_jsonfile(
-        self, path, source=None, source_type=None, name=None, partial=False
+        self,
+        path,
+        source=None,
+        source_type=None,
+        name=None,
+        partial=False,
+        from_repo=False,
     ):
         import json
 
@@ -1448,7 +1474,7 @@ class PluginManagerPlugin(
                     self._logger.info(message)
                     self._log_message(message)
                     sub_result = self.command_install(
-                        url=archive, name=name, partial=True
+                        url=archive, name=name, partial=True, from_repo=from_repo
                     )
                     sub_results.append(sub_result)
 
@@ -2348,10 +2374,11 @@ def _filter_relevant_notification(notification, plugin_version, octoprint_versio
         and (
             (version_ranges is None and versions is None)
             or (
-                version_ranges
+                plugin_version
+                and version_ranges
                 and (any(map(lambda v: plugin_version in v, version_ranges)))
             )
-            or (versions and plugin_version in versions)
+            or (plugin_version and versions and plugin_version in versions)
         )
         and (
             "octoversions" not in notification

@@ -9,10 +9,12 @@ from flask_babel import gettext
 import octoprint.plugin
 from octoprint.access import ADMIN_GROUP, USER_GROUP
 from octoprint.access.permissions import Permissions
-from octoprint.server import NO_CONTENT, admin_permission, current_user
-from octoprint.server.util import require_login_with
+from octoprint.server import NO_CONTENT, current_user
+from octoprint.server.util import require_fresh_login_with
 from octoprint.server.util.flask import (
     add_non_caching_response_headers,
+    credentials_checked_recently,
+    ensure_credentials_checked_recently,
     no_firstrun_access,
     restricted_access,
 )
@@ -76,8 +78,11 @@ class ActiveKey:
         self.api_key = api_key
         self.user_id = user_id
 
-    def external(self):
-        return {"app_id": self.app_id, "api_key": self.api_key, "user_id": self.user_id}
+    def external(self, incl_key=False):
+        result = {"app_id": self.app_id, "user_id": self.user_id}
+        if incl_key:
+            result["api_key"] = self.api_key
+        return result
 
     def internal(self):
         return {"app_id": self.app_id, "api_key": self.api_key}
@@ -227,7 +232,7 @@ class AppKeysPlugin(
         if not pendings:
             return flask.abort(404)
 
-        response = require_login_with(
+        response = require_fresh_login_with(
             permissions=[Permissions.PLUGIN_APPKEYS_GRANT], user_id=required_user
         )
         if response:
@@ -270,6 +275,8 @@ class AppKeysPlugin(
         if not Permissions.PLUGIN_APPKEYS_GRANT.can():
             flask.abort(403, description="No permission to grant app access")
 
+        ensure_credentials_checked_recently()
+
         decision = data["decision"] in valid_boolean_trues
         user_id = current_user.get_name()
 
@@ -293,23 +300,45 @@ class AppKeysPlugin(
     ##~~ SimpleApiPlugin mixin
 
     def get_api_commands(self):
-        return {"generate": ["app"], "revoke": ["key"]}
+        return {"generate": ["app"], "revoke": []}
 
     def on_api_get(self, request):
         user_id = current_user.get_name()
         if not user_id:
             return flask.abort(403)
 
+        # GET ?app_id=...[&user_id=...]
+        if request.values.get("app"):
+            app_id = request.values.get("app")
+            user_id = request.values.get("user", user_id)
+            if (
+                user_id != current_user.get_name()
+                and not Permissions.PLUGIN_APPKEYS_ADMIN.can()
+            ):
+                return flask.abort(403)
+
+            key = self._api_key_for_user_and_app_id(user_id, app_id)
+            if not key:
+                return flask.abort(404)
+
+            return flask.jsonify(
+                key=key.external(incl_key=credentials_checked_recently())
+            )
+
+        # GET ?all=true (admin only)
         if (
             request.values.get("all") in valid_boolean_trues
             and Permissions.PLUGIN_APPKEYS_ADMIN.can()
         ):
             keys = self._all_api_keys()
+
         else:
             keys = self._api_keys_for_user(user_id)
 
         return flask.jsonify(
-            keys=list(map(lambda x: x.external(), keys)),
+            keys=list(
+                map(lambda x: x.external(), keys),
+            ),
             pending={
                 x.user_token: x.external() for x in self._get_pending_by_user_id(user_id)
             },
@@ -322,13 +351,37 @@ class AppKeysPlugin(
 
         if command == "revoke":
             api_key = data.get("key")
-            if not api_key:
-                return flask.abort(400)
 
-            if not admin_permission.can():
+            if api_key:
+                # deprecated key based revoke?
+                from flask import request
+
+                from octoprint.server.util import get_remote_address
+
+                self._logger.warning(
+                    "Deprecated key based revoke command sent to /api/plugin/appkeys by {}, should be migrated to use app id/user tuple".format(
+                        get_remote_address(request)
+                    )
+                )
+
+            else:
+                # newer app/user based revoke?
+                user = data.get("user", user_id)
+                app = data.get("app")
+                if not app:
+                    return flask.abort(400, description="Need either app or key")
+
+                api_key = self._api_key_for_user_and_app_id(user, app)
+
+            if not api_key:
+                return flask.abort(400, description="Need either app or key")
+
+            if not Permissions.PLUGIN_APPKEYS_ADMIN.can():
                 user_for_key = self._user_for_api_key(api_key)
                 if user_for_key is None or user_for_key.user_id != user_id:
                     return flask.abort(403)
+
+            ensure_credentials_checked_recently()
 
             self._delete_api_key(api_key)
 
@@ -341,6 +394,8 @@ class AppKeysPlugin(
             selected_user_id = data.get("user", user_id)
             if selected_user_id != user_id and not Permissions.PLUGIN_APPKEYS_ADMIN.can():
                 return flask.abort(403)
+
+            ensure_credentials_checked_recently()
 
             key = self._add_api_key(selected_user_id, app_name.strip())
             return flask.jsonify(user_id=selected_user_id, app_id=app_name, api_key=key)
@@ -473,12 +528,18 @@ class AppKeysPlugin(
             return key.api_key
 
     def _delete_api_key(self, api_key):
+        if isinstance(api_key, ActiveKey):
+            api_key = api_key.api_key
+
         with self._keys_lock:
             for user_id, data in self._keys.items():
                 self._keys[user_id] = list(filter(lambda x: x.api_key != api_key, data))
             self._save_keys()
 
     def _user_for_api_key(self, api_key):
+        if isinstance(api_key, ActiveKey):
+            api_key = api_key.api_key
+
         with self._keys_lock:
             for user_id, data in self._keys.items():
                 if any(filter(lambda x: x.api_key == api_key, data)):
@@ -495,6 +556,17 @@ class AppKeysPlugin(
             for keys in self._keys.values():
                 result += keys
         return result
+
+    def _api_key_for_user_and_app_id(self, user_id, app_id):
+        with self._keys_lock:
+            if user_id not in self._keys:
+                return None
+
+            for key in self._keys[user_id]:
+                if key.app_id.lower() == app_id.lower():
+                    return key
+
+        return None
 
     def _generate_key(self):
         return generate_api_key()

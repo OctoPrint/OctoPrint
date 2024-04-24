@@ -260,10 +260,12 @@ class PrinterInterface:
 
         Arguments:
             heater (str): The heater for which to set the target temperature. Either "bed" for setting the bed
-                temperature or something matching the regular expression "tool[0-9]+" (e.g. "tool0", "tool1", ...) for
-                the hotends of the printer
+                temperature, "chamber" for setting the temperature of the heated enclosure or something matching the
+                regular expression "tool[0-9]+" (e.g. "tool0", "tool1", ...) for the hotends of the printer. However,
+                addressing components that are disabled or unconfigured in the printer profile will result in a
+                "Suppressed command" error popup message.
             value (int, float): The temperature in celsius to set the target temperature to.
-            tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
+            tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle.
         """
         raise NotImplementedError()
 
@@ -600,6 +602,10 @@ class PrinterInterface:
 
     @property
     def firmware_info(self):
+        raise NotImplementedError()
+
+    @property
+    def error_info(self):
         raise NotImplementedError()
 
 

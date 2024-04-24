@@ -19,6 +19,9 @@
             </div>
         </div>
 
+        <div class="refresh_overlay">
+            <a data-bind="click: refreshWebcam" aria-label="{{ _('Refresh webcam view')|edq }}"><i class="fas fa-refresh"></i></a>
+        </div>
 
         {% if templates.webcam.order|length > 1 %}
         <ul class="nav justify-content-end">
@@ -117,12 +120,12 @@
         <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendRetractCommand() }">{{ _('Retract') }}</button>
         <div data-bind="style: { visibility: tools().length > 1 ? 'visible' : 'hidden' }">
             <div class="btn-group control-box" style="display: inline-block">
-                <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && !isPrinting() && !isPaused()">
+                <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational()">
                     {{ _('Switch Tool...') }}
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" data-bind="foreach: tools">
-                    <li><a href="#" data-bind="click: $root.sendSelectToolCommand, text: name(), enable: $root.isOperational() && !$root.isPrinting() && !$root.isPaused()"></a></li>
+                    <li><a href="javascript:void(0)" data-bind="click: $root.sendSelectToolCommand, text: name(), enable: $root.isOperational()"></a></li>
                 </ul>
             </div>
             <a class="text-info" style="display: inline-block; height: 30px; vertical-align: middle" href="javascript:void(0)" data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _('Please note!') }}', content: '{{ _('The selected tool can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.') }}'}"><i class="fas fa-info-circle"></i></a>

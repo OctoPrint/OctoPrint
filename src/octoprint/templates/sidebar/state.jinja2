@@ -1,4 +1,4 @@
-<span title="{{ _('Current printer state')|edq }}">{{ _('State') }}</span>: <strong data-test-id="state-string" data-bind="text: stateString"></strong><br>
+<span title="{{ _('Current printer state')|edq }}">{{ _('State') }}</span>: <strong data-test-id="state-string" data-bind="text: stateString"></strong> <a href="javascript:void(0)" class="text-error" data-bind="visible: errorInfoAvailable, click: function() { showFirmwareErrorModal() }"><i class="fas fa-exclamation-circle"></i></a><br>
 <span data-bind="visible: hasErrorString" class="text-error"><span data-test-id="error-string" data-bind="text: errorString"></span><br></span>
 <span data-bind="visible: isOperational"><span title="{{ _('Count of resend requests, transmitted lines and resend ratio')|edq }}">{{ _('Resend ratio') }}</span>: <strong data-bind="css: {'text-error': resendRatioCritical}"><span title="{{ _('resend requests') | edq }}" data-bind="text: formatHuman(resendCount())"></span> / <span title="{{ _('transmitted lines') | edq }}" data-bind="text: formatHuman(resendTotalTransmitted())"></span> (<span title="{{ _('resend ratio') }}" data-bind="text: resendRatio"></span>%) <a href="https://faq.octoprint.org/communication-errors" target="_blank" class="text-error" data-bind="visible: resendRatioCritical"><i class="fas fa-question-circle"></i></a></strong><br></span>
 <hr>
@@ -11,7 +11,7 @@
 <span title="{{ _('Current timelapse configuration')|edq }}">{{ _('Timelapse') }}</span>: <strong data-bind="text: timelapseString"></strong><br>
 <!-- /ko -->
 <!-- ko foreach: filament -->
-<span data-bind="text: 'Filament (' + name() + '): ', title: 'Filament usage for ' + name()"></span><strong data-bind="text: formatFilament(data())"></strong><br>
+<span data-bind="text: _.sprintf(gettext('Filament (%(name)s)'), { name: name() }), attr: {title: _.sprintf(gettext('Filament usage for %(name)s'), {name: name()})}"></span>: <strong data-bind="text: formatFilament(data())"></strong><br>
 <!-- /ko -->
 <span title="{{ _('Estimated total print time based on analysis of the file or past prints')|edq }}">{{ _('Approx. Total Print Time') }}</span>: <strong data-bind="text: estimatedPrintTimeString, attr: {title: estimatedPrintTimeExactString}"></strong><br>
 <hr>

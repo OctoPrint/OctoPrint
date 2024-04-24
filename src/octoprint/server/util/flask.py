@@ -11,7 +11,7 @@ import logging
 import os
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Union
 
 import flask
@@ -36,7 +36,7 @@ import octoprint.access.users
 import octoprint.plugin
 import octoprint.server
 import octoprint.vendor.flask_principal as flask_principal
-from octoprint.access import auth_log, login_mechanisms
+from octoprint.access import auth_log
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated, yaml
@@ -679,8 +679,8 @@ def passive_login():
         if not u.is_anonymous:
             if not flask.g.identity or not flask.g.identity.id:
                 # the user was just now found
-                login_mechanism = login_mechanisms.get(
-                    flask.session.get("login_mechanism", "unknown"), "unknown mechanism"
+                login_mechanism = octoprint.server.util.LoginMechanism.to_log(
+                    flask.session.get("login_mechanism", "unknown")
                 )
                 auth_log(
                     f"Logging in user {u.get_id()} from {remote_address} via {login_mechanism}"
@@ -731,7 +731,10 @@ def passive_login():
                         logger.info(
                             f"Logging in user {autologin_as} from {remote_address} via autologin"
                         )
-                        flask.session["login_mechanism"] = "autologin"
+                        flask.session[
+                            "login_mechanism"
+                        ] = octoprint.server.util.LoginMechanism.AUTOLOGIN
+                        flask.session["credentials_seen"] = False
                         return autologin_user
             except Exception:
                 logger.exception(
@@ -753,7 +756,21 @@ def passive_login():
     )
     if flask.session.get("login_mechanism") is not None:
         response["_login_mechanism"] = flask.session.get("login_mechanism")
+    response["_credentials_seen"] = to_api_credentials_seen(
+        flask.session.get("credentials_seen", False)
+    )
     return flask.jsonify(response)
+
+
+def to_api_credentials_seen(credentials_seen):
+    if not credentials_seen:
+        return False
+
+    return (
+        datetime.fromtimestamp(credentials_seen, tz=timezone.utc)
+        .replace(microsecond=0)
+        .isoformat()
+    )
 
 
 # ~~ rate limiting helper
@@ -1512,6 +1529,21 @@ def permission_validator(request, permission):
         raise tornado.web.HTTPError(403)
 
 
+def permission_and_fresh_credentials_validator(request, permission):
+    """
+    Validates that the given request is made by an authorized user, identified either by API key or existing Flask
+    session, and that the credentials have been checked recently if it's a Flask session.
+
+    Must be executed in an existing Flask request context!
+
+    :param request: The Flask request object
+    :param request: The required permission
+    """
+
+    permission_validator(request, permission)
+    ensure_credentials_checked_recently()
+
+
 @deprecated(
     "admin_validator is deprecated, please use new permission_validator", since=""
 )
@@ -1632,6 +1664,51 @@ def firstrun_only_access(func):
             return func(*args, **kwargs)
         else:
             flask.abort(403)
+
+    return decorated_view
+
+
+def credentials_checked_recently():
+    minutes = settings().getInt(["accessControl", "defaultReauthenticationTimeout"])
+    if not minutes:
+        return True
+
+    login_mechanism = flask.session.get("login_mechanism")
+    if not octoprint.server.util.LoginMechanism.reauthentication_enabled(login_mechanism):
+        return True
+
+    credentials_seen = flask.session.get("credentials_seen")
+    now = datetime.now()
+
+    try:
+        if credentials_seen and datetime.fromtimestamp(
+            credentials_seen
+        ) > now - timedelta(minutes=minutes):
+            # credentials seen less than the set minutes ago, proceed
+            return True
+    except Exception:
+        logging.getLogger(__name__).exception("Error while checking for seen credentials")
+        pass
+
+    return False
+
+
+def ensure_credentials_checked_recently():
+    if not credentials_checked_recently():
+        flask.abort(403, description="Please reauthenticate with your credentials")
+
+
+def require_credentials_checked_recently(func):
+    """
+    If you decorate a view with this, it will ensure that only users who entered their password
+    recently in this login session are allowed to proceed. Otherwise it will cause a HTTP 403 status code
+    to be returned by the decorated resource.
+    """
+
+    @functools.wraps(func)
+    def decorated_view(*args, **kwargs):
+        ensure_credentials_checked_recently()
+        return func(*args, **kwargs)
 
     return decorated_view
 
@@ -1770,6 +1847,7 @@ def collect_core_assets(preferred_stylesheet="css"):
         "js/app/viewmodels/connection.js",
         "js/app/viewmodels/control.js",
         "js/app/viewmodels/files.js",
+        "js/app/viewmodels/firstrun_wizard.js",
         "js/app/viewmodels/loginstate.js",
         "js/app/viewmodels/loginui.js",
         "js/app/viewmodels/navigation.js",

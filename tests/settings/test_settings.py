@@ -347,8 +347,6 @@ class SettingsTest(unittest.TestCase):
             except octoprint.settings.NoSuchSettingsPath:
                 pass
 
-    ##~~ test setters
-
     def test_set(self):
         with self.settings() as settings:
             settings.set(["server", "host"], "127.0.0.1")
@@ -768,6 +766,10 @@ def _key(*path):
     return octoprint.settings._CHAINMAP_SEP.join(path)
 
 
+def _prefix(*path):
+    return _key(*path) + octoprint.settings._CHAINMAP_SEP
+
+
 @ddt.ddt
 class ChainmapTest(unittest.TestCase):
     def setUp(self):
@@ -836,6 +838,13 @@ class ChainmapTest(unittest.TestCase):
         flattened = octoprint.settings.HierarchicalChainMap._flatten(updated)
 
         self.assertEqual(flattened, self.chainmap._chainmap.maps[0])
+
+    def test_set_empty_dict(self):
+        self.assertTrue(_key("empty", "value", "a") in self.chainmap._chainmap.maps[0])
+
+        self.chainmap.set_by_path(["empty", "value"], {})
+
+        self.assertFalse(_key("empty", "value", "a") in self.chainmap._chainmap.maps[0])
 
     def test_del_by_path(self):
         self.chainmap.del_by_path(
@@ -911,3 +920,87 @@ class ChainmapTest(unittest.TestCase):
         self.assertEqual(
             expected, octoprint.settings.HierarchicalChainMap._unflatten(value)
         )
+
+    def test_prefix_caching_has_populates(self):
+        # this should populate the prefix cache
+        self.chainmap.has_path(["plugins", "foo"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 1)
+        self.assertTrue(_prefix("plugins", "foo") in self.chainmap._prefixed_keys)
+
+    def test_prefix_caching_get_populates(self):
+        # this should populate the prefix cache
+        self.chainmap.get_by_path(["plugins", "foo"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 1)
+        self.assertTrue(_prefix("plugins", "foo") in self.chainmap._prefixed_keys)
+
+    def test_prefix_caching_scalars_ignored(self):
+        # this shouldn't populate the prefix cache
+        self.chainmap.has_path(["api", "key"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 0)
+
+    def test_prefix_caching_set_invalidates(self):
+        # this should populate the prefix cache
+        self.chainmap.has_path(["plugins", "foo"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 1)
+        self.assertTrue(_prefix("plugins", "foo") in self.chainmap._prefixed_keys)
+
+        # this should extend the prefix cache
+        self.chainmap.get_by_path(["plugins", "foo", "bar"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 2)
+        self.chainmap.has_path(["plugins", "foo", "bar"])
+
+        # this should remove all plugins.foo keys in the prefix cache
+        self.chainmap.set_by_path(["plugins", "foo"], {})
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 0)
+
+    def test_prefix_caching_del_invalidates(self):
+        # this should populate the prefix cache
+        self.chainmap.has_path(["plugins", "baz", "d"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 1)
+        self.assertTrue(_prefix("plugins", "baz", "d") in self.chainmap._prefixed_keys)
+
+        # this should remove all plugins.baz keys in the prefix cache
+        self.chainmap.del_by_path(["plugins", "baz"])
+
+        # validate that
+        keys = [
+            key
+            for key in self.chainmap._prefixed_keys
+            if key.startswith(_prefix("plugins", "baz"))
+        ]
+        self.assertTrue(len(keys) == 0)
+
+    def test_prefix_caching_custom_defaults(self):
+        # this should populate the prefix cache
+        self.chainmap.has_path(["swu", "checks"])
+
+        # validate that
+        self.assertTrue(len(self.chainmap._prefixed_keys) == 1)
+        self.assertTrue(_prefix("swu", "checks") in self.chainmap._prefixed_keys)
+
+        # this should save a new key for some custom defaults
+        path = ["swu", "checks", "yetanother"]
+        defaults = {"swu": {"checks": {"yetanother": {}}}}
+        self.chainmap.with_config_defaults(defaults=defaults).set_by_path(
+            path, {"foo": 3}
+        )
+
+        # getting the first path now should include our new data
+        data = self.chainmap.get_by_path(["swu", "checks"], merged=True)
+
+        # validate that
+        self.assertTrue("yetanother" in data)

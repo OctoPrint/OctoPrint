@@ -51,7 +51,7 @@ Use the following settings to enable access control:
 
      # Whether to trust Basic Authentication headers. If you have setup Basic Authentication in front of
      # OctoPrint and the user names you use there match OctoPrint accounts, by setting this to true users will
-     # be logged into OctoPrint as the user user during Basic Authentication. Your should ONLY ENABLE THIS if your
+     # be logged into OctoPrint as the user during Basic Authentication. Your should ONLY ENABLE THIS if your
      # OctoPrint instance is only accessible through a connection locked down through Basic Authentication!
      trustBasicAuthentication: false
 
@@ -71,6 +71,10 @@ Use the following settings to enable access control:
 
      # If a remote user is not found, add them. Use this only if all users from the remote system can use OctoPrint.
      addRemoteUsers: false
+
+     # Default timeout after which to require reauthentication by a user for dangerous changes, in minutes.
+     # Defaults to 5 minutes. Set to 0 to disable reauthentication requirements (SECURITY IMPACT!).
+     defaultReauthenticationTimeout: 5
 
 .. _sec-configuration-config_yaml-api:
 
@@ -870,10 +874,6 @@ Use the following settings to configure the server:
      # If this option is true, OctoPrint will enable safe mode on the next server start and
      # reset the setting to false
      startOnceInSafeMode: false
-
-     # Signals to OctoPrint that the last startup was incomplete. OctoPrint will then startup
-     # in safe mode
-     incompleteStartup: false
 
      # Set this to true to make OctoPrint ignore incomplete startups. Helpful for development.
      ignoreIncompleteStartup: false
