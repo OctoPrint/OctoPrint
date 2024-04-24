@@ -183,12 +183,14 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit != 'true'
         working-directory: ./tests/playwright
         run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
           npx playwright install --with-deps
 
       - name: 🏗 Install Playwright OS dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         working-directory: ./tests/playwright
         run: |
+          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
           npx playwright install-deps
 
       - name: 🎭 Run Playwright

@@ -3,10 +3,10 @@
 # This file is distributed under the same license as the OctoPrint project.
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.10.0rc4\n"
+"Project-Id-Version: OctoPrint 1.10.0\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2024-04-08 15:05+0200\n"
-"PO-Revision-Date: 2024-04-08 15:05+0200\n"
+"POT-Creation-Date: 2024-04-24 10:28+0200\n"
+"PO-Revision-Date: 2024-04-24 10:25+0200\n"
 "Last-Translator: Gina Häußge <gina@octoprint.org>\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
