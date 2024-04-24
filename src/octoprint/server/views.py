@@ -245,6 +245,7 @@ def login():
         "user_id": user_id,
         "logged_in": not current_user.is_anonymous,
         "reauthenticate": reauthenticate,
+        "forms": [],
     }
 
     try:
@@ -257,6 +258,23 @@ def login():
         render_kwargs.update({"theming": additional_assets})
     except Exception:
         _logger.exception("Error processing theming CSS, ignoring")
+
+    mfa_plugins = pluginManager.get_implementations(octoprint.plugin.MfaPlugin)
+    for plugin in mfa_plugins:
+        try:
+            form = plugin.get_mfa_form()
+            if form:
+                render_kwargs["forms"].append(
+                    {
+                        "id": f"form-{plugin._identifier}",
+                        "template": f"{plugin.template_folder_key}/{form}",
+                    }
+                )
+        except Exception:
+            _logger.exception(
+                f"Error while calling plugin {plugin._identifier}, skipping it",
+                extra={"plugin": plugin._identifier},
+            )
 
     resp = make_response(render_template("login.jinja2", **render_kwargs))
     return add_csrf_cookie(resp)

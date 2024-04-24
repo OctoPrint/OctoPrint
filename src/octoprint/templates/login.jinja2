@@ -107,5 +107,16 @@
             </div>
         </div>
     </div>
+
+    <script type="text/html" id="form-password-login">
+    </script>
+
+    {% for form in forms %}
+        {% try "<!-- There was an error with the template {filename} at line number {lineno}: {exception} -->" %}
+        <script type="text/html" id="{{ form.id }}">
+            {% include form.template ignore missing %}
+        </script>
+        {% endtry %}
+    {% endfor %}
 </body>
 </html>

@@ -10,6 +10,7 @@ $(function () {
         startedUp: false
     };
 
+    var loginElement = $("#login");
     var overlayElement = $("#login-overlay");
     var errorCredentialsElement = $("#login-error-credentials");
     var errorRateElement = $("#login-error-rate");
@@ -18,6 +19,8 @@ $(function () {
     var reconnectElement = $("#login-reconnect");
 
     var ignoreDisconnect = false;
+
+    loginElement.html($("#form-password-login").html());
 
     buttonElement.click(function () {
         var usernameElement = $("#login-user");
