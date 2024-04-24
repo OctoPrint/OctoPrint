@@ -50,10 +50,10 @@ maintenance 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
 fix/.* 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
 improve/.* 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
 
-# staging/bugfix is the branch for preparation of the 1.9.x bugfix releases
+# staging/bugfix is the branch for preparation of the 1.10.x bugfix releases
 # so are any bug/... branches
-staging/bugfix 1.9.4 506648c152681bf4b1416cf2b5aaf97d526ee752 pep440-dev
-bug/.* 1.9.4 506648c152681bf4b1416cf2b5aaf97d526ee752 pep440-dev
+staging/bugfix 1.10.1 fed2dd7660c1587e2c280a30ed9d84ceffa1b89d pep440-dev
+bug/.* 1.10.1 fed2dd7660c1587e2c280a30ed9d84ceffa1b89d pep440-dev
 
 # staging/maintenance is currently the branch for preparation of 1.10.0rc5
 # so is regressionfix/...
