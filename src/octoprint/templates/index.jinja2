@@ -134,12 +134,12 @@
                             {% for key in templates.tab.order %}
                                 {% set entry, data = templates.tab.entries[key] %}
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
-                                <li id="{{ data._div }}_link"
+                                <li role="tab" id="{{ data._div }}_link"
                                     class="{% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
                                     {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
                                     {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                         >
-                                        <a href="#{{ data._div }}" data-toggle="tab" role="tab" aria-label="{{ entry|edq }}">{{ entry|e }}</a>
+                                        <a href="#{{ data._div }}" data-toggle="tab" aria-label="{{ entry|edq }}">{{ entry|e }}</a>
                                 </li>
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
                             {% endfor %}
