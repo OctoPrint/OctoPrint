@@ -258,7 +258,7 @@ For timelapse type ``zchange``.
    * - ``renderAfterPrint``
      - 1
      - string
-     - Determines whether the timelapse should be rendered automatically after the print finishes. 
+     - Determines whether the timelapse should be rendered automatically after the print finishes.
 
 .. _sec-api-timelapse-datamodel-config-timed:
 

@@ -251,7 +251,13 @@ def setTimelapseConfig():
         data = request.values
 
     if "type" in data:
-        config = {"type": data["type"], "postRoll": 0, "fps": 25, "renderAfterPrint": "always", "options": {}}
+        config = {
+            "type": data["type"],
+            "postRoll": 0,
+            "fps": 25,
+            "renderAfterPrint": "always",
+            "options": {},
+        }
 
         if "postRoll" in data:
             try:
