@@ -47,10 +47,10 @@ def create_client(
         try:
             with open(cli_key_file, encoding="utf8") as f:
                 apikey = f.readline()
-        except Exception:
+        except Exception as exc:
             raise FatalStartupError(
                 f"Can not authenticate with server at {host}:{port}, no key"
-            )
+            ) from exc
 
     baseurl = octoprint_client.build_base_url(
         https=https,
