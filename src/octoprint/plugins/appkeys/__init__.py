@@ -376,7 +376,7 @@ class AppKeysPlugin(
 
             if not Permissions.PLUGIN_APPKEYS_ADMIN.can():
                 user_for_key = self._user_for_api_key(api_key)
-                if user_for_key is None or user_for_key.user_id != user_id:
+                if user_for_key is None or user_for_key.get_id() != user_id:
                     return flask.abort(403)
 
             ensure_credentials_checked_recently()
