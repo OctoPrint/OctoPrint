@@ -1944,7 +1944,12 @@ $(function () {
             const draggedFiles = Array.from(e.originalEvent.dataTransfer.items).filter(
                 (item) => item.kind === "file"
             );
-            if (!draggedFiles.length) {
+
+            // Now, on every sane browser, we can just check if we have dragged files,
+            // but Safari wants to be special and doesn't give us that info so we
+            // just assume we have files, even if that means we might show the overlay
+            // when we shouldn't. To anyone annoyed by this, blame Apple. See #5004
+            if (!draggedFiles.length && !OctoPrint.coreui.browser.safari) {
                 return;
             }
 
