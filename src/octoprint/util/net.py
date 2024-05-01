@@ -57,7 +57,7 @@ def get_lan_ranges(additional_private=None):
         additional_private = []
 
     def to_ipnetwork(address):
-        prefix = address["netmask"]
+        prefix = address["mask"]
         if "/" in prefix:
             # v6 notation in netifaces output, e.g. "ffff:ffff:ffff:ffff::/64"
             _, prefix = prefix.split("/")
