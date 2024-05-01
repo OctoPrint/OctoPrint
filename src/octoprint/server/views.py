@@ -1453,7 +1453,7 @@ def fetch_template_data(refresh=False):
 
                     return f
 
-                extractor = partial(create_safe_extractor, t, x)(
+                extractor = partial(create_safe_extractor, t)(
                     template_sorting[t]["key_extractor"]
                 )
 
