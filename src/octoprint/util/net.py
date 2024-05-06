@@ -50,6 +50,20 @@ else:
         HAS_V6 = False
 
 
+def get_netmask(address):
+    # netifaces2 - see #5005
+    netmask = address.get("mask")
+    if netmask:
+        return netmask
+
+    # netifaces
+    netmask = address.get("netmask")
+    if netmask:
+        return netmask
+
+    raise ValueError(f"No netmask found in address: {address!r}")
+
+
 def get_lan_ranges(additional_private=None):
     logger = logging.getLogger(__name__)
 
@@ -57,7 +71,7 @@ def get_lan_ranges(additional_private=None):
         additional_private = []
 
     def to_ipnetwork(address):
-        prefix = address["netmask"]
+        prefix = get_netmask(address)
         if "/" in prefix:
             # v6 notation in netifaces output, e.g. "ffff:ffff:ffff:ffff::/64"
             _, prefix = prefix.split("/")
