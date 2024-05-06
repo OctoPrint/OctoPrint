@@ -568,7 +568,11 @@ $(function () {
                         )
                             return [];
 
-                        const tickSize = 5 * 60 * 1000; // 5 minutes
+                        let tickSize = 5 * 60 * 1000; // 5 minutes
+                        while ((axis.max - axis.min) / tickSize > 10) {
+                            tickSize += 5 * 60 * 1000; // 5 minutes
+                        }
+
                         const ticks = [];
                         let val = axis.max;
                         while (val > axis.min) {
@@ -592,7 +596,7 @@ $(function () {
                         } else if (diffInMins === 0) {
                             return gettext("now");
                         } else {
-                            return "- " + diffInMins + " " + gettext("min");
+                            return "-" + diffInMins + gettext("min");
                         }
                     }
                 },
