@@ -64,7 +64,7 @@ class Achievements(metaclass=AchievementsMetaClass):
     )
 
     ONE_SMALL_STEP_FOR_MAN = Achievement(
-        name="That's One Small Step For Man", description="Finish your first print."
+        name="That's One Small Step For (A) Man", description="Finish your first print."
     )
 
     ADVENTURER = Achievement(
