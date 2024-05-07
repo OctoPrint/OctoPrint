@@ -662,7 +662,11 @@ class Timelapse:
             file_prefix = self._file_prefix
             gcode_file = self._gcode_file
             self._reset_metadata()
-            if self.render_after_print=="always" or (self.render_after_print=="successful" and success) or (self.render_after_print=="fail" and not success):
+            if (
+                self.render_after_print == "always"
+                or (self.render_after_print == "successful" and success)
+                or (self.render_after_print == "fail" and not success)
+            ):
                 create_movie(file_prefix, gcode_file)
             else:
                 self._logger.debug("Not rendering timelapse of failed prints")
