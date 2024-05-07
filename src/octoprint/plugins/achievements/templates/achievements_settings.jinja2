@@ -4,13 +4,29 @@
     <div class="control-group">
         <label class="control-label"> {{ _('Timezone') }}</label>
         <div class="controls">
-            <select data-bind="value: settings.plugins.achievements.timezone">
+            <select data-bind="value: settings.settings.plugins.achievements.timezone">
                 <option value="">{{ _('Server timezone (%%(server_time)s)')|format(server_time=plugin_achievements_server_timezone) }}</option>
                 {% for timezone in plugin_achievements_timezones %}
                     <option value="{{ timezone }}">{{ timezone }}</option>
                 {% endfor %}
             </select>
             <span class="help-inline">{{ _('Select your local timezone here. It will be used for time and date based achievements.') }}</span>
+        </div>
+    </div>
+</form>
+
+<h4>{{ _('Reset achievements') }}</h4>
+
+<form class="form-horizontal" onsubmit="return false;">
+    <div class="control-group">
+        <div class="controls">
+            <button class="btn btn-warning" data-bind="click: function() { if (!$root.resetting()) { $root.resetTimebasedAchievements() } }, css: {disabled: resetting}"><i class="fa fa-spinner fa-spin" data-bind="visible: resetting"></i> {{ _('Reset time based achievements') }}</button>
+            <span class="help-inline">{{ _('Resetting all time based achievements might be a good idea after a timezone change.') }}</span>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <button class="btn btn-danger" data-bind="click: function() { if (!$root.resetting()) { resetAllAchievements() } }, css: {disabled: resetting}"><i class="fa fa-spinner fa-spin" data-bind="visible: resetting"></i> {{ _('Reset all achievements') }}</button>
         </div>
     </div>
 </form>
