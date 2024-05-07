@@ -1,3 +1,5 @@
+<p><small class="muted" data-bind="visible: loginState.hasPermissionKo(access.permissions.ADMIN)">{{ _("Don't like achievements? No problem! Just disable the Achievements plugin!") }}</small></p>
+
 <h3>{{ _('Achievements') }} (<span data-bind="text: achievedAchievements"></span>/<span data-bind="text: totalAchievements"></span>)</h3>
 
 <div class="achievement-list" data-bind="foreach: achievements">
