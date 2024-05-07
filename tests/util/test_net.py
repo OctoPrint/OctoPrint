@@ -14,19 +14,27 @@ def patched_interfaces():
     return ["eth0"]
 
 
-def patched_ifaddresses(addr):
+def patched_ifaddresses(addr, netmask):
     if addr == "eth0":
         return {
             socket.AF_INET: [
-                {"addr": "192.168.123.10", "netmask": "255.255.255.0"},
-                {"addr": "12.1.1.10", "netmask": "255.0.0.0"},
+                {"addr": "192.168.123.10", netmask: "255.255.255.0"},
+                {"addr": "12.1.1.10", netmask: "255.0.0.0"},
             ],
             socket.AF_INET6: [
-                {"addr": "2a01:4f8:1c0c:6958::1", "netmask": "ffff:ffff:ffff:ffff::/64"}
+                {"addr": "2a01:4f8:1c0c:6958::1", netmask: "ffff:ffff:ffff:ffff::/64"}
             ],
         }
 
     return {}
+
+
+def patched_ifaddresses_mask(addr):
+    return patched_ifaddresses(addr, "mask")
+
+
+def patched_ifaddresses_netmask(addr):
+    return patched_ifaddresses(addr, "netmask")
 
 
 @ddt.ddt
@@ -49,13 +57,14 @@ class UtilNetTest(unittest.TestCase):
     )
     @ddt.unpack
     @mock.patch("netifaces.interfaces", side_effect=patched_interfaces)
-    @mock.patch("netifaces.ifaddresses", side_effect=patched_ifaddresses)
     @mock.patch.object(octoprint.util.net, "HAS_V6", True)
-    def test_is_lan_address(self, input_address, input_additional, expected, nifa, nifs):
-        actual = octoprint.util.net.is_lan_address(
-            input_address, additional_private=input_additional
-        )
-        self.assertEqual(expected, actual)
+    def test_is_lan_address(self, input_address, input_additional, expected, nifs):
+        for side_effect in (patched_ifaddresses_mask, patched_ifaddresses_netmask):
+            with mock.patch("netifaces.ifaddresses", side_effect=side_effect):
+                actual = octoprint.util.net.is_lan_address(
+                    input_address, additional_private=input_additional
+                )
+                self.assertEqual(expected, actual)
 
     @ddt.data(
         ("fe80::89f3:31bb:ced0:2093%wlan0", "fe80::89f3:31bb:ced0:2093"),
@@ -77,3 +86,19 @@ class UtilNetTest(unittest.TestCase):
     def test_unmap_v4_in_v6(self, address, expected):
         actual = octoprint.util.net.unmap_v4_as_v6(address)
         self.assertEqual(expected, actual)
+
+    @ddt.data(
+        ({"mask": "192.168.0.0/24"}, "192.168.0.0/24"),
+        ({"netmask": "192.168.0.0/24"}, "192.168.0.0/24"),
+    )
+    @ddt.unpack
+    def test_get_netmask(self, address, expected):
+        actual = octoprint.util.net.get_netmask(address)
+        self.assertEqual(expected, actual)
+
+    def test_get_netmask_broken_address(self):
+        try:
+            octoprint.util.net.get_netmask({"nm": "192.168.0.0/24"})
+            self.fail("Expected ValueError")
+        except Exception as e:
+            self.assertIsInstance(e, ValueError)
