@@ -623,6 +623,15 @@ class Timelapse:
         """
         return None
 
+    def _reset_metadata(self):
+        self._image_number = None
+        self._in_timelapse = False
+        self._gcode_file = None
+        self._file_prefix = None
+
+        self._capture_errors = 0
+        self._capture_success = 0
+
     def start_timelapse(self, gcode_file):
         self._logger.debug(f"Starting timelapse for {gcode_file}")
 
@@ -641,21 +650,20 @@ class Timelapse:
 
         self._in_timelapse = False
 
-        def reset_image_number():
-            self._image_number = None
-
-        def create_movie():
+        def create_movie(file_prefix, gcode_file):
             render_unrendered_timelapse(
-                self._file_prefix,
-                gcode=self._gcode_file,
+                file_prefix,
+                gcode=gcode_file,
                 postfix=None if success else "-fail",
                 fps=self._fps,
             )
 
         def reset_and_create():
-            reset_image_number()
-            if self.render_failed_print != "successful" or success:
-                create_movie()
+            file_prefix = self._file_prefix
+            gcode_file = self._gcode_file
+            self._reset_metadata()
+            if self.render_after_print=="always" or (self.render_after_print=="successful" and success) or (self.render_after_print=="fail" and not success):
+                create_movie(file_prefix, gcode_file)
             else:
                 self._logger.debug("Not rendering timelapse of failed prints")
 
@@ -697,14 +705,14 @@ class Timelapse:
                 if do_create_movie:
                     self._on_post_roll_done = create_wait_for_captures(reset_and_create)
                 else:
-                    self._on_post_roll_done = reset_image_number
+                    self._on_post_roll_done = self._reset_metadata
                 self.process_post_roll()
             else:
                 # no post roll? perfect, render
                 if do_create_movie:
                     wait_for_captures(reset_and_create)
                 else:
-                    reset_image_number()
+                    self._reset_metadata()
 
         self._logger.debug("Waiting to process capture queue")
         wait_for_captures(continue_rendering)

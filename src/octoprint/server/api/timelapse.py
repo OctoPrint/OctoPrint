@@ -320,7 +320,7 @@ def setTimelapseConfig():
             except ValueError:
                 abort(400, description="renderAfterPrint is invalid")
             else:
-                if renderAfterPrint in ["always", "successful", "never"]:
+                if renderAfterPrint in ["always", "successful", "fail", "never"]:
                     config["renderAfterPrint"] = renderAfterPrint
                 else:
                     abort(400, description="renderAfterPrint is invalid")
