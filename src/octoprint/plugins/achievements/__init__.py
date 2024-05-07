@@ -229,11 +229,11 @@ class AchievementsPlugin(
 
             if payload["time"] > self._data.stats.longest_print_duration:
                 self._data.stats.longest_print_duration = payload["time"]
-                self._data.stats.longest_print_date = datetime.datetime.now().timestamp()
+                self._data.stats.longest_print_date = self._now().timestamp()
 
             if payload["time"] > self._year_data.longest_print_duration:
                 self._year_data.longest_print_duration = payload["time"]
-                self._year_data.longest_print_date = datetime.datetime.now().timestamp()
+                self._year_data.longest_print_date = self._now().timestamp()
 
             self._trigger_achievement(Achievements.ONE_SMALL_STEP_FOR_MAN, write=False)
 
@@ -422,7 +422,7 @@ class AchievementsPlugin(
     def get_year_data(self, year):
         year_data = self._load_year_file(year=year)
         if year_data is None:
-            if year == datetime.datetime.now().year:
+            if year == self._now().year:
                 year_data = self._year_data
             else:
                 abort(404)
@@ -567,7 +567,7 @@ class AchievementsPlugin(
 
     def _year_path(self, year=None):
         if year is None:
-            year = datetime.datetime.now().year
+            year = self._now().year
         return os.path.join(self.get_plugin_data_folder(), f"{year}.json")
 
     def _available_years(self):
@@ -583,13 +583,13 @@ class AchievementsPlugin(
                 continue
 
         if not years:
-            years.append(datetime.datetime.now().year)
+            years.append(self._now().year)
         return years
 
     def _reset_data(self):
         self._data = Data(
             stats=Stats(
-                created=datetime.datetime.now().timestamp(),
+                created=self._now().timestamp(),
                 created_version=get_octoprint_version().base_version,
             ),
             achievements={},
