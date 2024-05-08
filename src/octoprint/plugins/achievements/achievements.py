@@ -14,6 +14,7 @@ class Achievement(BaseModel):
     description: str = ""
     hidden: bool = False
     nag: bool = False
+    timebased: bool = False
 
     @property
     def icon(self):
@@ -114,6 +115,7 @@ class Achievements(metaclass=AchievementsMetaClass):
         name="Can't Get Enough",
         description="Finish 10 prints in one day.",
         nag=True,
+        timebased=True,
     )
 
     THE_MANUFACTURER_I = Achievement(
@@ -140,24 +142,28 @@ class Achievements(metaclass=AchievementsMetaClass):
         name="Happy Birthday, foosel",
         description="Start a print on foosel's birthday, March 21st.",
         hidden=True,
+        timebased=True,
     )
 
     HAPPY_BIRTHDAY_OCTOPRINT = Achievement(
         name="Happy Birthday, OctoPrint",
         description="Start a print on OctoPrint's birthday, December 25th.",
         hidden=True,
+        timebased=True,
     )
 
     SPOOKY = Achievement(
         name="Spooky",
         description="Start a print on Halloween, October 31st.",
         hidden=True,
+        timebased=True,
     )
 
     SANTAS_LITTLE_HELPER = Achievement(
         name="Santa's Little Helper",
         description="Start a print between December 1st and December 24th.",
         hidden=True,
+        timebased=True,
     )
 
     ## weekday specific
@@ -165,11 +171,13 @@ class Achievements(metaclass=AchievementsMetaClass):
     TGIF = Achievement(
         name="TGIF",
         description="Start a print on a Friday.",
+        timebased=True,
     )
 
     WEEKEND_WARRIOR = Achievement(
         name="Weekend Warrior",
         description="Start prints on four consecutive weekends.",
+        timebased=True,
     )
 
     ## time specific
@@ -178,12 +186,14 @@ class Achievements(metaclass=AchievementsMetaClass):
         name="Early Bird",
         description="Start a print between 03:00 and 07:00.",
         hidden=True,
+        timebased=True,
     )
 
     NIGHT_OWL = Achievement(
         name="Night Owl",
         description="Start a print between 23:00 and 03:00.",
         hidden=True,
+        timebased=True,
     )
 
     ## file management
@@ -248,6 +258,7 @@ class Achievements(metaclass=AchievementsMetaClass):
         name="Must Be One Of Those Days",
         description="Cancel ten consecutive prints on the same day.",
         hidden=True,
+        timebased=True,
     )
 
     SO_CLOSE = Achievement(

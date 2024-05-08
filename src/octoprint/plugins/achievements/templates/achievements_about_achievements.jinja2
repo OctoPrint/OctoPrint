@@ -1,4 +1,13 @@
+<p><small class="muted" data-bind="visible: loginState.hasPermissionKo(access.permissions.ADMIN)">{{ _("Don't like achievements? No problem! Just disable the Achievements plugin!") }}</small></p>
+
 <h3>{{ _('Achievements') }} (<span data-bind="text: achievedAchievements"></span>/<span data-bind="text: totalAchievements"></span>)</h3>
+
+<p data-bind="visible: loginState.hasPermissionKo(access.permissions.SETTINGS)"><small><em>
+    {{ _('Achievements with a %(clock)s are time based and rely on proper %(startlink)stimezone configuration%(endlink)s (currently: %(timezone)s, %(time)s).', clock='<i class="fa-solid fa-clock"></i>', timezone='<span data-bind="text: timezoneName"></span>', time='<span data-bind="text: timezoneTime"></span>', startlink='<a href="javascript:void(0)" data-bind="click: showTimezoneConfig">', endlink='</a>') }}
+</em></small></p>
+<p data-bind="hidden: loginState.hasPermissionKo(access.permissions.SETTINGS)"><small><em>
+    {{ _('Achievements with a %(clock)s are time based and rely on proper timezone configuration (currently: %(timezone)s, %(time)s). If the used timezone is wrong, ask your administrator to configure it correctly.', clock='<i class="fa-solid fa-clock"></i>', timezone='<span data-bind="text: timezoneName"></span>', time='<span data-bind="text: timezoneTime"></span>') }}
+</em></small></p>
 
 <div class="achievement-list" data-bind="foreach: achievements">
     <div class="achievement-item" data-bind="css: {achieved: $data.achieved}">
@@ -8,7 +17,7 @@
             </svg>
         </div>
         <div class="achievement-info">
-            <strong data-bind="text: name"></strong> <i class="fa-solid fa-user-secret" data-bind="visible: hidden"></i><br>
+            <strong data-bind="text: name"></strong> <i class="fa-solid fa-user-secret" data-bind="visible: hidden"></i> <i class="fa-solid fa-clock" data-bind="visible: timebased"></i><br>
             <small><em data-bind="text: description"></em></small><br>
             <small data-bind="visible: $data.achieved">{{ _('Unlocked:') }} <span data-bind="text: formatDate($data.achieved)"></span></small>
         </div>

@@ -29,12 +29,18 @@ class ApiAchievement(Achievement):
     achieved: int = 0
 
 
+class ApiTimezoneInfo(BaseModel):
+    name: str
+    offset: int
+
+
 class ApiResponse(BaseModel):
     stats: Stats
     achievements: List[ApiAchievement]
     hidden_achievements: int
     current_year: YearlyStats
     available_years: List[int]
+    timezone: ApiTimezoneInfo
 
 
 class AchievementsPlugin(
@@ -65,6 +71,11 @@ class AchievementsPlugin(
         self._load_current_year_file()
         return super().initialize()
 
+    def _server_timezone(self):
+        return (
+            datetime.datetime.utcnow().astimezone()
+        )  # utcnow still needed while supporting Python 3.7
+
     def _now(self):
         if self._tz is None:
             import pytz
@@ -91,7 +102,16 @@ class AchievementsPlugin(
                 ),
                 "default_groups": [READONLY_GROUP, USER_GROUP, ADMIN_GROUP],
                 "roles": ["view"],
-            }
+            },
+            {
+                "key": "RESET",
+                "name": "Reset instance achievements & stats",
+                "description": gettext(
+                    "Allows to reset the instance achievements & stats."
+                ),
+                "default_groups": [ADMIN_GROUP],
+                "roles": ["reset"],
+            },
         ]
 
     ##~~ socket emit hook
@@ -229,11 +249,11 @@ class AchievementsPlugin(
 
             if payload["time"] > self._data.stats.longest_print_duration:
                 self._data.stats.longest_print_duration = payload["time"]
-                self._data.stats.longest_print_date = datetime.datetime.now().timestamp()
+                self._data.stats.longest_print_date = self._now().timestamp()
 
             if payload["time"] > self._year_data.longest_print_duration:
                 self._year_data.longest_print_duration = payload["time"]
-                self._year_data.longest_print_date = datetime.datetime.now().timestamp()
+                self._year_data.longest_print_date = self._now().timestamp()
 
             self._trigger_achievement(Achievements.ONE_SMALL_STEP_FOR_MAN, write=False)
 
@@ -390,6 +410,8 @@ class AchievementsPlugin(
     @octoprint.plugin.BlueprintPlugin.route("/", methods=["GET"])
     @Permissions.PLUGIN_ACHIEVEMENTS_VIEW.require(403)
     def get_data(self):
+        self._now()  # make sure self._tz is set, if we have a timezone
+
         achievements = [
             ApiAchievement(
                 achieved=self._data.achievements.get(a.key, 0),
@@ -400,6 +422,16 @@ class AchievementsPlugin(
             if not a.hidden or self._has_achievement(a)
         ]
         achievements.sort(key=lambda a: a.name)
+
+        if self._tz:
+            timezone_name = self._tz.zone
+            timezone_offset = (
+                self._tz.utcoffset(datetime.datetime.now()).total_seconds() // 60
+            )
+        else:
+            server_timezone = self._server_timezone()
+            timezone_name = server_timezone.tzname()
+            timezone_offset = server_timezone.utcoffset().total_seconds() // 60
 
         response = ApiResponse(
             stats=self._data.stats,
@@ -413,6 +445,10 @@ class AchievementsPlugin(
             ),
             current_year=self._year_data,
             available_years=self._available_years(),
+            timezone=ApiTimezoneInfo(
+                name=timezone_name,
+                offset=timezone_offset,
+            ),
         )
 
         return jsonify(response.dict())
@@ -422,12 +458,26 @@ class AchievementsPlugin(
     def get_year_data(self, year):
         year_data = self._load_year_file(year=year)
         if year_data is None:
-            if year == datetime.datetime.now().year:
+            if year == self._now().year:
                 year_data = self._year_data
             else:
                 abort(404)
 
         return jsonify(year_data.dict())
+
+    @octoprint.plugin.BlueprintPlugin.route("/reset/achievements", methods=["POST"])
+    @Permissions.PLUGIN_ACHIEVEMENTS_RESET.require(403)
+    def reset_achievements(self):
+        from flask import request
+
+        from octoprint.server import NO_CONTENT
+
+        data = request.json
+        if "achievements" not in data or not isinstance(data["achievements"], list):
+            abort(400, "Need list of achievements to reset")
+
+        self._reset_achievements(*data["achievements"])
+        return NO_CONTENT
 
     ##~~ AssetPlugin
 
@@ -471,19 +521,19 @@ class AchievementsPlugin(
                 "type": "settings",
                 "name": gettext("Achievements"),
                 "template": "achievements_settings.jinja2",
-                "custom_bindings": False,
+                "custom_bindings": True,
             },
         ]
 
     def get_template_vars(self):
-        import datetime
-
         import pytz
+
+        server_timezone = self._server_timezone()
 
         return {
             "svgs": self._generate_svg(),
             "timezones": pytz.common_timezones,
-            "server_timezone": datetime.datetime.utcnow().astimezone().tzname(),
+            "server_timezone": server_timezone.tzname(),
         }
 
     ##~~ External helpers
@@ -530,6 +580,15 @@ class AchievementsPlugin(
         payload["logo"] = achievement.icon
         self._event_bus.fire(Events.PLUGIN_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKED, payload)
 
+    def _reset_achievements(self, *achievements, write=True):
+        for achievement in achievements:
+            if not Achievements.get(achievement):
+                self._logger.error(f"Unknown achievement {achievement}")
+                continue
+            self._data.achievements.pop(achievement, None)
+        if write:
+            self._write_data_file()
+
     def _generate_svg(self):
         import os
         from xml.dom.minidom import parse
@@ -567,7 +626,7 @@ class AchievementsPlugin(
 
     def _year_path(self, year=None):
         if year is None:
-            year = datetime.datetime.now().year
+            year = self._now().year
         return os.path.join(self.get_plugin_data_folder(), f"{year}.json")
 
     def _available_years(self):
@@ -583,13 +642,13 @@ class AchievementsPlugin(
                 continue
 
         if not years:
-            years.append(datetime.datetime.now().year)
+            years.append(self._now().year)
         return years
 
     def _reset_data(self):
         self._data = Data(
             stats=Stats(
-                created=datetime.datetime.now().timestamp(),
+                created=self._now().timestamp(),
                 created_version=get_octoprint_version().base_version,
             ),
             achievements={},

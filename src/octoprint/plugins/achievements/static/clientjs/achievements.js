@@ -19,6 +19,17 @@
         return this.base.get(this.baseUrl + "/year/" + year, opts);
     };
 
+    OctoPrintAchievementsClient.prototype.resetAchievements = function (
+        achievements,
+        opts
+    ) {
+        return this.base.postJson(
+            this.baseUrl + "/reset/achievements",
+            {achievements: achievements},
+            opts
+        );
+    };
+
     // register plugin component
     OctoPrintClient.registerPluginComponent("achievements", OctoPrintAchievementsClient);
 
