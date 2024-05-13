@@ -481,7 +481,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
                 command += ["--offset", str(offset[0]), str(offset[1])]
             if g90_extruder:
                 command += ["--g90-extruder"]
-            command.append(f'"{self._current.absolute_path}"')
+            command.append(self._current.absolute_path)
 
             self._logger.info(f"Invoking analysis command: {' '.join(command)}")
 
