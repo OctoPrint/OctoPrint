@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.10.0\n"
+"Project-Id-Version: OctoPrint 1.10.1\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2024-04-24 10:28+0200\n"
+"POT-Creation-Date: 2024-05-13 15:27+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -126,57 +126,69 @@ msgstr ""
 msgid "Allows to manage settings and also to read sensitive settings"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/__init__.py:89
+#: src/octoprint/plugins/achievements/__init__.py:100
 msgid "Allows to view the instance achievements & stats."
 msgstr ""
 
-#: src/octoprint/plugins/achievements/__init__.py:460
-#: src/octoprint/plugins/achievements/__init__.py:472
-#: src/octoprint/plugins/achievements/templates/achievements_about_achievements.jinja2:1
+#: src/octoprint/plugins/achievements/__init__.py:109
+msgid "Allows to reset the instance achievements & stats."
+msgstr ""
+
+#: src/octoprint/plugins/achievements/__init__.py:510
+#: src/octoprint/plugins/achievements/__init__.py:522
+#: src/octoprint/plugins/achievements/templates/achievements_about_achievements.jinja2:3
 #: src/octoprint/templates/footer.jinja2:10
 msgid "Achievements"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/__init__.py:466
+#: src/octoprint/plugins/achievements/__init__.py:516
 msgid "Instance Stats"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/__init__.py:677
+#: src/octoprint/plugins/achievements/__init__.py:736
 msgid ""
 "Without this plugin you will no longer be able to earn achievements and "
 "track stats about your OctoPrint instance."
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:40
+#: src/octoprint/plugins/achievements/static/js/achievements.js:56
 msgid "No prints yet"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:42
+#: src/octoprint/plugins/achievements/static/js/achievements.js:58
 #, python-format
 msgid "%(prints)s (%(finished)s finished)"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:53
+#: src/octoprint/plugins/achievements/static/js/achievements.js:69
 #, python-format
 msgid "%(total)s"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:57
+#: src/octoprint/plugins/achievements/static/js/achievements.js:73
 #, python-format
 msgid "%(total)s (%(finished)s finished)"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:70
+#: src/octoprint/plugins/achievements/static/js/achievements.js:86
 #, python-format
 msgid "%(duration)s (finished on %(date)s, %(timeSince)s)"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:80
+#: src/octoprint/plugins/achievements/static/js/achievements.js:96
 #, python-format
 msgid "... and %(count)s hidden achievements!"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:125
+#: src/octoprint/plugins/achievements/static/js/achievements.js:115
+msgid "This will reset all achievements. This action cannot be undone!"
+msgstr ""
+
+#: src/octoprint/plugins/achievements/static/js/achievements.js:182
+msgid "This will reset all time based achievements. This action cannot be undone!"
+msgstr ""
+
+#: src/octoprint/plugins/achievements/static/js/achievements.js:232
 #, python-format
 msgid ""
 "Enjoying OctoPrint? Looks like it! <a href=\"%(url)s\" target=\"_blank\" "
@@ -184,7 +196,7 @@ msgid ""
 "then</a> - thank you!"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:128
+#: src/octoprint/plugins/achievements/static/js/achievements.js:235
 #, python-format
 msgid ""
 "Getting value from OctoPrint? <a href=\"%(url)s\" target=\"_blank\" "
@@ -192,7 +204,7 @@ msgid ""
 "maintainer with a donation</a> - thank you!"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:131
+#: src/octoprint/plugins/achievements/static/js/achievements.js:238
 #, python-format
 msgid ""
 "Has OctoPrint helped you enjoy your printer more? <a href=\"%(url)s\" "
@@ -200,15 +212,65 @@ msgid ""
 "supporting its continued development</a> - thank you!"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:149
+#: src/octoprint/plugins/achievements/static/js/achievements.js:250
+msgid "Configure timezone..."
+msgstr ""
+
+#: src/octoprint/plugins/achievements/static/js/achievements.js:268
 msgid "Show all achievements..."
 msgstr ""
 
-#: src/octoprint/plugins/achievements/static/js/achievements.js:153
+#: src/octoprint/plugins/achievements/static/js/achievements.js:272
 msgid "Achievement unlocked!"
 msgstr ""
 
-#: src/octoprint/plugins/achievements/templates/achievements_about_achievements.jinja2:13
+#: src/octoprint/plugins/achievements/static/js/achievements.js:339
+msgid "Reset time based achievements?"
+msgstr ""
+
+#: src/octoprint/plugins/achievements/static/js/achievements.js:340
+msgid ""
+"You have changed the timezone setting. Do you want to reset all time "
+"based achievements?"
+msgstr ""
+
+#: src/octoprint/plugins/achievements/static/js/achievements.js:343
+msgid "Do you want to reset all time based achievements?"
+msgstr ""
+
+#: src/octoprint/plugins/achievements/static/js/achievements.js:346
+#: src/octoprint/static/js/app/viewmodels/files.js:738
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:469
+msgid "Yes"
+msgstr ""
+
+#: src/octoprint/plugins/achievements/static/js/achievements.js:347
+#: src/octoprint/static/js/app/viewmodels/files.js:737
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:468
+msgid "No"
+msgstr ""
+
+#: src/octoprint/plugins/achievements/templates/achievements_about_achievements.jinja2:1
+msgid "Don't like achievements? No problem! Just disable the Achievements plugin!"
+msgstr ""
+
+#: src/octoprint/plugins/achievements/templates/achievements_about_achievements.jinja2:6
+#, python-format
+msgid ""
+"Achievements with a %(clock)s are time based and rely on proper "
+"%(startlink)stimezone configuration%(endlink)s (currently: %(timezone)s, "
+"%(time)s)."
+msgstr ""
+
+#: src/octoprint/plugins/achievements/templates/achievements_about_achievements.jinja2:9
+#, python-format
+msgid ""
+"Achievements with a %(clock)s are time based and rely on proper timezone "
+"configuration (currently: %(timezone)s, %(time)s). If the used timezone "
+"is wrong, ask your administrator to configure it correctly."
+msgstr ""
+
+#: src/octoprint/plugins/achievements/templates/achievements_about_achievements.jinja2:22
 msgid "Unlocked:"
 msgstr ""
 
@@ -261,6 +323,24 @@ msgstr ""
 msgid ""
 "Select your local timezone here. It will be used for time and date based "
 "achievements."
+msgstr ""
+
+#: src/octoprint/plugins/achievements/templates/achievements_settings.jinja2:18
+msgid "Reset achievements"
+msgstr ""
+
+#: src/octoprint/plugins/achievements/templates/achievements_settings.jinja2:23
+msgid "Reset time based achievements"
+msgstr ""
+
+#: src/octoprint/plugins/achievements/templates/achievements_settings.jinja2:24
+msgid ""
+"Resetting all time based achievements might be a good idea after a "
+"timezone change."
+msgstr ""
+
+#: src/octoprint/plugins/achievements/templates/achievements_settings.jinja2:29
+msgid "Reset all achievements"
 msgstr ""
 
 #: src/octoprint/plugins/action_command_notification/__init__.py:34
@@ -501,7 +581,7 @@ msgstr ""
 #: src/octoprint/static/js/app/helpers.js:1070
 #: src/octoprint/templates/dialogs/about.jinja2:58
 #: src/octoprint/templates/dialogs/firmwareerror.jinja2:37
-#: src/octoprint/templates/dialogs/settings.jinja2:53
+#: src/octoprint/templates/dialogs/settings.jinja2:54
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:139
 #: src/octoprint/templates/dialogs/timelapse.jinja2:10
 #: src/octoprint/templates/recovery.jinja2:169
@@ -562,7 +642,7 @@ msgid ""
 "through the API."
 msgstr ""
 
-#: src/octoprint/plugins/appkeys/__init__.py:617
+#: src/octoprint/plugins/appkeys/__init__.py:613
 msgid ""
 "Without this plugin third party clients will no longer be able to obtain "
 "an API key without you manually copy-pasting it."
@@ -1364,7 +1444,7 @@ msgstr ""
 
 #: src/octoprint/plugins/corewizard/subwizards.py:52
 #: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:1
-#: src/octoprint/server/views.py:1122
+#: src/octoprint/server/views.py:1128
 #: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:1
 msgid "Access Control"
 msgstr ""
@@ -1659,7 +1739,7 @@ msgid ""
 "discoverable on the network via Bonjour and uPnP."
 msgstr ""
 
-#: src/octoprint/plugins/errortracking/__init__.py:84
+#: src/octoprint/plugins/errortracking/__init__.py:86
 #: src/octoprint/plugins/errortracking/templates/errortracking_settings.jinja2:1
 msgid "Error Tracking"
 msgstr ""
@@ -2860,7 +2940,7 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:47
-#: src/octoprint/server/views.py:888
+#: src/octoprint/server/views.py:894
 msgid "Plugins"
 msgstr ""
 
@@ -3241,7 +3321,7 @@ msgstr ""
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:459
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:206
-#: src/octoprint/templates/dialogs/settings.jinja2:54
+#: src/octoprint/templates/dialogs/settings.jinja2:55
 #: src/octoprint/templates/dialogs/temperature.jinja2:32
 msgid "Save"
 msgstr ""
@@ -3296,7 +3376,7 @@ msgid "Update?"
 msgstr ""
 
 #: src/octoprint/plugins/softwareupdate/__init__.py:2347
-#: src/octoprint/server/views.py:1120
+#: src/octoprint/server/views.py:1126
 #: src/octoprint/static/js/app/viewmodels/appearance.js:106
 #: src/octoprint/static/js/app/viewmodels/appearance.js:110
 #: src/octoprint/static/js/app/viewmodels/appearance.js:111
@@ -4143,117 +4223,117 @@ msgid ""
 " for development."
 msgstr ""
 
-#: src/octoprint/server/views.py:976
+#: src/octoprint/server/views.py:982
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:16
 msgid "Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:987
+#: src/octoprint/server/views.py:993
 #: src/octoprint/templates/sidebar/state.jinja2:1
 msgid "State"
 msgstr ""
 
-#: src/octoprint/server/views.py:997
+#: src/octoprint/server/views.py:1003
 msgid "Files"
 msgstr ""
 
-#: src/octoprint/server/views.py:1014
+#: src/octoprint/server/views.py:1020
 msgid "Temperature"
 msgstr ""
 
-#: src/octoprint/server/views.py:1023
+#: src/octoprint/server/views.py:1029
 msgid "Control"
 msgstr ""
 
-#: src/octoprint/server/views.py:1032
+#: src/octoprint/server/views.py:1038
 msgid "Terminal"
 msgstr ""
 
-#: src/octoprint/server/views.py:1041
+#: src/octoprint/server/views.py:1047
 #: src/octoprint/templates/sidebar/state.jinja2:11
 msgid "Timelapse"
 msgstr ""
 
-#: src/octoprint/server/views.py:1054
+#: src/octoprint/server/views.py:1060
 msgid "Printer"
 msgstr ""
 
-#: src/octoprint/server/views.py:1056
+#: src/octoprint/server/views.py:1062
 msgid "Serial Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:1064
+#: src/octoprint/server/views.py:1070
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:1
 msgid "Printer Profiles"
 msgstr ""
 
-#: src/octoprint/server/views.py:1072
+#: src/octoprint/server/views.py:1078
 msgid "Temperatures"
 msgstr ""
 
-#: src/octoprint/server/views.py:1080
+#: src/octoprint/server/views.py:1086
 #: src/octoprint/templates/dialogs/settings/terminalfilters.jinja2:1
 msgid "Terminal Filters"
 msgstr ""
 
-#: src/octoprint/server/views.py:1088
+#: src/octoprint/server/views.py:1094
 #: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:1
 msgid "GCODE Scripts"
 msgstr ""
 
-#: src/octoprint/server/views.py:1095 src/octoprint/server/views.py:1097
+#: src/octoprint/server/views.py:1101 src/octoprint/server/views.py:1103
 #: src/octoprint/templates/dialogs/settings/features.jinja2:1
 msgid "Features"
 msgstr ""
 
-#: src/octoprint/server/views.py:1105
+#: src/octoprint/server/views.py:1111
 msgid "Webcam & Timelapse"
 msgstr ""
 
-#: src/octoprint/server/views.py:1113
+#: src/octoprint/server/views.py:1119
 msgid "API"
 msgstr ""
 
-#: src/octoprint/server/views.py:1130
+#: src/octoprint/server/views.py:1136
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:2
 #: src/octoprint/templates/sidebar/files_header.jinja2:13
 msgid "Folders"
 msgstr ""
 
-#: src/octoprint/server/views.py:1138
+#: src/octoprint/server/views.py:1144
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:1
 msgid "Appearance"
 msgstr ""
 
-#: src/octoprint/server/views.py:1146
+#: src/octoprint/server/views.py:1152
 #: src/octoprint/templates/dialogs/settings/server.jinja2:1
 msgid "Server"
 msgstr ""
 
-#: src/octoprint/server/views.py:1159
+#: src/octoprint/server/views.py:1165
 msgid "Access"
 msgstr ""
 
-#: src/octoprint/server/views.py:1167
+#: src/octoprint/server/views.py:1173
 msgid "Interface"
 msgstr ""
 
-#: src/octoprint/server/views.py:1197
+#: src/octoprint/server/views.py:1203
 #: src/octoprint/static/js/app/viewmodels/temperature.js:533
 msgid "Start"
 msgstr ""
 
-#: src/octoprint/server/views.py:1204
+#: src/octoprint/server/views.py:1210
 #: src/octoprint/templates/dialogs/wizard.jinja2:57
 msgid "Finish"
 msgstr ""
 
-#: src/octoprint/server/api/system.py:256
+#: src/octoprint/server/api/system.py:254
 #: src/octoprint/templates/snippets/settings/server/serverCommandSystemShutdown.jinja2:2
 msgid "Shutdown system"
 msgstr ""
 
-#: src/octoprint/server/api/system.py:257
+#: src/octoprint/server/api/system.py:255
 msgid ""
 "<strong>You are about to shutdown the system.</strong></p><p>This action "
 "may disrupt any ongoing print jobs (depending on your printer's "
@@ -4261,11 +4341,11 @@ msgid ""
 " from your printer's internal storage)."
 msgstr ""
 
-#: src/octoprint/server/api/system.py:263
+#: src/octoprint/server/api/system.py:261
 msgid "Reboot system"
 msgstr ""
 
-#: src/octoprint/server/api/system.py:264
+#: src/octoprint/server/api/system.py:262
 msgid ""
 "<strong>You are about to reboot the system.</strong></p><p>This action "
 "may disrupt any ongoing print jobs (depending on your printer's "
@@ -4273,12 +4353,12 @@ msgid ""
 " from your printer's internal storage)."
 msgstr ""
 
-#: src/octoprint/server/api/system.py:270
+#: src/octoprint/server/api/system.py:268
 #: src/octoprint/templates/snippets/settings/server/serverCommandServerRestart.jinja2:2
 msgid "Restart OctoPrint"
 msgstr ""
 
-#: src/octoprint/server/api/system.py:271
+#: src/octoprint/server/api/system.py:269
 msgid ""
 "<strong>You are about to restart the OctoPrint "
 "server.</strong></p><p>This action may disrupt any ongoing print jobs "
@@ -4286,11 +4366,11 @@ msgid ""
 " apply to prints run directly from your printer's internal storage)."
 msgstr ""
 
-#: src/octoprint/server/api/system.py:277
+#: src/octoprint/server/api/system.py:275
 msgid "Restart OctoPrint in safe mode"
 msgstr ""
 
-#: src/octoprint/server/api/system.py:278
+#: src/octoprint/server/api/system.py:276
 msgid ""
 "<strong>You are about to restart the OctoPrint server in safe "
 "mode.</strong></p><p>This action may disrupt any ongoing print jobs "
@@ -4803,16 +4883,6 @@ msgstr ""
 #: src/octoprint/static/js/app/viewmodels/files.js:736
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:467
 msgid "Do you want to start the print job now?"
-msgstr ""
-
-#: src/octoprint/static/js/app/viewmodels/files.js:737
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:468
-msgid "No"
-msgstr ""
-
-#: src/octoprint/static/js/app/viewmodels/files.js:738
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:469
-msgid "Yes"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:846
@@ -5393,6 +5463,26 @@ msgstr ""
 msgid "This will delete the API Key. It will cease to to function immediately."
 msgstr ""
 
+#: src/octoprint/static/js/app/viewmodels/settings.js:1302
+#, python-format
+msgid ""
+"<p>You have Autologin enabled. This means that you will be automatically "
+"logged in when accessing OctoPrint from a local IP.</p><p>By default, "
+"OctoPrint is configured in such a way this should not pose a security "
+"risk. However, <strong>if you yourself have any additional reverse "
+"proxies configured</strong> in front of OctoPrint, make sure those are "
+"configured correctly.</p><p><a href='%(url)s' target='_blank' "
+"rel='noopener noreferer'>Read more in the FAQ</a>.</p>"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:1310
+msgid "Autologin Heads-up"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:1319
+msgid "Got it!"
+msgstr ""
+
 #: src/octoprint/static/js/app/viewmodels/slicing.js:127
 msgid "Do nothing"
 msgstr ""
@@ -5504,20 +5594,20 @@ msgstr ""
 msgid "Disconnected"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:593
+#: src/octoprint/static/js/app/viewmodels/temperature.js:597
 msgid "now"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:595
+#: src/octoprint/static/js/app/viewmodels/temperature.js:599
 msgid "min"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:659
+#: src/octoprint/static/js/app/viewmodels/temperature.js:663
 #: src/octoprint/templates/tabs/temperature.jinja2:23
 msgid "Actual"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:669
+#: src/octoprint/static/js/app/viewmodels/temperature.js:673
 #: src/octoprint/templates/tabs/temperature.jinja2:25
 msgid "Target"
 msgstr ""
@@ -6065,11 +6155,15 @@ msgstr ""
 msgid "System info"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings.jinja2:60
+#: src/octoprint/templates/dialogs/settings.jinja2:53
+msgid "Reverse Proxy Test"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings.jinja2:61
 msgid "Settings update detected"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings.jinja2:63
+#: src/octoprint/templates/dialogs/settings.jinja2:64
 msgid ""
 "\n"
 "            The settings have been updated on the server. You may reload "
@@ -6080,18 +6174,18 @@ msgid ""
 "        "
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings.jinja2:68
+#: src/octoprint/templates/dialogs/settings.jinja2:69
 msgid ""
 "\n"
 "            How do you want to proceed?\n"
 "        "
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings.jinja2:74
+#: src/octoprint/templates/dialogs/settings.jinja2:75
 msgid "Reload all"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings.jinja2:75
+#: src/octoprint/templates/dialogs/settings.jinja2:76
 msgid "Reload only non-conflicting changes"
 msgstr ""
 
@@ -6416,8 +6510,7 @@ msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:131
 #: src/octoprint/templates/overlays/dragndrop.jinja2:10
-#: src/octoprint/templates/sidebar/files.jinja2:73
-#: src/octoprint/templates/sidebar/files.jinja2:84
+#: src/octoprint/templates/sidebar/files.jinja2:72
 msgid "Upload"
 msgstr ""
 
@@ -7854,7 +7947,7 @@ msgstr ""
 msgid "Create folder..."
 msgstr ""
 
-#: src/octoprint/templates/sidebar/files.jinja2:94
+#: src/octoprint/templates/sidebar/files.jinja2:88
 msgid "Hint: You can also drag and drop files on this page to upload them."
 msgstr ""
 
