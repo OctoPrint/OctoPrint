@@ -198,6 +198,7 @@ def login():
     allowed_paths = [
         url_for("index"),
         url_for("recovery"),
+        url_for("reverse_proxy_test"),
     ]
     try:
         allowed_paths += [
@@ -369,21 +370,26 @@ def in_cache():
 @app.route("/reverse_proxy_test")
 @app.route("/reverse_proxy_test/")
 def reverse_proxy_test():
-    from octoprint.server.util.flask import get_cookie_suffix, get_remote_address
+    from octoprint.server.util.flask import get_reverse_proxy_info
 
-    remote_address = get_remote_address(request)
-    cookie_suffix = get_cookie_suffix(request)
+    authenticated = request.args.get("authenticated", False) is not False
+    if authenticated:
+        response = require_fresh_login_with(permissions=[Permissions.ADMIN])
+        if response:
+            return response
 
-    return render_template(
-        "reverse_proxy_test.jinja2",
-        theming=[],
-        client_ip=remote_address,
-        server_protocol=request.environ.get("wsgi.url_scheme"),
-        server_name=request.environ.get("SERVER_NAME"),
-        server_port=request.environ.get("SERVER_PORT"),
-        server_path=request.script_root if request.script_root else "/",
-        cookie_suffix=cookie_suffix,
-    )
+    kwargs = get_reverse_proxy_info().dict()
+
+    try:
+        return render_template(
+            "reverse_proxy_test.jinja2",
+            authenticated=authenticated,
+            theming=[],
+            **kwargs,
+        )
+    except Exception:
+        _logger.exception("Error rendering reverse proxy test page")
+        return abort(500)
 
 
 @app.route("/")

@@ -18,6 +18,7 @@ import tornado.httpclient
 import tornado.httpserver
 import tornado.httputil
 import tornado.iostream
+import tornado.netutil
 import tornado.tcpserver
 import tornado.util
 import tornado.web
@@ -26,6 +27,7 @@ from tornado.ioloop import IOLoop
 from zipstream.ng import ZIP_DEFLATED, ZipStream
 
 import octoprint.util
+import octoprint.util.net
 
 
 def fix_json_encode():
@@ -91,6 +93,36 @@ def fix_websocket_check_origin():
     import tornado.websocket
 
     tornado.websocket.WebSocketHandler.check_origin = patched_check_origin
+
+
+def fix_tornado_xheader_handling():
+    """
+    This fixes tornado.httpserver._HTTPRequestContext._apply_xheaders to only use "X-Forwarded-For" header
+    for rewriting the ``remote_ip`` field, utilizing the set of trusted downstreams, instead of blindly
+    trusting ``X-Real-Ip``, and to also fetch the scheme from "X-Forwarded-Proto" if available.
+    """
+
+    def patched_apply_xheaders(self, headers: "tornado.httputil.HTTPHeaders") -> None:
+        """Rewrite the ``remote_ip`` and ``protocol`` fields."""
+
+        # other than the default implementation, we only use "X-Forwarded-For" here, not "X-Real-Ip"
+        ip = octoprint.util.net.get_http_client_ip(
+            self.remote_ip, headers.get("X-Forwarded-For"), self.trusted_downstream
+        )
+        if tornado.netutil.is_valid_ip(ip):
+            self.remote_ip = ip
+
+        # also fetch scheme from "X-Forwarded-Proto" if available
+        proto_header = headers.get("X-Scheme", headers.get("X-Forwarded-Proto"))
+        if proto_header:
+            # use only the last proto entry if there is more than one
+            proto_header = proto_header.split(",")[-1].strip()
+        if proto_header in ("http", "https"):
+            self.protocol = proto_header
+
+    import tornado.httpserver
+
+    tornado.httpserver._HTTPRequestContext._apply_xheaders = patched_apply_xheaders
 
 
 # ~~ More sensible logging

@@ -50,6 +50,7 @@
     <div class="modal-footer">
         <button class="btn aboutlink" data-bind="click: function() { about.show('about_about') }"><i class="fas fa-info-circle"></i> {{ _('About OctoPrint') }}</button>
         <button class="btn systeminfolink" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.SYSTEM), click: function() { about.show('about_systeminfo') }"><i class="fas fa-flag-checkered"></i> {{ _('System info') }}</button>
+        <a href="{{ url_for('reverse_proxy_test', authenticated='') }}" class="btn reverseproxylink" target="_blank" rel="noopener noreferer"><i class="fas fa-check-double"></i> {{ _('Reverse Proxy Test') }}</a>
         <button class="btn" data-test-id="settings-close-button" data-bind="click: function() { cancelData() }" aria-hidden="true">{{ _('Close') }}</button>
         <button class="btn btn-primary" data-test-id="settings-save" data-bind="click: function() { saveData(undefined, $root.hide) }, enable: !exchanging(), css: {disabled: exchanging()}"><i class="fas fa-spinner fa-spin" data-bind="visible: sending"></i> {{ _('Save') }}</button>
     </div>

@@ -85,14 +85,14 @@ class PrinterStateConnection(
 
     _event_payload_processors = {
         Events.CLIENT_OPENED: [
-            lambda user, payload: payload
-            if user.has_permission(Permissions.ADMIN)
-            else {}
+            lambda user, payload: (
+                payload if user.has_permission(Permissions.ADMIN) else {}
+            )
         ],
         Events.CLIENT_AUTHED: [
-            lambda user, payload: payload
-            if user.has_permission(Permissions.ADMIN)
-            else {}
+            lambda user, payload: (
+                payload if user.has_permission(Permissions.ADMIN) else {}
+            )
         ],
         "*": [],
     }
@@ -101,10 +101,12 @@ class PrinterStateConnection(
     _emit_permissions = {
         "connected": [],
         "reauthRequired": [],
-        "plugin": lambda payload: []
-        if payload.get("plugin") in ("backup", "softwareupdate")
-        and settings().getBoolean(["server", "firstRun"])
-        else [Permissions.STATUS],
+        "plugin": lambda payload: (
+            []
+            if payload.get("plugin") in ("backup", "softwareupdate")
+            and settings().getBoolean(["server", "firstRun"])
+            else [Permissions.STATUS]
+        ),
         "*": [Permissions.STATUS],
     }
 
@@ -179,10 +181,15 @@ class PrinterStateConnection(
 
     @staticmethod
     def _get_remote_address(info):
-        forwarded_for = info.headers.get("X-Forwarded-For")
-        if forwarded_for is not None:
-            return forwarded_for.split(",")[0]
-        return info.ip
+        from octoprint.util.net import get_http_client_ip
+
+        trusted_proxies = settings().get(["server", "reverseProxy", "trustedUpstream"])
+        if not isinstance(trusted_proxies, list):
+            trusted_proxies = ["127.0.0.1"]
+
+        return get_http_client_ip(
+            info.ip, info.headers.get("X-Forwarded-For"), trusted_proxies
+        )
 
     def _keep_alive_callback(self):
         if not self._authed:

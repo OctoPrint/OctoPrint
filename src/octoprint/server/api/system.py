@@ -15,7 +15,7 @@ from octoprint.logging import prefix_multilines
 from octoprint.plugin import plugin_manager
 from octoprint.server import NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import get_remote_address, no_firstrun_access
+from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import settings as s
 from octoprint.systemcommands import system_command_manager
 from octoprint.util.commandline import CommandlineCaller
@@ -96,9 +96,7 @@ def _usageForFolders():
 @Permissions.SYSTEM.require(403)
 def performSystemAction():
     logging.getLogger(__name__).warning(
-        "Deprecated API call to /api/system made by {}, should be migrated to use /system/commands/custom/<action>".format(
-            get_remote_address(request)
-        )
+        f"Deprecated API call to /api/system made by {request.remote_addr}, should be migrated to use /system/commands/custom/<action>"
     )
 
     data = request.get_json(silent=True)

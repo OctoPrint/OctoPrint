@@ -125,9 +125,11 @@ def getSettings():
 
     data = {
         "api": {
-            "key": s.get(["api", "key"])
-            if Permissions.ADMIN.can() and credentials_checked_recently()
-            else None,
+            "key": (
+                s.get(["api", "key"])
+                if Permissions.ADMIN.can() and credentials_checked_recently()
+                else None
+            ),
             "allowCrossOrigin": s.get(["api", "allowCrossOrigin"]),
         },
         "appearance": {
@@ -410,6 +412,14 @@ def getSettings():
     else:
         data["webcam"] = {}
 
+    if Permissions.ADMIN.can():
+        data["accessControl"] = {
+            "autologinLocal": s.getBoolean(["accessControl", "autologinLocal"]),
+            "autologinHeadsupAcknowledged": s.getBoolean(
+                ["accessControl", "autologinHeadsupAcknowledged"]
+            ),
+        }
+
     return jsonify(data)
 
 
@@ -556,6 +566,13 @@ def _saveSettings(data):
     if "api" in data:
         if "allowCrossOrigin" in data["api"]:
             s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
+
+    if "accessControl" in data:
+        if "autologinHeadsupAcknowledged" in data["accessControl"]:
+            s.setBoolean(
+                ["accessControl", "autologinHeadsupAcknowledged"],
+                data["accessControl"]["autologinHeadsupAcknowledged"],
+            )
 
     if "appearance" in data:
         if "name" in data["appearance"]:
