@@ -75,6 +75,7 @@ thanks to everyone who contributed!
   * Mark Walker
   * Martin
   * Martin Schmitt
+  * Matthias Urlichs
   * mcbriers
   * Michael Aumock
   * Michael Badagliacco
@@ -98,4 +99,4 @@ thanks to everyone who contributed!
   * Tideline 3D
   * Ulrich Kempken
 
-and 3192 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 3176 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!

@@ -384,6 +384,7 @@ class Server:
         util.tornado.fix_json_encode()
         util.tornado.fix_websocket_check_origin()
         util.tornado.enable_per_message_deflate_extension()
+        util.tornado.fix_tornado_xheader_handling()
 
         cli_key = self._setup_cli_key()
         self._setup_mimetypes()

@@ -917,18 +917,18 @@ Use the following settings to configure the server:
        # (X-Forwarded-Host by default, see above) with forwarded requests.
        hostFallback:
 
-       # List of trusted downstream servers for which to ignore the IP address when trying to determine
-       # the connecting client's IP address. If you have OctoPrint behind more than one reverse proxy
-       # you should add their IPs here so that they won't be interpreted as the client's IP. One reverse
-       # proxy will be handled correctly by default.
+       # List of trusted proxy servers for which to ignore the IP address when trying to determine
+       # the connecting client's IP address. A reverse proxy on the same machine as OctoPrint (e.g. as
+       # found on OctoPi) will be handled correctly by the default setting of 127.0.0.1 and ::1, further
+       # proxies in front of that you'll have to add yourself.
        trustedDownstream:
-       - 192.168.1.254
-       - 192.168.23.42
+       - 127.0.0.1
+       - "::1"
 
      # Whether to allow OctoPrint to be embedded in a frame or not. Note that depending on your setup you might
      # have to set SameSite to None, Secure to true and serve OctoPrint through a reverse proxy that enables https
      # for cookies and thus logging in to work
-     allowFraming: true
+     allowFraming: false
 
      # Settings for further configuration of the cookies that OctoPrint sets (login, remember me, ...)
      cookies:
