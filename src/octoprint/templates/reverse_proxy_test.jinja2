@@ -53,8 +53,8 @@
     </div>
     <div id="reverse_proxy_test" class="container" style="padding-top: 1em">
         <div class="alert alert-error" data-bind="visible: !cookieSuffixMatch">
-            <strong>Warning!</strong> The used cookie suffix doesn't match between client and server. That means that OctoPrint's
-            UI won't work properly. Please check your configuration and fix it.
+            <strong>Warning!</strong> The used cookie suffix doesn't match between client and server. That means that logging
+            into OctoPrint's UI won't work properly. Please check your configuration and fix it.
         </div>
 
         <p>
@@ -118,6 +118,37 @@
                 <td>{{ cookie_suffix }}</td>
             </tr>
         </table>
+
+        {% if authenticated %}
+            <p>
+                OctoPrint received the following <strong>request headers</strong> from your client that were used to determine the above values:
+            </p>
+
+            <ul>
+                {% for key, value in headers.items() %}
+                    <li><code>{{ key }}</code>: <code>{{ value }}</code></li>
+                {% endfor %}
+            </ul>
+
+            <p>
+                Your server side Client IP was determined to be {{ client_ip }}. Your <code>X-Forwarded-For</code> header
+                {% if headers["X-Forwarded-For"] %} (<code>{{ headers["X-Forwarded-For"] }}</code>){% endif %} might
+                have influenced that. Make sure that this is the IP that OctoPrint should be seeing. It will be the right most
+                IP in the <code>X-Forwarded-For</code> header that is not among your <strong>configured trusted downstreams</strong>:
+            </p>
+
+            <ul>
+                {% for host in trusted_proxies %}
+                    <li><code>{{ host }}</code></li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>
+                To receive more information about the request headers that OctoPrint received, please
+                <a href="{{ url_for("reverse_proxy_test", authenticated="") }}">request the authenticated version of this page</a>.
+                Note that this will only work if the above settings are reporting green across the board.
+            </p>
+        {% endif %}
 
         <p>
             Please refer to <a href="https://faq.octoprint.org/reverse-proxy" target="_blank" rel="noopener noreferrer">the Reverse Proxy FAQ entry</a>

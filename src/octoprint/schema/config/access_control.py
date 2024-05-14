@@ -36,6 +36,9 @@ class AccessControlConfig(BaseModel):
     autologinAs: Optional[str] = None
     """The name of the user to automatically log on clients originating from `localNetworks` as. Must be the name of one of your configured users."""
 
+    autologinHeadsupAcknowledged: bool = False
+    """Whether the user has acknowledged the heads-up about the importance of a correct reverse proxy configuration in the presence of autologin."""
+
     trustBasicAuthentication: bool = False
     """Whether to trust Basic Authentication headers. If you have setup Basic Authentication in front of OctoPrint and the user names you use there match OctoPrint accounts, by setting this to true users will be logged into OctoPrint as the user during Basic Authentication. **ONLY ENABLE THIS** if your OctoPrint instance is only accessible through a connection locked down through Basic Authentication!"""
 

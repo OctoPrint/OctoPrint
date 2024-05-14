@@ -1292,6 +1292,44 @@ $(function () {
                         self.requestData();
                     }, self.reauthenticationTimeout);
             }
+
+            // if autologinLocal is enabled and the heads-up not yet acknowledged, show it now
+            if (
+                self.settings.accessControl &&
+                self.settings.accessControl.autologinLocal() &&
+                !self.settings.accessControl.autologinHeadsupAcknowledged()
+            ) {
+                const text = gettext(
+                    "<p>You have Autologin enabled. This means that you will be automatically logged in when accessing OctoPrint from a local IP.</p>" +
+                        "<p>By default, OctoPrint is configured in such a way this should not pose a security risk. However, <strong>if you yourself have " +
+                        "any additional reverse proxies configured</strong> in front of OctoPrint, make sure those are configured correctly.</p>" +
+                        "<p><a href='%(url)s' target='_blank' rel='noopener noreferer'>Read more in the FAQ</a>.</p>"
+                );
+
+                new PNotify.singleButtonNotify({
+                    title: gettext("Autologin Heads-up"),
+                    text: _.sprintf(text, {
+                        url: "https://faq.octoprint.org/reverse-proxy"
+                    }),
+                    hide: false,
+                    confirm: {
+                        confirm: true,
+                        buttons: [
+                            {
+                                text: gettext("Got it!"),
+                                addClass: "btn-primary",
+                                click: function (notice) {
+                                    notice.remove();
+                                    self.settings.accessControl.autologinHeadsupAcknowledged(
+                                        true
+                                    );
+                                    self.saveData();
+                                }
+                            }
+                        ]
+                    }
+                });
+            }
         };
 
         self.cancelData = function () {

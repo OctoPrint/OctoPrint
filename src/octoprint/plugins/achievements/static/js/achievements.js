@@ -317,6 +317,11 @@ $(function () {
             self.dummy.notifySubscribers();
         };
 
+        self.onStartupComplete = () => {
+            // copy initial timezone setting
+            self.timezoneSetting(self.settings.settings.plugins.achievements.timezone());
+        };
+
         self.onEventSettingsUpdated = (payload) => {
             if (
                 self.settings.settings.plugins.achievements.timezone() !==
