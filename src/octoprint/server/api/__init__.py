@@ -32,8 +32,6 @@ from octoprint.server.util import (
     corsRequestHandler,
     corsResponseHandler,
     csrfRequestHandler,
-    loginFromApiKeyRequestHandler,
-    loginFromAuthorizationHeaderRequestHandler,
     noCachingExceptGetResponseHandler,
 )
 from octoprint.server.util.flask import (
@@ -70,8 +68,6 @@ VERSION = "0.1"
 api.after_request(noCachingExceptGetResponseHandler)
 
 api.before_request(corsRequestHandler)
-api.before_request(loginFromAuthorizationHeaderRequestHandler)
-api.before_request(loginFromApiKeyRequestHandler)
 api.before_request(csrfRequestHandler)
 api.after_request(corsResponseHandler)
 

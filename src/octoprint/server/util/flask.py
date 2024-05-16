@@ -585,7 +585,9 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
         return flask.request.endpoint != "static"
 
     def save_session(self, app, session, response):
-        if flask.g.get("login_via_apikey", False):
+        from octoprint.server.util import LoginMechanism
+
+        if session.get("_login_mechanism") == LoginMechanism.APIKEY:
             return
         return super().save_session(app, session, response)
 
