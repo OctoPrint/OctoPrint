@@ -824,6 +824,9 @@ class WsgiInputContainer:
             request.connection.finish()
             self._log(status_code, request)
 
+        except Exception:
+            logging.getLogger(__name__).exception("Exception in WSGI application")
+
         finally:
             if future is not None:
                 future.set_result(None)
