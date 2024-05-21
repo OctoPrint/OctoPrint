@@ -55,6 +55,9 @@ Various tests
          received within this time frame, the check will be considered a failure. Optional, defaults to 3 seconds.
        * ``validSsl``: Whether to validate the SSL connection if the ``url`` happens to be an HTTPS URL or not. Optional,
          defaults to ``True``.
+       * ``basicAuth``: A dictionary with the keys ``username`` and ``password`` to use for basic authentication. Optional.
+       * ``digestAuth``: A dictionary with the keys ``username`` and ``password`` to use for digest authentication. Optional.
+       * ``bearerAuth``: A string with the bearer token to use for bearer authentication. Optional.
        * ``status``: The status code(s) or named status range(s) to test for. Can be either a single
          value or a list of either HTTP status codes or any of the following named status ranges:
 

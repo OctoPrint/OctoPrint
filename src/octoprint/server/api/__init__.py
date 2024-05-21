@@ -607,22 +607,57 @@ def _test_url(data):
         "timeout": StatusCodeRange(start=0, end=1),
     }
 
-    url = data["url"]
-    method = data.get("method", "HEAD")
-    timeout = 3.0
-    valid_ssl = True
     check_status = [status_ranges["normal"]]
     content_type_whitelist = None
     content_type_blacklist = None
 
+    params = {
+        "method": data.get("method", "HEAD"),
+        "url": data["url"],
+        "timeout": 3.0,
+        "verify": True,
+    }
+
     if "timeout" in data:
         try:
-            timeout = float(data["timeout"])
+            params["timeout"] = float(data["timeout"])
         except Exception:
             abort(400, description="timeout is invalid")
 
     if "validSsl" in data:
-        valid_ssl = data["validSsl"] in valid_boolean_trues
+        params["verify"] = data["validSsl"] in valid_boolean_trues
+
+    if "basicAuth" in data:
+        if not isinstance(data["basicAuth"], dict):
+            abort(400, description="basicAuth must be a dictionary")
+
+        if "username" not in data["basicAuth"] or "password" not in data["basicAuth"]:
+            abort(400, description="basicAuth must contain username and password")
+
+        from requests.auth import HTTPBasicAuth
+
+        params["auth"] = HTTPBasicAuth(
+            data["basicAuth"]["username"], data["basicAuth"]["password"]
+        )
+
+    elif "digestAuth" in data:
+        if not isinstance(data["digestAuth"], dict):
+            abort(400, description="digestAuth must be a dictionary")
+
+        if "username" not in data["digestAuth"] or "password" not in data["digestAuth"]:
+            abort(400, description="digestAuth must contain username and password")
+
+        from requests.auth import HTTPDigestAuth
+
+        params["auth"] = HTTPDigestAuth(
+            data["digestAuth"]["username"], data["digestAuth"]["password"]
+        )
+
+    elif "bearerAuth" in data:
+        if not isinstance(data["bearerAuth"], str):
+            abort(400, description="bearerAuth must be a string")
+
+        params["headers"] = {"Authorization": f"Bearer {data['bearerAuth']}"}
 
     if "status" in data:
         request_status = data["status"]
@@ -658,9 +693,7 @@ def _test_url(data):
     outcome = True
     status = 0
     try:
-        with requests.request(
-            method=method, url=url, timeout=timeout, verify=valid_ssl, stream=True
-        ) as response:
+        with requests.request(**params) as response:
             status = response.status_code
             outcome = outcome and any(status in x for x in check_status)
             content_type = response.headers.get("content-type")
@@ -710,11 +743,11 @@ def _test_url(data):
                 response_result["content"] = content
     except Exception:
         logging.getLogger(__name__).exception(
-            f"Error while running a test {method} request on {url}"
+            f"Error while running a test {params['method']} request on {params['url']}"
         )
         outcome = False
 
-    result = {"url": url, "status": status, "result": outcome}
+    result = {"url": params["url"], "status": status, "result": outcome}
     if response_result:
         result["response"] = response_result
 
