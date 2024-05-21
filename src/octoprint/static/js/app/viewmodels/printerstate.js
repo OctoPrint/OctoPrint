@@ -71,7 +71,7 @@ $(function () {
                 (self.isPrinting() || self.isPaused()) &&
                 !self.isCancelling() &&
                 !self.isPausing() &&
-                self.loginState.loggedIn()
+                self.loginState.hasPermission(self.access.permissions.PRINT)
             );
         });
 
