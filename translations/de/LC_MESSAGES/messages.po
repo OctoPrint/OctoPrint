@@ -305,7 +305,7 @@ msgid ""
 "%(time)s)."
 msgstr ""
 "Achievements mit einem %(clock)s sind zeitbasiert und hängen von einer "
-"korrekten %(startlink)Zeitzonen-Konfiguration%(endlink) ab (aktuell: "
+"korrekten %(startlink)sZeitzonen-Konfiguration%(endlink)s ab (aktuell: "
 "%(timezone)s, %(time)s)."
 
 #: src/octoprint/plugins/achievements/templates/achievements_about_achievements.jinja2:9
