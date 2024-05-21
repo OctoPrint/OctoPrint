@@ -6446,7 +6446,7 @@ msgstr "Weiter"
 
 #: src/octoprint/static/js/app/viewmodels/temperature.js:538
 msgid "Connected"
-msgstr "Verbindunden"
+msgstr "Verbunden"
 
 #: src/octoprint/static/js/app/viewmodels/temperature.js:539
 msgid "Disconnected"
