@@ -374,10 +374,16 @@ class AchievementsPlugin(
         elif event == Events.FOLDER_ADDED:
             self._trigger_achievement(Achievements.THE_ORGANIZER)
 
-        elif event == Events.PLUGIN_BACKUP_BACKUP_CREATED:
+        elif (
+            hasattr(Events, "PLUGIN_BACKUP_BACKUP_CREATED")
+            and event == Events.PLUGIN_BACKUP_BACKUP_CREATED
+        ):
             self._trigger_achievement(Achievements.BETTER_SAFE_THAN_SORRY)
 
-        elif event == Events.PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN:
+        elif (
+            hasattr(Events, "PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN")
+            and event == Events.PLUGIN_PLUGINMANAGER_INSTALL_PLUGIN
+        ):
             if payload.get("from_repo"):
                 self._trigger_achievement(Achievements.ADVENTURER)
             else:
@@ -390,7 +396,10 @@ class AchievementsPlugin(
 
             changed = yearly_changed = True
 
-        elif event == Events.PLUGIN_PLUGINMANAGER_UNINSTALL_PLUGIN:
+        elif (
+            hasattr(Events, "PLUGIN_PLUGINMANAGER_UNINSTALL_PLUGIN")
+            and event == Events.PLUGIN_PLUGINMANAGER_UNINSTALL_PLUGIN
+        ):
             self._data.stats.plugins_uninstalled += 1
             self._year_data.plugins_uninstalled += 1
 
