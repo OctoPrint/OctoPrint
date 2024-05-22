@@ -76,8 +76,12 @@ $(function () {
 
         self.snapshotUrlContainsAuth = ko.pureComputed(() => {
             const urlStr = self.snapshotUrl();
-            const url = new URL(urlStr);
-            return !!(url.username || url.password);
+            try {
+                const url = new URL(urlStr);
+                return !!(url.username || url.password);
+            } catch (e) {
+                return false;
+            }
         });
 
         self.testWebcamStreamUrlBusy = ko.observable(false);
