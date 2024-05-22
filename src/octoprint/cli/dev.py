@@ -71,12 +71,6 @@ class OctoPrintDevelCommands(click.MultiCommand):
         except ImportError:
             return None
 
-        try:
-            # we depend on Cookiecutter >= 1.4
-            from cookiecutter.prompt import StrictEnvironment
-        except ImportError:
-            return None
-
         import contextlib
 
         @contextlib.contextmanager
@@ -111,6 +105,8 @@ class OctoPrintDevelCommands(click.MultiCommand):
             original_prompt_for_config = cookiecutter.main.prompt_for_config
 
             def custom_prompt_for_config(context, no_input=False):
+                from cookiecutter.environment import StrictEnvironment
+
                 cookiecutter_dict = {}
 
                 env = StrictEnvironment()
