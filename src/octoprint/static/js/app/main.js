@@ -200,6 +200,17 @@ $(function () {
             location.reload(force);
         };
 
+        exports.browser.errorConsole = [];
+        window.addEventListener("error", (event) => {
+            exports.browser.errorConsole.push(event);
+        });
+        window.console.error = (function (old) {
+            return function () {
+                exports.browser.errorConsole.push(arguments);
+                old.apply(this, arguments);
+            };
+        })(window.console.error);
+
         return exports;
     })();
 
