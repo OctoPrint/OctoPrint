@@ -4,61 +4,123 @@
  */
 
 $(function () {
-    var OctoPrint = window.OctoPrint;
+    const OctoPrint = window.OctoPrint;
 
     OctoPrint.loginui = {
         startedUp: false
     };
 
-    var loginElement = $("#login");
-    var overlayElement = $("#login-overlay");
-    var errorCredentialsElement = $("#login-error-credentials");
-    var errorRateElement = $("#login-error-rate");
-    var offlineElement = $("#login-offline");
-    var buttonElement = $("#login-button");
-    var reconnectElement = $("#login-reconnect");
+    const loginForm = $("#login");
+    const mfaForm = $("#mfa");
 
-    var ignoreDisconnect = false;
+    const overlayElement = $("#login-overlay");
+    const errorCredentialsElement = $("#login-error-credentials");
+    const errorRateElement = $("#login-error-rate");
+    const errorMfaElement = $("#login-error-mfa");
+    const offlineElement = $("#login-offline");
+    const buttonElement = $("#login-button");
+    const reconnectElement = $("#login-reconnect");
 
-    loginElement.html($("#form-password-login").html());
+    let ignoreDisconnect = false;
 
-    buttonElement.click(function () {
-        var usernameElement = $("#login-user");
-        var passwordElement = $("#login-password");
-        var rememberElement = $("#login-remember");
+    const performLogin = (mfaCredentials) => {
+        const usernameElement = $("#login-user");
+        const passwordElement = $("#login-password");
+        const rememberElement = $("#login-remember");
 
-        var username = usernameElement.val();
-        var password = passwordElement.val();
-        var remember = rememberElement.prop("checked");
+        const username = usernameElement.val();
+        const password = passwordElement.val();
+        const remember = rememberElement.prop("checked");
 
         overlayElement.addClass("in");
         errorCredentialsElement.removeClass("in");
         errorRateElement.removeClass("in");
 
+        const opts = {};
+        if (mfaCredentials) {
+            opts.additionalPayload = mfaCredentials;
+        }
+
         OctoPrint.browser
-            .login(username, password, remember)
+            .login(username, password, remember, opts)
             .done(() => {
                 ignoreDisconnect = true;
                 window.location.href = REDIRECT_URL;
             })
             .fail((xhr) => {
-                usernameElement.val(USER_ID);
-                passwordElement.val("");
-
-                if (USER_ID) {
-                    passwordElement.focus();
+                if (
+                    xhr.status === 403 &&
+                    xhr.responseText &&
+                    JSON.parse(xhr.responseText).mfa
+                ) {
+                    showMfa(JSON.parse(xhr.responseText).mfa);
                 } else {
-                    usernameElement.focus();
+                    usernameElement.val(USER_ID);
+                    passwordElement.val("");
+
+                    showPasswordForm();
+
+                    if (USER_ID) {
+                        passwordElement.focus();
+                    } else {
+                        usernameElement.focus();
+                    }
+
+                    if (xhr.status === 429) {
+                        errorRateElement.addClass("in");
+                    } else if (mfaCredentials) {
+                        errorMfaElement.addClass("in");
+                    } else {
+                        errorCredentialsElement.addClass("in");
+                    }
                 }
 
                 overlayElement.removeClass("in");
-                if (xhr.status === 429) {
-                    errorRateElement.addClass("in");
-                } else {
-                    errorCredentialsElement.addClass("in");
-                }
             });
+    };
 
+    const showPasswordForm = () => {
+        loginForm.show();
+        mfaForm.hide();
+    };
+
+    const showMfa = (options) => {
+        const mfaOptions = $("#mfa-options", mfaForm);
+        _.each(options, (mfa) => {
+            const formTemplate = $(`#form-${mfa}`);
+            const title = formTemplate.data("title");
+            const form = formTemplate.html();
+
+            const container = $(`<div class="accordion-group"></div>`);
+            const heading = $(
+                `<div class="accordion-heading"><a role="heading" aria-level="2" aria-label="{{ title|edq }}" class="accordion-toggle" data-toggle="collapse" data-parent="#mfa-options" href="#mfa-form-${mfa}">${title}</a></div>`
+            );
+            const body = $(
+                `<div class="accordion-body collapse in" id="mfa-form-${mfa}">${form}</div>`
+            );
+            container.append(heading).append(body);
+
+            mfaOptions.append(container);
+
+            $('button[type="submit"', container).click(() => {
+                const additional = {};
+                _.each(["input", "select", "textarea"], (tag) => {
+                    $(`${tag}[data-mfa]`, container).each((index, element) => {
+                        const jqueryElement = $(element);
+                        const input = jqueryElement.data("mfa");
+                        additional[`mfa-${mfa}-${input}`] = jqueryElement.val();
+                    });
+                });
+                performLogin(additional);
+            });
+        });
+
+        mfaForm.show();
+        loginForm.hide();
+    };
+
+    buttonElement.click(() => {
+        performLogin();
         return false;
     });
 

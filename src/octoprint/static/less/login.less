@@ -31,14 +31,17 @@ body {
   }
 }
 
-#login-error-credentials,
-#login-error-rate,
+.login-error,
 #login-offline {
   display: none;
 
   &.in {
     display: block;
   }
+}
+
+#mfa-options .accordion-body {
+  padding: 1em;
 }
 
 #login-overlay {

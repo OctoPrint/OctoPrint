@@ -263,11 +263,13 @@ def login():
     for plugin in mfa_plugins:
         try:
             form = plugin.get_mfa_form()
-            if form:
+            if form and isinstance(form, tuple) and len(form) == 2:
+                title, form = form
                 render_kwargs["forms"].append(
                     {
                         "id": f"form-{plugin._identifier}",
                         "template": f"{plugin.template_folder_key}/{form}",
+                        "title": title,
                     }
                 )
         except Exception:

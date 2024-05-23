@@ -2395,8 +2395,8 @@ class WebcamProviderPlugin(OctoPrintPlugin):
 
 class MfaPlugin(TemplatePlugin, OctoPrintPlugin, SortablePlugin):
     def get_mfa_form(self, *args, **kwargs):
-        """Returns an additional template to be made available as form on the login page."""
+        """Returns a tuple of title and additional template to be made available as form on the login page."""
         return None
 
-    def is_mfa_step_required(self, request, *args, **kwargs):
+    def is_mfa_step_required(self, request, user, data, *args, **kwargs):
         return False

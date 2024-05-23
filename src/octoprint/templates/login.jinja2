@@ -71,8 +71,9 @@
                 {% endif %}
             </h2>
 
-            <div id="login-error-credentials" class="alert alert-error" data-test-id="login-error">{{ _('Incorrect username or password. Hint: Both are case sensitive!') }}</div>
-            <div id="login-error-rate" class="alert alert-error" data-test-id="login-error-rate">{{ _('You have made too many failed login attempts. Please try again later.') }}</div>
+            <div id="login-error-credentials" class="alert alert-error login-error" data-test-id="login-error">{{ _('Incorrect username or password. Hint: Both are case sensitive!') }}</div>
+            <div id="login-error-rate" class="alert alert-error login-error" data-test-id="login-error-rate">{{ _('You have made too many failed login attempts. Please try again later.') }}</div>
+            <div id="login-error-mfa" class="alert alert-error login-error" data-test-id="login-error-mfa">{{ _('Incorrect MFA credentials.') }}</div>
             <div id="login-offline" class="alert alert-error">{{ _('Server is currently offline.') }} <a id="login-reconnect" href="javascript:void(0)">{{ _('Reconnect...') }}</a></div>
 
             {% if reauthenticate %}<p>
@@ -95,6 +96,16 @@
         </form>
     </div>
 
+    <div id="mfa" class="container" style="display: none">
+        <form class="form-signin">
+            <p>{% trans %}
+                You have enabled multifactor authentication. Please choose one of the following options to further authenticate yourself:
+            {% endtrans %}</p>
+
+            <div id="mfa-options" class="accordion"></div>
+        </form>
+    </div>
+
     <div id="login-overlay">
         <div class="background"></div>
         <div class="wrapper">
@@ -108,12 +119,9 @@
         </div>
     </div>
 
-    <script type="text/html" id="form-password-login">
-    </script>
-
     {% for form in forms %}
         {% try "<!-- There was an error with the template {filename} at line number {lineno}: {exception} -->" %}
-        <script type="text/html" id="{{ form.id }}">
+        <script type="text/html" id="{{ form.id }}" data-title="{{ form.title }}">
             {% include form.template ignore missing %}
         </script>
         {% endtry %}

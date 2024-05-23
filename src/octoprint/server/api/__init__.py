@@ -288,7 +288,8 @@ def serverStatus():
 @api.route("/login", methods=["POST"])
 @limit(
     "3/minute;5/10 minutes;10/hour",
-    deduct_when=lambda response: response.status_code == 403,
+    deduct_when=lambda response: response.status_code == 403
+    and not getattr(response, "__mfa_required__", False),
     error_message="You have made too many failed login attempts. Please try again later.",
 )
 def login():
@@ -317,6 +318,30 @@ def login():
                         f"Failed login attempt for user {username} from {remote_addr}, user is deactivated"
                     )
                     abort(403)
+
+                mfa_required = False
+                mfa_options = []
+                for mfa in octoprint.server.pluginManager.get_implementations(
+                    octoprint.plugin.MfaPlugin
+                ):
+                    result = mfa.is_mfa_step_required(request, user, data)
+                    if isinstance(result, Response):
+                        return result
+
+                    if result:
+                        mfa_required = True
+                        mfa_options.append(mfa._identifier)
+
+                if mfa_required:
+                    response = make_response(
+                        jsonify(
+                            error="Multi-factor authentication required", mfa=mfa_options
+                        ),
+                        403,
+                        {"Content-Type": "application/json"},
+                    )
+                    response.__mfa_required__ = True
+                    return response
 
                 user = octoprint.server.userManager.login_user(user)
                 session["usersession.id"] = user.session
