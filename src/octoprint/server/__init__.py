@@ -145,7 +145,6 @@ from octoprint.server.util import (
     corsRequestHandler,
     corsResponseHandler,
     csrfRequestHandler,
-    loginFromApiKeyRequestHandler,
     requireLoginRequestHandler,
 )
 from octoprint.server.util.flask import PreemptiveCache, validate_session_signature
@@ -237,19 +236,26 @@ def load_user(id):
 
 
 def load_user_from_request(request):
-    user = None
+    # API key?
+    apikey = util.get_api_key(request)
+    if apikey:
+        user = util.get_user_for_apikey(apikey)
+        if user:
+            return user
 
     if settings().getBoolean(["accessControl", "trustBasicAuthentication"]):
         # Basic Authentication?
-        user = util.get_user_for_authorization_header(
-            request.headers.get("Authorization")
-        )
+        user = util.get_user_for_authorization_header(request)
+        if user:
+            return user
 
     if settings().getBoolean(["accessControl", "trustRemoteUser"]):
         # Remote user header?
         user = util.get_user_for_remote_user_header(request)
+        if user:
+            return user
 
-    return user
+    return None
 
 
 def unauthorized_user():
@@ -2042,7 +2048,6 @@ class Server:
             return
 
         blueprint.before_request(corsRequestHandler)
-        blueprint.before_request(loginFromApiKeyRequestHandler)
         blueprint.after_request(corsResponseHandler)
 
         if plugin.is_blueprint_csrf_protected():

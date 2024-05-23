@@ -6,6 +6,7 @@ import base64
 import datetime
 import logging
 import sys
+from typing import Optional, Union
 
 PY3 = sys.version_info >= (3, 0)  # should now always be True, kept for plugins
 
@@ -15,10 +16,9 @@ import netaddr
 
 import octoprint.server
 import octoprint.timelapse
-import octoprint.vendor.flask_principal as flask_principal
 from octoprint.plugin import plugin_manager
 from octoprint.settings import settings
-from octoprint.util import deprecated, to_unicode
+from octoprint.util import to_unicode
 
 from . import flask, sockjs, tornado, watchdog  # noqa: F401
 
@@ -52,87 +52,6 @@ class LoginMechanism:
         elif login_mechanism == cls.REMOTE_USER:
             return "Remote User header"
         return "unknown method"
-
-
-@deprecated(
-    "API keys are no longer needed for anonymous access and thus this is now obsolete"
-)
-def enforceApiKeyRequestHandler():
-    pass
-
-
-apiKeyRequestHandler = deprecated(
-    "apiKeyRequestHandler has been renamed to enforceApiKeyRequestHandler"
-)(enforceApiKeyRequestHandler)
-
-
-def loginFromApiKeyRequestHandler():
-    """
-    ``before_request`` handler for blueprints which creates a login session for the provided api key (if available)
-
-    App session keys are handled as anonymous keys here and ignored.
-
-    TODO 1.11.0: Do we still need this with load_user_from_request in place?
-    """
-    try:
-        if loginUserFromApiKey():
-            _flask.g.login_via_apikey = True
-    except InvalidApiKeyException:
-        _flask.abort(403, "Invalid API key")
-
-
-def loginFromAuthorizationHeaderRequestHandler():
-    """
-    ``before_request`` handler for creating login sessions based on the Authorization header.
-
-    TODO 1.11.0: Do we still need this with load_user_from_request in place?
-    """
-    try:
-        if loginUserFromAuthorizationHeader():
-            _flask.g.login_via_header = True
-    except InvalidApiKeyException:
-        _flask.abort(403, "Invalid credentials in Basic Authorization header")
-
-
-class InvalidApiKeyException(Exception):
-    pass
-
-
-def loginUserFromApiKey():
-    apikey = get_api_key(_flask.request)
-    if not apikey:
-        return False
-
-    remote_address = flask.get_remote_address(_flask.request)
-    user = get_user_for_apikey(apikey, remote_address=remote_address)
-    if user is None:
-        # invalid API key = no API key
-        raise InvalidApiKeyException("Invalid API key")
-
-    return _loginHelper(user, login_mechanism=LoginMechanism.APIKEY)
-
-
-def loginUserFromAuthorizationHeader():
-    authorization_header = get_authorization_header(_flask.request)
-    user = get_user_for_authorization_header(authorization_header)
-    return _loginHelper(user, login_mechanism=LoginMechanism.AUTHHEADER)
-
-
-def _loginHelper(user, login_mechanism=None):
-    if (
-        user is not None
-        and user.is_active
-        and flask_login.login_user(user, remember=False)
-    ):
-        flask_principal.identity_changed.send(
-            _flask.current_app._get_current_object(),
-            identity=flask_principal.Identity(user.get_id()),
-        )
-        if login_mechanism:
-            _flask.session["login_mechanism"] = login_mechanism
-            _flask.session["credentials_seen"] = False
-        return True
-    return False
 
 
 def requireLoginRequestHandler():
@@ -248,7 +167,29 @@ def optionsAllowOrigin(request):
     return resp
 
 
-def get_user_for_apikey(apikey, remote_address=None):
+def get_user_for_apikey(
+    apikey, remote_address: str = None
+) -> "Optional[octoprint.access.users.User]":
+    """
+    Tries to find a user based on the given API key.
+
+    Will only perform any action if the API key is not None and not empty.
+
+    If the API key is the cli key and the client's address is a loopback address,
+    the CLI user will be returned.
+
+    If the API key is a user key, the user will be returned.
+
+    If the API key is neither, the key will be passed to all registered key validators
+    and the first non-None result will be returned.
+
+    Args:
+        apikey (str): the API key to check
+        remote_address (str): the remote address of the client, optional
+
+    Returns:
+        octoprint.access.users.User: the user found, or None if none was found
+    """
     if apikey is not None:
         if apikey == octoprint.server.cli_key and remote_address:
             try:
@@ -280,7 +221,14 @@ def get_user_for_apikey(apikey, remote_address=None):
     return None
 
 
-def get_user_for_remote_user_header(request):
+def get_user_for_remote_user_header(
+    request: _flask.Request,
+) -> "Optional[octoprint.access.users.User]":
+    """
+    Tries to find a user based on the configured remote user request header.
+
+    Will only perform any action if the trustRemoteUser setting is enabled.
+    """
     if not settings().getBoolean(["accessControl", "trustRemoteUser"]):
         return None
 
@@ -288,13 +236,13 @@ def get_user_for_remote_user_header(request):
     if header is None:
         return None
 
-    user = octoprint.server.userManager.findUser(userid=header)
+    user = octoprint.server.userManager.find_user(userid=header)
 
     if user is None and settings().getBoolean(["accessControl", "addRemoteUsers"]):
         octoprint.server.userManager.add_user(
             header, settings().generateApiKey(), active=True
         )
-        user = octoprint.server.userManager.findUser(userid=header)
+        user = octoprint.server.userManager.find_user(userid=header)
 
     if user:
         _flask.session["login_mechanism"] = LoginMechanism.REMOTE_USER
@@ -302,24 +250,41 @@ def get_user_for_remote_user_header(request):
     return user
 
 
-def get_user_for_authorization_header(header):
+def get_user_for_authorization_header(
+    request: _flask.Request, header: str = "Authorization"
+) -> "Optional[octoprint.access.users.User]":
+    """
+    Tries to find a user based on the Authorization request header.
+
+    Will only perform any action if the trustBasicAuthentication setting is enabled.
+
+    If configured accordingly, will also check if the password used for the Basic Authentication
+    matches the one stored for the user.
+
+    Args:
+        request: the request object
+        header (str): the header to check for the authorization header, defaults to "Authorization"
+    """
+
+    value = request.headers.get(header)
+
     if not settings().getBoolean(["accessControl", "trustBasicAuthentication"]):
         return None
 
-    if header is None:
+    if value is None:
         return None
 
-    if not header.startswith("Basic "):
-        # we currently only support Basic Authentication
+    if not value.startswith("Basic "):
+        # we only support Basic Authentication here
         return None
 
-    header = header.replace("Basic ", "", 1)
+    value = value.replace("Basic ", "", 1)
     try:
-        header = to_unicode(base64.b64decode(header))
+        value = to_unicode(base64.b64decode(value))
     except TypeError:
         return None
 
-    name, password = header.split(":", 1)
+    name, password = value.split(":", 1)
     if not octoprint.server.userManager.enabled:
         return None
 
@@ -336,7 +301,23 @@ def get_user_for_authorization_header(header):
     return user
 
 
-def get_api_key(request):
+def get_api_key(
+    request: Union[_flask.Request, "tornado.httputil.HTTPServerRequest"],
+) -> Optional[str]:
+    """
+    Extracts the API key from the given request.
+
+    The request may be a Flask or Tornado request object. Attempts will
+    be made to read the API key from the "apikey" request parameter,
+    the "X-Api-Key" header, or the "Authorization" header in "Bearer" mode.
+
+    Args:
+        request: the request object, either a Flask or a Tornado request
+
+    Returns:
+        str: the API key, or None if not found
+    """
+
     # Check Flask GET/POST arguments
     if hasattr(request, "values") and "apikey" in request.values:
         return request.values["apikey"]
@@ -362,11 +343,6 @@ def get_api_key(request):
             return token
 
     return None
-
-
-def get_authorization_header(request):
-    # Tornado and Flask headers
-    return request.headers.get("Authorization")
 
 
 def get_plugin_hash():
@@ -404,17 +380,6 @@ def has_permissions(*permissions):
 
     Returns: True if the user has all permissions, False otherwise
     """
-    logged_in = False
-
-    try:
-        if loginUserFromApiKey():
-            logged_in = True
-    except InvalidApiKeyException:
-        pass  # ignored
-
-    if not logged_in:
-        loginUserFromAuthorizationHeader()
-
     flask.passive_login()
     return all(p.can() for p in permissions)
 

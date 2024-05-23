@@ -768,7 +768,9 @@ class Timelapse:
             self._logger.debug(
                 f"Going to capture {filename} from {self._webcam.config.name} provided by {self._webcam.providerIdentifier}"
             )
-            snapshot = self._webcam.providerPlugin.take_webcam_snapshot(self._webcam)
+            snapshot = self._webcam.providerPlugin.take_webcam_snapshot(
+                self._webcam.config.name
+            )
 
             with open(filename, "wb") as f:
                 for chunk in snapshot:
