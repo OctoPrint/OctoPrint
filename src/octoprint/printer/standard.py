@@ -606,7 +606,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
     def set_temperature(self, heater, value, *args, **kwargs):
         if not PrinterInterface.valid_heater_regex.match(heater):
             raise ValueError(
-                'heater must match "tool[0-9]+", "bed" or "chamber": {heater}'.format(
+                'heater must match "tool([0-9]+|Current_Extruder)", "bed" or "chamber": {heater}'.format(
                     heater=heater
                 )
             )
@@ -621,8 +621,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             extruder_count = printer_profile["extruder"]["count"]
             shared_nozzle = printer_profile["extruder"]["sharedNozzle"]
             if extruder_count > 1 and not shared_nozzle:
-                toolNum = int(heater[len("tool") :])
-                self.commands(f"M104 T{toolNum} S{value}", tags=tags)
+                if heater[len("tool") :] == "Current_Extruder":
+                    toolNum = "current_extruder"
+                    self.commands(f"M104 T{toolNum} S{value}", tags=tags)
+                else:
+                    toolNum = int(heater[len("tool") :])
+                    self.commands(f"M104 T{toolNum} S{value}", tags=tags)
             else:
                 self.commands(f"M104 S{value}", tags=tags)
 
