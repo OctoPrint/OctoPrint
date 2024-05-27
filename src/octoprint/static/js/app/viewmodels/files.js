@@ -177,21 +177,40 @@ $(function () {
         self.listStyle.subscribe(saveListStyleToLocalStorage);
         loadListStyleFromLocalStorage();
 
-        // initialize list helper
-        var listHelperFilters = {
-            printed: function (data) {
-                return !(
-                    data["prints"] &&
-                    data["prints"]["success"] &&
-                    data["prints"]["success"] > 0
-                );
-            },
-            sd: function (data) {
-                return data["origin"] && data["origin"] === "sdcard";
-            },
-            local: function (data) {
-                return !(data["origin"] && data["origin"] === "sdcard");
+        const recursiveFilter = (data, filter) => {
+            if (filter(data)) {
+                return true;
+            } else if (data.children) {
+                return data.children.some((child) => recursiveFilter(child, filter));
+            } else {
+                return false;
             }
+        };
+
+        const isCurrentlySelected = (data) => {
+            const selected = self.selectedFile;
+            return (
+                selected !== undefined &&
+                selected.origin === data.origin &&
+                selected.path === data.path
+            );
+        };
+
+        // initialize list helper
+        const listHelperFilters = {
+            printed: (data) =>
+                recursiveFilter(
+                    data,
+                    (child) =>
+                        isCurrentlySelected(child) ||
+                        !(
+                            child.prints !== undefined &&
+                            child.prints.success !== undefined &&
+                            child.prints.success > 0
+                        )
+                ),
+            sd: (data) => data["origin"] && data["origin"] === "sdcard",
+            local: (data) => !(data["origin"] && data["origin"] === "sdcard")
         };
         var listHelperExclusiveFilters = [["sd", "local"]];
 
