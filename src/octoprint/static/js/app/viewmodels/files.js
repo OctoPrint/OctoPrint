@@ -425,6 +425,7 @@ $(function () {
 
             self.selectedFile = data.file;
             self.highlightFile(data.file);
+            self.listHelper.refresh();
         };
 
         self._otherRequestInProgress = undefined;
