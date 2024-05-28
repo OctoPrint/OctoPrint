@@ -1686,7 +1686,7 @@ class VirtualPrinter:
         self, line: str, wait: bool = False, support_r: bool = False
     ) -> None:
         only_wait_if_higher = True
-        tool = 0
+        tool = self.currentExtruder
         toolMatch = re.search(r"T([0-9]+)", line)
         if toolMatch:
             tool = int(toolMatch.group(1))

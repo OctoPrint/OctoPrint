@@ -606,7 +606,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
     def set_temperature(self, heater, value, *args, **kwargs):
         if not PrinterInterface.valid_heater_regex.match(heater):
             raise ValueError(
-                'heater must match "tool[0-9]+", "bed" or "chamber": {heater}'.format(
+                'heater must match "tool", "tool([0-9])", "bed" or "chamber": {heater}'.format(
                     heater=heater
                 )
             )
@@ -616,7 +616,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         tags = kwargs.get("tags", set()) | {"trigger:printer.set_temperature"}
 
-        if heater.startswith("tool"):
+        if heater == "tool":
+            # set current tool, whatever that might be
+            self.commands(f"M104 S{value}", tags=tags)
+
+        elif heater.startswith("tool"):
+            # set specific tool
             printer_profile = self._printerProfileManager.get_current_or_default()
             extruder_count = printer_profile["extruder"]["count"]
             shared_nozzle = printer_profile["extruder"]["sharedNozzle"]
@@ -640,7 +645,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             raise ValueError("offsets must be a dict")
 
         validated_keys = list(
-            filter(lambda x: PrinterInterface.valid_heater_regex.match(x), offsets.keys())
+            filter(
+                lambda x: PrinterInterface.valid_heater_regex_no_current.match(x),
+                offsets.keys(),
+            )
         )
         validated_values = list(
             filter(lambda x: isinstance(x, (int, float)), offsets.values())
@@ -1841,7 +1849,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self, local_filename, remote_filename, filesize, user=None
     ):
         eventManager().fire(
-            Events.TRANSFER_STARTED, {"local": local_filename, "remote": remote_filename}
+            Events.TRANSFER_STARTED,
+            {"local": local_filename, "remote": remote_filename},
         )
 
         self._sdStreaming = True
