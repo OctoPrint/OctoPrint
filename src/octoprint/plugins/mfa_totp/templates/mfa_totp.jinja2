@@ -1,0 +1,20 @@
+<div id="plugin_mfa_totp_enroll" class="modal hide fade-in">
+    <div class="modal-header">
+        <a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Enrollment for TOTP Multi Factor Authentication') }}</h3>
+    </div>
+    <div class="modal-body">
+        <p>{{ _('Scan the QR code with your authenticator app and submit a generated token to activate TOTP multi factor authentication.') }}</p>
+        <form class="form-horizontal" onsubmit="return false;">
+            <div class="control-group">
+                <label class="control-label">{{ _('QR Code') }}</label>
+                <div class="controls">
+                    <div data-bind="qrcode: {text: enrollmentUri, size: 150}"></div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
+    </div>
+</div>

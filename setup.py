@@ -60,6 +60,7 @@ core_deps = [
     "psutil>=5.9.8,<6",
     "pydantic==1.10.12",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
     "pylru>=1.2.1,<2",
+    "pyotp>=2.9.0,<3",  # dependency of bundled TOTP MFA plugin
     "pyserial>=3.5,<4",
     "pytz",
     "PyYAML>=6.0.1,<7",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
