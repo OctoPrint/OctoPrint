@@ -72,7 +72,7 @@ class SelectedFilesLoader(BaseLoader):
         if template not in self.files:
             raise TemplateNotFound(template)
 
-        from jinja2.loaders import open_if_exists
+        from jinja2.utils import open_if_exists
 
         path = self.files[template]
         f = open_if_exists(path)
