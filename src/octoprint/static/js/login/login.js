@@ -12,6 +12,7 @@ $(function () {
 
     const loginForm = $("#login");
     const mfaForm = $("#mfa");
+    const mfaErrorElement = $("#mfa-error");
 
     const overlayElement = $("#login-overlay");
     const errorCredentialsElement = $("#login-error-credentials");
@@ -23,6 +24,22 @@ $(function () {
 
     let ignoreDisconnect = false;
 
+    const xhrErrorJson = function (xhr) {
+        if (!xhr.responseText) return null;
+        try {
+            return JSON.parse(xhr.responseText);
+        } catch (e) {
+            return null;
+        }
+    };
+
+    const hideErrors = () => {
+        errorCredentialsElement.removeClass("in");
+        errorRateElement.removeClass("in");
+        errorMfaElement.removeClass("in");
+        mfaErrorElement.removeClass("in");
+    };
+
     const performLogin = (mfaCredentials) => {
         const usernameElement = $("#login-user");
         const passwordElement = $("#login-password");
@@ -33,8 +50,7 @@ $(function () {
         const remember = rememberElement.prop("checked");
 
         overlayElement.addClass("in");
-        errorCredentialsElement.removeClass("in");
-        errorRateElement.removeClass("in");
+        hideErrors();
 
         const opts = {};
         if (mfaCredentials) {
@@ -44,16 +60,18 @@ $(function () {
         OctoPrint.browser
             .login(username, password, remember, opts)
             .done(() => {
+                hideErrors();
                 ignoreDisconnect = true;
                 window.location.href = REDIRECT_URL;
             })
             .fail((xhr) => {
-                if (
-                    xhr.status === 403 &&
-                    xhr.responseText &&
-                    JSON.parse(xhr.responseText).mfa
-                ) {
-                    showMfa(JSON.parse(xhr.responseText).mfa);
+                const response = xhrErrorJson(xhr);
+
+                if (xhr.status === 403 && response && response.mfa) {
+                    showMfa(response.mfa);
+                } else if (xhr.status === 403 && response && response.mfa_error) {
+                    mfaErrorElement.text(response.mfa_error);
+                    mfaErrorElement.addClass("in");
                 } else {
                     usernameElement.val(USER_ID);
                     passwordElement.val("");
@@ -89,7 +107,7 @@ $(function () {
         mfaOptions.empty();
 
         _.each(options, (mfa) => {
-            const formTemplate = $(`#form-${mfa}`);
+            const formTemplate = $(`#mfa_login_${mfa}`);
             const title = formTemplate.data("title");
             const form = formTemplate.html();
 

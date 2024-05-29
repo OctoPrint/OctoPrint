@@ -289,7 +289,7 @@ def serverStatus():
 @limit(
     "3/minute;5/10 minutes;10/hour",
     deduct_when=lambda response: response.status_code == 403
-    and not getattr(response, "__mfa_required__", False),
+    and not getattr(response, "__rate_limit_exempt__", False),
     error_message="You have made too many failed login attempts. Please try again later.",
 )
 def login():
@@ -335,12 +335,11 @@ def login():
                 if mfa_required:
                     response = make_response(
                         jsonify(
-                            error="Multi-factor authentication required", mfa=mfa_options
+                            error="Two-factor authentication required", mfa=mfa_options
                         ),
                         403,
-                        {"Content-Type": "application/json"},
                     )
-                    response.__mfa_required__ = True
+                    response.__rate_limit_exempt__ = True
                     return response
 
                 user = octoprint.server.userManager.login_user(user)

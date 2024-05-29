@@ -49,4 +49,14 @@
             </div>
         </div>
     </fieldset>
+
+    {% for key in templates.usersettings_mfa.order %}
+        {% set entry, data = templates.usersettings_mfa.entries[key] %}
+        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+        <fieldset id="{{ data._div }}" data-test-id="usersettings-mfa-{{ data._div }}-content" {% if "classes" in data %}class="{{ data.classes|join(' ') }}"{% endif %}" {% if "styles" in data %}style="{{ data.styles|join(', ') }}"{% endif %}>
+            <legend>2FA: {{ entry|e }}</legend>
+            {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template ignore missing %}{% endtry %}
+        </fieldset>
+        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+    {% endfor %}
 </form>

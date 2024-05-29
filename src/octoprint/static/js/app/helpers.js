@@ -1765,3 +1765,12 @@ var startWebRTC = function (videoElement, streamUrl, iceServers) {
 var fetchWindowLocation = function () {
     return window.location;
 };
+
+const xhrErrorJson = function (xhr) {
+    if (!xhr.responseText) return null;
+    try {
+        return JSON.parse(xhr.responseText);
+    } catch (e) {
+        return null;
+    }
+};

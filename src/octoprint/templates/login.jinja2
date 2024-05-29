@@ -73,7 +73,7 @@
 
             <div id="login-error-credentials" class="alert alert-error login-error" data-test-id="login-error">{{ _('Incorrect username or password. Hint: Both are case sensitive!') }}</div>
             <div id="login-error-rate" class="alert alert-error login-error" data-test-id="login-error-rate">{{ _('You have made too many failed login attempts. Please try again later.') }}</div>
-            <div id="login-error-mfa" class="alert alert-error login-error" data-test-id="login-error-mfa">{{ _('Incorrect MFA credentials.') }}</div>
+            <div id="login-error-mfa" class="alert alert-error login-error" data-test-id="login-error-mfa">{{ _('Incorrect 2FA credentials.') }}</div>
             <div id="login-offline" class="alert alert-error">{{ _('Server is currently offline.') }} <a id="login-reconnect" href="javascript:void(0)">{{ _('Reconnect...') }}</a></div>
 
             {% if reauthenticate %}<p>
@@ -98,8 +98,10 @@
 
     <div id="mfa" class="container" style="display: none">
         <form class="form-signin">
+            <div id="mfa-error" class="alert alert-error login-error" data-test-id="mfa-error"></div>
+
             <p>{% trans %}
-                You have enabled multifactor authentication. Please choose one of the following options to further authenticate yourself:
+                You have enabled two-factor authentication. Please choose one of the following options to further authenticate yourself:
             {% endtrans %}</p>
 
             <div id="mfa-options" class="accordion"></div>
