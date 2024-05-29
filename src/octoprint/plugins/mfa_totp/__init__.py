@@ -3,7 +3,7 @@ import time
 from typing import Dict
 
 import pyotp
-from flask import abort, jsonify
+from flask import abort, jsonify, make_response
 from flask_babel import gettext
 from flask_login import current_user
 
@@ -11,6 +11,7 @@ import octoprint.plugin
 from octoprint.schema import BaseModel
 
 CLEANUP_CUTOFF = 60 * 30  # 30 minutes
+VALID_WINDOW = 1  # delay of one tick is ok
 
 
 class MfaTotpUserSettings(BaseModel):
@@ -66,7 +67,7 @@ class MfaTotpPlugin(
         now = time.time()
         dirty = False
         for userid, user in list(self._data.users.items()):
-            if user.created < now - CLEANUP_CUTOFF:
+            if not user.active and user.created < now - CLEANUP_CUTOFF:
                 self._data.users.pop(userid)
                 dirty = True
         return dirty
@@ -84,7 +85,7 @@ class MfaTotpPlugin(
             )
             self._save_data()
 
-        return self._provisioning_uri(userid)
+        return secret, self._provisioning_uri(userid)
 
     def _provisioning_uri(self, userid):
         if userid not in self._data.users:
@@ -104,7 +105,7 @@ class MfaTotpPlugin(
             return False
 
         secret = self._data.users[userid].secret
-        if pyotp.TOTP(secret).verify(token):
+        if pyotp.TOTP(secret).verify(token, valid_window=VALID_WINDOW):
             self._data.users[userid].last_used = token
             self._save_data()
             return True
@@ -122,8 +123,12 @@ class MfaTotpPlugin(
     def get_template_configs(self):
         return [
             {
-                "type": "usersettings",
-                "name": gettext("2FA: TOTP"),
+                "type": "usersettings_mfa",
+                "name": gettext("TOTP"),
+            },
+            {
+                "type": "mfa_login",
+                "name": gettext("TOTP"),
             },
         ]
 
@@ -149,7 +154,9 @@ class MfaTotpPlugin(
             # user enrollment: generate secret and return provisioning URI
             if userid in self._data.users and self._data.users[userid].active:
                 return abort(409, "User already enrolled")
-            return jsonify(uri=self._enroll_user(userid))
+
+            key, uri = self._enroll_user(userid)
+            return jsonify(key=key, uri=uri)
 
         elif command == "activate":
             # activate user: verify token, only then activate user
@@ -159,8 +166,9 @@ class MfaTotpPlugin(
                 return abort(409, "User enrollment already verified")
 
             token = data.get("token", "")
-            if not self._verify_user(userid, token):
-                return abort(403, "Invalid token")
+            response = self.get_verification_response(userid, token)
+            if response:
+                return response
 
             self._data.users[userid].active = True
             self._save_data()
@@ -171,10 +179,13 @@ class MfaTotpPlugin(
             if userid not in self._data.users:
                 return abort(404, "User not enrolled")
 
-            if self._data.users[userid].active:
-                token = data.get("token", "")
-                if not self._verify_user(userid, token):
-                    return abort(403, "Invalid token")
+            if not self._data.users[userid].active:
+                return abort(400, "User erollment is not active")
+
+            token = data.get("token", "")
+            response = self.get_verification_response(userid, token)
+            if response:
+                return response
 
             self._data.users.pop(userid)
             self._save_data()
@@ -194,10 +205,28 @@ class MfaTotpPlugin(
         if not token:
             return True
 
-        if not self._verify_user(userid, token):
-            return abort(403)
+        response = self.get_verification_response(userid, token)
+        if response:
+            return response
 
         return False
+
+    ##~~ Helpers
+
+    def get_verification_response(self, userid, token):
+        if not self._verify_user(userid, token):
+            if token == self._data.users[userid].last_used:
+                return make_response(
+                    jsonify(
+                        error="Token already used",
+                        mfa_error=gettext(
+                            "The entered token has already been used, please wait for a new one"
+                        ),
+                    ),
+                    403,
+                )
+            else:
+                return abort(403, "Invalid token")
 
 
 __plugin_name__ = gettext("Two Factor Authentication: TOTP")

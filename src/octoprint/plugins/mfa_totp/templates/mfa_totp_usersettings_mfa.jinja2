@@ -1,0 +1,29 @@
+<p>
+    {{ _('Status:') }} <strong data-bind="text: enrollmentStatus, css: {'text-error': !active(), 'text-success': active}"></strong>
+</p>
+
+<div data-bind="visible: !active()">
+    <p>{% trans %}
+        If you want to activate two-factor authentication via TOTP for your account, click the button below. You will be asked to
+        scan or manually enter your secret key into your authenticator application, and then to provide a generated code for verification.
+    {% endtrans %}</p>
+
+    <div class="control-group">
+        <div class="controls">
+            <button class="btn btn-primary" data-bind="click: enroll">Enroll</button>
+        </div>
+    </div>
+</div>
+
+<div data-bind="visible: active">
+    <p>{% trans %}
+        If you want to disable two-factor authentication via TOTP, click the button below. You will be required to
+        enter a current code to confirm the deactivation.
+    {% endtrans %}</p>
+
+    <div class="control-group">
+        <div class="controls">
+            <button class="btn btn-danger" data-bind="click: deactivate">Deactivate</button>
+        </div>
+    </div>
+</div>

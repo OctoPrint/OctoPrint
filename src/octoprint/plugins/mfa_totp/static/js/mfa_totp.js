@@ -4,18 +4,28 @@ $(() => {
 
         self.active = ko.observable(false);
 
+        self.enrollmentKey = ko.observable();
         self.enrollmentUri = ko.observable();
         self.verificationToken = ko.observable();
         self.verificationError = ko.observable(false);
+        self.mfaError = ko.observable();
 
         self.enrollmentDialog = $("#plugin_mfa_totp_enroll");
         self.verificationDialog = $("#plugin_mfa_totp_verify");
 
         self.enrollmentStatus = ko.pureComputed(() => {
             if (self.active()) {
-                return gettext("Enrolled");
+                return gettext("Active");
             } else {
-                return gettext("Not enrolled");
+                return gettext("Not active");
+            }
+        });
+
+        self.verificationErrorText = ko.pureComputed(() => {
+            if (self.mfaError()) {
+                return self.mfaError();
+            } else {
+                return gettext("Token could not be verified.");
             }
         });
 
@@ -28,6 +38,7 @@ $(() => {
         self.enroll = () => {
             self.verificationToken("");
             OctoPrint.plugins.mfa_totp.enroll().done((response) => {
+                self.enrollmentKey(response.key);
                 self.enrollmentUri(response.uri);
                 self.enrollmentDialog.modal("show");
                 $("#mfa_totp_enrollment_token").focus();
@@ -40,7 +51,8 @@ $(() => {
             OctoPrint.plugins.mfa_totp
                 .activate(token)
                 .done(() => {
-                    self.verificationError(true);
+                    self.verificationError(false);
+                    self.mfaError("");
                     self.enrollmentDialog.modal("hide");
                     self.requestData();
                 })
@@ -58,14 +70,20 @@ $(() => {
         self.finishDeactivation = () => {
             const token = self.verificationToken();
             self.verificationToken("");
+            self.mfaError("");
             OctoPrint.plugins.mfa_totp
                 .deactivate(token)
                 .done(() => {
-                    self.verificationError(true);
+                    self.verificationError(false);
+                    self.mfaError("");
                     self.verificationDialog.modal("hide");
                     self.requestData();
                 })
-                .fail(() => {
+                .fail((xhr) => {
+                    const response = xhrErrorJson(xhr);
+                    if (response && response.mfa_error) {
+                        self.mfaError(response.mfa_error);
+                    }
                     self.verificationError(true);
                 });
         };
@@ -88,7 +106,7 @@ $(() => {
         construct: MfaTotpViewModel,
         dependencies: [],
         elements: [
-            "#usersettings_plugin_mfa_totp",
+            "#usersettings_mfa_plugin_mfa_totp",
             "#plugin_mfa_totp_enroll",
             "#plugin_mfa_totp_verify"
         ]
