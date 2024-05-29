@@ -46,8 +46,11 @@ class PrinterInterface:
     valid_tool_regex = re.compile(r"^(tool\d+)$")
     """Regex for valid tool identifiers."""
 
-    valid_heater_regex = re.compile(r"^(tool\d+|bed|chamber)$")
+    valid_heater_regex = re.compile(r"^(tool\d*|bed|chamber)$")
     """Regex for valid heater identifiers."""
+
+    valid_heater_regex_no_current = re.compile(r"^(tool\d+|bed|chamber)$")
+    """Regex for valid heater identifiers without the current heater."""
 
     @classmethod
     def get_connection_options(cls, *args, **kwargs):
