@@ -44,13 +44,12 @@ class MfaTotpPlugin(
 
     def _load_data(self):
         if not os.path.exists(self._data_file):
-            return MfaTotpSettings()
-
-        try:
-            self._data = MfaTotpSettings.parse_file(self._data_file)
-        except Exception as e:
-            self._logger.exception(f"Error loading TOTP MFA data: {e}")
             self._data = MfaTotpSettings()
+        else:
+            try:
+                self._data = MfaTotpSettings.parse_file(self._data_file)
+            except Exception as e:
+                self._logger.exception(f"Error loading TOTP MFA data: {e}")
 
         if self._cleanup_data():
             self._save_data()
