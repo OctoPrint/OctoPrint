@@ -86,6 +86,8 @@ $(function () {
 
     const showMfa = (options) => {
         const mfaOptions = $("#mfa-options", mfaForm);
+        mfaOptions.empty();
+
         _.each(options, (mfa) => {
             const formTemplate = $(`#form-${mfa}`);
             const title = formTemplate.data("title");
@@ -102,7 +104,8 @@ $(function () {
 
             mfaOptions.append(container);
 
-            $('button[type="submit"', container).click(() => {
+            $('button[type="submit"', container).click((e) => {
+                e.preventDefault();
                 const additional = {};
                 _.each(["input", "select", "textarea"], (tag) => {
                     $(`${tag}[data-mfa]`, container).each((index, element) => {
@@ -116,6 +119,7 @@ $(function () {
         });
 
         mfaForm.show();
+        mfaForm.find("input,textarea.select").filter(":visible:first").focus();
         loginForm.hide();
     };
 

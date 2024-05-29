@@ -1,1 +1,16 @@
-<h3>Enrollment status: <span data-bind="text: enrollmentStatus"></span></h3>
+<strong>Enrollment status: <span data-bind="text: enrollmentStatus"></span></strong>
+
+<div data-bind="visible: !active()">
+    <p>{% trans %}
+        If you want to activate 2FA via TOTP for your account, click the button below.
+    {% endtrans %}</p>
+    <button class="btn btn-primary" data-bind="visible: !active(), click: enroll">Enroll</button>
+</div>
+
+<div data-bind="visible: active">
+    <p>{% trans %}
+        If you want to disable TOTP, click the button below. You will be required to
+        enter a current 2FA code to confirm the deactivation.
+    {% endtrans %}</p>
+    <button class="btn btn-danger" data-bind="visible: active(), click: deactivate">Deactivate</button>
+</div>
