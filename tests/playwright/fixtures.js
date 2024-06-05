@@ -5,6 +5,12 @@ const credentials = {
     password: process.env.OCTOPRINT_PASSWORD || "test"
 };
 
+const mfaCredentials = {
+    username: process.env.OCTOPRINT_MFA_USERNAME || "mfa",
+    password: process.env.OCTOPRINT_MFA_PASSWORD || "mfa",
+    token: "secret"
+};
+
 const expect = base.expect;
 
 exports.test = base.test.extend({
@@ -76,6 +82,10 @@ exports.test = base.test.extend({
         await use(credentials);
     },
 
+    mfaCredentials: async ({}, use) => {
+        await use(mfaCredentials);
+    },
+
     ui: async ({page, util, loginApi, baseURL}, use) => {
         const ui = {
             gotoLogin: async () => {
@@ -129,9 +139,27 @@ exports.test = base.test.extend({
                         window.OctoPrint.loginui.startedUp,
                     {timeout: 10_000}
                 );
+
+                const loginForm = await page.getByTestId("login-form");
+                await expect(loginForm).toBeVisible();
+
                 const loginTitle = await page.getByTestId("login-title");
                 await expect(loginTitle).toBeVisible();
                 await expect(loginTitle).toContainText("Please log in");
+            },
+
+            mfaHasLoaded: async () => {
+                await ui.loginIsLoading();
+                await page.waitForFunction(
+                    () =>
+                        window.OctoPrint &&
+                        window.OctoPrint.loginui &&
+                        window.OctoPrint.loginui.startedUp,
+                    {timeout: 10_000}
+                );
+
+                const mfaForm = await page.getByTestId("mfa-form");
+                await expect(mfaForm).toBeVisible();
             }
         };
         await use(ui);

@@ -87,3 +87,34 @@ test("Successful logout", async ({page, ui, credentials}) => {
 
     await ui.loginIsLoading();
 });
+
+if (process.env.TEST_MFA) {
+    test.describe.parallel("MFA", async () => {
+        test.beforeEach(async ({ui, page, mfaCredentials}) => {
+            await ui.gotoLogin();
+
+            await page.getByTestId("login-username").fill(mfaCredentials.username);
+            await page.getByTestId("login-password").fill(mfaCredentials.password);
+            await page.getByTestId("login-submit").click();
+        });
+
+        test("correct token", async ({page, ui, util, mfaCredentials}) => {
+            await page.getByTestId("mfa-dummy-token").fill(mfaCredentials.token);
+            await page.getByTestId("mfa-dummy-submit").click();
+
+            await ui.coreIsLoading();
+            await util.loginCookiesWithoutRememberMe();
+        });
+
+        test("wrong token", async ({page, ui, util, mfaCredentials}) => {
+            await page.getByTestId("mfa-dummy-token").fill("bzzt, wrong");
+            await page.getByTestId("mfa-dummy-submit").click();
+
+            await ui.mfaHasLoaded();
+
+            const mfaError = page.getByTestId("mfa-error");
+            await expect(mfaError).toBeVisible();
+            await expect(mfaError).toContainText("Incorrect token");
+        });
+    });
+}
