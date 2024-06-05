@@ -225,6 +225,15 @@ EventHandlerPlugin
    :members:
    :show-inheritance:
 
+.. _sec-plugins-mixins-mfaplugin:
+
+MfaPlugin
+~~~~~~~~~
+
+.. autoclass:: octoprint.plugin.MfaPlugin
+   :members:
+   :show-inheritance:
+
 .. _sec-plugins-mixins-progressplugin:
 
 ProgressPlugin
