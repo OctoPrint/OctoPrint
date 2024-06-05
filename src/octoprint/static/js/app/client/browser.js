@@ -23,7 +23,7 @@
             pass: password,
             remember: !!remember
         };
-        if (opts.additionalPayload) {
+        if (opts && opts.additionalPayload) {
             data = {...data, ...opts.additionalPayload};
             delete opts.additionalPayload;
         }
