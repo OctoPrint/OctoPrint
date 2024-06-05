@@ -312,6 +312,8 @@ def login():
         if "usersession.id" in session:
             _logout(current_user)
 
+        reauthenticate = current_user and current_user.get_id() == username
+
         user = octoprint.server.userManager.find_user(username)
         if user is not None:
             if octoprint.server.userManager.check_password(username, password):
@@ -323,47 +325,49 @@ def login():
 
                 ## MFA check
 
-                mfa_options = []
-                for mfa in octoprint.server.pluginManager.get_implementations(
-                    octoprint.plugin.MfaPlugin
-                ):
-                    if not mfa.is_mfa_enabled(user):
-                        # MFA not enabled for this user, so nothing to do here
-                        continue
+                if not reauthenticate:
+                    mfa_options = []
+                    for mfa in octoprint.server.pluginManager.get_implementations(
+                        octoprint.plugin.MfaPlugin
+                    ):
+                        if not mfa.is_mfa_enabled(user):
+                            # MFA not enabled for this user, so nothing to do here
+                            continue
 
-                    try:
-                        if mfa.has_mfa_credentials(request, user, data):
-                            # MFA credentials are there and correct, no need to check further
-                            mfa_options.clear()
-                            break
+                        try:
+                            if mfa.has_mfa_credentials(request, user, data):
+                                # MFA credentials are there and correct, no need to check further
+                                mfa_options.clear()
+                                break
 
-                        mfa_options.append(mfa._identifier)
-                    except WrongMfaCredentials as exc:
-                        # MFA credentials are there but wrong, abort
+                            mfa_options.append(mfa._identifier)
+                        except WrongMfaCredentials as exc:
+                            # MFA credentials are there but wrong, abort
+                            auth_log(
+                                f"Failed login attempt for user {username} from {remote_addr}, wrong 2FA credentials"
+                            )
+                            return make_response(
+                                jsonify(
+                                    error="Wrong two-factor authentication credentials",
+                                    mfa_error=str(exc),
+                                ),
+                                403,
+                            )
+
+                    if len(mfa_options):
+                        # MFA required, abort
                         auth_log(
-                            f"Failed login attempt for user {username} from {remote_addr}, wrong 2FA credentials"
+                            f"Two-factor authentication required to log in {username} from {remote_addr}"
                         )
-                        return make_response(
+                        response = make_response(
                             jsonify(
-                                error="Wrong two-factor authentication credentials",
-                                mfa_error=str(exc),
+                                error="Two-factor authentication required",
+                                mfa=mfa_options,
                             ),
                             403,
                         )
-
-                if len(mfa_options):
-                    # MFA required, abort
-                    auth_log(
-                        f"Two-factor authentication required to log in {username} from {remote_addr}"
-                    )
-                    response = make_response(
-                        jsonify(
-                            error="Two-factor authentication required", mfa=mfa_options
-                        ),
-                        403,
-                    )
-                    response.__rate_limit_exempt__ = True
-                    return response
+                        response.__rate_limit_exempt__ = True
+                        return response
 
                 ## Actual login starts here
 
