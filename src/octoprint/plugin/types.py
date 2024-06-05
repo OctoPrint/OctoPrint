@@ -2393,6 +2393,13 @@ class WebcamProviderPlugin(OctoPrintPlugin):
         raise NotImplementedError()
 
 
+class WrongMfaCredentials(Exception):
+    pass
+
+
 class MfaPlugin(TemplatePlugin, OctoPrintPlugin, SortablePlugin):
-    def is_mfa_step_required(self, request, user, data, *args, **kwargs):
+    def is_mfa_enabled(self, user):
         return False
+
+    def has_mfa_credentials(self, request, user, data, *args, **kwargs):
+        return True
