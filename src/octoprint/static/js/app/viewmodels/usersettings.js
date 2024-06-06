@@ -66,7 +66,17 @@ $(function () {
 
             var process = function (user) {
                 self.currentUser(user);
-                self.userSettingsDialog.modal("show");
+                self.userSettingsDialog
+                    .modal({
+                        minHeight: function () {
+                            return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
+                        }
+                    })
+                    .css({
+                        "margin-left": function () {
+                            return -($(this).width() / 2);
+                        }
+                    });
             };
 
             // make sure we have the current user data, see #2534

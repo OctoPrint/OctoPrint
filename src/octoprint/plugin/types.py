@@ -332,6 +332,16 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
        wrapper div and the link in the navigation will have the additional classes and styles applied as defined via the
        configuration through :func:`get_template_configs`.
 
+    User settings
+       Plugins may also inject a dialog into the existing user settings view.
+
+       The included template must be called ``<plugin identifier>_usersettings.jinja2`` (e.g. ``myplugin_usersettings.jinja2``) unless
+       overridden by the configuration supplied through :func:`get_template_configs`.
+
+       The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
+       wrapper div and the link in the navigation will have the additional classes and styles applied as defined via the
+       configuration through :func:`get_template_configs`.
+
     Webcam
        Plugins can provide a custom webcam view for watching a camera stream, which will be embedded into the "Control"
        panel of OctoPrint's default UI.
@@ -369,6 +379,29 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
           wizard step.
 
        .. versionadded:: 1.3.0
+
+    Two-factor authentication form
+       Plugins may define additional form templates to be injected into the two-factor authentication part of the login
+       dialog. Note that with the current implementation, further 2FA form panels will be sorted alphabetically by their
+       name.
+
+       The included template must be called ``<plugin identifier>_mfa_login.jinja2`` (e.g. ``myplugin_mfa_login.jinja2``) unless
+       overridden by the configuration supplied through :func:`get_template_configs`.
+
+       Please note that for this template type, only ``type``, ``name`` and ``template`` are supported in the configuration
+       dictionary returned by :func:`get_template_configs`. All other keys are ignored.
+
+       .. versionadded:: 1.11.0
+
+    Two-factor authentication user settings
+       Plugins may define additional panels to be injected into the "Access" tab of the user settings, to allow further
+       configuration of provided two-factor authentication mechanisms. Note that with the current implementation, further
+       2FA sections will be sorted alphabetically by their name.
+
+       The included template must be called ``<plugin identifier>_usersettings_mfa.jinja2`` (e.g. ``myplugin_usersettings_mfa.jinja2``) unless
+       overridden by the configuration supplied through :func:`get_template_configs`.
+
+       .. versionadded:: 1.11.0
 
     About
        Plugins may define additional panels into OctoPrint's "About" dialog. Note that with the current implementation
@@ -435,8 +468,11 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
                  * ``navbar``: unused
                  * ``sidebar``: sidebar heading
                  * ``tab``: tab heading
-                 * ``settings``: settings link
+                 * ``settings`` and ``usersettings``: settings link
+                 * ``webcam``: selection button
                  * ``wizard``: wizard link
+                 * ``mfa_login``: form heading
+                 * ``usersettings_mfa``: section heading
                  * ``about``: about link
                  * ``generic``: unused
 
@@ -447,7 +483,11 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
                  * ``sidebar``: ``<plugin identifier>_sidebar.jinja2``
                  * ``tab``: ``<plugin identifier>_tab.jinja2``
                  * ``settings``: ``<plugin identifier>_settings.jinja2``
+                 * ``usersettings``: ``<plugin identifier>_usersettings.jinja2``
+                 * ``webcam``: ``<plugin identifier>_webcam.jinja2``
                  * ``wizard``: ``<plugin identifier>_wizard.jinja2``
+                 * ``mfa_login``: ``<plugin identifier>_mfa_login.jinja2``
+                 * ``usersettings_mfa``: ``<plugin identifier>_usersettings_mfa.jinja2``
                  * ``about``: ``<plugin identifier>_about.jinja2``
                  * ``generic``: ``<plugin identifier>.jinja2``
 
@@ -526,7 +566,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
               * - styles_content
                 - Like ``styles`` but only applied to the content pane itself
 
-        ``tab`` type and ``settings`` type
+        ``tab``, ``settings`` and ``usersettings`` type
 
            .. list-table::
               :widths: 5 95
@@ -2385,9 +2425,63 @@ class WebcamProviderPlugin(OctoPrintPlugin):
         """
         Used to take a JPEG snapshot of the webcam. This method may raise an exception, you can expect failures to be handled.
 
-         :param string webcamName: The name of the webcam to take a snapshot of as given by the configurations
+        Arguments:
+            webcamName (str): The name of the webcam to take a snapshot of as given by the configurations
 
         Returns:
             An iterator over bytes of the JPEG image
         """
         raise NotImplementedError()
+
+
+class WrongMfaCredentials(Exception):
+    """Raised when the user provides wrong MFA credentials."""
+
+    pass
+
+
+class MfaPlugin(TemplatePlugin, OctoPrintPlugin, SortablePlugin):
+    """
+    The ``MfaPlugin`` mixin allows plugins to provide multi-factor authentication (MFA) for OctoPrint.
+
+    This mixin is especially interesting for plugins which want to add additional security to OctoPrint, e.g. by requiring
+    a second factor for login.
+
+    The mixin implements :class:`~octoprint.plugin.TemplatePlugin` to allow plugins to provide custom templates for the
+    MFA setup and verification process.
+
+    A reference implementation of an MFA plugin, implementing TOTP, can be found at `github.com/OctoPrint/OctoPrint-MfaTotp <https://github.com/OctoPrint/OctoPrint-MfaTotp>`_.
+    Additionally there's a dummy implementation used for testing as part of OctoPrint's source code in the folder ``.github/fixtures/mfa_dummy``.
+    Interested plugin developers are encouraged to take a look at both these implementation to get an idea of how to implement their own MFA plugin.
+
+    .. versionadded:: 1.11.0
+    """
+
+    def is_mfa_enabled(self, user):
+        """
+        Whether this MFA method is enabled for the given user.
+
+        Arguments:
+            user (User): The user to check the MFA status for
+
+        Returns:
+            bool: True if this MFA method is enabled for the user, False otherwise
+        """
+        return False
+
+    def has_mfa_credentials(self, request, user, data, *args, **kwargs):
+        """
+        Checks whether the request contains the necessary MFA credentials for the given user.
+
+        Arguments:
+            request (flask.Request): The request to check
+            user (User): The user to check the MFA credentials for
+            data (dict): The data from the request
+
+        Returns:
+            bool: True if the request contains the necessary MFA credentials (or the MFA method is not enabled for the user), False otherwise
+
+        Raises:
+            WrongMfaCredentials: If the request contains the necessary MFA credentials but they are wrong
+        """
+        return True

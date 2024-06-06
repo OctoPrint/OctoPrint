@@ -70,7 +70,7 @@ class Achievements(metaclass=AchievementsMetaClass):
 
     ADVENTURER = Achievement(
         name="The Adventurer",
-        description="Install a plugin.",
+        description="Install a plugin from the repository.",
     )
 
     TINKERER = Achievement(

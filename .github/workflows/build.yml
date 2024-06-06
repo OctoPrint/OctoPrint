@@ -155,6 +155,11 @@ jobs:
           mkdir e2econfig
           cp -r .github/fixtures/with_acl/* e2econfig
 
+      - name: 🏗 Install dummy mfa plugin
+        run: |
+          mkdir -p e2econfig/plugins
+          cp -r .github/fixtures/mfa_dummy e2econfig/plugins/mfa_dummy
+
       - name: 🏗 Prepare Playwright env
         working-directory: ./tests/playwright
         run: |
@@ -191,6 +196,7 @@ jobs:
           npx playwright test
         env:
           OCTOPRINT_SERVER_BASE: ${{ github.workspace }}/e2econfig
+          TEST_MFA: true
 
       - name: 🔎 Check octoprint.log for errors
         run: |

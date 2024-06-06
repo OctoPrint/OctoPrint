@@ -61,7 +61,7 @@
         </div>
     </noscript>
 
-    <div id="login" class="container">
+    <div id="login" class="container" data-test-id="login-form">
         <form class="form-signin">
             <h2 class="form-signin-heading" data-test-id="login-title">
                 {% if reauthenticate %}
@@ -71,8 +71,9 @@
                 {% endif %}
             </h2>
 
-            <div id="login-error-credentials" class="alert alert-error" data-test-id="login-error">{{ _('Incorrect username or password. Hint: Both are case sensitive!') }}</div>
-            <div id="login-error-rate" class="alert alert-error" data-test-id="login-error-rate">{{ _('You have made too many failed login attempts. Please try again later.') }}</div>
+            <div id="login-error-credentials" class="alert alert-error login-error" data-test-id="login-error">{{ _('Incorrect username or password. Hint: Both are case sensitive!') }}</div>
+            <div id="login-error-rate" class="alert alert-error login-error" data-test-id="login-error-rate">{{ _('You have made too many failed login attempts. Please try again later.') }}</div>
+            <div id="login-error-mfa" class="alert alert-error login-error" data-test-id="login-error-mfa">{{ _('Incorrect 2FA credentials.') }}</div>
             <div id="login-offline" class="alert alert-error">{{ _('Server is currently offline.') }} <a id="login-reconnect" href="javascript:void(0)">{{ _('Reconnect...') }}</a></div>
 
             {% if reauthenticate %}<p>
@@ -95,6 +96,18 @@
         </form>
     </div>
 
+    <div id="mfa" class="container" style="display: none" data-test-id="mfa-form">
+        <form class="form-signin">
+            <div id="mfa-error" class="alert alert-error login-error" data-test-id="mfa-error"></div>
+
+            <p>{% trans %}
+                You have enabled two-factor authentication. Please choose one of the following options to further authenticate yourself:
+            {% endtrans %}</p>
+
+            <div id="mfa-options" class="accordion" data-test-id="mfa-options"></div>
+        </form>
+    </div>
+
     <div id="login-overlay">
         <div class="background"></div>
         <div class="wrapper">
@@ -107,5 +120,13 @@
             </div>
         </div>
     </div>
+
+    {% for form in forms %}
+        {% try "<!-- There was an error with the template {filename} at line number {lineno}: {exception} -->" %}
+        <script type="text/html" id="{{ form.id }}" data-title="{{ form.title }}">
+            {% include form.template ignore missing %}
+        </script>
+        {% endtry %}
+    {% endfor %}
 </body>
 </html>

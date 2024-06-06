@@ -288,10 +288,13 @@ def serverStatus():
 @api.route("/login", methods=["POST"])
 @limit(
     "3/minute;5/10 minutes;10/hour",
-    deduct_when=lambda response: response.status_code == 403,
+    deduct_when=lambda response: response.status_code == 403
+    and not getattr(response, "__rate_limit_exempt__", False),
     error_message="You have made too many failed login attempts. Please try again later.",
 )
 def login():
+    from octoprint.plugin.types import WrongMfaCredentials
+
     data = request.get_json(silent=True)
     if not data:
         data = request.values
@@ -309,6 +312,8 @@ def login():
         if "usersession.id" in session:
             _logout(current_user)
 
+        reauthenticate = current_user and current_user.get_id() == username
+
         user = octoprint.server.userManager.find_user(username)
         if user is not None:
             if octoprint.server.userManager.check_password(username, password):
@@ -317,6 +322,54 @@ def login():
                         f"Failed login attempt for user {username} from {remote_addr}, user is deactivated"
                     )
                     abort(403)
+
+                ## MFA check
+
+                if not reauthenticate:
+                    mfa_options = []
+                    for mfa in octoprint.server.pluginManager.get_implementations(
+                        octoprint.plugin.MfaPlugin
+                    ):
+                        if not mfa.is_mfa_enabled(user):
+                            # MFA not enabled for this user, so nothing to do here
+                            continue
+
+                        try:
+                            if mfa.has_mfa_credentials(request, user, data):
+                                # MFA credentials are there and correct, no need to check further
+                                mfa_options.clear()
+                                break
+
+                            mfa_options.append(mfa._identifier)
+                        except WrongMfaCredentials as exc:
+                            # MFA credentials are there but wrong, abort
+                            auth_log(
+                                f"Failed login attempt for user {username} from {remote_addr}, wrong 2FA credentials"
+                            )
+                            return make_response(
+                                jsonify(
+                                    error="Wrong two-factor authentication credentials",
+                                    mfa_error=str(exc),
+                                ),
+                                403,
+                            )
+
+                    if len(mfa_options):
+                        # MFA required, abort
+                        auth_log(
+                            f"Two-factor authentication required to log in {username} from {remote_addr}"
+                        )
+                        response = make_response(
+                            jsonify(
+                                error="Two-factor authentication required",
+                                mfa=mfa_options,
+                            ),
+                            403,
+                        )
+                        response.__rate_limit_exempt__ = True
+                        return response
+
+                ## Actual login starts here
 
                 user = octoprint.server.userManager.login_user(user)
                 session["usersession.id"] = user.session

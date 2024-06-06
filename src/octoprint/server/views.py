@@ -178,6 +178,9 @@ def _locale_str(locale):
     return str(locale) if locale else "en"
 
 
+_mfa_login_forms = None
+
+
 @app.route("/login")
 @app.route("/login/")
 def login():
@@ -258,6 +261,53 @@ def login():
     except Exception:
         _logger.exception("Error processing theming CSS, ignoring")
 
+    # fetch all MFA login forms
+
+    global _mfa_login_forms
+    if _mfa_login_forms is None:
+        mfa_plugins = pluginManager.get_implementations(octoprint.plugin.MfaPlugin)
+        mfa_config_keys = {"type", "name", "template"}
+        mfa_rules = {
+            "mfa_login": {
+                "div": lambda x: f"mfa_login_{x}",
+                "template": lambda x: f"{x}_mfa_login.jinja2",
+                "to_entry": lambda x: x,
+            }
+        }
+        forms = []
+        for plugin in mfa_plugins:
+            try:
+                # all MfaPlugins are also TemplatePlugins, so we can use the same method here
+                configs = plugin.get_template_configs()
+
+                # preprocess the mfa login template to only include config keys that are supported here
+                def cleanup(config):
+                    return {k: v for k, v in config.items() if k in mfa_config_keys}
+
+                configs = [cleanup(x) for x in configs if x["type"] == "mfa_login"]
+                includes = _process_template_configs(
+                    plugin._identifier, plugin, configs, mfa_rules
+                )
+
+                if includes["mfa_login"]:
+                    mfa_login = includes["mfa_login"][0]
+                    forms.append(
+                        {
+                            "id": mfa_login["_div"],
+                            "template": mfa_login["template"],
+                            "title": mfa_login["name"],
+                        }
+                    )
+            except Exception:
+                _logger.exception(
+                    f"Error while calling plugin {plugin._identifier}, skipping it",
+                    extra={"plugin": plugin._identifier},
+                )
+        _mfa_login_forms = forms
+
+    render_kwargs["forms"] = _mfa_login_forms
+
+    # render the login dialog
     resp = make_response(render_template("login.jinja2", **render_kwargs))
     return add_csrf_cookie(resp)
 
@@ -881,6 +931,11 @@ def fetch_template_data(refresh=False):
             "template": lambda x: x + "_usersettings.jinja2",
             "to_entry": lambda data: (data["name"], data),
         },
+        "usersettings_mfa": {
+            "div": lambda x: "usersettings_mfa_plugin_" + x,
+            "template": lambda x: x + "_usersettings_mfa.jinja2",
+            "to_entry": lambda data: (data["name"], data),
+        },
         "wizard": {
             "div": lambda x: "wizard_plugin_" + x,
             "template": lambda x: x + "_wizard.jinja2",
@@ -926,6 +981,7 @@ def fetch_template_data(refresh=False):
             "custom_add_order": lambda missing: ["section_plugins"] + missing,
         },
         "usersettings": {"add": "append", "key": "name"},
+        "usersettings_mfa": {"add": "append", "key": "name"},
         "wizard": {"add": "append", "key": "name", "key_extractor": wizard_key_extractor},
         "webcam": {"add": "append", "key": "name"},
         "about": {"add": "append", "key": "name"},
