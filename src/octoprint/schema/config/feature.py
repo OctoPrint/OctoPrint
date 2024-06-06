@@ -35,7 +35,7 @@ class FeatureConfig(BaseModel):
 
     uploadOverwriteConfirmation: bool = True
 
-    autoUppercaseBlacklist: List[str] = ["M117", "M118"]
+    autoUppercaseBlacklist: List[str] = ["M117", "M118", "M707", "M708"]
     """Commands that should never be auto-uppercased when sent to the printer through the Terminal tab."""
 
     g90InfluencesExtruder: bool = False

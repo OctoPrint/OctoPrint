@@ -183,6 +183,7 @@ date of first contribution):
   * [Matthias Weis](https://github.com/mad73923)
   * [Rob Emery](https://github.com/mintsoft)
   * [Jacopo Tediosi](https://github.com/jacopotediosi)
+  * [Jeff Mixon](https://github.com/zaventh)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
