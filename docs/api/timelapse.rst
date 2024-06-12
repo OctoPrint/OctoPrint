@@ -255,6 +255,10 @@ For timelapse type ``zchange``.
      - 1
      - int
      - Snapshots will be rate limited against this interval, to prevent performance issues with vase mode/continuous z prints
+   * - ``renderAfterPrint``
+     - 1
+     - string
+     - Determines whether the timelapse should be rendered automatically after the print finishes.
 
 .. _sec-api-timelapse-datamodel-config-timed:
 
@@ -283,3 +287,7 @@ For timelapse type ``timed``.
      - 1
      - int
      - Seconds between individual shots
+   * - ``renderAfterPrint``
+     - 1
+     - string
+     - Determines whether the timelapse should be rendered automatically after the print finishes.
