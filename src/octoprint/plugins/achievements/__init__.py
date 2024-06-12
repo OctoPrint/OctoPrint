@@ -425,7 +425,7 @@ class AchievementsPlugin(
             ApiAchievement(
                 achieved=self._data.achievements.get(a.key, 0),
                 logo=a.icon,
-                **a.dict(),
+                **a.model_dump(mode="json"),
             )
             for a in Achievements.all()
             if not a.hidden or self._has_achievement(a)
@@ -460,7 +460,7 @@ class AchievementsPlugin(
             ),
         )
 
-        return jsonify(response.dict())
+        return jsonify(response.model_dump(mode="json"))
 
     @octoprint.plugin.BlueprintPlugin.route("/year/<int:year>", methods=["GET"])
     @Permissions.PLUGIN_ACHIEVEMENTS_VIEW.require(403)
@@ -472,7 +472,7 @@ class AchievementsPlugin(
             else:
                 abort(404)
 
-        return jsonify(year_data.dict())
+        return jsonify(year_data.model_dump(mode="json"))
 
     @octoprint.plugin.BlueprintPlugin.route("/reset/achievements", methods=["POST"])
     @Permissions.PLUGIN_ACHIEVEMENTS_RESET.require(403)
@@ -584,7 +584,7 @@ class AchievementsPlugin(
 
         self._logger.info(f"New achievement unlocked: {achievement.name}!")
 
-        payload = achievement.dict()
+        payload = achievement.model_dump(mode="json")
         payload["type"] = "achievement"
         payload["logo"] = achievement.icon
         self._event_bus.fire(Events.PLUGIN_ACHIEVEMENTS_ACHIEVEMENT_UNLOCKED, payload)
@@ -690,7 +690,11 @@ class AchievementsPlugin(
             with octoprint.util.atomic_write(self._data_path, mode="wb") as f:
                 f.write(
                     octoprint.util.to_bytes(
-                        json.dumps(self._data.dict(), indent=2, separators=(",", ": "))
+                        json.dumps(
+                            self._data.model_dump(mode="json"),
+                            indent=2,
+                            separators=(",", ": "),
+                        )
                     )
                 )
 
@@ -714,7 +718,9 @@ class AchievementsPlugin(
                 f.write(
                     octoprint.util.to_bytes(
                         json.dumps(
-                            self._year_data.dict(), indent=2, separators=(",", ": ")
+                            self._year_data.model_dump(mode="json"),
+                            indent=2,
+                            separators=(",", ": "),
                         )
                     )
                 )

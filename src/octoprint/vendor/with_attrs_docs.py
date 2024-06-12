@@ -19,12 +19,12 @@ def apply_attributes_docs(
     """
     docs = extract_docs_from_cls_obj(model)
 
-    for field in model.__fields__.values():
-        if field.field_info.description and not override_existing:
+    for name, field in model.model_fields.items():
+        if field.description and not override_existing:
             continue
 
         try:
-            field.field_info.description = '\n'.join(docs[field.name])
+            field.description = '\n'.join(docs[name])
         except KeyError:
             pass
 

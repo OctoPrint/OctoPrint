@@ -199,7 +199,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
     @property
     def error_info(self):
-        return self._error_info.dict() if self._error_info else None
+        return self._error_info.model_dump(mode="json") if self._error_info else None
 
     # ~~ handling of PrinterCallbacks
 
