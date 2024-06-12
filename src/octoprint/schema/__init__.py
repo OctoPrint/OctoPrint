@@ -24,10 +24,10 @@ except ImportError:
 
         def model_dump(self, *args, **kwargs):
             # not supported in pydantic 1.x
-            kwargs.pop("mode")
-            kwargs.pop("context")
-            kwargs.pop("round_trip")
-            kwargs.pop("warnings")
-            kwargs.pop("serialize_as_any")
+            kwargs.pop("mode", None)
+            kwargs.pop("context", None)
+            kwargs.pop("round_trip", None)
+            kwargs.pop("warnings", None)
+            kwargs.pop("serialize_as_any", None)
 
             return self.dict(*args, **kwargs)
