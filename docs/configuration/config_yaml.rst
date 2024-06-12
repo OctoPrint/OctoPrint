@@ -1227,6 +1227,10 @@ Use the following settings to configure webcam support:
        # fps * postRoll * interval seconds. Zchange timelapses will take one final picture and add it fps * postRoll
        postRoll: 0
 
+       # Determines whether rendering the timelapse should be done automatically after the print is finished.
+       # This can be done always, only after successful prints, only after failed prints, or never.
+       renderAfterPrint: always
+
        # Additional options depending on the timelapse type. All timelapses take a postRoll and an fps setting.
        options:
 
