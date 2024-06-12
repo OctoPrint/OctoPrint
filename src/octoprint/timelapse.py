@@ -20,6 +20,7 @@ import octoprint.plugin
 import octoprint.util as util
 from octoprint.events import Events, eventManager
 from octoprint.plugin import plugin_manager
+from octoprint.schema.config.webcam import RenderAfterPrintEnum, TimelapseTypeEnum
 from octoprint.settings import settings
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import sv
@@ -432,7 +433,7 @@ def configure_timelapse(config=None, persist=False):
         not timelapse_enabled
         or not timelapse_precondition
         or type is None
-        or "off" == type
+        or type == TimelapseTypeEnum.off
     ):
         current = None
 
@@ -445,11 +446,11 @@ def configure_timelapse(config=None, persist=False):
         if "fps" in config and config["fps"] > 0:
             fps = config["fps"]
 
-        renderAfterPrint = "always"
+        renderAfterPrint = RenderAfterPrintEnum.always
         if "renderAfterPrint" in config:
             renderAfterPrint = config["renderAfterPrint"]
 
-        if "zchange" == type:
+        if type == TimelapseTypeEnum.zchange:
             retractionZHop = 0
             if (
                 "options" in config
@@ -474,7 +475,7 @@ def configure_timelapse(config=None, persist=False):
                 render_after_print=renderAfterPrint,
             )
 
-        elif "timed" == type:
+        elif type == TimelapseTypeEnum.timed:
             interval = 10
             if (
                 "options" in config
@@ -501,7 +502,9 @@ class Timelapse:
     QUEUE_ENTRY_TYPE_CAPTURE = "capture"
     QUEUE_ENTRY_TYPE_CALLBACK = "callback"
 
-    def __init__(self, post_roll=0, fps=25, render_after_print="always"):
+    def __init__(
+        self, post_roll=0, fps=25, render_after_print=RenderAfterPrintEnum.always
+    ):
         self._logger = logging.getLogger(__name__)
         self._image_number = None
         self._in_timelapse = False
@@ -593,9 +596,12 @@ class Timelapse:
         self.stop_timelapse(
             success=success,
             do_create_movie=(
-                self.render_after_print == "always"
-                or (self.render_after_print == "successful" and success)
-                or (self.render_after_print == "fail" and not success)
+                self.render_after_print == RenderAfterPrintEnum.always
+                or (self.render_after_print == RenderAfterPrintEnum.success and success)
+                or (
+                    self.render_after_print == RenderAfterPrintEnum.failure
+                    and not success
+                )
             ),
         )
 

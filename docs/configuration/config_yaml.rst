@@ -1228,8 +1228,7 @@ Use the following settings to configure webcam support:
        postRoll: 0
 
        # Determines whether rendering the timelapse should be done automatically after the print is finished.
-       # Can be "always", "never", "successful" and "fail".
-       # "successful" means that only successful prints are rendered after the print finished, while "fail" means the opposite.
+       # This can be done always, only after successful prints, only after failed prints, or never.
        renderAfterPrint: always
 
        # Additional options depending on the timelapse type. All timelapses take a postRoll and an fps setting.
