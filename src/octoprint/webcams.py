@@ -95,7 +95,7 @@ def __get_webcam_by_setting(setting, fallbackFilter, settings=None, plugin_manag
 
 def get_webcams_as_dicts(plugin_manager=None):
     def to_dict(webcam):
-        webcam_dict = webcam.config.model_dump(mode="json")
+        webcam_dict = webcam.config.dict()
         webcam_dict["provider"] = webcam.providerIdentifier
         return webcam_dict
 
