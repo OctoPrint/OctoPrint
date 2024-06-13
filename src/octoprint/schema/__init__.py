@@ -3,21 +3,11 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 
 
 from pydantic import BaseModel as PydanticBaseModel
+from pydantic import ConfigDict
+from pydantic import __version__ as pydantic_version
 
-try:
-    # pydantic 2.x
-    import pydantic.v1 as pydantic_v1  # noqa: F401
-
-    del pydantic_v1
-
-    from pydantic import ConfigDict
-
-    class BaseModel(PydanticBaseModel):
-        model_config = ConfigDict(use_enum_values=True)
-
-except ImportError:
+if pydantic_version.startswith("1."):
     # pydantic 1.x
-
     class BaseModel(PydanticBaseModel):
         class Config:
             use_enum_values = True
@@ -31,3 +21,10 @@ except ImportError:
             kwargs.pop("serialize_as_any", None)
 
             return self.dict(*args, **kwargs)
+
+else:
+    # pydantic 2.x
+    from pydantic import ConfigDict
+
+    class BaseModel(PydanticBaseModel):
+        model_config = ConfigDict(use_enum_values=True)
