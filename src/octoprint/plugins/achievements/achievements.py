@@ -1,7 +1,7 @@
 import os
 import re
 
-from pydantic import BaseModel
+from octoprint.schema import BaseModel
 
 ROMAN_NUMERAL = re.compile(
     "^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$", re.IGNORECASE

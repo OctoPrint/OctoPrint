@@ -11,13 +11,13 @@ from typing import List
 
 from flask import abort, jsonify
 from flask_babel import gettext
-from pydantic import BaseModel
 
 import octoprint.plugin
 import octoprint.util
 from octoprint.access import ADMIN_GROUP, READONLY_GROUP, USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
+from octoprint.schema import BaseModel
 from octoprint.util.version import get_octoprint_version
 
 from .achievements import Achievement, Achievements
@@ -249,11 +249,11 @@ class AchievementsPlugin(
 
             if payload["time"] > self._data.stats.longest_print_duration:
                 self._data.stats.longest_print_duration = payload["time"]
-                self._data.stats.longest_print_date = self._now().timestamp()
+                self._data.stats.longest_print_date = int(self._now().timestamp())
 
             if payload["time"] > self._year_data.longest_print_duration:
                 self._year_data.longest_print_duration = payload["time"]
-                self._year_data.longest_print_date = self._now().timestamp()
+                self._year_data.longest_print_date = int(self._now().timestamp())
 
             self._trigger_achievement(Achievements.ONE_SMALL_STEP_FOR_MAN, write=False)
 
@@ -657,7 +657,7 @@ class AchievementsPlugin(
     def _reset_data(self):
         self._data = Data(
             stats=Stats(
-                created=self._now().timestamp(),
+                created=int(self._now().timestamp()),
                 created_version=get_octoprint_version().base_version,
             ),
             achievements={},
