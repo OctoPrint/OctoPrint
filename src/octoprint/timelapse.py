@@ -20,6 +20,7 @@ import octoprint.plugin
 import octoprint.util as util
 from octoprint.events import Events, eventManager
 from octoprint.plugin import plugin_manager
+from octoprint.schema.config.webcam import RenderAfterPrintEnum, TimelapseTypeEnum
 from octoprint.settings import settings
 from octoprint.util import get_fully_qualified_classname as fqcn
 from octoprint.util import sv
@@ -432,7 +433,7 @@ def configure_timelapse(config=None, persist=False):
         not timelapse_enabled
         or not timelapse_precondition
         or type is None
-        or "off" == type
+        or type == TimelapseTypeEnum.off
     ):
         current = None
 
@@ -445,7 +446,11 @@ def configure_timelapse(config=None, persist=False):
         if "fps" in config and config["fps"] > 0:
             fps = config["fps"]
 
-        if "zchange" == type:
+        renderAfterPrint = RenderAfterPrintEnum.always
+        if "renderAfterPrint" in config:
+            renderAfterPrint = config["renderAfterPrint"]
+
+        if type == TimelapseTypeEnum.zchange:
             retractionZHop = 0
             if (
                 "options" in config
@@ -467,9 +472,10 @@ def configure_timelapse(config=None, persist=False):
                 retraction_zhop=retractionZHop,
                 min_delay=minDelay,
                 fps=fps,
+                render_after_print=renderAfterPrint,
             )
 
-        elif "timed" == type:
+        elif type == TimelapseTypeEnum.timed:
             interval = 10
             if (
                 "options" in config
@@ -478,7 +484,12 @@ def configure_timelapse(config=None, persist=False):
             ):
                 interval = config["options"]["interval"]
 
-            current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps)
+            current = TimedTimelapse(
+                post_roll=postRoll,
+                interval=interval,
+                fps=fps,
+                render_after_print=renderAfterPrint,
+            )
 
     notify_callbacks(current)
 
@@ -491,7 +502,9 @@ class Timelapse:
     QUEUE_ENTRY_TYPE_CAPTURE = "capture"
     QUEUE_ENTRY_TYPE_CALLBACK = "callback"
 
-    def __init__(self, post_roll=0, fps=25):
+    def __init__(
+        self, post_roll=0, fps=25, render_after_print=RenderAfterPrintEnum.always
+    ):
         self._logger = logging.getLogger(__name__)
         self._image_number = None
         self._in_timelapse = False
@@ -514,6 +527,8 @@ class Timelapse:
         self._movie_dir = settings().getBaseFolder("timelapse")
 
         self._fps = fps
+
+        self._render_after_print = render_after_print
 
         self._pluginManager = octoprint.plugin.plugin_manager()
         self._pre_capture_hooks = self._pluginManager.get_hooks(
@@ -551,6 +566,10 @@ class Timelapse:
     def fps(self):
         return self._fps
 
+    @property
+    def render_after_print(self):
+        return self._render_after_print
+
     def unload(self):
         if self._in_timelapse:
             self.stop_timelapse(do_create_movie=False)
@@ -573,7 +592,18 @@ class Timelapse:
         """
         Override this to perform additional actions upon the stop of a print job.
         """
-        self.stop_timelapse(success=(event == Events.PRINT_DONE))
+        success = event == Events.PRINT_DONE
+        self.stop_timelapse(
+            success=success,
+            do_create_movie=(
+                self.render_after_print == RenderAfterPrintEnum.always
+                or (self.render_after_print == RenderAfterPrintEnum.success and success)
+                or (
+                    self.render_after_print == RenderAfterPrintEnum.failure
+                    and not success
+                )
+            ),
+        )
 
     def on_print_resumed(self, event, payload):
         """
@@ -604,6 +634,15 @@ class Timelapse:
         """
         return None
 
+    def _reset_metadata(self):
+        self._image_number = None
+        self._in_timelapse = False
+        self._gcode_file = None
+        self._file_prefix = None
+
+        self._capture_errors = 0
+        self._capture_success = 0
+
     def start_timelapse(self, gcode_file):
         self._logger.debug(f"Starting timelapse for {gcode_file}")
 
@@ -622,20 +661,19 @@ class Timelapse:
 
         self._in_timelapse = False
 
-        def reset_image_number():
-            self._image_number = None
-
-        def create_movie():
+        def create_movie(file_prefix, gcode_file):
             render_unrendered_timelapse(
-                self._file_prefix,
-                gcode=self._gcode_file,
+                file_prefix,
+                gcode=gcode_file,
                 postfix=None if success else "-fail",
                 fps=self._fps,
             )
 
         def reset_and_create():
-            reset_image_number()
-            create_movie()
+            file_prefix = self._file_prefix
+            gcode_file = self._gcode_file
+            self._reset_metadata()
+            create_movie(file_prefix, gcode_file)
 
         def wait_for_captures(callback):
             self._capture_queue.put(
@@ -675,14 +713,14 @@ class Timelapse:
                 if do_create_movie:
                     self._on_post_roll_done = create_wait_for_captures(reset_and_create)
                 else:
-                    self._on_post_roll_done = reset_image_number
+                    self._on_post_roll_done = self._reset_metadata
                 self.process_post_roll()
             else:
                 # no post roll? perfect, render
                 if do_create_movie:
                     wait_for_captures(reset_and_create)
                 else:
-                    reset_image_number()
+                    self._reset_metadata()
 
         self._logger.debug("Waiting to process capture queue")
         wait_for_captures(continue_rendering)
@@ -846,8 +884,17 @@ class Timelapse:
 
 
 class ZTimelapse(Timelapse):
-    def __init__(self, retraction_zhop=0, min_delay=5.0, post_roll=0, fps=25):
-        Timelapse.__init__(self, post_roll=post_roll, fps=fps)
+    def __init__(
+        self,
+        retraction_zhop=0,
+        min_delay=5.0,
+        post_roll=0,
+        fps=25,
+        render_after_print="always",
+    ):
+        Timelapse.__init__(
+            self, post_roll=post_roll, fps=fps, render_after_print=render_after_print
+        )
 
         if min_delay < 0:
             min_delay = 0
@@ -904,8 +951,10 @@ class ZTimelapse(Timelapse):
 
 
 class TimedTimelapse(Timelapse):
-    def __init__(self, interval=1, post_roll=0, fps=25):
-        Timelapse.__init__(self, post_roll=post_roll, fps=fps)
+    def __init__(self, interval=1, post_roll=0, fps=25, render_after_print="always"):
+        Timelapse.__init__(
+            self, post_roll=post_roll, fps=fps, render_after_print=render_after_print
+        )
         self._interval = interval
         if self._interval < 1:
             self._interval = 1  # force minimum interval of 1s

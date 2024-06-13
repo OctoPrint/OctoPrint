@@ -159,6 +159,12 @@
                             <small class="prop" data-bind="visible: python"><i class="fas fa-cog"></i> Python <span data-bind="text: python"></span></small>
                             <small class="prop">&nbsp;</small>
                         </div>
+                        <div data-bind="css: {muted: !enabled}">
+                            <small class="label label-important" data-bind="visible: $data.attributes.includes('abandoned')"><i class="fas fa-heartbeat"></i> {{ _('Abandoned') }}</small>
+                            <small class="label label-info" data-bind="visible: $data.attributes.includes('cloud')"><i class="fas fa-cloud"></i> {{ _('Cloud') }}</small>
+                            <small class="label label-warning" data-bind="visible: $data.attributes.includes('commercial')"><i class="fas fa-coins"></i> {{ _('Commercial') }}</small>
+                            <small class="label label-success" data-bind="visible: $data.attributes.includes('free-tier')"><i class="fas fa-thumbs-up"></i> {{ _('Free tier') }}</small>
+                        </div>
                     </td>
                     <td class="settings_plugin_plugin_manager_plugins_actions">
                         <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fas fa-eraser" title="{{ _('Cleanup Plugin Data')|edq }}" aria-label="{{ _('Cleanup Plugin Data')|edq }}" data-bind="css: {disabled: !$root.enableCleanup($data)}, enable: $root.enableCleanup($data), click: function() { $root.cleanupPlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="far fa-trash-alt" title="{{ _('Uninstall Plugin')|edq }}" aria-label="{{ _('Uninstall Plugin')|edq }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
@@ -346,6 +352,12 @@
                                     <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.stars !== undefined" title="{{ _('Github stars')|edq }}"><i class="fas fa-star"></i> <span data-bind="text: ($data.github !== undefined && $data.github.stars !== undefined) ? formatNumberK($data.github.stars) : 0"></span></small>
                                     <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.last_push !== undefined" title="{{ _('Last push to main branch')|edq }}"><i class="fas fa-sync"></i> <span data-bind="text: ($data.github !== undefined && $data.github.last_push !== undefined) ? $data.github.last_push.substring(0, 10) : ''"></span></small>
                                     <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.latest_release != undefined && $data.github.latest_release.tag && $data.github.latest_release.date" title="{{ _('Latest release & date')|edq }}"><i class="fas fa-tag"></i> <span data-bind="text: $data.github !== undefined && $data.github.latest_release !== undefined && $data.github.latest_release.tag ? $data.github.latest_release.tag : ''"></span> (<span data-bind="text: $data.github !== undefined && $data.github.latest_release !== undefined && $data.github.latest_release.date ? $data.github.latest_release.date.substring(0, 10) : ''"></span>)</small>
+                                </div>
+                                <div class="attributes">
+                                    <small class="label label-important" data-bind="visible: $data.attributes.includes('abandoned')"><i class="fas fa-heartbeat"></i> {{ _('Abandoned') }}</small>
+                                    <small class="label label-info" data-bind="visible: $data.attributes.includes('cloud')"><i class="fas fa-cloud"></i> {{ _('Cloud') }}</small>
+                                    <small class="label label-warning" data-bind="visible: $data.attributes.includes('commercial')"><i class="fas fa-coins"></i> {{ _('Commercial') }}</small>
+                                    <small class="label label-success" data-bind="visible: $data.attributes.includes('free-tier')"><i class="fas fa-thumbs-up"></i> {{ _('Free tier') }}</small>
                                 </div>
                             </div>
 

@@ -104,6 +104,12 @@ def map_repository_entry(entry):
             # we default to only assume py2 compatibility for now
             result["is_compatible"]["python"] = is_python_compatible(">=2.7,<3")
 
+    if "attributes" not in result:
+        result["attributes"] = []
+
+    if result.get("abandoned"):
+        result["attributes"].append("abandoned")
+
     return result
 
 
@@ -2299,6 +2305,7 @@ class PluginManagerPlugin(
             ),
             "origin": plugin.origin.type,
             "notifications": self._get_notifications(plugin),
+            "attributes": self._get_attributes(plugin),
         }
 
     def _get_notifications(self, plugin):
@@ -2341,6 +2348,16 @@ class PluginManagerPlugin(
             ),
             "important": notification.get("important", False),
         }
+
+    def _get_attributes(self, plugin):
+        key = plugin.key
+        if (
+            not self._repository_plugins_by_id
+            or key not in self._repository_plugins_by_id
+        ):
+            return []
+
+        return self._repository_plugins_by_id[key].get("attributes", [])
 
 
 @pylru.lrudecorator(size=127)

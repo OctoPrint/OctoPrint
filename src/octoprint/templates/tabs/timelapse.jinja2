@@ -73,6 +73,18 @@
             </div>
 
             <div class="control-group">
+                <label class="control-label" for="webcam_timelapse_mode">{{ _('Render timelapse after print') }}</label>
+                <div class="controls">
+                    <select id="webcam_timelapse_mode" data-bind="value: timelapseRenderAfterPrint, enable: !isPrinting()">
+                        <option value="always">{{ _('Always') }}</option>
+                        <option value="success">{{ _('On success') }}</option>
+                        <option value="failure">{{ _('On failure') }}</option>
+                        <option value="never">{{ _('Never') }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-group">
                 <div class="controls">
                     <label class="checkbox">
                         <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}
