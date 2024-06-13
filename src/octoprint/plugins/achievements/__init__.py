@@ -11,13 +11,13 @@ from typing import List
 
 from flask import abort, jsonify
 from flask_babel import gettext
-from pydantic import BaseModel
 
 import octoprint.plugin
 import octoprint.util
 from octoprint.access import ADMIN_GROUP, READONLY_GROUP, USER_GROUP
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
+from octoprint.schema import BaseModel
 from octoprint.util.version import get_octoprint_version
 
 from .achievements import Achievement, Achievements
