@@ -58,7 +58,8 @@ core_deps = [
     "pathvalidate>=2.5.2,<3",
     "pkginfo>=1.9.6,<2",
     "psutil>=5.9.8,<6",
-    "pydantic==1.10.12",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
+    "pydantic>=2.7.4,<3 ; python_version>='3.8'",
+    "pydantic==1.10.12 ; python_version<'3.8'",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
     "pylru>=1.2.1,<2",
     "pyserial>=3.5,<4",
     "pytz",
