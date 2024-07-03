@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import concurrent.futures
 import hashlib
 import logging
+import os
 import time
 from urllib.parse import urlencode
 
@@ -535,6 +536,9 @@ class TrackingPlugin(
 
         unique_id = self._settings.get(["unique_id"])
         if not unique_id:
+            return
+
+        if os.environ.get("CI"):
             return
 
         server = self._settings.get(["server"])
