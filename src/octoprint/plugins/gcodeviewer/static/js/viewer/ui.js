@@ -100,7 +100,7 @@ GCODE.ui = (function () {
 
         if (!window.Worker) {
             fatal.push(
-                "<li>Your browser doesn't seem to support HTML5 Web Workers, this application won't work without it.</li>"
+                "<li>Your browser doesn't seem to support HTML5 Web Workers, GCode Viewer won't work without it.</li>"
             );
         }
 
