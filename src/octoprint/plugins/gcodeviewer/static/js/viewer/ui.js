@@ -97,6 +97,13 @@ GCODE.ui = (function () {
         var fatal = [];
 
         var errorList = document.getElementById("errorList");
+
+        if (!Modernizr.webworkers) {
+            fatal.push(
+                "<li>Your browser doesn't seem to support HTML5 Web Workers, this application won't work without it.</li>"
+            );
+        }
+
         if (fatal.length > 0) {
             if (errorList) {
                 errorList.innerHTML = "<ul>" + fatal.join("") + "</ul>";
