@@ -538,7 +538,7 @@ class TrackingPlugin(
         if not unique_id:
             return
 
-        if os.environ.get("CI"):
+        if os.environ.get("CI") or os.environ.get("OCTOPRINT_DISABLE_TRACKING"):
             return
 
         server = self._settings.get(["server"])
