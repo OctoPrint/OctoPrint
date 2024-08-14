@@ -27,4 +27,4 @@ else:
     from pydantic import ConfigDict
 
     class BaseModel(PydanticBaseModel):
-        model_config = ConfigDict(use_enum_values=True)
+        model_config = ConfigDict(use_enum_values=True, validate_default=True)
