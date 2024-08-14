@@ -92,7 +92,7 @@ def settings(init=False, basedir=None, configfile=None, overlays=None):
 
 # TODO: This is a temporary solution to get the default settings from the pydantic model.
 _config = Config()
-default_settings = _config.dict(by_alias=True)
+default_settings = _config.model_dump(by_alias=True)
 """The default settings of the core application."""
 
 valid_boolean_trues = CaseInsensitiveSet(True, "true", "yes", "y", "1", 1)
