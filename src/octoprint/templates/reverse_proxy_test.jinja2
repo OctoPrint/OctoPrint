@@ -134,7 +134,7 @@
                 Your server side Client IP was determined to be {{ client_ip }}. Your <code>X-Forwarded-For</code> header
                 {% if headers["X-Forwarded-For"] %} (<code>{{ headers["X-Forwarded-For"] }}</code>){% endif %} might
                 have influenced that. Make sure that this is the IP that OctoPrint should be seeing. It will be the right most
-                IP in the <code>X-Forwarded-For</code> header that is not among your <strong>configured trusted downstreams</strong>:
+                IP in the <code>X-Forwarded-For</code> header that is not among your <strong>trusted proxies</strong>:
             </p>
 
             <ul>

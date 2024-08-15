@@ -681,6 +681,64 @@ class SettingsTest(unittest.TestCase):
             settings.save(force=True)
             self.assertGreater(settings.last_modified, last_modified)
 
+    ##~~ test migrations
+
+    @ddt.data(
+        # migrate trustedDownstream to trustedProxies, strip localhost addresses
+        (
+            {
+                "server": {
+                    "reverseProxy": {
+                        "trustedDownstream": ["127.0.0.1", "::1", "10.0.0.1"]
+                    }
+                }
+            },
+            {"server": {"reverseProxy": {"trustedProxies": ["10.0.0.1"]}}},
+            True,
+        ),
+        # only set trustedUpstream if it's not set only to localhost addresses
+        (
+            {"server": {"reverseProxy": {"trustedDownstream": ["127.0.0.1", "::1"]}}},
+            {"server": {"reverseProxy": {}}},
+            True,
+        ),
+        # set trustLocalhostProxies to false if no localhost in trustedDownstream
+        (
+            {"server": {"reverseProxy": {"trustedDownstream": ["10.0.0.1"]}}},
+            {
+                "server": {
+                    "reverseProxy": {
+                        "trustedProxies": ["10.0.0.1"],
+                        "trustLocalhostProxies": False,
+                    }
+                }
+            },
+            True,
+        ),
+        # delete trustedDownstream
+        (
+            {"server": {"reverseProxy": {"trustedUpstream": ["10.0.0.1"]}}},
+            {"server": {"reverseProxy": {}}},
+            True,
+        ),
+        # nothing to migrate
+        (
+            {"foo": "bar"},
+            {"foo": "bar"},
+            False,
+        ),
+    )
+    @ddt.unpack
+    def test_migrate_trusted_proxies(self, config, expected_config, expected_return):
+        with self.settings() as settings:
+            with self.mocked_backup(settings):
+                actual_return = settings._migrate_trusted_proxies(config)
+                self.assertEqual(expected_return, actual_return)
+                self.assertEqual(expected_config, config)
+
+                if actual_return:
+                    settings.backup.assert_called_once_with("trusted_proxies_migration")
+
     ##~~ helpers
 
     @contextlib.contextmanager
@@ -719,6 +777,17 @@ class SettingsTest(unittest.TestCase):
             settings = octoprint.settings.Settings()
             settings.add_overlay(self.overlay, key="overlay")
             yield settings
+
+    @contextlib.contextmanager
+    def mocked_backup(self, settings):
+        orig_backup = settings.backup
+        backup = unittest.mock.Mock()
+        settings.backup = backup
+
+        try:
+            yield backup
+        finally:
+            settings.backup = orig_backup
 
 
 @ddt.ddt

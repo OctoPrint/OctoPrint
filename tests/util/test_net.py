@@ -210,3 +210,32 @@ def test_get_http_client_ip(remote_addr, header, trusted_proxies, expected):
         octoprint.util.net.get_http_client_ip(remote_addr, header, trusted_proxies)
         == expected
     )
+
+
+@pytest.mark.parametrize(
+    "proxies,add_localhost,expected",
+    [
+        (["10.0.0.1"], True, ["127.0.0.0/8", "::1", "10.0.0.1"]),
+        ([], True, ["127.0.0.0/8", "::1"]),
+        (None, True, ["127.0.0.0/8", "::1"]),
+        (["10.0.0.1"], False, ["10.0.0.1"]),
+        (None, False, []),
+    ],
+)
+def test_usable_trusted_proxies(proxies, add_localhost, expected):
+    assert octoprint.util.net.usable_trusted_proxies(proxies, add_localhost) == expected
+
+
+def test_usable_trusted_proxies_from_settings():
+    settings = mock.Mock()
+    settings.get.return_value = ["10.0.0.1"]
+    settings.getBoolean.return_value = True
+
+    with mock.patch.object(octoprint.util.net, "usable_trusted_proxies") as patched:
+        octoprint.util.net.usable_trusted_proxies_from_settings(settings)
+
+        assert settings.get.called_once_with(["server", "reverseProxy", "trustedProxies"])
+        assert settings.getBoolean.called_once_with(
+            ["server", "reverseProxy", "trustLocalhostProxies"]
+        )
+        assert patched.called_once_with(["10.0.0.1"], True)

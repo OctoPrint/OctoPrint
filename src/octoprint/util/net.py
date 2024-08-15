@@ -130,6 +130,29 @@ def get_lan_ranges(additional_private=None):
     return subnets
 
 
+def usable_trusted_proxies(proxies, add_localhost=True):
+    if proxies is None or not isinstance(proxies, list):
+        logging.getLogger(__name__).warning("Invalid trusted proxies, using defaults")
+        proxies = []
+
+    if add_localhost:
+        return ["127.0.0.0/8", "::1"] + proxies
+    else:
+        return proxies
+
+
+def usable_trusted_proxies_from_settings(settings):
+    configured_trusted_proxies = settings.get(
+        ["server", "reverseProxy", "trustedProxies"]
+    )
+    trust_localhost_proxies = settings.getBoolean(
+        ["server", "reverseProxy", "trustLocalhostProxies"]
+    )
+    return usable_trusted_proxies(
+        configured_trusted_proxies, add_localhost=trust_localhost_proxies
+    )
+
+
 def is_lan_address(address, additional_private=None):
     if not address:
         # no address is LAN address
