@@ -453,7 +453,7 @@ def reverse_proxy_test():
         if response:
             return response
 
-    kwargs = get_reverse_proxy_info().dict()
+    kwargs = get_reverse_proxy_info().model_dump()
 
     try:
         return render_template(

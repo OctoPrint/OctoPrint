@@ -42,7 +42,7 @@ from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated, yaml
 from octoprint.util.json import JsonEncoding
-from octoprint.util.net import is_lan_address
+from octoprint.util.net import is_lan_address, usable_trusted_proxies_from_settings
 from octoprint.util.tz import UTC_TZ, is_timezone_aware
 
 # ~~ monkey patching
@@ -2044,9 +2044,7 @@ def get_reverse_proxy_info():
         if header in flask.request.headers:
             headers[header] = flask.request.headers[header]
 
-    trusted_downstreams = settings().get(["server", "reverseProxy", "trustedDownstream"])
-    if not trusted_downstreams:
-        trusted_downstreams = []
+    trusted_proxies = usable_trusted_proxies_from_settings(settings())
 
     return ReverseProxyInfo(
         client_ip=flask.request.remote_addr,
@@ -2055,6 +2053,6 @@ def get_reverse_proxy_info():
         server_port=int(flask.request.environ.get("SERVER_PORT")),
         server_path=flask.request.script_root if flask.request.script_root else "/",
         cookie_suffix=get_cookie_suffix(flask.request),
-        trusted_proxies=trusted_downstreams,
+        trusted_proxies=trusted_proxies,
         headers=headers,
     )

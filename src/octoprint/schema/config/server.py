@@ -42,8 +42,11 @@ class ReverseProxyConfig(BaseModel):
 
     portFallback: Optional[str] = None
 
-    trustedDownstream: List[str] = ["127.0.0.1", "::1"]
-    """List of trusted downstream servers for which to ignore the IP address when trying to determine the connecting client's IP address. A reverse proxy on the same machine as OctoPrint (e.g. as found on OctoPi) will be handled correctly by default, further proxies in front of that you'll have to add yourself."""
+    trustedProxies: List[str] = []
+    """List of trusted proxy servers for which to ignore the IP address when trying to determine the connecting client's IP address. A reverse proxy on the same machine as OctoPrint (e.g. as found on OctoPi) will be handled correctly by default through `trustLocalhostProxies`, further proxies in front of that you'll have to add yourself here."""
+
+    trustLocalhostProxies: bool = True
+    """Whether to trust the local machine to act as a reverse proxy. Defaults to true, will ensure that `127.0.0.0/8` and `::1` will always be considered to be included in `trustedProxies`. If you want to explicitly disable trusting the local machine, set this to false and don't include the local machine in trustedProxies (as in, don't include "127.0.0.1", "127.0.0.0/8" or "::1")."""
 
 
 @with_attrs_docs

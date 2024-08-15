@@ -1104,20 +1104,15 @@ class Server:
         self._stop_intermediary_server()
 
         # initialize and bind the server
-        trusted_downstream = self._settings.get(
-            ["server", "reverseProxy", "trustedDownstream"]
+        trusted_proxies = octoprint.util.net.usable_trusted_proxies_from_settings(
+            settings()
         )
-        if not isinstance(trusted_downstream, list):
-            self._logger.warning(
-                "server.reverseProxy.trustedDownstream is not a list, skipping"
-            )
-            trusted_downstream = []
 
         server_kwargs = {
             "max_body_sizes": max_body_sizes,
             "default_max_body_size": self._settings.getInt(["server", "maxSize"]),
             "xheaders": True,
-            "trusted_downstream": trusted_downstream,
+            "trusted_downstream": trusted_proxies,
         }
         if sys.platform == "win32":
             # set 10min idle timeout under windows to hopefully make #2916 less likely
