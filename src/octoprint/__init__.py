@@ -568,7 +568,7 @@ def init_webcam_compat_overlay(settings, plugin_manager):
         logging.getLogger(__name__).info(
             f"Installing webcam compat overlay for configured default webcam {default_webcam}"
         )
-        overlay = {"webcam": default_webcam.config.compat.dict(by_alias=True)}
+        overlay = {"webcam": default_webcam.config.compat.model_dump(by_alias=True)}
         settings.add_overlay(
             overlay,
             key="webcam_compat",
