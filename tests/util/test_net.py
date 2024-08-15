@@ -234,8 +234,8 @@ def test_usable_trusted_proxies_from_settings():
     with mock.patch.object(octoprint.util.net, "usable_trusted_proxies") as patched:
         octoprint.util.net.usable_trusted_proxies_from_settings(settings)
 
-        assert settings.get.called_once_with(["server", "reverseProxy", "trustedProxies"])
-        assert settings.getBoolean.called_once_with(
+        settings.get.assert_called_once_with(["server", "reverseProxy", "trustedProxies"])
+        settings.getBoolean.assert_called_once_with(
             ["server", "reverseProxy", "trustLocalhostProxies"]
         )
-        assert patched.called_once_with(["10.0.0.1"], True)
+        patched.assert_called_once_with(["10.0.0.1"], add_localhost=True)
