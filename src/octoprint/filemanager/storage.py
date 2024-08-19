@@ -549,8 +549,8 @@ class LocalFileStorage(StorageInterface):
                 self._logger.exception("Could not rename old metadata.yaml file")
 
         else:
-            # make sure the metadata is initialized as far as possible
-            self._list_folder(self.basefolder)
+            # make sure the metadata is initialized as far as possible, but don't cache (#5049)
+            self._list_folder(self.basefolder, fill_cache=False)
 
         self._logger.info(
             f"... file metadata for {self.basefolder} initialized successfully."
@@ -1565,7 +1565,7 @@ class LocalFileStorage(StorageInterface):
         incl_func_args=True,
         log_enter=True,
     )
-    def _list_folder(self, path, base="", force_refresh=False, **kwargs):
+    def _list_folder(self, path, base="", force_refresh=False, fill_cache=True, **kwargs):
         def get_size(nodes):
             total_size = 0
             for node in nodes.values():
@@ -1734,10 +1734,11 @@ class LocalFileStorage(StorageInterface):
                         )
                         continue
 
-                self._filelist_cache[path] = (
-                    lm,
-                    result,
-                )
+                if fill_cache:
+                    self._filelist_cache[path] = (
+                        lm,
+                        result,
+                    )
                 return enrich_folders(result)
         finally:
             # save metadata
