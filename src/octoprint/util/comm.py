@@ -5631,7 +5631,7 @@ class MachineCom:
                 self.setPause(True)
 
             if gcode in self._blocked_commands:
-                message = "Not sending {} to printer, it's configured as a blocked command".format(
+                message = "Not sending {} to printer as it's configured as a blocked command".format(
                     gcode
                 )
                 self._log("Info: " + message)
@@ -5647,7 +5647,7 @@ class MachineCom:
                 return (None,)
 
             if gcode in self._ignored_commands:
-                message = "Not sending {} to printer, it's configured as an ignored command".format(
+                message = "Not sending {} to printer as it's configured as an ignored command".format(
                     gcode
                 )
                 self._log("Info: " + message)

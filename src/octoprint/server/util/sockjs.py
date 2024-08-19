@@ -181,11 +181,12 @@ class PrinterStateConnection(
 
     @staticmethod
     def _get_remote_address(info):
-        from octoprint.util.net import get_http_client_ip
+        from octoprint.util.net import (
+            get_http_client_ip,
+            usable_trusted_proxies_from_settings,
+        )
 
-        trusted_proxies = settings().get(["server", "reverseProxy", "trustedUpstream"])
-        if not isinstance(trusted_proxies, list):
-            trusted_proxies = ["127.0.0.1"]
+        trusted_proxies = usable_trusted_proxies_from_settings(settings())
 
         return get_http_client_ip(
             info.ip, info.headers.get("X-Forwarded-For"), trusted_proxies

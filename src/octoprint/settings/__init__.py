@@ -1231,6 +1231,7 @@ class Settings:
             self._migrate_string_temperature_profile_values,
             self._migrate_blocked_commands,
             self._migrate_gcodeviewer_enabled,
+            self._migrate_trusted_proxies,
         )
 
         for migrate in migrators:
@@ -1718,6 +1719,59 @@ class Settings:
             del config["gcodeViewer"]["enabled"]
             return True
         return False
+
+    def _migrate_trusted_proxies(self, config):
+        """
+        Migrates trustedDownstream to trustedProxies and deletes trustedUpstream.
+
+        Creates a backup of the current config to allow recovery of trusted downstream configuration. The
+        backup prefix is "trusted_proxies_migration".
+
+        See #5036
+
+        Added in 1.11.0
+        """
+        modified = False
+
+        if "server" in config and "reverseProxy" in config["server"]:
+            if "trustedDownstream" in config["server"]["reverseProxy"]:
+                trustedProxies = config["server"]["reverseProxy"]["trustedDownstream"]
+
+                if not trustedProxies or not isinstance(trustedProxies, list):
+                    trustedProxies = []
+
+                localhost = ["127.0.0.1", "127.0.0.0/8", "::1"]
+                if all(x not in trustedProxies for x in localhost):
+                    # set trustLocalhostProxies to False if no localhost address is in trustedProxies
+                    config["server"]["reverseProxy"]["trustLocalhostProxies"] = False
+
+                for addr in localhost:
+                    # remove localhost addresses from trustedProxies
+                    try:
+                        trustedProxies.remove(addr)
+                    except ValueError:
+                        pass
+
+                if trustedProxies:
+                    # only set trustedProxies if there are any left
+                    config["server"]["reverseProxy"]["trustedProxies"] = trustedProxies
+
+                del config["server"]["reverseProxy"]["trustedDownstream"]
+
+                modified = True
+
+            if "trustedUpstream" in config["server"]["reverseProxy"]:
+                # trustedUpstream should never have been used to begin with, bug
+                del config["server"]["reverseProxy"]["trustedUpstream"]
+                modified = True
+
+        if modified:
+            backup_path = self.backup("trusted_proxies_migration")
+            self._logger.info(
+                f"Made a copy of the current config at {backup_path} to allow recovery of trusted downstream configuration"
+            )
+
+        return modified
 
     def backup(self, suffix=None, path=None, ext=None, hidden=False):
         import shutil
