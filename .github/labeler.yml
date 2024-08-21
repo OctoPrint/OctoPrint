@@ -1,28 +1,53 @@
 docs:
-  - "docs/*"
-  - "docs/**/*"
-  - "README.md"
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/**
+          - README.md
 
 meta:
-  - "CODE_OF_CONDUCT.md"
-  - "CONTRIBUTING.md"
-  - "SECURITY.md"
-  - ".github/CODEOWNERS"
-  - ".github/FUNDING.yml"
-  - ".github/ISSUE_TEMPLATE/*"
-  - ".github/PULL_REQUEST_TEMPLATE.md"
+  - changed-files:
+      - any-glob-to-any-file:
+          - CODE_OF_CONDUCT.md
+          - CONTRIBUTING.md
+          - SECURITY.md
+          - .github/CODEOWNERS
+          - .github/FUNDING.yml
+          - .github/ISSUE_TEMPLATE/**
+          - .github/PULL_REQUEST_TEMPLATE.md
 
 ci/cd:
-  - ".github/fixtures/**/*"
-  - ".github/workflows/*"
-  - ".github/dependabot.yml"
-  - ".github/issue-validation.yml"
-  - ".github/labeler.yml"
-  - ".github/pr-validation.yml"
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/fixtures/**
+          - .github/workflows/**
+          - .github/dependabot.yml
+          - .github/issue-validation.yml
+          - .github/labeler.yml
+          - .github/pr-validation.yml
 
 docker:
-  - ".github/workflows/trigger_docker.yml"
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/workflows/trigger_docker.yml
 
 tests:
-  - "tests/*"
-  - "tests/**/*"
+  - changed-files:
+      - any-glob-to-any-file: tests/**
+
+"targets maintenance":
+  - base-branch: maintenance
+
+"target devel":
+  - base-branch: devel
+
+"targets staging/bugfix":
+  - base-branch: staging/bugfix
+
+"targets staging/maintenance":
+  - base-branch: staging/maintenance
+
+"targets staging/devel":
+  - base-branch: staging/devel
+
+"targets master":
+  - base-branch: master
