@@ -8,7 +8,8 @@ $(function () {
         self.lastCommandResponse = undefined;
         self.systemActions = ko.observableArray([]);
 
-        self._startupNotification = undefined;
+        self._flaggedFoldersNotification = undefined;
+        self._pythonEOLNotification = undefined;
 
         self.requestData = function () {
             self.requestCommandData();
@@ -67,7 +68,8 @@ $(function () {
             const startupData = response.startup;
 
             if (startupData.flagged_basefolders) {
-                if (self._startupNotification) self._startupNotification.remove();
+                if (self._flaggedFoldersNotification)
+                    self._flaggedFoldersNotification.remove();
 
                 let html =
                     "<p>" +
@@ -92,10 +94,62 @@ $(function () {
                     ) +
                     "</p>";
 
-                self._startupNotification = new PNotify({
+                self._flaggedFoldersNotification = new PNotify({
                     title: gettext("Warning"),
                     text: html,
                     type: "warning",
+                    hide: false
+                });
+            }
+
+            if (startupData.python_eol) {
+                if (self._pythonEOLNotification) self._pythonEOLNotification.remove();
+
+                let eolStatement;
+                if (startupData.python_eol.soon) {
+                    eolStatement = gettext(
+                        "Your Python version %(python)s is nearing its end of life (%(date)s)."
+                    );
+                } else {
+                    eolStatement = gettext(
+                        "Your Python version %(python)s is past its end of life (%(date)s)."
+                    );
+                }
+
+                if (startupData.python_eol.last_octoprint) {
+                    octoprintStatement = _.sprintf(
+                        gettext(
+                            "OctoPrint %(octoprint)s will be the last version to support this Python version."
+                        ),
+                        {octoprint: _.escape(startupData.python_eol.last_octoprint)}
+                    );
+                } else {
+                    octoprintStatement = gettext(
+                        "A future version of OctoPrint will drop support for this Python version."
+                    );
+                }
+
+                const html =
+                    "<p>" +
+                    _.sprintf(eolStatement, {
+                        python: _.escape(PYTHON_VERSION),
+                        date: _.escape(startupData.python_eol.date)
+                    }) +
+                    " " +
+                    octoprintStatement +
+                    " " +
+                    gettext("You should upgrade as soon as possible!") +
+                    "</p>" +
+                    "<p>" +
+                    gettext(
+                        "Please refer to the FAQ for recommended upgrade workflows:"
+                    ) +
+                    "</p>" +
+                    "<p><a href='https://faq.octoprint.org/python-upgrade' target='_blank' rel='noopener noreferer'>How to migrate to another Python version</a></p>";
+
+                self._pythonEOLNotification = new PNotify({
+                    title: gettext("Warning"),
+                    text: html,
                     hide: false
                 });
             }
