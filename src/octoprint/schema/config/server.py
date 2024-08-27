@@ -8,6 +8,7 @@ from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 CONST_15MIN = 15 * 60
+CONST_24H = 24 * 60
 CONST_1GB = 1024 * 1024 * 1024
 CONST_500MB = 500 * 1024 * 1024
 CONST_200MB = 200 * 1024 * 1024
@@ -152,6 +153,33 @@ class CookiesConfig(BaseModel):
 
 
 @with_attrs_docs
+class PythonEolEntry(BaseModel):
+    date: str
+    """The date when the Python version will reach EOL, in format YYYY-MM-DD."""
+
+    last_octoprint: Optional[str] = None
+    """The last OctoPrint version that will support this Python version, optional."""
+
+
+@with_attrs_docs
+class PythonEolCheckConfig(BaseModel):
+    enabled: bool = True
+    """Whether to enable the Python EOL warning."""
+
+    url: str = "https://get.octoprint.org/python-eol"
+    """URL to fetch the Python EOL data from."""
+
+    ttl: int = CONST_24H
+    """Time to live of the cached Python EOL data, in minutes (default: 24 hours)."""
+
+    fallback: Dict[str, PythonEolEntry] = {
+        "3.7": {"date": "2023-06-27", "last_octoprint": "1.11.x"},
+        "3.8": {"date": "2024-10-31"},
+    }
+    """Fallback data for Python EOL data, in case the online check fails."""
+
+
+@with_attrs_docs
 class ServerConfig(BaseModel):
     host: Optional[str] = None
     """Use this option to define the host to which to bind the server. If unset, OctoPrint will attempt to bind on all available interfaces, IPv4 and v6 unless either is disabled."""
@@ -192,6 +220,9 @@ class ServerConfig(BaseModel):
 
     pluginBlacklist: PluginBlacklistConfig = PluginBlacklistConfig()
     """Configuration of the plugin blacklist."""
+
+    pythonEolCheck: PythonEolCheckConfig = PythonEolCheckConfig()
+    """Configuration of the Python EOL warning."""
 
     diskspace: DiskspaceConfig = DiskspaceConfig()
     """Settings of when to display what disk space warning."""

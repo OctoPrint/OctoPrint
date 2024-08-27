@@ -66,17 +66,40 @@ def getSystemInfo():
 @no_firstrun_access
 @Permissions.SYSTEM.require(403)
 def getStartupInformation():
+    import datetime
+    import sys
+
     from octoprint.server import safe_mode
     from octoprint.settings import settings
 
     result = {}
 
+    # safe mode
     if safe_mode is not None:
         result["safe_mode"] = safe_mode
 
+    # flagged base folders
     flagged_basefolders = settings().flagged_basefolders
     if flagged_basefolders:
         result["flagged_basefolders"] = flagged_basefolders
+
+    # python EOL
+    if settings().getBoolean(["server", "pythonEolCheck", "enabled"]):
+        python_eol_data = _get_python_eol_data()
+        today = datetime.date.today().isoformat()
+        for python in (
+            f"{sys.version_info.major}",
+            f"{sys.version_info.major}.{sys.version_info.minor}",
+        ):
+            if python in python_eol_data:
+                data = python_eol_data[python]
+                result["python_eol"] = {
+                    "date": data["date"],
+                    "soon": today < data["date"],
+                }
+                if "last_octoprint" in data:
+                    result["python_eol"]["last_octoprint"] = data["last_octoprint"]
+                break
 
     return jsonify(startup=result)
 
@@ -89,6 +112,62 @@ def _usageForFolders():
             usage = psutil.disk_usage(path)
             data[folder_name] = {"free": usage.free, "total": usage.total}
     return data
+
+
+_python_eol_cache = None
+_python_eol_timestamp = None
+
+
+def _get_python_eol_data(force=False):
+    import time
+
+    import requests
+
+    from octoprint.server import connectivityChecker
+    from octoprint.settings import settings
+
+    url = settings().get(["server", "pythonEolCheck", "url"])
+    ttl = settings().getInt(["server", "pythonEolCheck", "ttl"]) * 60
+    fallback = settings().get(
+        ["server", "pythonEolCheck", "fallback"], asdict=True, merged=True
+    )
+
+    global _python_eol_cache, _python_eol_timestamp
+
+    if (
+        _python_eol_cache is None
+        or _python_eol_timestamp is None
+        or _python_eol_timestamp + ttl < time.time()
+        or force
+    ):
+        if connectivityChecker is not None and connectivityChecker.online:
+            from octoprint import __version__ as octoprint_version
+
+            try:
+                r = requests.get(
+                    url,
+                    headers={"User-Agent": f"OctoPrint/{octoprint_version}"},
+                    timeout=(3.05, 7),
+                )
+                r.raise_for_status()
+                _python_eol_cache = r.json()
+                _python_eol_timestamp = time.time()
+                logging.getLogger(__name__).info(f"Fetched Python EOL data from {url}")
+            except Exception:
+                logging.getLogger(__name__).exception(
+                    "Could not fetch Python EOL data, falling back to defaults"
+                )
+                _python_eol_cache = fallback
+                _python_eol_timestamp = time.time()
+
+        else:
+            logging.getLogger(__name__).info(
+                "Could not fetch Python EOL data, we are offline, falling back to defaults"
+            )
+            _python_eol_cache = fallback
+            _python_eol_timestamp = time.time()
+
+    return _python_eol_cache
 
 
 @api.route("/system", methods=["POST"])
