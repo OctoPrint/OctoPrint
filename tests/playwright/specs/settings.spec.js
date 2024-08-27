@@ -12,7 +12,8 @@ test("Open settings", async ({page, ui}) => {
 });
 
 test.describe.parallel("Close settings", () => {
-    test.beforeEach(async ({page, ui}) => {
+    test.beforeEach(async ({page, ui, util}) => {
+        await util.setCookie("python_eol_notified", "true");
         await ui.gotoLoggedInCore();
         await page.getByTestId("settings-open").click();
         await expect(page.getByTestId("settings-dialog")).toBeVisible();
