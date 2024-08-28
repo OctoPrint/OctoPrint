@@ -173,7 +173,7 @@ class PythonEolCheckConfig(BaseModel):
     """Time to live of the cached Python EOL data, in minutes (default: 24 hours)."""
 
     fallback: Dict[str, PythonEolEntry] = {
-        "3.7": {"date": "2023-06-27", "last_octoprint": "1.11.x"},
+        "3.7": {"date": "2023-06-27", "last_octoprint": "1.11.*"},
         "3.8": {"date": "2024-10-31"},
     }
     """Fallback data for Python EOL data, in case the online check fails."""

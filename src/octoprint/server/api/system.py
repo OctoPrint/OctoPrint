@@ -71,6 +71,7 @@ def getStartupInformation():
 
     from octoprint.server import safe_mode
     from octoprint.settings import settings
+    from octoprint.util.version import get_python_version_string
 
     result = {}
 
@@ -94,6 +95,7 @@ def getStartupInformation():
             if python in python_eol_data:
                 data = python_eol_data[python]
                 result["python_eol"] = {
+                    "version": get_python_version_string(),
                     "date": data["date"],
                     "soon": today < data["date"],
                 }

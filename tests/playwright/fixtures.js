@@ -166,6 +166,20 @@ exports.test = base.test.extend({
     },
 
     util: async ({context, baseURL}, use) => {
+        const getCookieName = (cookie) => {
+            const url = new URL(baseURL);
+            const port = url.port || (url.protocol === "https:" ? 443 : 80);
+            if (url.pathname && url.pathname !== "/") {
+                let path = url.pathname;
+                if (path.endsWith("/")) {
+                    path = path.substring(0, path.length - 1);
+                }
+                return `${cookie}_P${port}_R${path.replace(/\//, "|")}`;
+            } else {
+                return `${cookie}_P${port}`;
+            }
+        };
+
         const util = {
             loginCookiesWithoutRememberMe: async () => {
                 const cookies = await context.cookies();
@@ -191,18 +205,13 @@ exports.test = base.test.extend({
                 ).toBeTruthy();
             },
 
-            getCookieName: (cookie) => {
-                const url = new URL(baseURL);
-                const port = url.port || (url.protocol === "https:" ? 443 : 80);
-                if (url.pathname && url.pathname !== "/") {
-                    let path = url.pathname;
-                    if (path.endsWith("/")) {
-                        path = path.substring(0, path.length - 1);
-                    }
-                    return `${cookie}_P${port}_R${path.replace(/\//, "|")}`;
-                } else {
-                    return `${cookie}_P${port}`;
-                }
+            getCookieName: getCookieName,
+
+            setCookie: async (name, value) => {
+                const cookieName = getCookieName(name);
+                await context.addCookies([
+                    {name: cookieName, value: value, url: baseURL}
+                ]);
             },
 
             getFullUrlRegExp: (path) => {
