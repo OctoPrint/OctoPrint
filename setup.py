@@ -219,16 +219,16 @@ class ScanDepsCommand(setuptools.Command):
                 continue
 
             lower = None
-            for spec in requirement.specs:
-                if spec[0] == ">=":
-                    lower = spec[1]
+            for spec in requirement.specifier._specs:
+                if spec.operator == ">=":
+                    lower = spec.version
                     break
 
             latest = versions[-1]
 
-            update = Update(requirement.project_name, str(requirement), lower, latest)
+            update = Update(requirement.name, str(requirement), lower, latest)
 
-            if str(latest) not in requirement:
+            if str(latest) not in requirement.specifier:
                 update_bounds.append(update)
             elif lower and parse_version(lower) < latest:
                 update_lower_bounds.append(update)
