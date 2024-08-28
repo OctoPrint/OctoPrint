@@ -14,7 +14,6 @@ import time
 from datetime import datetime
 
 import filetype
-import pkg_resources
 import pylru
 import requests
 import sarge
@@ -2362,7 +2361,9 @@ class PluginManagerPlugin(
 
 @pylru.lrudecorator(size=127)
 def parse_requirement(line):
-    return pkg_resources.Requirement.parse(line)
+    from packaging.requirements import Requirement
+
+    return Requirement(line).specifier
 
 
 def _filter_relevant_notification(notification, plugin_version, octoprint_version):

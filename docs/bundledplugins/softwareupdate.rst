@@ -225,7 +225,7 @@ types are currently recognized:
 
     * ``release_compare``: Method to use to compare between current version
       information and release versions on Github. One of ``python`` (version
-      comparison using ``pkg_resources.parse_version``, newer version detected
+      comparison using ``packaging.version.parse``, newer version detected
       if remote > current), ``semantic`` (version comparison using
       ``semantic_version`` package, newer version detected if remote > current)
       and ``unequal`` (string comparison, newer version detected if
