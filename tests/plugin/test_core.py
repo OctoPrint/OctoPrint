@@ -56,7 +56,7 @@ class PluginTestCase(unittest.TestCase):
 
         logging.basicConfig(level=logging.DEBUG)
 
-        # TODO mock pkg_resources to return some defined entry_points
+        # TODO mock some defined entry_points
 
         import os
 

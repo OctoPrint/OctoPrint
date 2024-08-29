@@ -349,7 +349,7 @@ class SoftwareUpdatePlugin(
             return self._configured_checks
 
     def _check_environment(self):
-        import pkg_resources
+        from octoprint.util.version import safe_get_package_version
 
         local_pip = create_pip_caller(
             command=self._settings.global_get(["server", "commands", "localPipCommand"])
@@ -358,7 +358,7 @@ class SoftwareUpdatePlugin(
         # check python and setuptools version
         versions = {
             "python": get_python_version_string(),
-            "setuptools": pkg_resources.get_distribution("setuptools").version,
+            "setuptools": safe_get_package_version("setuptools", "n/a"),
             "pip": local_pip.version_string,
         }
         supported = (
@@ -2362,7 +2362,7 @@ class SoftwareUpdatePlugin(
                 result["current"] = VERSION
 
         elif target == "pip":
-            import pkg_resources
+            from octoprint.util.version import safe_get_package_version
 
             displayName = check.get("displayName")
             if displayName is None:
@@ -2373,9 +2373,7 @@ class SoftwareUpdatePlugin(
             displayVersion = check.get("displayVersion")
             if displayVersion is None:
                 # displayVersion missing or set to None
-                distribution = pkg_resources.get_distribution("pip")
-                if distribution:
-                    displayVersion = distribution.version
+                displayVersion = safe_get_package_version("pip")
             result["displayVersion"] = to_unicode(displayVersion, errors="replace")
 
             result["pip_command"] = check.get(

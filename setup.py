@@ -50,13 +50,14 @@ core_deps = [
     "flask>=2.2.3,<2.3",  # breaking changes can happen on minor version increases (with deprecation warnings)
     "frozendict>=2.4.0,<3",
     "future>=0.18.3,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
+    "importlib-metadata==5.2.0 ; python_version<'3.8'",  # backport of importlib.metadata for python 3.7
     "markdown>=3.4.4,<3.5",  # later versions require Python 3.8+
     "netaddr>=1.3.0,<1.4",  # changelog hints at breaking changes on minor version increases
     # "netifaces2>=0.0.21,<0.1",  # fork of netifaces in Rust, use rolled back due to build issues in some environments
     "netifaces>=0.11.0,<0.12",
+    "packaging",
     "passlib>=1.7.4,<2",
     "pathvalidate>=2.5.2,<3",
-    "pkginfo>=1.9.6,<2",
     "psutil>=5.9.8,<6",
     "pydantic>=2.7.4,<3 ; python_version>='3.8'",
     "pydantic==1.10.16 ; python_version<'3.8'",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
@@ -180,8 +181,8 @@ class ScanDepsCommand(setuptools.Command):
     def run(self):
         from collections import namedtuple
 
-        import pkg_resources
         import requests
+        from packaging.requirements import Requirement
         from packaging.version import parse as parse_version
 
         Update = namedtuple("Update", ["name", "spec", "current", "latest"])
@@ -193,10 +194,10 @@ class ScanDepsCommand(setuptools.Command):
             all_requires += value
 
         for r in all_requires:
-            requirement = pkg_resources.Requirement.parse(r)
+            requirement = Requirement(r)
 
             resp = requests.get(
-                self.PYPI.format(package=requirement.project_name),
+                self.PYPI.format(package=requirement.name),
                 headers={"Accept": "application/vnd.pypi.simple.v1+json"},
             )
             resp.raise_for_status()
@@ -218,16 +219,16 @@ class ScanDepsCommand(setuptools.Command):
                 continue
 
             lower = None
-            for spec in requirement.specs:
-                if spec[0] == ">=":
-                    lower = spec[1]
+            for spec in requirement.specifier._specs:
+                if spec.operator == ">=":
+                    lower = spec.version
                     break
 
             latest = versions[-1]
 
-            update = Update(requirement.project_name, str(requirement), lower, latest)
+            update = Update(requirement.name, str(requirement), lower, latest)
 
-            if str(latest) not in requirement:
+            if str(latest) not in requirement.specifier:
                 update_bounds.append(update)
             elif lower and parse_version(lower) < latest:
                 update_lower_bounds.append(update)

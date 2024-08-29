@@ -3,13 +3,13 @@ __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms
 
 import logging
 
-import pkg_resources
 import requests
 
 from octoprint.util.version import (
     get_comparable_version,
     is_prerelease,
     is_python_compatible,
+    safe_get_package_version,
 )
 
 INFO_URL = "https://pypi.org/pypi/{package}/json"
@@ -102,12 +102,7 @@ def get_latest(target, check, online=True, *args, **kwargs):
         raise CannotUpdateOffline()
 
     package = check.get("package")
-
-    distribution = pkg_resources.get_distribution(package)
-    if distribution:
-        local_version = distribution.version
-    else:
-        local_version = None
+    local_version = safe_get_package_version(package)
 
     remote_version = _get_latest_release(
         package, include_prerelease=check.get("prerelease", False)

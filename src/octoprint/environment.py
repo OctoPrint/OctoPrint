@@ -96,9 +96,9 @@ class EnvironmentDetector:
 
         # try to find pip version
         try:
-            import pkg_resources
+            from octoprint.util.version import get_package_version
 
-            result["pip"] = pkg_resources.get_distribution("pip").version
+            result["pip"] = get_package_version("pip")
         except Exception:
             self._logger.exception("Error detecting pip version")
 

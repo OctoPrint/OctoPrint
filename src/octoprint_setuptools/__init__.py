@@ -15,6 +15,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import glob
 import os
+import re
 import shutil
 from distutils.command.clean import clean as _clean
 
@@ -583,8 +584,6 @@ def create_plugin_setup_parameters(
     package=None,
     dependency_links=None,
 ):
-    import pkg_resources
-
     if package is None:
         package = "octoprint_{identifier}".format(**locals())
 
@@ -623,7 +622,7 @@ def create_plugin_setup_parameters(
         raise ValueError("eggs must be a list")
 
     egg = "{name}*.egg-info".format(
-        name=pkg_resources.to_filename(pkg_resources.safe_name(name))
+        name=re.sub('[^A-Za-z0-9.]+', '-', name).replace('-', '_')
     )
     if egg not in eggs:
         eggs = [egg] + eggs

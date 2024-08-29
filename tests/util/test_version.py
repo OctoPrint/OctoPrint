@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2021 The OctoPrint Project - Released under terms
 import unittest
 
 import ddt
-import pkg_resources
+from packaging.version import parse as parse_version
 
 
 @ddt.ddt
@@ -29,13 +29,13 @@ class VersionUtilTest(unittest.TestCase):
             else:
                 raise
         else:
-            self.assertEqual(actual, pkg_resources.parse_version(expected))
+            self.assertEqual(actual, parse_version(expected))
 
     def test_get_comparable_version_base(self):
         from octoprint.util.version import get_comparable_version
 
         actual = get_comparable_version("1.6.0.dev303+g328853170.dirty", base=True)
-        self.assertEqual(actual, pkg_resources.parse_version("1.6.0"))
+        self.assertEqual(actual, parse_version("1.6.0"))
 
     @ddt.data(
         ("1.6.0", "1.6.0"),

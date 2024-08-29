@@ -32,8 +32,12 @@ import sys
 from collections import OrderedDict, defaultdict, namedtuple
 from os import scandir
 
-import pkg_resources
-import pkginfo
+from packaging.specifiers import SpecifierSet
+
+try:
+    import importlib.metadata as meta
+except ImportError:  # Python 3.7
+    import importlib_metadata as meta
 
 from octoprint.util import sv, time_this, to_unicode
 from octoprint.util.version import get_python_version_string, is_python_compatible
@@ -871,9 +875,7 @@ class PluginManager:
             if isinstance(entry, (tuple, list)):
                 key, version = entry
                 try:
-                    processed_blacklist.append(
-                        (key, pkg_resources.Requirement.parse(key + version))
-                    )
+                    processed_blacklist.append((key, SpecifierSet(version)))
                 except Exception:
                     self.logger.warning(
                         "Invalid version requirement {} for blacklist "
@@ -1093,19 +1095,6 @@ class PluginManager:
         added = OrderedDict()
         found = []
 
-        # let's make sure we have a current working set ...
-        working_set = pkg_resources.WorkingSet()
-
-        # ... including the user's site packages
-        import site
-        import sys
-
-        if site.ENABLE_USER_SITE:
-            if site.USER_SITE not in working_set.entries:
-                working_set.add_entry(site.USER_SITE)
-            if site.USER_SITE not in sys.path:
-                site.addsitedir(site.USER_SITE)
-
         if not isinstance(groups, (list, tuple)):
             groups = [groups]
 
@@ -1122,82 +1111,74 @@ class PluginManager:
                     )
 
         for group in groups:
-            for entry_point in wrapped(
-                working_set.iter_entry_points(group=group, name=None)
-            ):
-                try:
-                    key = entry_point.name
-                    module_name = entry_point.module_name
-                    version = entry_point.dist.version
-
-                    found.append(key)
-                    if (
-                        key in existing
-                        or key in added
-                        or (
-                            ignore_uninstalled
-                            and key in self.marked_plugins["uninstalled"]
-                        )
-                    ):
-                        # plugin is already defined or marked as uninstalled, ignore it
-                        continue
-
-                    bundled = key in self.plugin_considered_bundled
-                    kwargs = {
-                        "module_name": module_name,
-                        "version": version,
-                        "bundled": bundled,
-                    }
-                    package_name = entry_point.dist.project_name
+            for dist in meta.distributions():
+                for entry_point in wrapped(dist.entry_points.select(group=group)):
                     try:
-                        entry_point_metadata = EntryPointMetadata(entry_point)
+                        key = entry_point.name
+                        module_name = entry_point.value
+                        version = dist.version
+
+                        found.append(key)
+                        if (
+                            key in existing
+                            or key in added
+                            or (
+                                ignore_uninstalled
+                                and key in self.marked_plugins["uninstalled"]
+                            )
+                        ):
+                            # plugin is already defined or marked as uninstalled, ignore it
+                            continue
+
+                        bundled = key in self.plugin_considered_bundled
+                        kwargs = {
+                            "module_name": module_name,
+                            "version": version,
+                            "bundled": bundled,
+                        }
+                        package_name = dist.name
+
+                        if dist.metadata and dist.metadata.json:
+                            kwargs.update(
+                                {
+                                    "name": dist.metadata.json.get("name"),
+                                    "summary": dist.metadata.json.get("summary"),
+                                    "author": dist.metadata.json.get("author"),
+                                    "url": dist.metadata.json.get("home_page"),
+                                    "license": dist.metadata.json.get("license"),
+                                }
+                            )
+
+                        plugin = self._import_plugin_from_module(key, **kwargs)
+                        if plugin:
+                            plugin.origin = EntryPointOrigin(
+                                "entry_point", group, module_name, package_name, version
+                            )
+                            plugin.enabled = False
+
+                            # plugin is manageable if its location is writable and OctoPrint
+                            # is either not running from a virtual env or the plugin is
+                            # installed in that virtual env - the virtual env's pip will not
+                            # allow us to uninstall stuff that is installed outside
+                            # of the virtual env, so this check is necessary
+                            plugin.managable = os.access(plugin.location, os.W_OK) and (
+                                not self._python_virtual_env
+                                or is_sub_path_of(plugin.location, self._python_prefix)
+                                or is_editable_install(
+                                    self._python_install_dir,
+                                    package_name,
+                                    module_name,
+                                    plugin.location,
+                                )
+                            )
+
+                            added[key] = plugin
                     except Exception:
                         self.logger.exception(
-                            "Something went wrong while retrieving metadata for module {}".format(
-                                module_name
+                            "Error processing entry point {!r} for group {}".format(
+                                entry_point, group
                             )
                         )
-                    else:
-                        kwargs.update(
-                            {
-                                "name": entry_point_metadata.name,
-                                "summary": entry_point_metadata.summary,
-                                "author": entry_point_metadata.author,
-                                "url": entry_point_metadata.home_page,
-                                "license": entry_point_metadata.license,
-                            }
-                        )
-
-                    plugin = self._import_plugin_from_module(key, **kwargs)
-                    if plugin:
-                        plugin.origin = EntryPointOrigin(
-                            "entry_point", group, module_name, package_name, version
-                        )
-                        plugin.enabled = False
-
-                        # plugin is manageable if its location is writable and OctoPrint
-                        # is either not running from a virtual env or the plugin is
-                        # installed in that virtual env - the virtual env's pip will not
-                        # allow us to uninstall stuff that is installed outside
-                        # of the virtual env, so this check is necessary
-                        plugin.managable = os.access(plugin.location, os.W_OK) and (
-                            not self._python_virtual_env
-                            or is_sub_path_of(plugin.location, self._python_prefix)
-                            or is_editable_install(
-                                self._python_install_dir,
-                                package_name,
-                                module_name,
-                                plugin.location,
-                            )
-                        )
-
-                        added[key] = plugin
-                except Exception:
-                    self.logger.exception(
-                        "Error processing entry point {!r} for group {}".format(
-                            entry_point, group
-                        )
-                    )
 
         return added, found
 
@@ -2342,32 +2323,6 @@ def is_editable_install(install_dir, package, module, location):
             raise  # TODO really ignore this?
             pass
     return False
-
-
-class EntryPointMetadata(pkginfo.Distribution):
-    def __init__(self, entry_point):
-        self.entry_point = entry_point
-        self.extractMetadata()
-
-    def read(self):
-        import warnings
-
-        metadata_files = ("METADATA", "PKG-INFO")  # wheel  # egg
-
-        if self.entry_point and self.entry_point.dist:
-            for metadata_file in metadata_files:
-                try:
-                    return self.entry_point.dist.get_metadata(metadata_file)
-                except OSError:  # noqa: B014
-                    # file not found, metadata file might be missing, ignore
-                    pass
-
-        warnings.warn(
-            "No package metadata found for package {}".format(
-                self.entry_point.module_name
-            ),
-            stacklevel=2,
-        )
 
 
 class Plugin:
