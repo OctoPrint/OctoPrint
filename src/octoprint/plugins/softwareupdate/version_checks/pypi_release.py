@@ -41,6 +41,7 @@ def _fetch_files(package: str) -> Iterable[ReleaseFile]:
             headers={"Accept": "application/vnd.pypi.simple.v1+json"},
             timeout=(3.05, 7),
         )
+        r.raise_for_status()
     except requests.ConnectionError as exc:
         raise NetworkError(cause=exc) from exc
 
