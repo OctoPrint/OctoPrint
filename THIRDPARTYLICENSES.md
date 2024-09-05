@@ -63,7 +63,6 @@
   * [netifaces](https://github.com/al45tair/netifaces): MIT
   * [passlib](https://passlib.readthedocs.io/): BSD
   * [pathvalidate](https://pathvalidate.readthedocs.io/en/latest/index.html): MIT
-  * [pkginfo](http://pypi.python.org/pypi/pkginfo/): Python
   * [psutil](https://github.com/giampaolo/psutil): BSD
   * [pydantic](https://github.com/pydantic/pydantic): MIT
   * [pylru](https://github.com/jlhutch/pylru): GPLv2
