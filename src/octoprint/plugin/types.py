@@ -248,7 +248,7 @@ class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
         js
            JavaScript files, such as additional view models
-        jsclient
+        clientjs
            JavaScript files containing additional parts for the JS Client Library (since 1.3.10)
         css
            CSS files with additional styles, will be embedded into delivered pages when not running in LESS mode.
@@ -272,12 +272,31 @@ class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         The assets will be made available by OctoPrint under the URL ``/plugin/<plugin identifier>/static/<path>``, with
         ``plugin identifier`` being the plugin's identifier and ``path`` being the path as defined in the asset dictionary.
 
-        Assets of the types ``js``, ``css`` and ``less`` will be automatically bundled by OctoPrint using
+        Assets will be automatically bundled by OctoPrint using
         `Flask-Assets <http://flask-assets.readthedocs.org/en/latest/>`_.
+
+        If not overridden, this will return a dictionary of all discovered assets following the format ``<type>/<identifier>.<ext>`` (since 1.11.0).
 
         :return dict: a dictionary describing the static assets to publish for the plugin
         """
-        return {}
+
+        import os.path
+
+        result = {}
+
+        asset_folder = self.get_asset_folder()
+        for folder, ext in {
+            "clientjs": "js",
+            "js": "js",
+            "css": "css",
+            "less": "less",
+        }.items():
+            filename = os.path.join(folder, f"{self._identifier}.{ext}")
+            path = os.path.join(asset_folder, filename)
+            if os.path.exists(path):
+                result[folder] = [filename]
+
+        return result
 
 
 class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
