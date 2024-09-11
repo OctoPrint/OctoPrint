@@ -1,0 +1,16 @@
+.plugin_health_check_alert h4.plugin_health_check_header {
+    margin-bottom: 10px;
+}
+
+.plugin_health_check_content p:last-child {
+    margin-bottom: 0;
+}
+
+.plugin_health_check_alert a {
+    color: #c09853;
+    text-decoration: underline;
+}
+  
+.plugin_health_check_alert.alert-error a {
+    color: #b94a48;
+}
