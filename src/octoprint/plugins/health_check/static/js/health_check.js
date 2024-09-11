@@ -92,10 +92,6 @@ $(function () {
             return false;
         };
 
-        self.configureHealthChecks = () => {
-            return false;
-        };
-
         self.requestData = (refresh) => {
             if (
                 !self.loginState.hasPermission(
