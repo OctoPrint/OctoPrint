@@ -27,6 +27,7 @@ class ComponentOrderConfig(BaseModel):
         "plugin_logging_seriallog",
         "plugin_logging_plugintimingslog",
         "plugin_pi_support",
+        "plugin_health_check",
         "login",
     ]
     """Order of navbar items."""

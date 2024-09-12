@@ -9,7 +9,6 @@ $(function () {
         self.systemActions = ko.observableArray([]);
 
         self._flaggedFoldersNotification = undefined;
-        self._pythonEOLNotification = undefined;
 
         self.requestData = function () {
             self.requestCommandData();
@@ -100,85 +99,6 @@ $(function () {
                     type: "warning",
                     hide: false
                 });
-            }
-
-            if (startupData.python_eol) {
-                const COOKIE_NAME = "python_eol_notified";
-                const COOKIE_VALUE = `${startupData.python_eol.version};${startupData.python_eol.date}`;
-
-                if (self._pythonEOLNotification) {
-                    self._pythonEOLNotification.remove();
-                    self._pythonEOLNotification = undefined;
-                }
-
-                const currentCookieValue = OctoPrint.getCookie(COOKIE_NAME);
-                if (
-                    currentCookieValue !== "true" &&
-                    currentCookieValue !== COOKIE_VALUE
-                ) {
-                    let eolStatement;
-                    if (startupData.python_eol.soon) {
-                        eolStatement = gettext(
-                            "Your Python version %(python)s is nearing its end of life (%(date)s)."
-                        );
-                    } else {
-                        eolStatement = gettext(
-                            "Your Python version %(python)s is past its end of life (%(date)s)."
-                        );
-                    }
-
-                    if (startupData.python_eol.last_octoprint) {
-                        octoprintStatement = _.sprintf(
-                            gettext(
-                                "OctoPrint %(octoprint)s will be the last version to support this Python version."
-                            ),
-                            {octoprint: _.escape(startupData.python_eol.last_octoprint)}
-                        );
-                    } else {
-                        octoprintStatement = gettext(
-                            "A future version of OctoPrint will drop support for this Python version."
-                        );
-                    }
-
-                    const html =
-                        "<p>" +
-                        _.sprintf(eolStatement, {
-                            python: _.escape(startupData.python_eol.version),
-                            date: _.escape(startupData.python_eol.date)
-                        }) +
-                        " " +
-                        octoprintStatement +
-                        " " +
-                        gettext("You should upgrade as soon as possible!") +
-                        "</p>" +
-                        "<p>" +
-                        gettext(
-                            "Please refer to the FAQ for recommended upgrade workflows:"
-                        ) +
-                        "</p>" +
-                        "<p><a href='https://faq.octoprint.org/python-upgrade' target='_blank' rel='noopener noreferer'>How to migrate to another Python version</a></p>" +
-                        "<p><small>" +
-                        gettext(
-                            "This will be shown again every 30 days until you have upgraded your Python."
-                        ) +
-                        "</small></p>";
-
-                    self._pythonEOLNotification = new PNotify({
-                        title: gettext("Warning"),
-                        text: html,
-                        hide: false
-                    });
-                    self._pythonEOLNotification.elem.attr(
-                        "data-test-id",
-                        "notification-python-eol"
-                    );
-
-                    OctoPrint.setCookie(
-                        COOKIE_NAME,
-                        COOKIE_VALUE,
-                        {maxage: 30 * 24 * 60 * 60} // 30d
-                    );
-                }
             }
         };
 
