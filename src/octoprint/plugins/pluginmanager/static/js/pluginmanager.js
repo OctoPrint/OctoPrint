@@ -1227,7 +1227,8 @@ $(function () {
                     command: self.installed(plugin) ? "reinstall" : "install",
                     url: plugin.archive,
                     dependency_links:
-                        plugin.follow_dependency_links || self.followDependencyLinks()
+                        plugin.follow_dependency_links || self.followDependencyLinks(),
+                    from_repo: true
                 }
             };
             OctoPrint.simpleApiCommand("pluginmanager", "clear_queued_plugin", data).done(
