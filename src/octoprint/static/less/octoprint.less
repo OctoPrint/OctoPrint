@@ -1395,6 +1395,12 @@ textarea.block {
 .dropdown-menu-right {
   right: 0;
   left: auto;
+
+  > .dropdown-submenu > .dropdown-menu {
+    left: inherit;
+    right: 100%;
+    border-radius: 6px 0 6px 6px;
+  }
 }
 
 /** Styles for Bootstrap Slider */
