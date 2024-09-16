@@ -737,8 +737,15 @@ class PluginManagerPlugin(
             abort(403)
 
         if command == "clear_queued_plugin":
-            if data["plugin"] and data["plugin"] in self._queued_installs:
-                self._queued_installs.remove(data["plugin"])
+            if data["plugin"]:
+                match = [
+                    x
+                    for x in self._queued_installs
+                    if x.items() >= data["plugin"].items()
+                ]
+                if match:
+                    for m in match:
+                        self._queued_installs.remove(m)
             return (
                 jsonify({"queued_installs": self._queued_installs}),
                 202,
