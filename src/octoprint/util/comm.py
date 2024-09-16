@@ -2264,6 +2264,10 @@ class MachineCom:
             ["serial", "externalHeatupDetection"]
         )
 
+        wait_for_start = settings().getBoolean(["serial", "waitForStartOnConnect"])
+
+        suppress_2nd_hello = settings().getBoolean(["serial", "suppressSecondHello"])
+
         self._consecutive_timeouts = 0
 
         # Open the serial port
@@ -2274,7 +2278,7 @@ class MachineCom:
             self._changeState(self.STATE_OPEN_SERIAL)
             if not self._open_serial(self._port, self._baudrate):
                 return
-            try_hello = not settings().getBoolean(["serial", "waitForStartOnConnect"])
+            try_hello = not wait_for_start
             self._changeState(self.STATE_CONNECTING)
             self._timeout = self._ok_timeout = self._get_new_communication_timeout()
         else:
@@ -2298,9 +2302,10 @@ class MachineCom:
         if try_hello:
             self.sayHello()
 
-            # we send a second one right away because sometimes there's garbage on the line on first connect
-            # that can kill oks
-            self.sayHello()
+            if not suppress_2nd_hello:
+                # we send a second one right away because sometimes there's garbage on the line on first connect
+                # that can kill oks
+                self.sayHello()
 
         while self._monitoring_active:
             try:
@@ -3221,7 +3226,8 @@ class MachineCom:
                 elif self._state == self.STATE_CONNECTING:
                     if "start" in line and not startSeen:
                         startSeen = True
-                        self.sayHello()
+                        if wait_for_start:
+                            self.sayHello()
                     elif line.startswith("ok") or (supportWait and line == "wait"):
                         if line == "wait":
                             # if it was a wait we probably missed an ok, so let's simulate that now
