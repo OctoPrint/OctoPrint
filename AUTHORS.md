@@ -186,6 +186,7 @@ date of first contribution):
   * [Jeff Mixon](https://github.com/zaventh)
   * [lauren n. liberda](https://selfisekai.rocks/)
   * [Nathan Schulte](https://github.com/nmschulte)
+  * [Michon van Dooren](https://github.com/MaienM)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
