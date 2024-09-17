@@ -160,6 +160,9 @@ class SerialConfig(BaseModel):
     helloCommand: str = "M110 N0"
     """Command to send in order to initiate a handshake with the printer."""
 
+    suppressSecondHello: bool = False
+    """Whether to suppress the second hello command. Might be required for some printer configurations with custom hello commands."""
+
     disconnectOnErrors: bool = True
     """Whether to disconnect from the printer on errors or not."""
 
