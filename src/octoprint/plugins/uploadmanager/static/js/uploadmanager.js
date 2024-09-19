@@ -418,13 +418,16 @@ $(function () {
                 return self.files.enableRemove(item);
             });
         };
-        self.enableSlicing = function () {
+        self.slicingAvailable = ko.pureComputed(() => {
+            return self.files.slicing.enableSlicingDialog();
+        });
+        self.enableSlicing = () => {
             const files = self.selectedFiles();
             if (files.length !== 1) return false;
 
             return files[0].type == "model" && self.files.enableSlicing(files[0]);
         };
-        self.enableSelect = function (printAfterSelect) {
+        self.enableSelect = (printAfterSelect) => {
             const files = self.selectedFiles();
             if (files.length !== 1) return false;
 
@@ -503,7 +506,10 @@ $(function () {
                 message: gettext("Please specify the name:"),
                 validator: (value) => {
                     // check that the name is valid
-                    if (!_isNameUnique(value)) {
+                    const path = self.currentPath()
+                        ? self.currentPath() + "/" + value
+                        : value;
+                    if (!_isPathUnique(path)) {
                         return gettext("This name is already in use!");
                     }
                     return true;
@@ -529,7 +535,10 @@ $(function () {
                 validator: (value) => {
                     // check that the name is valid
                     log.info("checking validity of ", value);
-                    if (!_isNameUnique(value, [name])) {
+                    const path = self.currentPath()
+                        ? self.currentPath() + "/" + value
+                        : value;
+                    if (!_isPathUnique(path, [from])) {
                         return gettext("This name is already in use!");
                     }
                     return true;
@@ -798,12 +807,30 @@ $(function () {
             self.listHelper.selectNone();
         };
 
-        const _isNameUnique = (name, exceptions) => {
+        const _isPathUnique = (path, exceptions) => {
             exceptions = exceptions || [];
+            if (_.contains(exceptions, path)) return true;
+
+            const paths = _collectPaths();
+            return !_.contains(paths, path);
+        };
+
+        const _collectPaths = (location) => {
             const files = self.files.allItems();
-            return _.every(files, (item) => {
-                return item.name !== name || _.contains(exceptions, item.name);
-            });
+
+            const pathPicker = (items) => {
+                const paths = [];
+                _.each(items, (item) => {
+                    if (item.origin !== location) return;
+                    paths.push(item.path);
+                    if (item.children) {
+                        paths.push(...pathPicker(item.children));
+                    }
+                });
+                return paths;
+            };
+
+            return pathPicker(files);
         };
 
         const _collectFolders = (location) => {
