@@ -606,7 +606,8 @@ $(function () {
                 }),
                 gettext("Copied %(filename)s..."),
                 gettext("Copying %(filename)s failed, continuing..."),
-                gettext("Copying %(filename)s failed: %(error)s")
+                gettext("Copying %(filename)s failed: %(error)s"),
+                (file) => file.path != destination
             );
         };
 
@@ -627,28 +628,75 @@ $(function () {
                 }),
                 gettext("Moved %(filename)s..."),
                 gettext("Moving %(filename)s failed, continuing..."),
-                gettext("Moving %(filename)s failed: %(error)s")
+                gettext("Moving %(filename)s failed: %(error)s"),
+                (file) => file.path != destination
             );
         };
 
         self.remove = () => {
             if (!self.enableRemove()) return;
 
-            return self._bulkAction(
-                (file) => {
-                    return OctoPrint.files.delete(file.origin, file.path);
-                },
-                gettext("Deleting"),
-                gettext("Deleting %(count)d items..."),
-                gettext("Deleted %(filename)s..."),
-                gettext("Deletion of %(filename)s failed, continuing..."),
-                gettext("Deletion of %(filename)s failed: %(error)s")
-            );
+            const files = self.selectedFiles();
+            if (files.length === 0) return;
+
+            let message;
+            let confirm = true;
+            if (files.length > 1) {
+                message = _.sprintf(
+                    gettext("You are about to delete %(count)d items forever."),
+                    {count: files.length}
+                );
+            } else {
+                if (files[0].type === "folder") {
+                    message = _.sprintf(
+                        gettext(
+                            'You are about to delete the folder "%(folder)s" forever which still contains files and/or sub folders.'
+                        ),
+                        {folder: files[0].name}
+                    );
+                    confirm = !!files[0].weight;
+                } else {
+                    message = _.sprintf(
+                        gettext('You are about to delete "%(file)s" forever.'),
+                        {file: files[0].name}
+                    );
+                }
+            }
+
+            const proceed = () => {
+                self._bulkAction(
+                    (file) => {
+                        return OctoPrint.files.delete(file.origin, file.path);
+                    },
+                    gettext("Deleting"),
+                    gettext("Deleting %(count)d items..."),
+                    gettext("Deleted %(filename)s..."),
+                    gettext("Deletion of %(filename)s failed, continuing..."),
+                    gettext("Deletion of %(filename)s failed: %(error)s")
+                );
+            };
+
+            if (confirm) {
+                showConfirmationDialog(message, proceed);
+            } else {
+                proceed();
+            }
         };
 
-        self._bulkAction = (callback, title, message, ok, nokShort, nokLong) => {
-            const files = self.selectedFiles();
-            if (!files) return;
+        self._bulkAction = (
+            callback,
+            title,
+            message,
+            ok,
+            nokShort,
+            nokLong,
+            fileFilter
+        ) => {
+            const files =
+                fileFilter && _.isFunction(fileFilter)
+                    ? _.filter(self.selectedFiles(), fileFilter)
+                    : self.selectedFiles();
+            if (!files || files.length === 0) return;
 
             if (files.length > 1) {
                 // bulk operation
