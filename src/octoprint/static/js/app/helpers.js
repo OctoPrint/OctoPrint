@@ -419,7 +419,7 @@ function ItemListHelper(
 function formatSize(bytes) {
     if (!bytes) return "-";
 
-    var units = ["bytes", "KB", "MB", "GB"];
+    var units = ["B", "KB", "MB", "GB"];
     for (var i = 0; i < units.length; i++) {
         if (bytes < 1024) {
             return _.sprintf("%3.1f%s", bytes, units[i]);
