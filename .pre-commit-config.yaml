@@ -42,3 +42,10 @@ repos:
     hooks:
       - id: codespell
         exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|tests/playwright|scripts/)
+  - repo: https://github.com/OctoPrint/pre-commit-lessc
+    rev: 4.2.0
+    hooks:
+      - id: lessc
+        args: ["--wrapper-quiet", "--clean-css=--s1 --advanced --compatibility=ie8"]
+        additional_dependencies: ["less-plugin-clean-css"]
+        files: ^(src/octoprint/static/less/(octoprint|recovery|login)\.less|src/octoprint/plugins/.*/static/less/.*\.less$)
