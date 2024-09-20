@@ -56,8 +56,8 @@ QUnit.cases(
         var params = [
             {title: "UndefinedSize", input: undefined, expected: "-"},
             {title: "EmptySize", input: "", expected: "-"},
-            {title: "WholeByte", input: 1, expected: "1.0bytes"},
-            {title: "FractionalBytes", input: 1.1, expected: "1.1bytes"},
+            {title: "WholeByte", input: 1, expected: "1.0B"},
+            {title: "FractionalBytes", input: 1.1, expected: "1.1B"},
             {title: "OneKilobyte", input: 1024, expected: "1.0KB"},
             {title: "TwoKilobytes", input: 2048, expected: "2.0KB"},
             {title: "FractionalKilobytes", input: 2.2 * 1024, expected: "2.2KB"},
