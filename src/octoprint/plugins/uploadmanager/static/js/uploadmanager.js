@@ -490,7 +490,7 @@ $(function () {
             const file = self.selectedFiles()[0];
             if (file.origin !== "local") return;
 
-            OctoPrint.files.issueEntryComand(file.origin, file.path, "uploadSd", {});
+            OctoPrint.files.issueEntryCommand(file.origin, file.path, "uploadSd", {});
         };
 
         self.slice = () => {

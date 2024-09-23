@@ -1262,7 +1262,7 @@ def gcodeFileCommand(filename, target):
                 if select or print:
                     printer.select_file(filename, FileDestinations.SDCARD, print)
 
-            path = fileManager.path_in_storage(FileDestinations.LOCAL, filename)
+            path = fileManager.path_on_disk(FileDestinations.LOCAL, filename)
             remote = printer.add_sd_file(
                 filename,
                 path,
