@@ -566,7 +566,7 @@ Also adjust your plugin's ``templates/helloworld_navbar.jinja2`` like this:
 
 OctoPrint injects the template variables that your plugin defines prefixed with ``plugin_<plugin identifier>_`` into
 the template renderer, so your ``url`` got turned into ``plugin_helloworld_url`` which you can now use as a simple
-`Jinja2 Variable <https://jinja.palletsprojects.com/templates.html#variables>`_ in your plugin's template.
+`Jinja2 Variable <https://jinja.palletsprojects.com/templates#variables>`_ in your plugin's template.
 
 Restart OctoPrint and shift-reload the page in your browser (to make sure you really get a fresh copy). The link should
 still work and point to the URL we defined as default.
@@ -1135,7 +1135,7 @@ might show what's possible with a few lines of code already. Finally, just take 
 
 .. seealso::
 
-   `Jinja Template Designer Documentation <https://jinja.palletsprojects.com/templates.html>`_
+   `Jinja Template Designer Documentation <https://jinja.palletsprojects.com/templates>`_
       Jinja's Template Designer Documentation describes the syntax and semantics of the template language used
       by OctoPrint's frontend.
 
