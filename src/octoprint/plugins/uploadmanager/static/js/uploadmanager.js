@@ -385,24 +385,7 @@ $(function () {
             });
         };
 
-        self.enableDownload = function () {
-            var selected = self.selectedFiles();
-
-            var data = self.selectedFiles();
-            for (var i = 0; i < data.length; i++) {
-                var element = data[i];
-                if (
-                    !element.hasOwnProperty("type") ||
-                    !element.hasOwnProperty("origin") ||
-                    element.type == "folder" ||
-                    element.origin != "local"
-                )
-                    return false;
-            }
-
-            return selected.length != 0;
-        };
-        self.enableUploadSD = function () {
+        self.enableUploadSD = () => {
             return (
                 self.loginState.isUser() &&
                 self.selectedFiles().length === 1 &&
@@ -410,7 +393,7 @@ $(function () {
                 self.checkSelectedOrigin("local")
             );
         };
-        self.enableRemove = function () {
+        self.enableRemove = () => {
             if (!self.loginState.isUser() || self.selectedFiles().length === 0)
                 return false;
 
@@ -464,16 +447,42 @@ $(function () {
             );
         };
 
-        self.download = function () {
-            if (!self.enableDownload()) return;
+        self.enableDownload = ko.pureComputed(() => {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_DOWNLOAD))
+                return false;
+            return !!self.downloadUrl();
+        });
 
-            _.each(self.selectedFiles(), function (file, index) {
-                $.fileDownload(self.files.downloadLink(file), {
-                    data: {cookie: "fileDownload" + index},
-                    cookieName: "fileDownload" + index
-                });
-            });
-        };
+        self.downloadUrl = ko.pureComputed(() => {
+            const files = self.selectedFiles();
+            if (files.length === 0) return "";
+            if (!_.all(files, (item) => item.origin === "local")) return "";
+
+            // pick all files & ensure they can all be downloaded
+            const allFiles = _.filter(files, (item) => item.type !== "folder");
+            const downloadableFiles = _.filter(
+                allFiles,
+                (item) => item.refs && item.refs.download
+            );
+            if (allFiles.length !== downloadableFiles.length) return "";
+
+            // pick all folders
+            const allFolders = _.filter(files, (item) => item.type === "folder");
+
+            // calculate total list of downloadables
+            const downloadables = [...downloadableFiles, ..._collectFiles(allFolders)];
+            if (downloadables.length === 0) return "";
+
+            if (downloadables.length > 1 || downloadables[0].type === "folder") {
+                const bulkUrl = OctoPrint.files.bulkDownloadUrlLocal(
+                    _.map(_collectFiles(downloadables), (item) => item.path)
+                );
+                if (BASEURL.length + bulkUrl.length >= 2000) return "";
+                return bulkUrl;
+            } else {
+                return downloadables[0].refs.download;
+            }
+        });
 
         self.uploadSD = () => {
             if (!self.enableUploadSD()) return;
@@ -853,6 +862,18 @@ $(function () {
             folders.push("/");
             folders.sort();
             return folders;
+        };
+
+        const _collectFiles = (items) => {
+            const files = [];
+            _.each(items, (item) => {
+                if (item.type !== "folder" && item.refs && item.refs.download) {
+                    files.push(item);
+                } else if (item.type === "folder" && item.children) {
+                    files.push(..._collectFiles(item.children));
+                }
+            });
+            return files;
         };
     }
 
