@@ -770,6 +770,7 @@ Then we'll create our custom `Knockout <http://knockoutjs.com/documentation/intr
 like so:
 
 .. code-block:: javascript
+   :emphasize-lines: 31-42
 
    $(function() {
        function HelloWorldViewModel(parameters) {
