@@ -75,6 +75,10 @@ Saving this as ``helloworld.py`` in ``~/.octoprint/plugins`` yields you somethin
    | Hello World (1.0.0) = /home/gina/.octoprint/plugins/helloworld.py
    [...]
 
+.. note::
+
+   Plugin folder for Linux will be ~/.octoprint/plugins, for Windows it will be %APPDATA%/OctoPrint/plugins and for Mac ~/Library/Application Support/OctoPrint/plugins
+
 OctoPrint found that plugin in the folder and took a look into it. The name and the version it displays in that log
 entry it got from the ``__plugin_name__`` and ``__plugin_version__`` lines. It also read the description from
 ``__plugin_description__`` and stored it in an internal data structure, but we'll just ignore this for now. Additionally
