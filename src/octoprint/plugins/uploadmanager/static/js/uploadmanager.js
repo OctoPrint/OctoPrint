@@ -372,6 +372,7 @@ $(function () {
         };
 
         self.templateFor = function (data) {
+            if (data.origin === "sdcard") return "uploadmanager_template_sdcard";
             return "uploadmanager_template_" + data.type;
         };
 

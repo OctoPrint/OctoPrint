@@ -110,7 +110,7 @@
                     <i class="fa-regular fa-file-lines"></i>
                 </td>
                 <td class="title" data-bind="css: $root.files.getSuccessClass($data)">
-                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }"></span>
+                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
                 </td>
                 <td class="uploaded" data-bind="text: formatDate(date)"></td>
                 <td class="printed" data-bind="text: formatDate($root.lastPrint($data))"></td>
@@ -122,7 +122,7 @@
                     <i class="fa-regular fa-file-image"></i>
                 </td>
                 <td class="title">
-                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }"></span>
+                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
                 </td>
                 <td class="uploaded" data-bind="text: formatDate(date)"></td>
                 <td class="printed"></td>
@@ -134,7 +134,19 @@
                     <i class="fa-regular fa-folder"></i>
                 </td>
                 <td class="title">
-                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }"></span>
+                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
+                </td>
+                <td class="uploaded" data-bind="text: formatDate(date)"></td>
+                <td class="printed" data-bind="text: formatDate($root.lastPrint($data))"></td>
+                <td class="size" data-bind="text: formatSize(size)"></td>
+            </script>
+
+            <script type="text/html" id="uploadmanager_template_sdcard">
+                <td class="icon">
+                    <i class="fa-solid fa-sd-card"></i>
+                </td>
+                <td class="title">
+                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
                 </td>
                 <td class="uploaded" data-bind="text: formatDate(date)"></td>
                 <td class="printed" data-bind="text: formatDate($root.lastPrint($data))"></td>
