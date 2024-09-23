@@ -589,8 +589,7 @@ a proper shift-reload) point to the German Wikipedia node about "Hello World" pr
    2015-01-30 11:47:18,634 - octoprint.plugins.helloworld - INFO - Hello World! (more: https://de.wikipedia.org/wiki/Hallo-Welt-Programm)
 
 Nice! But not very user friendly. We don't have any way yet to edit the URL from within OctoPrint and have to restart
-the server and reload the page every time we want a value change to take effect. Let's try adding a little settings dialog
-for our plugin in which we can edit the URL and take any changes take immediate effect.
+the server and reload the page every time we want a value change to take effect. Let's try adding a small settings dialog to our plugin, allowing us to edit the URL so that changes take effect immediately.
 
 First of all, we'll create the settings dialog. You might already have guessed that we'll need another template for that.
 So in your plugin's ``templates`` folder create a new file ``helloworld_settings.jinja2`` and put the following content
