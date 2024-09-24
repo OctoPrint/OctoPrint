@@ -243,6 +243,16 @@ $(function () {
             return _.sprintf(gettext("%(count)d selected"), {count: count});
         });
 
+        self.selectionSize = ko.pureComputed(() => {
+            const files = self.selectedFiles();
+            let sum = 0;
+            _.each(files, (item) => {
+                if (item.size == undefined) return;
+                sum += item.size;
+            });
+            return _.sprintf(gettext("Size: %(size)s"), {size: formatSize(sum)});
+        });
+
         self.handleSingleClick = function (data, event) {
             // prevent shift click from highlighting text
             document.getSelection().removeAllRanges();
@@ -357,7 +367,26 @@ $(function () {
             _.each(list, (element) => {
                 if (!self.isSelected(element)) {
                     self.selectedFiles.push(element);
-                    self._lastClickedItem = element;
+                }
+            });
+        };
+
+        self.selectAllOfOrigin = (origin) => {
+            const list = self.filesAndFolders();
+
+            _.each(list, (element) => {
+                if (element.origin == origin && !self.isSelected(element)) {
+                    self.selectedFiles.push(element);
+                }
+            });
+        };
+
+        self.selectAllOfType = (type) => {
+            const list = self.filesAndFolders();
+
+            _.each(list, (element) => {
+                if (element.type == type && !self.isSelected(element)) {
+                    self.selectedFiles.push(element);
                 }
             });
         };

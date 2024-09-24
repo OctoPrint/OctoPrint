@@ -17,6 +17,14 @@
                     <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="far fa-square"></i> <span class="caret"></span></button>
                     <ul class="dropdown-menu">
                         <li><a href="javascript:void(0)" data-bind="click: selectAll">{{ _('Select all') }}</a></li>
+                        <li class="divider"></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.selectAllOfOrigin('local') }">{{ _('Select all stored locally') }}</a></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.selectAllOfOrigin('sdcard') }">{{ _('Select all stored on printer') }}</a></li>
+                        <li class="divider"></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.selectAllOfType('machinecode') }">{{ _('Select all machinecode files') }}</a></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.selectAllOfType('model') }">{{ _('Select all model files') }}</a></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.selectAllOfType('folder') }">{{ _('Select all folders') }}</a></li>
+                        <li class="divider"></li>
                         <li><a href="javascript:void(0)" data-bind="click: invertSelection">{{ _('Invert selection') }}</a></li>
                         <li><a href="javascript:void(0)" data-bind="click: deselectAll">{{ _('Clear selection') }}</a></li>
                     </ul>
@@ -101,8 +109,12 @@
                 </table>
             </div>
 
-            <div>
-                <small class="muted align-right" data-bind="text: selectionText"></small>
+            <div class="table-footer">
+                <small class="muted" data-bind="text: selectionText"></small>
+                <span data-bind="visible: selectedFiles().length > 0">
+                    &middot;
+                    <small class="muted" data-bind="text: selectionSize"></small>
+                </span>
             </div>
 
             <script type="text/html" id="uploadmanager_template_machinecode">
