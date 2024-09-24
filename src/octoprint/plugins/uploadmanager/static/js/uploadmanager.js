@@ -854,13 +854,12 @@ $(function () {
             return !_.contains(paths, path);
         };
 
-        const _collectPaths = (location) => {
+        const _collectPaths = () => {
             const files = self.files.allItems();
 
             const pathPicker = (items) => {
                 const paths = [];
                 _.each(items, (item) => {
-                    if (item.origin !== location) return;
                     paths.push(item.path);
                     if (item.children) {
                         paths.push(...pathPicker(item.children));
