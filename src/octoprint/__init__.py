@@ -385,6 +385,7 @@ def init_logging(
                     "handlers": ["tornadoFile"],
                     "propagate": False,
                 },
+                "tornado": {"level": "ERROR"},
                 "octoprint": {"level": "INFO"},
                 "octoprint.util": {"level": "INFO"},
                 "octoprint.plugins": {"level": "INFO"},

@@ -75,6 +75,11 @@ Saving this as ``helloworld.py`` in ``~/.octoprint/plugins`` yields you somethin
    | Hello World (1.0.0) = /home/gina/.octoprint/plugins/helloworld.py
    [...]
 
+.. note::
+
+   For Linux, the plugin folder be ``~/.octoprint/plugins``. For Windows it will be ``%APPDATA%/OctoPrint/plugins`` and for
+   Mac ``~/Library/Application Support/OctoPrint/plugins``.
+
 OctoPrint found that plugin in the folder and took a look into it. The name and the version it displays in that log
 entry it got from the ``__plugin_name__`` and ``__plugin_version__`` lines. It also read the description from
 ``__plugin_description__`` and stored it in an internal data structure, but we'll just ignore this for now. Additionally
@@ -562,7 +567,7 @@ Also adjust your plugin's ``templates/helloworld_navbar.jinja2`` like this:
 
 OctoPrint injects the template variables that your plugin defines prefixed with ``plugin_<plugin identifier>_`` into
 the template renderer, so your ``url`` got turned into ``plugin_helloworld_url`` which you can now use as a simple
-`Jinja2 Variable <https://jinja.palletsprojects.com/templates.html#variables>`_ in your plugin's template.
+`Jinja2 Variable <https://jinja.palletsprojects.com/templates#variables>`_ in your plugin's template.
 
 Restart OctoPrint and shift-reload the page in your browser (to make sure you really get a fresh copy). The link should
 still work and point to the URL we defined as default.
@@ -585,8 +590,7 @@ a proper shift-reload) point to the German Wikipedia node about "Hello World" pr
    2015-01-30 11:47:18,634 - octoprint.plugins.helloworld - INFO - Hello World! (more: https://de.wikipedia.org/wiki/Hallo-Welt-Programm)
 
 Nice! But not very user friendly. We don't have any way yet to edit the URL from within OctoPrint and have to restart
-the server and reload the page every time we want a value change to take effect. Let's try adding a little settings dialog
-for our plugin in which we can edit the URL and take any changes take immediate effect.
+the server and reload the page every time we want a value change to take effect. Let's try adding a small settings dialog to our plugin, allowing us to edit the URL so that changes take effect immediately.
 
 First of all, we'll create the settings dialog. You might already have guessed that we'll need another template for that.
 So in your plugin's ``templates`` folder create a new file ``helloworld_settings.jinja2`` and put the following content
@@ -767,6 +771,7 @@ Then we'll create our custom `Knockout <http://knockoutjs.com/documentation/intr
 like so:
 
 .. code-block:: javascript
+   :emphasize-lines: 31-42
 
    $(function() {
        function HelloWorldViewModel(parameters) {
@@ -1131,7 +1136,7 @@ might show what's possible with a few lines of code already. Finally, just take 
 
 .. seealso::
 
-   `Jinja Template Designer Documentation <https://jinja.palletsprojects.com/templates.html>`_
+   `Jinja Template Designer Documentation <https://jinja.palletsprojects.com/templates>`_
       Jinja's Template Designer Documentation describes the syntax and semantics of the template language used
       by OctoPrint's frontend.
 
