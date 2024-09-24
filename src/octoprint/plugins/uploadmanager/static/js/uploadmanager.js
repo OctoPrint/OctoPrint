@@ -1,5 +1,7 @@
 /**
- * Created by Salandora on 06.09.2015.
+ * Originally based on "Filemanager", created by Marc Hannappel
+ *
+ * Rewritten and maintained as part of OctoPrint since 09/2024
  */
 
 $(function () {
