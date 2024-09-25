@@ -1095,7 +1095,7 @@ class LocalFileStorage(StorageInterface):
 
     def has_analysis(self, path):
         metadata = self.get_metadata(path)
-        return "analysis" in metadata
+        return metadata and "analysis" in metadata
 
     def get_metadata(self, path):
         path, name = self.sanitize(path)
