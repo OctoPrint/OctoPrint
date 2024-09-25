@@ -42,7 +42,7 @@
                 </div>
 
                 <div class="btn-group">
-                    <button class="btn btn-small" title="{{ _('Slice') }}" data-bind="click: $root.slice, css: { disabled: !$root.enableSlicing() }, visible: $root.slicingAvailable"><i class="fa-solid fa-layer-group"></i></button>
+                    <button class="btn btn-small" title="{{ _('Slice...') }}" data-bind="click: $root.slice, css: { disabled: !$root.enableSlicing() }, visible: $root.slicingAvailable"><i class="fa-solid fa-layer-group"></i></button>
                     {% if enableSdSupport %}
                     <button class="btn btn-small" title="{{ _('Upload to SD') }}" data-bind="click: $root.uploadSD, css: { disabled: !$root.enableUploadSD() }"><i class="fa-solid fa-sd-card"></i></button>
                     {% endif %}

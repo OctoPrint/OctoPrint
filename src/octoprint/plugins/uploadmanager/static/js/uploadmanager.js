@@ -557,7 +557,20 @@ $(function () {
                 },
                 onproceed: (value) => {
                     const path = self.currentPath();
-                    OctoPrint.files.createFolder("local", value, path);
+                    OctoPrint.files.createFolder("local", value, path).fail((jqXHR) => {
+                        showMessageDialog({
+                            title: gettext("Operation failed"),
+                            message: _.sprintf(
+                                gettext(
+                                    "Creating new folder %(filename)s failed: %(error)s"
+                                ),
+                                {
+                                    filename: _.escape(`local:${value}`),
+                                    error: _.escape(_errorFromJqXHR(jqXHR))
+                                }
+                            )
+                        });
+                    });
                 }
             });
         };
@@ -565,9 +578,10 @@ $(function () {
         self.rename = () => {
             if (!self.enableRename()) return;
 
-            const name = self.selectedFiles()[0].name;
-            const origin = self.selectedFiles()[0].origin;
-            const from = self.selectedFiles()[0].path;
+            const file = self.selectedFiles()[0];
+            const name = file.name;
+            const origin = file.origin;
+            const from = file.path;
 
             showTextboxDialog({
                 title: _.sprintf(gettext("Rename %(name)s"), {name: name}),
@@ -589,7 +603,23 @@ $(function () {
                     const folder = self.currentPath();
                     const to = `${folder}/${value}`;
                     log.info(`Renaming ${from} to ${to}`);
-                    OctoPrint.files.move(origin, from, to);
+                    OctoPrint.files
+                        .move(origin, from, to)
+                        .done(() => {
+                            self.deselectAll();
+                        })
+                        .fail((jqXHR) => {
+                            showMessageDialog({
+                                title: gettext("Operation failed"),
+                                message: _.sprintf(
+                                    gettext("Renaming %(filename)s failed: %(error)s"),
+                                    {
+                                        filename: _.escape(filename),
+                                        error: _.escape(_errorFromJqXHR(jqXHR))
+                                    }
+                                )
+                            });
+                        });
                 }
             });
         };
@@ -768,7 +798,7 @@ $(function () {
                             });
                             const long = _.sprintf(nokLong, {
                                 filename: _.escape(filename),
-                                error: _.escape(jqXHR.responseText)
+                                error: _.escape(_errorFromJqXHR(jqXHR))
                             });
                             deferred.notify(short, long, false);
                         });
@@ -803,9 +833,21 @@ $(function () {
                 return promise;
             } else {
                 // only one file
-                return callback(self.selectedFiles()[0]).done(() => {
-                    self.deselectAll();
-                });
+                const file = self.selectedFiles()[0];
+                const filename = `${file.origin}:${file.path}`;
+                return callback(file)
+                    .done(() => {
+                        self.deselectAll();
+                    })
+                    .fail((jqXHR) => {
+                        showMessageDialog({
+                            title: gettext("Operation failed"),
+                            message: _.sprintf(nokLong, {
+                                filename: _.escape(filename),
+                                error: _.escape(_errorFromJqXHR(jqXHR))
+                            })
+                        });
+                    });
             }
         };
 
@@ -905,6 +947,17 @@ $(function () {
                 }
             });
             return files;
+        };
+
+        const _errorFromJqXHR = (jqXHR) => {
+            let error = jqXHR.responseText;
+            try {
+                const json = JSON.parse(jqXHR.responseText);
+                if (json.error) error = json.error;
+            } catch (e) {
+                // no json apparently
+            }
+            return error;
         };
     }
 
