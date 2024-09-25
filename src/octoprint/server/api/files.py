@@ -10,6 +10,7 @@ from urllib.parse import quote as urlquote
 
 import psutil
 from flask import abort, jsonify, make_response, request, url_for
+from werkzeug.exceptions import HTTPException
 
 import octoprint.filemanager
 import octoprint.filemanager.storage
@@ -1154,6 +1155,8 @@ def gcodeFileCommand(filename, target):
                 ):
                     abort(409, description="File or folder does already exist")
 
+            except HTTPException:
+                raise
             except Exception:
                 abort(
                     409, description="Exception thrown by storage, bad folder/file name?"
