@@ -7,6 +7,7 @@
 })(this, function (OctoPrintClient, $, _) {
     var url = "api/files";
     var downloadUrl = "downloads/files";
+    var bulkDownloadLocalUrl = "downloads/files/local";
     var testUrl = url + "/test";
 
     var OctoPrintFilesClient = function (base) {
@@ -162,6 +163,10 @@
             url = this.base.getBaseUrl() + url;
         }
         return url;
+    };
+
+    OctoPrintFilesClient.prototype.bulkDownloadUrlLocal = function (filenames) {
+        return this.base.bulkDownloadUrl(bulkDownloadLocalUrl, filenames);
     };
 
     OctoPrintFilesClient.prototype.pathForEntry = function (entry) {

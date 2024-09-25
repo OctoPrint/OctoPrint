@@ -691,7 +691,7 @@ $(function () {
                 var options = {
                     message: _.sprintf(
                         gettext(
-                            'You are about to delete the folder "%(folder)s" which still contains files and/or sub folders.'
+                            'You are about to delete the folder "%(folder)s" forever which still contains files and/or sub folders.'
                         ),
                         {folder: _.escape(folder.name)}
                     ),
@@ -818,7 +818,13 @@ $(function () {
                 return;
             }
 
-            self._removeEntry(file, event);
+            const message = _.sprintf(
+                gettext('You are about to delete "%(file)s" forever.'),
+                {file: file.name}
+            );
+            showConfirmationDialog(message, () => {
+                self._removeEntry(file, event);
+            });
         };
 
         self.sliceFile = function (file) {

@@ -804,6 +804,16 @@ class Server:
             )
         }
 
+        bulkdownloads_path_validator = {
+            "path_validation": util.tornado.path_validation_factory(
+                lambda path: not octoprint.util.is_hidden_path(path)
+                and octoprint.filemanager.valid_file_type(os.path.basename(path))
+                and os.path.realpath(os.path.abspath(path)).startswith(
+                    settings().getBaseFolder("uploads")
+                )
+            )
+        }
+
         valid_timelapse = lambda path: not octoprint.util.is_hidden_path(path) and (
             octoprint.timelapse.valid_timelapse(path)
             or octoprint.timelapse.valid_timelapse_thumbnail(path)
@@ -900,6 +910,25 @@ class Server:
                     no_hidden_files_validator,
                     only_known_types_validator,
                     additional_mime_types,
+                ),
+            ),
+            # bulk download of uploaded printables
+            (
+                r"/downloads/files/local",
+                util.tornado.DynamicZipBundleHandler,
+                joined_dict(
+                    {
+                        "as_attachment": True,
+                        "attachment_name": "octoprint-files.zip",
+                        "path_processor": lambda x: (
+                            x,
+                            os.path.join(
+                                self._settings.getBaseFolder("uploads"), *x.split("/")
+                            ),
+                        ),
+                    },
+                    download_permission_validator,
+                    bulkdownloads_path_validator,
                 ),
             ),
             # log files

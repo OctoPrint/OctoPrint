@@ -1,0 +1,111 @@
+:root {
+  --plugin-uploadmanager-table-header: #ffffffee;
+}
+
+#plugin_uploadmanager_dialog {
+  .marquee-hover {
+    display: block;
+    transition-property: margin-left;
+    transition-duration: 0.5s;
+    transition-timing-function: linear;
+  }
+
+  .form-search {
+    .search-query-with-clear {
+      padding: 0px 15px;
+    }
+
+    input[type="search"] {
+      box-sizing: border-box;
+      width: 100%;
+      height: 30px;
+    }
+  }
+
+  .flex-column {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .flex-row {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .flex-grow {
+    flex-grow: 1;
+  }
+
+  .table-wrapper {
+    overflow: hidden auto;
+    flex-grow: 1;
+  }
+
+  .table-footer {
+    text-align: right;
+  }
+
+  table {
+    table-layout: fixed;
+    margin-bottom: 0px;
+
+    td,
+    th {
+      white-space: normal;
+      cursor: pointer;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background-color: var(--plugin-uploadmanager-table-header);
+    }
+
+    .select {
+      width: 10px;
+      text-align: center;
+      vertical-align: middle;
+
+      input[type="checkbox"] {
+        margin: 0;
+      }
+    }
+
+    .icon {
+      width: 16px;
+      text-align: center;
+    }
+
+    .title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .uploaded,
+    .printed {
+      width: 15%;
+      text-align: center;
+    }
+
+    .size {
+      width: 10%;
+      text-align: right;
+    }
+  }
+}
+
+#plugin_uploadmanager_contextmenu_wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+#plugin_uploadmanager_contextmenu {
+  position: absolute;
+  z-index: 5000;
+  display: block;
+}
