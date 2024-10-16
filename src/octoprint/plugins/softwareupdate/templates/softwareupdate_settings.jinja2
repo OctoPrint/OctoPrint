@@ -93,7 +93,7 @@
                     <li><a href="javascript:void(0)" data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}">{{ _('Force check for updates') }}</a></li>
                 </ul>
             </div>
-            <button class="btn" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}" aria-label="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
+            <button class="btn" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}" aria-label="{{ _('Plugin Configuration') }}"><i class="fas fa-wrench"></i></button>
         </div>
 
         <h3>{{ _('Current versions') }}</h3>
@@ -104,7 +104,7 @@
                 <tr>
                     <td class="settings_plugin_softwareupdate_column_update">
                         <a href="javascript:void(0)" data-bind="visible: compatible, click: toggleDisabled"><i class="far" data-bind="css: { muted: !updateAvailable, 'fa-bell': !disabled, 'fa-bell-slash': disabled }, attr: { title: notificationIconTitle() }"></i></a>
-                        <span data-bind="visible: !compatible" class="muted"><i class="fas fa-power-off" title="{{ _('Not compatible') }}|edq"></i></span>
+                        <span data-bind="visible: !compatible" class="muted"><i class="fas fa-power-off" title="{{ _('Not compatible') }}"></i></span>
                     </td>
                     <td class="settings_plugin_softwareupdate_column_information">
                         <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible && !$root.updateQueued($data)" class="btn btn-primary pull-right">{{ _('Update') }}</a>

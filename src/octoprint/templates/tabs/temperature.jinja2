@@ -20,11 +20,11 @@
     <table id="temperature-table" class="table table-bordered table-hover" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
         <tr>
             <th class="temperature_tool"></th>
-            <th class="temperature_actual" title="{{ _('Current actual temperature as reported by your printer')|edq }}">{{ _('Actual') }}</th>
-            <th class="temperature_target" title="{{ _('Current target temperature as reported by your printer')|edq }}">
+            <th class="temperature_actual" title="{{ _('Current actual temperature as reported by your printer') }}">{{ _('Actual') }}</th>
+            <th class="temperature_target" title="{{ _('Current target temperature as reported by your printer') }}">
                 {{ _('Target') }}
                 <div class="btn-group pull-right">
-                    <button class="btn btn-small dropdown-toggle" title="{{ _('Set temperature profile')|edq }}" aria-label="{{ _('Set temperature profile')|edq }}" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><span class="caret"></span></button>
+                    <button class="btn btn-small dropdown-toggle" title="{{ _('Set temperature profile') }}" aria-label="{{ _('Set temperature profile') }}" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><span class="caret"></span></button>
                     <ul class="dropdown-menu">
                         <li>
                             <a href="javascript:void(0)" data-bind="click: $root.setTargetsToZero">{{ _('Off') }}</a>
@@ -38,7 +38,7 @@
                     </ul>
                 </div>
             </th>
-            <th class="temperature_offset" title="{{ _('Offset to apply to temperature commands sent from files')|edq }}">{{ _('Offset') }}</th>
+            <th class="temperature_offset" title="{{ _('Offset to apply to temperature commands sent from files') }}">{{ _('Offset') }}</th>
         </tr>
         <!-- ko foreach: tools -->
         <tr data-bind="template: { name: 'temprow-template' }"></tr>
@@ -53,13 +53,13 @@
         <td class="temperature_target">
             <form class="form-inline" style="margin:0" data-bind="submit: function(element) { $root.setTarget($data, element) }">
                 <div class="input-prepend input-append">
-                    <button type="button" class="btn btn-input-dec" data-bind="click: $root.decrementTarget, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()" title="{{ _('Fine adjust: -1°C')|edq }}" aria-label="{{ _('Fine adjust: -1°C')|edq }}"><i class="fas fa-minus"></i></button>
+                    <button type="button" class="btn btn-input-dec" data-bind="click: $root.decrementTarget, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()" title="{{ _('Fine adjust: -1°C') }}" aria-label="{{ _('Fine adjust: -1°C') }}"><i class="fas fa-minus"></i></button>
                     <input type="number" min="0" max="999" class="input-mini input-nospin" style="width: 30px" data-bind="attr: {placeholder: cleanTemperature(target(), 1)}, value: newTarget, valueUpdate: 'input', enable: $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)() && $root.isOperational(), event: { focus: function(d, e) {$root.handleFocus(e, 'target', $data) } }">
                     <span class="add-on">&deg;C</span>
-                    <button type="button" class="btn btn-input-inc" data-bind="click: $root.incrementTarget, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()" title="{{ _('Fine adjust: +1°C')|edq }}" aria-label="{{ _('Fine adjust: +1°C')|edq }}"><i class="fas fa-plus"></i></button>
+                    <button type="button" class="btn btn-input-inc" data-bind="click: $root.incrementTarget, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()" title="{{ _('Fine adjust: +1°C') }}" aria-label="{{ _('Fine adjust: +1°C') }}"><i class="fas fa-plus"></i></button>
                 </div>
                 <div class="btn-group">
-                    <button type="submit" data-bind="enable: $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)() && $root.isOperational() && $data.newTargetValid()" class="btn btn-primary" title="{{ _('Set')|edq }}" aria-label="{{ _('Set')|edq }}"><i class="fas fa-check"></i></button>
+                    <button type="submit" data-bind="enable: $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)() && $root.isOperational() && $data.newTargetValid()" class="btn btn-primary" title="{{ _('Set') }}" aria-label="{{ _('Set') }}"><i class="fas fa-check"></i></button>
                     <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()">
                         <span class="caret"></span>
                     </button>
@@ -82,8 +82,8 @@
                 <div class="input-append">
                     <span class="input-mini uneditable-input text-right" style="width: 30px" data-bind="text: offset"></span>
                     <span class="add-on">&deg;C</span>
-                    <button class="btn" title="{{ _('Change Offset')|edq }}" aria-label="{{ _('Change Offset')|edq }}" data-bind="click: $root.changeOffset, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><i class="fas fa-pencil-alt"></i></button>
-                    <button class="btn" title="{{ _('Delete Offset')|edq }}" aria-label="{{ _('Delete Offset')|edq }}" data-bind="click: $root.setOffsetToZero, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><i class="far fa-trash-alt"></i></button>
+                    <button class="btn" title="{{ _('Change Offset') }}" aria-label="{{ _('Change Offset') }}" data-bind="click: $root.changeOffset, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><i class="fas fa-pencil-alt"></i></button>
+                    <button class="btn" title="{{ _('Delete Offset') }}" aria-label="{{ _('Delete Offset') }}" data-bind="click: $root.setOffsetToZero, enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><i class="far fa-trash-alt"></i></button>
                 </div>
             </form>
         </td>

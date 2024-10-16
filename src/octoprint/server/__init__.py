@@ -659,7 +659,8 @@ class Server:
         # initialize slicing manager and register it for changes in the registered plugins
         slicingManager.initialize()
         pluginLifecycleManager.add_callback(
-            ["enabled", "disabled"], lambda name, plugin: slicingManager.reload_slicers()
+            ["enabled", "disabled"],
+            lambda name, plugin: slicingManager.reload_slicers(),
         )
 
         # setup jinja2
@@ -1522,6 +1523,7 @@ class Server:
         )
 
         # we must set this here because setting app.debug will access app.jinja_env
+        app.jinja_options = {"autoescape": True}
         app.jinja_environment = PrefixAwareJinjaEnvironment
 
         app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -1938,7 +1940,7 @@ class Server:
             and plugin.template_folder_key not in app.jinja_env.prefix_loader.mapping
         ):
             loader = octoprint.util.jinja.FilteredFileSystemLoader(
-                [plugin.get_template_folder()],
+                [folder],
                 path_filter=lambda x: not octoprint.util.is_hidden_path(x),
             )
 
@@ -2395,7 +2397,8 @@ class Server:
             dynamic_plugin_assets["bundled"]["clientjs"]
         )
         clientjs_plugins = js_bundles_for_plugins(
-            dynamic_plugin_assets["external"]["clientjs"], filters="js_delimiter_bundler"
+            dynamic_plugin_assets["external"]["clientjs"],
+            filters="js_delimiter_bundler",
         )
 
         js_libs_bundle = Bundle(

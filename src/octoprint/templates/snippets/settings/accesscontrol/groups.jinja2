@@ -9,7 +9,7 @@
     </thead>
     <tbody data-bind="foreach: $root.access.groups.listHelper.paginatedItems">
     <tr>
-        <td class="settings_groups_default"><span class="fas fa-star" data-bind="invisible: !$data.default" title="{{ _('Default group')|edq }}"></span></td>
+        <td class="settings_groups_default"><span class="fas fa-star" data-bind="invisible: !$data.default" title="{{ _('Default group') }}"></span></td>
         <td class="settings_groups_name">
             <span data-bind="text: name"></span><br>
             <small class="muted" data-bind="text: description"></small>
@@ -27,7 +27,7 @@
             </table>
         </td>
         <td class="settings_groups_actions">
-            <a href="javascript:void()" class="fas fa-pencil-alt" title="{{ _('Update group')|edq }}" data-bind="enable: changeable, css: {disabled: !changeable}, click: function() { $root.access.groups.showEditGroupDialog($data); }"></a>&nbsp;|&nbsp;<a href="javascript:void()" class="far fa-trash-alt" title="{{ _('Delete group') }}" data-bind="enable: removable, css: {disabled: !removable}, click: function() { $root.access.groups.confirmRemoveGroup($data); }"></a>
+            <a href="javascript:void()" class="fas fa-pencil-alt" title="{{ _('Update group') }}" data-bind="enable: changeable, css: {disabled: !changeable}, click: function() { $root.access.groups.showEditGroupDialog($data); }"></a>&nbsp;|&nbsp;<a href="javascript:void()" class="far fa-trash-alt" title="{{ _('Delete group') }}" data-bind="enable: removable, css: {disabled: !removable}, click: function() { $root.access.groups.confirmRemoveGroup($data); }"></a>
         </td>
     </tr>
     </tbody>
@@ -44,7 +44,7 @@
     </ul>
 </div>
 
-<button title="{{ _('Add group')|edq }}" class="btn pull-right" data-bind="click: $root.access.groups.showAddGroupDialog"><i class="fas fa-plus"></i> {{ _('Add group...') }}</button>
+<button title="{{ _('Add group') }}" class="btn pull-right" data-bind="click: $root.access.groups.showAddGroupDialog"><i class="fas fa-plus"></i> {{ _('Add group...') }}</button>
 
 <!-- Modals for group management -->
 

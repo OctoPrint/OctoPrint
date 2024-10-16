@@ -43,7 +43,7 @@
             <td class="settings_plugin_appkeys_checkbox"><input type="checkbox" data-bind="value: user_id + ':' + app_id, checked: $root.markedForDeletion"></td>
             <td class="settings_plugin_appkeys_user"><span data-bind="text: user_id"></span></td>
             <td class="settings_plugin_appkeys_app"><span data-bind="text: app_id"></span></td>
-            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke')|edq }}" class="fa fa-trash-o" data-bind="click: function() { $parent.revokeKey($data) }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Details')|edq }}" class="fas fa-search" data-bind="click: function() { $parent.showKeyDetails($data) }"></a></td>
+            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke') }}" class="fa fa-trash-o" data-bind="click: function() { $parent.revokeKey($data) }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Details') }}" class="fas fa-search" data-bind="click: function() { $parent.showKeyDetails($data) }"></a></td>
         </tr>
         </tbody>
     </table>

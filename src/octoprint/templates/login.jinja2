@@ -25,8 +25,8 @@
 
     <script>
         var BASE_URL = "{{ url_for('index') }}";
-        var REDIRECT_URL = "{{ redirect_url|e }}";
-        var USER_ID = "{{ user_id|e }}";
+        var REDIRECT_URL = "{{ redirect_url }}";
+        var USER_ID = "{{ user_id }}";
     </script>
     <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
     <script src="{{ url_for("static", filename="js/lib/sockjs.min.js") }}"></script>
@@ -79,13 +79,13 @@
             {% if reauthenticate %}<p>
                 {{ _('You need to reauthenticate before you can continue. Please enter your password below.') }}
             </p>{% elif user_id %}<p>
-                {{ _('The following account is required:') }} {{ user_id|e }}
+                {{ _('The following account is required:') }} {{ user_id }}
             </p>{% elif logged_in %}<p>
                 {{ _('An account with the following permissions is required:') }} {{ permission_names|join(", ") }}
             </p>{% endif %}
 
-            <input type="text" id="login-user" data-test-id="login-username" class="input-block-level" placeholder="{{ _('Username')|edq }}" {% if user_id %}value="{{ user_id|edq }}" disabled{% endif %} autofocus autocapitalize="none">
-            <input type="password" id="login-password" data-test-id="login-password" class="input-block-level" placeholder="{{ _('Password')|edq }}">
+            <input type="text" id="login-user" data-test-id="login-username" class="input-block-level" placeholder="{{ _('Username') }}" {% if user_id %}value="{{ user_id }}" disabled{% endif %} autofocus autocapitalize="none">
+            <input type="password" id="login-password" data-test-id="login-password" class="input-block-level" placeholder="{{ _('Password') }}">
             {% if not reauthenticate %}
             <span class="pull-right"><small><a href="https://faq.octoprint.org/forgotten-password" id="login-forgotpassword" target="_blank" tabindex="-1">{{ _('Forgot password?') }}</a></small></span>
             <label class="checkbox">

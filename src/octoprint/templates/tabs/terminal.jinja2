@@ -13,8 +13,8 @@
         <span data-bind="visible: !autoscrollEnabled() && enableFancyFunctionality()" style="display: none">(<a href="javascript:void(0)" data-bind="click: scrollToEnd">{{ _("Scroll to end") }}</a>)</span>
     </small>
     <small id="terminal-actions-panel" class="pull-right">
-        <a href="javascript:void(0)" data-bind="click: copyAll"><i class="fas fa-copy terminal-copy-all" title="{{ _('Copy all')|edq }}"></i> {{ _('Copy all') }}</a><br>
-        <a href="javascript:void(0)" data-bind="click: clearAllLogs"><i class="far fa-trash-alt terminal-clear-logs" title="{{ _('Clear log window')|edq }}"></i> {{ _('Clear all') }}</a>
+        <a href="javascript:void(0)" data-bind="click: copyAll"><i class="fas fa-copy terminal-copy-all" title="{{ _('Copy all') }}"></i> {{ _('Copy all') }}</a><br>
+        <a href="javascript:void(0)" data-bind="click: clearAllLogs"><i class="far fa-trash-alt terminal-clear-logs" title="{{ _('Clear log window') }}"></i> {{ _('Clear all') }}</a>
     </small>
     <small id="terminal-limited-functionality-panel" class="pull-left text-warning" data-bind="visible: !fancyFunctionality()" style="display: none">
         {{ _('For performance reasons only a limited amount of terminal functionality is enabled right now.') }}
