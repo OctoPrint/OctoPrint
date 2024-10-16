@@ -1752,7 +1752,7 @@ class Server:
             root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
             allowed = ["AUTHORS.md", "SUPPORTERS.md", "THIRDPARTYLICENSES.md"]
             files = {"_data/" + name: os.path.join(root, name) for name in allowed}
-            loaders.append(octoprint.util.jinja.SelectedFilesWithConversionLoader(files))
+            loaders.append(octoprint.util.jinja.SelectedFilesLoader(files))
 
         # TODO: Remove this in 2.0.0
         warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will soon no longer be supported."
@@ -1943,6 +1943,13 @@ class Server:
                 [folder],
                 path_filter=lambda x: not octoprint.util.is_hidden_path(x),
             )
+            if not plugin._plugin_info.bundled and not plugin.is_template_autoescaped():
+                loader = octoprint.util.jinja.PostProcessWrapperLoader(
+                    loader,
+                    lambda source: "{% autoescape false %}"
+                    + source
+                    + "{% endautoescape %}",
+                )
 
             app.jinja_env.prefix_loader.mapping[plugin.template_folder_key] = loader
 
