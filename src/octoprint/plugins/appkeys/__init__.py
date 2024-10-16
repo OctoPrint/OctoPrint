@@ -260,7 +260,7 @@ class AppKeysPlugin(
                 theming=[],
                 request_text=gettext(
                     '"<strong>%(app)s</strong>" has requested access to control OctoPrint through the API.'
-                ).replace("%(app)s", app_id),
+                ),
             )
         )
         return add_csrf_cookie(add_non_caching_response_headers(response))
