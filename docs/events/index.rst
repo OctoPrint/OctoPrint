@@ -394,7 +394,6 @@ MetadataAnalysisFinished
 
    .. versionchanged:: 1.4.0
 
-
 MetadataStatisticsUpdated
    The metadata of a file has been updated after a print.
 
