@@ -7,148 +7,152 @@ import io
 import unittest
 from unittest import mock
 
+import pytest
+
 import octoprint.filemanager
 import octoprint.filemanager.util
 import octoprint.settings
 
 
-class FilemanagerMethodTest(unittest.TestCase):
-    def setUp(self):
-        # mock plugin manager
-        self.plugin_manager_patcher = mock.patch("octoprint.plugin.plugin_manager")
-        self.plugin_manager_getter = self.plugin_manager_patcher.start()
-
-        self.plugin_manager = mock.MagicMock()
-
-        hook_extensions = {
-            "some_plugin": lambda: {"machinecode": {"foo": ["foo", "f"]}},
-            "other_plugin": lambda: {"model": {"amf": ["amf"]}},
-            "mime_map": lambda: {
-                "mime_map": {
-                    "mime_map_yes": octoprint.filemanager.ContentTypeMapping(
-                        ["mime_map_yes"], "application/mime_map_yes"
-                    )
-                }
-            },
-            "mime_detect": lambda: {
-                "machinecode": {
-                    "mime_detect_yes": octoprint.filemanager.ContentTypeDetector(
-                        ["mime_detect_yes"], lambda x: "application/mime_detect_yes"
-                    ),
-                    "mime_detect_no": octoprint.filemanager.ContentTypeDetector(
-                        ["mime_detect_no"], lambda x: None
-                    ),
-                }
-            },
-        }
-        self.plugin_manager.get_hooks.return_value = hook_extensions
-
-        self.plugin_manager_getter.return_value = self.plugin_manager
-
-    def tearDown(self):
-        self.plugin_manager_patcher.stop()
-
-    def test_full_extension_tree(self):
-        full = octoprint.filemanager.full_extension_tree()
-        self.assertTrue("machinecode" in full)
-        self.assertTrue("gcode" in full["machinecode"])
-        self.assertTrue(
-            isinstance(
-                full["machinecode"]["gcode"], octoprint.filemanager.ContentTypeMapping
-            )
-        )
-        self.assertSetEqual(
-            {"gcode", "gco", "g"}, set(full["machinecode"]["gcode"].extensions)
-        )
-        self.assertTrue("foo" in full["machinecode"])
-        self.assertTrue(isinstance(full["machinecode"]["foo"], list))
-        self.assertSetEqual({"f", "foo"}, set(full["machinecode"]["foo"]))
-
-        self.assertTrue("model" in full)
-        self.assertTrue("amf" in full["model"])
-        self.assertTrue(isinstance(full["model"]["amf"], list))
-        self.assertSetEqual({"amf"}, set(full["model"]["amf"]))
-
-    def test_get_mimetype(self):
-        self.assertEqual(octoprint.filemanager.get_mime_type("foo.gcode"), "text/plain")
-        self.assertEqual(
-            octoprint.filemanager.get_mime_type("foo.unknown"), "application/octet-stream"
-        )
-        self.assertEqual(
-            octoprint.filemanager.get_mime_type("foo.mime_map_yes"),
-            "application/mime_map_yes",
-        )
-        self.assertEqual(
-            octoprint.filemanager.get_mime_type("foo.mime_map_no"),
-            "application/octet-stream",
-        )
-        self.assertEqual(
-            octoprint.filemanager.get_mime_type("foo.mime_detect_yes"),
-            "application/mime_detect_yes",
-        )
-        self.assertEqual(
-            octoprint.filemanager.get_mime_type("foo.mime_detect_no"),
-            "application/octet-stream",
-        )
-
-    def test_valid_file_type(self):
-        self.assertTrue(octoprint.filemanager.valid_file_type("foo.amf", type="model"))
-        self.assertTrue(octoprint.filemanager.valid_file_type("foo.amf", type="amf"))
-        self.assertFalse(
-            octoprint.filemanager.valid_file_type("foo.stl", type="machinecode")
-        )
-        self.assertTrue(
-            octoprint.filemanager.valid_file_type("foo.foo", type="machinecode")
-        )
-        self.assertTrue(octoprint.filemanager.valid_file_type("foo.foo", type="foo"))
-        self.assertTrue(octoprint.filemanager.valid_file_type("foo.foo"))
-        self.assertTrue(octoprint.filemanager.valid_file_type("foo.mime_map_yes"))
-        self.assertTrue(octoprint.filemanager.valid_file_type("foo.mime_detect_yes"))
-        self.assertFalse(octoprint.filemanager.valid_file_type("foo.unknown"))
-
-        extension_tree = {
-            "machinecode": {
-                "gcode": octoprint.filemanager.ContentTypeMapping(
-                    ["gcode", "gco", "g"], "text/plain"
-                ),
-                "foo": ["foo", "f"],
+@pytest.fixture
+def mocked_plugin_manager():
+    plugin_manager_patcher = mock.patch("octoprint.plugin.plugin_manager")
+    plugin_manager_getter = plugin_manager_patcher.start()
+    plugin_manager = mock.MagicMock()
+    hook_extensions = {
+        "some_plugin": lambda: {"machinecode": {"foo": ["foo", "f"]}},
+        "other_plugin": lambda: {"model": {"amf": ["amf"]}},
+        "mime_map": lambda: {
+            "mime_map": {
+                "mime_map_yes": octoprint.filemanager.ContentTypeMapping(
+                    ["mime_map_yes"], "application/mime_map_yes"
+                )
             }
+        },
+        "mime_detect": lambda: {
+            "machinecode": {
+                "mime_detect_yes": octoprint.filemanager.ContentTypeDetector(
+                    ["mime_detect_yes"], lambda x: "application/mime_detect_yes"
+                ),
+                "mime_detect_no": octoprint.filemanager.ContentTypeDetector(
+                    ["mime_detect_no"], lambda x: None
+                ),
+            }
+        },
+    }
+    plugin_manager.get_hooks.return_value = hook_extensions
+    plugin_manager_getter.return_value = plugin_manager
+
+    yield plugin_manager
+
+    plugin_manager_patcher.stop()
+
+
+def test_full_extension_tree(mocked_plugin_manager):
+    full = octoprint.filemanager.full_extension_tree()
+
+    assert "machinecode" in full
+    assert "gcode" in full["machinecode"]
+    assert isinstance(
+        full["machinecode"]["gcode"], octoprint.filemanager.ContentTypeMapping
+    )
+    assert {"gcode", "gco", "g", "gc~"} == set(full["machinecode"]["gcode"].extensions)
+
+    assert "foo" in full["machinecode"]
+    assert isinstance(full["machinecode"]["foo"], list)
+    assert {"f", "foo"} == set(full["machinecode"]["foo"])
+
+    assert "model" in full
+    assert "amf" in full["model"]
+    assert isinstance(full["model"]["amf"], list)
+    assert {"amf"} == set(full["model"]["amf"])
+
+
+@pytest.mark.parametrize(
+    "filename,expected",
+    [
+        ("foo.gcode", "text/plain"),
+        ("foo.unknown", "application/octet-stream"),
+        ("foo.mime_map_yes", "application/mime_map_yes"),
+        ("foo.mime_map_no", "application/octet-stream"),
+        ("foo.mime_detect_yes", "application/mime_detect_yes"),
+        ("foo.mime_detect_no", "application/octet-stream"),
+    ],
+)
+def test_get_mimetype(mocked_plugin_manager, filename, expected):
+    assert octoprint.filemanager.get_mime_type(filename) == expected
+
+
+@pytest.mark.parametrize(
+    "filename, expected",
+    [
+        ("foo.foo", True),
+        ("foo.mime_map_yes", True),
+        ("foo.mime_detect_yes", True),
+        ("foo.unknown", False),
+    ],
+)
+def test_valid_file_type(mocked_plugin_manager, filename, expected):
+    assert octoprint.filemanager.valid_file_type(filename) == expected
+
+
+@pytest.mark.parametrize(
+    "filename, type, expected",
+    [
+        ("foo.amf", "model", True),
+        ("foo.amf", "amf", True),
+        ("foo.stl", "machinecode", False),
+        ("foo.foo", "machinecode", True),
+        ("foo.foo", "foo", True),
+    ],
+)
+def test_valid_file_type_with_type(mocked_plugin_manager, filename, type, expected):
+    assert octoprint.filemanager.valid_file_type(filename, type=type) == expected
+
+
+@pytest.mark.parametrize("filename, expected", [("foo.foo", True), ("foo.amf", False)])
+def test_valid_file_type_with_extension_tree(mocked_plugin_manager, filename, expected):
+    tree = {
+        "machinecode": {
+            "gcode": octoprint.filemanager.ContentTypeMapping(
+                ["gcode", "gco", "g"], "text/plain"
+            ),
+            "foo": ["foo", "f"],
         }
+    }
 
-        # With cached extension tree
-        self.assertTrue(
-            octoprint.filemanager.valid_file_type("foo.foo", tree=extension_tree)
-        )
-        self.assertFalse(
-            octoprint.filemanager.valid_file_type("foo.amf", tree=extension_tree)
-        )
+    assert octoprint.filemanager.valid_file_type(filename, tree=tree) == expected
 
-    def test_get_file_type(self):
-        self.assertEqual(
-            ["machinecode", "gcode"], octoprint.filemanager.get_file_type("foo.gcode")
-        )
-        self.assertEqual(
-            ["machinecode", "gcode"], octoprint.filemanager.get_file_type("foo.gco")
-        )
-        self.assertEqual(
-            ["machinecode", "foo"], octoprint.filemanager.get_file_type("foo.f")
-        )
-        self.assertEqual(["model", "amf"], octoprint.filemanager.get_file_type("foo.amf"))
-        self.assertIsNone(octoprint.filemanager.get_file_type("foo.unknown"))
 
-    def test_hook_failure(self):
-        def hook():
-            raise RuntimeError("Boo!")
+@pytest.mark.parametrize(
+    "filename, expected",
+    [
+        ("foo.gcode", ["machinecode", "gcode"]),
+        ("foo.gco", ["machinecode", "gcode"]),
+        ("foo.g", ["machinecode", "gcode"]),
+        ("foo.gc~", ["machinecode", "gcode"]),
+        ("foo.f", ["machinecode", "foo"]),
+        ("foo.amf", ["model", "amf"]),
+        ("foo.unknown", None),
+    ],
+)
+def test_get_file_type(mocked_plugin_manager, filename, expected):
+    assert octoprint.filemanager.get_file_type(filename) == expected
 
-        self.plugin_manager.get_hooks.return_value = {"hook": hook}
 
-        with mock.patch("octoprint.filemanager.logging") as patched_logging:
-            logger = mock.MagicMock()
-            patched_logging.getLogger.return_value = logger
+def test_hook_failure(mocked_plugin_manager):
+    def hook():
+        raise RuntimeError("Boo!")
 
-            octoprint.filemanager.get_all_extensions()
+    mocked_plugin_manager.get_hooks.return_value = {"hook": hook}
 
-            self.assertEqual(1, len(logger.mock_calls))
+    with mock.patch("octoprint.filemanager.logging") as patched_logging:
+        logger = mock.MagicMock()
+        patched_logging.getLogger.return_value = logger
+
+        octoprint.filemanager.get_all_extensions()
+
+        assert len(logger.mock_calls) == 1
 
 
 class FileManagerTest(unittest.TestCase):
