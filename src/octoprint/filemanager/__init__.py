@@ -27,7 +27,9 @@ extensions = {}
 
 def full_extension_tree():
     result = {
-        "machinecode": {"gcode": ContentTypeMapping(["gcode", "gco", "g"], "text/plain")}
+        "machinecode": {
+            "gcode": ContentTypeMapping(["gcode", "gco", "g", "gc~"], "text/plain")
+        }
     }
 
     def leaf_merger(a, b):
