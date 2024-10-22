@@ -1340,15 +1340,33 @@ $(function () {
             if (query !== undefined && query.trim() !== "") {
                 query = query.toLocaleLowerCase();
 
-                var recursiveSearch = function (entry) {
+                let user = null;
+
+                const parts = query.split(" ");
+                // first or last part is a user: filter, apply it and adjust the query
+                if (parts[0].startsWith("user:")) {
+                    // first part is a user: filter
+                    user = parts[0].substring("user:".length);
+                    query = query.substring(parts[0].length).trim();
+                }
+                if (parts.length > 1 && parts[parts.length - 1].startsWith("user:")) {
+                    // last part is a user: filter
+                    user = parts[parts.length - 1].substring("user:".length);
+                    query = query
+                        .substring(0, query.length - parts[parts.length - 1].length - 1)
+                        .trim();
+                }
+
+                const recursiveSearch = (entry) => {
                     if (entry === undefined) {
                         return false;
                     }
 
-                    var success =
-                        (entry["display"] &&
+                    const success =
+                        (user === null || entry["user"] === user) &&
+                        ((entry["display"] &&
                             entry["display"].toLocaleLowerCase().indexOf(query) > -1) ||
-                        entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+                            entry["name"].toLocaleLowerCase().indexOf(query) > -1);
                     if (!success && entry["type"] === "folder" && entry["children"]) {
                         return _.any(entry["children"], recursiveSearch);
                     }
