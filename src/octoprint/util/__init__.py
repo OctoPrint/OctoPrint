@@ -1696,9 +1696,9 @@ def time_this(
 
 
 def generate_api_key():
-    import uuid
+    import secrets
 
-    return "".join("%02X" % z for z in bytes(uuid.uuid4().bytes))
+    return secrets.token_urlsafe()
 
 
 def map_boolean(value, true_text, false_text):

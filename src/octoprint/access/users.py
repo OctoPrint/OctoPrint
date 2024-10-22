@@ -4,9 +4,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import hashlib
 import logging
 import os
+import secrets
 import shutil
 import time
-import uuid
 
 import wrapt
 from flask_login import AnonymousUserMixin, UserMixin
@@ -1456,7 +1456,7 @@ class SessionUser(wrapt.ObjectProxy):
     def __init__(self, user):
         wrapt.ObjectProxy.__init__(self, user)
 
-        self._self_session = "".join("%02X" % z for z in bytes(uuid.uuid4().bytes))
+        self._self_session = secrets.token_hex()
         self._self_created = self._self_touched = time.monotonic()
 
     @property

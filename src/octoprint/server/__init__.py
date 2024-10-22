@@ -1502,11 +1502,9 @@ class Server:
 
         secret_key = s.get(["server", "secretKey"])
         if not secret_key:
-            import string
-            from random import choice
+            import secrets
 
-            chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
-            secret_key = "".join(choice(chars) for _ in range(32))
+            secret_key = secrets.token_hex()
             s.set(["server", "secretKey"], secret_key)
             s.save()
 
