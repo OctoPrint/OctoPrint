@@ -401,7 +401,7 @@ MetadataStatisticsUpdated
 
      * ``storage``: the storage's identifier
      * ``path``: the file's path within its storage location
-   
+
    .. versionchanged:: 1.10.0
 
 FileSelected
