@@ -394,6 +394,16 @@ MetadataAnalysisFinished
 
    .. versionchanged:: 1.4.0
 
+MetadataStatisticsUpdated
+   The metadata of a file has been updated after a print.
+
+   Payload:
+
+     * ``storage``: the storage's identifier
+     * ``path``: the file's path within its storage location
+
+   .. versionchanged:: 1.10.0
+
 FileSelected
    A file has been selected for printing.
 
