@@ -298,6 +298,10 @@ File information
      - list
      - Path to type of file in extension tree. E.g. ``["model", "stl"]`` for ``.stl`` files, or ``["machinecode", "gcode"]``
        for ``.gcode`` files. ``["folder"]`` for folders.
+   * - ``user``
+     - 0..1
+     - String
+     - User who uploaded the file/created the folder, if this information is available.
 
 Additional properties depend on ``type``.
 For a ``type`` value of ``folder``, see :ref:`Folders <sec-api-datamodel-files-folders>`.

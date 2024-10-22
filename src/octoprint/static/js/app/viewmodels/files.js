@@ -1075,6 +1075,9 @@ $(function () {
 
         self.getAdditionalData = function (data) {
             var output = "";
+            if (data["user"]) {
+                output += gettext("Uploaded by") + ": " + data["user"] + "<br>";
+            }
             if (data["gcodeAnalysis"]) {
                 if (
                     data["gcodeAnalysis"]["_empty"] ||
