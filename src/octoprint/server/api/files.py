@@ -538,6 +538,9 @@ def uploadGcodeFile(target):
     input_upload_path = (
         input_name + "." + settings().get(["server", "uploads", "pathSuffix"])
     )
+
+    user = current_user.get_name()
+
     if input_upload_name in request.values and input_upload_path in request.values:
         if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
             abort(404)
@@ -644,8 +647,6 @@ def uploadGcodeFile(target):
 
         reselect = printer.is_current_file(futureFullPathInStorage, sd)
 
-        user = current_user.get_name()
-
         def fileProcessingFinished(filename, absFilename, destination):
             """
             Callback for when the file processing (upload, optional slicing, addition to analysis queue) has
@@ -694,6 +695,7 @@ def uploadGcodeFile(target):
                 upload,
                 allow_overwrite=True,
                 display=canonFilename,
+                user=user,
             )
         except (OSError, StorageError) as e:
             _abortWithException(e)
@@ -806,7 +808,10 @@ def uploadGcodeFile(target):
 
         try:
             added_folder = fileManager.add_folder(
-                target, futureFullPath, display=canonName
+                target,
+                futureFullPath,
+                display=canonName,
+                user=user,
             )
         except (OSError, StorageError) as e:
             _abortWithException(e)
@@ -1159,7 +1164,8 @@ def gcodeFileCommand(filename, target):
                 raise
             except Exception:
                 abort(
-                    409, description="Exception thrown by storage, bad folder/file name?"
+                    409,
+                    description="Exception thrown by storage, bad folder/file name?",
                 )
 
             is_file = fileManager.file_exists(target, filename)

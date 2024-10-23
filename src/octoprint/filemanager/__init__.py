@@ -695,6 +695,7 @@ class FileManager:
         printer_profile=None,
         analysis=None,
         display=None,
+        user=None,
     ):
         if printer_profile is None:
             printer_profile = self._printer_profile_manager.get_current_or_default()
@@ -733,6 +734,7 @@ class FileManager:
             printer_profile=printer_profile,
             allow_overwrite=allow_overwrite,
             display=display,
+            user=user,
         )
 
         queue_entry = self._analysis_queue_entry(
@@ -849,9 +851,9 @@ class FileManager:
 
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
-    def add_folder(self, location, path, ignore_existing=True, display=None):
+    def add_folder(self, location, path, ignore_existing=True, display=None, user=None):
         path_in_storage = self._storage(location).add_folder(
-            path, ignore_existing=ignore_existing, display=display
+            path, ignore_existing=ignore_existing, display=display, user=user
         )
 
         _, name = self._storage(location).split_path(path_in_storage)
