@@ -235,6 +235,7 @@ class FileManagerTest(unittest.TestCase):
             allow_overwrite=False,
             links=None,
             display=None,
+            user=None,
         )
 
         expected_events = [
@@ -277,6 +278,36 @@ class FileManagerTest(unittest.TestCase):
             allow_overwrite=False,
             links=None,
             display="täst.gcode",
+            user=None,
+        )
+
+    def test_add_file_user(self):
+        wrapper = object()
+
+        test_profile = {"id": "_default", "name": "My Default Profile"}
+        self.printer_profile_manager.get_current_or_default.return_value = test_profile
+
+        self.local_storage.add_file.return_value = ("", "test.gcode")
+        self.local_storage.path_in_storage.return_value = "test.gcode"
+        self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
+        self.local_storage.split_path.return_value = ("", "test.gcode")
+
+        file_path = self.file_manager.add_file(
+            octoprint.filemanager.FileDestinations.LOCAL,
+            "test.gcode",
+            wrapper,
+            user="user",
+        )
+
+        self.assertEqual(("", "test.gcode"), file_path)
+        self.local_storage.add_file.assert_called_once_with(
+            "test.gcode",
+            wrapper,
+            printer_profile=test_profile,
+            allow_overwrite=False,
+            links=None,
+            display=None,
+            user="user",
         )
 
     def test_remove_file(self):
@@ -314,7 +345,7 @@ class FileManagerTest(unittest.TestCase):
 
         self.assertEqual(("", "test_folder"), folder_path)
         self.local_storage.add_folder.assert_called_once_with(
-            "test_folder", ignore_existing=True, display=None
+            "test_folder", ignore_existing=True, display=None, user=None
         )
 
         expected_events = [
@@ -341,7 +372,7 @@ class FileManagerTest(unittest.TestCase):
             )
             self.fail("Expected an exception to occur!")
         self.local_storage.add_folder.assert_called_once_with(
-            "test_folder", ignore_existing=False, display=None
+            "test_folder", ignore_existing=False, display=None, user=None
         )
 
     def test_add_folder_display(self):
@@ -355,7 +386,19 @@ class FileManagerTest(unittest.TestCase):
             )
             self.fail("Expected an exception to occur!")
         self.local_storage.add_folder.assert_called_once_with(
-            "test_folder", ignore_existing=True, display="täst_folder"
+            "test_folder", ignore_existing=True, display="täst_folder", user=None
+        )
+
+    def test_add_folder_user(self):
+        self.local_storage.add_folder.side_effect = RuntimeError("already there")
+
+        with self.assertRaises(RuntimeError, msg="already there"):
+            self.file_manager.add_folder(
+                octoprint.filemanager.FileDestinations.LOCAL, "test_folder", user="user"
+            )
+            self.fail("Expected an exception to occur!")
+        self.local_storage.add_folder.assert_called_once_with(
+            "test_folder", ignore_existing=True, display=None, user="user"
         )
 
     def test_remove_folder(self):
@@ -615,6 +658,7 @@ class FileManagerTest(unittest.TestCase):
             links=None,
             allow_overwrite=False,
             display=None,
+            user=None,
         ):
             file_obj.save("prefix/" + path)
             return path
@@ -705,6 +749,7 @@ class FileManagerTest(unittest.TestCase):
             allow_overwrite=True,
             links=expected_links,
             display=None,
+            user=None,
         )
 
         # assert that the generated gcode was manipulated as required
