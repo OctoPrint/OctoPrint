@@ -75,7 +75,7 @@ $(function () {
             );
         });
 
-        self.fileobject = ko.observable(undefined);
+        self.filedata = ko.observable(undefined);
         self.filename = ko.observable(undefined);
         self.filepath = ko.observable(undefined);
         self.filedisplay = ko.observable(undefined);
@@ -321,7 +321,6 @@ $(function () {
 
         self._processJobData = function (data) {
             if (data.file) {
-                self.fileobject(data.file);
                 self.filename(data.file.name);
                 self.filepath(data.file.path);
                 self.filesize(data.file.size);
@@ -329,7 +328,6 @@ $(function () {
                 self.filedate(data.file.date);
                 self.sd(data.file.origin === "sdcard");
             } else {
-                self.fileobject(undefined);
                 self.filename(undefined);
                 self.filepath(undefined);
                 self.filesize(undefined);
@@ -452,8 +450,7 @@ $(function () {
                         "onBeforePrintStart",
                         function (method) {
                             prevented =
-                                prevented ||
-                                method(callback, self.fileobject()) === false;
+                                prevented || method(callback, self.filedata()) === false;
                         }
                     );
 
