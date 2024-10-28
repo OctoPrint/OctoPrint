@@ -431,7 +431,7 @@ $(function () {
             if (self.isPaused()) {
                 showConfirmationDialog({
                     message: gettext(
-                        "This will restart the print job from the beginning."
+                        "This will restart the print job from the beginning. Please ensure that the print bed is clear."
                     ),
                     onproceed: function () {
                         OctoPrint.job.restart();
@@ -462,7 +462,7 @@ $(function () {
                 } else {
                     showConfirmationDialog({
                         message: gettext(
-                            "This will start a new print job. Please check that the print bed is clear."
+                            "This will start a new print job. Please ensure that the print bed is clear."
                         ),
                         question: gettext("Do you want to start the print job now?"),
                         cancel: gettext("No"),
