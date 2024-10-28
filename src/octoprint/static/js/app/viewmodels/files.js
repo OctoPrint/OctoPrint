@@ -724,7 +724,7 @@ $(function () {
                         self.allViewModels,
                         "onBeforePrintStart",
                         function (method) {
-                            prevented = prevented || method(callback) === false;
+                            prevented = prevented || method(callback, data) === false;
                         }
                     );
                     if (!prevented) callback();

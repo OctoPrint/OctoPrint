@@ -225,11 +225,12 @@ onUserPermissionsChanged(user)
    will be provided as only parameter. Note that this may also be triggered for not logged in guests if the guest
    group is modified. In this case ``user`` will be undefined.
 
-onBeforePrintStart(callback)
+onBeforePrintStart(callback, data)
    Called before a print is started either by clicking the "Print" button in the state panel or the select & print icon
-   in the file list. The callback to actually proceed with starting the print is provided as the only parameter. By returning
+   in the file list. The callback to proceed with starting the print is provided as first parameter. By returning
    ``false`` from this, plugins may prevent a print from actually starting, optionally starting it at a later date by
-   calling ``callback`` themselves. This can be used for example to implement an additional confirmation dialog.
+   calling ``callback`` themselves. This can be used for example to implement an additional confirmation dialog. The
+   second parameter is a file data object that includes details such as name, path, and origin.
 
 onTabChange(next, current)
    Called before the main tab view switches to a new tab, so `before` the new tab becomes visible. Called with the
