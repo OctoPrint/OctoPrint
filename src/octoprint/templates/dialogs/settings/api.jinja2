@@ -38,7 +38,7 @@
                 <button class="btn" data-bind="click: revealApiKey, enabled: !revealingApiKey(), css: {disabled: revealingApiKey}"><i class="fas fa-spinner fa-spin" data-bind="visible: revealingApiKey"></i> {{ _('Reveal API Key') }}</button>
             </div>
         </div>
-        <div class="control-group" data-bind="visible: api_key">
+        <div class="control-group" data-bind="visible: api_key() && apiKeyVisible()">
             <label class="control-label">{{ _('QR Code') }}</label>
             <div class="controls">
                 <div data-bind="qrcode: {text: api_key, size: 180}"></div>

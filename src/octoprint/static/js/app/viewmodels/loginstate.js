@@ -21,7 +21,35 @@ $(function () {
 
         self.currentUser = ko.observable(undefined);
         self.currentLoginMechanism = ko.observable(undefined);
+
         self.credentialsSeen = ko.observable(undefined);
+        self.credentialsSeenTimeout = undefined;
+        self.credentialsSeen.subscribe(() => {
+            const credentialsSeen = self.credentialsSeen();
+            if (credentialsSeen === undefined) {
+                return;
+            }
+
+            if (CONFIG_REAUTHENTICATION_TIMEOUT <= 0) return;
+
+            if (self.credentialsSeenTimeout)
+                window.clearTimeout(self.credentialsSeenTimeout);
+
+            const now = new Date();
+            const seen = new Date(credentialsSeen);
+            const timeout =
+                seen.getTime() +
+                (CONFIG_REAUTHENTICATION_TIMEOUT * 60 + 10) * 1000 -
+                now.getTime();
+
+            if (timeout > 0) {
+                callViewModels(self.allViewModels, "onUserCredentialsRefreshed");
+                window.setTimeout(() => {
+                    callViewModels(self.allViewModels, "onUserCredentialsOutdated");
+                    self.credentialsSeenTimeout = undefined;
+                }, timeout);
+            }
+        });
 
         self.elementUsernameInput = undefined;
         self.elementPasswordInput = undefined;
