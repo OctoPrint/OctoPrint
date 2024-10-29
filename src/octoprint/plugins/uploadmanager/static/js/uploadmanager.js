@@ -442,14 +442,13 @@ $(function () {
 
             return files[0].type == "model" && self.files.enableSlicing(files[0]);
         };
-        self.enableSelect = (printAfterSelect) => {
+        self.enableLoad = (printAfterLoad) => {
             const files = self.selectedFiles();
             if (files.length !== 1) return false;
 
-            return (
-                files[0].type == "machinecode" &&
-                self.files.enableSelect(files[0], printAfterSelect)
-            );
+            return files[0].type == "machinecode" && printAfterLoad
+                ? self.files.enableSelectAndPrint(files[0], printAfterLoad)
+                : self.files.enableSelect(files[0]);
         };
         self.enableRename = () => {
             return (
@@ -531,11 +530,11 @@ $(function () {
             self.files.sliceFile(self.selectedFiles()[0]);
         };
 
-        self.loadFile = (printAfterSelect) => {
-            if (!self.enableSelect(printAfterSelect)) return;
+        self.loadFile = (printAfterLoad) => {
+            if (!self.enableLoad(printAfterLoad)) return;
 
             const file = self.selectedFiles()[0];
-            OctoPrint.files.select(file.origin, file.path, printAfterSelect);
+            self.files.loadFile(file, printAfterLoad);
         };
 
         self.showAddFolderDialog = () => {

@@ -705,7 +705,7 @@ $(function () {
             }
         };
 
-        self.loadFile = function (data, printAfterLoad) {
+        self.loadFile = (data, printAfterLoad) => {
             if (!self.loginState.hasPermission(self.access.permissions.FILES_SELECT))
                 return;
 
@@ -713,45 +713,46 @@ $(function () {
                 return;
             }
 
-            var proceed = function (p) {
-                var prevented = false;
-                var callback = function () {
-                    OctoPrint.files.select(data.origin, data.path, p);
+            const proceed = (print) => {
+                const callback = () => {
+                    OctoPrint.files.select(data.origin, data.path, print);
                 };
 
-                if (p) {
+                if (print) {
+                    let prevented = false;
                     callViewModels(
                         self.allViewModels,
                         "onBeforePrintStart",
                         function (method) {
-                            prevented = prevented || method(callback) === false;
+                            prevented = prevented || method(callback, data) === false;
                         }
                     );
-                }
-
-                if (!prevented) {
+                    if (!prevented) callback();
+                } else {
                     callback();
                 }
             };
 
             if (
                 printAfterLoad &&
-                self.listHelper.isSelectedByMatcher(function (item) {
-                    return item && item.origin === data.origin && item.path === data.path;
-                }) &&
+                self.listHelper.isSelectedByMatcher(
+                    (item) =>
+                        item && item.origin === data.origin && item.path === data.path
+                ) &&
                 self.enablePrint(data)
             ) {
                 // file was already selected, just start the print job
+                // self.printerState.print will take care of confirmation, onBeforePrintStart, etc.
                 self.printerState.print();
             } else {
                 // select file, start print job (if requested and within dimensions)
-                var withinPrintDimensions = self.evaluatePrintDimensions(data, true);
-                var print = printAfterLoad && withinPrintDimensions;
+                const withinPrintDimensions = self.evaluatePrintDimensions(data, true);
+                const print = printAfterLoad && withinPrintDimensions;
 
                 if (print && self.settingsViewModel.feature_printStartConfirmation()) {
                     showConfirmationDialog({
                         message: gettext(
-                            "This will start a new print job. Please check that the print bed is clear."
+                            "This will start a new print job. Please ensure that the print bed is clear."
                         ),
                         question: gettext("Do you want to start the print job now?"),
                         cancel: gettext("No"),
