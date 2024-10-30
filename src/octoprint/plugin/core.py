@@ -1112,7 +1112,9 @@ class PluginManager:
 
         for group in groups:
             for dist in meta.distributions():
-                for entry_point in wrapped(dist.entry_points.select(group=group)):
+                for entry_point in wrapped(
+                    [ep for ep in dist.entry_points if ep.group == group]
+                ):
                     try:
                         key = entry_point.name
                         module_name = entry_point.value
