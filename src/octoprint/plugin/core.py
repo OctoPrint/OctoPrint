@@ -28,6 +28,7 @@ import importlib.util
 import inspect
 import logging
 import os
+import string
 import sys
 from collections import OrderedDict, defaultdict, namedtuple
 from os import scandir
@@ -1098,27 +1099,22 @@ class PluginManager:
         if not isinstance(groups, (list, tuple)):
             groups = [groups]
 
-        def wrapped(gen):
-            # to protect against some issues in installed packages that make iteration over entry points
-            # fall on its face - e.g. https://groups.google.com/forum/#!msg/octoprint/DyXdqhR0U7c/kKMUsMmIBgAJ
-            for entry in gen:
+        for group in groups:
+            for dist in meta.distributions():
                 try:
-                    yield entry
+                    # to protect against some issues in installed packages that make iteration over entry points
+                    # fall on its face - e.g. https://groups.google.com/forum/#!msg/octoprint/DyXdqhR0U7c/kKMUsMmIBgAJ
+                    entry_points = [ep for ep in dist.entry_points if ep.group == group]
                 except Exception:
                     self.logger.exception(
                         "Something went wrong while processing the entry points of a package in the "
                         "Python environment - broken entry_points.txt in some package?"
                     )
 
-        for group in groups:
-            for dist in meta.distributions():
-                for entry_point in wrapped(
-                    [ep for ep in dist.entry_points if ep.group == group]
-                ):
+                for entry_point in entry_points:
                     try:
                         key = entry_point.name
                         module_name = entry_point.value
-                        version = dist.version
 
                         found.append(key)
                         if (
@@ -1132,24 +1128,42 @@ class PluginManager:
                             # plugin is already defined or marked as uninstalled, ignore it
                             continue
 
-                        bundled = key in self.plugin_considered_bundled
+                        # See https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata
+                        # or PEP 566 for available metadata fields
+                        metadata = dist.metadata
+                        if (
+                            not metadata
+                            or "Name" not in metadata
+                            or "Version" not in metadata
+                        ):
+                            continue
+
+                        package_name = dist.metadata["Name"]
+                        version = dist.metadata["Version"]
+
                         kwargs = {
+                            "name": package_name,
                             "module_name": module_name,
                             "version": version,
-                            "bundled": bundled,
+                            "bundled": key in self.plugin_considered_bundled,
+                            "summary": metadata.get("Summary"),
+                            "author": metadata.get("Author"),
                         }
-                        package_name = dist.name
 
-                        if dist.metadata and dist.metadata.json:
-                            kwargs.update(
-                                {
-                                    "name": dist.metadata.json.get("name"),
-                                    "summary": dist.metadata.json.get("summary"),
-                                    "author": dist.metadata.json.get("author"),
-                                    "url": dist.metadata.json.get("home_page"),
-                                    "license": dist.metadata.json.get("license"),
-                                }
-                            )
+                        if "License-Expression" in metadata:
+                            kwargs["license"] = metadata["License-Expression"]
+                        elif "License" in metadata:
+                            kwargs["license"] = metadata["License"]
+
+                        if "Home-page" in metadata:
+                            kwargs["url"] = metadata["Home-page"]
+                        elif "Project-URL" in metadata:
+                            for entry in metadata.get_all("Project-URL"):
+                                label, url = map(str.strip, entry.split(",", 1))
+                                label = normalize_project_url_label(label)
+                                if label == "homepage":
+                                    kwargs["url"] = url
+                                    break
 
                         plugin = self._import_plugin_from_module(key, **kwargs)
                         if plugin:
@@ -1175,7 +1189,7 @@ class PluginManager:
                             )
 
                             added[key] = plugin
-                    except Exception:
+                    except Exception as _:
                         self.logger.exception(
                             "Error processing entry point {!r} for group {}".format(
                                 entry_point, group
@@ -2325,6 +2339,13 @@ def is_editable_install(install_dir, package, module, location):
             raise  # TODO really ignore this?
             pass
     return False
+
+
+def normalize_project_url_label(label: str) -> str:
+    # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#label-normalization
+    chars_to_remove = string.puctuation + string.whitespace
+    removal_map = str.maketrans("", "", chars_to_remove)
+    return label.translate(removal_map).lower()
 
 
 class Plugin:
