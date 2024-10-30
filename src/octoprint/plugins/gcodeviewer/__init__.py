@@ -7,6 +7,8 @@ import flask
 from flask_babel import gettext
 
 import octoprint.plugin
+from octoprint.access.permissions import Permissions
+from octoprint.server.util.flask import no_firstrun_access
 from octoprint.util.files import search_through_file
 
 
@@ -79,6 +81,8 @@ class GcodeviewerPlugin(
     @octoprint.plugin.BlueprintPlugin.route(
         "/skipuntilcheck/<string:origin>/<path:filename>", methods=["GET"]
     )
+    @no_firstrun_access
+    @Permissions.FILES_DOWNLOAD.require(403)
     def check_skip_until_presence(self, origin, filename):
         try:
             path = self._file_manager.path_on_disk(origin, filename)
