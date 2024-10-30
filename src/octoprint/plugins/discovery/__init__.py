@@ -100,17 +100,13 @@ class DiscoveryPlugin(
     def discovery(self):
         self._logger.debug("Rendering discovery.xml")
 
-        modelName = self._settings.get(["model", "name"])
-        if not modelName:
-            import octoprint.server
-
-            modelName = octoprint.server.DISPLAY_VERSION
-
         vendor = self._settings.get(["model", "vendor"])
-        vendorUrl = self._settings.get(["model", "vendorUrl"])
         if not vendor:
             vendor = "The OctoPrint Project"
-            vendorUrl = "http://www.octoprint.org/"
+
+        vendorUrl = self._settings.get(["model", "vendorUrl"])
+        if not vendorUrl:
+            vendorUrl = "https://octoprint.org/"
 
         response = flask.make_response(
             flask.render_template(
@@ -118,7 +114,7 @@ class DiscoveryPlugin(
                 friendlyName=self.get_instance_name(),
                 manufacturer=vendor,
                 manufacturerUrl=vendorUrl,
-                modelName=modelName,
+                modelName=self._settings.get(["model", "name"]),
                 modelDescription=self._settings.get(["model", "description"]),
                 modelNumber=self._settings.get(["model", "number"]),
                 modelUrl=self._settings.get(["model", "url"]),
@@ -544,6 +540,9 @@ class DiscoveryPlugin(
 
         entries = self._create_http_txt_record_dict()
         entries.update(
+            # This *should* be staying in the local network and thus not leak this info outside. If the
+            # network is configured differently, we can consider this either a mistake, or an
+            # explicit decision.
             version=octoprint.server.VERSION,
             api=octoprint.server.api.VERSION,
             uuid=self.get_uuid(),

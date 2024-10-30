@@ -7,13 +7,13 @@
     <device>
         <deviceType>urn:schemas-upnp-org:device:Basic:1</deviceType>
         <friendlyName>{{ friendlyName }}</friendlyName>
-        <manufacturer>{{ manufacturer }}</manufacturer>
-        {% if manufacturerUrl %}<manufacturerURL>{{ manufacturerUrl }}</manufacturerURL>{% endif %}
-        <modelName>{{ modelName }}</modelName>
-        {% if modelDescription %}<modelDescription>{{ modelDescription }}</modelDescription>{% endif %}
-        {% if modelNumber %}<modelNumber>{{ modelNumber }}</modelNumber>{% endif %}
-        {% if modelUrl %}<modelURL>{{ modelUrl }}</modelURL>{% endif %}
-        {% if serialNumber %}<serialNumber>{{ serialNumber }}</serialNumber>{% endif %}
+        <manufacturer>{{ manufacturer }}</manufacturer>{% if manufacturerUrl %}
+        <manufacturerURL>{{ manufacturerUrl }}</manufacturerURL>{% endif %}{% if modelName %}
+        <modelName>{{ modelName }}</modelName>{% endif %}{% if modelDescription %}
+        <modelDescription>{{ modelDescription }}</modelDescription>{% endif %}{% if modelNumber %}
+        <modelNumber>{{ modelNumber }}</modelNumber>{% endif %}{% if modelUrl %}
+        <modelURL>{{ modelUrl }}</modelURL>{% endif %}{% if serialNumber %}
+        <serialNumber>{{ serialNumber }}</serialNumber>{% endif %}
         <UDN>uuid:{{ uuid }}</UDN>
         <serviceList>
         </serviceList>
