@@ -82,6 +82,7 @@ class GcodeviewerPlugin(
         "/skipuntilcheck/<string:origin>/<path:filename>", methods=["GET"]
     )
     @no_firstrun_access
+    @Permissions.GCODE_VIEWER.require(403)
     @Permissions.FILES_DOWNLOAD.require(403)
     def check_skip_until_presence(self, origin, filename):
         try:
