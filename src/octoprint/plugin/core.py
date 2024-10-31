@@ -392,6 +392,9 @@ class PluginInfo:
         self.invalid_syntax = False
         """Whether invalid syntax was encountered while trying to load this plugin."""
 
+        self.flags = []
+        """Additional flags assigned to the plugin through config."""
+
         self._name = name
         self._version = version
         self._description = description
@@ -846,6 +849,7 @@ class PluginManager:
         plugin_restart_needing_hooks=None,
         plugin_obsolete_hooks=None,
         plugin_considered_bundled=None,
+        plugin_flags=None,
         plugin_validators=None,
         compatibility_ignored_list=None,
     ):
@@ -869,6 +873,8 @@ class PluginManager:
             compatibility_ignored_list = []
         if plugin_considered_bundled is None:
             plugin_considered_bundled = []
+        if plugin_flags is None:
+            plugin_flags = {}
 
         processed_blacklist = []
         for entry in plugin_blacklist:
@@ -896,6 +902,7 @@ class PluginManager:
         self.logging_prefix = logging_prefix
         self.compatibility_ignored_list = compatibility_ignored_list
         self.plugin_considered_bundled = plugin_considered_bundled
+        self.plugin_flags = plugin_flags
 
         self.enabled_plugins = {}
         self.disabled_plugins = {}
@@ -1227,6 +1234,7 @@ class PluginManager:
             license=license,
         )
         plugin.bundled = bundled
+        plugin.flags = self.plugin_flags.get(key, [])
 
         if self._is_plugin_disabled(key):
             self.logger.info(f"Plugin {plugin} is disabled.")
@@ -1306,6 +1314,7 @@ class PluginManager:
             )
 
             plugin.bundled = bundled
+            plugin.flags = self.plugin_flags.get(key, [])
         except Exception:
             self.logger.exception(f"Error loading plugin {key}")
             return None

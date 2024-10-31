@@ -1933,6 +1933,7 @@ class Server:
 
     def _register_additional_template_plugin(self, plugin):
         import octoprint.util.jinja
+        from octoprint.plugin import PluginFlags
 
         folder = plugin.get_template_folder()
         if (
@@ -1943,7 +1944,13 @@ class Server:
                 [folder],
                 path_filter=lambda x: not octoprint.util.is_hidden_path(x),
             )
-            if not plugin._plugin_info.bundled and not plugin.is_template_autoescaped():
+            if PluginFlags.AUTOESCAPE_ON not in plugin._plugin_info.flags and (
+                PluginFlags.AUTOESCAPE_OFF in plugin._plugin_info.flags
+                or (
+                    not plugin._plugin_info.bundled
+                    and not plugin.is_template_autoescaped()
+                )
+            ):
                 loader = octoprint.util.jinja.PostProcessWrapperLoader(
                     loader,
                     lambda source: "{% autoescape false %}"
