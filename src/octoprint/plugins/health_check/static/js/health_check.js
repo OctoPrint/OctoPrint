@@ -180,7 +180,7 @@ $(function () {
                 "<p>" +
                 gettext("Please refer to the FAQ for recommended upgrade workflows:") +
                 "</p>" +
-                "<p><a href='https://faq.octoprint.org/python-upgrade' target='_blank' rel='noopener noreferer'>How to migrate to another Python version</a></p>";
+                "<p><a href='https://faq.octoprint.org/python-update' target='_blank' rel='noopener noreferer'>How to migrate to another Python version</a></p>";
 
             const notification =
                 html +
