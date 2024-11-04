@@ -30,6 +30,9 @@ $(function () {
         self.access_apikey = ko.observable(undefined);
         self.interface_language = ko.observable(undefined);
 
+        self.apiKeyVisible = ko.observable(false);
+        self.revealingApiKey = ko.observable(false);
+
         self.currentUser = ko.observable(undefined);
         self.currentUser.subscribe(function (newUser) {
             self.access_password(undefined);
@@ -57,30 +60,42 @@ $(function () {
             return self.access_password() !== self.access_repeatedPassword();
         });
 
-        self.show = function (user) {
+        self.show = (user) => {
             if (!CONFIG_ACCESS_CONTROL) return;
 
             if (user === undefined) {
                 user = self.loginState.currentUser();
             }
 
-            var process = function (user) {
-                self.currentUser(user);
-                self.userSettingsDialog.modal("show");
-            };
-
             // make sure we have the current user data, see #2534
-            OctoPrint.access.users
-                .get(user.name)
-                .done(function (data) {
-                    process(data);
+            self.requestData(user.name)
+                .done(() => {
+                    self.userSettingsDialog.modal("show");
                 })
-                .fail(function () {
+                .fail(() => {
                     log.warn(
                         "Could not fetch current user data, proceeding with client side data copy"
                     );
-                    process(user);
+                    self.fromResponse(user);
                 });
+        };
+
+        self.requestData = (name) => {
+            if (name === undefined && self.currentUser() === undefined) return;
+            if (name === undefined) {
+                name = self.currentUser().name;
+            }
+
+            return OctoPrint.access.users.get(name).done((data) => {
+                self.fromResponse(data);
+            });
+        };
+
+        self.fromResponse = (data) => {
+            self.currentUser(data);
+
+            // this should only ever return true if we triggered the request through the "reveal api key" button
+            self.apiKeyVisible(self.revealingApiKey());
         };
 
         self.save = function () {
@@ -129,12 +144,14 @@ $(function () {
         self.generateApikey = function () {
             if (!CONFIG_ACCESS_CONTROL) return;
 
-            var generate = function () {
-                self.users
-                    .generateApikey(self.currentUser().name)
-                    .done(function (response) {
-                        self.access_apikey(response.apikey);
-                    });
+            const generate = () => {
+                self.loginState.reauthenticateIfNecessary(() => {
+                    self.users
+                        .generateApikey(self.currentUser().name)
+                        .done((response) => {
+                            self.access_apikey(response.apikey);
+                        });
+                });
             };
 
             if (self.access_apikey()) {
@@ -157,12 +174,23 @@ $(function () {
                 gettext(
                     "This will delete the API Key. It will cease to to function immediately."
                 ),
-                function () {
-                    self.users.deleteApikey(self.currentUser().name).done(function () {
-                        self.access_apikey(undefined);
+                () => {
+                    self.loginState.reauthenticateIfNecessary(() => {
+                        self.users.deleteApikey(self.currentUser().name).done(() => {
+                            self.access_apikey(undefined);
+                        });
                     });
                 }
             );
+        };
+
+        self.revealApiKey = () => {
+            self.loginState.reauthenticateIfNecessary(() => {
+                self.revealingApiKey(true);
+                self.requestData(self.currentUser().name).always(() => {
+                    self.revealingApiKey(false);
+                });
+            });
         };
 
         self.updateSettings = function (username, settings) {
@@ -187,6 +215,11 @@ $(function () {
             self.userSettingsDialog.on("beforeSave", function () {
                 callViewModels(allViewModels, "onUserSettingsBeforeSave");
             });
+        };
+
+        self.onUserCredentialsOutdated = () => {
+            self.apiKeyVisible(false);
+            self.requestData();
         };
     }
 

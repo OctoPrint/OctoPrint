@@ -11,6 +11,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.server import SUCCESS, groupManager, userManager
 from octoprint.server.api import api, valid_boolean_trues
 from octoprint.server.util.flask import (
+    credentials_checked_recently,
     ensure_credentials_checked_recently,
     no_firstrun_access,
     require_credentials_checked_recently,
@@ -132,7 +133,11 @@ def remove_group(key):
 @no_firstrun_access
 @Permissions.ADMIN.require(403)
 def get_users():
-    return jsonify(users=list(map(lambda u: u.as_dict(), userManager.get_all_users())))
+    users = [u.as_dict() for u in userManager.get_all_users()]
+    if not credentials_checked_recently():
+        for u in users:
+            u["apikey"] = None
+    return jsonify(users=users)
 
 
 @api.route("/access/users", methods=["POST"])
@@ -178,7 +183,10 @@ def get_user(username):
     ):
         user = userManager.find_user(username)
         if user is not None:
-            return jsonify(user)
+            user_dict = user.as_dict()
+            if not credentials_checked_recently():
+                user_dict["apikey"] = None
+            return jsonify(user_dict)
         else:
             abort(404)
     else:
@@ -323,6 +331,7 @@ def change_settings_for_user(username):
 
 @api.route("/access/users/<username>/apikey", methods=["DELETE"])
 @no_firstrun_access
+@require_credentials_checked_recently
 def delete_apikey_for_user(username):
     if (
         current_user is not None
@@ -347,6 +356,7 @@ def delete_apikey_for_user(username):
 
 @api.route("/access/users/<username>/apikey", methods=["POST"])
 @no_firstrun_access
+@require_credentials_checked_recently
 def generate_apikey_for_user(username):
     if not userManager.enabled:
         return jsonify(SUCCESS)
