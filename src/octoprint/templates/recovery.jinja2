@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="{{ url_for("static", filename="css/recovery.css") }}">
 
     {% for url in theming %}
-        <link rel="stylesheet" href="{{ url }}">
+        <link rel="stylesheet" href="{{ url|e }}">
     {% endfor %}
 
     <!-- le javascript -->
