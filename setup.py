@@ -30,7 +30,7 @@ SETUP_REQUIRES = []
 
 # Requirements for our application
 bundled_plugins = [
-    "OctoPrint-FileCheck>=2021.2.23",
+    "OctoPrint-FileCheck>=2024.3.27",
     "OctoPrint-FirmwareCheck>=2021.10.11",
     "OctoPrint-PiSupport>=2023.10.10",
 ]

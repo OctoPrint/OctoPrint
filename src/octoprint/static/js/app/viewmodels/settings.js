@@ -1048,7 +1048,6 @@ $(function () {
             return data;
         };
 
-        self.reauthenticationTimeout = undefined;
         self.fromResponse = function (response, local) {
             // server side changes to set
             var serverChangedData;
@@ -1236,15 +1235,6 @@ $(function () {
             mapToObservables(serverChangedData, specialMappings, clientChangedData);
 
             firstRequest.resolve();
-
-            // special delivery for the API key flag
-            self.apiKeyVisible(self.loginState.checkCredentialsSeen());
-            if (self.apiKeyVisible()) {
-                self.reauthenticationTimeout =
-                    self.loginState.afterReauthenticationTimeout(() => {
-                        self.requestData();
-                    }, self.reauthenticationTimeout);
-            }
 
             // if autologinLocal is enabled and the heads-up not yet acknowledged, show it now
             if (
@@ -1446,6 +1436,10 @@ $(function () {
                     if (!self._startupComplete) return;
                     self.requestData();
                 };
+
+        self.onUserCredentialsOutdated = () => {
+            self.requestData();
+        };
 
         self.validURL = function (str) {
             var pattern = new RegExp(

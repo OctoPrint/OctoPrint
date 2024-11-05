@@ -9,11 +9,9 @@ thanks to everyone who contributed!
   * 3D-TECH
   * 3DPrinterOS
   * Accalia Elementia
-  * Al Mucci
   * Alex Young
   * Anthony Gainsborough
   * Ash King
-  * BigTreeTech
   * Boris Hussein
   * Brad Jackson
   * Bradford Benn
@@ -27,9 +25,9 @@ thanks to everyone who contributed!
   * Christian Würthner
   * Christoph Sigrist
   * Christopher Heiny
-  * Cognite Solutions
   * Coltarus Halo
   * CooperSpartan
+  * David L Weiner
   * David OMeara
   * David Pitman
   * DeltaMaker 3D Printers
@@ -39,28 +37,21 @@ thanks to everyone who contributed!
   * Ed Crump
   * Erik Ableson
   * Ernesto Martinez
-  * Fiberpunk
   * Franziska Kunsmann
   * George Jeng
   * Happy House
   * Hog Duske
-  * Jacob Renstrom
   * James Fryman
   * James Nangano
   * Jason Kitchens
-  * Jay Moran
   * JCsGotThis
   * Jeff Moe
-  * Jeremy Cole
   * John Cassel
-  * Julian Melo
   * Justin Kaufman
   * Kaile Riser
-  * kantlivelong@gmail.com
   * Kazuhiro Ogura
   * Keenan Newton
   * Kenneth Jiang
-  * Kevin Luff
   * Khaled Allen
   * Kureemii
   * Kurt Wubbels
@@ -74,17 +65,15 @@ thanks to everyone who contributed!
   * Mark Walker
   * Martin
   * Martin Schmitt
+  * Matthew Andersen
   * Matthias Urlichs
-  * mcbriers
   * Michael Aumock
   * Michael Badagliacco
-  * Michael Duergner
   * Mike Labanov
   * Mosaic Manufacturing
-  * Nick Chestnut
   * Norman Jaffe
-  * Obico
   * Paul McMaster
+  * Printago
   * Randy C. Will
   * Ranjib Dey
   * Richard Stocks
@@ -98,4 +87,4 @@ thanks to everyone who contributed!
   * Tideline 3D
   * Ulrich Kempken
 
-and 3140 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 2952 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
