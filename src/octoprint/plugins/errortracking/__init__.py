@@ -7,7 +7,6 @@ import logging
 import requests.exceptions
 import serial
 import tornado.websocket
-from flask import jsonify
 from flask_babel import gettext
 
 import octoprint.plugin
@@ -75,7 +74,6 @@ class ErrorTrackingPlugin(
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
-    octoprint.plugin.SimpleApiPlugin,
 ):
     def get_template_configs(self):
         return [
@@ -119,9 +117,6 @@ class ErrorTrackingPlugin(
 
         if old_enabled != enabled:
             _enable_errortracking()
-
-    def on_api_get(self, request):
-        return jsonify(**self.get_template_vars())
 
 
 _enabled = False
