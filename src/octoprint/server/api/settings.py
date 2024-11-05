@@ -16,6 +16,7 @@ from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import (
     credentials_checked_recently,
     no_firstrun_access,
+    require_credentials_checked_recently,
     with_revalidation_checking,
 )
 from octoprint.settings import settings, valid_boolean_trues
@@ -478,6 +479,7 @@ def setSettings():
 @api.route("/settings/apikey", methods=["POST"])
 @no_firstrun_access
 @Permissions.ADMIN.require(403)
+@require_credentials_checked_recently
 def generateApiKey():
     apikey = settings().generateApiKey()
     return jsonify(apikey=apikey)
@@ -486,6 +488,7 @@ def generateApiKey():
 @api.route("/settings/apikey", methods=["DELETE"])
 @no_firstrun_access
 @Permissions.ADMIN.require(403)
+@require_credentials_checked_recently
 def deleteApiKey():
     settings().deleteApiKey()
     return NO_CONTENT
@@ -581,7 +584,8 @@ def _saveSettings(data):
             s.set(["appearance", "color"], data["appearance"]["color"])
         if "colorTransparent" in data["appearance"]:
             s.setBoolean(
-                ["appearance", "colorTransparent"], data["appearance"]["colorTransparent"]
+                ["appearance", "colorTransparent"],
+                data["appearance"]["colorTransparent"],
             )
         if "colorIcon" in data["appearance"]:
             s.setBoolean(["appearance", "colorIcon"], data["appearance"]["colorIcon"])
@@ -855,7 +859,8 @@ def _saveSettings(data):
             data["serial"]["blacklistedBaudrates"], (list, tuple)
         ):
             s.set(
-                ["serial", "blacklistedBaudrates"], data["serial"]["blacklistedBaudrates"]
+                ["serial", "blacklistedBaudrates"],
+                data["serial"]["blacklistedBaudrates"],
             )
         if "longRunningCommands" in data["serial"] and isinstance(
             data["serial"]["longRunningCommands"], (list, tuple)
@@ -942,7 +947,8 @@ def _saveSettings(data):
             s.setBoolean(["serial", "sdLowerCase"], data["serial"]["sdLowerCase"])
         if "swallowOkAfterResend" in data["serial"]:
             s.setBoolean(
-                ["serial", "swallowOkAfterResend"], data["serial"]["swallowOkAfterResend"]
+                ["serial", "swallowOkAfterResend"],
+                data["serial"]["swallowOkAfterResend"],
             )
         if "repetierTargetTemp" in data["serial"]:
             s.setBoolean(
@@ -1051,7 +1057,8 @@ def _saveSettings(data):
             )
         if "resendRatioThreshold" in data["serial"]:
             s.setInt(
-                ["serial", "resendRatioThreshold"], data["serial"]["resendRatioThreshold"]
+                ["serial", "resendRatioThreshold"],
+                data["serial"]["resendRatioThreshold"],
             )
         if "resendRatioStart" in data["serial"]:
             s.setInt(["serial", "resendRatioStart"], data["serial"]["resendRatioStart"])

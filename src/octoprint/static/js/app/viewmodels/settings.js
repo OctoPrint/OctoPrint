@@ -128,6 +128,7 @@ $(function () {
         self.api_allowCrossOrigin = ko.observable(undefined);
 
         self.apiKeyVisible = ko.observable(false);
+        self.revealingApiKey = ko.observable(false);
 
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
@@ -689,17 +690,19 @@ $(function () {
             self.settingsDialog.modal("hide");
         };
 
-        self.generateApiKey = function () {
+        self.generateApiKey = () => {
             if (!CONFIG_ACCESS_CONTROL) return;
 
             showConfirmationDialog(
                 gettext(
                     "This will generate a new API Key. The old API Key will cease to function immediately."
                 ),
-                function () {
-                    OctoPrint.settings.generateApiKey().done(function (response) {
-                        self.api_key(response.apikey);
-                        self.requestData();
+                () => {
+                    self.loginState.reauthenticateIfNecessary(() => {
+                        OctoPrint.settings.generateApiKey().done((response) => {
+                            self.api_key(response.apikey);
+                            self.requestData();
+                        });
                     });
                 }
             );
@@ -713,9 +716,11 @@ $(function () {
                 gettext(
                     "This will delete the API Key. It will cease to to function immediately."
                 ),
-                function () {
-                    OctoPrint.settings.deleteApiKey().done(() => {
-                        self.api_key(undefined);
+                () => {
+                    self.loginState.reauthenticateIfNecessary(() => {
+                        OctoPrint.settings.deleteApiKey().done(() => {
+                            self.api_key(undefined);
+                        });
                     });
                 }
             );
@@ -725,7 +730,6 @@ $(function () {
             copyToClipboard(self.api_key());
         };
 
-        self.revealingApiKey = ko.observable(false);
         self.revealApiKey = () => {
             self.loginState.reauthenticateIfNecessary(() => {
                 self.revealingApiKey(true);
@@ -1095,7 +1099,6 @@ $(function () {
             return data;
         };
 
-        self.reauthenticationTimeout = undefined;
         self.fromResponse = function (response, local) {
             // server side changes to set
             var serverChangedData;
@@ -1284,14 +1287,8 @@ $(function () {
 
             firstRequest.resolve();
 
-            // special delivery for the API key flag
-            self.apiKeyVisible(self.loginState.checkCredentialsSeen());
-            if (self.apiKeyVisible()) {
-                self.reauthenticationTimeout =
-                    self.loginState.afterReauthenticationTimeout(() => {
-                        self.requestData();
-                    }, self.reauthenticationTimeout);
-            }
+            // this should only ever return true if we triggered the request through the "reveal api key" button
+            self.apiKeyVisible(self.revealingApiKey());
 
             // if autologinLocal is enabled and the heads-up not yet acknowledged, show it now
             if (
@@ -1493,6 +1490,11 @@ $(function () {
                     if (!self._startupComplete) return;
                     self.requestData();
                 };
+
+        self.onUserCredentialsOutdated = () => {
+            self.apiKeyVisible(false);
+            self.requestData();
+        };
 
         self.validURL = function (str) {
             var pattern = new RegExp(

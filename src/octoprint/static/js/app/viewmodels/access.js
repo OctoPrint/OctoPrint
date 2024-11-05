@@ -43,6 +43,9 @@ $(function () {
                 return !self.isCurrentUser(user);
             };
 
+            self.apikeysVisible = ko.observable(false);
+            self.revealingApikeys = ko.observable(false);
+
             self.editor = {
                 name: ko.observable(undefined),
                 groups: ko.observableArray([]),
@@ -163,6 +166,9 @@ $(function () {
 
             self.fromResponse = function (response) {
                 self.listHelper.updateItems(response.users);
+
+                // This should only be true if the request was triggered by a click on "reveal api key"
+                self.apikeysVisible(self.revealingApikeys());
             };
 
             self.showAddUserDialog = function () {
@@ -355,6 +361,22 @@ $(function () {
                 });
             };
 
+            self.revealApikeys = () => {
+                access.loginState.reauthenticateIfNecessary(() => {
+                    self.revealingApikeys(true);
+                    self.requestData().always(() => {
+                        self.revealingApikeys(false);
+                        if (self.currentUser()) {
+                            OctoPrint.access.users
+                                .get(self.currentUser().name)
+                                .done((data) => {
+                                    self.currentUser(data);
+                                });
+                        }
+                    });
+                });
+            };
+
             self.copyApikey = function () {
                 copyToClipboard(self.editor.apikey());
             };
@@ -379,6 +401,16 @@ $(function () {
             self.onStartup = function () {
                 self.userEditorDialog = $("#settings-usersEditorDialog");
                 self.changePasswordDialog = $("#settings-usersDialogChangePassword");
+            };
+
+            self.onUserCredentialsOutdated = () => {
+                self.apikeysVisible(false);
+                self.requestData();
+                if (self.currentUser()) {
+                    OctoPrint.access.users.get(self.currentUser().name).done((data) => {
+                        self.currentUser(data);
+                    });
+                }
             };
 
             //~~ API calls
@@ -978,6 +1010,10 @@ $(function () {
 
         access.onServerReconnect = function () {
             access.permissions.initialize();
+        };
+
+        access.onUserCredentialsOutdated = () => {
+            access.users.onUserCredentialsOutdated();
         };
 
         access.onUserPermissionsChanged =

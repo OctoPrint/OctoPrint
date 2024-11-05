@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="{{ url_for('plugin.appkeys.static', filename='css/authdialog.css') }}">
 
     {% for url in theming %}
-        <link rel="stylesheet" href="{{ url }}">
+        <link rel="stylesheet" href="{{ url|e }}">
     {% endfor %}
 
     <!-- le javascript -->
@@ -45,8 +45,8 @@
         <form id="auth-choice" class="form-auth">
             <h2 class="form-auth-heading" data-test-id="login-title">{{ _('Access Request') }}</h2>
 
-            <p>{% trans %}Hello {{ user }}!{% endtrans %}</p>
-            <p>{{ request_text }}</p>
+            <p>{{ _("Hello %(user)s!", user=user|e) }}</p>
+            <p>{{ request_text | format(app=app|e) }}</p>
             <p>{% trans %}
                 Do you want to allow access to this application with your user account?
             {% endtrans %}</p>
