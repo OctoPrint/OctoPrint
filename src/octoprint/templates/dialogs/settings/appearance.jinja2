@@ -1,26 +1,26 @@
 <h3>{{ _("Appearance") }}</h3>
 <form class="form-horizontal" onsubmit="return false;">
-    <div class="control-group" title="{{ _('Name of this OctoPrint instance, will be shown in the navigation bar and broadcast on the network')|edq }}">
+    <div class="control-group" title="{{ _('Name of this OctoPrint instance, will be shown in the navigation bar and broadcast on the network') }}">
         <label class="control-label" for="settings-appearanceName">{{ _('Title') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: appearance_name" id="settings-appearanceName">
         </div>
     </div>
-    <div class="control-group" title="{{ _('Personalize the color of the navigation bar - maybe to match your printer?')|edq }}">
+    <div class="control-group" title="{{ _('Personalize the color of the navigation bar - maybe to match your printer?') }}">
         <label class="control-label" for="settings-appearanceColor">{{ _('Color') }}</label>
         <div class="controls">
             <select id="settings-appearanceColor" data-bind="value: appearance_color, options: appearance_available_colors, optionsText: 'name', optionsValue: 'key'">
             </select>
         </div>
     </div>
-    <div class="control-group" title="{{ _('For acrylic printers ;)')|edq }}">
+    <div class="control-group" title="{{ _('For acrylic printers ;)') }}">
         <div class="controls">
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: appearance_colorTransparent"> {{ _('Transparent color') }}
             </label>
         </div>
     </div>
-    <div class="control-group" title="{{ _('Also personalize the icon of the browser tab')|edq }}">
+    <div class="control-group" title="{{ _('Also personalize the icon of the browser tab') }}">
         <div class="controls">
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: appearance_colorIcon"> {{ _('Colorize favicon (in supported browsers)') }}

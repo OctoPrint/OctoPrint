@@ -659,7 +659,8 @@ class Server:
         # initialize slicing manager and register it for changes in the registered plugins
         slicingManager.initialize()
         pluginLifecycleManager.add_callback(
-            ["enabled", "disabled"], lambda name, plugin: slicingManager.reload_slicers()
+            ["enabled", "disabled"],
+            lambda name, plugin: slicingManager.reload_slicers(),
         )
 
         # setup jinja2
@@ -1522,6 +1523,7 @@ class Server:
         )
 
         # we must set this here because setting app.debug will access app.jinja_env
+        app.jinja_options = {"autoescape": True}
         app.jinja_environment = PrefixAwareJinjaEnvironment
 
         app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -1748,7 +1750,7 @@ class Server:
             root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
             allowed = ["AUTHORS.md", "SUPPORTERS.md", "THIRDPARTYLICENSES.md"]
             files = {"_data/" + name: os.path.join(root, name) for name in allowed}
-            loaders.append(octoprint.util.jinja.SelectedFilesWithConversionLoader(files))
+            loaders.append(octoprint.util.jinja.SelectedFilesLoader(files))
 
         # TODO: Remove this in 2.0.0
         warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will soon no longer be supported."
@@ -1929,6 +1931,7 @@ class Server:
 
     def _register_additional_template_plugin(self, plugin):
         import octoprint.util.jinja
+        from octoprint.plugin import PluginFlags
 
         folder = plugin.get_template_folder()
         if (
@@ -1936,9 +1939,22 @@ class Server:
             and plugin.template_folder_key not in app.jinja_env.prefix_loader.mapping
         ):
             loader = octoprint.util.jinja.FilteredFileSystemLoader(
-                [plugin.get_template_folder()],
+                [folder],
                 path_filter=lambda x: not octoprint.util.is_hidden_path(x),
             )
+            if PluginFlags.AUTOESCAPE_ON not in plugin._plugin_info.flags and (
+                PluginFlags.AUTOESCAPE_OFF in plugin._plugin_info.flags
+                or (
+                    not plugin._plugin_info.bundled
+                    and not plugin.is_template_autoescaped()
+                )
+            ):
+                loader = octoprint.util.jinja.PostProcessWrapperLoader(
+                    loader,
+                    lambda source: "{% autoescape false %}"
+                    + source
+                    + "{% endautoescape %}",
+                )
 
             app.jinja_env.prefix_loader.mapping[plugin.template_folder_key] = loader
 
@@ -2393,7 +2409,8 @@ class Server:
             dynamic_plugin_assets["bundled"]["clientjs"]
         )
         clientjs_plugins = js_bundles_for_plugins(
-            dynamic_plugin_assets["external"]["clientjs"], filters="js_delimiter_bundler"
+            dynamic_plugin_assets["external"]["clientjs"],
+            filters="js_delimiter_bundler",
         )
 
         js_libs_bundle = Bundle(

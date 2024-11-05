@@ -19,3 +19,6 @@ class PluginsConfig(BaseModel):
 
     sorting_order: Dict[str, Dict[str, int]] = Field({}, alias="_sortingOrder")
     """Custom sorting of hooks and implementations provided by plugins. Two-tiered dictionary structure, plugin identifier mapping to a dictionary of order overrides mapped by sorting context/hook name."""
+
+    flags: Dict[str, List[str]] = Field({}, alias="_flags")
+    """Configured flags for plugins by plugin identifier."""
