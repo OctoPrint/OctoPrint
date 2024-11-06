@@ -136,7 +136,7 @@
 
     <p>
         <button class="btn btn-warning btn-block" data-bind="click: approveLargeFile">
-            {{ _('Yes, please visualize %(name)s regardless of its size', name='<span data-bind="text: selectedFile.path"></span>') }}
+            {{ _('Yes, please visualize %(name)s regardless of its size', name='<span data-bind="text: selectedFile.path"></span>'|safe) }}
         </button>
     <p>
 
