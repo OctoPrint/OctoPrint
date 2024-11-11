@@ -48,11 +48,14 @@ class TestCommHelpers(unittest.TestCase):
         ("M140 S100", {"tool0": 10, "tool1": 20, "bed": 30}, 1, 130.0),
         ("M190 S100", {"tool0": 10, "tool1": 20, "bed": 30}, 1, 130.0),
         ("M109 S220", {"tool0": 10, "tool1": 20, "bed": 30}, 0, 230.0),
+        ("M141 S100", {"tool0": 10, "tool1": 20, "bed": 30, "chamber": 40}, 0, 140.0),
+        ("M191 S100", {"tool0": 10, "tool1": 20, "bed": 30, "chamber": 40}, 0, 140.0),
         ("M109 S220", {}, 0, None),
-        ("M140 S100", {}, 0, None),
         ("M104 S220", {"tool0": 0}, 0, None),
         ("M104 S220", {"tool0": 20}, None, None),
         ("M104 S0", {"tool0": 20}, 0, None),
+        ("M140 S100", {}, 0, None),
+        ("M141 S100", {}, 0, None),
     )
     @unpack
     def test_apply_temperature_offsets(self, input, offsets, current_tool, expected):
