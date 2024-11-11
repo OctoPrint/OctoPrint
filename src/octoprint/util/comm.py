@@ -2058,6 +2058,9 @@ class MachineCom:
             )
             return
 
+        if not self._sdAvailable:
+            return
+
         if tags is None:
             tags = set()
 
