@@ -1495,7 +1495,11 @@ class VirtualPrinter:
                 self._logger.exception("While handling %r", data)
 
     def _listSd(self, incl_long=False, incl_timestamp=False):
-        line = "{dosname}"
+        line = (
+            "{dosname}"
+            if not self._settings.get_boolean(["sdFiles", "upper_case"])
+            else "{dosname_upper}"
+        )
         if self._settings.get_boolean(["sdFiles", "size"]):
             line += " {size}"
             if self._settings.get_boolean(["sdFiles", "timestamp"]) or incl_timestamp:
@@ -1525,6 +1529,7 @@ class VirtualPrinter:
                 "name": entry.name,
                 "path": entry.path,
                 "dosname": dosname,
+                "dosname_upper": dosname.upper(),
                 "size": entry.stat().st_size,
                 "timestamp": unix_timestamp_to_m20_timestamp(entry.stat().st_mtime),
             }
