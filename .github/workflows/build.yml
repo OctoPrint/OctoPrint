@@ -184,6 +184,11 @@ jobs:
     needs:
       - publish-on-release
     runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/OctoPrint
+    permissions:
+      id-token: write
     steps:
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4
@@ -205,6 +210,11 @@ jobs:
     if: github.event_name == 'release' && github.repository == 'OctoPrint/OctoPrint'
     needs: publish-on-testpypi
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/OctoPrint
+    permissions:
+      id-token: write
     steps:
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4
