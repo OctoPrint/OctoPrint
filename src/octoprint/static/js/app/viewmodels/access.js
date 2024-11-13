@@ -406,7 +406,7 @@ $(function () {
             self.onUserCredentialsOutdated = () => {
                 self.apikeysVisible(false);
                 self.requestData();
-                if (self.currentUser()) {
+                if (self.currentUser() && self.currentUser().name) {
                     OctoPrint.access.users.get(self.currentUser().name).done((data) => {
                         self.currentUser(data);
                     });
