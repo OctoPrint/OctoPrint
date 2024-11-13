@@ -97,15 +97,6 @@ def parse_plugin_metadata(path):
     try:
         import ast
 
-        try:
-            from ast import Constant as ast_Constant
-        except ImportError:  # Python 3.7
-
-            class ast_Constant(ast.Str):
-                @property
-                def value(self):
-                    return self.s
-
         with open(path, "rb") as f:
             root = ast.parse(f.read(), filename=path)
 
@@ -119,6 +110,40 @@ def parse_plugin_metadata(path):
 
         def extract_target_ids(node):
             return [x.id for x in filter(lambda x: isinstance(x, ast.Name), node.targets)]
+
+        if sys.version_info >= (3, 8, 0):
+
+            def extract_value(node):
+                if isinstance(node, ast.Constant):
+                    return node.value
+
+                elif (
+                    isinstance(node, ast.Call)
+                    and hasattr(node, "func")
+                    and node.func.id == "gettext"
+                    and node.args
+                    and isinstance(node.args[0], ast.Constant)
+                ):
+                    return node.args[0].value
+
+                return None
+
+        else:  # Python 3.7
+
+            def extract_value(node):
+                if isinstance(node, ast.Str):
+                    return node.s
+
+                elif (
+                    isinstance(node, ast.Call)
+                    and hasattr(node, "func")
+                    and node.func.id == "gettext"
+                    and node.args
+                    and isinstance(node.args[0], ast.Str)
+                ):
+                    return node.args[0].s
+
+                return None
 
         def extract_names(node):
             if isinstance(node, ast.Assign):
@@ -142,18 +167,9 @@ def parse_plugin_metadata(path):
             for a in reversed(assignments):
                 targets = extract_target_ids(a)
                 if key in targets:
-                    if isinstance(a.value, ast_Constant):
-                        result[key] = a.value.value
-
-                    elif (
-                        isinstance(a.value, ast.Call)
-                        and hasattr(a.value, "func")
-                        and a.value.func.id == "gettext"
-                        and a.value.args
-                        and isinstance(a.value.args[0], ast_Constant)
-                    ):
-                        result[key] = a.value.args[0].value
-
+                    value = extract_value(a.value)
+                    if value:
+                        result[key] = value
                     break
 
         for key in (ControlProperties.attr_hidden,):

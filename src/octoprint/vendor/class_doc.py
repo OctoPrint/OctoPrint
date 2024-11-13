@@ -3,6 +3,7 @@
 import inspect
 import itertools
 import string
+import sys
 import textwrap
 import tokenize
 from typing import Dict, List, Optional, Union, Iterator, Any
@@ -11,13 +12,12 @@ import more_itertools as mitertools
 
 import ast
 
-try:
-    from ast import Constant as ast_Constant
-except ImportError:  # Python 3.7
-    class ast_Constant(ast.Str):
-        @property
-        def value(self):
-            return self.s
+if sys.version_info >= (3, 8, 0):
+    AST_CONSTANT_TYPE = ast.Constant
+    AST_CONSTANT_VALUE = lambda x: x.value
+else:  # Python 3.7
+    AST_CONSTANT_TYPE = ast.Str
+    AST_CONSTANT_VALUE = lambda x: x.s
 
 
 def _test_advanced_ast_presence() -> bool:
@@ -43,8 +43,8 @@ class _ASTTools:
 
     @classmethod
     def _get_first_lineno(cls, node: ast.AST) -> int:
-        if isinstance(node, ast.Expr) and isinstance(node, ast_Constant):
-            return node.lineno - node.value.value.count('\n')
+        if isinstance(node, ast.Expr) and isinstance(node, AST_CONSTANT_TYPE):
+            return node.lineno - AST_CONSTANT_VALUE(node.value).count('\n')
         return node.lineno
 
     @classmethod
@@ -235,10 +235,10 @@ def extract_all_attr_docstrings(
     return {
         target: comments
         for node, comments in (
-            (node, inspect.cleandoc(next_node.value.value).split('\n'))
+            (node, inspect.cleandoc(AST_CONSTANT_VALUE(next_node.value)).split('\n'))
             for node, next_node in mitertools.windowed(cls_def.body, 2)
             if isinstance(node, (ast.Assign, ast.AnnAssign))
-            if isinstance(next_node, ast.Expr) and (isinstance(next_node.value, ast_Constant))
+            if isinstance(next_node, ast.Expr) and (isinstance(next_node.value, AST_CONSTANT_TYPE))
             if _ast_tools.count_neighbor_newlines(lines, node, next_node) == 0
         )
         for target in _get_assign_targets(node)
