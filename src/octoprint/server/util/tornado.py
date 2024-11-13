@@ -620,7 +620,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             # directly use data from buffer
             body = self._buffer
 
-        self.request.headers["Content-Length"] = len(body)
+        self.request.headers["Content-Length"] = str(len(body))
 
         try:
             # call the configured fallback with request and body to use

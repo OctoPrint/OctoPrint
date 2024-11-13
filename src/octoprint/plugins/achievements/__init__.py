@@ -72,9 +72,7 @@ class AchievementsPlugin(
         return super().initialize()
 
     def _server_timezone(self):
-        return (
-            datetime.datetime.utcnow().astimezone()
-        )  # utcnow still needed while supporting Python 3.7
+        return datetime.datetime.now(datetime.timezone.utc).astimezone()
 
     def _now(self):
         if self._tz is None:

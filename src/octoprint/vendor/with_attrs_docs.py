@@ -4,7 +4,7 @@
 
 from typing import Type
 
-from class_doc import extract_docs_from_cls_obj
+from .class_doc import extract_docs_from_cls_obj
 from pydantic import BaseModel
 from pydantic import __version__ as pydantic_version
 

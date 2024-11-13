@@ -97,6 +97,15 @@ def parse_plugin_metadata(path):
     try:
         import ast
 
+        try:
+            from ast import Constant as ast_Constant
+        except ImportError:  # Python 3.7
+
+            class ast_Constant(ast.Str):
+                @property
+                def value(self):
+                    return self.s
+
         with open(path, "rb") as f:
             root = ast.parse(f.read(), filename=path)
 
@@ -133,20 +142,17 @@ def parse_plugin_metadata(path):
             for a in reversed(assignments):
                 targets = extract_target_ids(a)
                 if key in targets:
-                    if isinstance(a.value, ast.Constant):
+                    if isinstance(a.value, ast_Constant):
                         result[key] = a.value.value
-
-                    elif isinstance(a.value, ast.Str):
-                        result[key] = a.value.s
 
                     elif (
                         isinstance(a.value, ast.Call)
                         and hasattr(a.value, "func")
                         and a.value.func.id == "gettext"
                         and a.value.args
-                        and isinstance(a.value.args[0], ast.Str)
+                        and isinstance(a.value.args[0], ast_Constant)
                     ):
-                        result[key] = a.value.args[0].s
+                        result[key] = a.value.args[0].value
 
                     break
 
