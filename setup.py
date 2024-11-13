@@ -85,6 +85,7 @@ core_deps = [
 ]
 vendored_deps = [
     "blinker>=1.6.3,<1.7.0",  # dependency of flask_principal, later versions require Python 3.8+
+    "more-itertools>=5.0.0",  # dependency of class-doc
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
 ]
