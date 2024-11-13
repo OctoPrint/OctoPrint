@@ -67,7 +67,7 @@ jobs:
     name: 🧪 Unit tests
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -130,7 +130,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ["3.7", "3.12"]
+        python: ["3.7", "3.12", "3.13"]
     steps:
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4
