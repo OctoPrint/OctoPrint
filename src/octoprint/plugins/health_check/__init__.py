@@ -176,7 +176,7 @@ class HealthCheckPlugin(
                     "ttl": 24 * 60 * 60,
                     "fallback": {
                         "3.7": {"date": "2023-06-27", "last_octoprint": "1.11.*"},
-                        "3.8": {"date": "2024-10-31"},
+                        "3.8": {"date": "2024-10-07", "last_octoprint": "1.11.*"},
                     },
                 },
                 "filesystem_storage": {"issue_threshold": 95, "warning_threshold": 85},
