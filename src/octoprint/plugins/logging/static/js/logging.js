@@ -4,6 +4,7 @@ $(function () {
 
         self.loginState = parameters[0];
         self.access = parameters[1];
+        self.settings = parameters[2];
 
         self.availableLoggers = ko.observableArray();
         self.availableLoggersName = ko.observable();
@@ -19,6 +20,28 @@ $(function () {
 
         self.availableLoggersSorted = ko.computed(function () {
             return _.sortBy(self.availableLoggers());
+        });
+
+        self.serialLogWarning = ko.pureComputed(() => {
+            return (
+                self.serialLogEnabled() &&
+                self.settings &&
+                self.settings.settings &&
+                self.settings.settings.plugins &&
+                self.settings.settings.plugins.logging &&
+                self.settings.settings.plugins.logging.serial_log_warning()
+            );
+        });
+
+        self.pluginTimingsLogWarning = ko.pureComputed(() => {
+            return (
+                self.pluginTimingsLogEnabled() &&
+                self.settings &&
+                self.settings.settings &&
+                self.settings.settings.plugins &&
+                self.settings.settings.plugins.logging &&
+                self.settings.settings.plugins.logging.plugintimings_log_warning()
+            );
         });
 
         // initialize list helper
@@ -397,7 +420,7 @@ $(function () {
     OCTOPRINT_VIEWMODELS.push({
         construct: LoggingViewModel,
         additionalNames: ["logsViewModel"],
-        dependencies: ["loginStateViewModel", "accessViewModel"],
+        dependencies: ["loginStateViewModel", "accessViewModel", "settingsViewModel"],
         elements: [
             "#settings_plugin_logging",
             "#navbar_plugin_logging_seriallog",

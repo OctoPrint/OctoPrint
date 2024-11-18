@@ -23,7 +23,7 @@ class LoggingPlugin(
     octoprint.plugin.TemplatePlugin,
     octoprint.plugin.BlueprintPlugin,
 ):
-    # Additional permissions hook
+    # ~~ Additional permissions hook
 
     def get_additional_permissions(self):
         return [
@@ -37,6 +37,8 @@ class LoggingPlugin(
                 "roles": ["manage"],
             }
         ]
+
+    # ~~ BluePrintPlugin mixin
 
     @octoprint.plugin.BlueprintPlugin.route("/", methods=["GET"])
     @no_firstrun_access
@@ -128,6 +130,43 @@ class LoggingPlugin(
 
     def is_blueprint_csrf_protected(self):
         return True
+
+    # ~~ TemplatePlugin mixin
+
+    def get_template_configs(self):
+        return [
+            {
+                "type": "navbar",
+                "template": "logging_navbar_seriallog.jinja2",
+                "suffix": "_seriallog",
+            },
+            {
+                "type": "navbar",
+                "template": "logging_navbar_plugintimingslog.jinja2",
+                "suffix": "_plugintimingslog",
+            },
+            {"type": "settings", "name": gettext("Logging"), "custom_bindings": True},
+        ]
+
+    # ~~ AssetPlugin mixin
+
+    def get_assets(self):
+        return {
+            "js": ["js/logging.js"],
+            "clientjs": ["clientjs/logging.js"],
+            "less": ["less/logging.less"],
+            "css": ["css/logging.css"],
+        }
+
+    # ~~ SettingsPlugin mixin
+
+    def get_settings_defaults(self):
+        return {
+            "serial_log_warning": True,
+            "plugintimings_log_warning": True,
+        }
+
+    # ~~ Internals
 
     def _get_usage(self):
         import psutil
@@ -240,29 +279,6 @@ class LoggingPlugin(
 
     def _is_managed_logger(self, logger):
         return logger and (logger.startswith("octoprint") or logger.startswith("tornado"))
-
-    def get_template_configs(self):
-        return [
-            {
-                "type": "navbar",
-                "template": "logging_navbar_seriallog.jinja2",
-                "suffix": "_seriallog",
-            },
-            {
-                "type": "navbar",
-                "template": "logging_navbar_plugintimingslog.jinja2",
-                "suffix": "_plugintimingslog",
-            },
-            {"type": "settings", "name": gettext("Logging"), "custom_bindings": True},
-        ]
-
-    def get_assets(self):
-        return {
-            "js": ["js/logging.js"],
-            "clientjs": ["clientjs/logging.js"],
-            "less": ["less/logging.less"],
-            "css": ["css/logging.css"],
-        }
 
 
 __plugin_name__ = "Logging"
