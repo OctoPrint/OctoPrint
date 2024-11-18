@@ -24,7 +24,7 @@
         </td>
         <td class="settings_users_active"><i class="far" data-bind="css: { 'fa-check-square': active, 'fa-square': !active }"></i></td>
         <td class="settings_users_actions">
-            <a href="javascript:void()" class="fas fa-pencil-alt" title="{{ _('Update User')|edq }}" data-bind="click: function() { $root.access.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="javascript:void()" class="fas fa-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.access.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="javascript:void()" class="far fa-trash-alt" title="{{ _('Delete user') }}" data-bind="css: { disabled: !$root.access.users.isDeleteUserEnabled($data)}, enabled: $root.access.users.isDeleteUserEnabled($data), click: function() { if ($root.access.users.isDeleteUserEnabled($data)) { $root.access.users.confirmRemoveUser($data); } }"></a>
+            <a href="javascript:void()" class="fas fa-pencil-alt" title="{{ _('Update User') }}" data-bind="click: function() { $root.access.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="javascript:void()" class="fas fa-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.access.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="javascript:void()" class="far fa-trash-alt" title="{{ _('Delete user') }}" data-bind="css: { disabled: !$root.access.users.isDeleteUserEnabled($data)}, enabled: $root.access.users.isDeleteUserEnabled($data), click: function() { if ($root.access.users.isDeleteUserEnabled($data)) { $root.access.users.confirmRemoveUser($data); } }"></a>
         </td>
     </tr>
     </tbody>
@@ -41,7 +41,7 @@
     </ul>
 </div>
 
-<button title="{{ _('Add user')|edq }}" class="btn pull-right" data-bind="click: $root.access.users.showAddUserDialog"><i class="fas fa-plus"></i> {{ _('Add user...') }}</button>
+<button title="{{ _('Add user') }}" class="btn pull-right" data-bind="click: $root.access.users.showAddUserDialog"><i class="fas fa-plus"></i> {{ _('Add user...') }}</button>
 
 <!-- Modals for user management -->
 
@@ -130,7 +130,7 @@
 <div id="settings-usersDialogChangePassword" class="modal hide fade-in">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Change password for user "%(user)s"', user='<span data-bind="text: $root.access.users.editor.name"></span>') }}</h3>
+        <h3>{{ _('Change password for user "%(user)s"', user='<span data-bind="text: $root.access.users.editor.name"></span>'|safe) }}</h3>
     </div>
     <div class="modal-body">
         <form class="form-horizontal" onsubmit="return false;">
@@ -159,7 +159,7 @@
                     <label class="control-label">{{ _('Current API Key') }}</label>
                     <div class="controls" data-bind="visible: $root.access.users.apikeysVisible">
                         <div class="input-append input-block-level ">
-                            <input type="text" readonly="readonly" data-bind="value: $root.access.users.editor.apikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A')|esq }}'}">
+                            <input type="text" readonly="readonly" data-bind="value: $root.access.users.editor.apikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
                             <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: $root.access.users.copyApikey, css: {'disabled': !$root.access.users.editor.apikey()}"><i class="fas fa-copy"></i></a>
                             <a class="btn add-on" title="Generate new API Key" data-bind="click: function() { $root.access.users.confirmGenerateApikey(); }"><i class="fas fa-sync"></i></a>
                             <a class="btn add-on btn-danger" title="Delete API Key" data-bind="click: function() { $root.access.users.confirmDeleteApikey(); }, css: {'disabled': !$root.access.users.editor.apikey()}"><i class="far fa-trash-alt"></i></a>

@@ -67,7 +67,7 @@ jobs:
     name: 🧪 Unit tests
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -101,7 +101,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
         installable: ["wheel", "sdist"]
     runs-on: ubuntu-latest
     steps:
@@ -130,96 +130,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ["3.7", "3.12"]
+        python: ["3.7", "3.12", "3.13"]
     steps:
-      - name: ⬇ Checkout code
-        uses: actions/checkout@v4
-
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
 
-      - name: 🏗 Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v5
+      - name: 🎭 Run E2E
+        uses: OctoPrint/actions/e2e@main
         with:
-          python-version: ${{ matrix.python }}
-
-      - name: 🏗 Install OctoPrint build
-        run: |
-          pip install dist/*.whl
-
-      - name: 🏗 Create base config for test server
-        run: |
-          mkdir e2econfig
-          cp -r .github/fixtures/with_acl/* e2econfig
-
-      - name: 🏗 Install dummy mfa plugin
-        run: |
-          mkdir -p e2econfig/plugins
-          cp -r .github/fixtures/mfa_dummy e2econfig/plugins/mfa_dummy
-
-      - name: 🏗 Prepare Playwright env
-        working-directory: ./tests/playwright
-        run: |
-          npm ci
-          PLAYWRIGHT_VERSION=$(npm ls --json @playwright/test | jq --raw-output '.dependencies["@playwright/test"].version')
-          echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
-
-      - name: 🧰 Cache Playwright browser binaries
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: "~/.cache/ms-playwright"
-          key: "${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}"
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
-      - name: 🏗 Install Playwright browser binaries & OS dependencies
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        working-directory: ./tests/playwright
-        run: |
-          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
-          npx playwright install --with-deps
-
-      - name: 🏗 Install Playwright OS dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        working-directory: ./tests/playwright
-        run: |
-          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
-          npx playwright install-deps
-
-      - name: 🎭 Run Playwright
-        working-directory: ./tests/playwright
-        run: |
-          npx playwright test
-        env:
-          OCTOPRINT_SERVER_BASE: ${{ github.workspace }}/e2econfig
-          TEST_MFA: true
-
-      - name: 🔎 Check octoprint.log for errors
-        run: |
-          log=${{ github.workspace }}/e2econfig/logs/octoprint.log
-          if grep "\- ERROR \-" $log; then
-            echo "::error::Errors were logged to octoprint.log"
-            grep -Pazo '(?m)^\N+\- ERROR \-\N*\n(^\N*?\n)*?(?=\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} \- )' $log
-            exit 1
-          fi
-
-      - name: ⬆ Upload Playwright report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report-py${{ matrix.python }}
-          path: tests/playwright/playwright-report
-
-      - name: ⬆ Upload OctoPrint logs
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: octoprint-logs-py${{ matrix.python }}
-          path: ${{ github.workspace }}/e2econfig/logs
+          ref: ${{ github.ref }}
+          octoprint: ${{ github.workspace }}/dist/*.whl
+          python: ${{ matrix.python }}
+          suffix: "-py${{ matrix.python }}"
 
   publish-on-release:
     name: 📦 Publish build & source on GitHub release
@@ -259,6 +184,11 @@ jobs:
     needs:
       - publish-on-release
     runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/OctoPrint
+    permissions:
+      id-token: write
     steps:
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4
@@ -273,7 +203,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         continue-on-error: true
         with:
-          password: ${{ secrets.testpypi_password }}
           repository-url: https://test.pypi.org/legacy/
 
   publish-on-pypi:
@@ -281,6 +210,11 @@ jobs:
     if: github.event_name == 'release' && github.repository == 'OctoPrint/OctoPrint'
     needs: publish-on-testpypi
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/OctoPrint
+    permissions:
+      id-token: write
     steps:
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4
@@ -293,8 +227,6 @@ jobs:
           rm dist/sha512sums.txt
       - name: ⬆ Publish to index
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.pypi_password }}
 
   notify-custopizer-build:
     name: 📧 Notify OctoPi-UpToDate

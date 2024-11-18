@@ -683,6 +683,7 @@ def init_pluginsystem(
     plugin_entry_points = ["octoprint.plugin"]
     plugin_disabled_list = settings.get(["plugins", "_disabled"])
     plugin_sorting_order = settings.get(["plugins", "_sortingOrder"], merged=True)
+    plugin_flags = settings.get(["plugins", "_flags"], merged=True)
 
     plugin_blacklist = []
     if not ignore_blacklist and settings.getBoolean(
@@ -718,6 +719,7 @@ def init_pluginsystem(
         plugin_blacklist=plugin_blacklist,
         plugin_validators=plugin_validators,
         compatibility_ignored_list=compatibility_ignored_list,
+        plugin_flags=plugin_flags,
     )
 
     settings_overlays = {}

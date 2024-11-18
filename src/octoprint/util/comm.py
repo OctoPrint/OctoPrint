@@ -2055,6 +2055,9 @@ class MachineCom:
             )
             return
 
+        if not self._sdAvailable:
+            return
+
         if tags is None:
             tags = set()
 
@@ -6201,7 +6204,7 @@ class SendQueue(PrependableQueue):
 
 
 _temp_command_regex = re.compile(
-    r"^M(?P<command>104|109|140|190)(\s+T(?P<tool>\d+)|\s+[SR](?P<temperature>[-+]?\d*\.?\d*))+"
+    r"^M(?P<command>104|109|140|190|141|191)(\s+T(?P<tool>\d+)|\s+[SR](?P<temperature>[-+]?\d*\.?\d*))+"
 )
 
 
@@ -6230,6 +6233,10 @@ def apply_temperature_offsets(line, offsets, current_tool=None):
     elif groups["command"] in ("140", "190"):
         # bed temperature
         offset = offsets["bed"] if "bed" in offsets else 0
+
+    elif groups["command"] in ("141", "191"):
+        # chamber temperature
+        offset = offsets["chamber"] if "chamber" in offsets else 0
 
     if offset == 0:
         return line

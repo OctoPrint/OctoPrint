@@ -499,7 +499,7 @@ def index():
     # if we need to refresh our template cache or it's not yet set, process it
     fetch_template_data(refresh=force_refresh)
 
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
 
     enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
     enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])

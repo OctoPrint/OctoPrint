@@ -61,7 +61,7 @@
   * [frozendict](https://github.com/slezica/python-frozendict): MIT
   * [netaddr](https://github.com/netaddr/netaddr/): BSD
   * [netifaces](https://github.com/al45tair/netifaces): MIT
-  * [passlib](https://passlib.readthedocs.io/): BSD
+  * [passlib/libpass](https://passlib.readthedocs.io/): BSD
   * [pathvalidate](https://pathvalidate.readthedocs.io/en/latest/index.html): MIT
   * [psutil](https://github.com/giampaolo/psutil): BSD
   * [pydantic](https://github.com/pydantic/pydantic): MIT

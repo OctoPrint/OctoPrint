@@ -674,6 +674,25 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
         return os.path.join(self._basefolder, "templates")
 
+    def is_template_autoescaped(self):
+        """
+        Whether a plugin's templates have autoescape enabled. For now this defaults to ``False`` to not cause issues with plugins currently
+        pushing HTML into templates through variables. Long term, this will default to ``True`` and hence prevent something like this from
+        working, unless a plugin opts out by returning ``False`` here.
+
+        It is **strongly** recommended to return ``True`` however and use the ``safe`` filter for those expressions that actually need to support
+        HTML entities. That way a plugin will severely reduce the risk of causing XSS security issues.
+
+        .. versionadded:: 1.11.0
+        """
+        if not getattr(self, "__autoescape_warning_logged", False):
+            self._logger.warning(
+                "The templates of this plugin are currently not being autoescaped. This has potential security implications. "
+                "For that reason OctoPrint 1.13.0 will globally enforce autoescaping. Plugin authors seeing this should read https://faq.octoprint.org/plugin-autoescape."
+            )
+            setattr(self, "__autoescape_warning_logged", True)
+        return False
+
 
 class UiPlugin(OctoPrintPlugin, SortablePlugin):
     """

@@ -148,12 +148,12 @@
 
     OctoPrintClient.prototype.getCookie = function (name) {
         name = this.getCookieName(name);
-        return decodeURIComponent(
-            ("; " + document.cookie)
-                .split("; " + name + "=")
-                .pop()
-                .split(";")[0]
-        );
+        const cookies = document.cookie
+            .split("; ")
+            .filter((x) => x.startsWith(name + "="));
+        if (cookies.length === 0) return false;
+
+        return decodeURIComponent(cookies.shift().split("=")[1]);
     };
 
     OctoPrintClient.prototype.setCookie = function (name, value, opts) {

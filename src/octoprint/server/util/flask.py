@@ -439,7 +439,7 @@ def encode_remember_me_cookie(value):
         remember_key = userManager.signature_key_for_user(
             name, current_app.config["SECRET_KEY"]
         )
-        timestamp = datetime.utcnow().timestamp()
+        timestamp = datetime.now(timezone.utc).timestamp()
         return encode_cookie(f"{name}|{timestamp}", key=remember_key)
     except Exception:
         pass
@@ -462,11 +462,9 @@ def decode_remember_me_cookie(value):
             cookie = decode_cookie(value, key=signature_key)
             if cookie:
                 # still valid?
-                if (
-                    datetime.fromtimestamp(float(created))
-                    + timedelta(seconds=current_app.config["REMEMBER_COOKIE_DURATION"])
-                    > datetime.utcnow()
-                ):
+                if datetime.datetime.fromtimestamp(float(created)) + datetime.timedelta(
+                    seconds=current_app.config["REMEMBER_COOKIE_DURATION"]
+                ) > datetime.now(timezone.utc):
                     return encode_cookie(name)
         except Exception:
             pass

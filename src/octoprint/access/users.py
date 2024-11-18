@@ -10,7 +10,6 @@ import time
 
 import wrapt
 from flask_login import AnonymousUserMixin, UserMixin
-from passlib.hash import pbkdf2_sha256
 from werkzeug.local import LocalProxy
 
 from octoprint.access.groups import Group, GroupChangeListener
@@ -22,7 +21,19 @@ from octoprint.util import get_fully_qualified_classname as fqcn
 password_hashers = []
 
 try:
-    from passlib.hash import argon2
+    from libpass.hash import pbkdf2_sha256
+
+    LIBPASS = True
+except ImportError:  # Python < 3.9
+    from passlib.hash import pbkdf2_sha256
+
+    LIBPASS = False
+
+try:
+    if LIBPASS:
+        from libpass.hash import argon2
+    else:
+        from passlib.hash import argon2
 
     # test if we can actually hash and verify, if not we won't use this backend
     hash = argon2.hash("test")

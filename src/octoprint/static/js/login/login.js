@@ -16,6 +16,7 @@ $(function () {
 
     const overlayElement = $("#login-overlay");
     const errorCredentialsElement = $("#login-error-credentials");
+    const errorCsrfElement = $("#login-error-csrf");
     const errorRateElement = $("#login-error-rate");
     const errorMfaElement = $("#login-error-mfa");
     const offlineElement = $("#login-offline");
@@ -35,6 +36,7 @@ $(function () {
 
     const hideErrors = () => {
         errorCredentialsElement.removeClass("in");
+        errorCsrfElement.removeClass("in");
         errorRateElement.removeClass("in");
         errorMfaElement.removeClass("in");
         mfaErrorElement.removeClass("in");
@@ -88,6 +90,8 @@ $(function () {
                         errorRateElement.addClass("in");
                     } else if (mfaCredentials) {
                         errorMfaElement.addClass("in");
+                    } else if (xhr.status === 400) {
+                        errorCsrfElement.addClass("in");
                     } else {
                         errorCredentialsElement.addClass("in");
                     }

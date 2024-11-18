@@ -295,32 +295,40 @@ class Server:
         self._safe_mode = safe_mode
         self._allow_root = allow_root
         self._octoprint_daemon = octoprint_daemon
-        self._server = None
 
-        self._logger = None
+        self._logger = logging.getLogger(__name__)
+        self._setup_heartbeat_logging()
 
         self._lifecycle_callbacks = defaultdict(list)
 
         self._intermediary_server = None
+        self._server = None
+        self._watched_observer = None
 
-    def run(self):
         if not self._allow_root:
             self._check_for_root()
 
         if self._settings is None:
             self._settings = settings()
 
-        incomplete_startup_flag = (
-            pathlib.Path(self._settings._basedir) / ".incomplete_startup"
-        )
+        if self._plugin_manager is None:
+            self._plugin_manager = octoprint.plugin.plugin_manager()
+
+        if self._settings.getBoolean(["serial", "log"]):
+            # enable debug logging to serial.log
+            logging.getLogger("SERIAL").setLevel(logging.DEBUG)
+
+        if self._settings.getBoolean(["devel", "pluginTimings"]):
+            # enable plugin timings log
+            logging.getLogger("PLUGIN_TIMINGS").setLevel(logging.DEBUG)
+
+    def run(self):
+        incomplete_startup_flag = self._get_incomplete_startup_flag()
         if not self._settings.getBoolean(["server", "ignoreIncompleteStartup"]):
             try:
                 incomplete_startup_flag.touch()
             except Exception:
                 self._logger.exception("Could not create startup triggered safemode flag")
-
-        if self._plugin_manager is None:
-            self._plugin_manager = octoprint.plugin.plugin_manager()
 
         global app
         global babel
@@ -346,73 +354,26 @@ class Server:
         global safe_mode
         global cli_key
 
-        from tornado.ioloop import IOLoop
-        from tornado.web import Application
-
+        pluginManager = self._plugin_manager
         debug = self._debug
         safe_mode = self._safe_mode
 
         if safe_mode:
             self._log_safe_mode_start(safe_mode)
 
+        # network setup
         if self._v6_only and not octoprint.util.net.HAS_V6:
             raise RuntimeError(
                 "IPv6 only mode configured but system doesn't support IPv6"
             )
+        self._ensure_host()
+        self._ensure_port()
 
-        if self._host is None:
-            host = self._settings.get(["server", "host"])
-            if host is None:
-                if octoprint.util.net.HAS_V6:
-                    host = "::"
-                else:
-                    host = "0.0.0.0"
-
-            self._host = host
-
-        if ":" in self._host and not octoprint.util.net.HAS_V6:
-            raise RuntimeError(
-                "IPv6 host address {!r} configured but system doesn't support IPv6".format(
-                    self._host
-                )
-            )
-
-        if self._port is None:
-            self._port = self._settings.getInt(["server", "port"])
-            if self._port is None:
-                self._port = 5000
-
-        self._logger = logging.getLogger(__name__)
-        self._setup_heartbeat_logging()
-        pluginManager = self._plugin_manager
-
-        # monkey patch/fix some stuff
-        util.tornado.fix_json_encode()
-        util.tornado.fix_websocket_check_origin()
-        util.tornado.enable_per_message_deflate_extension()
-        util.tornado.fix_tornado_xheader_handling()
-
-        cli_key = self._setup_cli_key()
+        self._setup_monkey_patching()
         self._setup_mimetypes()
-
-        # setup app
-        self._setup_app(app)
-
-        # setup i18n
-        additional_translation_folders = []
-        if not safe_mode:
-            additional_translation_folders += [
-                self._settings.getBaseFolder("translations")
-            ]
-        self._setup_i18n(app, additional_folders=additional_translation_folders)
-
-        if self._settings.getBoolean(["serial", "log"]):
-            # enable debug logging to serial.log
-            logging.getLogger("SERIAL").setLevel(logging.DEBUG)
-
-        if self._settings.getBoolean(["devel", "pluginTimings"]):
-            # enable plugin timings log
-            logging.getLogger("PLUGIN_TIMINGS").setLevel(logging.DEBUG)
+        self._setup_cli_key()
+        self._setup_flask_app(app)
+        self._setup_i18n(app)
 
         # start the intermediary server
         self._start_intermediary_server()
@@ -431,12 +392,322 @@ class Server:
         printerProfileManager = PrinterProfileManager()
         eventManager = self._event_manager
 
+        self._setup_analysis_queue()
+        self._setup_slicing_manager()
+        self._setup_file_manager()
+
+        pluginLifecycleManager = LifecycleManager(self._plugin_manager)
+
+        preemptiveCache = PreemptiveCache(
+            os.path.join(
+                self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"
+            )
+        )
+
+        self._setup_json_encoding()
+        self._setup_connectivity_checker()
+
+        environmentDetector = self._environment_detector
+
+        components = {
+            "plugin_manager": self._plugin_manager,
+            "printer_profile_manager": printerProfileManager,
+            "event_bus": eventManager,
+            "analysis_queue": analysisQueue,
+            "slicing_manager": slicingManager,
+            "file_manager": fileManager,
+            "plugin_lifecycle_manager": pluginLifecycleManager,
+            "preemptive_cache": preemptiveCache,
+            "json_encoder": jsonEncoder,
+            "json_decoder": jsonDecoder,
+            "connectivity_checker": connectivityChecker,
+            "environment_detector": self._environment_detector,
+            "system_commands": systemCommandManager,
+        }
+
+        # ~~ setup access control
+
+        # get additional permissions from plugins
+        self._setup_plugin_permissions()
+
+        self._setup_group_manager(components)
+        components.update({"group_manager": groupManager})
+
+        self._setup_user_manager(components)
+        components.update({"user_manager": userManager})
+
+        self._setup_printer(components)
+        components.update({"printer": printer})
+
+        self._setup_plugin_manager(components)
+
+        # log environment data now
+        self._environment_detector.log_detected_environment()
+
+        self._setup_jinja2()
+        self._setup_assets()
+        self._setup_timelapse()
+        self._setup_command_triggers()
+        self._setup_login_manager()
+        self._setup_blueprints()
+
+        ## Tornado initialization starts here
+
+        enable_cors = settings().getBoolean(["api", "allowCrossOrigin"])
+        util.tornado.RequestlessExceptionLoggingMixin.LOG_REQUEST = debug
+        util.tornado.CorsSupportMixin.ENABLE_CORS = enable_cors
+
+        self._start_event_loop()  # manually start the event loop
+
+        self._tornado_app = self._setup_tornado_app(enable_cors=enable_cors)
+
+        # this can take a bit, so we do it while the intermediary server is still running
+        max_body_sizes = self._get_max_body_sizes()
+
+        self._stop_intermediary_server()
+
+        # initialize and bind the actual server
+        self._server = self._initialize_and_bind_server(max_body_sizes=max_body_sizes)
+
+        ### From now on it's ok to launch subprocesses again
+
+        eventManager.fire(events.Events.STARTUP)
+
+        self._start_analysis_backlog()
+        self._start_serial_autoconnect()
+        self._start_serial_autorefresh()
+        self._start_watched_observer()
+        self._call_startup_plugins()
+        self._trigger_after_startup()
+
+        self._register_shutdown_handlers()
+
+        try:
+            # this is the main loop - as long as tornado is running, OctoPrint is running
+            from tornado.ioloop import IOLoop
+
+            IOLoop.current().start()
+
+            self._logger.debug("Tornado's IOLoop stopped")
+        except (KeyboardInterrupt, SystemExit):
+            pass
+        except Exception:
+            self._logger.fatal(
+                "Now that is embarrassing... Something went really really wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!"
+            )
+            self._logger.exception("Stacktrace follows:")
+
+    def _setup_heartbeat_logging(self):
+        logger = logging.getLogger(__name__ + ".heartbeat")
+
+        def log_heartbeat():
+            logger.info("Server heartbeat <3")
+
+        interval = settings().getFloat(["server", "heartbeat"])
+        logger.info(f"Starting server heartbeat, {interval}s interval")
+
+        timer = octoprint.util.RepeatedTimer(interval, log_heartbeat)
+        timer.start()
+
+    def _ensure_host(self):
+        if self._host is None:
+            host = self._settings.get(["server", "host"])
+            if host is None:
+                if octoprint.util.net.HAS_V6:
+                    host = "::"
+                else:
+                    host = "0.0.0.0"
+
+            self._host = host
+
+        if ":" in self._host and not octoprint.util.net.HAS_V6:
+            raise RuntimeError(
+                "IPv6 host address {!r} configured but system doesn't support IPv6".format(
+                    self._host
+                )
+            )
+
+    def _ensure_port(self):
+        if self._port is None:
+            self._port = self._settings.getInt(["server", "port"])
+            if self._port is None:
+                self._port = 5000
+
+    def _setup_monkey_patching(self):
+        # monkey patch/fix some stuff
+        util.tornado.fix_json_encode()
+        util.tornado.fix_websocket_check_origin()
+        util.tornado.enable_per_message_deflate_extension()
+        util.tornado.fix_tornado_xheader_handling()
+
+    def _setup_mimetypes(self):
+        # Safety measures for Windows... apparently the mimetypes module takes its translation from the windows
+        # registry, and if for some weird reason that gets borked the reported MIME types can be all over the place.
+        # Since at least in Chrome that can cause hilarious issues with JS files (refusal to run them and thus a
+        # borked UI) we make sure that .js always maps to the correct application/javascript, and also throw in a
+        # .css -> text/css for good measure.
+        #
+        # See #3367
+        mimetypes.add_type("application/javascript", ".js")
+        mimetypes.add_type("text/css", ".css")
+
+    def _setup_flask_app(self, app):
+        global limiter
+
+        from octoprint.server.util.flask import (
+            OctoPrintFlaskRequest,
+            OctoPrintFlaskResponse,
+            OctoPrintJsonProvider,
+            OctoPrintSessionInterface,
+            PrefixAwareJinjaEnvironment,
+            ReverseProxiedEnvironment,
+        )
+
+        # we must set this here because setting app.debug will access app.jinja_env
+        app.jinja_options = {"autoescape": True}
+        app.jinja_environment = PrefixAwareJinjaEnvironment
+
+        app.config["TEMPLATES_AUTO_RELOAD"] = True
+        app.config["REMEMBER_COOKIE_DURATION"] = 90 * 24 * 60 * 60  # 90 days
+        app.config["REMEMBER_COOKIE_HTTPONLY"] = True
+        # REMEMBER_COOKIE_SECURE will be taken care of by our custom cookie handling
+
+        # we must not set this before TEMPLATES_AUTO_RELOAD is set to True or that won't take
+        app.debug = self._debug
+
+        # setup octoprint's flask json serialization/deserialization
+        app.json = OctoPrintJsonProvider(app)
+        app.json.compact = False
+
+        s = settings()
+
+        secret_key = s.get(["server", "secretKey"])
+        if not secret_key:
+            import secrets
+
+            secret_key = secrets.token_hex()
+            s.set(["server", "secretKey"], secret_key)
+            s.save()
+
+        app.secret_key = secret_key
+
+        reverse_proxied = ReverseProxiedEnvironment(
+            header_prefix=s.get(["server", "reverseProxy", "prefixHeader"]),
+            header_scheme=s.get(["server", "reverseProxy", "schemeHeader"]),
+            header_host=s.get(["server", "reverseProxy", "hostHeader"]),
+            header_server=s.get(["server", "reverseProxy", "serverHeader"]),
+            header_port=s.get(["server", "reverseProxy", "portHeader"]),
+            prefix=s.get(["server", "reverseProxy", "prefixFallback"]),
+            scheme=s.get(["server", "reverseProxy", "schemeFallback"]),
+            host=s.get(["server", "reverseProxy", "hostFallback"]),
+            server=s.get(["server", "reverseProxy", "serverFallback"]),
+            port=s.get(["server", "reverseProxy", "portFallback"]),
+        )
+
+        OctoPrintFlaskRequest.environment_wrapper = reverse_proxied
+        app.request_class = OctoPrintFlaskRequest
+        app.response_class = OctoPrintFlaskResponse
+        app.session_interface = OctoPrintSessionInterface()
+
+        @app.before_request
+        def before_request():
+            g.locale = self._get_locale()
+
+            # used for performance measurement
+            g.start_time = time.monotonic()
+
+            if self._debug and "perfprofile" in request.args:
+                try:
+                    from pyinstrument import Profiler
+
+                    g.perfprofiler = Profiler()
+                    g.perfprofiler.start()
+                except ImportError:
+                    # profiler dependency not installed, ignore
+                    pass
+
+        @app.after_request
+        def after_request(response):
+            # send no-cache headers with all POST responses
+            if request.method == "POST":
+                response.cache_control.no_cache = True
+
+            response.headers.add("X-Clacks-Overhead", "GNU Terry Pratchett")
+
+            if hasattr(g, "perfprofiler"):
+                g.perfprofiler.stop()
+                output_html = g.perfprofiler.output_html()
+                return make_response(output_html)
+
+            if hasattr(g, "start_time"):
+                end_time = time.monotonic()
+                duration_ms = int((end_time - g.start_time) * 1000)
+                response.headers.add("Server-Timing", f"app;dur={duration_ms}")
+
+            return response
+
+        from octoprint.util.jinja import MarkdownFilter
+
+        MarkdownFilter(app)
+
+        from flask_limiter import Limiter
+        from flask_limiter.util import get_remote_address
+
+        app.config["RATELIMIT_STRATEGY"] = "fixed-window-elastic-expiry"
+
+        limiter = Limiter(
+            key_func=get_remote_address,
+            app=app,
+            enabled=s.getBoolean(["devel", "enableRateLimiter"]),
+            storage_uri="memory://",
+        )
+
+    def _setup_i18n(self, app):
+        global babel
+        global LOCALES
+        global LANGUAGES
+        global safe_mode
+
+        dirs = []
+        if not safe_mode:
+            dirs += [self._settings.getBaseFolder("translations")]
+        dirs += [os.path.join(app.root_path, "translations")]
+
+        # translations from plugins
+        plugins = octoprint.plugin.plugin_manager().enabled_plugins
+        for plugin in plugins.values():
+            plugin_translation_dir = os.path.join(plugin.location, "translations")
+            if not os.path.isdir(plugin_translation_dir):
+                continue
+            dirs.append(plugin_translation_dir)
+
+        app.config["BABEL_TRANSLATION_DIRECTORIES"] = ";".join(dirs)
+
+        babel = Babel(app, locale_selector=self._get_locale)
+
+        def get_available_locale_identifiers(locales):
+            result = set()
+
+            # add available translations
+            for locale in locales:
+                result.add(str(locale))
+
+            return result
+
+        with app.app_context():
+            LOCALES = babel.list_translations()
+        LANGUAGES = get_available_locale_identifiers(LOCALES)
+
+    def _setup_analysis_queue(self):
+        global analysisQueue
+
         analysis_queue_factories = {
             "gcode": octoprint.filemanager.analysis.GcodeAnalysisQueue
         }
-        analysis_queue_hooks = pluginManager.get_hooks(
+        analysis_queue_hooks = self._plugin_manager.get_hooks(
             "octoprint.filemanager.analysis.factory"
         )
+
         for name, hook in analysis_queue_hooks.items():
             try:
                 additional_factories = hook()
@@ -446,14 +717,18 @@ class Server:
                     f"Error while processing analysis queues from {name}",
                     extra={"plugin": name},
                 )
+
         analysisQueue = octoprint.filemanager.analysis.AnalysisQueue(
             analysis_queue_factories
         )
 
+    def _setup_slicing_manager(self):
+        global slicingManager
         slicingManager = octoprint.slicing.SlicingManager(
             self._settings.getBaseFolder("slicingProfiles"), printerProfileManager
         )
 
+    def _setup_storage_managers(self):
         storage_managers = {}
         storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = (
             octoprint.filemanager.storage.LocalFileStorage(
@@ -463,6 +738,12 @@ class Server:
                 ),
             )
         )
+        return storage_managers
+
+    def _setup_file_manager(self):
+        global fileManager
+
+        storage_managers = self._setup_storage_managers()
 
         fileManager = octoprint.filemanager.FileManager(
             analysisQueue,
@@ -470,18 +751,16 @@ class Server:
             printerProfileManager,
             initial_storage_managers=storage_managers,
         )
-        pluginLifecycleManager = LifecycleManager(pluginManager)
-        preemptiveCache = PreemptiveCache(
-            os.path.join(
-                self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"
-            )
-        )
 
+    def _setup_json_encoding(self):
         JsonEncoding.add_encoder(users.User, lambda obj: obj.as_dict())
         JsonEncoding.add_encoder(groups.Group, lambda obj: obj.as_dict())
         JsonEncoding.add_encoder(
             permissions.OctoPrintPermission, lambda obj: obj.as_dict()
         )
+
+    def _setup_connectivity_checker(self):
+        global connectivityChecker
 
         # start regular check if we are connected to the internet
         def on_connectivity_change(old_value, new_value):
@@ -491,7 +770,6 @@ class Server:
             )
 
         connectivityChecker = self._connectivity_checker
-        environmentDetector = self._environment_detector
 
         def on_settings_update(*args, **kwargs):
             # make sure our connectivity checker runs with the latest settings
@@ -521,29 +799,142 @@ class Server:
 
         eventManager.subscribe(events.Events.SETTINGS_UPDATED, on_settings_update)
 
-        components = {
-            "plugin_manager": pluginManager,
-            "printer_profile_manager": printerProfileManager,
-            "event_bus": eventManager,
-            "analysis_queue": analysisQueue,
-            "slicing_manager": slicingManager,
-            "file_manager": fileManager,
-            "plugin_lifecycle_manager": pluginLifecycleManager,
-            "preemptive_cache": preemptiveCache,
-            "json_encoder": jsonEncoder,
-            "json_decoder": jsonDecoder,
-            "connectivity_checker": connectivityChecker,
-            "environment_detector": self._environment_detector,
-            "system_commands": systemCommandManager,
-        }
+    def _setup_plugin_permissions(self):
+        from octoprint.access.permissions import PluginOctoPrintPermission
 
-        # ~~ setup access control
+        key_whitelist = re.compile(r"[A-Za-z0-9_]*")
 
-        # get additional permissions from plugins
-        self._setup_plugin_permissions()
+        def permission_key(plugin, definition):
+            return "PLUGIN_{}_{}".format(plugin.upper(), definition["key"].upper())
+
+        def permission_name(plugin, definition):
+            return "{}: {}".format(plugin, definition["name"])
+
+        def permission_role(plugin, role):
+            return f"plugin_{plugin}_{role}"
+
+        def process_regular_permission(plugin_info, definition):
+            permissions = []
+            for key in definition.get("permissions", []):
+                permission = octoprint.access.permissions.Permissions.find(key)
+
+                if permission is None:
+                    # if there is still no permission found, postpone this - maybe it is a permission from
+                    # another plugin that hasn't been loaded yet
+                    return False
+
+                permissions.append(permission)
+
+            roles = definition.get("roles", [])
+            description = definition.get("description", "")
+            dangerous = definition.get("dangerous", False)
+            default_groups = definition.get("default_groups", [])
+
+            roles_and_permissions = [
+                permission_role(plugin_info.key, role) for role in roles
+            ] + permissions
+
+            key = permission_key(plugin_info.key, definition)
+            permission = PluginOctoPrintPermission(
+                permission_name(plugin_info.name, definition),
+                description,
+                *roles_and_permissions,
+                plugin=plugin_info.key,
+                dangerous=dangerous,
+                default_groups=default_groups,
+            )
+            setattr(
+                octoprint.access.permissions.Permissions,
+                key,
+                permission,
+            )
+
+            self._logger.info(
+                "Added new permission from plugin {}: {} (needs: {!r})".format(
+                    plugin_info.key, key, ", ".join(map(repr, permission.needs))
+                )
+            )
+            return True
+
+        postponed = []
+
+        hooks = self._plugin_manager.get_hooks("octoprint.access.permissions")
+        for name, factory in hooks.items():
+            try:
+                if isinstance(factory, (tuple, list)):
+                    additional_permissions = list(factory)
+                elif callable(factory):
+                    additional_permissions = factory()
+                else:
+                    raise ValueError("factory must be either a callable, tuple or list")
+
+                if not isinstance(additional_permissions, (tuple, list)):
+                    raise ValueError(
+                        "factory result must be either a tuple or a list of permission definition dicts"
+                    )
+
+                plugin_info = self._plugin_manager.get_plugin_info(name)
+                for p in additional_permissions:
+                    if not isinstance(p, dict):
+                        continue
+
+                    if "key" not in p or "name" not in p:
+                        continue
+
+                    if not key_whitelist.match(p["key"]):
+                        self._logger.warning(
+                            "Got permission with invalid key from plugin {}: {}".format(
+                                name, p["key"]
+                            )
+                        )
+                        continue
+
+                    if not process_regular_permission(plugin_info, p):
+                        postponed.append((plugin_info, p))
+            except Exception:
+                self._logger.exception(
+                    f"Error while creating permission instance/s from {name}"
+                )
+
+        # final resolution passes
+        pass_number = 1
+        still_postponed = []
+        while len(postponed):
+            start_length = len(postponed)
+            self._logger.debug(
+                "Plugin permission resolution pass #{}, "
+                "{} unresolved permissions...".format(pass_number, start_length)
+            )
+
+            for plugin_info, definition in postponed:
+                if not process_regular_permission(plugin_info, definition):
+                    still_postponed.append((plugin_info, definition))
+
+            self._logger.debug(
+                "... pass #{} done, {} permissions left to resolve".format(
+                    pass_number, len(still_postponed)
+                )
+            )
+
+            if len(still_postponed) == start_length:
+                # no change, looks like some stuff is unresolvable - let's bail
+                for plugin_info, definition in still_postponed:
+                    self._logger.warning(
+                        "Unable to resolve permission from {}: {!r}".format(
+                            plugin_info.key, definition
+                        )
+                    )
+                break
+
+            postponed = still_postponed
+            still_postponed = []
+            pass_number += 1
+
+    def _setup_group_manager(self, components):
+        global groupManager
 
         # create group manager instance
-        group_manager_factories = pluginManager.get_hooks(
+        group_manager_factories = self._plugin_manager.get_hooks(
             "octoprint.access.groups.factory"
         )
         for name, factory in group_manager_factories.items():
@@ -571,14 +962,16 @@ class Server:
                     "falling back to FilebasedGroupManager!".format(group_manager_name)
                 )
                 groupManager = octoprint.access.groups.FilebasedGroupManager()
-        components.update({"group_manager": groupManager})
+
+    def _setup_user_manager(self, components):
+        global userManager
 
         # create user manager instance
-        user_manager_factories = pluginManager.get_hooks(
+        user_manager_factories = self._plugin_manager.get_hooks(
             "octoprint.users.factory"
         )  # legacy, set first so that new wins
         user_manager_factories.update(
-            pluginManager.get_hooks("octoprint.access.users.factory")
+            self._plugin_manager.get_hooks("octoprint.access.users.factory")
         )
         for name, factory in user_manager_factories.items():
             try:
@@ -608,10 +1001,15 @@ class Server:
                     "falling back to FilebasedUserManager!".format(user_manager_name)
                 )
                 userManager = octoprint.access.users.FilebasedUserManager(groupManager)
-        components.update({"user_manager": userManager})
+
+    def _setup_printer(self, components):
+        global analysisQueue
+        global fileManager
+        global printerProfileManager
+        global printer
 
         # create printer instance
-        printer_factories = pluginManager.get_hooks("octoprint.printer.factory")
+        printer_factories = self._plugin_manager.get_hooks("octoprint.printer.factory")
         for name, factory in printer_factories.items():
             try:
                 printer = factory(components)
@@ -625,8 +1023,8 @@ class Server:
                 )
         else:
             printer = Printer(fileManager, analysisQueue, printerProfileManager)
-        components.update({"printer": printer})
 
+    def _setup_plugin_manager(self, components):
         from octoprint import (
             init_custom_events,
             init_settings_plugin_config_migration_and_cleanup,
@@ -635,24 +1033,21 @@ class Server:
         from octoprint import octoprint_plugin_inject_factory as opif
         from octoprint import settings_plugin_inject_factory as spif
 
-        init_custom_events(pluginManager)
+        init_custom_events(self._plugin_manager)
 
         octoprint_plugin_inject_factory = opif(self._settings, components)
         settings_plugin_inject_factory = spif(self._settings)
 
-        pluginManager.implementation_inject_factories = [
+        self._plugin_manager.implementation_inject_factories = [
             octoprint_plugin_inject_factory,
             settings_plugin_inject_factory,
         ]
-        pluginManager.initialize_implementations()
+        self._plugin_manager.initialize_implementations()
 
-        init_settings_plugin_config_migration_and_cleanup(pluginManager)
-        init_webcam_compat_overlay(self._settings, pluginManager)
+        init_settings_plugin_config_migration_and_cleanup(self._plugin_manager)
+        init_webcam_compat_overlay(self._settings, self._plugin_manager)
 
-        pluginManager.log_all_plugins()
-
-        # log environment data now
-        self._environment_detector.log_detected_environment()
+        self._plugin_manager.log_all_plugins()
 
         # initialize file manager and register it for changes in the registered plugins
         fileManager.initialize()
@@ -663,51 +1058,828 @@ class Server:
         # initialize slicing manager and register it for changes in the registered plugins
         slicingManager.initialize()
         pluginLifecycleManager.add_callback(
-            ["enabled", "disabled"], lambda name, plugin: slicingManager.reload_slicers()
+            ["enabled", "disabled"],
+            lambda name, plugin: slicingManager.reload_slicers(),
         )
 
-        # setup jinja2
-        self._setup_jinja2()
+    def _setup_jinja2(self):
+        import re
 
-        # setup assets
-        self._setup_assets()
+        app.jinja_env.add_extension("jinja2.ext.do")
+        app.jinja_env.add_extension("octoprint.util.jinja.trycatch")
 
+        def regex_replace(s, find, replace):
+            return re.sub(find, replace, s)
+
+        html_header_regex = re.compile(
+            r"<h(?P<number>[1-6])>(?P<content>.*?)</h(?P=number)>"
+        )
+
+        def offset_html_headers(s, offset):
+            def repl(match):
+                number = int(match.group("number"))
+                number += offset
+                if number > 6:
+                    number = 6
+                elif number < 1:
+                    number = 1
+                return "<h{number}>{content}</h{number}>".format(
+                    number=number, content=match.group("content")
+                )
+
+            return html_header_regex.sub(repl, s)
+
+        markdown_header_regex = re.compile(
+            r"^(?P<hashes>#+)\s+(?P<content>.*)$", flags=re.MULTILINE
+        )
+
+        def offset_markdown_headers(s, offset):
+            def repl(match):
+                number = len(match.group("hashes"))
+                number += offset
+                if number > 6:
+                    number = 6
+                elif number < 1:
+                    number = 1
+                return "{hashes} {content}".format(
+                    hashes="#" * number, content=match.group("content")
+                )
+
+            return markdown_header_regex.sub(repl, s)
+
+        html_link_regex = re.compile(r"<(?P<tag>a.*?)>(?P<content>.*?)</a>")
+
+        def externalize_links(text):
+            def repl(match):
+                tag = match.group("tag")
+                if "href" not in tag:
+                    return match.group(0)
+
+                if "target=" not in tag and "rel=" not in tag:
+                    tag += ' target="_blank" rel="noreferrer noopener"'
+
+                content = match.group("content")
+                return f"<{tag}>{content}</a>"
+
+            return html_link_regex.sub(repl, text)
+
+        single_quote_regex = re.compile("(?<!\\\\)'")
+
+        def escape_single_quote(text):
+            return single_quote_regex.sub("\\'", text)
+
+        double_quote_regex = re.compile('(?<!\\\\)"')
+
+        def escape_double_quote(text):
+            return double_quote_regex.sub('\\"', text)
+
+        app.jinja_env.filters["regex_replace"] = regex_replace
+        app.jinja_env.filters["offset_html_headers"] = offset_html_headers
+        app.jinja_env.filters["offset_markdown_headers"] = offset_markdown_headers
+        app.jinja_env.filters["externalize_links"] = externalize_links
+        app.jinja_env.filters["escape_single_quote"] = app.jinja_env.filters["esq"] = (
+            escape_single_quote
+        )
+        app.jinja_env.filters["escape_double_quote"] = app.jinja_env.filters["edq"] = (
+            escape_double_quote
+        )
+
+        # configure additional template folders for jinja2
+        import jinja2
+
+        import octoprint.util.jinja
+
+        app.jinja_env.prefix_loader = jinja2.PrefixLoader({})
+
+        loaders = [app.jinja_loader, app.jinja_env.prefix_loader]
+        if octoprint.util.is_running_from_source():
+            root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+            allowed = ["AUTHORS.md", "SUPPORTERS.md", "THIRDPARTYLICENSES.md"]
+            files = {"_data/" + name: os.path.join(root, name) for name in allowed}
+            loaders.append(octoprint.util.jinja.SelectedFilesLoader(files))
+
+        # TODO: Remove this in 2.0.0
+        warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will soon no longer be supported."
+        loaders.append(
+            octoprint.util.jinja.WarningLoader(
+                octoprint.util.jinja.PrefixChoiceLoader(app.jinja_env.prefix_loader),
+                warning_message,
+            )
+        )
+
+        app.jinja_loader = jinja2.ChoiceLoader(loaders)
+
+        self._register_template_plugins()
+
+        # make sure plugin lifecycle events relevant for jinja2 are taken care of
+        def template_enabled(name, plugin):
+            if plugin.implementation is None or not isinstance(
+                plugin.implementation, octoprint.plugin.TemplatePlugin
+            ):
+                return
+            self._register_additional_template_plugin(plugin.implementation)
+
+        def template_disabled(name, plugin):
+            if plugin.implementation is None or not isinstance(
+                plugin.implementation, octoprint.plugin.TemplatePlugin
+            ):
+                return
+            self._unregister_additional_template_plugin(plugin.implementation)
+
+        pluginLifecycleManager.add_callback("enabled", template_enabled)
+        pluginLifecycleManager.add_callback("disabled", template_disabled)
+
+    def _register_template_plugins(self):
+        template_plugins = self._plugin_manager.get_implementations(
+            octoprint.plugin.TemplatePlugin
+        )
+        for plugin in template_plugins:
+            try:
+                self._register_additional_template_plugin(plugin)
+            except Exception:
+                self._logger.exception(
+                    "Error while trying to register templates of plugin {}, ignoring it".format(
+                        plugin._identifier
+                    )
+                )
+
+    def _register_additional_template_plugin(self, plugin):
+        import octoprint.util.jinja
+        from octoprint.plugin import PluginFlags
+
+        folder = plugin.get_template_folder()
+        if (
+            folder is not None
+            and plugin.template_folder_key not in app.jinja_env.prefix_loader.mapping
+        ):
+            loader = octoprint.util.jinja.FilteredFileSystemLoader(
+                [folder],
+                path_filter=lambda x: not octoprint.util.is_hidden_path(x),
+            )
+            if PluginFlags.AUTOESCAPE_ON not in plugin._plugin_info.flags and (
+                PluginFlags.AUTOESCAPE_OFF in plugin._plugin_info.flags
+                or (
+                    not plugin._plugin_info.bundled
+                    and not plugin.is_template_autoescaped()
+                )
+            ):
+                loader = octoprint.util.jinja.PostProcessWrapperLoader(
+                    loader,
+                    lambda source: "{% autoescape false %}"
+                    + source
+                    + "{% endautoescape %}",
+                )
+
+            app.jinja_env.prefix_loader.mapping[plugin.template_folder_key] = loader
+
+    def _unregister_additional_template_plugin(self, plugin):
+        folder = plugin.get_template_folder()
+        if (
+            folder is not None
+            and plugin.template_folder_key in app.jinja_env.prefix_loader.mapping
+        ):
+            del app.jinja_env.prefix_loader.mapping[plugin.template_folder_key]
+
+    def _setup_assets(self):
+        global app
+        global assets
+
+        from octoprint.server.util.webassets import MemoryManifest  # noqa: F401
+
+        util.flask.fix_webassets_convert_item_to_flask_url()
+        util.flask.fix_webassets_filtertool()
+
+        base_folder = self._settings.getBaseFolder("generated")
+
+        # clean the folder
+        if self._settings.getBoolean(["devel", "webassets", "clean_on_startup"]):
+            import errno
+            import shutil
+
+            for entry, recreate in (
+                ("webassets", True),
+                # no longer used, but clean up just in case
+                (".webassets-cache", False),
+                (".webassets-manifest.json", False),
+            ):
+                path = os.path.join(base_folder, entry)
+
+                # delete path if it exists
+                if os.path.exists(path):
+                    try:
+                        self._logger.debug(f"Deleting {path}...")
+                        if os.path.isdir(path):
+                            shutil.rmtree(path)
+                        else:
+                            os.remove(path)
+                    except Exception:
+                        self._logger.exception(
+                            f"Error while trying to delete {path}, " f"leaving it alone"
+                        )
+                        continue
+
+                # re-create path if necessary
+                if recreate:
+                    self._logger.debug(f"Creating {path}...")
+                    error_text = (
+                        f"Error while trying to re-create {path}, that might cause "
+                        f"errors with the webassets cache"
+                    )
+                    try:
+                        os.makedirs(path)
+                    except OSError as e:
+                        if e.errno == errno.EACCES:
+                            # that might be caused by the user still having the folder open somewhere, let's try again after
+                            # waiting a bit
+                            import time
+
+                            for n in range(3):
+                                time.sleep(0.5)
+                                self._logger.debug(
+                                    "Creating {path}: Retry #{retry} after {time}s".format(
+                                        path=path, retry=n + 1, time=(n + 1) * 0.5
+                                    )
+                                )
+                                try:
+                                    os.makedirs(path)
+                                    break
+                                except Exception:
+                                    if self._logger.isEnabledFor(logging.DEBUG):
+                                        self._logger.exception(
+                                            f"Ignored error while creating "
+                                            f"directory {path}"
+                                        )
+                                    pass
+                            else:
+                                # this will only get executed if we never did
+                                # successfully execute makedirs above
+                                self._logger.exception(error_text)
+                                continue
+                        else:
+                            # not an access error, so something we don't understand
+                            # went wrong -> log an error and stop
+                            self._logger.exception(error_text)
+                            continue
+                    except Exception:
+                        # not an OSError, so something we don't understand
+                        # went wrong -> log an error and stop
+                        self._logger.exception(error_text)
+                        continue
+
+                self._logger.info(f"Reset webasset folder {path}...")
+
+        AdjustedEnvironment = type(Environment)(
+            Environment.__name__,
+            (Environment,),
+            {"resolver_class": util.flask.PluginAssetResolver},
+        )
+
+        class CustomDirectoryEnvironment(AdjustedEnvironment):
+            @property
+            def directory(self):
+                return base_folder
+
+        assets = CustomDirectoryEnvironment(app)
+        assets.debug = not self._settings.getBoolean(["devel", "webassets", "bundle"])
+
+        # we should rarely if ever regenerate the webassets in production and can wait a
+        # few seconds for regeneration in development, if it means we can get rid of
+        # a whole monkey patch and in internal use of pickle with non-tamperproof files
+        assets.cache = False
+        assets.manifest = "memory"
+
+        UpdaterType = type(util.flask.SettingsCheckUpdater)(
+            util.flask.SettingsCheckUpdater.__name__,
+            (util.flask.SettingsCheckUpdater,),
+            {"updater": assets.updater},
+        )
+        assets.updater = UpdaterType
+
+        preferred_stylesheet = self._settings.get(["devel", "stylesheet"])
+
+        dynamic_core_assets = util.flask.collect_core_assets()
+        dynamic_plugin_assets = util.flask.collect_plugin_assets(
+            preferred_stylesheet=preferred_stylesheet
+        )
+
+        js_libs = [
+            "js/lib/babel-polyfill.min.js",
+            "js/lib/jquery/jquery.min.js",
+            "js/lib/modernizr.custom.js",
+            "js/lib/lodash.min.js",
+            "js/lib/sprintf.min.js",
+            "js/lib/knockout.js",
+            "js/lib/knockout.mapping-latest.js",
+            "js/lib/babel.js",
+            "js/lib/bootstrap/bootstrap.js",
+            "js/lib/bootstrap/bootstrap-modalmanager.js",
+            "js/lib/bootstrap/bootstrap-modal.js",
+            "js/lib/bootstrap/bootstrap-slider.js",
+            "js/lib/bootstrap/bootstrap-tabdrop.js",
+            "js/lib/jquery/jquery-ui.js",
+            "js/lib/jquery/jquery.flot.js",
+            "js/lib/jquery/jquery.flot.time.js",
+            "js/lib/jquery/jquery.flot.crosshair.js",
+            "js/lib/jquery/jquery.flot.dashes.js",
+            "js/lib/jquery/jquery.flot.resize.js",
+            "js/lib/jquery/jquery.iframe-transport.js",
+            "js/lib/jquery/jquery.fileupload.js",
+            "js/lib/jquery/jquery.slimscroll.min.js",
+            "js/lib/jquery/jquery.qrcode.min.js",
+            "js/lib/jquery/jquery.bootstrap.wizard.js",
+            "js/lib/pnotify/pnotify.core.min.js",
+            "js/lib/pnotify/pnotify.buttons.min.js",
+            "js/lib/pnotify/pnotify.callbacks.min.js",
+            "js/lib/pnotify/pnotify.confirm.min.js",
+            "js/lib/pnotify/pnotify.desktop.min.js",
+            "js/lib/pnotify/pnotify.history.min.js",
+            "js/lib/pnotify/pnotify.mobile.min.js",
+            "js/lib/pnotify/pnotify.nonblock.min.js",
+            "js/lib/pnotify/pnotify.reference.min.js",
+            "js/lib/pnotify/pnotify.tooltip.min.js",
+            "js/lib/pnotify/pnotify.maxheight.js",
+            "js/lib/moment-with-locales.min.js",
+            "js/lib/pusher.color.min.js",
+            "js/lib/detectmobilebrowser.js",
+            "js/lib/ua-parser.min.js",
+            "js/lib/md5.min.js",
+            "js/lib/bootstrap-slider-knockout-binding.js",
+            "js/lib/loglevel.min.js",
+            "js/lib/sockjs.min.js",
+            "js/lib/hls.js",
+            "js/lib/less.js",
+        ]
+
+        css_libs = [
+            "css/bootstrap.min.css",
+            "css/bootstrap-modal.css",
+            "css/bootstrap-slider.css",
+            "css/bootstrap-tabdrop.css",
+            "vendor/font-awesome-3.2.1/css/font-awesome.min.css",
+            "vendor/fontawesome-6.5.1/css/all.min.css",
+            "vendor/fontawesome-6.5.1/css/v4-shims.min.css",
+            "vendor/fa5-power-transforms.min.css",
+            "css/jquery.fileupload-ui.css",
+            "css/pnotify.core.min.css",
+            "css/pnotify.buttons.min.css",
+            "css/pnotify.history.min.css",
+        ]
+
+        # a couple of custom filters
+        from webassets.filter import register_filter
+
+        from octoprint.server.util.webassets import (
+            GzipFile,
+            JsDelimiterBundler,
+            JsPluginBundle,
+            LessImportRewrite,
+            RJSMinExtended,
+            SourceMapRemove,
+            SourceMapRewrite,
+        )
+
+        register_filter(LessImportRewrite)
+        register_filter(SourceMapRewrite)
+        register_filter(SourceMapRemove)
+        register_filter(JsDelimiterBundler)
+        register_filter(GzipFile)
+        register_filter(RJSMinExtended)
+
+        def all_assets_for_plugins(collection):
+            """Gets all plugin assets for a dict of plugin->assets"""
+            result = []
+            for assets in collection.values():
+                result += assets
+            return result
+
+        # -- JS --------------------------------------------------------------------------------------------------------
+
+        filters = ["sourcemap_remove"]
+        if self._settings.getBoolean(["devel", "webassets", "minify"]):
+            filters += ["rjsmin_extended"]
+        filters += ["js_delimiter_bundler", "gzip"]
+
+        js_filters = filters
+        if self._settings.getBoolean(["devel", "webassets", "minify_plugins"]):
+            js_plugin_filters = js_filters
+        else:
+            js_plugin_filters = [x for x in js_filters if x not in ("rjsmin_extended",)]
+
+        def js_bundles_for_plugins(collection, filters=None):
+            """Produces JsPluginBundle instances that output IIFE wrapped assets"""
+            result = OrderedDict()
+            for plugin, assets in collection.items():
+                if len(assets):
+                    result[plugin] = JsPluginBundle(plugin, *assets, filters=filters)
+            return result
+
+        js_core = (
+            dynamic_core_assets["js"]
+            + all_assets_for_plugins(dynamic_plugin_assets["bundled"]["js"])
+            + ["js/app/dataupdater.js", "js/app/helpers.js", "js/app/main.js"]
+        )
+        js_plugins = js_bundles_for_plugins(
+            dynamic_plugin_assets["external"]["js"], filters="js_delimiter_bundler"
+        )
+
+        clientjs_core = dynamic_core_assets["clientjs"] + all_assets_for_plugins(
+            dynamic_plugin_assets["bundled"]["clientjs"]
+        )
+        clientjs_plugins = js_bundles_for_plugins(
+            dynamic_plugin_assets["external"]["clientjs"],
+            filters="js_delimiter_bundler",
+        )
+
+        js_libs_bundle = Bundle(
+            *js_libs, output="webassets/packed_libs.js", filters=",".join(js_filters)
+        )
+
+        js_core_bundle = Bundle(
+            *js_core, output="webassets/packed_core.js", filters=",".join(js_filters)
+        )
+
+        if len(js_plugins) == 0:
+            js_plugins_bundle = Bundle(*[])
+        else:
+            js_plugins_bundle = Bundle(
+                *js_plugins.values(),
+                output="webassets/packed_plugins.js",
+                filters=",".join(js_plugin_filters),
+            )
+
+        js_app_bundle = Bundle(
+            js_plugins_bundle,
+            js_core_bundle,
+            output="webassets/packed_app.js",
+            filters=",".join(js_plugin_filters),
+        )
+
+        js_client_core_bundle = Bundle(
+            *clientjs_core,
+            output="webassets/packed_client_core.js",
+            filters=",".join(js_filters),
+        )
+
+        if len(clientjs_plugins) == 0:
+            js_client_plugins_bundle = Bundle(*[])
+        else:
+            js_client_plugins_bundle = Bundle(
+                *clientjs_plugins.values(),
+                output="webassets/packed_client_plugins.js",
+                filters=",".join(js_plugin_filters),
+            )
+
+        js_client_bundle = Bundle(
+            js_client_core_bundle,
+            js_client_plugins_bundle,
+            output="webassets/packed_client.js",
+            filters=",".join(js_plugin_filters),
+        )
+
+        # -- CSS -------------------------------------------------------------------------------------------------------
+
+        css_filters = ["cssrewrite", "gzip"]
+
+        css_core = list(dynamic_core_assets["css"]) + all_assets_for_plugins(
+            dynamic_plugin_assets["bundled"]["css"]
+        )
+        css_plugins = list(
+            all_assets_for_plugins(dynamic_plugin_assets["external"]["css"])
+        )
+
+        css_libs_bundle = Bundle(
+            *css_libs, output="webassets/packed_libs.css", filters=",".join(css_filters)
+        )
+
+        if len(css_core) == 0:
+            css_core_bundle = Bundle(*[])
+        else:
+            css_core_bundle = Bundle(
+                *css_core,
+                output="webassets/packed_core.css",
+                filters=",".join(css_filters),
+            )
+
+        if len(css_plugins) == 0:
+            css_plugins_bundle = Bundle(*[])
+        else:
+            css_plugins_bundle = Bundle(
+                *css_plugins,
+                output="webassets/packed_plugins.css",
+                filters=",".join(css_filters),
+            )
+
+        css_app_bundle = Bundle(
+            css_core,
+            css_plugins,
+            output="webassets/packed_app.css",
+            filters=",".join(css_filters),
+        )
+
+        # -- LESS ------------------------------------------------------------------------------------------------------
+
+        less_filters = ["cssrewrite", "less_importrewrite", "gzip"]
+
+        less_core = list(dynamic_core_assets["less"]) + all_assets_for_plugins(
+            dynamic_plugin_assets["bundled"]["less"]
+        )
+        less_plugins = all_assets_for_plugins(dynamic_plugin_assets["external"]["less"])
+
+        if len(less_core) == 0:
+            less_core_bundle = Bundle(*[])
+        else:
+            less_core_bundle = Bundle(
+                *less_core,
+                output="webassets/packed_core.less",
+                filters=",".join(less_filters),
+            )
+
+        if len(less_plugins) == 0:
+            less_plugins_bundle = Bundle(*[])
+        else:
+            less_plugins_bundle = Bundle(
+                *less_plugins,
+                output="webassets/packed_plugins.less",
+                filters=",".join(less_filters),
+            )
+
+        less_app_bundle = Bundle(
+            less_core,
+            less_plugins,
+            output="webassets/packed_app.less",
+            filters=",".join(less_filters),
+        )
+
+        # -- asset registration ----------------------------------------------------------------------------------------
+
+        assets.register("js_libs", js_libs_bundle)
+        assets.register("js_client_core", js_client_core_bundle)
+        for plugin, bundle in clientjs_plugins.items():
+            # register our collected clientjs plugin bundles so that they are bound to the environment
+            assets.register(f"js_client_plugin_{plugin}", bundle)
+        assets.register("js_client_plugins", js_client_plugins_bundle)
+        assets.register("js_client", js_client_bundle)
+        assets.register("js_core", js_core_bundle)
+        for plugin, bundle in js_plugins.items():
+            # register our collected plugin bundles so that they are bound to the environment
+            assets.register(f"js_plugin_{plugin}", bundle)
+        assets.register("js_plugins", js_plugins_bundle)
+        assets.register("js_app", js_app_bundle)
+        assets.register("css_libs", css_libs_bundle)
+        assets.register("css_core", css_core_bundle)
+        assets.register("css_plugins", css_plugins_bundle)
+        assets.register("css_app", css_app_bundle)
+        assets.register("less_core", less_core_bundle)
+        assets.register("less_plugins", less_plugins_bundle)
+        assets.register("less_app", less_app_bundle)
+
+    def _prepare_asset_plugins(self):
+        def register_asset_blueprint(plugin, blueprint, url_prefix):
+            try:
+                app.register_blueprint(
+                    blueprint, url_prefix=url_prefix, name_prefix="plugin"
+                )
+                self._logger.debug(
+                    f"Registered assets of plugin {plugin} under URL prefix {url_prefix}"
+                )
+            except Exception:
+                self._logger.exception(
+                    f"Error while registering blueprint of plugin {plugin}, ignoring it",
+                    extra={"plugin": plugin},
+                )
+
+        blueprints = []
+        registrators = []
+
+        asset_plugins = octoprint.plugin.plugin_manager().get_implementations(
+            octoprint.plugin.AssetPlugin
+        )
+        for plugin in asset_plugins:
+            if isinstance(plugin, octoprint.plugin.BlueprintPlugin):
+                continue
+            blueprint, prefix = self._prepare_asset_plugin(plugin)
+
+            blueprints.append(blueprint)
+            registrators.append(
+                functools.partial(
+                    register_asset_blueprint, plugin._identifier, blueprint, prefix
+                )
+            )
+
+        return blueprints, registrators
+
+    def _prepare_asset_plugin(self, plugin):
+        name = plugin._identifier
+
+        url_prefix = f"/plugin/{name}"
+        blueprint = Blueprint(name, name, static_folder=plugin.get_asset_folder())
+
+        blueprint.before_request(corsRequestHandler)
+        blueprint.after_request(corsResponseHandler)
+
+        return blueprint, url_prefix
+
+    def _setup_timelapse(self):
         # configure timelapse
         octoprint.timelapse.valid_timelapse("test")
         octoprint.timelapse.configure_timelapse()
 
-        # setup command triggers
+    def _setup_command_triggers(self):
+        global printer
+
         events.CommandTrigger(printer)
         if self._debug:
             events.DebugEventListener()
 
-        # setup login manager
-        self._setup_login_manager()
+    def _setup_login_manager(self):
+        global loginManager
 
-        # register API blueprint
-        self._setup_blueprints()
+        loginManager = LoginManager()
 
-        ## Tornado initialization starts here
+        # "strong" is incompatible to remember me, see maxcountryman/flask-login#156. It also causes issues with
+        # clients toggling between IPv4 and IPv6 client addresses due to names being resolved one way or the other as
+        # at least observed on a Win10 client targeting "localhost", resolved as both "127.0.0.1" and "::1"
+        loginManager.session_protection = "basic"
 
-        ioloop = IOLoop.current()
+        loginManager.user_loader(load_user)
+        loginManager.unauthorized_handler(unauthorized_user)
+        loginManager.anonymous_user = userManager.anonymous_user_factory
+        loginManager.request_loader(load_user_from_request)
 
-        enable_cors = settings().getBoolean(["api", "allowCrossOrigin"])
+        loginManager.init_app(app, add_context_processor=False)
 
-        self._router = SockJSRouter(
-            self._create_socket_connection,
-            "/sockjs",
-            session_kls=util.sockjs.ThreadSafeSession,
-            user_settings={
-                "websocket_allow_origin": "*" if enable_cors else "",
-                "jsessionid": False,
-                "sockjs_url": "../../static/js/lib/sockjs.min.js",
-            },
+    def _setup_blueprints(self):
+        # do not remove or the index view won't be found
+        import octoprint.server.views  # noqa: F401
+        from octoprint.server.api import api
+        from octoprint.server.util.flask import make_api_error
+
+        blueprints = [api]
+        api_endpoints = ["/api"]
+        registrators = [functools.partial(app.register_blueprint, api, url_prefix="/api")]
+
+        # also register any blueprints defined in BlueprintPlugins
+        (
+            blueprints_from_plugins,
+            api_endpoints_from_plugins,
+            registrators_from_plugins,
+        ) = self._prepare_blueprint_plugins()
+        blueprints += blueprints_from_plugins
+        api_endpoints += api_endpoints_from_plugins
+        registrators += registrators_from_plugins
+
+        # and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
+        (blueprints_from_assets, registrators_from_assets) = self._prepare_asset_plugins()
+        blueprints += blueprints_from_assets
+        registrators += registrators_from_assets
+
+        # make sure all before/after_request hook results are attached as well
+        self._add_plugin_request_handlers_to_blueprints(*blueprints)
+
+        # register everything with the system
+        for registrator in registrators:
+            registrator()
+
+        @app.errorhandler(HTTPException)
+        def _handle_api_error(ex):
+            if any(request.path.startswith(x) for x in api_endpoints):
+                return make_api_error(ex.description, ex.code)
+            else:
+                return ex
+
+    def _prepare_blueprint_plugins(self):
+        def register_plugin_blueprint(plugin, blueprint, url_prefix):
+            try:
+                app.register_blueprint(
+                    blueprint, url_prefix=url_prefix, name_prefix="plugin"
+                )
+                self._logger.debug(
+                    f"Registered API of plugin {plugin} under URL prefix {url_prefix}"
+                )
+            except Exception:
+                self._logger.exception(
+                    f"Error while registering blueprint of plugin {plugin}, ignoring it",
+                    extra={"plugin": plugin},
+                )
+
+        blueprints = []
+        api_endpoints = []
+        registrators = []
+
+        blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(
+            octoprint.plugin.BlueprintPlugin
+        )
+        for plugin in blueprint_plugins:
+            blueprint, prefix = self._prepare_blueprint_plugin(plugin)
+
+            blueprints.append(blueprint)
+            api_endpoints += (prefix + x for x in plugin.get_blueprint_api_prefixes())
+            registrators.append(
+                functools.partial(
+                    register_plugin_blueprint, plugin._identifier, blueprint, prefix
+                )
+            )
+
+        return blueprints, api_endpoints, registrators
+
+    def _prepare_blueprint_plugin(self, plugin):
+        name = plugin._identifier
+        blueprint = plugin.get_blueprint()
+        if blueprint is None:
+            return
+
+        blueprint.before_request(corsRequestHandler)
+        blueprint.after_request(corsResponseHandler)
+
+        if plugin.is_blueprint_csrf_protected():
+            self._logger.debug(
+                f"CSRF Protection for Blueprint of plugin {name} is enabled"
+            )
+            blueprint.before_request(csrfRequestHandler)
+        else:
+            self._logger.warning(
+                f"CSRF Protection for Blueprint of plugin {name} is DISABLED"
+            )
+
+        if plugin.is_blueprint_protected():
+            blueprint.before_request(requireLoginRequestHandler)
+
+        url_prefix = f"/plugin/{name}"
+        return blueprint, url_prefix
+
+    def _add_plugin_request_handlers_to_blueprints(self, *blueprints):
+        before_hooks = octoprint.plugin.plugin_manager().get_hooks(
+            "octoprint.server.api.before_request"
+        )
+        after_hooks = octoprint.plugin.plugin_manager().get_hooks(
+            "octoprint.server.api.after_request"
         )
 
-        upload_suffixes = {
-            "name": self._settings.get(["server", "uploads", "nameSuffix"]),
-            "path": self._settings.get(["server", "uploads", "pathSuffix"]),
-        }
+        for name, hook in before_hooks.items():
+            plugin = octoprint.plugin.plugin_manager().get_plugin(name)
+            for blueprint in blueprints:
+                try:
+                    result = hook(plugin=plugin)
+                    if isinstance(result, (list, tuple)):
+                        for h in result:
+                            blueprint.before_request(h)
+                except Exception:
+                    self._logger.exception(
+                        "Error processing before_request hooks from plugin {}".format(
+                            plugin
+                        ),
+                        extra={"plugin": name},
+                    )
+
+        for name, hook in after_hooks.items():
+            plugin = octoprint.plugin.plugin_manager().get_plugin(name)
+            for blueprint in blueprints:
+                try:
+                    result = hook(plugin=plugin)
+                    if isinstance(result, (list, tuple)):
+                        for h in result:
+                            blueprint.after_request(h)
+                except Exception:
+                    self._logger.exception(
+                        "Error processing after_request hooks from plugin {}".format(
+                            plugin
+                        ),
+                        extra={"plugin": name},
+                    )
+
+    def _start_event_loop(self):
+        import asyncio
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    def _setup_tornado_app(self, enable_cors=False):
+        from tornado.web import Application
+
+        added_headers, removed_headers = self._get_header_transforms()
+
+        handlers = self._get_server_handlers(
+            added_headers=added_headers,
+            removed_headers=removed_headers,
+            enable_cors=enable_cors,
+        )
+
+        transforms = [
+            util.tornado.GlobalHeaderTransform.for_headers(
+                "OctoPrintGlobalHeaderTransform",
+                headers=added_headers,
+                removed_headers=removed_headers,
+            )
+        ]
+
+        app = Application(handlers=handlers, transforms=transforms)
+
+        return app
+
+    def _get_server_handlers(
+        self, added_headers=None, removed_headers=None, enable_cors=False
+    ):
+        from concurrent.futures import ThreadPoolExecutor
 
         def mime_type_guesser(path):
             from octoprint.filemanager import get_mime_type
@@ -726,7 +1898,7 @@ class Server:
         ##~~ Permission validators
 
         access_validators_from_plugins = []
-        for plugin, hook in pluginManager.get_hooks(
+        for plugin, hook in self._plugin_manager.get_hooks(
             "octoprint.server.http.access_validator"
         ).items():
             try:
@@ -862,8 +2034,20 @@ class Server:
                 joined.update(d)
             return joined
 
-        util.tornado.RequestlessExceptionLoggingMixin.LOG_REQUEST = debug
-        util.tornado.CorsSupportMixin.ENABLE_CORS = enable_cors
+        # SockJS
+
+        self._router = SockJSRouter(
+            self._create_socket_connection,
+            "/sockjs",
+            session_kls=util.sockjs.ThreadSafeSession,
+            user_settings={
+                "websocket_allow_origin": "*" if enable_cors else "",
+                "jsessionid": False,
+                "sockjs_url": "../../static/js/lib/sockjs.min.js",
+            },
+        )
+
+        # Various default routes
 
         server_routes = self._router.urls + [
             # various downloads
@@ -1018,8 +2202,10 @@ class Server:
             ),
         ]
 
-        # fetch additional routes from plugins
-        for name, hook in pluginManager.get_hooks("octoprint.server.http.routes").items():
+        # additional routes from plugins
+        for name, hook in self._plugin_manager.get_hooks(
+            "octoprint.server.http.routes"
+        ).items():
             try:
                 result = hook(list(server_routes))
             except Exception:
@@ -1049,16 +2235,12 @@ class Server:
                         )
                         server_routes.append((route, handler, kwargs))
 
-        headers = {
-            "X-Robots-Tag": "noindex, nofollow, noimageindex",
-            "X-Content-Type-Options": "nosniff",
+        # api handler
+
+        upload_suffixes = {
+            "name": self._settings.get(["server", "uploads", "nameSuffix"]),
+            "path": self._settings.get(["server", "uploads", "pathSuffix"]),
         }
-        if not settings().getBoolean(["server", "allowFraming"]):
-            headers["X-Frame-Options"] = "sameorigin"
-
-        removed_headers = ["Server"]
-
-        from concurrent.futures import ThreadPoolExecutor
 
         server_routes.append(
             (
@@ -1070,7 +2252,7 @@ class Server:
                         executor=ThreadPoolExecutor(
                             thread_name_prefix="WsgiRequestHandler"
                         ),
-                        headers=headers,
+                        headers=added_headers,
                         removed_headers=removed_headers,
                     ),
                     "file_prefix": "octoprint-file-upload-",
@@ -1080,15 +2262,21 @@ class Server:
             )
         )
 
-        transforms = [
-            util.tornado.GlobalHeaderTransform.for_headers(
-                "OctoPrintGlobalHeaderTransform",
-                headers=headers,
-                removed_headers=removed_headers,
-            )
-        ]
+        return server_routes
 
-        self._tornado_app = Application(handlers=server_routes, transforms=transforms)
+    def _get_header_transforms(self):
+        added = {
+            "X-Robots-Tag": "noindex, nofollow, noimageindex",
+            "X-Content-Type-Options": "nosniff",
+        }
+        if not settings().getBoolean(["server", "allowFraming"]):
+            added["X-Frame-Options"] = "sameorigin"
+
+        removed = ["Server"]
+
+        return added, removed
+
+    def _get_max_body_sizes(self):
         max_body_sizes = [
             (
                 "POST",
@@ -1099,7 +2287,7 @@ class Server:
         ]
 
         # allow plugins to extend allowed maximum body sizes
-        for name, hook in pluginManager.get_hooks(
+        for name, hook in self._plugin_manager.get_hooks(
             "octoprint.server.http.bodysize"
         ).items():
             try:
@@ -1134,9 +2322,12 @@ class Server:
                         )
                         max_body_sizes.append((method, route, size))
 
-        self._stop_intermediary_server()
+        return max_body_sizes
 
-        # initialize and bind the server
+    def _initialize_and_bind_server(self, max_body_sizes=None):
+        if max_body_sizes is None:
+            max_body_sizes = self._get_max_body_sizes()
+
         trusted_proxies = octoprint.util.net.usable_trusted_proxies_from_settings(
             settings()
         )
@@ -1151,111 +2342,111 @@ class Server:
             # set 10min idle timeout under windows to hopefully make #2916 less likely
             server_kwargs.update({"idle_connection_timeout": 600})
 
-        self._server = util.tornado.CustomHTTPServer(self._tornado_app, **server_kwargs)
+        # initialize
+        server = util.tornado.CustomHTTPServer(self._tornado_app, **server_kwargs)
 
-        listening_address = self._host
+        # bind
+        address = self._host
         if self._host == "::" and not self._v6_only:
             # special case - tornado only listens on v4 _and_ v6 if we use None as address
-            listening_address = None
+            address = None
+        server.listen(self._port, address=address)
 
-        self._server.listen(self._port, address=listening_address)
+        return server
 
-        ### From now on it's ok to launch subprocesses again
-
-        eventManager.fire(events.Events.STARTUP)
-
+    def _start_analysis_backlog(self):
         # analysis backlog
         fileManager.process_backlog()
 
-        # auto connect
-        if self._settings.getBoolean(["serial", "autoconnect"]):
-            self._logger.info(
-                "Autoconnect on startup is configured, trying to connect to the printer..."
+    def _start_serial_autoconnect(self):
+        if not self._settings.getBoolean(["serial", "autoconnect"]):
+            return
+
+        self._logger.info(
+            "Autoconnect on startup is configured, trying to connect to the printer..."
+        )
+        try:
+            (port, baudrate) = (
+                self._settings.get(["serial", "port"]),
+                self._settings.getInt(["serial", "baudrate"]),
             )
-            try:
-                (port, baudrate) = (
-                    self._settings.get(["serial", "port"]),
-                    self._settings.getInt(["serial", "baudrate"]),
+            printer_profile = printerProfileManager.get_default()
+            connectionOptions = printer.__class__.get_connection_options()
+            if port in connectionOptions["ports"] or port == "AUTO" or port is None:
+                self._logger.info(f"Trying to connect to configured serial port {port}")
+                printer.connect(
+                    port=port,
+                    baudrate=baudrate,
+                    profile=(
+                        printer_profile["id"] if "id" in printer_profile else "_default"
+                    ),
                 )
-                printer_profile = printerProfileManager.get_default()
-                connectionOptions = printer.__class__.get_connection_options()
-                if port in connectionOptions["ports"] or port == "AUTO" or port is None:
-                    self._logger.info(
-                        f"Trying to connect to configured serial port {port}"
-                    )
-                    printer.connect(
-                        port=port,
-                        baudrate=baudrate,
-                        profile=(
-                            printer_profile["id"]
-                            if "id" in printer_profile
-                            else "_default"
-                        ),
-                    )
-                else:
-                    self._logger.info(
-                        "Could not find configured serial port {} in the system, cannot automatically connect to a non existing printer. Is it plugged in and booted up yet?"
-                    )
-            except Exception:
-                self._logger.exception(
-                    "Something went wrong while attempting to automatically connect to the printer"
+            else:
+                self._logger.info(
+                    "Could not find configured serial port {} in the system, cannot automatically connect to a non existing printer. Is it plugged in and booted up yet?"
                 )
+        except Exception:
+            self._logger.exception(
+                "Something went wrong while attempting to automatically connect to the printer"
+            )
 
-        # auto refresh serial ports while not connected
-        if self._settings.getBoolean(["serial", "autorefresh"]):
-            from octoprint.util.comm import serialList
+    def _start_serial_autorefresh(self):
+        from octoprint.util.comm import serialList
 
-            last_ports = None
+        if not self._settings.getBoolean(["serial", "autorefresh"]):
+            return
+
+        last_ports = None
+        autorefresh = None
+
+        def refresh_serial_list():
+            nonlocal last_ports
+
+            new_ports = sorted(serialList())
+            if new_ports != last_ports:
+                self._logger.info(
+                    "Serial port list was updated, refreshing the port list in the frontend"
+                )
+                eventManager.fire(
+                    events.Events.CONNECTIONS_AUTOREFRESHED,
+                    payload={"ports": new_ports},
+                )
+            last_ports = new_ports
+
+        def autorefresh_active():
+            return printer.is_closed_or_error()
+
+        def autorefresh_stopped():
+            nonlocal autorefresh
+
+            self._logger.info("Autorefresh of serial port list stopped")
             autorefresh = None
 
-            def refresh_serial_list():
-                nonlocal last_ports
+        def run_autorefresh():
+            nonlocal autorefresh
 
-                new_ports = sorted(serialList())
-                if new_ports != last_ports:
-                    self._logger.info(
-                        "Serial port list was updated, refreshing the port list in the frontend"
-                    )
-                    eventManager.fire(
-                        events.Events.CONNECTIONS_AUTOREFRESHED,
-                        payload={"ports": new_ports},
-                    )
-                last_ports = new_ports
-
-            def autorefresh_active():
-                return printer.is_closed_or_error()
-
-            def autorefresh_stopped():
-                nonlocal autorefresh
-
-                self._logger.info("Autorefresh of serial port list stopped")
+            if autorefresh is not None:
+                autorefresh.cancel()
                 autorefresh = None
 
-            def run_autorefresh():
-                nonlocal autorefresh
-
-                if autorefresh is not None:
-                    autorefresh.cancel()
-                    autorefresh = None
-
-                autorefresh = octoprint.util.RepeatedTimer(
-                    self._settings.getInt(["serial", "autorefreshInterval"]),
-                    refresh_serial_list,
-                    run_first=True,
-                    condition=autorefresh_active,
-                    on_finish=autorefresh_stopped,
-                )
-                autorefresh.name = "Serial autorefresh worker"
-
-                self._logger.info("Starting autorefresh of serial port list")
-                autorefresh.start()
-
-            run_autorefresh()
-            eventManager.subscribe(
-                octoprint.events.Events.DISCONNECTED, lambda e, p: run_autorefresh()
+            autorefresh = octoprint.util.RepeatedTimer(
+                self._settings.getInt(["serial", "autorefreshInterval"]),
+                refresh_serial_list,
+                run_first=True,
+                condition=autorefresh_active,
+                on_finish=autorefresh_stopped,
             )
+            autorefresh.name = "Serial autorefresh worker"
 
-        # start up watchdogs
+            self._logger.info("Starting autorefresh of serial port list")
+            autorefresh.start()
+
+        run_autorefresh()
+        eventManager.subscribe(
+            octoprint.events.Events.DISCONNECTED, lambda e, p: run_autorefresh()
+        )
+
+    def _start_watched_observer(self):
         try:
             watched = self._settings.getBaseFolder("watched")
             watchdog_handler = util.watchdog.GcodeWatchdogHandler(fileManager, printer)
@@ -1270,26 +2461,13 @@ class Server:
 
             observer.schedule(watchdog_handler, watched, recursive=True)
             observer.start()
+            self._watched_observer = observer
         except Exception:
             self._logger.exception("Error starting watched folder observer")
 
-        # run our startup plugins
-        octoprint.plugin.call_plugin(
-            octoprint.plugin.StartupPlugin,
-            "on_startup",
-            args=(self._host, self._port),
-            sorting_context="StartupPlugin.on_startup",
-        )
+    def _trigger_after_startup(self):
+        from tornado.ioloop import IOLoop
 
-        def call_on_startup(name, plugin):
-            implementation = plugin.get_implementation(octoprint.plugin.StartupPlugin)
-            if implementation is None:
-                return
-            implementation.on_startup(self._host, self._port)
-
-        pluginLifecycleManager.add_callback("enabled", call_on_startup)
-
-        # prepare our after startup function
         def on_after_startup():
             if self._host == "::":
                 if self._v6_only:
@@ -1323,25 +2501,12 @@ class Server:
             # create a single use thread in which to perform our after-startup-tasks, start that and hand back
             # control to the ioloop
             def work():
-                octoprint.plugin.call_plugin(
-                    octoprint.plugin.StartupPlugin,
-                    "on_after_startup",
-                    sorting_context="StartupPlugin.on_after_startup",
-                )
-
-                def call_on_after_startup(name, plugin):
-                    implementation = plugin.get_implementation(
-                        octoprint.plugin.StartupPlugin
-                    )
-                    if implementation is None:
-                        return
-                    implementation.on_after_startup()
-
-                pluginLifecycleManager.add_callback("enabled", call_on_after_startup)
+                self._call_afterstartup_plugins()
 
                 # if there was a rogue plugin we wouldn't even have made it here, so remove startup triggered safe mode
                 # flag again...
                 try:
+                    incomplete_startup_flag = self._get_incomplete_startup_flag()
                     if incomplete_startup_flag.exists():
                         incomplete_startup_flag.unlink()
                 except Exception:
@@ -1360,23 +2525,21 @@ class Server:
 
             threading.Thread(target=work).start()
 
-        ioloop.add_callback(on_after_startup)
+        IOLoop.current().add_callback(on_after_startup)
 
-        # prepare our shutdown function
+    def _register_shutdown_handlers(self):
+        from tornado.ioloop import IOLoop
+
         def on_shutdown():
             # will be called on clean system exit and shutdown the watchdog observer and call the on_shutdown methods
             # on all registered ShutdownPlugins
             self._logger.info("Shutting down...")
-            observer.stop()
-            observer.join()
+            if self._watched_observer:
+                self._watched_observer.stop()
+                self._watched_observer.join()
             eventManager.fire(events.Events.SHUTDOWN)
 
-            self._logger.info("Calling on_shutdown on plugins")
-            octoprint.plugin.call_plugin(
-                octoprint.plugin.ShutdownPlugin,
-                "on_shutdown",
-                sorting_context="ShutdownPlugin.on_shutdown",
-            )
+            self._call_shutdown_plugins()
 
             # wait for shutdown event to be processed, but maximally for 15s
             event_timeout = 15.0
@@ -1399,391 +2562,54 @@ class Server:
             # will stop tornado on SIGTERM, making the program exit cleanly
             def shutdown_tornado():
                 self._logger.debug("Shutting down tornado's IOLoop...")
-                ioloop.stop()
+                IOLoop.current().stop()
 
             self._logger.debug("SIGTERM received...")
-            ioloop.add_callback_from_signal(shutdown_tornado)
+            IOLoop.current().add_callback_from_signal(shutdown_tornado)
 
         signal.signal(signal.SIGTERM, sigterm_handler)
 
-        try:
-            # this is the main loop - as long as tornado is running, OctoPrint is running
-            ioloop.start()
-            self._logger.debug("Tornado's IOLoop stopped")
-        except (KeyboardInterrupt, SystemExit):
-            pass
-        except Exception:
-            self._logger.fatal(
-                "Now that is embarrassing... Something went really really wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!"
-            )
-            self._logger.exception("Stacktrace follows:")
+    def _get_incomplete_startup_flag(self):
+        return pathlib.Path(self._settings._basedir) / ".incomplete_startup"
 
-    def _log_safe_mode_start(self, self_mode):
-        self_mode_file = os.path.join(
-            self._settings.getBaseFolder("data"), "last_safe_mode"
-        )
-        try:
-            with open(self_mode_file, "w+", encoding="utf-8") as f:
-                f.write(self_mode)
-        except Exception as ex:
-            self._logger.warn(f"Could not write safe mode file {self_mode_file}: {ex}")
-
-    def _create_socket_connection(self, session):
-        global \
-            printer, \
-            fileManager, \
-            analysisQueue, \
-            userManager, \
-            eventManager, \
-            connectivityChecker
-        return util.sockjs.PrinterStateConnection(
-            printer,
-            fileManager,
-            analysisQueue,
-            userManager,
-            groupManager,
-            eventManager,
-            pluginManager,
-            connectivityChecker,
-            session,
+    def _call_startup_plugins(self):
+        octoprint.plugin.call_plugin(
+            octoprint.plugin.StartupPlugin,
+            "on_startup",
+            args=(self._host, self._port),
+            sorting_context="StartupPlugin.on_startup",
         )
 
-    def _check_for_root(self):
-        if "geteuid" in dir(os) and os.geteuid() == 0:
-            exit("You should not run OctoPrint as root!")
-
-    def _get_locale(self):
-        global LANGUAGES
-
-        l10n = None
-        default_language = self._settings.get(["appearance", "defaultLanguage"])
-
-        if "l10n" in request.values:
-            # request: query param
-            l10n = request.values["l10n"].split(",")
-
-        elif "X-Locale" in request.headers:
-            # request: header
-            l10n = request.headers["X-Locale"].split(",")
-
-        elif hasattr(g, "identity") and g.identity:
-            # user setting
-            userid = g.identity.id
-            try:
-                user_language = userManager.get_user_setting(
-                    userid, ("interface", "language")
-                )
-                if user_language is not None and not user_language == "_default":
-                    l10n = [user_language]
-            except octoprint.access.users.UnknownUser:
-                pass
-
-        if (
-            not l10n
-            and default_language is not None
-            and not default_language == "_default"
-            and default_language in LANGUAGES
-        ):
-            # instance setting
-            l10n = [default_language]
-
-        if l10n:
-            # canonicalize and get rid of invalid language codes
-            l10n_canonicalized = []
-            for x in l10n:
-                try:
-                    l10n_canonicalized.append(str(Locale.parse(x)))
-                except Exception:
-                    # invalid language code, ignore
-                    continue
-            return Locale.negotiate(l10n_canonicalized, LANGUAGES)
-
-        # request: preference
-        return Locale.parse(request.accept_languages.best_match(LANGUAGES, default="en"))
-
-    def _setup_heartbeat_logging(self):
-        logger = logging.getLogger(__name__ + ".heartbeat")
-
-        def log_heartbeat():
-            logger.info("Server heartbeat <3")
-
-        interval = settings().getFloat(["server", "heartbeat"])
-        logger.info(f"Starting server heartbeat, {interval}s interval")
-
-        timer = octoprint.util.RepeatedTimer(interval, log_heartbeat)
-        timer.start()
-
-    def _setup_app(self, app):
-        global limiter
-
-        from octoprint.server.util.flask import (
-            OctoPrintFlaskRequest,
-            OctoPrintFlaskResponse,
-            OctoPrintJsonProvider,
-            OctoPrintSessionInterface,
-            PrefixAwareJinjaEnvironment,
-            ReverseProxiedEnvironment,
-        )
-
-        # we must set this here because setting app.debug will access app.jinja_env
-        app.jinja_environment = PrefixAwareJinjaEnvironment
-
-        app.config["TEMPLATES_AUTO_RELOAD"] = True
-        app.config["REMEMBER_COOKIE_DURATION"] = 90 * 24 * 60 * 60  # 90 days
-        app.config["REMEMBER_COOKIE_HTTPONLY"] = True
-        # REMEMBER_COOKIE_SECURE will be taken care of by our custom cookie handling
-
-        # we must not set this before TEMPLATES_AUTO_RELOAD is set to True or that won't take
-        app.debug = self._debug
-
-        # setup octoprint's flask json serialization/deserialization
-        app.json = OctoPrintJsonProvider(app)
-        app.json.compact = False
-
-        s = settings()
-
-        secret_key = s.get(["server", "secretKey"])
-        if not secret_key:
-            import secrets
-
-            secret_key = secrets.token_hex()
-            s.set(["server", "secretKey"], secret_key)
-            s.save()
-
-        app.secret_key = secret_key
-
-        reverse_proxied = ReverseProxiedEnvironment(
-            header_prefix=s.get(["server", "reverseProxy", "prefixHeader"]),
-            header_scheme=s.get(["server", "reverseProxy", "schemeHeader"]),
-            header_host=s.get(["server", "reverseProxy", "hostHeader"]),
-            header_server=s.get(["server", "reverseProxy", "serverHeader"]),
-            header_port=s.get(["server", "reverseProxy", "portHeader"]),
-            prefix=s.get(["server", "reverseProxy", "prefixFallback"]),
-            scheme=s.get(["server", "reverseProxy", "schemeFallback"]),
-            host=s.get(["server", "reverseProxy", "hostFallback"]),
-            server=s.get(["server", "reverseProxy", "serverFallback"]),
-            port=s.get(["server", "reverseProxy", "portFallback"]),
-        )
-
-        OctoPrintFlaskRequest.environment_wrapper = reverse_proxied
-        app.request_class = OctoPrintFlaskRequest
-        app.response_class = OctoPrintFlaskResponse
-        app.session_interface = OctoPrintSessionInterface()
-
-        @app.before_request
-        def before_request():
-            g.locale = self._get_locale()
-
-            # used for performance measurement
-            g.start_time = time.monotonic()
-
-            if self._debug and "perfprofile" in request.args:
-                try:
-                    from pyinstrument import Profiler
-
-                    g.perfprofiler = Profiler()
-                    g.perfprofiler.start()
-                except ImportError:
-                    # profiler dependency not installed, ignore
-                    pass
-
-        @app.after_request
-        def after_request(response):
-            # send no-cache headers with all POST responses
-            if request.method == "POST":
-                response.cache_control.no_cache = True
-
-            response.headers.add("X-Clacks-Overhead", "GNU Terry Pratchett")
-
-            if hasattr(g, "perfprofiler"):
-                g.perfprofiler.stop()
-                output_html = g.perfprofiler.output_html()
-                return make_response(output_html)
-
-            if hasattr(g, "start_time"):
-                end_time = time.monotonic()
-                duration_ms = int((end_time - g.start_time) * 1000)
-                response.headers.add("Server-Timing", f"app;dur={duration_ms}")
-
-            return response
-
-        from octoprint.util.jinja import MarkdownFilter
-
-        MarkdownFilter(app)
-
-        from flask_limiter import Limiter
-        from flask_limiter.util import get_remote_address
-
-        app.config["RATELIMIT_STRATEGY"] = "fixed-window-elastic-expiry"
-
-        limiter = Limiter(
-            key_func=get_remote_address,
-            app=app,
-            enabled=s.getBoolean(["devel", "enableRateLimiter"]),
-            storage_uri="memory://",
-        )
-
-    def _setup_i18n(self, app, additional_folders=None):
-        global babel
-        global LOCALES
-        global LANGUAGES
-
-        if additional_folders is None:
-            additional_folders = []
-
-        dirs = additional_folders + [os.path.join(app.root_path, "translations")]
-
-        # translations from plugins
-        plugins = octoprint.plugin.plugin_manager().enabled_plugins
-        for plugin in plugins.values():
-            plugin_translation_dir = os.path.join(plugin.location, "translations")
-            if not os.path.isdir(plugin_translation_dir):
-                continue
-            dirs.append(plugin_translation_dir)
-
-        app.config["BABEL_TRANSLATION_DIRECTORIES"] = ";".join(dirs)
-
-        babel = Babel(app, locale_selector=self._get_locale)
-
-        def get_available_locale_identifiers(locales):
-            result = set()
-
-            # add available translations
-            for locale in locales:
-                result.add(str(locale))
-
-            return result
-
-        with app.app_context():
-            LOCALES = babel.list_translations()
-        LANGUAGES = get_available_locale_identifiers(LOCALES)
-
-    def _setup_jinja2(self):
-        import re
-
-        app.jinja_env.add_extension("jinja2.ext.do")
-        app.jinja_env.add_extension("octoprint.util.jinja.trycatch")
-
-        def regex_replace(s, find, replace):
-            return re.sub(find, replace, s)
-
-        html_header_regex = re.compile(
-            r"<h(?P<number>[1-6])>(?P<content>.*?)</h(?P=number)>"
-        )
-
-        def offset_html_headers(s, offset):
-            def repl(match):
-                number = int(match.group("number"))
-                number += offset
-                if number > 6:
-                    number = 6
-                elif number < 1:
-                    number = 1
-                return "<h{number}>{content}</h{number}>".format(
-                    number=number, content=match.group("content")
-                )
-
-            return html_header_regex.sub(repl, s)
-
-        markdown_header_regex = re.compile(
-            r"^(?P<hashes>#+)\s+(?P<content>.*)$", flags=re.MULTILINE
-        )
-
-        def offset_markdown_headers(s, offset):
-            def repl(match):
-                number = len(match.group("hashes"))
-                number += offset
-                if number > 6:
-                    number = 6
-                elif number < 1:
-                    number = 1
-                return "{hashes} {content}".format(
-                    hashes="#" * number, content=match.group("content")
-                )
-
-            return markdown_header_regex.sub(repl, s)
-
-        html_link_regex = re.compile(r"<(?P<tag>a.*?)>(?P<content>.*?)</a>")
-
-        def externalize_links(text):
-            def repl(match):
-                tag = match.group("tag")
-                if "href" not in tag:
-                    return match.group(0)
-
-                if "target=" not in tag and "rel=" not in tag:
-                    tag += ' target="_blank" rel="noreferrer noopener"'
-
-                content = match.group("content")
-                return f"<{tag}>{content}</a>"
-
-            return html_link_regex.sub(repl, text)
-
-        single_quote_regex = re.compile("(?<!\\\\)'")
-
-        def escape_single_quote(text):
-            return single_quote_regex.sub("\\'", text)
-
-        double_quote_regex = re.compile('(?<!\\\\)"')
-
-        def escape_double_quote(text):
-            return double_quote_regex.sub('\\"', text)
-
-        app.jinja_env.filters["regex_replace"] = regex_replace
-        app.jinja_env.filters["offset_html_headers"] = offset_html_headers
-        app.jinja_env.filters["offset_markdown_headers"] = offset_markdown_headers
-        app.jinja_env.filters["externalize_links"] = externalize_links
-        app.jinja_env.filters["escape_single_quote"] = app.jinja_env.filters["esq"] = (
-            escape_single_quote
-        )
-        app.jinja_env.filters["escape_double_quote"] = app.jinja_env.filters["edq"] = (
-            escape_double_quote
-        )
-
-        # configure additional template folders for jinja2
-        import jinja2
-
-        import octoprint.util.jinja
-
-        app.jinja_env.prefix_loader = jinja2.PrefixLoader({})
-
-        loaders = [app.jinja_loader, app.jinja_env.prefix_loader]
-        if octoprint.util.is_running_from_source():
-            root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
-            allowed = ["AUTHORS.md", "SUPPORTERS.md", "THIRDPARTYLICENSES.md"]
-            files = {"_data/" + name: os.path.join(root, name) for name in allowed}
-            loaders.append(octoprint.util.jinja.SelectedFilesWithConversionLoader(files))
-
-        # TODO: Remove this in 2.0.0
-        warning_message = "Loading plugin template '{template}' from '{filename}' without plugin prefix, this is deprecated and will soon no longer be supported."
-        loaders.append(
-            octoprint.util.jinja.WarningLoader(
-                octoprint.util.jinja.PrefixChoiceLoader(app.jinja_env.prefix_loader),
-                warning_message,
-            )
-        )
-
-        app.jinja_loader = jinja2.ChoiceLoader(loaders)
-
-        self._register_template_plugins()
-
-        # make sure plugin lifecycle events relevant for jinja2 are taken care of
-        def template_enabled(name, plugin):
-            if plugin.implementation is None or not isinstance(
-                plugin.implementation, octoprint.plugin.TemplatePlugin
-            ):
+        def call_on_startup(name, plugin):
+            implementation = plugin.get_implementation(octoprint.plugin.StartupPlugin)
+            if implementation is None:
                 return
-            self._register_additional_template_plugin(plugin.implementation)
+            implementation.on_startup(self._host, self._port)
 
-        def template_disabled(name, plugin):
-            if plugin.implementation is None or not isinstance(
-                plugin.implementation, octoprint.plugin.TemplatePlugin
-            ):
+        pluginLifecycleManager.add_callback("enabled", call_on_startup)
+
+    def _call_afterstartup_plugins(self):
+        octoprint.plugin.call_plugin(
+            octoprint.plugin.StartupPlugin,
+            "on_after_startup",
+            sorting_context="StartupPlugin.on_after_startup",
+        )
+
+        def call_on_after_startup(name, plugin):
+            implementation = plugin.get_implementation(octoprint.plugin.StartupPlugin)
+            if implementation is None:
                 return
-            self._unregister_additional_template_plugin(plugin.implementation)
+            implementation.on_after_startup()
 
-        pluginLifecycleManager.add_callback("enabled", template_enabled)
-        pluginLifecycleManager.add_callback("disabled", template_disabled)
+        pluginLifecycleManager.add_callback("enabled", call_on_after_startup)
+
+    def _call_shutdown_plugins(self):
+        self._logger.info("Calling on_shutdown on plugins")
+        octoprint.plugin.call_plugin(
+            octoprint.plugin.ShutdownPlugin,
+            "on_shutdown",
+            sorting_context="ShutdownPlugin.on_shutdown",
+        )
 
     def _execute_preemptive_flask_caching(self, preemptive_cache):
         import time
@@ -2139,16 +2965,6 @@ class Server:
                         extra={"plugin": name},
                     )
 
-    def _setup_cli_key(self):
-        from octoprint.util import generate_api_key
-
-        cli_key_file = os.path.join(self._settings.getBaseFolder("generated"), "cli.key")
-        cli_key = generate_api_key()
-        with open(cli_key_file, "w", encoding="utf8") as f:
-            f.write(cli_key)
-
-        return cli_key
-
     def _setup_mimetypes(self):
         # Safety measures for Windows... apparently the mimetypes module takes its translation from the windows
         # registry, and if for some weird reason that gets borked the reported MIME types can be all over the place.
@@ -2159,6 +2975,17 @@ class Server:
         # See #3367
         mimetypes.add_type("application/javascript", ".js")
         mimetypes.add_type("text/css", ".css")
+
+    def _setup_cli_key(self):
+        from octoprint.util import generate_api_key
+
+        cli_key_file = os.path.join(self._settings.getBaseFolder("generated"), "cli.key")
+        generated_key = generate_api_key()
+        with open(cli_key_file, "w", encoding="utf8") as f:
+            f.write(generated_key)
+
+        global cli_key
+        cli_key = generated_key
 
     def _setup_assets(self):
         global app
@@ -2762,138 +3589,220 @@ class Server:
         self._intermediary_server.server_close()
         self._logger.info("Intermediary server shut down")
 
-    def _setup_plugin_permissions(self):
-        global pluginManager
+    def _log_safe_mode_start(self, self_mode):
+        self_mode_file = os.path.join(
+            self._settings.getBaseFolder("data"), "last_safe_mode"
+        )
+        try:
+            with open(self_mode_file, "w+", encoding="utf-8") as f:
+                f.write(self_mode)
+        except Exception as ex:
+            self._logger.warn(f"Could not write safe mode file {self_mode_file}: {ex}")
 
-        from octoprint.access.permissions import PluginOctoPrintPermission
+    def _create_socket_connection(self, session):
+        global \
+            printer, \
+            fileManager, \
+            analysisQueue, \
+            userManager, \
+            eventManager, \
+            connectivityChecker
+        return util.sockjs.PrinterStateConnection(
+            printer,
+            fileManager,
+            analysisQueue,
+            userManager,
+            groupManager,
+            eventManager,
+            self._plugin_manager,
+            connectivityChecker,
+            session,
+        )
 
-        key_whitelist = re.compile(r"[A-Za-z0-9_]*")
+    def _check_for_root(self):
+        if "geteuid" in dir(os) and os.geteuid() == 0:
+            exit("You should not run OctoPrint as root!")
 
-        def permission_key(plugin, definition):
-            return "PLUGIN_{}_{}".format(plugin.upper(), definition["key"].upper())
+    def _get_locale(self):
+        global LANGUAGES
 
-        def permission_name(plugin, definition):
-            return "{}: {}".format(plugin, definition["name"])
+        l10n = None
+        default_language = self._settings.get(["appearance", "defaultLanguage"])
 
-        def permission_role(plugin, role):
-            return f"plugin_{plugin}_{role}"
+        if "l10n" in request.values:
+            # request: query param
+            l10n = request.values["l10n"].split(",")
 
-        def process_regular_permission(plugin_info, definition):
-            permissions = []
-            for key in definition.get("permissions", []):
-                permission = octoprint.access.permissions.Permissions.find(key)
+        elif "X-Locale" in request.headers:
+            # request: header
+            l10n = request.headers["X-Locale"].split(",")
 
-                if permission is None:
-                    # if there is still no permission found, postpone this - maybe it is a permission from
-                    # another plugin that hasn't been loaded yet
-                    return False
+        elif hasattr(g, "identity") and g.identity:
+            # user setting
+            userid = g.identity.id
+            try:
+                user_language = userManager.get_user_setting(
+                    userid, ("interface", "language")
+                )
+                if user_language is not None and not user_language == "_default":
+                    l10n = [user_language]
+            except octoprint.access.users.UnknownUser:
+                pass
 
-                permissions.append(permission)
+        if (
+            not l10n
+            and default_language is not None
+            and not default_language == "_default"
+            and default_language in LANGUAGES
+        ):
+            # instance setting
+            l10n = [default_language]
 
-            roles = definition.get("roles", [])
-            description = definition.get("description", "")
-            dangerous = definition.get("dangerous", False)
-            default_groups = definition.get("default_groups", [])
+        if l10n:
+            # canonicalize and get rid of invalid language codes
+            l10n_canonicalized = []
+            for x in l10n:
+                try:
+                    l10n_canonicalized.append(str(Locale.parse(x)))
+                except Exception:
+                    # invalid language code, ignore
+                    continue
+            return Locale.negotiate(l10n_canonicalized, LANGUAGES)
 
-            roles_and_permissions = [
-                permission_role(plugin_info.key, role) for role in roles
-            ] + permissions
+        # request: preference
+        return Locale.parse(request.accept_languages.best_match(LANGUAGES, default="en"))
 
-            key = permission_key(plugin_info.key, definition)
-            permission = PluginOctoPrintPermission(
-                permission_name(plugin_info.name, definition),
-                description,
-                *roles_and_permissions,
-                plugin=plugin_info.key,
-                dangerous=dangerous,
-                default_groups=default_groups,
-            )
-            setattr(
-                octoprint.access.permissions.Permissions,
-                key,
-                permission,
-            )
+    def _execute_preemptive_flask_caching(self, preemptive_cache):
+        import time
 
-            self._logger.info(
-                "Added new permission from plugin {}: {} (needs: {!r})".format(
-                    plugin_info.key, key, ", ".join(map(repr, permission.needs))
+        from werkzeug.test import EnvironBuilder
+
+        # we clean up entries from our preemptive cache settings that haven't been
+        # accessed longer than server.preemptiveCache.until days
+        preemptive_cache_timeout = settings().getInt(
+            ["server", "preemptiveCache", "until"]
+        )
+        cutoff_timestamp = time.time() - preemptive_cache_timeout * 24 * 60 * 60
+
+        def filter_current_entries(entry):
+            """Returns True for entries younger than the cutoff date"""
+            return "_timestamp" in entry and entry["_timestamp"] > cutoff_timestamp
+
+        def filter_http_entries(entry):
+            """Returns True for entries targeting http or https."""
+            return (
+                "base_url" in entry
+                and entry["base_url"]
+                and (
+                    entry["base_url"].startswith("http://")
+                    or entry["base_url"].startswith("https://")
                 )
             )
-            return True
 
-        postponed = []
+        def filter_entries(entry):
+            """Combined filter."""
+            filters = (filter_current_entries, filter_http_entries)
+            return all(f(entry) for f in filters)
 
-        hooks = pluginManager.get_hooks("octoprint.access.permissions")
-        for name, factory in hooks.items():
-            try:
-                if isinstance(factory, (tuple, list)):
-                    additional_permissions = list(factory)
-                elif callable(factory):
-                    additional_permissions = factory()
-                else:
-                    raise ValueError("factory must be either a callable, tuple or list")
+        # filter out all old and non-http entries
+        cache_data = preemptive_cache.clean_all_data(
+            lambda root, entries: list(filter(filter_entries, entries))
+        )
+        if not cache_data:
+            return
 
-                if not isinstance(additional_permissions, (tuple, list)):
-                    raise ValueError(
-                        "factory result must be either a tuple or a list of permission definition dicts"
-                    )
+        def execute_caching():
+            logger = logging.getLogger(__name__ + ".preemptive_cache")
 
-                plugin_info = pluginManager.get_plugin_info(name)
-                for p in additional_permissions:
-                    if not isinstance(p, dict):
-                        continue
+            for route in sorted(cache_data.keys(), key=lambda x: (x.count("/"), x)):
+                entries = sorted(
+                    cache_data[route], key=lambda x: x.get("_count", 0), reverse=True
+                )
+                for kwargs in entries:
+                    plugin = kwargs.get("plugin", None)
+                    if plugin:
+                        try:
+                            plugin_info = self._plugin_manager.get_plugin_info(
+                                plugin, require_enabled=True
+                            )
+                            if plugin_info is None:
+                                logger.info(
+                                    "About to preemptively cache plugin {} but it is not installed or enabled, preemptive caching makes no sense".format(
+                                        plugin
+                                    )
+                                )
+                                continue
 
-                    if "key" not in p or "name" not in p:
-                        continue
+                            implementation = plugin_info.implementation
+                            if implementation is None or not isinstance(
+                                implementation, octoprint.plugin.UiPlugin
+                            ):
+                                logger.info(
+                                    "About to preemptively cache plugin {} but it is not a UiPlugin, preemptive caching makes no sense".format(
+                                        plugin
+                                    )
+                                )
+                                continue
+                            if not implementation.get_ui_preemptive_caching_enabled():
+                                logger.info(
+                                    "About to preemptively cache plugin {} but it has disabled preemptive caching".format(
+                                        plugin
+                                    )
+                                )
+                                continue
+                        except Exception:
+                            logger.exception(
+                                "Error while trying to check if plugin {} has preemptive caching enabled, skipping entry"
+                            )
+                            continue
 
-                    if not key_whitelist.match(p["key"]):
-                        self._logger.warning(
-                            "Got permission with invalid key from plugin {}: {}".format(
-                                name, p["key"]
+                    additional_request_data = kwargs.get("_additional_request_data", {})
+                    kwargs = {
+                        k: v
+                        for k, v in kwargs.items()
+                        if not k.startswith("_") and not k == "plugin"
+                    }
+                    kwargs.update(additional_request_data)
+
+                    try:
+                        start = time.monotonic()
+                        if plugin:
+                            logger.info(
+                                "Preemptively caching {} (ui {}) for {!r}".format(
+                                    route, plugin, kwargs
+                                )
+                            )
+                        else:
+                            logger.info(
+                                "Preemptively caching {} (ui _default) for {!r}".format(
+                                    route, kwargs
+                                )
+                            )
+
+                        headers = kwargs.get("headers", {})
+                        headers["X-Force-View"] = plugin if plugin else "_default"
+                        headers["X-Preemptive-Recording"] = "yes"
+                        kwargs["headers"] = headers
+
+                        builder = EnvironBuilder(**kwargs)
+                        app(builder.get_environ(), lambda *a, **kw: None)
+
+                        logger.info(f"... done in {time.monotonic() - start:.2f}s")
+                    except Exception:
+                        logger.exception(
+                            "Error while trying to preemptively cache {} for {!r}".format(
+                                route, kwargs
                             )
                         )
-                        continue
 
-                    if not process_regular_permission(plugin_info, p):
-                        postponed.append((plugin_info, p))
-            except Exception:
-                self._logger.exception(
-                    f"Error while creating permission instance/s from {name}"
-                )
+        # asynchronous caching
+        import threading
 
-        # final resolution passes
-        pass_number = 1
-        still_postponed = []
-        while len(postponed):
-            start_length = len(postponed)
-            self._logger.debug(
-                "Plugin permission resolution pass #{}, "
-                "{} unresolved permissions...".format(pass_number, start_length)
-            )
-
-            for plugin_info, definition in postponed:
-                if not process_regular_permission(plugin_info, definition):
-                    still_postponed.append((plugin_info, definition))
-
-            self._logger.debug(
-                "... pass #{} done, {} permissions left to resolve".format(
-                    pass_number, len(still_postponed)
-                )
-            )
-
-            if len(still_postponed) == start_length:
-                # no change, looks like some stuff is unresolvable - let's bail
-                for plugin_info, definition in still_postponed:
-                    self._logger.warning(
-                        "Unable to resolve permission from {}: {!r}".format(
-                            plugin_info.key, definition
-                        )
-                    )
-                break
-
-            postponed = still_postponed
-            still_postponed = []
-            pass_number += 1
+        cache_thread = threading.Thread(
+            target=execute_caching, name="Preemptive Cache Worker"
+        )
+        cache_thread.daemon = True
+        cache_thread.start()
 
 
 class LifecycleManager:

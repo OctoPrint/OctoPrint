@@ -23,7 +23,7 @@ except ImportError:
 # ----------------------------------------------------------------------------------------
 
 # Supported python versions
-PYTHON_REQUIRES = ">=3.7, <3.13"
+PYTHON_REQUIRES = ">=3.7, <3.14"
 
 # Requirements for setup.py
 SETUP_REQUIRES = []
@@ -44,10 +44,12 @@ core_deps = [
     "feedparser>=6.0.11,<7",
     "filetype>=1.2.0,<2",
     "Flask-Assets>=2.1.0,<3",
-    "Flask-Babel>=3.1.0,<4",
+    "Flask-Babel>=4.0.0,<5 ; python_version>='3.8'",
+    "Flask-Babel>=3.1.0,<4 ; python_version<'3.8'",
     "Flask-Login>=0.6.3,<0.7",  # breaking changes can happen on minor version increases
     "Flask-Limiter>=3.5.0,<4",
-    "flask>=2.2.3,<2.3",  # breaking changes can happen on minor version increases (with deprecation warnings)
+    "flask>=3.0.3,<3.1 ; python_version>='3.8'",  # breaking changes can happen on minor version increases (with deprecation warnings)
+    "flask>=2.2.3,<2.3 ; python_version<'3.8'",
     "frozendict>=2.4.0,<3",
     "future>=0.18.3,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
     "importlib-metadata==5.2.0 ; python_version<'3.8'",  # backport of importlib.metadata for python 3.7
@@ -56,7 +58,8 @@ core_deps = [
     # "netifaces2>=0.0.21,<0.1",  # fork of netifaces in Rust, use rolled back due to build issues in some environments
     "netifaces>=0.11.0,<0.12",
     "packaging",
-    "passlib>=1.7.4,<2",
+    "libpass>=1.8.1,<2 ; python_version>='3.9'",  # replacement for unmaintained passlib
+    "passlib==1.7.4 ; python_version<'3.9'",
     "pathvalidate>=2.5.2,<3",
     "psutil>=5.9.8,<6",
     "pydantic>=2.7.4,<3 ; python_version>='3.8'",
@@ -70,17 +73,19 @@ core_deps = [
     "semantic_version>=2.10.0,<3",
     "sentry-sdk>=1.40.0,<2",
     "setuptools",
-    "tornado>=6.2,<6.3",  # later versions require Python 3.8+
+    "tornado>=6.4.1,<6.5 ; python_version>='3.8'",
+    "tornado>=6.2,<6.3 ; python_version<'3.8'",
     "watchdog>=2.3.1,<3",
     "websocket-client==1.6.1",  # later versions require Python 3.8+, breaking changes can happen on patch version increases, changelog incomplete
-    "werkzeug>=2.2.3,<2.3",  # breaking changes can happen on minor version increases
+    "werkzeug>=3.0.6,<3.1 ; python_version>='3.8'",  # breaking changes can happen on minor version increases, newer versions need Python 3.9
+    "werkzeug>=2.2.3,<2.3.0 ; python_version<'3.8'",
     "wrapt>=1.15,<1.16",
     "zeroconf~=0.127",  # breaking changes can happen on minor version increases (despite semantic versioning)
     "zipstream-ng>=1.7.1,<2.0.0",
 ]
 vendored_deps = [
     "blinker>=1.6.3,<1.7.0",  # dependency of flask_principal, later versions require Python 3.8+
-    "class-doc>=0.2.6,<0.3",  # dependency of with_attrs_docs
+    "more-itertools>=5.0.0",  # dependency of class-doc
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
 ]
@@ -104,6 +109,8 @@ EXTRA_REQUIRES = {
         "mock>=5.1.0,<6",
         "pytest-doctest-custom>=1.0.0,<2",
         "pytest>=7.3.0,<8",
+        # formatting, liniting, etc
+        "ruff",
         # pre-commit
         "pre-commit",
         # profiler
@@ -360,11 +367,11 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.10",
             "Programming Language :: Python :: 3.11",
             "Programming Language :: Python :: 3.12",
+            "Programming Language :: Python :: 3.13",
             "Programming Language :: Python :: 3 :: Only",
             "Programming Language :: Python :: Implementation :: CPython",
             "Programming Language :: JavaScript",
             "Topic :: Printing",
-            "Topic :: System :: Monitoring",
         ],
         author="Gina Häußge",
         author_email="gina@octoprint.org",

@@ -13,6 +13,8 @@ from . import CheckResult, HealthCheck, Result
 class PythonEolHealthCheck(HealthCheck):
     key = "python_eol"
 
+    MAX_MONTHS_UNTIL = 12
+
     def __init__(self, settings):
         super().__init__(settings)
 
@@ -24,7 +26,8 @@ class PythonEolHealthCheck(HealthCheck):
 
     def perform_check(self, force=False):
         data = self._get_eol_data(force=force)
-        today = datetime.date.today().isoformat()
+        today_obj = datetime.date.today()
+        today = today_obj.isoformat()
 
         major = sys.version_info.major
         major_minor = f"{sys.version_info.major}.{sys.version_info.minor}"
@@ -37,11 +40,19 @@ class PythonEolHealthCheck(HealthCheck):
         ):
             if python in data:
                 data = data[python]
+
+                date_obj = datetime.date.fromisoformat(data["date"])
+                months_until = (date_obj - today_obj).total_seconds() / (
+                    30 * 24 * 60 * 60
+                )
+                if months_until > self.MAX_MONTHS_UNTIL:
+                    continue
+
                 soon = today < data["date"]
                 context = {
                     "version": get_python_version_string(),
                     "date": data["date"],
-                    "soon": today < data["date"],
+                    "soon": soon,
                 }
                 if "last_octoprint" in data:
                     context["last_octoprint"] = data["last_octoprint"]

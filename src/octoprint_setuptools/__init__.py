@@ -472,7 +472,7 @@ class PackTranslation(Command):
 
         import datetime
 
-        now = datetime.datetime.utcnow().replace(microsecond=0)
+        now = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
 
         if self.target is None:
             self.target = self.__class__.source_dir
@@ -622,7 +622,7 @@ def create_plugin_setup_parameters(
         raise ValueError("eggs must be a list")
 
     egg = "{name}*.egg-info".format(
-        name=re.sub('[^A-Za-z0-9.]+', '-', name).replace('-', '_')
+        name=re.sub("[^A-Za-z0-9.]+", "-", name).replace("-", "_")
     )
     if egg not in eggs:
         eggs = [egg] + eggs

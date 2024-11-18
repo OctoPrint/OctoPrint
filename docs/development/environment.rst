@@ -14,7 +14,7 @@ below.
 
   * Prerequisites:
 
-    * `Latest stable Python 3 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv``
+    * `Stable Python 3 <https://python.org>`_ including ``pip``, ``setuptools`` and ``virtualenv`` (currently supported: Python 3.7 up to 3.13)
     * `Git <https://git-scm.com>`_
 
   * Checkout the OctoPrint sources from their Git repository:
