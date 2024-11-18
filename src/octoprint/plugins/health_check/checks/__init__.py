@@ -26,7 +26,7 @@ class HealthCheck:
     key: str = "dummy"
 
     def __init__(self, settings: dict = None):
-        self._logger = logging.getLogger("octoprint.plugin.healthcheck." + self.key)
+        self._logger = logging.getLogger("octoprint.plugins.healthcheck." + self.key)
         if settings is None:
             settings = {}
         self._settings = settings
