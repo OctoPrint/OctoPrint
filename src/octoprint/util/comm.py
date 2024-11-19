@@ -5121,6 +5121,12 @@ class MachineCom:
 
     ## gcode
 
+    NOT_SENDING_T = (
+        "Not {action} T{tool}, that tool doesn't exist according to the printer profile or "
+        "was reported as invalid by the firmware. Make sure your printer profile is set up "
+        "correctly in OctoPrint, with the number of extruders set to all available extruders."
+    )
+
     def _gcode_T_queuing(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
@@ -5130,11 +5136,7 @@ class MachineCom:
             new_tool = int(toolMatch.group("value"))
 
             if not self._validate_tool(new_tool):
-                message = (
-                    "Not queuing T{}, that tool doesn't exist according to the printer profile or "
-                    "was reported as invalid by the firmware. Make sure your "
-                    "printer profile is set up correctly.".format(new_tool)
-                )
+                message = self.NOT_SENDING_T.format(action="queuing", tool=new_tool)
                 self._log("Warn: " + message)
                 eventManager().fire(
                     Events.COMMAND_SUPPRESSED,
@@ -5173,12 +5175,7 @@ class MachineCom:
         if toolMatch:
             new_tool = int(toolMatch.group("value"))
             if not self._validate_tool(new_tool):
-                message = (
-                    "Not sending T{}, that tool doesn't exist according to "
-                    "the printer profile or was reported as invalid by the "
-                    "firmware. Make sure your printer profile is set up "
-                    "correctly.".format(new_tool)
-                )
+                message = self.NOT_SENDING_T.format(action="sending", tool=new_tool)
                 self._log("Warn: " + message)
                 self._logger.warning(message)
                 eventManager().fire(
