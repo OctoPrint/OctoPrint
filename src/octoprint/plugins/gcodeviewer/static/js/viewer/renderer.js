@@ -290,12 +290,15 @@ GCODE.renderer = (function () {
         var x = cmd.x !== undefined ? cmd.x : cmd.prevX;
         var y = cmd.y !== undefined ? cmd.y : cmd.prevY;
 
-        var centerX = cmd.prevX + cmd.i;
-        var centerY = cmd.prevY + cmd.j;
+        var i = cmd.i !== undefined ? cmd.i : 0;
+        var j = cmd.j !== undefined ? cmd.j : 0;
+
+        var centerX = cmd.prevX + i;
+        var centerY = cmd.prevY + j;
         return {
             x: centerX,
             y: centerY,
-            r: Math.sqrt(cmd.i * cmd.i + cmd.j * cmd.j),
+            r: Math.sqrt(i * i + j * j),
             startAngle: Math.atan2(cmd.prevY - centerY, cmd.prevX - centerX),
             endAngle: Math.atan2(y - centerY, x - centerX),
             startX: cmd.prevX,
