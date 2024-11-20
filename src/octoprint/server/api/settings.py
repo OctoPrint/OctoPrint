@@ -368,6 +368,7 @@ def getSettings():
             "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
             "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
             "watermark": s.getBoolean(["webcam", "watermark"]),
+            "renderAfterPrintDelay": s.getInt(["webcam", "renderAfterPrintDelay"]),
             # webcams & defaults
             "webcams": webcamsDict,
             "defaultWebcam": None,
@@ -683,6 +684,11 @@ def _saveSettings(data):
             s.set(["webcam", "ffmpegVideoCodec"], data["webcam"]["ffmpegVideoCodec"])
         if "watermark" in data["webcam"]:
             s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
+        if "renderAfterPrintDelay" in data["webcam"]:
+            s.setInt(
+                ["webcam", "renderAfterPrintDelay"],
+                data["webcam"]["renderAfterPrintDelay"],
+            )
         if "defaultWebcam" in data["webcam"]:
             s.set(["webcam", "defaultWebcam"], data["webcam"]["defaultWebcam"])
         if "snapshotWebcam" in data["webcam"]:

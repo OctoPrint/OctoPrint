@@ -1679,6 +1679,7 @@ class Server:
         # configure timelapse
         octoprint.timelapse.valid_timelapse("test")
         octoprint.timelapse.configure_timelapse()
+        octoprint.timelapse.setup_rendering_queue()
 
     def _setup_command_triggers(self):
         global printer

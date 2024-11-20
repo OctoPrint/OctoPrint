@@ -1212,6 +1212,9 @@ Use the following settings to configure webcam support:
      # Whether to include a "created with OctoPrint" watermark in the generated timelapse movies
      watermark: true
 
+     # Delay to wait for after print end before rendering timelapse, in seconds. If another print gets started during this time, the rendering will be postponed.
+     renderAfterPrintDelay: 0
+
      # Whether to flip the webcam horizontally
      flipH: false
 

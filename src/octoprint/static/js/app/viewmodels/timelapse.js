@@ -142,7 +142,7 @@ $(function () {
         self.timelapseMinDelay.subscribe(function () {
             self.isDirty(true);
         });
-        self.timelapseRenderAfterPrint.subscribe(function () {
+        self.timelapseRenderAfterPrint.subscribe(() => {
             self.isDirty(true);
         });
         self.persist.subscribe(function () {

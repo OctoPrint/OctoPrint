@@ -86,6 +86,9 @@ class WebcamConfig(BaseModel):
     cleanTmpAfterDays: int = 7
     """After how many days unrendered timelapses will be deleted."""
 
+    renderAfterPrintDelay: int = 0
+    """Delay to wait for after print end before rendering timelapse, in seconds. If another print gets started during this time, the rendering will be postponed."""
+
     defaultWebcam: str = "classic"
     """The name of the default webcam"""
 
