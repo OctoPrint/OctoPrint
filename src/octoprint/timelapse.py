@@ -33,6 +33,8 @@ current = None
 # currently active render job, if any
 current_render_job = None
 
+logger = logging.getLogger(__name__)
+
 # filename formats
 _capture_format = "{prefix}-{number}.jpg"
 _capture_glob = "{prefix}-*.jpg"
@@ -66,6 +68,92 @@ _job_lock = threading.RLock()
 # cached valid timelapse extensions
 _extensions = None
 
+# rendering queue
+_rendering_queue = queue.Queue()
+_rendering_queue_processing_enabled = threading.Event()
+_rendering_queue_processing_timer = None
+_rendering_queue_processing_mutex = threading.RLock()
+
+
+def setup_rendering_queue():
+    def on_idle(*args, **kwargs):
+        global _rendering_queue_processing_timer
+
+        delay = settings().get(["webcam", "renderAfterPrintDelay"])
+
+        if delay:
+            with _rendering_queue_processing_mutex:
+                _rendering_queue_processing_timer = threading.Timer(
+                    delay, enable_rendering
+                )
+                _rendering_queue_processing_timer.start()
+
+        else:
+            enable_rendering()
+
+    def on_printing(*args, **kwargs):
+        global _rendering_queue_processing_timer
+
+        with _rendering_queue_processing_mutex:
+            if _rendering_queue_processing_timer:
+                logger.debug("Cancelling rendering queue processing timer")
+                _rendering_queue_processing_timer.cancel()
+                _rendering_queue_processing_timer = None
+
+        disable_rendering()
+
+    eventManager().subscribe(Events.PRINT_STARTED, on_printing)
+    eventManager().subscribe(Events.PRINT_DONE, on_idle)
+    eventManager().subscribe(Events.PRINT_FAILED, on_idle)
+
+    def process_rendering_queue():
+        while _rendering_queue:
+            try:
+                job = _rendering_queue.get()
+
+                while (
+                    job
+                ):  # we use the job as the flag of completion, once it's None it's done
+                    _rendering_queue_processing_enabled.wait()
+
+                    with _rendering_queue_processing_mutex:
+                        if not _rendering_queue_processing_enabled.is_set():
+                            # probably was cleared just now
+                            continue
+
+                    logger.info(f"Starting to render {job._prefix}")
+                    job._render()
+                    logger.info(f"Finished rendering {job._prefix}")
+
+                    job = None  # job's done
+            except Exception:
+                logger.exception("Error while processing timelapse rendering queue")
+
+    thread = threading.Thread(
+        target=process_rendering_queue, name="TimelapseRenderingQueue"
+    )
+    thread.daemon = True
+    thread.start()
+
+    enable_rendering()
+
+
+def enable_rendering():
+    _rendering_queue_processing_enabled.set()
+    logger.info("Enabled rendering queue processing")
+
+
+def disable_rendering():
+    _rendering_queue_processing_enabled.clear()
+    logger.info("Disabled rendering queue processing")
+
+
+def enqueue_for_rendering(job):
+    _rendering_queue.put(job)
+    logger.info(
+        f"Added render job {job._prefix} to rendering queue, now at {_rendering_queue.qsize()} items..."
+    )
+
 
 def create_thumbnail_path(movie_path):
     return _thumbnail_format.format(movie_path)
@@ -86,7 +174,7 @@ def valid_timelapse(path):
                     continue
                 extensions += result
             except Exception:
-                logging.getLogger(__name__).exception(
+                logger.exception(
                     "Exception while retrieving additional timelapse "
                     "extensions from hook {name}".format(name=name),
                     extra={"plugin": name},
@@ -225,8 +313,8 @@ def delete_unrendered_timelapse(name):
                 if fnmatch.fnmatch(entry.name, pattern):
                     os.remove(entry.path)
             except Exception:
-                if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
-                    logging.getLogger(__name__).exception(
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(
                         f"Error while processing file {entry.name} during cleanup"
                     )
 
@@ -242,7 +330,7 @@ def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=None):
     videocodec = settings().get(["webcam", "ffmpegVideoCodec"])
     webcam = get_snapshot_webcam()
     if webcam is None:
-        logging.getLogger(__name__).error("No webcam configured, can't render timelapse")
+        logger.error("No webcam configured, can't render timelapse")
     else:
         job = TimelapseRenderJob(
             capture_dir,
@@ -291,14 +379,14 @@ def delete_old_unrendered_timelapses():
                 if max(entry.stat().st_ctime, entry.stat().st_mtime) < cutoff:
                     prefixes_to_clean.append(prefix)
             except Exception:
-                if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
-                    logging.getLogger(__name__).exception(
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.exception(
                         f"Error while processing file {entry.name} during cleanup"
                     )
 
         for prefix in prefixes_to_clean:
             delete_unrendered_timelapse(prefix)
-            logging.getLogger(__name__).info(f"Deleted old unrendered timelapse {prefix}")
+            logger.info(f"Deleted old unrendered timelapse {prefix}")
 
 
 def _create_render_start_handler(name, gcode=None):
@@ -397,7 +485,7 @@ def notify_callback(callback, config=None, timelapse=None):
     try:
         callback.sendTimelapseConfig(config)
     except Exception:
-        logging.getLogger(__name__).exception(
+        logger.exception(
             "Exception while pushing timelapse configuration",
             extra={"callback": fqcn(callback)},
         )
@@ -424,7 +512,7 @@ def configure_timelapse(config=None, persist=False):
 
     type = config["type"]
     if not timelapse_precondition and timelapse_precondition:
-        logging.getLogger(__name__).warning(
+        logger.warning(
             "Essential timelapse settings unconfigured (snapshot URL or FFMPEG path) "
             "but timelapse enabled."
         )
@@ -438,17 +526,9 @@ def configure_timelapse(config=None, persist=False):
         current = None
 
     else:
-        postRoll = 0
-        if "postRoll" in config and config["postRoll"] >= 0:
-            postRoll = config["postRoll"]
-
-        fps = 25
-        if "fps" in config and config["fps"] > 0:
-            fps = config["fps"]
-
-        renderAfterPrint = RenderAfterPrintEnum.always
-        if "renderAfterPrint" in config:
-            renderAfterPrint = config["renderAfterPrint"]
+        postRoll = config.get("postRoll", 0)
+        fps = config.get("fps", 25)
+        renderAfterPrint = config.get("renderAfterPrint", RenderAfterPrintEnum.always)
 
         if type == TimelapseTypeEnum.zchange:
             retractionZHop = 0
@@ -503,9 +583,12 @@ class Timelapse:
     QUEUE_ENTRY_TYPE_CALLBACK = "callback"
 
     def __init__(
-        self, post_roll=0, fps=25, render_after_print=RenderAfterPrintEnum.always
+        self,
+        post_roll=0,
+        fps=25,
+        render_after_print=RenderAfterPrintEnum.always,
     ):
-        self._logger = logging.getLogger(__name__)
+        self._logger = logger
         self._image_number = None
         self._in_timelapse = False
         self._gcode_file = None
@@ -1045,21 +1128,13 @@ class TimelapseRenderJob:
         self._watermark = watermark
 
         self._thread = None
-        self._logger = logging.getLogger(__name__)
+        self._logger = logger
 
         self._parsed_duration = 0
 
     def process(self):
         """Processes the job."""
-
-        self._thread = threading.Thread(
-            target=self._render,
-            name="TimelapseRenderJob_{prefix}_{postfix}".format(
-                prefix=self._prefix, postfix=self._postfix
-            ),
-        )
-        self._thread.daemon = True
-        self._thread.start()
+        enqueue_for_rendering(self)
 
     def _render(self):
         """Rendering runnable."""
@@ -1213,8 +1288,6 @@ class TimelapseRenderJob:
 
     @classmethod
     def _try_generate_thumbnail(cls, ffmpeg, movie_path):
-        logger = logging.getLogger(__name__)
-
         try:
             thumb_path = create_thumbnail_path(movie_path)
             commandline = settings().get(["webcam", "ffmpegThumbnailCommandline"])
@@ -1290,8 +1363,6 @@ class TimelapseRenderJob:
         """
 
         ### See unit tests in test/timelapse/test_timelapse_renderjob.py
-
-        logger = logging.getLogger(__name__)
 
         ### Not all players can handle non-mpeg2 in VOB format
         if not videocodec:

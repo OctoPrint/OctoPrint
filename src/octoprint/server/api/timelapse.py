@@ -34,27 +34,34 @@ _timelapse_cache_mutex = threading.RLock()
 
 
 def _config_for_timelapse(timelapse):
-    if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
-        return {
-            "type": "zchange",
+    if timelapse is not None:
+        config = {
             "postRoll": timelapse.post_roll,
             "fps": timelapse.fps,
-            "retractionZHop": timelapse.retraction_zhop,
-            "minDelay": timelapse.min_delay,
             "renderAfterPrint": timelapse.render_after_print,
         }
-    elif timelapse is not None and isinstance(
-        timelapse, octoprint.timelapse.TimedTimelapse
-    ):
-        return {
-            "type": "timed",
-            "postRoll": timelapse.post_roll,
-            "fps": timelapse.fps,
-            "interval": timelapse.interval,
-            "renderAfterPrint": timelapse.render_after_print,
-        }
-    else:
-        return {"type": "off"}
+
+        if isinstance(timelapse, octoprint.timelapse.ZTimelapse):
+            config.update(
+                {
+                    "type": "zchange",
+                    "retractionZHop": timelapse.retraction_zhop,
+                    "minDelay": timelapse.min_delay,
+                }
+            )
+            return config
+
+        elif isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
+            config.update(
+                {
+                    "type": "timed",
+                    "postRoll": timelapse.post_roll,
+                    "interval": timelapse.interval,
+                }
+            )
+            return config
+
+    return {"type": "off"}
 
 
 def _lastmodified(unrendered):
