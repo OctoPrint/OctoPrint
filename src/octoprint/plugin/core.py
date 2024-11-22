@@ -2069,24 +2069,40 @@ class PluginManager:
         if len(all_plugins) <= 0:
             _log("No plugins available")
         else:
-            formatted_plugins = "\n".join(
-                "| "
-                + x.long_str(
-                    show_bundled=show_bundled,
-                    bundled_strs=bundled_str,
-                    show_location=show_location,
-                    location_str=location_str,
-                    show_enabled=show_enabled,
-                    enabled_strs=enabled_str,
+            bundled_plugins = [x for x in all_plugins if x.bundled]
+            third_party_plugins = [x for x in all_plugins if not x.bundled]
+
+            formatted_plugins = "\n"
+            for headline, plugins in (
+                ("Bundled Plugins", bundled_plugins),
+                ("Third Party Plugins", third_party_plugins),
+            ):
+                formatted_plugins += f"| {headline} ({len(plugins)})\n"
+                formatted_plugins += "\n".join(
+                    "|  "
+                    + x.long_str(
+                        show_bundled=show_bundled,
+                        bundled_strs=bundled_str,
+                        show_location=show_location,
+                        location_str=location_str,
+                        show_enabled=show_enabled,
+                        enabled_strs=enabled_str,
+                    )
+                    for x in sorted(plugins, key=lambda x: str(x).lower())
                 )
-                for x in sorted(self.plugins.values(), key=lambda x: str(x).lower())
-            )
+                formatted_plugins += "\n"
+
             legend = "Prefix legend: {1} = disabled, {2} = blacklisted, {3} = incompatible".format(
                 *enabled_str
             )
+
             _log(
-                "{count} plugin(s) registered with the system:\n{plugins}\n{legend}".format(
-                    count=len(all_plugins), plugins=formatted_plugins, legend=legend
+                "{count} plugin(s) registered with the system ({bundled} bundled & {third_party} third party):{plugins}{legend}".format(
+                    count=len(all_plugins),
+                    bundled=len(bundled_plugins),
+                    third_party=len(third_party_plugins),
+                    plugins=formatted_plugins,
+                    legend=legend,
                 )
             )
 
