@@ -948,7 +948,7 @@ class Settings:
             # shallow copy
             result = dict(c)
 
-            if "regex" in result and "template" in result:
+            if result.get("regex", None) and result.get("template", None):
                 # if it's a template matcher, we need to add a key to associate with the matcher output
                 import hashlib
 
