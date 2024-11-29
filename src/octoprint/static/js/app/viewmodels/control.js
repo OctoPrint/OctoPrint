@@ -248,10 +248,6 @@ $(function () {
             self.isLoading(data.flags.loading);
         };
 
-        self.onEventSettingsUpdated = function () {
-            self.requestData();
-        };
-
         self.onEventRegisteredMessageReceived = function (payload) {
             if (payload.key in self.feedbackControlLookup) {
                 var outputs = self.feedbackControlLookup[payload.key];
@@ -266,21 +262,6 @@ $(function () {
         self.rerenderControls = function () {
             var allControls = self.controlsFromServer.concat(self.additionalControls);
             self.controls(self._processControls(allControls));
-        };
-
-        self.requestData = function () {
-            if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) {
-                return;
-            }
-
-            OctoPrint.control.getCustomControls().done(function (response) {
-                self._fromResponse(response);
-            });
-        };
-
-        self._fromResponse = function (response) {
-            self.controlsFromServer = response.controls;
-            self.rerenderControls();
         };
 
         self._processControls = function (controls) {
@@ -615,16 +596,20 @@ $(function () {
             return span + " " + offset;
         };
 
-        self.onUserPermissionsChanged =
-            self.onUserLoggedIn =
-            self.onUserLoggedOut =
-                function () {
-                    self.requestData();
-                };
-
         self.onAllBound = function (allViewModels) {
-            var additionalControls = [];
-            callViewModels(allViewModels, "getAdditionalControls", function (method) {
+            self.settings.firstRequest.done(() => {
+                const process = (controls) => {
+                    self.controlsFromServer = ko.mapping.toJS(controls);
+                    self.rerenderControls();
+                };
+                self.settings.settings.controls.subscribe(() => {
+                    process(self.settings.settings.controls());
+                });
+                process(self.settings.settings.controls());
+            });
+
+            let additionalControls = [];
+            callViewModels(allViewModels, "getAdditionalControls", (method) => {
                 additionalControls = additionalControls.concat(method());
             });
             if (additionalControls.length > 0) {
