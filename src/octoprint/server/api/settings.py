@@ -401,6 +401,11 @@ def getSettings():
     else:
         data["webcam"] = {}
 
+    if Permissions.CONTROL.can():
+        data["controls"] = s.get(["controls"])
+    else:
+        data["controls"] = []
+
     if Permissions.ADMIN.can():
         data["accessControl"] = {
             "autologinLocal": s.getBoolean(["accessControl", "autologinLocal"]),
@@ -1109,6 +1114,10 @@ def _saveSettings(data):
                 s.saveScript(
                     "gcode", name, script.replace("\r\n", "\n").replace("\r", "\n")
                 )
+
+    if "controls" in data:
+        # TODO: sanitize
+        s.set(["controls"], data["controls"])
 
     if "server" in data:
         if "commands" in data["server"]:
