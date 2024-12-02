@@ -13,6 +13,7 @@ Bundled Plugins
    tracking.rst
    appkeys.rst
    backup.rst
+   customcontrolmanager.rst
    discovery.rst
    errortracking.rst
    file_check.rst
@@ -21,4 +22,5 @@ Bundled Plugins
    logging.rst
    pluginmanager.rst
    softwareupdate.rst
+   uploadmanager.rst
    virtual_printer.rst
