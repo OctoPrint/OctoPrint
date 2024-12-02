@@ -125,6 +125,11 @@ EXTRA_REQUIRES = {
         "sphinxcontrib-mermaid",
         "sphinx_rtd_theme",
         "readthedocs-sphinx-ext",
+        "sphinxcontrib-applehelp==1.0.4",
+        "sphinxcontrib-devhelp==1.0.2",
+        "sphinxcontrib-htmlhelp==2.0.1",
+        "sphinxcontrib-qthelp==1.0.3",
+        "sphinxcontrib-serializinghtml==1.1.5",
     ],
 }
 
