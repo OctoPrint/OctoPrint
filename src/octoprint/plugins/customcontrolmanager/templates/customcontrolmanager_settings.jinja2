@@ -77,10 +77,10 @@
 </script>
 <script type="text/html" id="customcontrolmanager-management-buttons-section">
     <div class="btn-group management-buttons">
-        <button class="btn btn-mini btn-primary" data-bind="click: function() { $root.editControl($data) }"><i class="fa-solid fa-pencil"></i></button>
-        <button class="btn btn-mini btn-danger" data-bind="click: function () { $root.deleteControl($data) }"><i class="fa-solid fa-trash"></i></button>
         <button class="btn btn-mini" data-bind="click: function () { $root.addControl($data) }"><i class="fa-regular fa-square-plus"></i></button>
         <button class="btn btn-mini" data-bind="click: function () { $root.addContainer($data) }"><i class="fa-solid fa-folder-plus"></i></button>
+        <button class="btn btn-mini btn-primary" data-bind="click: function() { $root.editControl($data) }"><i class="fa-solid fa-pencil"></i></button>
+        <button class="btn btn-mini btn-danger" data-bind="click: function () { $root.deleteControl($data) }"><i class="fa-solid fa-trash"></i></button>
     </div>
 </script>
 <!-- End of templates for custom controls -->
@@ -105,7 +105,7 @@
                 <div class="control-group" data-bind="css: { error: editor.nameError }">
                     <label class="control-label">{{ _('Title') }}</label>
                     <div class="controls">
-                        <input type="text" class="input-block-level" data-bind="value: editor.control().name"></input>
+                        <input type="text" class="input-block-level" data-bind="value: editor.control().name, valueUpdate: 'keyup'"></input>
                     </div>
                 </div>
             <!-- /ko -->
