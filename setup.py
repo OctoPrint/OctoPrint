@@ -46,7 +46,7 @@ core_deps = [
     "Flask-Assets>=2.1.0,<3",
     "Flask-Babel>=4.0.0,<5 ; python_version>='3.8'",
     "Flask-Login>=0.6.3,<0.7",  # breaking changes can happen on minor version increases
-    "Flask-Limiter>=3.8,<3.9",  # later versions require Python 3.9+
+    "Flask-Limiter>=3.8,<3.9 ; python_version>='3.8'",  # later versions require Python 3.9+
     "flask>=3.0.3,<3.1 ; python_version>='3.8'",  # later versions require Python 3.9+, breaking changes can happen on minor version increases (with deprecation warnings)
     "frozendict>=2.4.6,<3",
     "markdown>=3.7,<3.8 ; python_version>='3.8'",
@@ -80,7 +80,7 @@ core_deps_37 = [
     "Babel>=2.14.0,<2.15 ; python_version<'3.8'",
     "cachelib>=0.10.2,<0.11 ; python_version<'3.8'",
     "Flask-Babel>=3.1.0,<4 ; python_version<'3.8'",
-    "Flask-Limiter>=3.5,<3.6",
+    "Flask-Limiter>=3.5,<3.6 ; python_version<'3.8'",
     "flask>=2.2.3,<2.3 ; python_version<'3.8'",
     "importlib-metadata>=8.5.0 ; python_version<'3.8'",  # backport of importlib.metadata for python 3.7
     "markdown>=3.4.4,<3.5 ; python_version<'3.8'",
