@@ -30,62 +30,71 @@ SETUP_REQUIRES = []
 
 # Requirements for our application
 bundled_plugins = [
-    "OctoPrint-FileCheck>=2024.3.27",
+    "OctoPrint-FileCheck>=2024.11.12",
     "OctoPrint-FirmwareCheck>=2021.10.11",
     "OctoPrint-PiSupport>=2023.10.10",
 ]
 core_deps = [
     "argon2-cffi>=23.1.0",
-    "Babel>=2.12.1,<2.13",  # breaking changes can happen on minor version increases
-    "cachelib>=0.10.2,<0.11",
+    "Babel>=2.16,<2.17 ; python_version>='3.8'",  # breaking changes can happen on minor version increases
+    "cachelib>=0.13.0,<0.14 ; python_version>='3.8'",
     "Click>=8.1.7,<9",
-    "colorlog>=6.7.0,<7",
-    "emoji>=2.10.1,<3",
+    "colorlog>=6.9.0,<7",
+    "emoji>=2.14,<3",
     "feedparser>=6.0.11,<7",
     "filetype>=1.2.0,<2",
     "Flask-Assets>=2.1.0,<3",
     "Flask-Babel>=4.0.0,<5 ; python_version>='3.8'",
-    "Flask-Babel>=3.1.0,<4 ; python_version<'3.8'",
     "Flask-Login>=0.6.3,<0.7",  # breaking changes can happen on minor version increases
-    "Flask-Limiter>=3.5.0,<4",
-    "flask>=3.0.3,<3.1 ; python_version>='3.8'",  # breaking changes can happen on minor version increases (with deprecation warnings)
-    "flask>=2.2.3,<2.3 ; python_version<'3.8'",
-    "frozendict>=2.4.0,<3",
-    "future>=0.18.3,<1",  # not really needed anymore, but leaving in for py2/3 compat plugins
-    "importlib-metadata==5.2.0 ; python_version<'3.8'",  # backport of importlib.metadata for python 3.7
-    "markdown>=3.4.4,<3.5",  # later versions require Python 3.8+
+    "Flask-Limiter>=3.9.2,<4",
+    "flask>=3.0.3,<3.1 ; python_version>='3.8'",  # later versions require Python 3.9+, breaking changes can happen on minor version increases (with deprecation warnings)
+    "frozendict>=2.4.6,<3",
+    "markdown>=3.7,<3.8 ; python_version>='3.8'",
     "netaddr>=1.3.0,<1.4",  # changelog hints at breaking changes on minor version increases
     # "netifaces2>=0.0.21,<0.1",  # fork of netifaces in Rust, use rolled back due to build issues in some environments
     "netifaces>=0.11.0,<0.12",
     "packaging",
     "libpass>=1.8.1,<2 ; python_version>='3.9'",  # replacement for unmaintained passlib
     "passlib==1.7.4 ; python_version<'3.9'",
-    "pathvalidate>=2.5.2,<3",
-    "psutil>=5.9.8,<6",
-    "pydantic>=2.7.4,<3 ; python_version>='3.8'",
-    "pydantic==1.10.16 ; python_version<'3.8'",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
+    "pathvalidate>=3.2.1,<4",
+    "psutil>=6.1.0,<7",
+    "pydantic>=2.10.2,<3 ; python_version>='3.8'",
     "pylru>=1.2.1,<2",
     "pyserial>=3.5,<4",
     "pytz",
-    "PyYAML>=6.0.1,<7",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
-    "requests>=2.31.0,<3",
+    "PyYAML>=6.0.2,<7",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
+    "requests>=2.32.3,<3",
     "sarge==0.1.7.post1",
     "semantic_version>=2.10.0,<3",
-    "sentry-sdk>=1.40.0,<2",
+    "sentry-sdk>=2.19.0,<3",
     "setuptools",
-    "tornado>=6.4.1,<6.5 ; python_version>='3.8'",
+    "tornado>=6.4.2,<6.5 ; python_version>='3.8'",
+    "watchdog>=4.0.2,<5 ; python_version>='3.8'",  # later versions require Python 3.9+
+    "websocket-client>=1.8.0,<1.9",  # breaking changes can happen on patch version increases, changelog incomplete
+    "werkzeug>=3.0.6,<3.1 ; python_version>='3.8'",  # later versions require Python 3.9+, breaking changes can happen on minor version increases
+    "wrapt>=1.17,<1.18 ; python_version>='3.8'",
+    "zeroconf>=0.136.2,<0.137 ; python_version>='3.8'",  # breaking changes can happen on minor version increases (despite semantic versioning)
+    "zipstream-ng>=1.8.0,<2.0.0",
+]
+core_deps_37 = [
+    "Babel>=2.14.0,<2.15 ; python_version<'3.8'",
+    "cachelib>=0.10.2,<0.11 ; python_version<'3.8'",
+    "Flask-Babel>=3.1.0,<4 ; python_version<'3.8'",
+    "flask>=2.2.3,<2.3 ; python_version<'3.8'",
+    "importlib-metadata>=8.5.0 ; python_version<'3.8'",  # backport of importlib.metadata for python 3.7
+    "markdown>=3.4.4,<3.5 ; python_version<'3.8'",
+    "pydantic==1.10.16 ; python_version<'3.8'",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
     "tornado>=6.2,<6.3 ; python_version<'3.8'",
-    "watchdog>=2.3.1,<3",
-    "websocket-client==1.6.1",  # later versions require Python 3.8+, breaking changes can happen on patch version increases, changelog incomplete
-    "werkzeug>=3.0.6,<3.1 ; python_version>='3.8'",  # breaking changes can happen on minor version increases, newer versions need Python 3.9
+    "watchdog>=3.0.0,<4 ; python_version<'3.8'",
+    "websocket-client==1.6.1 ; python_version<'3.8'",
     "werkzeug>=2.2.3,<2.3.0 ; python_version<'3.8'",
-    "wrapt>=1.15,<1.16",
-    "zeroconf~=0.127",  # breaking changes can happen on minor version increases (despite semantic versioning)
-    "zipstream-ng>=1.7.1,<2.0.0",
+    "wrapt>=1.16,<1.17 ; python_version<'3.8'",
+    "zeroconf>=0.131.0,<0.132 ; python_version<'3.8'",
 ]
 vendored_deps = [
-    "blinker>=1.6.3,<1.7.0",  # dependency of flask_principal, later versions require Python 3.8+
-    "more-itertools>=5.0.0",  # dependency of class-doc
+    "blinker>=1.9.0,<1.10.0 ; python_version>='3.8'",  # dependency of flask_principal
+    "blinker>=1.6.3,<1.7.0 ; python_version<'3.8'",  # later versions require Python 3.8+
+    "more-itertools>=10.5.0",  # dependency of class-doc
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
 ]
@@ -94,7 +103,9 @@ plugin_deps = [
     "wheel",  # makes sure plugins can be built as wheels in OctoPrint's venv, see #4682
 ]
 
-INSTALL_REQUIRES = bundled_plugins + core_deps + vendored_deps + plugin_deps
+INSTALL_REQUIRES = (
+    bundled_plugins + core_deps + core_deps_37 + vendored_deps + plugin_deps
+)
 
 # Additional requirements for optional install options and/or OS-specific dependencies
 EXTRA_REQUIRES = {
@@ -108,7 +119,8 @@ EXTRA_REQUIRES = {
         "ddt",
         "mock>=5.1.0,<6",
         "pytest-doctest-custom>=1.0.0,<2",
-        "pytest>=7.3.0,<8",
+        "pytest>=8.3.4,<9 ; python_version>='3.8'",
+        "pytest>=7.4.4,<8 ; python_version<'3.8'",
         # formatting, liniting, etc
         "ruff",
         # pre-commit
@@ -117,7 +129,7 @@ EXTRA_REQUIRES = {
         "pyinstrument",
     ],
     # Dependencies for developing OctoPrint plugins
-    "plugins": ["cookiecutter>=2.5.0,<3"],  # update plugin tutorial when updating this
+    "plugins": ["cookiecutter>=2.6.0,<3"],  # update plugin tutorial when updating this
     # Dependencies for building the documentation
     "docs": [
         "sphinx",
@@ -125,11 +137,6 @@ EXTRA_REQUIRES = {
         "sphinxcontrib-mermaid",
         "sphinx_rtd_theme",
         "readthedocs-sphinx-ext",
-        "sphinxcontrib-applehelp==1.0.4",
-        "sphinxcontrib-devhelp==1.0.2",
-        "sphinxcontrib-htmlhelp==2.0.1",
-        "sphinxcontrib-qthelp==1.0.3",
-        "sphinxcontrib-serializinghtml==1.1.5",
     ],
 }
 
