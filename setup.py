@@ -62,7 +62,7 @@ core_deps = [
     "pylru>=1.2.1,<2",
     "pyserial>=3.5,<4",
     "pytz",
-    "PyYAML>=6.0.2,<7",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
+    "PyYAML>=6.0.2,<7 ; python_version>='3.8'",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
     "requests>=2.32.3,<3",
     "sarge==0.1.7.post1",
     "semantic_version>=2.10.0,<3",
@@ -85,6 +85,7 @@ core_deps_37 = [
     "importlib-metadata>=8.5.0 ; python_version<'3.8'",  # backport of importlib.metadata for python 3.7
     "markdown>=3.4.4,<3.5 ; python_version<'3.8'",
     "pydantic==1.10.16 ; python_version<'3.8'",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
+    "PyYAML==6.0.1 ; python_version<'3.8'",
     "tornado>=6.2,<6.3 ; python_version<'3.8'",
     "watchdog>=3.0.0,<4 ; python_version<'3.8'",
     "websocket-client==1.6.1 ; python_version<'3.8'",
@@ -93,8 +94,8 @@ core_deps_37 = [
     "zeroconf>=0.131.0,<0.132 ; python_version<'3.8'",
 ]
 vendored_deps = [
-    "blinker>=1.9.0,<1.10.0 ; python_version>='3.8'",  # dependency of flask_principal
-    "blinker>=1.6.3,<1.7.0 ; python_version<'3.8'",  # later versions require Python 3.8+
+    "blinker>=1.8.0,<1.9.0 ; python_version>='3.8'",  # dependency of flask_principal, later versions require Python 3.9+
+    "blinker>=1.6.3,<1.7.0 ; python_version<'3.8'",
     "more-itertools>=10.5.0",  # dependency of class-doc
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
