@@ -63,14 +63,14 @@ core_deps = [
     "pyserial>=3.5,<4",
     "pytz",
     "PyYAML>=6.0.2,<7 ; python_version>='3.8'",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
-    "requests>=2.32.3,<3",
+    "requests>=2.32.3,<3 ; python_version>='3.8'",
     "sarge==0.1.7.post1",
     "semantic_version>=2.10.0,<3",
     "sentry-sdk>=2.19.0,<3",
     "setuptools",
     "tornado>=6.4.2,<6.5 ; python_version>='3.8'",
     "watchdog>=4.0.2,<5 ; python_version>='3.8'",  # later versions require Python 3.9+
-    "websocket-client>=1.8.0,<1.9",  # breaking changes can happen on patch version increases, changelog incomplete
+    "websocket-client>=1.8.0,<1.9 ; python_version>='3.8'",  # breaking changes can happen on patch version increases, changelog incomplete
     "werkzeug>=3.0.6,<3.1 ; python_version>='3.8'",  # later versions require Python 3.9+, breaking changes can happen on minor version increases
     "wrapt>=1.17,<1.18 ; python_version>='3.8'",
     "zeroconf>=0.136.2,<0.137 ; python_version>='3.8'",  # breaking changes can happen on minor version increases (despite semantic versioning)
@@ -82,10 +82,11 @@ core_deps_37 = [
     "Flask-Babel>=3.1.0,<4 ; python_version<'3.8'",
     "Flask-Limiter>=3.5,<3.6 ; python_version<'3.8'",
     "flask>=2.2.3,<2.3 ; python_version<'3.8'",
-    "importlib-metadata>=8.5.0 ; python_version<'3.8'",  # backport of importlib.metadata for python 3.7
+    "importlib-metadata>=6.7.0 ; python_version<'3.8'",  # backport of importlib.metadata for python 3.7, later versions require Python 3.8+
     "markdown>=3.4.4,<3.5 ; python_version<'3.8'",
     "pydantic==1.10.16 ; python_version<'3.8'",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
     "PyYAML==6.0.1 ; python_version<'3.8'",
+    "requests>=2.31,<2.32 ; python_version<'3.8'",
     "tornado>=6.2,<6.3 ; python_version<'3.8'",
     "watchdog>=3.0.0,<4 ; python_version<'3.8'",
     "websocket-client==1.6.1 ; python_version<'3.8'",
@@ -96,12 +97,14 @@ core_deps_37 = [
 vendored_deps = [
     "blinker>=1.8.0,<1.9.0 ; python_version>='3.8'",  # dependency of flask_principal, later versions require Python 3.9+
     "blinker>=1.6.3,<1.7.0 ; python_version<'3.8'",
-    "more-itertools>=10.5.0",  # dependency of class-doc
+    "more-itertools>=10.5.0 ; python_version>='3.8'",  # dependency of class-doc
+    "more-itertools>=9.1,<10 ; python_version<'3.8'",
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
 ]
 plugin_deps = [
     # "OctoPrint-Setuptools>=1.0.3",  # makes sure plugins can import this on setup.py based install
+    "future",  # some plugins might still depend on this but not in their own requirements
     "wheel",  # makes sure plugins can be built as wheels in OctoPrint's venv, see #4682
 ]
 
