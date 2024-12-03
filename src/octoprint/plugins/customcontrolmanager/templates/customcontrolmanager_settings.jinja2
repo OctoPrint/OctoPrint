@@ -1,7 +1,7 @@
 <h3>{{ _('Custom Controls') }}</h3>
 <div class="customcontrolmananger-controls-container">
     <div class="customcontrolmananger-add-controls-prompt">
-        Add controls here
+        <div class="muted">{{ _('You currently don\'t have any custom controls defined. Why not add some using the buttons below?') }}</div>
     </div>
     <!-- ko template: { name: $root.getTemplate, foreach: controls } --><!-- /ko -->
 </div>
@@ -77,10 +77,10 @@
 </script>
 <script type="text/html" id="customcontrolmanager-management-buttons-section">
     <div class="btn-group management-buttons">
-        <button class="btn btn-mini btn-primary" data-bind="click: function() { $root.editControl($data) }"><i class="fa-solid fa-pencil"></i></button>
-        <button class="btn btn-mini btn-danger" data-bind="click: function () { $root.deleteControl($data) }"><i class="fa-solid fa-trash"></i></button>
         <button class="btn btn-mini" data-bind="click: function () { $root.addControl($data) }"><i class="fa-regular fa-square-plus"></i></button>
         <button class="btn btn-mini" data-bind="click: function () { $root.addContainer($data) }"><i class="fa-solid fa-folder-plus"></i></button>
+        <button class="btn btn-mini btn-primary" data-bind="click: function() { $root.editControl($data) }"><i class="fa-solid fa-pencil"></i></button>
+        <button class="btn btn-mini btn-danger" data-bind="click: function () { $root.deleteControl($data) }"><i class="fa-solid fa-trash"></i></button>
     </div>
 </script>
 <!-- End of templates for custom controls -->
@@ -105,7 +105,7 @@
                 <div class="control-group" data-bind="css: { error: editor.nameError }">
                     <label class="control-label">{{ _('Title') }}</label>
                     <div class="controls">
-                        <input type="text" class="input-block-level" data-bind="value: editor.control().name"></input>
+                        <input type="text" class="input-block-level" data-bind="value: editor.control().name, valueUpdate: 'keyup'"></input>
                     </div>
                 </div>
             <!-- /ko -->
@@ -159,9 +159,18 @@
                                     <button class="btn btn-danger btn-small pull-right" data-bind="click: function() { $root.editor.removeInput($data) }"><i class="fa-solid fa-trash"></i></button>
                                     <h4>{{ _('Text parameter') }}</h4>
                                     <div class="form-inline">
-                                        <input type="text" class="input-small" placeholder="{{ _('Name') }}" data-bind="value: name">
+                                        <div class="control-labeled">
+                                            <label>{{ _('Name') }}</label>
+                                            <input type="text" class="input-small" placeholder="{{ _('Name') }}" data-bind="value: name">
+                                        </div>
+                                        <div class="control-labeled">
+                                            <label>{{ _('Parameter') }}</label>
                                         <input type="text" class="input-small" placeholder="{{ _('Parameter') }}" data-bind="value: parameter">
+                                        </div>
+                                        <div class="control-labeled">
+                                            <label>{{ _('Default') }}</label>
                                         <input type="text" class="input-small" placeholder="{{ _('Default') }}" data-bind="value: $data.default">
+                                        </div>
                                     </div>
                                 </div>
                             <!-- /ko -->
@@ -170,12 +179,30 @@
                                 <button class="btn btn-danger btn-small pull-right" data-bind="click: function() { $root.editor.removeInput($data) }"><i class="fa-solid fa-trash"></i></button>
                                 <h4>{{ _('Slider') }}</h4>
                                 <div class="form-inline">
-                                    <input type="text" class="input-small" placeholder="{{ _('Name') }}" data-bind="value: name">
-                                    <input type="text" class="input-small" placeholder="{{ _('Parameter') }}" data-bind="value: parameter">
-                                    <input type="number" class="input-small" placeholder="{{ _('Default') }}" data-bind="value: $data.default">
-                                    <input type="number" class="input-small" placeholder="{{ _('Min') }}" data-bind="value: slider.min">
-                                    <input type="number" class="input-small" placeholder="{{ _('Max') }}" data-bind="value: slider.max">
-                                    <input type="number" class="input-small" placeholder="{{ _('Step') }}" data-bind="value: slider.step">
+                                    <div class="control-labeled">
+                                        <label>{{ _('Name') }}</label>
+                                        <input type="text" class="input-small" placeholder="{{ _('Name') }}" data-bind="value: name">
+                                    </div>
+                                    <div class="control-labeled">
+                                        <label>{{ _('Parameter') }}</label>
+                                        <input type="text" class="input-small" placeholder="{{ _('Parameter') }}" data-bind="value: parameter">
+                                    </div>
+                                    <div class="control-labeled">
+                                        <label>{{ _('Default') }}</label>
+                                        <input type="text" class="input-small" placeholder="{{ _('Default') }}" data-bind="value: $data.default">
+                                    </div>
+                                    <div class="control-labeled">
+                                        <label>{{ _('Min') }}</label>
+                                        <input type="number" class="input-small" placeholder="{{ _('Min') }}" data-bind="value: slider.min">
+                                    </div>
+                                    <div class="control-labeled">
+                                        <label>{{ _('Max') }}</label>
+                                        <input type="number" class="input-small" placeholder="{{ _('Max') }}" data-bind="value: slider.max">
+                                    </div>
+                                    <div class="control-labeled">
+                                        <label>{{ _('Step') }}</label>
+                                        <input type="number" class="input-small" placeholder="{{ _('Step') }}" data-bind="value: slider.step">
+                                    </div>
                                 </div>
                             </div>
                             <!-- /ko -->

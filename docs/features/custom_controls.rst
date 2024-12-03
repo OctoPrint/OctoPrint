@@ -96,7 +96,7 @@ attribute wrapping more controls.
 
 .. hint::
 
-   Take a look at the `Custom Control Editor plugin <http://plugins.octoprint.org/plugins/customControl/>`_
+   Take a look at the bundled :ref:`Custom Control Manager plugin <sec-bundledplugins-customcontrolmanager>`_
    which allows you configuring your Custom Controls through OctoPrint's
    settings interface without the need to manually edit the configuration
    file.
