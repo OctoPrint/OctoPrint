@@ -224,8 +224,8 @@ def _enable_errortracking():
 
         sentry_sdk.init(url_server, release=version, before_send=_before_send)
 
-        with sentry_sdk.configure_scope() as scope:
-            scope.user = {"id": unique_id}
+        scope = sentry_sdk.get_isolation_scope()
+        scope.user = {"id": unique_id}
 
         logging.getLogger("octoprint.plugins.errortracking").info(
             "Initialized error tracking"
