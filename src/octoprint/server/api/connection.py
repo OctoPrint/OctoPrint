@@ -14,15 +14,17 @@ from octoprint.settings import settings
 @api.route("/connection", methods=["GET"])
 @Permissions.STATUS.require(403)
 def connectionState():
-    state, port, baudrate, printer_profile = printer.get_current_connection()
+    state = printer.connection_state
+
+    printer_profile = state.pop("profile", None)
+
     current = {
-        "state": state,
-        "port": port,
-        "baudrate": baudrate,
-        "printerProfile": printer_profile["id"]
+        "state": state.pop("state"),
+        "printerProfile": printer_profile
         if printer_profile is not None and "id" in printer_profile
         else "_default",
     }
+    current.update(**state)
 
     return jsonify({"current": current, "options": _get_options()})
 

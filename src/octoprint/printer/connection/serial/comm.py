@@ -4198,10 +4198,10 @@ class MachineCom:
 
         if ret != "":
             try:
-                self._log(f"Recv: {sanitize_ascii(ret)}")
+                self._log(f"<<< {sanitize_ascii(ret)}")
             except ValueError as e:
                 self._log(f"WARN: While reading last line: {e}")
-                self._log(f"Recv: {ret!r}")
+                self._log(f"<<< {ret!r}")
 
             if null_pos >= 0:
                 self._logger.warning("Received line:")
@@ -5037,7 +5037,7 @@ class MachineCom:
             return
 
         if log:
-            self._log("Send: " + cmd.decode(self._serial_encoding))
+            self._log(">>> " + cmd.decode(self._serial_encoding))
 
         cmd += b"\n"
         written = 0
@@ -5704,7 +5704,7 @@ class MachineComPrintCallback:
     def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
         pass
 
-    def on_comm_progress(self):
+    def on_comm_progress(self, progress: float):
         pass
 
     def on_comm_print_job_started(self, suppress_script=False, user=None):

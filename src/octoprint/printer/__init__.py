@@ -19,8 +19,11 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import re
+from typing import Dict, List
 
-from octoprint.filemanager import FileDestinations
+from octoprint.filemanager.destinations import FileDestinations
+from octoprint.printer.job import JobProgress, PrintJob
+from octoprint.schema import BaseModel
 from octoprint.settings import settings
 from octoprint.util import deprecated, natural_key
 
@@ -31,10 +34,18 @@ from octoprint.util import deprecated, natural_key
     since="1.3.0",
 )
 def get_connection_options():
-    return PrinterInterface.get_connection_options()
+    return PrinterMixin.get_connection_options()
 
 
-class PrinterInterface:
+class ErrorInformation(BaseModel):
+    error: str
+    reason: str
+    consequence: str = None
+    faq: str = None
+    logs: List[str] = None
+
+
+class CommonPrinterMixin:
     """
     The :class:`PrinterInterface` represents the developer interface to the :class:`~octoprint.printer.standard.Printer`
     instance.
@@ -78,7 +89,7 @@ class PrinterInterface:
             "autoconnect": settings().getBoolean(["serial", "autoconnect"]),
         }
 
-    def connect(self, port=None, baudrate=None, profile=None, *args, **kwargs):
+    def connect(self, *args, **kwargs):
         """
         Connects to the printer, using the specified serial ``port``, ``baudrate`` and printer ``profile``. If a
         connection is already established, that connection will be closed prior to connecting anew with the provided
@@ -190,7 +201,16 @@ class PrinterInterface:
         """
         raise NotImplementedError()
 
-    def script(self, name, context=None, tags=None, *args, **kwargs):
+    def script(
+        self,
+        name,
+        context=None,
+        tags=None,
+        must_be_set=True,
+        part_of_job=False,
+        *args,
+        **kwargs,
+    ):
         """
         Sends the GCODE script ``name`` to the printer.
 
@@ -306,95 +326,18 @@ class PrinterInterface:
         """
         raise NotImplementedError()
 
-    def can_modify_file(self, path, sd, *args, **kwargs):
-        """
-        Determines whether the ``path`` (on the printer's SD if ``sd`` is True) may be modified (updated or deleted)
-        or not.
+    @property
+    def current_job(self):
+        return None
 
-        A file that is currently being printed is not allowed to be modified. Any other file or the current file
-        when it is not being printed is fine though.
+    @property
+    def active_job(self):
+        if self.is_printing() or self.is_pausing or self.is_paused():
+            return self.current_job
+        return None
 
-        :since: 1.3.2
-
-        .. warning::
-
-           This was introduced in 1.3.2 to work around an issue when updating a file that is already selected.
-           I'm not 100% sure at this point if this is the best approach to solve this issue, so if you decide
-           to depend on this particular method in this interface, be advised that it might vanish in future
-           versions!
-
-        Arguments:
-            path (str): path in storage of the file to check
-            sd (bool): True if to check against SD storage, False otherwise
-
-        Returns:
-            (bool) True if the file may be modified, False otherwise
-        """
-        return not (
-            self.is_current_file(path, sd) and (self.is_printing() or self.is_paused())
-        )
-
-    def is_current_file(self, path, sd, *args, **kwargs):
-        """
-        Returns whether the provided ``path`` (on the printer's SD if ``sd`` is True) is the currently selected
-        file for printing.
-
-        :since: 1.3.2
-
-        .. warning::
-
-           This was introduced in 1.3.2 to work around an issue when updating a file that is already selected.
-           I'm not 100% sure at this point if this is the best approach to solve this issue, so if you decide
-           to depend on this particular method in this interface, be advised that it might vanish in future
-           versions!
-
-        Arguments:
-            path (str): path in storage of the file to check
-            sd (bool): True if to check against SD storage, False otherwise
-
-        Returns:
-            (bool) True if the file is currently selected, False otherwise
-        """
-        current_job = self.get_current_job()
-        if current_job is not None and "file" in current_job:
-            current_job_file = current_job["file"]
-            if "path" in current_job_file and "origin" in current_job_file:
-                current_file_path = current_job_file["path"]
-                current_file_origin = current_job_file["origin"]
-
-                return path == current_file_path and sd == (
-                    current_file_origin == FileDestinations.SDCARD
-                )
-
-        return False
-
-    def select_file(
-        self, path, sd, printAfterSelect=False, pos=None, tags=None, *args, **kwargs
-    ):
-        """
-        Selects the specified ``path`` for printing, specifying if the file is to be found on the ``sd`` or not.
-        Optionally can also directly start the print after selecting the file.
-
-        Arguments:
-            path (str): The path to select for printing. Either an absolute path or relative path to a  local file in
-                the uploads folder or a filename on the printer's SD card.
-            sd (boolean): Indicates whether the file is on the printer's SD card or not.
-            printAfterSelect (boolean): Indicates whether a print should be started
-                after the file is selected.
-            tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
-
-        Raises:
-            InvalidFileType: if the file is not a machinecode file and hence cannot be printed
-            InvalidFileLocation: if an absolute path was provided and not contained within local storage or
-                doesn't exist
-        """
-        raise NotImplementedError()
-
-    def unselect_file(self, *args, **kwargs):
-        """
-        Unselects and currently selected file.
-        """
-        raise NotImplementedError()
+    def set_job(self, job: PrintJob, tags=None, *args, **kwargs):
+        pass
 
     def start_print(self, tags=None, *args, **kwargs):
         """
@@ -403,7 +346,7 @@ class PrinterInterface:
         Arguments:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        raise NotImplementedError()
+        pass
 
     def pause_print(self, tags=None, *args, **kwargs):
         """
@@ -412,7 +355,7 @@ class PrinterInterface:
         Arguments:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        raise NotImplementedError()
+        pass
 
     def resume_print(self, tags=None, *args, **kwargs):
         """
@@ -421,7 +364,7 @@ class PrinterInterface:
         Arguments:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        raise NotImplementedError()
+        pass
 
     def toggle_pause_print(self, tags=None, *args, **kwargs):
         """
@@ -442,7 +385,7 @@ class PrinterInterface:
         Arguments:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        raise NotImplementedError()
+        pass
 
     def log_lines(self, *lines):
         """
@@ -457,7 +400,7 @@ class PrinterInterface:
         Returns:
              (str) A human readable string corresponding to the current communication state.
         """
-        raise NotImplementedError()
+        pass
 
     def get_state_id(self, *args, **kwargs):
         """
@@ -576,6 +519,36 @@ class PrinterInterface:
         """
         raise NotImplementedError()
 
+
+class ConnectedPrinterMixin(CommonPrinterMixin):
+    def supports_job(self, job: PrintJob) -> bool:
+        return False
+
+    @property
+    def job_progress(self) -> JobProgress:
+        return None
+
+
+class PrinterMixin(CommonPrinterMixin):
+    def connect(self, connector=None, parameters=None, profile=None, *args, **kwargs):
+        """
+        Connects to the printer, using the specified serial ``port``, ``baudrate`` and printer ``profile``. If a
+        connection is already established, that connection will be closed prior to connecting anew with the provided
+        parameters.
+
+        Arguments:
+            port (str): Name of the serial port to connect to. If not provided, an auto detection will be attempted.
+            baudrate (int): Baudrate to connect with. If not provided, an auto detection will be attempted.
+            profile (str): Name of the printer profile to use for this connection. If not provided, the default
+                will be retrieved from the :class:`PrinterProfileManager`.
+        """
+        pass
+
+    def set_job(
+        self, job: PrintJob, print_after_select=False, pos=None, tags=None, user=None
+    ):
+        pass
+
     def register_callback(self, callback, *args, **kwargs):
         """
         Registers a :class:`PrinterCallback` with the instance.
@@ -583,7 +556,7 @@ class PrinterInterface:
         Arguments:
             callback (PrinterCallback): The callback object to register.
         """
-        raise NotImplementedError()
+        pass
 
     def unregister_callback(self, callback, *args, **kwargs):
         """
@@ -592,7 +565,7 @@ class PrinterInterface:
         Arguments:
             callback (PrinterCallback): The callback object to unregister.
         """
-        raise NotImplementedError()
+        pass
 
     def send_initial_callback(self, callback):
         """
@@ -601,15 +574,85 @@ class PrinterInterface:
         Arguments:
                 callback (PrinterCallback): The callback object to send initial data to.
         """
-        raise NotImplementedError()
+        pass
+
+    def trigger_printjob_event(
+        self,
+        event,
+        job: PrintJob = None,
+        print_head_position: Dict = None,
+        job_position: Dict = None,
+        progress: float = None,
+        user: str = None,
+        payload: Dict = None,
+    ):
+        pass
 
     @property
-    def firmware_info(self):
-        raise NotImplementedError()
+    def firmware_info(self) -> Dict:
+        return None
 
     @property
-    def error_info(self):
-        raise NotImplementedError()
+    def error_info(self) -> Dict:
+        return None
+
+    @property
+    def connection_state(self) -> Dict:
+        return None
+
+    @deprecated(
+        message="select_file has been deprecated and will be removed in a future version. Please use set_job instead.",
+        includedoc="Replaced by :func:`PrinterInterface.set_job`",
+        since="1.11.0",
+    )
+    def select_file(
+        self,
+        path,
+        sd,
+        printAfterSelect=False,
+        pos=None,
+        tags=None,
+        user=None,
+        *args,
+        **kwargs,
+    ):
+        """
+        Selects the specified ``path`` for printing, specifying if the file is to be found on the ``sd`` or not.
+        Optionally can also directly start the print after selecting the file.
+
+        Arguments:
+            path (str): The path to select for printing. Either an absolute path or relative path to a  local file in
+                the uploads folder or a filename on the printer's SD card.
+            sd (boolean): Indicates whether the file is on the printer's SD card or not.
+            printAfterSelect (boolean): Indicates whether a print should be started
+                after the file is selected.
+            tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
+
+        Raises:
+            InvalidFileType: if the file is not a machinecode file and hence cannot be printed
+            InvalidFileLocation: if an absolute path was provided and not contained within local storage or
+                doesn't exist
+        """
+        job = PrintJob(
+            origin=FileDestinations.PRINTER if sd else FileDestinations.LOCAL,
+            path=path,
+            owner=user,
+        )
+        self.set_job(job, print_after_select=printAfterSelect, pos=pos, tags=tags)
+
+    @deprecated(
+        message="unselect_file has been deprecated and will be removed in a future version. Please use set_job instead.",
+        includedoc="Replaced by :func:`PrinterInterface.set_job`",
+        since="1.11.0",
+    )
+    def unselect_file(self, *args, **kwargs):
+        """
+        Unselects and currently selected file.
+        """
+        self.set_job(None)
+
+
+PrinterInterface = PrinterMixin
 
 
 class PrinterCallback:

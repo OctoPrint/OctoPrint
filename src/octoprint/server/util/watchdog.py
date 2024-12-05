@@ -107,7 +107,7 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
                 octoprint.filemanager.FileDestinations.LOCAL, futureFullPath
             )
 
-            if not self._printer.can_modify_file(futureFullPathInStorage, False):
+            if self._printer.active_job == f"local:{futureFullPathInStorage}":
                 return
 
             reselect = self._printer.is_current_file(futureFullPathInStorage, False)

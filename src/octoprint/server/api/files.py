@@ -542,8 +542,15 @@ def uploadGcodeFile(target):
     user = current_user.get_name()
 
     if input_upload_name in request.values and input_upload_path in request.values:
-        if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+        if target not in [
+            FileDestinations.LOCAL,
+            FileDestinations.PRINTER,
+            FileDestinations.SDCARD,
+        ]:
             abort(404)
+
+        if target == FileDestinations.SDCARD:
+            target = FileDestinations.PRINTER
 
         upload = octoprint.filemanager.util.DiskFileWrapper(
             request.values[input_upload_name], request.values[input_upload_path]
@@ -560,7 +567,7 @@ def uploadGcodeFile(target):
                 abort(400, description="userdata contains invalid JSON")
 
         # check preconditions for SD upload
-        sd = target == FileDestinations.SDCARD
+        sd = target == FileDestinations.PRINTER
         if sd:
             if not settings().getBoolean(["feature", "sdSupport"]):
                 abort(404)
@@ -624,7 +631,10 @@ def uploadGcodeFile(target):
             FileDestinations.LOCAL, futureFullPath
         )
 
-        if not printer.can_modify_file(futureFullPathInStorage, sd):
+        if (
+            str(printer.active_job)
+            == f"{'printer' if sd else 'local'}:{futureFullPathInStorage}"
+        ):
             abort(
                 409,
                 description="Trying to overwrite file that is currently being printed",
@@ -645,7 +655,10 @@ def uploadGcodeFile(target):
                 description="File already exists, cannot overwrite due to a lack of permissions",
             )
 
-        reselect = printer.is_current_file(futureFullPathInStorage, sd)
+        reselect = (
+            str(printer.job)
+            == f"{'printer' if sd else 'local'}:{futureFullPathInStorage}"
+        )
 
         def fileProcessingFinished(filename, absFilename, destination):
             """
