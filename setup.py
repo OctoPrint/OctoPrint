@@ -23,7 +23,7 @@ except ImportError:
 # ----------------------------------------------------------------------------------------
 
 # Supported python versions
-PYTHON_REQUIRES = ">=3.7, <3.14"
+PYTHON_REQUIRES = ">=3.8, <3.14"
 
 # Requirements for setup.py
 SETUP_REQUIRES = []
