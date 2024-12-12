@@ -655,7 +655,7 @@ def uploadGcodeFile(target):
             )
 
         reselect = (
-            str(printer.job)
+            str(printer.active_job)
             == f"{FileDestinations.SDCARD if sd else FileDestinations.LOCAL}:{futureFullPathInStorage}"
         )
 
