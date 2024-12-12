@@ -10,7 +10,8 @@ from unittest import mock
 
 from ddt import data, ddt, unpack
 
-from octoprint.filemanager.storage import LocalFileStorage, StorageError
+from octoprint.filemanager.storage import StorageError
+from octoprint.filemanager.storage.local import LocalFileStorage
 
 
 class FileWrapper:

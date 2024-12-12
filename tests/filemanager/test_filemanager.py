@@ -191,7 +191,7 @@ class FileManagerTest(unittest.TestCase):
         )
 
         self.local_storage = mock.MagicMock(
-            spec=octoprint.filemanager.storage.LocalFileStorage
+            spec=octoprint.filemanager.storage.local.LocalFileStorage
         )
         self.local_storage.analysis_backlog = iter([])
 

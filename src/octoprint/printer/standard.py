@@ -1077,6 +1077,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             blocking=blocking, timeout=timeout, tags=tags
         )
 
+    @util.deprecated(
+        message="_get_free_remote_name should no longer be used and will get removed in a future version",
+        since="1.12.0",
+    )
     def _get_free_remote_name(self, filename):
         files = self.get_sd_files()
         existing_sd_files = [x["name"] for x in files.values()]

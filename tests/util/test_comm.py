@@ -4,33 +4,33 @@ from unittest import mock
 import ddt
 import pytest
 
-import octoprint.util.comm
+import octoprint.printer.connection.serial.comm as comm
 from octoprint.util.files import m20_timestamp_to_unix_timestamp
 
 
 @ddt.ddt
 class TestCommErrorHandling(unittest.TestCase):
     def setUp(self):
-        self._comm = mock.create_autospec(octoprint.util.comm.MachineCom)
+        self._comm = mock.create_autospec(comm.MachineCom)
 
         # mocks
         self._comm._handle_errors = (
-            lambda *args, **kwargs: octoprint.util.comm.MachineCom._handle_errors(
+            lambda *args, **kwargs: comm.MachineCom._handle_errors(
                 self._comm, *args, **kwargs
             )
         )
         self._comm._trigger_error = (
-            lambda *args, **kwargs: octoprint.util.comm.MachineCom._trigger_error(
+            lambda *args, **kwargs: comm.MachineCom._trigger_error(
                 self._comm, *args, **kwargs
             )
         )
         self._comm._recoverable_communication_errors = (
-            octoprint.util.comm.MachineCom._recoverable_communication_errors
+            comm.MachineCom._recoverable_communication_errors
         )
         self._comm._resend_request_communication_errors = (
-            octoprint.util.comm.MachineCom._resend_request_communication_errors
+            comm.MachineCom._resend_request_communication_errors
         )
-        self._comm._sd_card_errors = octoprint.util.comm.MachineCom._sd_card_errors
+        self._comm._sd_card_errors = comm.MachineCom._sd_card_errors
         self._comm._lastCommError = None
         self._comm._errorValue = None
         self._comm._clear_to_send = mock.Mock()
@@ -302,7 +302,7 @@ class TestCommErrorHandling(unittest.TestCase):
     ],
 )
 def test__validate_m20_timestamp(val, expected):
-    assert octoprint.util.comm._validate_m20_timestamp(val) == expected
+    assert comm._validate_m20_timestamp(val) == expected
 
 
 @pytest.mark.parametrize(
@@ -387,4 +387,4 @@ def test__validate_m20_timestamp(val, expected):
     ],
 )
 def test_parse_file_list_line(val, expected):
-    assert octoprint.util.comm.parse_file_list_line(val) == expected
+    assert comm.parse_file_list_line(val) == expected

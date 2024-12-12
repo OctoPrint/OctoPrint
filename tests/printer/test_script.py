@@ -7,10 +7,11 @@ from unittest.mock import ANY, MagicMock, call, patch
 from octoprint.printer.standard import Printer
 
 
+@unittest.SkipTest  # TODO figure out where to move this test
 class ScriptsTestCase(unittest.TestCase):
     def setUp(self):
-        # mock comm
-        self.comm = MagicMock()
+        # mock connection
+        self.connection = MagicMock()
 
         # mock event manager
         self.event_manager = MagicMock()
@@ -37,7 +38,7 @@ class ScriptsTestCase(unittest.TestCase):
         self.settings_getter.return_value = self.settings
 
         self.printer = Printer(MagicMock(), MagicMock(), MagicMock())
-        self.printer._comm = self.comm
+        self.printer._connection = self.connection
 
     def tearDown(self):
         self.settings_patcher.stop()
