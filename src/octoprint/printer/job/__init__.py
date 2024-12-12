@@ -4,17 +4,17 @@ from octoprint.schema import BaseModel
 
 
 class PrintJob(BaseModel):
-    origin: str
+    storage: str
     path: str
     size: int = 0
     owner: Optional[str] = None
     path_on_disk: Optional[str] = None
 
     def __str__(self):
-        return f"{self.origin}:{self.path}"
+        return f"{self.storage}:{self.path}"
 
     def __eq__(self, value):
-        return self.origin == value.origin and self.path == value.path
+        return self.storage == value.origin and self.path == value.path
 
 
 class UploadJob(PrintJob):
@@ -25,5 +25,5 @@ class JobProgress(BaseModel):
     job: PrintJob
     progress: float
     pos: int
-    elapsed: int
-    cleaned_elapsed: int
+    elapsed: float
+    cleaned_elapsed: float

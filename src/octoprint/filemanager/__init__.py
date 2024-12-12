@@ -15,7 +15,7 @@ from octoprint.util import yaml
 
 from .analysis import AnalysisQueue, QueueEntry  # noqa: F401
 from .destinations import FileDestinations  # noqa: F401
-from .storage import LocalFileStorage  # noqa: F401
+from .storage.local import LocalFileStorage  # noqa: F401
 from .util import AbstractFileWrapper, DiskFileWrapper, StreamWrapper  # noqa: F401
 
 ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")

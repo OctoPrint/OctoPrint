@@ -1,21 +1,31 @@
 import copy
 import logging
 import os
+from concurrent.futures import Future
 from typing import Dict
 
 import octoprint.util as util
 from octoprint.events import Events, eventManager
-from octoprint.filemanager import NoSuchStorage, valid_file_type
+from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.printer import UnknownScript
+from octoprint.printer import (
+    CommunicationHealth,
+    ErrorInformation,
+    FirmwareInformation,
+    PrinterFile,
+    PrinterFilesMixin,
+    UnknownScript,
+)
 from octoprint.printer.connection import ConnectedPrinter, ConnectedPrinterState
 from octoprint.printer.connection.serial.comm import MachineCom, baudrateList, serialList
 from octoprint.printer.job import JobProgress, PrintJob, UploadJob
-from octoprint.settings import settings
 
 
-class ConnectedSerialPrinter(ConnectedPrinter):
+class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     connector = "serial"
+
+    can_upload_printer_file = True
+    can_download_printer_file = False
 
     @classmethod
     def connection_options(cls) -> Dict:
@@ -51,9 +61,12 @@ class ConnectedSerialPrinter(ConnectedPrinter):
 
         self._comm = None
 
+        self._upload_future = None
+        self._last_position = None
+
     @property
     def connection_parameters(self):
-        parameters = super().connection_parameters()
+        parameters = super().connection_parameters
         parameters.update(
             {
                 "port": self._port,
@@ -76,10 +89,10 @@ class ConnectedSerialPrinter(ConnectedPrinter):
             )
 
         self._comm = MachineCom(
-            self._port,
-            self._baudrate,
-            callbackObject=self,
-            printerProfileManager=self._printer_profile_manager,
+            self._profile,
+            port=self._port,
+            baudrate=self._baudrate,
+            callback=self,
         )
         self._comm.start()
 
@@ -87,11 +100,8 @@ class ConnectedSerialPrinter(ConnectedPrinter):
         if self._comm is not None:
             self._comm.close()
 
-    def get_transport(self, *args, **kwargs):
-        if self._comm is None:
-            return None
-
-        return self._comm.getTransport()
+    def emergency_stop(self, *args, **kwargs):
+        self.commands("M112", tags=kwargs.get("tags", set()))
 
     def job_on_hold(self, blocking=True, *args, **kwargs):
         if self._comm is None:
@@ -103,21 +113,30 @@ class ConnectedSerialPrinter(ConnectedPrinter):
             raise RuntimeError("No connection to the printer")
         return self._comm.set_job_on_hold(value, blocking=blocking)
 
-    def fake_ack(self, *args, **kwargs):
+    def repair_communication(self, *args, **kwargs):
         if self._comm is None:
             return
 
         self._comm.fakeOk()
 
-    def commands(self, commands, tags=None, force=False, *args, **kwargs):
+    @property
+    def communication_health(self) -> CommunicationHealth:
+        if self._comm is None:
+            return CommunicationHealth(errors=0, total=0)
+
+        return CommunicationHealth(
+            errors=self._comm.received_resends, total=self._comm.transmitted_lines
+        )
+
+    def commands(self, *commands, tags=None, force=False, **kwargs):
         """
         Sends one or more gcode commands to the printer.
         """
         if self._comm is None:
             return
 
-        if not isinstance(commands, (list, tuple)):
-            commands = [commands]
+        if len(commands) == 1 and isinstance(commands[0], (list, tuple)):
+            commands = commands[0]
 
         for command in commands:
             self._comm.sendCommand(command, tags=tags, force=force)
@@ -168,15 +187,13 @@ class ConnectedSerialPrinter(ConnectedPrinter):
         else:
             commands = ["G90", command]
 
-        self.commands(commands, tags=kwargs.get("tags", set()) | {"trigger:printer.jog"})
+        self.commands(*commands, tags=kwargs.get("tags", set()) | {"trigger:printer.jog"})
 
     def home(self, axes, *args, **kwargs):
         self.commands(
-            [
-                "G91",
-                "G28 {}".format(" ".join(f"{x.upper()}0" for x in axes)),
-                "G90",
-            ],
+            "G91",
+            "G28 {}".format(" ".join(f"{x.upper()}0" for x in axes)),
+            "G90",
             tags=kwargs.get("tags", set) | {"trigger:printer.home"},
         )
 
@@ -192,7 +209,11 @@ class ConnectedSerialPrinter(ConnectedPrinter):
             extrusion_speed = min([speed, max_e_speed])
 
         self.commands(
-            ["G91", "M83", f"G1 E{amount} F{extrusion_speed}", "M82", "G90"],
+            "G91",
+            "M83",
+            f"G1 E{amount} F{extrusion_speed}",
+            "M82",
+            "G90",
             tags=kwargs.get("tags", set()) | {"trigger:printer.extrude"},
         )
 
@@ -231,6 +252,13 @@ class ConnectedSerialPrinter(ConnectedPrinter):
         self._comm.setTemperatureOffset(offsets)
         self._setOffsets(self._comm.getOffsets())
 
+    @property
+    def temperature_offsets(self) -> Dict:
+        if self._comm is None:
+            return {}
+
+        return copy.deepcopy(self._comm.getOffsets())
+
     def feed_rate(self, factor, tags=None, *args, **kwargs):
         self.commands(
             f"M220 S{factor}",
@@ -266,8 +294,8 @@ class ConnectedSerialPrinter(ConnectedPrinter):
             return
 
         self._comm.selectFile(
-            "/" + job.path if job.origin != FileDestinations.LOCAL else job.path_on_disk,
-            job.origin != FileDestinations.LOCAL,
+            "/" + job.path if job.storage != FileDestinations.LOCAL else job.path_on_disk,
+            job.storage != FileDestinations.LOCAL,
             user=user,
             tags=tags,
         )
@@ -276,17 +304,12 @@ class ConnectedSerialPrinter(ConnectedPrinter):
         if not valid_file_type(job.path, type="machinecode"):
             return False
 
-        if job.origin not in (
-            FileDestinations.LOCAL,
-            FileDestinations.SDCARD,
-            FileDestinations.PRINTER,
-        ):
+        if job.storage not in (FileDestinations.LOCAL, FileDestinations.SDCARD):
             return False
 
-        if job.origin in (FileDestinations.SDCARD, FileDestinations.PRINTER):
-            return True
-
-        if not os.path.isfile(job.path_on_disk):
+        if job.storage != FileDestinations.SDCARD and not os.path.isfile(
+            job.path_on_disk
+        ):
             return False
 
         return True
@@ -294,9 +317,6 @@ class ConnectedSerialPrinter(ConnectedPrinter):
     @property
     def job_progress(self):
         if self._comm is None:
-            return None
-
-        if self.current_job is None:
             return None
 
         return JobProgress(
@@ -399,8 +419,7 @@ class ConnectedSerialPrinter(ConnectedPrinter):
             return "Closed", None, None, None
 
         port, baudrate = self._comm.getConnection()
-        printer_profile = self._printerProfileManager.get_current_or_default()
-        return self._comm.getStateString(), port, baudrate, printer_profile
+        return self._comm.getStateString(), port, baudrate, self._profile
 
     def is_closed_or_error(self, *args, **kwargs):
         return self._comm is None or self._comm.isClosedOrError()
@@ -437,158 +456,94 @@ class ConnectedSerialPrinter(ConnectedPrinter):
             and not self._comm.isStreaming()
         )
 
+    @property
+    def cancel_position(self) -> Dict:
+        if self._comm is None:
+            return None
+        pos = self._comm.cancel_position
+        return pos if pos is None else pos.as_dict()
+
+    @property
+    def pause_position(self) -> Dict:
+        if self._comm is None:
+            return None
+        pos = self._comm.pause_position
+        return pos if pos is None else pos.as_dict()
+
     # ~~ sd file handling
 
-    def is_sd_ready(self, *args, **kwargs):
-        if not settings().getBoolean(["feature", "sdSupport"]) or self._comm is None:
+    @property
+    def printer_files_mounted(self):
+        if self._comm is None:
             return False
-        else:
-            return self._comm.isSdReady()
+        return self._comm.isSdReady()
 
-    def get_sd_files(self, *args, **kwargs):
-        if not self.is_sd_ready():
+    def get_printer_files(self, refresh=False, *args, **kwargs):
+        if not self.printer_files_mounted:
             return []
 
-        if kwargs.get("refresh"):
-            self.refresh_sd_files(blocking=True)
+        if refresh:
+            self.refresh_printer_files(blocking=True)
 
-        return [
-            {"name": x[0][1:], "size": x[1], "display": x[2], "date": x[3]}
-            for x in self._comm.getSdFiles()
-        ]
+        files = self._comm.getSdFiles()
 
-    def add_sd_file(
-        self, filename, path, on_success=None, on_failure=None, *args, **kwargs
-    ):
+        result = []
+        for f in files:
+            pf = PrinterFile(path=f[0][1:], display=f[2], size=f[1], date=f[3])
+            if (
+                pf.size is None
+                and self._job
+                and self._job.storage == FileDestinations.SDCARD
+                and self._job.path == "/" + pf.path
+            ):
+                pf.size = self._job.size
+            result.append(pf)
+        return result
+
+    def upload_printer_file(self, source, target, *args, **kwargs):
         if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
             self._logger.error("No connection to printer or printer is busy")
             return
 
-        self._streamingFinishedCallback = on_success
-        self._streamingFailedCallback = on_failure
-
-        def sd_upload_started(local_filename, remote_filename):
-            eventManager().fire(
-                Events.TRANSFER_STARTED,
-                {"local": local_filename, "remote": remote_filename},
-            )
-
-        def sd_upload_succeeded(local_filename, remote_filename, elapsed):
-            payload = {
-                "local": local_filename,
-                "remote": remote_filename,
-                "time": elapsed,
-            }
-            eventManager().fire(Events.TRANSFER_DONE, payload)
-            if callable(self._streamingFinishedCallback):
-                self._streamingFinishedCallback(
-                    remote_filename, remote_filename, FileDestinations.SDCARD
-                )
-
-        def sd_upload_failed(local_filename, remote_filename, elapsed):
-            payload = {
-                "local": local_filename,
-                "remote": remote_filename,
-                "time": elapsed,
-            }
-            eventManager().fire(Events.TRANSFER_FAILED, payload)
-            if callable(self._streamingFailedCallback):
-                self._streamingFailedCallback(
-                    remote_filename, remote_filename, FileDestinations.SDCARD
-                )
-
-        for name, hook in self.sd_card_upload_hooks.items():
-            # first sd card upload plugin that feels responsible gets the job
-            try:
-                result = hook(
-                    self,
-                    filename,
-                    path,
-                    sd_upload_started,
-                    sd_upload_succeeded,
-                    sd_upload_failed,
-                    *args,
-                    **kwargs,
-                )
-                if result is not None:
-                    return result
-            except Exception:
-                self._logger.exception(
-                    "There was an error running the sd upload "
-                    "hook provided by plugin {}".format(name),
-                    extra={"plugin": name},
-                )
-
-        else:
-            # no plugin feels responsible, use the default implementation
-            return self._add_sd_file(filename, path, tags=kwargs.get("tags"))
-
-    def _get_free_remote_name(self, filename):
-        self.refresh_sd_files(blocking=True)
-        existingSdFiles = [x[0] for x in self._comm.getSdFiles()]
-
-        if valid_file_type(filename, "gcode"):
-            # figure out remote filename
-            remote_name = util.get_dos_filename(
-                filename,
-                existing_filenames=existingSdFiles,
-                extension="gco",
-                whitelisted_extensions=["gco", "g"],
-            )
-        else:
-            # probably something else added through a plugin, use it's basename as-is
-            remote_name = os.path.basename(filename)
-
-        return remote_name
-
-    def _add_sd_file(self, filename, path, tags=None):
-        if tags is None:
-            tags = set()
-
-        self._create_estimator("stream")
-        remote_name = self._comm.startFileTransfer(
-            path,
-            filename,
-            special=not valid_file_type(filename, "gcode"),
-            tags=tags | {"trigger:printer.add_sd_file"},
+        self._upload_future = Future()
+        remote = self._comm.startFileTransfer(
+            source,
+            target,
+            special=not valid_file_type(target, "gcode"),
+            tags=kwargs.get("tags", set()),
         )
+        return remote, self._upload_future
 
-        return remote_name
-
-    def delete_sd_file(self, filename, *args, **kwargs):
+    def delete_printer_file(self, path, *args, **kwargs):
         if not self._comm or not self._comm.isSdReady():
             return
         self._comm.deleteSdFile(
-            "/" + filename,
+            "/" + path,
             tags=kwargs.get("tags", set()) | {"trigger:printer.delete_sd_file"},
         )
 
-    def init_sd_card(self, *args, **kwargs):
+    def mount_printer_files(self, *args, **kwargs):
         if not self._comm or self._comm.isSdReady():
             return
         self._comm.initSdCard(
             tags=kwargs.get("tags", set()) | {"trigger:printer.init_sd_card"}
         )
 
-    def release_sd_card(self, *args, **kwargs):
+    def unmount_printer_files(self, *args, **kwargs):
         if not self._comm or not self._comm.isSdReady():
             return
         self._comm.releaseSdCard(
             tags=kwargs.get("tags", set()) | {"trigger:printer.release_sd_card"}
         )
 
-    def refresh_sd_files(self, blocking=False, *args, **kwargs):
-        """
-        Refreshes the list of file stored on the SD card attached to printer (if available and printer communication
-        available). Optional blocking parameter allows making the method block (max 10s) until the file list has been
-        received (and can be accessed via self._comm.getSdFiles()). Defaults to an asynchronous operation.
-        """
+    def refresh_sd_files(self, blocking=False, timeout=10, *args, **kwargs):
         if not self._comm or not self._comm.isSdReady():
             return
+
         self._comm.refreshSdFiles(
-            tags=kwargs.get("tags", set()) | {"trigger:printer.refresh_sd_files"},
             blocking=blocking,
-            timeout=kwargs.get("timeout", 10),
+            timeout=timeout,
+            tags=kwargs.get("tags", set()),
         )
 
     # ~~ comm.MachineComPrintCallback implementation
@@ -623,30 +578,45 @@ class ConnectedSerialPrinter(ConnectedPrinter):
 
     def on_comm_state_change(self, state):
         translated_state = self.STATE_LOOKUP.get(state)
-        self._listener.on_printer_state_changed(translated_state)
 
-    def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
-        self._listener.on_printer_error(
-            error, reason, consequence=consequence, faq=faq, logs=logs
+        state_str = None
+        error_str = None
+        if self._comm is not None:
+            state_str = self._comm.getStateString()
+            error_str = self._comm.getErrorString()
+
+        if translated_state in (
+            ConnectedPrinterState.CLOSED,
+            ConnectedPrinterState.CLOSED_WITH_ERROR,
+        ):
+            if self._comm is not None:
+                self._comm = None
+
+            self._firmware_info = None
+            self._error_info = None
+
+            super().set_job(None)
+
+        self._listener.on_printer_state_changed(
+            translated_state, state_str=state_str, error_str=error_str
         )
 
+    def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
+        self._error_info = ErrorInformation(
+            error=error, reason=reason, consequence=consequence, faq=faq, logs=logs
+        )
+        self._listener.on_printer_error(self._error_info)
+
     def on_comm_message(self, message):
+        # intentionally disabled - we only use logs now
         pass
-        # self._listener.on_printer_logs(
-        #    util.to_unicode(message, "utf-8", errors="replace")
-        # )
 
     def on_comm_progress(self):
         self._listener.on_printer_job_progress()
 
     def on_comm_z_change(self, newZ):
-        oldZ = self._currentZ
-        if newZ != oldZ:
-            # we have to react to all z-changes, even those that might "go backward" due to a slicer's retraction or
-            # anti-backlash-routines. Event subscribes should individually take care to filter out "wrong" z-changes
-            eventManager().fire(Events.Z_CHANGE, {"new": newZ, "old": oldZ})
-
-        self._setCurrentZ(newZ)
+        # intentionally disabled - event now gets triggered in comm, no more push upwards
+        pass
 
     def on_comm_sd_state_change(self, sdReady):
         self._listener.on_printer_files_available(sdReady)
@@ -656,15 +626,17 @@ class ConnectedSerialPrinter(ConnectedPrinter):
 
     def on_comm_file_selected(self, full_path, size, sd, user=None, data=None):
         job = PrintJob(
-            origin=FileDestinations.PRINTER if sd else FileDestinations.LOCAL,
+            storage=FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
             path=full_path,
             size=size,
             owner=user,
         )
 
+        super().set_job(job)
         self._listener.on_printer_job_changed(job, user=user, data=data)
 
     def on_comm_print_job_started(self, suppress_script=False, user=None):
+        self._error_info = None
         self._listener.on_printer_job_started(suppress_script=suppress_script, user=user)
 
     def on_comm_print_job_done(self, suppress_script=False):
@@ -674,7 +646,9 @@ class ConnectedSerialPrinter(ConnectedPrinter):
         payload = {}
         if firmware_error:
             payload["firmwareError"] = firmware_error
-        self._owner.trigger_printjob_event(user=user, payload=payload)
+        self._owner.trigger_printjob_event(
+            Events.PRINT_CANCELLING, user=user, payload=payload
+        )
 
     def on_comm_print_job_cancelled(self, suppress_script=False, user=None):
         self._listener.on_printer_job_cancelled(
@@ -691,25 +665,25 @@ class ConnectedSerialPrinter(ConnectedPrinter):
         self, local_filename, remote_filename, filesize, user=None
     ):
         job = UploadJob(
-            origin=FileDestinations.LOCAL,
+            storage=FileDestinations.LOCAL,
             path=local_filename,
             size=filesize,
             owner=user,
             remote_path=remote_filename,
         )
+        super().set_job(job)
         self._listener.on_printer_files_upload_start(job)
 
     def on_comm_file_transfer_done(
         self, local_filename, remote_filename, elapsed, failed=False
     ):
-        from octoprint.printer.job import UploadJob
-
-        job = UploadJob(
-            origin=FileDestinations.LOCAL,
-            path=local_filename,
-            remote_path=remote_filename,
+        self._listener.on_printer_files_upload_done(
+            self.current_job, elapsed, failed=failed
         )
-        self._listener.on_printer_files_upload_done(job, elapsed, failed=failed)
+        if self._upload_future:
+            self._upload_future.set_result((self.current_job, elapsed, failed))
+            self._upload_future = None
+        super().set_job(None)
 
     def on_comm_file_transfer_failed(self, local_filename, remote_filename, elapsed):
         self.on_comm_file_transfer_done(
@@ -717,15 +691,11 @@ class ConnectedSerialPrinter(ConnectedPrinter):
         )
 
     def on_comm_force_disconnect(self):
-        self._listener.on_printer_disconnect()
+        self._listener.on_printer_disconnected()
 
     def on_comm_record_fileposition(self, origin, name, pos):  # TODO
-        try:
-            self._fileManager.save_recovery_data(origin, name, pos)
-        except NoSuchStorage:
-            pass
-        except Exception:
-            self._logger.exception("Error while trying to persist print recovery data")
+        self._listener.on_printer_record_recovery_position(self.current_job, pos)
 
     def on_comm_firmware_info(self, firmware_name, firmware_data):
-        self._firmware_info = {"name": firmware_name, "data": firmware_data}
+        self._firmware_info = FirmwareInformation(name=firmware_name, data=firmware_data)
+        self._listener.on_printer_firmware_info(self._firmware_info)

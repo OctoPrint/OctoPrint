@@ -33,7 +33,7 @@ def connectionState():
 @no_firstrun_access
 @Permissions.CONNECTION.require(403)
 def connectionCommand():
-    valid_commands = {"connect": [], "disconnect": [], "fake_ack": []}
+    valid_commands = {"connect": [], "disconnect": [], "repair": [], "fake_ack": []}
 
     command, data, response = get_json_command_from_request(request, valid_commands)
     if response is not None:
@@ -67,8 +67,8 @@ def connectionCommand():
         printer.connect(port=port, baudrate=baudrate, profile=printerProfile)
     elif command == "disconnect":
         printer.disconnect()
-    elif command == "fake_ack":
-        printer.fake_ack()
+    elif command == "repair" or command == "fake_ack":
+        printer.repair_communication()
 
     return NO_CONTENT
 

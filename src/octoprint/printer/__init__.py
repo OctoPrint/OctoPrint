@@ -19,7 +19,10 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import re
-from typing import Dict, List
+from concurrent.futures import Future
+from typing import Dict, List, Set, Tuple, Union
+
+from pydantic import computed_field
 
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.printer.job import JobProgress, PrintJob
@@ -37,12 +40,29 @@ def get_connection_options():
     return PrinterMixin.get_connection_options()
 
 
+class CommunicationHealth(BaseModel):
+    errors: int
+    total: int
+
+    @computed_field
+    @property
+    def ratio(self) -> float:
+        if self.total == 0:
+            return 0
+        return float(self.errors) / float(self.total)
+
+
 class ErrorInformation(BaseModel):
     error: str
     reason: str
     consequence: str = None
     faq: str = None
     logs: List[str] = None
+
+
+class FirmwareInformation(BaseModel):
+    name: str
+    data: Dict
 
 
 class CommonPrinterMixin:
@@ -101,25 +121,11 @@ class CommonPrinterMixin:
             profile (str): Name of the printer profile to use for this connection. If not provided, the default
                 will be retrieved from the :class:`PrinterProfileManager`.
         """
-        pass
 
     def disconnect(self, *args, **kwargs):
         """
         Disconnects from the printer. Does nothing if no connection is currently established.
         """
-        raise NotImplementedError()
-
-    def get_transport(self, *args, **kwargs):
-        """
-        Returns the communication layer's transport object, if a connection is currently established.
-
-        Note that this doesn't have to necessarily be a :class:`serial.Serial` instance, it might also be something
-        different, so take care to do instance checks before attempting to access any properties or methods.
-
-        Returns:
-            object: The communication layer's transport object
-        """
-        raise NotImplementedError()
 
     def job_on_hold(self, blocking=True, *args, **kwargs):
         """
@@ -146,7 +152,6 @@ class CommonPrinterMixin:
         Args:
                 blocking (bool): Whether to block while attempting to acquire the lock (default) or not
         """
-        raise NotImplementedError()
 
     def set_job_on_hold(self, value, blocking=True, *args, **kwargs):
         """
@@ -179,27 +184,35 @@ class CommonPrinterMixin:
         Returns:
                 (bool) Whether the value could be set successfully (True) or a timeout was encountered (False)
         """
-        raise NotImplementedError()
 
-    def fake_ack(self, *args, **kwargs):
+    def repair_communication(self, *args, **kwargs):
         """
         Fakes an acknowledgment for the communication layer. If the communication between OctoPrint and the printer
         gets stuck due to lost "ok" responses from the server due to communication issues, this can be used to get
         things going again.
         """
-        raise NotImplementedError()
 
-    def commands(self, commands, tags=None, force=False, *args, **kwargs):
+    @property
+    def communication_health(self) -> CommunicationHealth:
+        return None
+
+    @property
+    def firmware_info(self) -> FirmwareInformation:
+        return None
+
+    @property
+    def error_info(self) -> ErrorInformation:
+        return None
+
+    def commands(self, *commands, tags=None, force=False, **kwargs):
         """
         Sends the provided ``commands`` to the printer.
 
         Arguments:
-            commands (str, list): The commands to send. Might be a single command provided just as a string or a list
-                of multiple commands to send in order.
+            commands (str): The commands to send, one or more
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
             force (bool): Whether to force sending of the command right away or allow queuing while printing
         """
-        raise NotImplementedError()
 
     def script(
         self,
@@ -227,7 +240,6 @@ class CommonPrinterMixin:
         Raises:
             UnknownScriptException: There is no GCODE script with name ``name``
         """
-        raise NotImplementedError()
 
     def jog(self, axes, relative=True, speed=None, tags=None, *args, **kwargs):
         """
@@ -242,7 +254,6 @@ class CommonPrinterMixin:
                 profile will be used.
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        raise NotImplementedError()
 
     def home(self, axes, tags=None, *args, **kwargs):
         """
@@ -253,7 +264,6 @@ class CommonPrinterMixin:
                 "x", "y", "z" and "e"
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        raise NotImplementedError()
 
     def extrude(self, amount, speed=None, tags=None, *args, **kwargs):
         """
@@ -265,7 +275,6 @@ class CommonPrinterMixin:
             the maximum speed of E axis from the printer profile will be used.
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        raise NotImplementedError()
 
     def change_tool(self, tool, tags=None, *args, **kwargs):
         """
@@ -275,7 +284,6 @@ class CommonPrinterMixin:
             tool (str): The tool to switch to, matching the regex "tool[0-9]+" (e.g. "tool0", "tool1", ...)
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        raise NotImplementedError()
 
     def set_temperature(self, heater, value, tags=None, *args, **kwargs):
         """
@@ -290,9 +298,10 @@ class CommonPrinterMixin:
             value (int, float): The temperature in celsius to set the target temperature to.
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle.
         """
-        raise NotImplementedError()
 
-    def set_temperature_offset(self, offsets=None, tags=None, *args, **kwargs):
+    def set_temperature_offset(
+        self, offsets: Dict = None, tags: Set = None, *args, **kwargs
+    ):
         """
         Sets the temperature ``offsets`` to apply to target temperatures read from a GCODE file while printing.
 
@@ -302,7 +311,10 @@ class CommonPrinterMixin:
                 "tool[0-9]+" for the offsets to the hotend target temperatures.
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        raise NotImplementedError()
+
+    @property
+    def temperature_offsets(self) -> Dict:
+        return None
 
     def feed_rate(self, factor, tags=None, *args, **kwargs):
         """
@@ -313,7 +325,6 @@ class CommonPrinterMixin:
                 int between 0 and 100 or a float between 0 and 1.
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        raise NotImplementedError()
 
     def flow_rate(self, factor, tags=None, *args, **kwargs):
         """
@@ -324,7 +335,12 @@ class CommonPrinterMixin:
                 int between 0 and 100 or a float between 0 and 1.
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        raise NotImplementedError()
+
+    def emergency_stop(self, *args, **kwargs):
+        pass
+
+    def get_files(self, *args, **kwargs) -> List:
+        return []
 
     @property
     def current_job(self):
@@ -432,28 +448,24 @@ class CommonPrinterMixin:
         Returns:
             (dict) The current state data.
         """
-        raise NotImplementedError()
 
     def get_current_job(self, *args, **kwargs):
         """
         Returns:
             (dict) The data of the current job.
         """
-        raise NotImplementedError()
 
     def get_current_temperatures(self, *args, **kwargs):
         """
         Returns:
             (dict) The current temperatures.
         """
-        raise NotImplementedError()
 
     def get_temperature_history(self, *args, **kwargs):
         """
         Returns:
             (list) The temperature history.
         """
-        raise NotImplementedError()
 
     def get_current_connection(self, *args, **kwargs):
         """
@@ -461,72 +473,112 @@ class CommonPrinterMixin:
             (tuple) The current connection information as a 4-tuple ``(connection_string, port, baudrate, printer_profile)``.
                 If the printer is currently not connected, the tuple will be ``("Closed", None, None, None)``.
         """
-        raise NotImplementedError()
 
     def is_closed_or_error(self, *args, **kwargs):
         """
         Returns:
             (boolean) Whether the printer is currently disconnected and/or in an error state.
         """
-        raise NotImplementedError()
 
     def is_operational(self, *args, **kwargs):
         """
         Returns:
             (boolean) Whether the printer is currently connected and available.
         """
-        raise NotImplementedError()
 
     def is_printing(self, *args, **kwargs):
         """
         Returns:
             (boolean) Whether the printer is currently printing.
         """
-        raise NotImplementedError()
 
     def is_cancelling(self, *args, **kwargs):
         """
         Returns:
             (boolean) Whether the printer is currently cancelling a print.
         """
-        raise NotImplementedError()
 
     def is_pausing(self, *args, **kwargs):
         """
         Returns:
                 (boolean) Whether the printer is currently pausing a print.
         """
-        raise NotImplementedError()
 
     def is_paused(self, *args, **kwargs):
         """
         Returns:
             (boolean) Whether the printer is currently paused.
         """
-        raise NotImplementedError()
 
     def is_error(self, *args, **kwargs):
         """
         Returns:
             (boolean) Whether the printer is currently in an error state.
         """
-        raise NotImplementedError()
 
     def is_ready(self, *args, **kwargs):
         """
         Returns:
             (boolean) Whether the printer is currently operational and ready for new print jobs (not printing).
         """
-        raise NotImplementedError()
 
 
 class ConnectedPrinterMixin(CommonPrinterMixin):
+    can_set_job_on_hold = True
+
     def supports_job(self, job: PrintJob) -> bool:
         return False
 
     @property
     def job_progress(self) -> JobProgress:
         return None
+
+    @property
+    def cancel_position(self) -> Dict:
+        return None
+
+    @property
+    def pause_position(self) -> Dict:
+        return None
+
+
+class PrinterFile(BaseModel):
+    path: str
+    display: str
+    size: Union[int, None]
+    date: Union[int, None]
+
+
+class PrinterFilesMixin:
+    can_upload_printer_file = True
+    can_download_printer_file = True
+
+    @property
+    def printer_files_mounted(self) -> bool:
+        return False
+
+    def mount_printer_files(self, *args, **kwargs) -> None:
+        pass
+
+    def unmount_printer_files(self, *args, **kwargs) -> None:
+        pass
+
+    def refresh_printer_files(self, blocking=False, timeout=10, *args, **kwargs) -> None:
+        pass
+
+    def get_printer_files(self, refresh=False, *args, **kwargs) -> List:
+        return []
+
+    def upload_printer_file(
+        self, source: str, target: str, *args, **kwargs
+    ) -> Tuple[str, Future]:
+        pass
+
+    def download_printer_file(self, path: str, *args, **kwargs) -> Future:
+        return None
+
+    def delete_printer_file(self, path: str, *args, **kwargs) -> None:
+        pass
 
 
 class PrinterMixin(CommonPrinterMixin):
@@ -589,21 +641,13 @@ class PrinterMixin(CommonPrinterMixin):
         pass
 
     @property
-    def firmware_info(self) -> Dict:
-        return None
-
-    @property
-    def error_info(self) -> Dict:
-        return None
-
-    @property
     def connection_state(self) -> Dict:
         return None
 
     @deprecated(
         message="select_file has been deprecated and will be removed in a future version. Please use set_job instead.",
         includedoc="Replaced by :func:`PrinterInterface.set_job`",
-        since="1.11.0",
+        since="1.12.0",
     )
     def select_file(
         self,
@@ -634,7 +678,7 @@ class PrinterMixin(CommonPrinterMixin):
                 doesn't exist
         """
         job = PrintJob(
-            origin=FileDestinations.PRINTER if sd else FileDestinations.LOCAL,
+            storage=FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
             path=path,
             owner=user,
         )
@@ -643,13 +687,37 @@ class PrinterMixin(CommonPrinterMixin):
     @deprecated(
         message="unselect_file has been deprecated and will be removed in a future version. Please use set_job instead.",
         includedoc="Replaced by :func:`PrinterInterface.set_job`",
-        since="1.11.0",
+        since="1.12.0",
     )
     def unselect_file(self, *args, **kwargs):
         """
         Unselects and currently selected file.
         """
         self.set_job(None)
+
+    @deprecated(
+        message="fake_ack has been renamed to repair_communication. This compatibility layer will be removed in a future version. Please use repair_communication instead.",
+        includedoc="Replaced by :func:`PrinterInterface.repair_communication`",
+        since="1.12.0",
+    )
+    def fake_ack(self, *args, **kwargs):
+        self.repair_communication(*args, **kwargs)
+
+    @deprecated(
+        message="get_transport is non-functional. There is currently no alternative implementation. This compatibility layer will be removed in a future version.",
+        includedoc="No longer functional",
+        since="1.12.0",
+    )
+    def get_transport(self, *args, **kwargs):
+        """
+        Returns the communication layer's transport object, if a connection is currently established.
+
+        Note that this doesn't have to necessarily be a :class:`serial.Serial` instance, it might also be something
+        different, so take care to do instance checks before attempting to access any properties or methods.
+
+        Returns:
+            object: The communication layer's transport object
+        """
 
 
 PrinterInterface = PrinterMixin
@@ -663,7 +731,6 @@ class PrinterCallback:
         Arguments:
             data (str): The received log line.
         """
-        pass
 
     def on_printer_add_message(self, data):
         """
@@ -672,7 +739,6 @@ class PrinterCallback:
         Arguments:
             data (str): The received message.
         """
-        pass
 
     def on_printer_add_temperature(self, data):
         """
@@ -694,7 +760,6 @@ class PrinterCallback:
         Arguments:
             data (dict): A dict of all current temperatures in the format as specified above
         """
-        pass
 
     def on_printer_received_registered_message(self, name, output):
         """
@@ -704,7 +769,6 @@ class PrinterCallback:
             name (str): Name of the registered message (e.g. the feedback command)
             output (str): Output for the registered message
         """
-        pass
 
     def on_printer_send_initial_data(self, data):
         """
@@ -729,7 +793,6 @@ class PrinterCallback:
         Arguments:
             data (dict): The initial data in the format as specified above.
         """
-        pass
 
     def on_printer_send_current_data(self, data):
         """
@@ -771,7 +834,6 @@ class PrinterCallback:
         Arguments:
             data (dict): The current data in the format as specified above.
         """
-        pass
 
 
 class UnknownScript(Exception):

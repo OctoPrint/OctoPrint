@@ -11,19 +11,24 @@ import logging
 import os
 import threading
 import time
-from typing import Dict, List
+from typing import Dict, cast
 
 from frozendict import frozendict
 
 import octoprint.util.json
 from octoprint import util as util
 from octoprint.events import Events, eventManager
-from octoprint.filemanager import FileDestinations, FileManager, valid_file_type
+from octoprint.filemanager import (
+    FileDestinations,
+    FileManager,
+    NoSuchStorage,
+    valid_file_type,
+)
 from octoprint.filemanager.analysis import AnalysisQueue
 from octoprint.plugin import ProgressPlugin, plugin_manager
 from octoprint.printer import (
-    ErrorInformation,
     PrinterCallback,
+    PrinterFilesMixin,
     PrinterMixin,
 )
 from octoprint.printer.connection import (
@@ -78,13 +83,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         self._state = None
 
-        self._currentZ = None
-
         self._printAfterSelect = False
         self._posAfterSelect = None
-
-        self._firmware_info = None
-        self._error_info = None
 
         # sd handling
         self._sdPrinting = False
@@ -162,7 +162,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 printTimeLeft=None,
                 printTimeLeftOrigin=None,
             ),
-            current_z=None,
             offsets=self._dict(),
             resends=self._dict(count=0, ratio=0),
         )
@@ -196,11 +195,21 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     @property
     def firmware_info(self):
-        return frozendict(self._firmware_info) if self._firmware_info else None
+        if not self._connection:
+            return None
+        firmware_info = self._connection.firmware_info
+        if firmware_info is None:
+            return None
+        return firmware_info.model_dump()
 
     @property
     def error_info(self):
-        return self._error_info.model_dump() if self._error_info else None
+        if not self._connection:
+            return None
+        error_info = self._connection.error_info
+        if error_info is None:
+            return None
+        return error_info.model_dump()
 
     @property
     def connection_state(self) -> Dict:
@@ -425,13 +434,14 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         eventManager().fire(Events.CONNECTING)
         self._printer_profile_manager.select(profile)
-
-        self._error_info = None
-        self._firmware_info = None
+        printer_profile = self._printer_profile_manager.get_current_or_default()
 
         connector_class = ConnectedPrinter.find(connector)
-        self._connection = connector_class(self, **parameters, profile=profile)
-        self._connection._printer_profile_manager = self._printer_profile_manager
+        self._connection = connector_class(
+            self,
+            **parameters,
+            profile=printer_profile,
+        )
         self._connection.connect()
 
     def disconnect(self, *args, **kwargs):
@@ -441,19 +451,17 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         eventManager().fire(Events.DISCONNECTING)
         if self._connection is not None:
             self._connection.disconnect()
+            self._connection = None
         else:
             eventManager().fire(Events.DISCONNECTED)
-        self._firmware_info = None
 
-    def get_transport(self, *args, **kwargs):
-        # TODO can this be removed?
-        """
-        if self._comm is None:
-            return None
+    def emergency_stop(self, *args, **kwargs):
+        if self._connection is None:
+            return
 
-        return self._comm.getTransport()
-        """
-        return None
+        tags = kwargs.get("tags", set()) | {"trigger:printer.emergency_stop"}
+
+        self._connection.emergency_stop(tags=tags)
 
     def job_on_hold(self, blocking=True, *args, **kwargs):
         if self._connection is None:
@@ -465,21 +473,21 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             raise RuntimeError("No connection to the printer")
         return self._connection.set_job_on_hold(value, blocking=blocking)
 
-    def fake_ack(self, *args, **kwargs):
+    def repair_communication(self, *args, **kwargs):
         if self._connection is None:
             return
 
-        self._connection.fake_ack()
+        self._connection.repair_communication()
 
-    def commands(self, commands, tags=None, force=False, *args, **kwargs):
+    def commands(self, *commands, tags=None, force=False, **kwargs):
         """
         Sends one or more gcode commands to the printer.
         """
         if self._connection is None:
             return
 
-        if not isinstance(commands, (list, tuple)):
-            commands = [commands]
+        if len(commands) == 1 and isinstance(commands[0], (list, tuple)):
+            commands = commands[0]
 
         if tags is None:
             tags = set()
@@ -715,10 +723,13 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             self._logger.info("Cannot load job: printer not connected or currently busy")
             return
 
-        if job.origin == FileDestinations.LOCAL:
-            job.path_on_disk = self._file_manager.path_on_disk(job.origin, job.path)
+        if job is None:
+            return
+
+        if job.storage == FileDestinations.LOCAL:
+            job.path_on_disk = self._file_manager.path_on_disk(job.storage, job.path)
             job.path = self._file_manager.path_in_storage(
-                job.origin, job.path_on_disk
+                job.storage, job.path_on_disk
             )  # canonicalize
 
         if not self._connection.supports_job(job):
@@ -739,7 +750,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 if (
                     actual_origin is None
                     or actual_path is None
-                    or actual_origin != job.origin
+                    or actual_origin != job.storage
                     or actual_path != job.path
                 ):
                     self._file_manager.delete_recovery_data()
@@ -752,12 +763,14 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._printAfterSelect = print_after_select
         self._posAfterSelect = pos
 
+        super().set_job(
+            job, print_after_select=print_after_select, pos=pos, tags=tags, user=user
+        )
         self._connection.set_job(
             job, print_after_select=print_after_select, pos=pos, tags=tags, user=user
         )
 
         self._updateProgressData()
-        self._setCurrentZ(None)
 
     def get_file_position(self):
         if self._connection is None:
@@ -789,7 +802,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         self._lastProgressReport = None
         self._updateProgressData()
-        self._setCurrentZ(None)
 
         if tags is None:
             tags = set()
@@ -862,13 +874,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         return util.thaw_frozendict(currentData["job"])
 
     def get_current_temperatures(self, *args, **kwargs):
-        """
-        if self._comm is not None:
-            offsets = self._comm.getOffsets()
-        else:
+        if self._connection is None:
             offsets = {}
-        """
-        offsets = {}  # TODO
+        else:
+            offsets = self._connection.temperature_offsets
 
         last = self._temps.last
         if last is None:
@@ -935,28 +944,34 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         if (
             not settings().getBoolean(["feature", "sdSupport"])
             or self._connection is None
+            or not isinstance(self._connection, PrinterFilesMixin)
         ):
             return False
-        else:
-            return self._connection.is_sd_ready()
+
+        return self._connection.printer_files_mounted
 
     def get_sd_files(self, *args, **kwargs):
         if not self.is_sd_ready():
             return []
 
-        if kwargs.get("refresh"):
-            self.refresh_sd_files(blocking=True)
+        refresh = kwargs.get("refresh", False)
 
         return [
-            {"name": x[0][1:], "size": x[1], "display": x[2], "date": x[3]}
-            for x in self._connection.get_printer_files()  # TODO
+            {"name": x.path, "size": x.size, "display": x.display, "date": x.date}
+            for x in cast(PrinterFilesMixin, self._connection).get_printer_files(
+                refresh=refresh
+            )
         ]
 
     def add_sd_file(
         self, filename, path, on_success=None, on_failure=None, *args, **kwargs
-    ):  # TODO
-        if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
+    ):
+        if not self.is_sd_ready() or not self._connection.is_ready():
             self._logger.error("No connection to printer or printer is busy")
+            return
+
+        connection = cast(PrinterFilesMixin, self._connection)
+        if not connection.can_upload_printer_file:
             return
 
         self._streamingFinishedCallback = on_success
@@ -1016,17 +1031,61 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         else:
             # no plugin feels responsible, use the default implementation
-            return self._add_sd_file(filename, path, tags=kwargs.get("tags"))
+            tags = kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"}
+            local = self._file_manager.path_on_disk(FileDestinations.LOCAL, filename)
+            remote, _ = connection.upload_printer_file(local, path, tags=tags)
+            return remote
+
+    def delete_sd_file(self, filename, *args, **kwargs):
+        if not self.is_sd_ready():
+            return
+
+        tags = kwargs.get("tags", set()) | {"trigger:printer.delete_sd_file"}
+
+        cast(PrinterFilesMixin, self._connection).delete_printer_file(
+            "/" + filename, tags=tags
+        )
+
+    def init_sd_card(self, *args, **kwargs):
+        if (
+            not self._connection
+            or not isinstance(self._connection, PrinterFilesMixin)
+            or self.is_sd_ready()
+        ):
+            return
+
+        tags = kwargs.get("tags", set()) | {"trigger:printer.init_sd_card"}
+
+        self._connection.mount_printer_files(tags=tags)
+
+    def release_sd_card(self, *args, **kwargs):
+        if not self.is_sd_ready():
+            return
+
+        tags = kwargs.get("tags", set()) | {"trigger:printer.release_sd_card"}
+
+        cast(PrinterFilesMixin, self._connection).unmount_printer_files(tags=tags)
+
+    def refresh_sd_files(self, blocking=False, *args, **kwargs):
+        if not self.is_sd_ready():
+            return
+
+        tags = kwargs.get("tags", set()) | {"trigger:printer.refresh_sd_files"}
+        timeout = kwargs.get("timeout", 10)
+
+        cast(PrinterFilesMixin, self._connection).refresh_printer_files(
+            blocking=blocking, timeout=timeout, tags=tags
+        )
 
     def _get_free_remote_name(self, filename):
-        self.refresh_sd_files(blocking=True)
-        existingSdFiles = [x[0] for x in self._comm.getSdFiles()]  # TODO
+        files = self.get_sd_files()
+        existing_sd_files = [x["name"] for x in files.values()]
 
         if valid_file_type(filename, "gcode"):
             # figure out remote filename
             remote_name = util.get_dos_filename(
                 filename,
-                existing_filenames=existingSdFiles,
+                existing_filenames=existing_sd_files,
                 extension="gco",
                 whitelisted_extensions=["gco", "g"],
             )
@@ -1036,59 +1095,11 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         return remote_name
 
-    def _add_sd_file(self, filename, path, tags=None):  # TODO
-        if tags is None:
-            tags = set()
-
-        self._create_estimator("stream")
-        remote_name = self._comm.startFileTransfer(
-            path,
-            filename,
-            special=not valid_file_type(filename, "gcode"),
-            tags=tags | {"trigger:printer.add_sd_file"},
-        )
-
-        return remote_name
-
-    def delete_sd_file(self, filename, *args, **kwargs):  # TODO
-        if not self._comm or not self._comm.isSdReady():
-            return
-        self._comm.deleteSdFile(
-            "/" + filename,
-            tags=kwargs.get("tags", set()) | {"trigger:printer.delete_sd_file"},
-        )
-
-    def init_sd_card(self, *args, **kwargs):  # TODO
-        if not self._comm or self._comm.isSdReady():
-            return
-        self._comm.initSdCard(
-            tags=kwargs.get("tags", set()) | {"trigger:printer.init_sd_card"}
-        )
-
-    def release_sd_card(self, *args, **kwargs):  # TODO
-        if not self._comm or not self._comm.isSdReady():
-            return
-        self._comm.releaseSdCard(
-            tags=kwargs.get("tags", set()) | {"trigger:printer.release_sd_card"}
-        )
-
-    def refresh_sd_files(self, blocking=False, *args, **kwargs):  # TODO
-        """
-        Refreshes the list of file stored on the SD card attached to printer (if available and printer communication
-        available). Optional blocking parameter allows making the method block (max 10s) until the file list has been
-        received (and can be accessed via self._comm.getSdFiles()). Defaults to an asynchronous operation.
-        """
-        if not self._comm or not self._comm.isSdReady():
-            return
-        self._comm.refreshSdFiles(
-            tags=kwargs.get("tags", set()) | {"trigger:printer.refresh_sd_files"},
-            blocking=blocking,
-            timeout=kwargs.get("timeout", 10),
-        )
-
     # ~~ ConnectedPrinterListenerMixin
 
-    def on_printer_state_changed(self, state: ConnectedPrinterState):
+    def on_printer_state_changed(
+        self, state: ConnectedPrinterState, state_str: str = None, error_str: str = None
+    ):
         old_state = self._state
 
         if old_state in (ConnectedPrinterState.PRINTING,):
@@ -1103,8 +1114,12 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                         payload = self._payload_for_print_job_event()
                         if payload:
                             job_progress = self._connection.job_progress
+                            error_info = self._connection.error_info
+
                             payload["reason"] = "error"
-                            payload["error"] = self._error_info.error  # TODO
+                            payload["error"] = (
+                                error_info.error if error_info else "unknown"
+                            )
                             payload["time"] = job_progress.elapsed
                             payload["progress"] = job_progress.progress
 
@@ -1150,21 +1165,18 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 self._setJobData(None, None, None)
 
             self._updateProgressData()
-            self._setCurrentZ(None)
             self._setOffsets(None)
             self._addTemperatureData()
             self._printer_profile_manager.deselect()
 
             eventManager().fire(Events.DISCONNECTED)
 
-        self._setState(
-            state
-        )  # TODO state_string=state_string, error_string=error_string)
+        self._setState(state, state_string=state_str, error_string=error_str)
 
     def on_printer_job_changed(self, job, user=None, data=None):
-        if job.path is not None:
+        if job is not None:
             payload = self._payload_for_print_job_event(
-                location=job.origin,
+                location=job.storage,
                 print_job_file=job.path,
                 print_job_user=user,
                 action_user=user,
@@ -1185,9 +1197,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             )
 
         self._setJobData(
-            job.path,
-            job.size,
-            job.origin in (FileDestinations.SDCARD, FileDestinations.PRINTER),
+            job.path if job else None,
+            job.size if job else None,
+            job.storage == FileDestinations.SDCARD if job else False,
             user=user,
             data=data,
         )
@@ -1206,9 +1218,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             self.start_print(pos=self._posAfterSelect, user=user)
 
     def on_printer_job_started(self, suppress_script=False, user=None):
-        # clear error info
-        self._error_info = None
-
         self._updateJobUser(
             user
         )  # the final job owner should always be whoever _started_ the job
@@ -1237,14 +1246,19 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     must_be_set=False,
                 )
 
-    def on_printer_job_paused(self, suppress_script=False, user=None):  # TODO
-        fileposition = self._comm.getFilePosition() if self._comm else None
-        progress = self._comm.getPrintProgress() if self._comm else None
+    def on_printer_job_paused(self, suppress_script=False, user=None):
+        job_progress = self._connection.job_progress if self._connection else None
+
+        if job_progress:
+            fileposition = job_progress.pos
+            progress = job_progress.progress
+        else:
+            fileposition = None
+            progress = None
+
         payload = self._payload_for_print_job_event(
-            position=self._comm.pause_position.as_dict()
-            if self._comm and self._comm.pause_position and not suppress_script
-            else None,
-            fileposition=fileposition["pos"] if fileposition else None,
+            position=self._connection.pause_position if self._connection else None,
+            fileposition=fileposition,
             progress=progress,
             action_user=user,
         )
@@ -1367,7 +1381,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             )
 
     def on_printer_job_cancelled(self, suppress_script=False, user=None):  # TODO
-        self._setCurrentZ(None)
         self._updateProgressData()
 
         job_progress = self._connection.job_progress if self._connection else None
@@ -1380,15 +1393,13 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             progress = None
 
         payload = self._payload_for_print_job_event(
-            position=self._comm.cancel_position.as_dict()
-            if self._comm and self._comm.cancel_position
-            else None,
-            fileposition=fileposition["pos"] if fileposition else None,
+            position=self._connection.cancel_position if self._connection else None,
+            fileposition=fileposition,
             progress=progress,
             action_user=user,
         )
         if payload:
-            payload["time"] = self._comm.getPrintTime()
+            payload["time"] = job_progress.elapsed
 
             eventManager().fire(Events.PRINT_CANCELLED, payload)
             eventManager().fire(
@@ -1432,7 +1443,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             thread.start()
 
     def on_printer_position_changed(self, position, reason=None):
-        return super().on_printer_position_changed(position, reason)
+        payload = {"reason": reason}
+        payload.update(position)
+        eventManager().fire(Events.POSITION_UPDATE, payload)
 
     def on_printer_temperature_update(self, temperatures):
         self._addTemperatureData(temperatures)
@@ -1441,26 +1454,28 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         for line in lines:
             self._addLog(line)
 
-    def on_printer_error(
-        self,
-        error: str,
-        reason: str,
-        consequence: str = None,
-        faq: str = None,
-        logs: List[str] = None,
-    ):
-        self._error_info = ErrorInformation(
-            error=error, reason=reason, consequence=consequence, faq=faq, logs=logs
-        )
-
     def on_printer_disconnect(self):
         self.disconnect()
 
+    def on_printer_record_recovery_position(self, job: PrintJob, pos: int):
+        try:
+            self._file_manager.save_recovery_data(job.storage, job.path, pos)
+        except NoSuchStorage:
+            pass
+        except Exception:
+            self._logger.exception("Error while trying to persist print recovery data")
+
     def on_printer_files_available(self, available):
-        return super().on_printer_files_available(available)
+        self._stateMonitor.set_state(
+            self._dict(
+                text=self.get_state_string(),
+                flags=self._getStateFlags(),
+                error=self.get_error(),
+            )
+        )
 
     def on_printer_files_refreshed(self, files):
-        return super().on_printer_files_refreshed(files)
+        eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
     def on_printer_files_upload_start(self, job: UploadJob):
         eventManager().fire(
@@ -1500,7 +1515,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     job.path, job.remote_path, FileDestinations.SDCARD
                 )
 
-        self._setCurrentZ(None)
         self._setJobData(None, None, None)
         self._updateProgressData()
         self._stateMonitor.set_state(
@@ -1528,7 +1542,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             "action_user": user,
         }
         if job is not None:
-            kwargs["location"] = job.origin
+            kwargs["location"] = job.storage
             kwargs["print_job_file"] = job.path
             kwargs["print_job_size"] = job.size
             kwargs["print_job_user"] = job.owner
@@ -1544,10 +1558,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def _setOffsets(self, offsets):
         self._stateMonitor.set_temp_offsets(offsets)
-
-    def _setCurrentZ(self, currentZ):
-        self._currentZ = currentZ
-        self._stateMonitor.set_current_z(self._currentZ)
 
     def _setState(self, state, state_string=None, error_string=None):
         if state_string is None:
@@ -1658,24 +1668,24 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             printTimeLeftOrigin=printTimeLeftOrigin,
         )
 
-    def _updateResendDataCallback(self):  # TODO
-        return self._dict(count=0, transmitted=0, ratio=0)
-        """
-        if not self._comm:
+    def _updateResendDataCallback(self):
+        if self._connection is None:
             return self._dict(count=0, transmitted=0, ratio=0)
+
+        communication_health = self._connection.communication_health
         return self._dict(
-            count=self._comm.received_resends,
-            transmitted=self._comm.transmitted_lines,
-            ratio=int(self._comm.resend_ratio * 100),
+            count=communication_health.errors,
+            transmitted=communication_health.total,
+            ratio=round(communication_health.ratio * 100),
         )
-        """
 
     def _addTemperatureData(self, temperatures=None):
         data = {"time": int(time.time())}
-        for key, value in temperatures.items():
-            if not isinstance(value, tuple) or not len(value) == 2:
-                continue
-            data[key] = self._dict(actual=value[0], target=value[1])
+        if temperatures:
+            for key, value in temperatures.items():
+                if not isinstance(value, tuple) or not len(value) == 2:
+                    continue
+                data[key] = self._dict(actual=value[0], target=value[1])
 
         self._temps.append(data)
         self._stateMonitor.add_temperature(self._dict(**data))
@@ -1951,7 +1961,6 @@ class StateMonitor:
 
         self._state = None
         self._job_data = None
-        self._current_z = None
         self._offsets = {}
         self._progress = None
         self._resends = None
@@ -1984,14 +1993,12 @@ class StateMonitor:
         state=None,
         job_data=None,
         progress=None,
-        current_z=None,
         offsets=None,
         resends=None,
     ):
         self.set_state(state)
         self.set_job_data(job_data)
         self.set_progress(progress)
-        self.set_current_z(current_z)
         self.set_temp_offsets(offsets)
         self.set_resends(resends)
 
@@ -2007,10 +2014,6 @@ class StateMonitor:
 
     def add_message(self, message):
         self._on_add_message(message)
-        self._change_event.set()
-
-    def set_current_z(self, current_z):
-        self._current_z = current_z
         self._change_event.set()
 
     def set_state(self, state):
@@ -2082,7 +2085,6 @@ class StateMonitor:
         return {
             "state": self._state,
             "job": self._job_data,
-            "currentZ": self._current_z,
             "progress": self._progress,
             "offsets": self._offsets,
             "resends": self._resends,

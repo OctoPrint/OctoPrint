@@ -496,9 +496,7 @@ class MachineCom:
 
     DETECTION_RETRIES = 3
 
-    def __init__(
-        self, port=None, baudrate=None, callbackObject=None, printerProfileManager=None
-    ):
+    def __init__(self, printer_profile, port=None, baudrate=None, callback=None):
         self._logger = logging.getLogger(__name__)
         self._serialLogger = logging.getLogger("SERIAL")
         self._phaseLogger = logging.getLogger(__name__ + ".command_phases")
@@ -511,13 +509,13 @@ class MachineCom:
                 baudrate = 0
             else:
                 baudrate = settingsBaudrate
-        if callbackObject is None:
-            callbackObject = MachineComPrintCallback()
+        if callback is None:
+            callback = MachineComPrintCallback()
 
         self._port = port
         self._baudrate = baudrate
-        self._callback = callbackObject
-        self._printerProfileManager = printerProfileManager
+        self._callback = callback
+        self._printer_profile = printer_profile
         self._state = self.STATE_NONE
         self._serial = None
 
@@ -1323,7 +1321,7 @@ class MachineCom:
 
         context.update(
             {
-                "printer_profile": self._printerProfileManager.get_current_or_default(),
+                "printer_profile": self._printer_profile,
                 "last_position": self.last_position,
                 "last_temperature": self.last_temperature.as_script_dict(),
                 "last_fanspeed": self.last_fanspeed,
@@ -2180,7 +2178,7 @@ class MachineCom:
 
         maxToolNum = max(
             maxToolNum,
-            self._printerProfileManager.get_current_or_default()["extruder"]["count"] - 1,
+            self._printer_profile["extruder"]["count"] - 1,
         )
 
         for name, hook in self._temperature_hooks.items():
@@ -2202,9 +2200,7 @@ class MachineCom:
                 )
 
         if current_tool_key in parsedTemps or "T0" in parsedTemps:
-            shared_nozzle = self._printerProfileManager.get_current_or_default()[
-                "extruder"
-            ]["sharedNozzle"]
+            shared_nozzle = self._printer_profile["extruder"]["sharedNozzle"]
             shared_temp = (
                 parsedTemps[current_tool_key]
                 if current_tool_key in parsedTemps
@@ -2232,7 +2228,7 @@ class MachineCom:
         # chamber temperature
         if "C" in parsedTemps and (
             self._capability_supported(self.CAPABILITY_CHAMBER_TEMP)
-            or self._printerProfileManager.get_current_or_default()["heatedChamber"]
+            or self._printer_profile["heatedChamber"]
         ):
             actual, target = parsedTemps["C"]
             del parsedTemps["C"]
@@ -5211,6 +5207,9 @@ class MachineCom:
                 try:
                     z = float(match.group("value"))
                     if self._currentZ != z:
+                        eventManager().fire(
+                            Events.Z_CHANGE, {"new": z, "old": self._currentZ}
+                        )
                         self._currentZ = z
                         self._callback.on_comm_z_change(z)
                 except ValueError:
@@ -5261,7 +5260,7 @@ class MachineCom:
     def _gcode_M140_queuing(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
-        if not self._printerProfileManager.get_current_or_default()["heatedBed"]:
+        if not self._printer_profile["heatedBed"]:
             message = (
                 'Not sending "{}", printer profile has no heated bed. Either '
                 "configure a heated bed or remove bed commands from your "
@@ -5280,7 +5279,7 @@ class MachineCom:
     def _gcode_M141_queuing(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
-        if not self._printerProfileManager.get_current_or_default()["heatedChamber"]:
+        if not self._printer_profile["heatedChamber"]:
             message = (
                 'Not sending "{}", printer profile has no heated chamber. Either '
                 "configure a heated chamber or remove chamber commands from your "
@@ -5498,13 +5497,11 @@ class MachineCom:
         # safe than sorry. We do this ignoring the queue since at this point it
         # is irrelevant whether the printer has sent enough ack's or not, we
         # are going to shutdown the connection in a second anyhow.
-        for tool in range(
-            self._printerProfileManager.get_current_or_default()["extruder"]["count"]
-        ):
+        for tool in range(self._printer_profile["extruder"]["count"]):
             self._do_increment_and_send_with_checksum(
                 f"M104 T{tool} S0".encode(self._serial_encoding)
             )
-        if self._printerProfileManager.get_current_or_default()["heatedBed"]:
+        if self._printer_profile["heatedBed"]:
             self._do_increment_and_send_with_checksum(b"M140 S0")
 
         if close:
@@ -5578,8 +5575,7 @@ class MachineCom:
 
     def _validate_tool(self, tool):
         return not self._sanity_check_tools or (
-            tool
-            < self._printerProfileManager.get_current_or_default()["extruder"]["count"]
+            tool < self._printer_profile["extruder"]["count"]
             and tool not in self._known_invalid_tools
         )
 
@@ -7037,7 +7033,7 @@ def upload_cli():
     comm = MachineCom(
         port=port,
         baudrate=baudrate,
-        callbackObject=callback,
+        callback=callback,
         printerProfileManager=printer_profile_manager,
     )
     callback.comm = comm

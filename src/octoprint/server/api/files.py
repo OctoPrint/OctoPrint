@@ -20,6 +20,7 @@ from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.filemanager.storage import StorageError
+from octoprint.printer.job import PrintJob
 from octoprint.server import (
     NO_CONTENT,
     current_user,
@@ -87,13 +88,15 @@ def _create_lastmodified(path, recursive):
             return fileManager.last_modified(
                 storage, path=path_in_storage, recursive=recursive
             )
+        except octoprint.filemanager.NoSuchStorage:
+            pass
         except Exception:
             logging.getLogger(__name__).exception(
                 "There was an error retrieving the last modified data from storage {} and path {}".format(
                     storage, path_in_storage
                 )
             )
-            return None
+        return None
 
 
 def _create_etag(path, filter, recursive, lm=None):
@@ -544,13 +547,9 @@ def uploadGcodeFile(target):
     if input_upload_name in request.values and input_upload_path in request.values:
         if target not in [
             FileDestinations.LOCAL,
-            FileDestinations.PRINTER,
             FileDestinations.SDCARD,
         ]:
             abort(404)
-
-        if target == FileDestinations.SDCARD:
-            target = FileDestinations.PRINTER
 
         upload = octoprint.filemanager.util.DiskFileWrapper(
             request.values[input_upload_name], request.values[input_upload_path]
@@ -567,7 +566,7 @@ def uploadGcodeFile(target):
                 abort(400, description="userdata contains invalid JSON")
 
         # check preconditions for SD upload
-        sd = target == FileDestinations.PRINTER
+        sd = target == FileDestinations.SDCARD
         if sd:
             if not settings().getBoolean(["feature", "sdSupport"]):
                 abort(404)
@@ -633,7 +632,7 @@ def uploadGcodeFile(target):
 
         if (
             str(printer.active_job)
-            == f"{'printer' if sd else 'local'}:{futureFullPathInStorage}"
+            == f"{FileDestinations.SDCARD if sd else FileDestinations.LOCAL}:{futureFullPathInStorage}"
         ):
             abort(
                 409,
@@ -657,7 +656,7 @@ def uploadGcodeFile(target):
 
         reselect = (
             str(printer.job)
-            == f"{'printer' if sd else 'local'}:{futureFullPathInStorage}"
+            == f"{FileDestinations.SDCARD if sd else FileDestinations.LOCAL}:{futureFullPathInStorage}"
         )
 
         def fileProcessingFinished(filename, absFilename, destination):
@@ -694,12 +693,8 @@ def uploadGcodeFile(target):
             if octoprint.filemanager.valid_file_type(added_file, "gcode") and (
                 to_select or to_print or reselect
             ):
-                printer.select_file(
-                    absFilename,
-                    destination == FileDestinations.SDCARD,
-                    to_print,
-                    user,
-                )
+                job = PrintJob(storage=destination, path=absFilename, owner=user)
+                printer.set_job(job, print_after_select=to_print)
 
         try:
             added_file = fileManager.add_file(
@@ -894,7 +889,7 @@ def gcodeFileCommand(filename, target):
                     description="Printer is already printing, cannot select a new file",
                 )
 
-            printAfterLoading = False
+            start_print = False
             if "print" in data and data["print"] in valid_boolean_trues:
                 with Permissions.PRINT.require(403):
                     if not printer.is_operational():
@@ -902,15 +897,13 @@ def gcodeFileCommand(filename, target):
                             409,
                             description="Printer is not operational, cannot directly start printing",
                         )
-                    printAfterLoading = True
+                    start_print = True
 
-            sd = False
-            if target == FileDestinations.SDCARD:
-                filenameToSelect = filename
-                sd = True
-            else:
-                filenameToSelect = fileManager.path_on_disk(target, filename)
-            printer.select_file(filenameToSelect, sd, printAfterLoading, user)
+            if target != FileDestinations.SDCARD:
+                filename = fileManager.path_on_disk(target, filename)
+
+            job = PrintJob(storage=target, path=filename, owner=user)
+            printer.set_job(job, print_after_select=start_print)
 
     elif command == "unselect":
         with Permissions.FILES_SELECT.require(403):
@@ -930,7 +923,7 @@ def gcodeFileCommand(filename, target):
                     "Only the currently selected file can be unselected", 400
                 )
 
-            printer.unselect_file()
+            printer.set_job(None)
 
     elif command == "slice":
         with Permissions.SLICE.require(403):
@@ -1069,13 +1062,10 @@ def gcodeFileCommand(filename, target):
 
             def slicing_done(target, path, select_after_slicing, print_after_slicing):
                 if select_after_slicing or print_after_slicing:
-                    sd = False
-                    if target == FileDestinations.SDCARD:
-                        filenameToSelect = path
-                        sd = True
-                    else:
+                    if target != FileDestinations.SDCARD:
                         filenameToSelect = fileManager.path_on_disk(target, path)
-                    printer.select_file(filenameToSelect, sd, print_after_slicing, user)
+                    job = PrintJob(storage=target, path=filenameToSelect, owner=user)
+                    printer.set_job(job, print_after_select=print_after_slicing)
 
             try:
                 fileManager.slice(
@@ -1218,7 +1208,7 @@ def gcodeFileCommand(filename, target):
                         # deselect the file if it's currently selected
                         currentOrigin, currentFilename = _getCurrentFile()
                         if currentFilename is not None and filename == currentFilename:
-                            printer.unselect_file()
+                            printer.set_job(None)
 
                         if is_file:
                             fileManager.move_file(target, filename, destination)
@@ -1282,7 +1272,10 @@ def gcodeFileCommand(filename, target):
 
             def selectAndOrPrint(filename, *args):
                 if select or print:
-                    printer.select_file(filename, FileDestinations.SDCARD, print)
+                    job = PrintJob(
+                        storage=FileDestinations.SDCARD, path=filename, owner=user
+                    )
+                    printer.set_job(job, print_after_select=print)
 
             path = fileManager.path_on_disk(FileDestinations.LOCAL, filename)
             remote = printer.add_sd_file(
@@ -1344,7 +1337,7 @@ def deleteGcodeFile(filename, target):
             and currentOrigin == target
             and filename == currentPath
         ):
-            printer.unselect_file()
+            printer.set_job(None)
 
         # delete it
         if target == FileDestinations.SDCARD:
@@ -1369,7 +1362,7 @@ def deleteGcodeFile(filename, target):
             and currentOrigin == target
             and fileManager.file_in_path(target, filename, currentPath)
         ):
-            printer.unselect_file()
+            printer.set_job(None)
 
         # delete it
         try:

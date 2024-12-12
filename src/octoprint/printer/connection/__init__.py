@@ -2,7 +2,12 @@ import enum
 import logging
 from typing import Dict, List
 
-from octoprint.printer import ConnectedPrinterMixin, PrinterMixin
+from octoprint.printer import (
+    ConnectedPrinterMixin,
+    ErrorInformation,
+    FirmwareInformation,
+    PrinterMixin,
+)
 from octoprint.printer.job import PrintJob, UploadJob
 
 
@@ -38,7 +43,9 @@ class ConnectedPrinterListenerMixin:
     ):
         pass
 
-    def on_printer_state_changed(self, state: ConnectedPrinterState):
+    def on_printer_state_changed(
+        self, state: ConnectedPrinterState, state_str: str = None, error_str: str = None
+    ):
         pass
 
     def on_printer_position_changed(self, position, reason=None):
@@ -50,17 +57,16 @@ class ConnectedPrinterListenerMixin:
     def on_printer_logs(self, *lines: str):
         pass
 
-    def on_printer_error(
-        self,
-        error: str,
-        reason: str,
-        consequence: str = None,
-        faq: str = None,
-        logs: List[str] = None,
-    ):
+    def on_printer_error(self, info: ErrorInformation):
+        pass
+
+    def on_printer_firmware_info(self, info: FirmwareInformation):
         pass
 
     def on_printer_disconnect(self):
+        pass
+
+    def on_printer_record_recovery_position(self, job: PrintJob, pos: int):
         pass
 
     def on_printer_job_changed(self, job: PrintJob, user: str = None, data: Dict = None):
@@ -99,6 +105,9 @@ class ConnectedPrinterMetaClass(type):
 
     def find(cls, connector):
         return cls.connectors.get(connector)
+
+    def all(cls):
+        return cls.connectors.values()
 
 
 class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClass):
