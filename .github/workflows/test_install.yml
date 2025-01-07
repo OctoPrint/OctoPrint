@@ -13,7 +13,7 @@ jobs:
     name: Install branch
     strategy:
       matrix:
-        os: ["ubuntu-latest"]
+        os: ["ubuntu-22.04"] # change back to ubuntu-latest once we drop Python 3.7
         python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
         branch: ["master", "release"]
     runs-on: ${{ matrix.os }}
