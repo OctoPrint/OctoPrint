@@ -51,7 +51,7 @@ jobs:
 
   pre-commit:
     name: 🧹 Pre-commit
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we update precommit to python 3.12
     steps:
       - uses: actions/checkout@v4
       - name: 🏗 Set up Python 3.12

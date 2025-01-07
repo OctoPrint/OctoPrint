@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.12
+  python: python3.10
 exclude: ^(src/octoprint/vendor/|src/octoprint/static/js/lib|src/octoprint/static/vendor|src/octoprint_setuptools|tests/static/js/lib|tests/util/_files|scripts/|translations/|.*\.css|.*\.svg)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
