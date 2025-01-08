@@ -292,7 +292,26 @@ class PluginManagerPlugin(
                 )
 
         # decouple repository fetching from server startup
-        self._fetch_all_data(do_async=True)
+        def backup_plugin_export():
+            import json
+
+            if not self._repository_available:
+                return
+
+            plugins = self.generate_plugins_json(
+                self._settings,
+                self._plugin_manager,
+                repo_plugins=self._repository_plugins_by_id,
+            )
+
+            export_path = os.path.join(
+                self._settings._basedir, "backup_plugin_export.json"
+            )
+            with open(export_path, "w", encoding="utf-8") as f:
+                json.dump(plugins, f, indent=2, allow_nan=False)
+            self._logger.info(f"Saved a current plugin export to {export_path}")
+
+        self._fetch_all_data(do_async=True, cb=backup_plugin_export)
 
     ##~~ SettingsPlugin
 
@@ -1969,10 +1988,12 @@ class PluginManagerPlugin(
             {"id": plugin.key, "version": plugin.version},
         )
 
-    def _fetch_all_data(self, do_async=False):
+    def _fetch_all_data(self, do_async=False, cb=None):
         def run():
             self._repository_available = self._fetch_repository_from_disk()
             self._notices_available = self._fetch_notices_from_disk()
+            if callable(cb):
+                cb()
 
         if do_async:
             thread = threading.Thread(target=run)
