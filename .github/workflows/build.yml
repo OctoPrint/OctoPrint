@@ -17,7 +17,7 @@ jobs:
       - name: 🏗 Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: "3.12"
       - name: 🏗 Install build dependencies
         run: |
           python -m pip install setuptools wheel --user
@@ -57,7 +57,7 @@ jobs:
       - name: 🏗 Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: "3.12"
       - name: 🚀 Run pre-commit
         run: |
           pip install pre-commit
@@ -85,7 +85,7 @@ jobs:
   test-js-unit:
     name: 🧪 JavaScript unit tests
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we figure out why puppeteer is unhappy under 24.04
     steps:
       - uses: actions/checkout@v4
       - name: 🏗 Set up test dependencies
@@ -103,7 +103,7 @@ jobs:
       matrix:
         python: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
         installable: ["wheel", "sdist"]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
     steps:
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4
@@ -127,7 +127,7 @@ jobs:
   test-e2e:
     name: 🧪 E2E tests
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
     strategy:
       matrix:
         python: ["3.8", "3.13"]
