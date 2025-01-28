@@ -38,9 +38,9 @@ core_deps = [
     "argon2-cffi>=23.1.0",
     "Babel>=2.16,<2.17 ; python_version>='3.8'",  # breaking changes can happen on minor version increases
     "cachelib>=0.13.0,<0.14 ; python_version>='3.8'",
-    "Click>=8.1.7,<9",
+    "Click>=8.1.8,<9",
     "colorlog>=6.9.0,<7",
-    "emoji>=2.14,<3",
+    "emoji>=2.14.1,<3",
     "feedparser>=6.0.11,<7",
     "filetype>=1.2.0,<2",
     "Flask-Assets>=2.1.0,<3",
@@ -56,9 +56,9 @@ core_deps = [
     "packaging",
     "libpass>=1.8.1,<2 ; python_version>='3.9'",  # replacement for unmaintained passlib
     "passlib==1.7.4 ; python_version<'3.9'",
-    "pathvalidate>=3.2.1,<4",
-    "psutil>=6.1.0,<7",
-    "pydantic>=2.10.2,<3 ; python_version>='3.8'",
+    "pathvalidate>=3.2.3,<4 ; python_version>='3.8'",
+    "psutil>=6.1.1,<7",
+    "pydantic>=2.10.6,<3 ; python_version>='3.8'",
     "pylru>=1.2.1,<2",
     "pyserial>=3.5,<4",
     "pytz",
@@ -66,14 +66,14 @@ core_deps = [
     "requests>=2.32.3,<3 ; python_version>='3.8'",
     "sarge==0.1.7.post1",
     "semantic_version>=2.10.0,<3",
-    "sentry-sdk>=2.19.0,<3",
+    "sentry-sdk>=2.20.0,<3",
     "setuptools",
     "tornado>=6.4.2,<6.5 ; python_version>='3.8'",
     "watchdog>=4.0.2,<5 ; python_version>='3.8'",  # later versions require Python 3.9+
     "websocket-client>=1.8.0,<1.9 ; python_version>='3.8'",  # breaking changes can happen on patch version increases, changelog incomplete
     "werkzeug>=3.0.6,<3.1 ; python_version>='3.8'",  # later versions require Python 3.9+, breaking changes can happen on minor version increases
-    "wrapt>=1.17,<1.18 ; python_version>='3.8'",
-    "zeroconf>=0.136.2,<0.137 ; python_version>='3.8'",  # breaking changes can happen on minor version increases (despite semantic versioning)
+    "wrapt>=1.17.2,<1.18 ; python_version>='3.8'",
+    "zeroconf>=0.136.2,<0.137 ; python_version>='3.8'",  # later versions require Python 3.9+, breaking changes can happen on minor version increases (despite semantic versioning)
     "zipstream-ng>=1.8.0,<2.0.0",
 ]
 core_deps_37 = [
@@ -84,6 +84,7 @@ core_deps_37 = [
     "flask>=2.2.3,<2.3 ; python_version<'3.8'",
     "importlib-metadata>=6.7.0 ; python_version<'3.8'",  # backport of importlib.metadata for python 3.7, later versions require Python 3.8+
     "markdown>=3.4.4,<3.5 ; python_version<'3.8'",
+    "pathvalidate>=3.2.1,<4 ; python_version<'3.8'",
     "pydantic==1.10.16 ; python_version<'3.8'",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
     "PyYAML==6.0.1 ; python_version<'3.8'",
     "requests>=2.31,<2.32 ; python_version<'3.8'",
@@ -97,7 +98,7 @@ core_deps_37 = [
 vendored_deps = [
     "blinker>=1.8.0,<1.9.0 ; python_version>='3.8'",  # dependency of flask_principal, later versions require Python 3.9+
     "blinker>=1.6.3,<1.7.0 ; python_version<'3.8'",
-    "more-itertools>=10.5.0 ; python_version>='3.8'",  # dependency of class-doc
+    "more-itertools>=10.5.0 ; python_version>='3.8'",  # dependency of class-doc, later versions require Python 3.9+
     "more-itertools>=9.1,<10 ; python_version<'3.8'",
     "regex",  # dependency of awesome-slugify
     "unidecode",  # dependency of awesome-slugify
