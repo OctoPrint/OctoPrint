@@ -56,7 +56,7 @@ core_deps = [
     "packaging",
     "libpass>=1.8.1,<2 ; python_version>='3.9'",  # replacement for unmaintained passlib
     "passlib==1.7.4 ; python_version<'3.9'",
-    "pathvalidate>=3.2.3,<4 ; python_version>='3.8'",
+    "pathvalidate>=3.2.1,<4 ; python_version<'3.8'",  # later versions require Python 3.9
     "psutil>=6.1.1,<7",
     "pydantic>=2.10.6,<3 ; python_version>='3.8'",
     "pylru>=1.2.1,<2",
@@ -84,7 +84,6 @@ core_deps_37 = [
     "flask>=2.2.3,<2.3 ; python_version<'3.8'",
     "importlib-metadata>=6.7.0 ; python_version<'3.8'",  # backport of importlib.metadata for python 3.7, later versions require Python 3.8+
     "markdown>=3.4.4,<3.5 ; python_version<'3.8'",
-    "pathvalidate>=3.2.1,<4 ; python_version<'3.8'",
     "pydantic==1.10.16 ; python_version<'3.8'",  # to be kept pinned until https://github.com/pydantic/pydantic/issues/7689 is resolved
     "PyYAML==6.0.1 ; python_version<'3.8'",
     "requests>=2.31,<2.32 ; python_version<'3.8'",
