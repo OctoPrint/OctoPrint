@@ -24,6 +24,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import fnmatch
 import importlib.machinery
+import importlib.metadata as meta
 import importlib.util
 import inspect
 import logging
@@ -34,11 +35,6 @@ from collections import OrderedDict, defaultdict, namedtuple
 from os import scandir
 
 from packaging.specifiers import SpecifierSet
-
-try:
-    import importlib.metadata as meta
-except ImportError:  # Python 3.7
-    import importlib_metadata as meta
 
 from octoprint.util import sv, time_this, to_unicode
 from octoprint.util.version import get_python_version_string, is_python_compatible

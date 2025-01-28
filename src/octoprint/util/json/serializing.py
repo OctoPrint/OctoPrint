@@ -6,7 +6,7 @@ import datetime
 import json
 import time
 from collections import OrderedDict
-from typing import Any, Callable, OrderedDictType
+from typing import Any, Callable
 
 from frozendict import frozendict
 
@@ -24,8 +24,8 @@ class SerializableJsonEncoding(JsonEncoding):
       * ``time.struct_time``
     """
 
-    encoders: OrderedDictType[type, Callable[[Any], Any]] = OrderedDict()
-    decoders: OrderedDictType[str, Callable[[dict], object]] = OrderedDict()
+    encoders: OrderedDict[type, Callable[[Any], Any]] = OrderedDict()
+    decoders: OrderedDict[str, Callable[[dict], object]] = OrderedDict()
 
     @classmethod
     def add_decoder(cls, classname, decoder):

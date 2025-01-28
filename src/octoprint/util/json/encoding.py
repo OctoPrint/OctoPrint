@@ -3,7 +3,7 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 
 import json
 from collections import OrderedDict
-from typing import Any, Callable, OrderedDictType
+from typing import Any, Callable
 
 from frozendict import frozendict
 
@@ -11,7 +11,7 @@ from octoprint.util import to_unicode
 
 
 class JsonEncoding:
-    encoders: OrderedDictType[type, Callable[[Any], Any]] = OrderedDict()
+    encoders: OrderedDict[type, Callable[[Any], Any]] = OrderedDict()
 
     @classmethod
     def add_encoder(cls, typ: type, encoder: Callable[[Any], Any]) -> None:

@@ -288,5 +288,5 @@ __plugin_disabling_discouraged__ = gettext(
     "This plugin provides the standard webcam in OctoPrint. If you do not have any other plugin providing a webcam set up, the webcam section in the control tab will no longer be visible."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 __plugin_implementation__ = ClassicWebcamPlugin()

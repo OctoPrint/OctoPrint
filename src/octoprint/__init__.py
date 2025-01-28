@@ -28,7 +28,7 @@ urllib3_ssl = True
    a sound SSL environment or not."""
 
 version_info = sys.version_info
-if version_info.major == 3 and version_info.minor >= 8 and sys.platform == "win32":
+if sys.platform == "win32":
     # Python 3.8 makes proactor event loop the default on Windows, Tornado doesn't like that
     #
     # see https://github.com/tornadoweb/tornado/issues/2608
