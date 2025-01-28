@@ -56,7 +56,7 @@ core_deps = [
     "packaging",
     "libpass>=1.8.1,<2 ; python_version>='3.9'",  # replacement for unmaintained passlib
     "passlib==1.7.4 ; python_version<'3.9'",
-    "pathvalidate>=3.2.1,<4 ; python_version<'3.8'",  # later versions require Python 3.9
+    "pathvalidate>=3.2.1,<4",  # later versions require Python 3.9
     "psutil>=6.1.1,<7",
     "pydantic>=2.10.6,<3 ; python_version>='3.8'",
     "pylru>=1.2.1,<2",
