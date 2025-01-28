@@ -3,12 +3,7 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 
 import json
 from collections import OrderedDict
-from typing import Any, Callable, Dict
-
-try:
-    from typing import OrderedDict as OrderedDictType
-except ImportError:
-    OrderedDictType = Dict  # py3.7.{0,1}
+from typing import Any, Callable, OrderedDictType
 
 from frozendict import frozendict
 

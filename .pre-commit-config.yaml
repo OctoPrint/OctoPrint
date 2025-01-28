@@ -19,7 +19,7 @@ repos:
     rev: v3.3.1
     hooks:
       - id: pyupgrade
-        args: ["--py37-plus"]
+        args: ["--py39-plus"]
         exclude: "setup.py|src/octoprint_setuptools/__init__.py"
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.2

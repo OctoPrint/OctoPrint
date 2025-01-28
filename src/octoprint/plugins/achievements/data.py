@@ -1,5 +1,3 @@
-from typing import Dict
-
 from octoprint.schema import BaseModel
 
 
@@ -25,7 +23,7 @@ class StatsBase(BaseModel):
     prints_finished: int = 0
     """Number of prints finished."""
 
-    prints_started_per_weekday: Dict[int, int] = {}
+    prints_started_per_weekday: dict[int, int] = {}
     """Number of prints started per weekday."""
 
     print_duration_total: float = 0
@@ -106,5 +104,5 @@ class State(BaseModel):
 
 class Data(BaseModel):
     stats: Stats
-    achievements: Dict[str, int]
+    achievements: dict[str, int]
     state: State

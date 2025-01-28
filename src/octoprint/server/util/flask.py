@@ -12,7 +12,7 @@ import os
 import threading
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 import flask
 import flask.json
@@ -2021,8 +2021,8 @@ class ReverseProxyInfo(BaseModel):
     server_port: int
     server_path: str
     cookie_suffix: str
-    trusted_proxies: List[str] = []
-    headers: Dict[str, str] = {}
+    trusted_proxies: list[str] = []
+    headers: dict[str, str] = {}
 
 
 def get_reverse_proxy_info():

@@ -8,7 +8,6 @@ import os
 import site
 import sys
 import threading
-from typing import List
 
 import sarge
 from packaging.requirements import Requirement
@@ -610,7 +609,7 @@ class PipCaller(CommandlineCaller):
                 )
                 return False, False, False, None
 
-    def _preprocess_lines(self, *lines: List[str]) -> List[str]:
+    def _preprocess_lines(self, *lines: list[str]) -> list[str]:
         return list(map(self._preprocess, lines))
 
     @staticmethod

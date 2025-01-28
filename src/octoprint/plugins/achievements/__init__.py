@@ -7,7 +7,6 @@ import datetime
 import json
 import os
 import threading
-from typing import List
 
 from flask import abort, jsonify
 from flask_babel import gettext
@@ -36,10 +35,10 @@ class ApiTimezoneInfo(BaseModel):
 
 class ApiResponse(BaseModel):
     stats: Stats
-    achievements: List[ApiAchievement]
+    achievements: list[ApiAchievement]
     hidden_achievements: int
     current_year: YearlyStats
-    available_years: List[int]
+    available_years: list[int]
     timezone: ApiTimezoneInfo
 
 
