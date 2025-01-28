@@ -44,21 +44,21 @@ BRANCH_VERSIONS = """
 #
 # The data is processed from top to bottom, the first matching line wins.
 
-# maintenance is currently the branch for preparation of maintenance release 1.11.0
+# maintenance is currently the branch for preparation of maintenance release 1.12.0
 # so are any fix/... and improve/... branches
-maintenance 1.11.0 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
-fix/.* 1.11.0 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
-improve/.* 1.11.0 f1e7f3253cccfbc2cd2e445646fbc2d3b31250d1
+maintenance 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
+fix/.* 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
+improve/.* 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
 
 # staging/bugfix is the branch for preparation of the 1.10.x bugfix releases
 # so are any bug/... branches
 staging/bugfix 1.10.4 9701568a6f3dcf356e5e800a49da6ffac128cae5
 bug/.* 1.10.4 9701568a6f3dcf356e5e800a49da6ffac128cae5
 
-# staging/maintenance is currently the branch for preparation of 1.10.0rc5
+# staging/maintenance is currently the branch for preparation of 1.11.0rc2
 # so is regressionfix/...
-staging/maintenance 1.10.0rc5 https://data.octoprint.org/#achievements
-regressionfix/.* 1.10.0rc5 https://data.octoprint.org/#achievements
+staging/maintenance 1.11.0rc2 https://data.octoprint.org/#achievements
+regressionfix/.* 1.11.0rc2 https://data.octoprint.org/#achievements
 
 # staging/devel is currently inactive (but has the 1.4.1rc4 namespace)
 staging/devel 1.4.1rc4 650d54d1885409fa1d411eb54b9e8c7ff428910f
