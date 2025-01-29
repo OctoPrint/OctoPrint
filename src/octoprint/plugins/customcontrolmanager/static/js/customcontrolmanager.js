@@ -422,6 +422,10 @@ $(function () {
             }
         };
 
+        self.rowCss = (control) => {
+            return self.controlVM.rowCss(ko.mapping.toJS(control));
+        };
+
         self.addContainer = (parent) => {
             self.editor.showContainer(null, parent).done((container) => {
                 self._processControl(container, "temp", parent);
