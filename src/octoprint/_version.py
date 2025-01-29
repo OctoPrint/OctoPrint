@@ -57,8 +57,8 @@ bug/.* 1.10.4 9701568a6f3dcf356e5e800a49da6ffac128cae5
 
 # staging/maintenance is currently the branch for preparation of 1.11.0rc2
 # so is regressionfix/...
-staging/maintenance 1.11.0rc2 https://data.octoprint.org/#achievements
-regressionfix/.* 1.11.0rc2 https://data.octoprint.org/#achievements
+staging/maintenance 1.11.0rc2 ad3fdb9cb641b52db8e7f479d388c10317597c76
+regressionfix/.* 1.11.0rc2 ad3fdb9cb641b52db8e7f479d388c10317597c76
 
 # staging/devel is currently inactive (but has the 1.4.1rc4 namespace)
 staging/devel 1.4.1rc4 650d54d1885409fa1d411eb54b9e8c7ff428910f
