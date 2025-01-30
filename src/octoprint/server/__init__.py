@@ -1062,6 +1062,7 @@ class Server:
 
         app.jinja_env.add_extension("jinja2.ext.do")
         app.jinja_env.add_extension("octoprint.util.jinja.trycatch")
+        app.jinja_env.add_extension("octoprint.util.jinja.autoesc")
 
         def regex_replace(s, find, replace):
             return re.sub(find, replace, s)
@@ -1220,9 +1221,7 @@ class Server:
             ):
                 loader = octoprint.util.jinja.PostProcessWrapperLoader(
                     loader,
-                    lambda source: "{% autoescape false %}"
-                    + source
-                    + "{% endautoescape %}",
+                    lambda source: "{% autoesc false %}" + source + "{% autoesc true %}",
                 )
 
             app.jinja_env.prefix_loader.mapping[plugin.template_folder_key] = loader

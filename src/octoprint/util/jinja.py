@@ -282,6 +282,18 @@ class ExceptionHandlerExtension(Extension):
 trycatch = ExceptionHandlerExtension
 
 
+class AutoescExtension(Extension):
+    tags = {"autoesc"}
+
+    def parse(self, parser):
+        node = nodes.EvalContextModifier(lineno=next(parser.stream).lineno)
+        node.options = [nodes.Keyword("autoescape", parser.parse_expression())]
+        return node
+
+
+autoesc = AutoescExtension
+
+
 class MarkdownFilter:
     def __init__(self, app, **markdown_options):
         self._markdown_options = markdown_options
