@@ -335,6 +335,16 @@ def init_logging(
                         settings.getBaseFolder("logs"), "tornado.log"
                     ),
                 },
+                "tornadoToConsole": {
+                    "class": "octoprint.logging.handlers.WrappingHandler",
+                    "level": "WARN",
+                    "handler": "console",
+                },
+                "tornadoToFile": {
+                    "class": "octoprint.logging.handlers.WrappingHandler",
+                    "level": "WARN",
+                    "handler": "file",
+                },
                 "authFile": {
                     "class": "octoprint.logging.handlers.AuthLogHandler",
                     "level": "DEBUG",
@@ -383,7 +393,7 @@ def init_logging(
                 "PLUGIN_TIMINGS.octoprint.plugin": {"level": "INFO"},
                 "tornado.access": {
                     "level": "INFO",
-                    "handlers": ["tornadoFile"],
+                    "handlers": ["tornadoFile", "tornadoToConsole", "tornadoToFile"],
                     "propagate": False,
                 },
                 "tornado": {"level": "ERROR"},
@@ -395,6 +405,8 @@ def init_logging(
         }
 
     if debug or verbosity > 0:
+        default_config["handlers"]["tornadoToConsole"]["level"] = "INFO"
+        default_config["handlers"]["tornadoToFile"]["level"] = "INFO"
         default_config["loggers"]["octoprint"]["level"] = "DEBUG"
         default_config["root"]["level"] = "INFO"
     if verbosity > 1:

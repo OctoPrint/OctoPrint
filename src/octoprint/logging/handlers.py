@@ -197,3 +197,30 @@ class CombinedLogHandler(logging.Handler):
                     handler.handle(record)
         finally:
             self.release()
+
+
+class WrappingHandler(logging.Handler):
+    def __init__(self, handler=None):
+        logging.Handler.__init__(self)
+        self.handler = handler
+
+    def handle(self, record):
+        self.acquire()
+        try:
+            if not self.handler:
+                return
+
+            if isinstance(self.handler, str):
+                # lookup handler on first use
+                root = logging.getLogger()
+                for h in root.handlers:
+                    if h.name == self.handler:
+                        self.handler = h
+                        break
+                else:
+                    self.handler = None
+
+            if self.handler and record.levelno >= self.level:
+                self.handler.handle(record)
+        finally:
+            self.release()
