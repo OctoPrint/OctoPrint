@@ -34,6 +34,7 @@ from flask_babel import Babel, gettext, ngettext  # noqa: F401
 from flask_login import (  # noqa: F401
     LoginManager,
     current_user,
+    login_user,
     session_protected,
     user_loaded_from_cookie,
     user_logged_out,
@@ -109,8 +110,6 @@ class OctoPrintAnonymousIdentity(AnonymousIdentity):
         for need in user.needs:
             self.provides.add(need)
 
-
-principals = Principal(app, anonymous_identity=OctoPrintAnonymousIdentity)
 
 import octoprint.access.groups as groups  # noqa: E402
 import octoprint.access.permissions as permissions  # noqa: E402
@@ -1067,6 +1066,7 @@ class Server:
 
         app.jinja_env.add_extension("jinja2.ext.do")
         app.jinja_env.add_extension("octoprint.util.jinja.trycatch")
+        app.jinja_env.add_extension("octoprint.util.jinja.autoesc")
 
         def regex_replace(s, find, replace):
             return re.sub(find, replace, s)
@@ -1225,9 +1225,7 @@ class Server:
             ):
                 loader = octoprint.util.jinja.PostProcessWrapperLoader(
                     loader,
-                    lambda source: "{% autoescape false %}"
-                    + source
-                    + "{% endautoescape %}",
+                    lambda source: "{% autoesc false %}" + source + "{% autoesc true %}",
                 )
 
             app.jinja_env.prefix_loader.mapping[plugin.template_folder_key] = loader
@@ -1708,6 +1706,20 @@ class Server:
         loginManager.request_loader(load_user_from_request)
 
         loginManager.init_app(app, add_context_processor=False)
+
+        global principals
+        principals = Principal(app, anonymous_identity=OctoPrintAnonymousIdentity)
+
+        def current_user_identity_loader():
+            # load the identity from the current flask_login user
+            if (
+                current_user is not None
+                and current_user.is_active
+                and not current_user.is_anonymous
+            ):
+                return Identity(current_user.get_id())
+
+        principals.identity_loader(current_user_identity_loader)
 
     def _setup_blueprints(self):
         # do not remove or the index view won't be found

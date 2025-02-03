@@ -137,7 +137,7 @@ $(function () {
         self.useOutput = ko.observable(false);
         self.useGrid = ko.pureComputed(() => {
             const parent = self.parent();
-            return parent && parent.layout === "horizontal_grid";
+            return parent && parent.layout && parent.layout() === "horizontal_grid";
         });
         self.nameError = ko.pureComputed(() => {
             return self.type() !== "container" && !self.control().name();
@@ -420,6 +420,10 @@ $(function () {
             } else {
                 return "customcontrolmanager-control";
             }
+        };
+
+        self.rowCss = (control) => {
+            return self.controlVM.rowCss(ko.mapping.toJS(control));
         };
 
         self.addContainer = (parent) => {

@@ -6,12 +6,7 @@ import datetime
 import json
 import time
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List
-
-try:
-    from typing import OrderedDict as OrderedDictType
-except ImportError:
-    OrderedDictType = Dict  # py3.7.{0,1}
+from typing import Any, Callable
 
 from frozendict import frozendict
 
@@ -29,8 +24,8 @@ class SerializableJsonEncoding(JsonEncoding):
       * ``time.struct_time``
     """
 
-    encoders: OrderedDictType[type, Callable[[Any], Any]] = OrderedDict()
-    decoders: OrderedDictType[str, Callable[[dict], object]] = OrderedDict()
+    encoders: OrderedDict[type, Callable[[Any], Any]] = OrderedDict()
+    decoders: OrderedDict[str, Callable[[dict], object]] = OrderedDict()
 
     @classmethod
     def add_decoder(cls, classname, decoder):
@@ -104,7 +99,7 @@ class SerializableJsonEncoding(JsonEncoding):
         return dct
 
 
-def class_encode(name: str, *params: Any) -> Dict[str, List]:
+def class_encode(name: str, *params: Any) -> dict[str, list]:
     """
     Encode a class name and parameters into a serializable dict. You'll
     probably want to use this if you're going to set a custom decoder.

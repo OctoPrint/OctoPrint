@@ -3,6 +3,8 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import logging
+
 import flask
 
 from octoprint.server.util.flask import OctoPrintFlaskResponse
@@ -90,6 +92,9 @@ def validate_csrf_request(request):
     header = request.headers.get("X-CSRF-Token", None)
 
     if not validate_csrf_tokens(cookie, header):
+        logging.getLogger(__name__).warning(
+            f"CSRF validation failed for {request.method} {request.path} from {request.remote_addr}, responding with HTTP 400 Bad Request"
+        )
         flask.abort(400, "CSRF validation failed")
 
 

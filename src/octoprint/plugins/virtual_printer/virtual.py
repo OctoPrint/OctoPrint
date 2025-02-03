@@ -10,7 +10,7 @@ import queue
 import re
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from serial import SerialTimeoutException
 
@@ -721,7 +721,7 @@ class VirtualPrinter:
                     self._send(area_report)
 
     @staticmethod
-    def _generate_area_report(profile: Dict) -> str:
+    def _generate_area_report(profile: dict) -> str:
         """
         Generate a string with the area of the printer volume.
 
@@ -1515,7 +1515,7 @@ class VirtualPrinter:
             self._send(item)
         self._send("End file list")
 
-    def _mappedSdList(self) -> Dict[str, Dict[str, Any]]:
+    def _mappedSdList(self) -> dict[str, dict[str, Any]]:
         result = {}
         for entry in os.scandir(self._virtualSd):
             if not entry.is_file():
@@ -1539,14 +1539,14 @@ class VirtualPrinter:
             result[dosname.lower()] = entry.name.lower()
         return result
 
-    def _getSdFileData(self, filename: str) -> Optional[Dict[str, Any]]:
+    def _getSdFileData(self, filename: str) -> Optional[dict[str, Any]]:
         files = self._mappedSdList()
         data = files.get(filename.lower())
         if isinstance(data, str):
             data = files.get(data.lower())
         return data
 
-    def _getSdFiles(self) -> List[Dict[str, Any]]:
+    def _getSdFiles(self) -> list[dict[str, Any]]:
         files = self._mappedSdList()
         return [x for x in files.values() if isinstance(x, dict)]
 

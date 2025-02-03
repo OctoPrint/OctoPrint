@@ -2,7 +2,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Optional
 
 from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
@@ -43,7 +43,7 @@ class ReverseProxyConfig(BaseModel):
 
     portFallback: Optional[str] = None
 
-    trustedProxies: List[str] = []
+    trustedProxies: list[str] = []
     """List of trusted proxy servers for which to ignore the IP address when trying to determine the connecting client's IP address. A reverse proxy on the same machine as OctoPrint (e.g. as found on OctoPi) will be handled correctly by default through `trustLocalhostProxies`, further proxies in front of that you'll have to add yourself here."""
 
     trustLocalhostProxies: bool = True
@@ -121,7 +121,7 @@ class DiskspaceConfig(BaseModel):
 
 @with_attrs_docs
 class PreemptiveCacheConfig(BaseModel):
-    exceptions: List[str] = []
+    exceptions: list[str] = []
     """Which server paths to exclude from the preemptive cache, e.g. `/some/path`."""
 
     until: int = 7
@@ -133,7 +133,7 @@ class IpCheckConfig(BaseModel):
     enabled: bool = True
     """Whether to enable the check."""
 
-    trustedSubnets: List[str] = []
+    trustedSubnets: list[str] = []
     """Additional non-local subnets to consider trusted, in CIDR notation, e.g. `192.168.1.0/24`."""
 
 
@@ -172,7 +172,7 @@ class PythonEolCheckConfig(BaseModel):
     ttl: int = CONST_24H
     """Time to live of the cached Python EOL data, in minutes (default: 24 hours)."""
 
-    fallback: Dict[str, PythonEolEntry] = {
+    fallback: dict[str, PythonEolEntry] = {
         "3.7": {"date": "2023-06-27", "last_octoprint": "1.11.*"},
         "3.8": {"date": "2024-10-31"},
     }
@@ -196,7 +196,7 @@ class ServerConfig(BaseModel):
     ignoreIncompleteStartup: bool = False
     """Set this to true to make OctoPrint ignore incomplete startups. Helpful for development."""
 
-    seenWizards: Dict[str, str] = {}
+    seenWizards: dict[str, str] = {}
 
     secretKey: Optional[str] = None
     """Secret key for encrypting cookies and such, randomly generated on first run."""
@@ -239,5 +239,5 @@ class ServerConfig(BaseModel):
     cookies: CookiesConfig = CookiesConfig()
     """Settings for further configuration of the cookies that OctoPrint sets (login, remember me, ...)."""
 
-    allowedLoginRedirectPaths: List[str] = []
+    allowedLoginRedirectPaths: list[str] = []
     """List of paths that are allowed to be used as redirect targets for the login page, in addition to the default ones (`/`, `/recovery/` and `/plugin/appkeys/auth/`)"""

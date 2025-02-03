@@ -11,7 +11,6 @@ import logging
 import os
 import threading
 import time
-from typing import List
 
 from frozendict import frozendict
 
@@ -40,7 +39,7 @@ class ErrorInformation(BaseModel):
     reason: str
     consequence: str = None
     faq: str = None
-    logs: List[str] = None
+    logs: list[str] = None
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):

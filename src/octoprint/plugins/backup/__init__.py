@@ -1604,7 +1604,7 @@ __plugin_disabling_discouraged__ = gettext(
     "& restore your OctoPrint settings and data."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 __plugin_implementation__ = BackupPlugin()
 __plugin_hooks__ = {
     "octoprint.server.http.routes": __plugin_implementation__.route_hook,

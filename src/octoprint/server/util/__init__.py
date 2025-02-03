@@ -190,27 +190,27 @@ def get_user_for_apikey(
     Returns:
         octoprint.access.users.User: the user found, or None if none was found
     """
-    if apikey is not None:
-        if apikey == octoprint.server.cli_key and remote_address:
-            try:
-                remote_address = netaddr.IPAddress(remote_address)
-                if remote_address.is_loopback():
-                    # CLI key was used on loopback
-                    return octoprint.server.userManager.cli_user_factory()
-            except Exception:
-                pass
+    user = None
 
+    if apikey == octoprint.server.cli_key and remote_address:
+        try:
+            remote_address = netaddr.IPAddress(remote_address)
+            if remote_address.is_loopback():
+                # CLI key was used on loopback
+                user = octoprint.server.userManager.cli_user_factory()
+        except Exception:
+            pass
+
+    if user is None:  # user still None? look up by api key
         user = octoprint.server.userManager.find_user(apikey=apikey)
-        if user is not None:
-            # user key was used
-            return user
 
+    if user is None:  # user still None? check hooks
         apikey_hooks = plugin_manager().get_hooks("octoprint.accesscontrol.keyvalidator")
         for name, hook in apikey_hooks.items():
             try:
                 user = hook(apikey)
                 if user is not None:
-                    return user
+                    break
             except Exception:
                 logging.getLogger(__name__).exception(
                     "Error running api key validator " "for plugin {} and key {}".format(
@@ -218,7 +218,11 @@ def get_user_for_apikey(
                     ),
                     extra={"plugin": name},
                 )
-    return None
+
+    if user:
+        _flask.session["login_mechanism"] = LoginMechanism.APIKEY
+        _flask.session["credentials_seen"] = datetime.datetime.now().timestamp()
+    return user
 
 
 def get_user_for_remote_user_header(

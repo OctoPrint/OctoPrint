@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
@@ -71,8 +71,8 @@ jobs:
     name: 🧪 Unit tests
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
-    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: 🏗 Set up Python ${{ matrix.python }}
@@ -105,9 +105,9 @@ jobs:
     needs: build
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         installable: ["wheel", "sdist"]
-    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
+    runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4
@@ -131,10 +131,10 @@ jobs:
   test-e2e:
     name: 🧪 E2E tests
     needs: build
-    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ["3.7", "3.12", "3.13"]
+        python: ["3.9", "3.13"]
     steps:
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4
