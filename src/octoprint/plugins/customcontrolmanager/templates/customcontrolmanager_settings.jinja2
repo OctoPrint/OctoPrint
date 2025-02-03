@@ -35,7 +35,7 @@
     <!-- ko if: layout() === 'horizontal_grid' -->
     <div class="row-fluid custom-section-horizontal-grid custom-section-content" data-bind="css: {hide: collapsed() && name()}">
         <!-- ko foreach: children -->
-        <div data-bind="template: { name: $root.getTemplate }, css: $root.controlVM.rowCss($data)"></div>
+        <div data-bind="template: { name: $root.getTemplate }, css: $root.rowCss($data)"></div>
         <!-- /ko -->
     </div>
     <!-- /ko -->
