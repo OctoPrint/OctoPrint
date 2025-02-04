@@ -125,7 +125,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: pip
-          cache-dependency-path: setup.py
       - name: 🚀 Install wheel
         if: matrix.installable == 'wheel'
         run: |
