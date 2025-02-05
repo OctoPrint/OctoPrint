@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 import copy
 import logging
 import os
+import platform
 import sys
 import threading
 
@@ -69,7 +70,7 @@ class EnvironmentDetector:
     def _detect_os(self):
         return {
             "id": get_os(),
-            "platform": sys.platform,
+            "platform": platform.platform(),
             "bits": 64 if sys.maxsize > 2**32 else 32,
         }
 
