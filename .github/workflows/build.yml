@@ -10,6 +10,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
+env:
+  DEFAULT_PYTHON: "3.12"
+
 jobs:
   build:
     name: 🔨 Build distribution
@@ -18,12 +21,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: 🏗 Set up Python 3.12
+      - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: setup.py
+          python-version: ${{ env.DEFAULT_PYTHON }}
       - name: 🏗 Install build dependencies
         run: |
           python -m pip install setuptools wheel --user
@@ -60,12 +61,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: 🏗 Set up Python 3.12
+      - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: setup.py
+          python-version: ${{ env.DEFAULT_PYTHON }}
       - name: 🚀 Run pre-commit
         run: |
           pip install pre-commit
@@ -83,8 +82,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          cache: pip
-          cache-dependency-path: setup.py
+      - name: 🧰 Determine cache key
+        run: |
+          hash=$(cat setup.py | sha256sum | cut -d" " -f1)
+          echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-setuppy-$hash" >> $GITHUB_ENV
+      - name: 🧰 Cache pip cache
+        uses: actions/cache@v4
+        id: pip-cache
+        with:
+          path: "~/.cache/pip"
+          key: "${{ env.CACHE_KEY }}"
       - name: 🏗 Set up test dependencies
         run: |
           pip install -e .[develop]
@@ -124,16 +131,33 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-          cache: pip
-      - name: 🚀 Install wheel
+      - name: 🧰 Determine installable & cache key for wheel
         if: matrix.installable == 'wheel'
         run: |
-          pip install dist/*.whl
-      - name: 🚀 Install source tarball
+          wheel=$(ls dist/*.whl | head -n1)
+          echo "INSTALLABLE=$wheel" >> $GITHUB_ENV
+
+          metadata=$(unzip -l "$wheel" | grep METADATA | tr -s " " | cut -d" " -f 5)
+          hash=$(unzip -p "$wheel" "$metadata" | grep "Requires-Dist:" | sort  | sha256sum | cut -d" " -f1)
+          echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-wheel-$hash" >> $GITHUB_ENV
+      - name: 🧰 Determine installable & cache key for sdist
         if: matrix.installable == 'sdist'
         run: |
-          sdist=$(ls dist/*.tar.gz | grep -v source)
-          pip install "$sdist"
+          sdist=$(ls dist/*.tar.gz | grep -v source | head -n1)
+          echo "INSTALLABLE=$sdist" >> $GITHUB_ENV
+
+          setup=$(tar -ztf "$sdist" | grep setup.py | grep -v testballoon)
+          hash=$(tar -axzf "$sdist" "$setup" -O | sha256sum | cut -d" " -f1)
+          echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-setuppy-$hash" >> $GITHUB_ENV
+      - name: 🧰 Cache pip cache
+        uses: actions/cache@v4
+        id: pip-cache
+        with:
+          path: "~/.cache/pip"
+          key: "${{ env.CACHE_KEY }}"
+      - name: 🚀 Install OctoPrint
+        run: |
+          pip install ${{ env.INSTALLABLE }}
 
   test-e2e:
     name: 🧪 E2E tests
@@ -149,11 +173,27 @@ jobs:
           name: dist
           path: dist
 
+      - name: 🧰 Determine installable & cache key
+        run: |
+          wheel=$(ls ${{ github.workspace }}/dist/*.whl | head -n1)
+          echo "INSTALLABLE=$wheel" >> $GITHUB_ENV
+
+          metadata=$(unzip -l "$wheel" | grep METADATA | tr -s " " | cut -d" " -f 5)
+          hash=$(unzip -p "$wheel" "$metadata" | grep "Requires-Dist:" | sort  | sha256sum | cut -d" " -f1)
+          echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-wheel-$hash" >> $GITHUB_ENV
+
+      - name: 🧰 Cache pip cache
+        uses: actions/cache@v4
+        id: pip-cache
+        with:
+          path: "~/.cache/pip"
+          key: "${{ env.CACHE_KEY }}"
+
       - name: 🎭 Run E2E
         uses: OctoPrint/actions/e2e@main
         with:
           ref: ${{ github.ref }}
-          octoprint: ${{ github.workspace }}/dist/*.whl
+          octoprint: ${{ env.INSTALLABLE }}
           python: ${{ matrix.python }}
           suffix: "-py${{ matrix.python }}"
 
