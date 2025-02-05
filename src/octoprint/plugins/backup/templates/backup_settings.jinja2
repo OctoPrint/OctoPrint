@@ -98,6 +98,11 @@
     <div class="control-group">
         <div class="controls">
             <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: createBackup"><i class="fas fa-spinner fa-spin" data-bind="visible: backupInProgress"></i> {{ _('Create backup now') }}</button>
+
+            <div class="progress progress-text-centered" style="margin-top: 1em" data-bind="visible: backupInProgress, css: { 'progress-striped' : backupProgressUnknown, active : backupProgressUnknown }">
+                <div class="bar" data-bind="style: {width: backupProgressString() + '%'}"></div>
+                <span class="progress-text-back" data-bind="css: { 'progress-text-front': (backupProgressString() >= 50), 'progress-text-back': (backupProgressString() < 50) }, text: backupProgressBarString()"></span>
+            </div>
         </div>
     </div>
 </form>
