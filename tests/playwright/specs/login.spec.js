@@ -48,7 +48,7 @@ test.describe.parallel("Successful login", async () => {
     });
 });
 
-test.describe("Remember Me functionality", async () => {
+test.describe.parallel("Remember Me functionality", async () => {
     const dataDir = ".auth";
     const storageState = path.join(dataDir, "storage-state-login-remember-me.json");
 
@@ -83,6 +83,19 @@ test.describe("Remember Me functionality", async () => {
         await ui.coreHasLoaded();
         await util.loginCookiesWithRememberMe();
         await expect(page.getByTestId("login-menu")).toContainText(credentials.username);
+    });
+
+    test("remember me doesn't prevent logout", async ({page, ui, util, credentials}) => {
+        await ui.gotoCore();
+        await ui.coreHasLoaded();
+
+        await expect(page.getByTestId("login-menu")).toContainText(credentials.username);
+        await page.getByTestId("login-menu").click();
+
+        await expect(page.getByTestId("logout-submit")).toBeVisible();
+        await page.getByTestId("logout-submit").click();
+
+        await ui.loginIsLoading();
     });
 });
 
