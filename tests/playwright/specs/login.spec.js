@@ -1,5 +1,7 @@
 // @ts-check
 const {test, expect} = require("../fixtures");
+const path = require("path");
+const fs = require("fs");
 
 test.describe.parallel("Successful login", async () => {
     test.beforeEach(async ({ui}) => {
@@ -43,6 +45,43 @@ test.describe.parallel("Successful login", async () => {
 
         await ui.coreIsLoading();
         await util.loginCookiesWithRememberMe();
+    });
+});
+
+test.describe("Remember Me functionality", async () => {
+    const dataDir = fs.mkdtempSync("playwright-data-");
+    const cookieFile = path.join(dataDir, "cookies-remember-me.json");
+    fs.writeFileSync(cookieFile, "{}");
+
+    test.beforeAll(async ({request, baseURL, credentials}) => {
+        console.log(`Data dir is at ${dataDir}`);
+        fs.writeFileSync(cookieFile, "{}");
+
+        await request.post(baseURL + "/api/login", {
+            data: {
+                user: credentials.username,
+                pass: credentials.password,
+                remember: true
+            }
+        });
+
+        await request.storageState({path: cookieFile});
+    });
+
+    test.afterAll(async () => {
+        fs.rmdirSync(dataDir, {recursive: true, force: true});
+    });
+
+    test.use({
+        storageState: cookieFile
+    });
+
+    test("remember me recognized", async ({page, ui, util, credentials}) => {
+        await util.deleteCookie("session");
+        await ui.gotoCore();
+        await ui.coreHasLoaded();
+        await util.loginCookiesWithRememberMe();
+        await expect(page.getByTestId("login-menu")).toContainText(credentials.username);
     });
 });
 
