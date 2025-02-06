@@ -49,14 +49,17 @@ test.describe.parallel("Successful login", async () => {
 });
 
 test.describe("Remember Me functionality", async () => {
-    const dataDir = fs.mkdtempSync("playwright-data-");
-    const cookieFile = path.join(dataDir, "cookies-remember-me.json");
-    fs.writeFileSync(cookieFile, "{}");
+    const dataDir = ".auth";
+    const storageState = path.join(dataDir, "storage-state-login-remember-me.json");
+
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir);
+    }
+    if (!fs.existsSync(storageState)) {
+        fs.writeFileSync(storageState, "{}");
+    }
 
     test.beforeAll(async ({request, baseURL, credentials}) => {
-        console.log(`Data dir is at ${dataDir}`);
-        fs.writeFileSync(cookieFile, "{}");
-
         await request.post(baseURL + "/api/login", {
             data: {
                 user: credentials.username,
@@ -65,20 +68,18 @@ test.describe("Remember Me functionality", async () => {
             }
         });
 
-        await request.storageState({path: cookieFile});
-    });
-
-    test.afterAll(async () => {
-        fs.rmdirSync(dataDir, {recursive: true, force: true});
+        await request.storageState({path: storageState});
     });
 
     test.use({
-        storageState: cookieFile
+        storageState: storageState
     });
 
     test("remember me recognized", async ({page, ui, util, credentials}) => {
         await util.deleteCookie("session");
+
         await ui.gotoCore();
+
         await ui.coreHasLoaded();
         await util.loginCookiesWithRememberMe();
         await expect(page.getByTestId("login-menu")).toContainText(credentials.username);
