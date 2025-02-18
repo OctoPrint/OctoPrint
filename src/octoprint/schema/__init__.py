@@ -22,6 +22,15 @@ if pydantic_version.startswith("1."):
 
             return self.dict(*args, **kwargs)
 
+        def model_dump_json(self, *args, **kwargs):
+            # not supported in pydantic 1.x
+            kwargs.pop("context", None)
+            kwargs.pop("round_trip", None)
+            kwargs.pop("warnings", None)
+            kwargs.pop("serialize_as_any", None)
+
+            return self.json(*args, **kwargs)
+
 else:
     # pydantic 2.x
     from pydantic import ConfigDict
