@@ -203,7 +203,11 @@ class HealthCheckPlugin(
             force=request.values.get("refresh") in octoprint.settings.valid_boolean_trues
         )
 
-        return flask.jsonify(health={k: v.model_dump() for k, v in result.items()})
+        health = {}
+        for k, v in result.items():
+            health[k] = v.model_dump()
+            health[k]["hash"] = v.hash
+        return flask.jsonify(health=health)
 
     ##~~ TemplatePlugin
 
