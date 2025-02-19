@@ -14,7 +14,7 @@
                 {% endtrans %}</p>
                 <!-- ko foreach: issueResults -->
                 <div class="plugin_health_check_alert alert alert-block alert-error">
-                    <h4 class="plugin_health_check_header" data-bind="text: title"></h4>
+                    <h4 class="plugin_health_check_header"><a href="javascript:void(0)" data-bind="click: function() { $root.toggleAcked($data) }"><i class="fas" data-bind="css: {'fa-envelope': !acked(), 'fa-envelope-open': acked()}" title="Mark as seen"></i></a> <span data-bind="text: title"></span></h4>
                     <div class="plugin_health_check_content" data-bind="html: html"></div>
                 </div>
                 <!-- /ko -->
@@ -27,11 +27,15 @@
                 {% endtrans %}</p>
                 <!-- ko foreach: warningResults -->
                 <div class="plugin_health_check_alert alert alert-block">
-                    <h4 class="plugin_health_check_header" data-bind="text: title"></h4>
+                    <h4 class="plugin_health_check_header"><a href="javascript:void(0)" data-bind="click: function() { $root.toggleAcked($data) }"><i class="fas" data-bind="css: {'fa-envelope': !acked(), 'fa-envelope-open': acked()}" title="Mark as seen"></i></a> <span data-bind="text: title"></span></h4>
                     <div class="plugin_health_check_content" data-bind="html: html"></div>
                 </div>
                 <!-- /ko -->
                 <!-- /ko -->
+
+                <p data-bind="visible: unackedCheckResults">
+                    <a href="javascript:void()" data-bind="click: ackAllCheckResults">{{ _('Mark all as read') }}</a>
+                </p>
             </div>
 
             <div data-bind="visible: checkResults().length === 0">

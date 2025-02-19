@@ -442,7 +442,8 @@ def encode_remember_me_cookie(value):
         timestamp = datetime.now(timezone.utc).timestamp()
         return encode_cookie(f"{name}|{timestamp}", key=remember_key)
     except Exception:
-        pass
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            logging.getLogger().exception("Error while encoding remember_me cookie")
 
     return ""
 
@@ -462,12 +463,13 @@ def decode_remember_me_cookie(value):
             cookie = decode_cookie(value, key=signature_key)
             if cookie:
                 # still valid?
-                if datetime.datetime.fromtimestamp(float(created)) + datetime.timedelta(
+                if datetime.fromtimestamp(float(created), timezone.utc) + timedelta(
                     seconds=current_app.config["REMEMBER_COOKIE_DURATION"]
                 ) > datetime.now(timezone.utc):
                     return encode_cookie(name)
         except Exception:
-            pass
+            if logging.getLogger().isEnabledFor(logging.DEBUG):
+                logging.getLogger().exception("Error while decoding remember_me cookie")
 
     raise ValueError("Invalid remember me cookie")
 
@@ -517,7 +519,10 @@ class OctoPrintFlaskRequest(flask.Request):
                     result[key] = process_value(key, value)
             except ValueError:
                 # ignore broken cookies
-                pass
+                if logging.getLogger().isEnabledFor(logging.DEBUG):
+                    logging.getLogger().exception(
+                        f"Ignoring cookie {key}, can't process value {value!r}"
+                    )
 
         result.update(desuffixed)
         return result

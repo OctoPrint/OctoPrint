@@ -2,6 +2,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2024 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import hashlib
 import logging
 from enum import Enum
 
@@ -17,6 +18,12 @@ class Result(Enum):
 class CheckResult(BaseModel):
     result: Result = Result.OK
     context: dict = {}
+
+    @property  # TODO: Turn this into a computed field once Python 3.7 is dropped
+    def hash(self) -> str:
+        hash = hashlib.sha1()
+        hash.update(self.model_dump_json().encode())
+        return hash.hexdigest()
 
 
 OK_RESULT = CheckResult()

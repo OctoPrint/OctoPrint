@@ -16,11 +16,12 @@ const expect = base.expect;
 exports.test = base.test.extend({
     loginApi: async ({context, baseURL}, use) => {
         const loginApi = {
-            login: async (username, password) => {
+            login: async (username, password, remember) => {
                 return await context.request.post(baseURL + "/api/login", {
                     data: {
                         user: username,
-                        pass: password
+                        pass: password,
+                        remember: !!remember
                     }
                 });
             },
@@ -29,10 +30,11 @@ exports.test = base.test.extend({
                 return await context.request.post(baseURL + "/api/logout");
             },
 
-            loginDefault: async () => {
+            loginDefault: async (remember) => {
                 const response = await loginApi.login(
                     credentials.username,
-                    credentials.password
+                    credentials.password,
+                    remember
                 );
                 await expect(response.ok()).toBeTruthy();
                 return response;
@@ -91,6 +93,11 @@ exports.test = base.test.extend({
             gotoLogin: async () => {
                 await page.goto(baseURL + "/?l10n=en");
                 await ui.loginHasLoaded();
+            },
+
+            gotoCore: async () => {
+                await page.goto(baseURL + "/?l10n=en");
+                await ui.coreHasLoaded();
             },
 
             gotoLoggedInCore: async () => {
@@ -212,6 +219,11 @@ exports.test = base.test.extend({
                 await context.addCookies([
                     {name: cookieName, value: value, url: baseURL}
                 ]);
+            },
+
+            deleteCookie: async (name) => {
+                const cookieName = getCookieName(name);
+                await context.clearCookies({name: cookieName});
             },
 
             getFullUrlRegExp: (path) => {

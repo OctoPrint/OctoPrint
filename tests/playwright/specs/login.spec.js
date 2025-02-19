@@ -1,5 +1,7 @@
 // @ts-check
 const {test, expect} = require("../fixtures");
+const path = require("path");
+const fs = require("fs");
 
 test.describe.parallel("Successful login", async () => {
     test.beforeEach(async ({ui}) => {
@@ -43,6 +45,57 @@ test.describe.parallel("Successful login", async () => {
 
         await ui.coreIsLoading();
         await util.loginCookiesWithRememberMe();
+    });
+});
+
+test.describe.parallel("Remember Me functionality", async () => {
+    const dataDir = ".auth";
+    const storageState = path.join(dataDir, "storage-state-login-remember-me.json");
+
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir);
+    }
+    if (!fs.existsSync(storageState)) {
+        fs.writeFileSync(storageState, "{}");
+    }
+
+    test.beforeAll(async ({request, baseURL, credentials}) => {
+        await request.post(baseURL + "/api/login", {
+            data: {
+                user: credentials.username,
+                pass: credentials.password,
+                remember: true
+            }
+        });
+
+        await request.storageState({path: storageState});
+    });
+
+    test.use({
+        storageState: storageState
+    });
+
+    test("remember me recognized", async ({page, ui, util, credentials}) => {
+        await util.deleteCookie("session");
+
+        await ui.gotoCore();
+
+        await ui.coreHasLoaded();
+        await util.loginCookiesWithRememberMe();
+        await expect(page.getByTestId("login-menu")).toContainText(credentials.username);
+    });
+
+    test("remember me doesn't prevent logout", async ({page, ui, util, credentials}) => {
+        await ui.gotoCore();
+        await ui.coreHasLoaded();
+
+        await expect(page.getByTestId("login-menu")).toContainText(credentials.username);
+        await page.getByTestId("login-menu").click();
+
+        await expect(page.getByTestId("logout-submit")).toBeVisible();
+        await page.getByTestId("logout-submit").click();
+
+        await ui.loginIsLoading();
     });
 });
 
