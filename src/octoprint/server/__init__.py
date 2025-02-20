@@ -3393,23 +3393,6 @@ class Server:
         assets.register("less_plugins", less_plugins_bundle)
         assets.register("less_app", less_app_bundle)
 
-    def _setup_login_manager(self):
-        global loginManager
-
-        loginManager = LoginManager()
-
-        # "strong" is incompatible to remember me, see maxcountryman/flask-login#156. It also causes issues with
-        # clients toggling between IPv4 and IPv6 client addresses due to names being resolved one way or the other as
-        # at least observed on a Win10 client targeting "localhost", resolved as both "127.0.0.1" and "::1"
-        loginManager.session_protection = "basic"
-
-        loginManager.user_loader(load_user)
-        loginManager.unauthorized_handler(unauthorized_user)
-        loginManager.anonymous_user = userManager.anonymous_user_factory
-        loginManager.request_loader(load_user_from_request)
-
-        loginManager.init_app(app, add_context_processor=False)
-
     def _start_intermediary_server(self):
         import socket
         import threading
