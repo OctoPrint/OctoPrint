@@ -15,7 +15,7 @@
 </p>
 
 OctoPrint provides a snappy web interface for controlling consumer 3D printers. It is Free Software
-and released under the [GNU Affero General Public License V3](https://www.gnu.org/licenses/agpl-3.0.html).
+and released under the [GNU Affero General Public License V3](https://www.gnu.org/licenses/agpl-3.0.html)[^1].
 
 Its website can be found at [octoprint.org](https://octoprint.org/?utm_source=github&utm_medium=readme).
 
@@ -39,6 +39,9 @@ You are currently looking at the source code repository of OctoPrint. If you alr
 want to find out how to use it, [the documentation](https://docs.octoprint.org/) might be of more interest for you. You might also want to subscribe to join
 [the community forum at community.octoprint.org](https://community.octoprint.org) where there are other active users who might be
 able to help you with any questions you might have.
+
+[^1]: Where another license applies to a specific file or folder, that is noted inside the file itself or a folder README. For licenses of both linked and
+      vendored third party dependencies, see also THIRDPARTYLICENSES.md.
 
 ## Contributing
 
