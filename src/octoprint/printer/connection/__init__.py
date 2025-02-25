@@ -1,6 +1,5 @@
 import enum
 import logging
-from typing import Dict, List
 
 from octoprint.printer import (
     ConnectedPrinterMixin,
@@ -32,7 +31,7 @@ class ConnectedPrinterListenerMixin:
     def on_printer_files_available(self, available: bool):
         pass
 
-    def on_printer_files_refreshed(self, files: List):
+    def on_printer_files_refreshed(self, files: list):
         pass
 
     def on_printer_files_upload_start(self, job: UploadJob):
@@ -69,7 +68,7 @@ class ConnectedPrinterListenerMixin:
     def on_printer_record_recovery_position(self, job: PrintJob, pos: int):
         pass
 
-    def on_printer_job_changed(self, job: PrintJob, user: str = None, data: Dict = None):
+    def on_printer_job_changed(self, job: PrintJob, user: str = None, data: dict = None):
         pass
 
     def on_printer_job_started(self, suppress_script: bool = False, user: str = None):
@@ -114,7 +113,7 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClas
     connector = None
 
     @classmethod
-    def connection_options(cls) -> Dict:
+    def connection_options(cls) -> dict:
         return {}
 
     def __init__(
@@ -148,5 +147,5 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClas
         self._job = job
 
     @property
-    def connection_parameters(self) -> Dict:
+    def connection_parameters(self) -> dict:
         return {"profile": self._profile}

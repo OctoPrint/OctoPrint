@@ -20,7 +20,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import re
 from concurrent.futures import Future
-from typing import Dict, List, Set, Tuple, Union
+from typing import Union
 
 from pydantic import computed_field
 
@@ -57,12 +57,12 @@ class ErrorInformation(BaseModel):
     reason: str
     consequence: str = None
     faq: str = None
-    logs: List[str] = None
+    logs: list[str] = None
 
 
 class FirmwareInformation(BaseModel):
     name: str
-    data: Dict
+    data: dict
 
 
 class CommonPrinterMixin:
@@ -300,7 +300,7 @@ class CommonPrinterMixin:
         """
 
     def set_temperature_offset(
-        self, offsets: Dict = None, tags: Set = None, *args, **kwargs
+        self, offsets: dict = None, tags: set = None, *args, **kwargs
     ):
         """
         Sets the temperature ``offsets`` to apply to target temperatures read from a GCODE file while printing.
@@ -313,7 +313,7 @@ class CommonPrinterMixin:
         """
 
     @property
-    def temperature_offsets(self) -> Dict:
+    def temperature_offsets(self) -> dict:
         return None
 
     def feed_rate(self, factor, tags=None, *args, **kwargs):
@@ -339,7 +339,7 @@ class CommonPrinterMixin:
     def emergency_stop(self, *args, **kwargs):
         pass
 
-    def get_files(self, *args, **kwargs) -> List:
+    def get_files(self, *args, **kwargs) -> list:
         return []
 
     @property
@@ -534,11 +534,11 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
         return None
 
     @property
-    def cancel_position(self) -> Dict:
+    def cancel_position(self) -> dict:
         return None
 
     @property
-    def pause_position(self) -> Dict:
+    def pause_position(self) -> dict:
         return None
 
 
@@ -566,12 +566,12 @@ class PrinterFilesMixin:
     def refresh_printer_files(self, blocking=False, timeout=10, *args, **kwargs) -> None:
         pass
 
-    def get_printer_files(self, refresh=False, *args, **kwargs) -> List:
+    def get_printer_files(self, refresh=False, *args, **kwargs) -> list:
         return []
 
     def upload_printer_file(
         self, source: str, target: str, *args, **kwargs
-    ) -> Tuple[str, Future]:
+    ) -> tuple[str, Future]:
         pass
 
     def download_printer_file(self, path: str, *args, **kwargs) -> Future:
@@ -632,16 +632,16 @@ class PrinterMixin(CommonPrinterMixin):
         self,
         event,
         job: PrintJob = None,
-        print_head_position: Dict = None,
-        job_position: Dict = None,
+        print_head_position: dict = None,
+        job_position: dict = None,
         progress: float = None,
         user: str = None,
-        payload: Dict = None,
+        payload: dict = None,
     ):
         pass
 
     @property
-    def connection_state(self) -> Dict:
+    def connection_state(self) -> dict:
         return None
 
     @deprecated(

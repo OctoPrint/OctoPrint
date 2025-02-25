@@ -2,7 +2,6 @@ import copy
 import logging
 import os
 from concurrent.futures import Future
-from typing import Dict
 
 import octoprint.util as util
 from octoprint.events import Events, eventManager
@@ -28,7 +27,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     can_download_printer_file = False
 
     @classmethod
-    def connection_options(cls) -> Dict:
+    def connection_options(cls) -> dict:
         return {"port": serialList(), "baudrate": baudrateList()}
 
     STATE_LOOKUP = {
@@ -253,7 +252,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._setOffsets(self._comm.getOffsets())
 
     @property
-    def temperature_offsets(self) -> Dict:
+    def temperature_offsets(self) -> dict:
         if self._comm is None:
             return {}
 
@@ -457,14 +456,14 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         )
 
     @property
-    def cancel_position(self) -> Dict:
+    def cancel_position(self) -> dict:
         if self._comm is None:
             return None
         pos = self._comm.cancel_position
         return pos if pos is None else pos.as_dict()
 
     @property
-    def pause_position(self) -> Dict:
+    def pause_position(self) -> dict:
         if self._comm is None:
             return None
         pos = self._comm.pause_position
