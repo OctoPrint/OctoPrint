@@ -68,6 +68,7 @@ _OPERATING_SYSTEMS = {
     "linux": lambda x: x.startswith("linux"),
     "macos": ["darwin"],
     "freebsd": lambda x: x.startswith("freebsd"),
+    "android": ["android"],
 }
 OPERATING_SYSTEM_UNMAPPED = "unmapped"
 
@@ -77,7 +78,8 @@ def get_os():
     Returns a canonical OS identifier.
 
     Currently the following OS are recognized: ``win32``, ``linux`` (``sys.platform`` = ``linux*``),
-    ``macos`` (``sys.platform`` = ``darwin``) and ``freebsd`` (``sys.platform`` = ``freebsd*``).
+    ``macos`` (``sys.platform`` = ``darwin``), ``freebsd`` (``sys.platform`` = ``freebsd*``) and
+    ``android`` (``sys.platform`` = ``android``).
 
     Returns:
             (str) mapped OS identifier

@@ -56,9 +56,10 @@ def patched_ifaddresses_netmask(addr):
     ],
 )
 def test_is_lan_address(input_address, input_additional, expected):
-    with mock.patch(
-        "netifaces.interfaces", side_effect=patched_interfaces
-    ), mock.patch.object(octoprint.util.net, "HAS_V6", True):
+    with (
+        mock.patch("netifaces.interfaces", side_effect=patched_interfaces),
+        mock.patch.object(octoprint.util.net, "HAS_V6", True),
+    ):
         for side_effect in (patched_ifaddresses_mask, patched_ifaddresses_netmask):
             with mock.patch("netifaces.ifaddresses", side_effect=side_effect):
                 assert (

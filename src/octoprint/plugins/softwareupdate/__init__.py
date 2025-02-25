@@ -41,19 +41,11 @@ from octoprint.util.version import (
 
 from . import cli, exceptions, updaters, util, version_checks
 
-# OctoPi 0.18+
-# MINIMUM_PYTHON = "3.7"
-# MINIMUM_SETUPTOOLS = "51.1"
-# MINIMUM_PIP = "20.3"
-
 # OctoPi 1.0.0+
-# MINIMUM_PYTHON = "3.9"
-# MINIMUM_SETUPTOOLS = "44.1"
-# MINIMUM_PIP = "22.3"
-
-MINIMUM_PYTHON = "3.7"
+MINIMUM_PYTHON = "3.9"
 MINIMUM_SETUPTOOLS = "44.1"
-MINIMUM_PIP = "20.3"
+MINIMUM_PIP = "22.3"
+
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -2571,7 +2563,7 @@ __plugin_disabling_discouraged__ = gettext(
     "your system at risk."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 
 
 def __plugin_load__():

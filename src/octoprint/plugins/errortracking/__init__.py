@@ -17,10 +17,10 @@ from octoprint.util.version import (
 )
 
 SENTRY_URL_SERVER = (
-    "https://29b1e6277b6d466f2a54ce5ce294d53a@o118517.ingest.us.sentry.io/1373987"
+    "https://a2f595ae90cd4bba1de37a4100f37f47@o118517.ingest.us.sentry.io/1373987"
 )
 SENTRY_URL_COREUI = (
-    "https://f3ff884d1875cd4f697a7099041d29c4@o118517.ingest.us.sentry.io/1374096"
+    "https://5b1399707efa901e74970fc35bb2840c@o118517.ingest.us.sentry.io/1374096"
 )
 
 SETTINGS_DEFAULTS = {
@@ -244,5 +244,5 @@ def __plugin_enable__():
 __plugin_name__ = "Error Tracking"
 __plugin_author__ = "Gina Häußge"
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 __plugin_implementation__ = ErrorTrackingPlugin()

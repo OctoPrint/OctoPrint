@@ -12,7 +12,7 @@ import os
 import threading
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 import flask
 import flask.json
@@ -442,7 +442,8 @@ def encode_remember_me_cookie(value):
         timestamp = datetime.now(timezone.utc).timestamp()
         return encode_cookie(f"{name}|{timestamp}", key=remember_key)
     except Exception:
-        pass
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            logging.getLogger().exception("Error while encoding remember_me cookie")
 
     return ""
 
@@ -462,12 +463,13 @@ def decode_remember_me_cookie(value):
             cookie = decode_cookie(value, key=signature_key)
             if cookie:
                 # still valid?
-                if datetime.datetime.fromtimestamp(float(created)) + datetime.timedelta(
+                if datetime.fromtimestamp(float(created), timezone.utc) + timedelta(
                     seconds=current_app.config["REMEMBER_COOKIE_DURATION"]
                 ) > datetime.now(timezone.utc):
                     return encode_cookie(name)
         except Exception:
-            pass
+            if logging.getLogger().isEnabledFor(logging.DEBUG):
+                logging.getLogger().exception("Error while decoding remember_me cookie")
 
     raise ValueError("Invalid remember me cookie")
 
@@ -517,7 +519,10 @@ class OctoPrintFlaskRequest(flask.Request):
                     result[key] = process_value(key, value)
             except ValueError:
                 # ignore broken cookies
-                pass
+                if logging.getLogger().isEnabledFor(logging.DEBUG):
+                    logging.getLogger().exception(
+                        f"Ignoring cookie {key}, can't process value {value!r}"
+                    )
 
         result.update(desuffixed)
         return result
@@ -1420,17 +1425,9 @@ def check_lastmodified(lastmodified: Union[int, float, datetime]) -> bool:
         return False
 
     if isinstance(lastmodified, (int, float)):
-        # max(86400, lastmodified) is workaround for https://bugs.python.org/issue29097,
-        # present in CPython 3.6.x up to 3.7.1.
-        #
-        # I think it's fair to say that we'll never encounter lastmodified values older than
-        # 1970-01-02 so this is a safe workaround.
-        #
-        # Timestamps are defined as seconds since epoch aka 1970/01/01 00:00:00Z, so we
-        # use UTC as timezone here.
-        lastmodified = datetime.fromtimestamp(
-            max(86400, lastmodified), tz=UTC_TZ
-        ).replace(microsecond=0)
+        lastmodified = datetime.fromtimestamp(lastmodified, tz=UTC_TZ).replace(
+            microsecond=0
+        )
 
     if not isinstance(lastmodified, datetime):
         raise ValueError(
@@ -2021,8 +2018,8 @@ class ReverseProxyInfo(BaseModel):
     server_port: int
     server_path: str
     cookie_suffix: str
-    trusted_proxies: List[str] = []
-    headers: Dict[str, str] = {}
+    trusted_proxies: list[str] = []
+    headers: dict[str, str] = {}
 
 
 def get_reverse_proxy_info():

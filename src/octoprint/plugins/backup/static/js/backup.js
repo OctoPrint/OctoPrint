@@ -24,8 +24,32 @@ $(function () {
 
         self.markedForBackupDeletion = ko.observableArray([]);
 
-        self.excludeFromBackup = ko.observableArray([]);
         self.backupInProgress = ko.observable(false);
+
+        self.backupTarget = ko.observable("");
+        self.backupProgress = ko.observable(-1);
+        self.backupProgressUnknown = ko.pureComputed(() => {
+            return !self.backupTarget() || self.backupProgress() < 0;
+        });
+        self.backupProgressString = ko.pureComputed(() => {
+            if (self.backupProgressUnknown()) {
+                return 0;
+            }
+
+            return self.backupProgress();
+        });
+        self.backupProgressBarString = ko.pureComputed(() => {
+            if (self.backupProgressUnknown()) {
+                return gettext("Creating backup...");
+            }
+
+            return _.sprintf(gettext("Creating backup %(target)s... (%(progress)d%%)"), {
+                target: self.backupTarget(),
+                progress: self.backupProgress()
+            });
+        });
+
+        self.excludeFromBackup = ko.observableArray([]);
         self.restoreSupported = ko.observable(true);
         self.maxUploadSize = ko.observable(0);
 
@@ -246,15 +270,21 @@ $(function () {
             if (data.type === "backup_done") {
                 self.requestData();
                 self.backupInProgress(false);
+                self.backupProgress(-1);
+                self.backupTarget("");
                 new PNotify({
                     title: gettext("Backup created successfully"),
                     type: "success"
                 });
             } else if (data.type === "backup_started") {
+                self.backupTarget(data.name);
+                self.backupProgress(0);
                 self.backupInProgress(true);
             } else if (data.type === "backup_error") {
                 self.requestData();
                 self.backupInProgress(false);
+                self.backupProgress(-1);
+                self.backupTarget("");
                 new PNotify({
                     title: gettext("Creating the backup failed"),
                     text: _.sprintf(
@@ -266,6 +296,10 @@ $(function () {
                     type: "error",
                     hide: false
                 });
+            } else if (data.type === "backup_progress") {
+                self.backupTarget(data.name);
+                self.backupProgress(Math.round(data.progress * 100));
+                self.backupInProgress(true);
             } else if (data.type === "restore_started") {
                 self.loglines.push({
                     line: gettext("Restoring from backup..."),

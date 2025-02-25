@@ -1,4 +1,7 @@
-# originally from https://github.com/danields761/class-doc, vendored for compatibility reasons
+# class-doc is licensed under MIT
+# 
+# Originally from <https://github.com/danields761/class-doc>,
+# vendored for compatibility reasons
 
 import inspect
 import itertools

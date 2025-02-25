@@ -1,6 +1,6 @@
 # Based on pydantic-settings version 0.2.5 by Daniel Daniels, licensed under MIT
 #
-# https://github.com/danields761/pydantic-settings
+# See <https://github.com/danields761/pydantic-settings>
 
 from typing import Type
 

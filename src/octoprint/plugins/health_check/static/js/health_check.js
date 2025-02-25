@@ -8,6 +8,7 @@ $(function () {
 
         self.lastCheck = undefined;
         self.checkResults = ko.observableArray();
+        self.unackedCheckResults = ko.observable(false);
 
         self.healthCheckDialog = undefined;
         self.healthCheckDialogContent = undefined;
@@ -92,6 +93,19 @@ $(function () {
             return false;
         };
 
+        self.toggleAcked = (result) => {
+            result.acked(!result.acked());
+            self._saveAcked();
+        };
+
+        self.ackAllCheckResults = () => {
+            const results = self.checkResults();
+            results.forEach((result) => {
+                result.acked(true);
+            });
+            self._saveAcked();
+        };
+
         self.requestData = (refresh) => {
             if (
                 !self.loginState.hasPermission(
@@ -107,6 +121,8 @@ $(function () {
         self.fromResponse = (response) => {
             self.lastCheck = response.health;
 
+            const acked = self._loadAcked();
+
             const results = [];
             _.each(_.keys(self.lastCheck), (key) => {
                 let handler = self[`_fromResponse_${key}`];
@@ -118,15 +134,20 @@ $(function () {
 
                 const result = self.lastCheck[key]["result"];
                 const context = self.lastCheck[key]["context"];
+                const hash = self.lastCheck[key]["hash"];
                 if (result === "ok") return;
 
                 const handlerResult = handler(result, context);
                 if (handlerResult) {
                     handlerResult.key = key;
+                    handlerResult.hash = hash;
+                    handlerResult.acked = ko.observable(acked[key] === hash);
                     results.push(handlerResult);
                 }
             });
+
             self.checkResults(results);
+            self._saveAcked();
         };
 
         self._fromResponse_python_eol = (result, context) => {
@@ -338,6 +359,26 @@ $(function () {
                         self.requestData();
                     }
                 };
+
+        self._localStorageKey = "plugin.health_check.acked_check_results";
+        self._saveAcked = () => {
+            const hashes = {};
+            self.checkResults().forEach((result) => {
+                if (result.acked()) {
+                    hashes[result.key] = result.hash;
+                }
+            });
+            saveToLocalStorage(self._localStorageKey, hashes);
+
+            self.unackedCheckResults(
+                _.filter(self.checkResults(), (x) => !x.acked()).length > 0
+            );
+
+            return hashes;
+        };
+        self._loadAcked = () => {
+            return loadFromLocalStorage(self._localStorageKey);
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({

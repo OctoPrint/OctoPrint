@@ -16,10 +16,8 @@ thanks to everyone who contributed!
   * Brad Jackson
   * Bradford Benn
   * Brandon Robertson
-  * Bruce Meyer
   * Charles Morgan
   * Chloe Martin
-  * Chris Heerschap
   * Christian Petropolis
   * Christian Wolf
   * Christian Würthner
@@ -34,7 +32,6 @@ thanks to everyone who contributed!
   * Dennis Breining
   * Dima Gorbenko
   * Dr. Frank Wester
-  * Ed Crump
   * Erik Ableson
   * Ernesto Martinez
   * Franziska Kunsmann
@@ -63,7 +60,6 @@ thanks to everyone who contributed!
   * Mark Greenwald
   * Mark Robards
   * Mark Walker
-  * Martin
   * Martin Schmitt
   * Matthew Andersen
   * Matthias Urlichs
@@ -72,8 +68,6 @@ thanks to everyone who contributed!
   * Mike Labanov
   * Mosaic Manufacturing
   * Norman Jaffe
-  * Paul McMaster
-  * Printago
   * Randy C. Will
   * Ranjib Dey
   * Richard Stocks
@@ -85,6 +79,7 @@ thanks to everyone who contributed!
   * Stefan Krister
   * TheWebMachine
   * Tideline 3D
+  * Timothy Efinger
   * Ulrich Kempken
 
-and 2952 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 2815 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!

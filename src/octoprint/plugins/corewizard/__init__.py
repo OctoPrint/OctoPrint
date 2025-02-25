@@ -137,5 +137,5 @@ __plugin_disabling_discouraged__ = gettext(
     "setup steps that might be required after an update."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 __plugin_implementation__ = CoreWizardPlugin()

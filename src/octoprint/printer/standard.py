@@ -11,7 +11,7 @@ import logging
 import os
 import threading
 import time
-from typing import Dict, cast
+from typing import cast
 
 from frozendict import frozendict
 
@@ -212,7 +212,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         return error_info.model_dump()
 
     @property
-    def connection_state(self) -> Dict:
+    def connection_state(self) -> dict:
         if self._connection is None:
             return {"state": "Offline"}
 
@@ -1533,11 +1533,11 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self,
         event,
         job: PrintJob = None,
-        print_head_position: Dict = None,
-        job_position: Dict = None,
+        print_head_position: dict = None,
+        job_position: dict = None,
         progress: float = None,
         user: str = None,
-        payload: Dict = None,
+        payload: dict = None,
     ):
         kwargs = {
             "position": print_head_position,

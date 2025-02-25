@@ -185,30 +185,38 @@ def get_user_for_apikey(apikey: str) -> "Optional[octoprint.access.users.User]":
     Returns:
         octoprint.access.users.User: the user found, or None if none was found
     """
-    if apikey is not None:
-        if apikey == settings().get(["api", "key"]):
-            # master key was used
-            return octoprint.server.userManager.api_user_factory()
+    if apikey is None:
+        return None
 
+    user = None
+
+    if apikey == settings().get(["api", "key"]):
+        # master key was used
+        user = octoprint.server.userManager.api_user_factory()
+
+    else:
         user = octoprint.server.userManager.find_user(apikey=apikey)
-        if user is not None:
-            # user key was used
-            return user
 
-        apikey_hooks = plugin_manager().get_hooks("octoprint.accesscontrol.keyvalidator")
-        for name, hook in apikey_hooks.items():
-            try:
-                user = hook(apikey)
-                if user is not None:
-                    return user
-            except Exception:
-                logging.getLogger(__name__).exception(
-                    "Error running api key validator " "for plugin {} and key {}".format(
-                        name, apikey
-                    ),
-                    extra={"plugin": name},
-                )
-    return None
+        if user is None:
+            apikey_hooks = plugin_manager().get_hooks(
+                "octoprint.accesscontrol.keyvalidator"
+            )
+            for name, hook in apikey_hooks.items():
+                try:
+                    user = hook(apikey)
+                    if user is not None:
+                        break
+                except Exception:
+                    logging.getLogger(__name__).exception(
+                        "Error running api key validator "
+                        "for plugin {} and key {}".format(name, apikey),
+                        extra={"plugin": name},
+                    )
+
+    if user:
+        _flask.session["login_mechanism"] = LoginMechanism.APIKEY
+        _flask.session["credentials_seen"] = datetime.datetime.now().timestamp()
+    return user
 
 
 def get_user_for_remote_user_header(
