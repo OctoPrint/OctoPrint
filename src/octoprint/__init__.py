@@ -587,7 +587,7 @@ def init_webcam_compat_overlay(settings, plugin_manager):
             overlay,
             key="webcam_compat",
             at_end=True,
-            deprecated="Please use the webcam system introduced with 1.9.0, this compatibility layer will be removed in a future release.",
+            deprecated="Please use the webcam system at `octoprint.webcams` introduced with 1.9.0, this compatibility layer will be removed in a future release.",
             replace=True,
         )
 
