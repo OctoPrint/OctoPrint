@@ -111,6 +111,7 @@ class ConnectedPrinterMetaClass(type):
 
 class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClass):
     connector = None
+    name = None
 
     @classmethod
     def connection_options(cls) -> dict:
@@ -148,4 +149,4 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClas
 
     @property
     def connection_parameters(self) -> dict:
-        return {"profile": self._profile}
+        return {"connector": self.connector, "profile": self._profile}

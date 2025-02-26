@@ -23,9 +23,10 @@
         return this.base.issueCommand(url, "disconnect", {}, opts);
     };
 
-    OctoPrintConnectionClient.prototype.fakeAck = function (opts) {
-        return this.base.issueCommand(url, "fake_ack", {}, opts);
-    };
+    OctoPrintConnectionClient.prototype.fakeAck =
+        OctoPrintConnectionClient.prototype.repair = function (opts) {
+            return this.base.issueCommand(url, "repair", {}, opts);
+        };
 
     OctoPrintClient.registerComponent("connection", OctoPrintConnectionClient);
     return OctoPrintConnectionClient;

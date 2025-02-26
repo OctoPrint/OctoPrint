@@ -2,31 +2,131 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+from typing import Optional
+
 from flask import abort, jsonify, request
 
 from octoprint.access.permissions import Permissions
+from octoprint.schema import BaseModel
 from octoprint.server import NO_CONTENT, printer, printerProfileManager
 from octoprint.server.api import api
-from octoprint.server.util.flask import get_json_command_from_request, no_firstrun_access
-from octoprint.settings import settings
+from octoprint.server.util.flask import (
+    api_version_matches,
+    api_versioned,
+    get_json_command_from_request,
+    no_firstrun_access,
+)
+from octoprint.settings import settings, valid_boolean_trues
+
+## Schema
+
+
+class CurrentConnectionState(BaseModel):
+    state: str
+    connector: Optional[str]
+    parameters: Optional[dict]
+    profile: Optional[str]
+
+
+class AvailablePrinterProfile(BaseModel):
+    id: str
+    name: str
+
+
+class AvailableConnector(BaseModel):
+    connector: str
+    name: str
+    parameters: dict
+
+
+class PreferredConnectorSettings(BaseModel):
+    connector: str
+    parameters: dict
+
+
+class ConnectionOptions(BaseModel):
+    connectors: list[AvailableConnector]
+    profiles: list[AvailablePrinterProfile]
+
+    preferredConnector: Optional[PreferredConnectorSettings]
+    preferredProfile: Optional[str]
+
+
+class ConnectionStateResponse(BaseModel):
+    current: CurrentConnectionState
+    options: ConnectionOptions
+
+
+# pre 1.12.0
+
+
+class CurrentConnectionState_pre_1_12_0(BaseModel):
+    state: str
+    printerProfile: Optional[str]
+    port: Optional[str]
+    baudrate: Optional[int]
+
+
+class ConnectionOptions_pre_1_12_0(BaseModel):
+    ports: list[str]
+    baudrates: list[int]
+    printerProfiles: list[AvailablePrinterProfile]
+
+    portPreference: Optional[str]
+    baudratePreference: Optional[int]
+    printerProfilePreference: Optional[str]
+
+
+class ConnectionStateResponse_pre_1_12_0(BaseModel):
+    current: CurrentConnectionState_pre_1_12_0
+    options: ConnectionOptions_pre_1_12_0
+
+
+## API
 
 
 @api.route("/connection", methods=["GET"])
+@api_versioned
 @Permissions.STATUS.require(403)
 def connectionState():
-    state = printer.connection_state
+    connection_state = printer.connection_state
 
-    printer_profile = state.pop("profile", None)
+    connector = connection_state.pop("connector", None)
+    profile = connection_state.pop("profile", None)
+    state = connection_state.pop("state", "Unknown")
 
-    current = {
-        "state": state.pop("state"),
-        "printerProfile": printer_profile
-        if printer_profile is not None and "id" in printer_profile
-        else "_default",
-    }
-    current.update(**state)
+    data = ConnectionStateResponse(
+        current=CurrentConnectionState(
+            state=state,
+            connector=connector,
+            parameters=connection_state,
+            profile=profile.get("_id") if profile else None,
+        ),
+        options=_get_options(),
+    )
 
-    return jsonify({"current": current, "options": _get_options()})
+    return jsonify(data.model_dump())
+
+
+@connectionState.version("<1.12.0")
+@Permissions.STATUS.require(403)
+def connectionState_pre_1_12_0():
+    connection_state = printer.connection_state
+
+    state = connection_state.pop("state")
+    profile = connection_state.pop("profile", None)
+
+    data = ConnectionStateResponse_pre_1_12_0(
+        current=CurrentConnectionState_pre_1_12_0(
+            state=state,
+            printerProfile=profile.get("id", None) if profile else None,
+            port=connection_state.get("port", ""),
+            baudrate=connection_state.get("baudrate", 0),
+        ),
+        options=_get_options_pre_1_12_0(),
+    )
+
+    return jsonify(data.model_dump())
 
 
 @api.route("/connection", methods=["POST"])
@@ -40,62 +140,123 @@ def connectionCommand():
         return response
 
     if command == "connect":
-        connection_options = printer.__class__.get_connection_options()
-
-        port = None
-        baudrate = None
+        connector = "serial"
+        parameters = {}
         printerProfile = None
-        if "port" in data:
-            port = data["port"]
-            if port not in connection_options["ports"] and port != "AUTO":
-                abort(400, description="port is invalid")
-        if "baudrate" in data:
-            baudrate = data["baudrate"]
-            if baudrate not in connection_options["baudrates"] and baudrate != 0:
-                abort(400, description="baudrate is invalid")
+
+        if api_version_matches(">=1.12.0"):
+            from octoprint.printer.connection import ConnectedPrinter
+
+            if "connector" in data:
+                connector = data["connector"]
+                if not ConnectedPrinter.find(connector):
+                    abort(400, description=f'unknown connector: "{connector}"')
+
+            if "parameters" in data:
+                parameters = data["parameters"]
+                if not isinstance(parameters, dict):
+                    abort(400, description="parameters must be a dictionary")
+
+        else:  # pre 1.12.0
+            connection_options = printer.__class__.get_connection_options()
+
+            if "port" in data:
+                port = data["port"]
+                if port not in connection_options["ports"] and port != "AUTO":
+                    abort(400, description="port is invalid")
+                parameters["port"] = port
+
+            if "baudrate" in data:
+                baudrate = data["baudrate"]
+                if baudrate not in connection_options["baudrates"] and baudrate != 0:
+                    abort(400, description="baudrate is invalid")
+                parameters["baudrate"] = baudrate
+
         if "printerProfile" in data:
             printerProfile = data["printerProfile"]
             if not printerProfileManager.exists(printerProfile):
                 abort(400, description="printerProfile is invalid")
-        if "save" in data and data["save"]:
+
+        # check if we also need to update the settings
+        settings_dirty = False
+
+        if "save" in data and data["save"] in valid_boolean_trues:
             settings().set(["serial", "port"], port)
             settings().setInt(["serial", "baudrate"], baudrate)
             printerProfileManager.set_default(printerProfile)
+            settings_dirty = True
+
         if "autoconnect" in data:
             settings().setBoolean(["serial", "autoconnect"], data["autoconnect"])
-        settings().save()
-        printer.connect(port=port, baudrate=baudrate, profile=printerProfile)
+            settings_dirty = True
+
+        if settings_dirty:
+            settings().save()
+
+        # connect
+        printer.connect(
+            connector=connector, parameters=parameters, profile=printerProfile
+        )
+
     elif command == "disconnect":
         printer.disconnect()
+
     elif command == "repair" or command == "fake_ack":
         printer.repair_communication()
 
     return NO_CONTENT
 
 
-def _get_options():
+def _get_options() -> ConnectionOptions:
+    from octoprint.printer.connection import ConnectedPrinter
+
+    connector_options = ConnectedPrinter.all()
+    profile_options = printerProfileManager.get_all()
+    default_profile = printerProfileManager.get_default()
+
+    return ConnectionOptions(
+        connectors=[
+            AvailableConnector(
+                connector=connector.connector,
+                name=connector.name,
+                parameters=connector.connection_options(),
+            )
+            for connector in connector_options
+        ],
+        profiles=[
+            AvailablePrinterProfile(
+                id=printer_profile["id"],
+                name=printer_profile.get("name", printer_profile["id"]),
+            )
+            for printer_profile in profile_options.values()
+            if "id" in printer_profile
+        ],
+        preferredConnector=PreferredConnectorSettings(
+            connector="serial", parameters={"port": None, "baudrate": 0}
+        ),
+        preferredProfile=default_profile["id"] if "id" in default_profile else None,
+    )
+
+
+def _get_options_pre_1_12_0() -> ConnectionOptions_pre_1_12_0:
     connection_options = printer.__class__.get_connection_options()
     profile_options = printerProfileManager.get_all()
     default_profile = printerProfileManager.get_default()
 
-    options = {
-        "ports": connection_options["ports"],
-        "baudrates": connection_options["baudrates"],
-        "printerProfiles": [
-            {
-                "id": printer_profile["id"],
-                "name": printer_profile["name"]
-                if "name" in printer_profile
-                else printer_profile["id"],
-            }
+    return ConnectionOptions_pre_1_12_0(
+        ports=connection_options["ports"],
+        baudrates=connection_options["baudrates"],
+        printerProfiles=[
+            AvailablePrinterProfile(
+                id=printer_profile["id"],
+                name=printer_profile.get("name", printer_profile["id"]),
+            )
             for printer_profile in profile_options.values()
             if "id" in printer_profile
         ],
-        "portPreference": connection_options["portPreference"],
-        "baudratePreference": connection_options["baudratePreference"],
-        "printerProfilePreference": default_profile["id"]
+        portPreference=connection_options["portPreference"],
+        baudratePreference=connection_options["baudratePreference"],
+        printerProfilePreference=default_profile["id"]
         if "id" in default_profile
         else None,
-    }
-
-    return options
+    )

@@ -22,6 +22,7 @@ from octoprint.printer.job import JobProgress, PrintJob, UploadJob
 
 class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     connector = "serial"
+    name = "Serial Connection"
 
     can_upload_printer_file = True
     can_download_printer_file = False
