@@ -1,7 +1,8 @@
 """
 This file is responsible for calculating the version of OctoPrint.
 
-It's based heavily on versioneer and miniver.
+It's based heavily on versioneer and miniver and licensed under
+CC0 <https://creativecommons.org/publicdomain/zero/1.0/>.
 
 The version is calculated as follows:
 
