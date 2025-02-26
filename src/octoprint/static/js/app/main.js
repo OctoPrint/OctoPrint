@@ -25,6 +25,8 @@ $(function () {
         OctoPrint.options.locale = l10n;
     }
 
+    OctoPrint.options.apiVersion = VERSION.split(".", 3).join(".");
+
     //~~ some CoreUI specific stuff we put into OctoPrint.coreui
 
     OctoPrint.coreui = (function () {
