@@ -4,7 +4,7 @@
 {% endtrans %}</small></div>
 
 <label for="connection_ports">{{ _('Serial Port') }}</label>
-<select id="connection_ports" data-test-id="connection-ports" data-connection-parameter="port" data-bind="options: serialConnector.portOptions, optionsCaption: serialConnector.portCaption, value: serialConnector.currentPort"></select>
+<select id="connection_ports" class="connection_parameter" data-test-id="connection-ports" data-connection-parameter="port" data-bind="options: serialConnector.portOptions, optionsCaption: serialConnector.portCaption, value: serialConnector.currentPort"></select>
 
 <label for="connection_baudrates">{{ _('Baudrate') }}</label>
-<select id="connection_baudrates" data-test-id="connection-baudrates" data-connection-parameter="baudrate" data-bind="options: serialConnector.baudrateOptions, optionsCaption: 'AUTO', value: serialConnector.currentBaudrate"></select>
+<select id="connection_baudrates" class="connection_parameter" data-test-id="connection-baudrates" data-connection-parameter="baudrate" data-bind="options: serialConnector.baudrateOptions, optionsCaption: 'AUTO', value: serialConnector.currentBaudrate"></select>

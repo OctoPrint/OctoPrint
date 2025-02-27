@@ -17,7 +17,7 @@ $(function () {
         };
         self.serialConnector.validPort = ko.pureComputed(
             () =>
-                !self.connectionOptionsFetched() ||
+                !self.connectionOptionsLastUpdated() ||
                 self.serialConnector.portOptions().length > 0 ||
                 self.settings.settings.serial.ignoreEmptyPorts()
         );
@@ -42,10 +42,22 @@ $(function () {
             self.currentProfile(self.printerProfiles.currentProfile());
         });
 
-        self.connectionOptionsFetched = ko.observable(false);
+        self.connectionOptionsLastUpdated = ko.observable(false);
         self.selectedConnector = ko.observable(undefined);
         self.connectorOptions = ko.observableArray([]);
         self.connectorParameters = {};
+
+        self.connectorParametersFor = (connector) => {
+            if (!self.connectorParameters[connector]) return {};
+            return self.connectorParameters[connector];
+        };
+        self.connectorParamOptionsFor = (connector, parameter) => {
+            return ko.pureComputed(() => {
+                self.connectionOptionsLastUpdated();
+                const parameters = self.connectorParametersFor(connector);
+                return parameters[parameter] !== undefined ? parameters[parameter] : [];
+            });
+        };
 
         self.currentConnector = ko.observable(undefined);
         self.currentConnectorParameters = {};
@@ -177,7 +189,7 @@ $(function () {
             }
 
             self.saveSettings(false);
-            self.connectionOptionsFetched(true);
+            self.connectionOptionsLastUpdated(new Date().getTime());
         };
 
         self.fromHistoryData = function (data) {

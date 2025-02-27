@@ -437,12 +437,19 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         printer_profile = self._printer_profile_manager.get_current_or_default()
 
         connector_class = ConnectedPrinter.find(connector)
-        self._connection = connector_class(
-            self,
-            **parameters,
-            profile=printer_profile,
-        )
-        self._connection.connect()
+        try:
+            self._connection = connector_class(
+                self,
+                **parameters,
+                profile=printer_profile,
+            )
+            self._connection.connect()
+        except Exception as exc:
+            self._connection = None
+            self._setState(
+                ConnectedPrinterState.ERROR, state_string="Error", error_string=str(exc)
+            )
+            raise exc
 
     def disconnect(self, *args, **kwargs):
         """

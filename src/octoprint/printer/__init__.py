@@ -111,15 +111,9 @@ class CommonPrinterMixin:
 
     def connect(self, *args, **kwargs):
         """
-        Connects to the printer, using the specified serial ``port``, ``baudrate`` and printer ``profile``. If a
+        Connects to the printer, using the specified connection parameters. If a
         connection is already established, that connection will be closed prior to connecting anew with the provided
         parameters.
-
-        Arguments:
-            port (str): Name of the serial port to connect to. If not provided, an auto detection will be attempted.
-            baudrate (int): Baudrate to connect with. If not provided, an auto detection will be attempted.
-            profile (str): Name of the printer profile to use for this connection. If not provided, the default
-                will be retrieved from the :class:`PrinterProfileManager`.
         """
 
     def disconnect(self, *args, **kwargs):
@@ -225,7 +219,7 @@ class CommonPrinterMixin:
         **kwargs,
     ):
         """
-        Sends the GCODE script ``name`` to the printer.
+        Sends the script ``name`` to the printer.
 
         The script will be run through the template engine, the rendering context can be extended by providing a
         ``context`` with additional template variables to use.
@@ -233,12 +227,12 @@ class CommonPrinterMixin:
         If the script is unknown, an :class:`UnknownScriptException` will be raised.
 
         Arguments:
-            name (str): The name of the GCODE script to render.
+            name (str): The name of the script to render.
             context (dict): An optional context of additional template variables to provide to the renderer.
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
 
         Raises:
-            UnknownScriptException: There is no GCODE script with name ``name``
+            UnknownScriptException: There is no script with name ``name``
         """
 
     def jog(self, axes, relative=True, speed=None, tags=None, *args, **kwargs):
@@ -362,7 +356,6 @@ class CommonPrinterMixin:
         Arguments:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        pass
 
     def pause_print(self, tags=None, *args, **kwargs):
         """
@@ -371,7 +364,6 @@ class CommonPrinterMixin:
         Arguments:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        pass
 
     def resume_print(self, tags=None, *args, **kwargs):
         """
@@ -380,7 +372,6 @@ class CommonPrinterMixin:
         Arguments:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        pass
 
     def toggle_pause_print(self, tags=None, *args, **kwargs):
         """
@@ -401,7 +392,6 @@ class CommonPrinterMixin:
         Arguments:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
-        pass
 
     def log_lines(self, *lines):
         """
@@ -409,14 +399,12 @@ class CommonPrinterMixin:
         Args:
                 *lines: the lines to log
         """
-        pass
 
     def get_state_string(self, *args, **kwargs):
         """
         Returns:
              (str) A human readable string corresponding to the current communication state.
         """
-        pass
 
     def get_state_id(self, *args, **kwargs):
         """
@@ -541,6 +529,20 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
     def pause_position(self) -> dict:
         return None
 
+    def connect(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    def disconnect(self, *args, **kwargs):
+        raise NotImplementedError()
+
+    def job_on_hold(self, blocking=True, *args, **kwargs):
+        if self.can_set_job_on_hold:
+            raise NotImplementedError()
+
+    def set_job_on_hold(self, value, blocking=True, *args, **kwargs):
+        if self.can_set_job_on_hold:
+            raise NotImplementedError()
+
 
 class PrinterFile(BaseModel):
     path: str
@@ -594,7 +596,6 @@ class PrinterMixin(CommonPrinterMixin):
             profile (str): Name of the printer profile to use for this connection. If not provided, the default
                 will be retrieved from the :class:`PrinterProfileManager`.
         """
-        pass
 
     def set_job(
         self, job: PrintJob, print_after_select=False, pos=None, tags=None, user=None
@@ -608,7 +609,6 @@ class PrinterMixin(CommonPrinterMixin):
         Arguments:
             callback (PrinterCallback): The callback object to register.
         """
-        pass
 
     def unregister_callback(self, callback, *args, **kwargs):
         """
@@ -617,7 +617,6 @@ class PrinterMixin(CommonPrinterMixin):
         Arguments:
             callback (PrinterCallback): The callback object to unregister.
         """
-        pass
 
     def send_initial_callback(self, callback):
         """
@@ -626,7 +625,6 @@ class PrinterMixin(CommonPrinterMixin):
         Arguments:
                 callback (PrinterCallback): The callback object to send initial data to.
         """
-        pass
 
     def trigger_printjob_event(
         self,
