@@ -294,7 +294,7 @@ class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
             filename = os.path.join(folder, f"{self._identifier}.{ext}")
             path = os.path.join(asset_folder, filename)
             if os.path.exists(path):
-                result[folder] = [filename]
+                result[folder] = [filename.replace("\\", "/")]  # issue #5115
 
         return result
 
