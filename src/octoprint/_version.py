@@ -11,21 +11,27 @@ imported and the version is read from there. This is the case for
 source distributions created by `setup.py sdist` as well as binary distributions
 built by `setup.py bdist` and `setup.py bdist_wheel`.
 
-If no such file exists, the version is calculated from git and the provided set
-of branch version rules. If the current branch matches one of the rules, the
-version is calculated as `<tag>.dev<distance>+g<short>` where `<tag>` is the
-virtual tag associated with the current branch, `<distance>` is the distance of
-the current HEAD from the reference commit of the branch and `<short>` is the
-short SHA1 of the current HEAD. If the current branch does not match any of the
-rules, the version is the closest tag reachable from the current HEAD.
+If no such file exists, but there are expanded keywords, the version will be
+calculated from those. If a tag can be determined, that will be used as the version:
+`<tag>`. If a branch can be determined and that matches a virtual tag, that virtual
+tag will be used and the version will be `<tag>.dev+unknown.g<short>`.
 
-If the current HEAD is dirty, the version as calculated from a matching branch
-rule is appended with `.dirty`. Versions from a closest tag instead get
-`.post<distance>.dev0` appended.
+If static file exists, and no expanded keywords exist either, the version is
+calculated from git and the provided set of branch version rules. If the current
+branch matches one of the rules, the version is calculated as
+`<tag>.dev<distance>+g<short>` where `<tag>` is the virtual tag associated with
+the current branch, `<distance>` is the distance of the current HEAD from the
+reference commit of the branch and `<short>` is the short SHA1 of the current HEAD.
+If the current branch does not match any of the rules, the version is the closest
+tag reachable from the current HEAD.
 
 If no tag can be determined but a commit hash, the version is `0+unknown.g<short>`.
 
 If no commit hash can be determined either, the version is `0+unknown`.
+
+If the current HEAD is dirty, the version as calculated from a matching branch
+rule is appended with `.dirty`. Versions from a closest tag instead get
+`.post<distance>.dev0` appended.
 """
 
 import errno
@@ -341,8 +347,31 @@ def _get_data_from_keywords():
     ]
     branch = branches[0] if branches else None
 
+    virtual_tag = None
+    if branch is not None:
+        if _verbose:
+            print(f"Branch     : {branch}")
+
+        lookup = _parse_branch_versions()
+        for matcher, vt, _ in lookup:
+            if not matcher.match(branch):
+                continue
+
+            virtual_tag = vt
+            if _verbose:
+                print(f"Virtual tag: {virtual_tag}")
+            break
+
+    if _verbose:
+        print(f"SHA        : {git_full}")
+        print(f"Short      : {git_full[:8]}")
+
     if tag is None:
-        template = FALLBACK_WITH_SHA
+        if virtual_tag is not None:
+            tag = virtual_tag
+            template = "{tag}.dev+unknown.g{short}"
+        else:
+            template = FALLBACK_WITH_SHA
     else:
         template = "{tag}"
 
