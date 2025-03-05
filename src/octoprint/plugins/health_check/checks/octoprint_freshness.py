@@ -32,6 +32,11 @@ class OctoPrintFreshnessCheck(HealthCheck):
         octoprint = get_octoprint_version(base=True)
 
         # octoprint = parse("1.8.6")  # for testing
+        # octoprint = parse("0+unknown")  # for testing
+
+        if octoprint.major == 0:
+            # 0+unknown and similar get ignored
+            return
 
         newer = _newer_versions(octoprint, self.versions)
         if not newer:
