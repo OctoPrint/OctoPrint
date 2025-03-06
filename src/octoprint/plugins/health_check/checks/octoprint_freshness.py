@@ -3,7 +3,7 @@ from typing import List
 from packaging.version import Version, parse
 
 if __name__ == "__main__":
-    __package__ = "octoprint.plugins.healthcheck.checks.octoprint_freshness"
+    __package__ = "octoprint.plugins.health_check.checks.octoprint_freshness"
 
 from . import CheckResult, HealthCheck, Result
 
@@ -112,6 +112,7 @@ if __name__ == "__main__":
 
     print("Newer:")
     newer = _newer_versions(parse("1.8.6"), versions)
+    # newer = _newer_versions(parse("0+unknown"), versions)
     print(repr(newer))
 
     print("Latest per minor:")
