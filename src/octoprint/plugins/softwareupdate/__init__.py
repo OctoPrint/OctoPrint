@@ -680,13 +680,13 @@ class SoftwareUpdatePlugin(
                     "restart": "octoprint",
                     "stable_branch": {
                         "branch": "master",
-                        "commitish": ["master"],
+                        "commitish": ["master", "main"],
                         "name": "Stable",
                     },
                     "prerelease_branches": [
                         {
                             "branch": "rc/maintenance",
-                            "commitish": ["rc/maintenance"],  # maintenance RCs
+                            "commitish": ["rc/maintenance", "next"],  # maintenance RCs
                             "name": "Maintenance RCs",
                         },
                         {
@@ -694,6 +694,7 @@ class SoftwareUpdatePlugin(
                             "commitish": [
                                 "rc/maintenance",
                                 "rc/devel",
+                                "next",
                             ],  # devel & maintenance RCs
                             "name": "Devel RCs",
                         },
