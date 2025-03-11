@@ -116,13 +116,13 @@ import octoprint.access.permissions as permissions  # noqa: E402
 
 # we set admin_permission to a GroupPermission with the default admin group
 admin_permission = octoprint.util.variable_deprecated(
-    "admin_permission has been deprecated, " "please use individual Permissions instead",
+    "admin_permission has been deprecated, please use individual Permissions instead",
     since="1.4.0",
 )(groups.GroupPermission(groups.ADMIN_GROUP))
 
 # we set user_permission to a GroupPermission with the default user group
 user_permission = octoprint.util.variable_deprecated(
-    "user_permission has been deprecated, " "please use individual Permissions instead",
+    "user_permission has been deprecated, please use individual Permissions instead",
     since="1.4.0",
 )(groups.GroupPermission(groups.USER_GROUP))
 
@@ -1272,7 +1272,7 @@ class Server:
                             os.remove(path)
                     except Exception:
                         self._logger.exception(
-                            f"Error while trying to delete {path}, " f"leaving it alone"
+                            f"Error while trying to delete {path}, leaving it alone"
                         )
                         continue
 
@@ -1414,8 +1414,8 @@ class Server:
             "css/bootstrap-slider.css",
             "css/bootstrap-tabdrop.css",
             "vendor/font-awesome-3.2.1/css/font-awesome.min.css",
-            "vendor/fontawesome-6.5.1/css/all.min.css",
-            "vendor/fontawesome-6.5.1/css/v4-shims.min.css",
+            "vendor/font-awesome-6.5.1/css/all.min.css",
+            "vendor/font-awesome-6.5.1/css/v4-shims.min.css",
             "vendor/fa5-power-transforms.min.css",
             "css/jquery.fileupload-ui.css",
             "css/pnotify.core.min.css",
