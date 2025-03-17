@@ -101,7 +101,7 @@ $(function () {
             if (data === undefined) {
                 data = self.filedata();
             }
-            if (data === undefined) return "null:null:null:null";
+            if (data === undefined) return "";
 
             const d = {origin: null, path: null, size: null, date: null, ...data};
             return `${d.origin}:${d.path}:${d.size}:${d.date}`.replace(
