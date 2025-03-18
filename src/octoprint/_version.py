@@ -62,10 +62,10 @@ improve/.* 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
 staging/bugfix 1.10.4 9701568a6f3dcf356e5e800a49da6ffac128cae5
 bug/.* 1.10.4 9701568a6f3dcf356e5e800a49da6ffac128cae5
 
-# staging/maintenance is currently the branch for preparation of 1.11.0rc5
+# staging/maintenance is currently the branch for preparation of 1.11.0rc6
 # so is regressionfix/...
-staging/maintenance 1.11.0rc5 3110deb587d5a2a402bd63f59e95f08a9cdfaf73
-regressionfix/.* 1.11.0rc5 3110deb587d5a2a402bd63f59e95f08a9cdfaf73
+staging/maintenance 1.11.0rc6 cf97418160e9918e0e51970a8b81f722d5170690
+regressionfix/.* 1.11.0rc6 cf97418160e9918e0e51970a8b81f722d5170690
 
 # staging/devel is currently inactive (but has the 1.4.1rc4 namespace)
 staging/devel 1.4.1rc4 650d54d1885409fa1d411eb54b9e8c7ff428910f
