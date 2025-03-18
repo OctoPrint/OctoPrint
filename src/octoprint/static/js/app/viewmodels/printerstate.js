@@ -347,7 +347,7 @@ $(function () {
         };
 
         self._processJobData = function (data) {
-            if (data.file) {
+            if (data.file && data.file.origin && data.file.path) {
                 const currentFileKey = self.calcFileKey();
                 const futureFileKey = self.calcFileKey(data.file);
                 if (
