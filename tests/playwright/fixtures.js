@@ -1,4 +1,5 @@
 const base = require("@playwright/test");
+const {MD5} = require("crypto-js");
 
 const credentials = {
     username: process.env.OCTOPRINT_USERNAME || "admin",
@@ -45,25 +46,40 @@ exports.test = base.test.extend({
     },
 
     connectionApi: async ({context, baseURL}, use) => {
-        const connectionApi = {
-            connect: async (port, baudrate) => {
-                port = port || "AUTO";
-                baudrate = baudrate || 0;
-                return await context.request.post(baseURL + "/api/connection", {
-                    data: {
-                        command: "connect",
-                        port: port,
-                        baudrate: baudrate
-                    }
-                });
-            },
+        const connect = async (port, baudrate) => {
+            port = port || "AUTO";
+            baudrate = baudrate || 0;
+            return await context.request.post(baseURL + "/api/connection", {
+                data: {
+                    command: "connect",
+                    port: port,
+                    baudrate: baudrate
+                }
+            });
+        };
+        const disconnect = async () => {
+            return await context.request.post(baseURL + "/api/connection", {
+                data: {
+                    command: "disconnect"
+                }
+            });
+        };
 
-            disconnect: async () => {
-                return await context.request.post(baseURL + "/api/connection", {
-                    data: {
-                        command: "disconnect"
-                    }
-                });
+        const connectionApi = {
+            connect: connect,
+            disconnect: disconnect,
+            ensureConnected: async (port, baudrate) => {
+                const response = await context.request.get(baseURL + "/api/connection");
+                const data = await response.json();
+                if (
+                    data.current.state === "Operational" &&
+                    (!port || data.current.port === port) &&
+                    (!baudrate || data.current.baudrate === baudrate)
+                ) {
+                    return;
+                }
+                await disconnect();
+                await connect(port, baudrate);
             }
         };
         await use(connectionApi);
@@ -75,6 +91,10 @@ exports.test = base.test.extend({
                 return await context.request.delete(
                     baseURL + `/api/files/${location}/${name}`
                 );
+            },
+            getEntryId: (origin, path) => {
+                path = path.replace(/^\/+/, "");
+                return MD5(`${origin}:${path}`);
             }
         };
         await use(filesApi);

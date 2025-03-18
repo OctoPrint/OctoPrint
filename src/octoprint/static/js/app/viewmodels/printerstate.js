@@ -101,9 +101,13 @@ $(function () {
             if (data === undefined) {
                 data = self.filedata();
             }
-            if (data === undefined) return "null:null:null:null";
+            if (data === undefined) return "";
 
-            return `${data.origin}:${data.path}:${data.size}:${data.date}`;
+            const d = {origin: null, path: null, size: null, date: null, ...data};
+            return `${d.origin}:${d.path}:${d.size}:${d.date}`.replace(
+                /(null)?(:null)+$/,
+                ""
+            );
         };
 
         self.progress = ko.observable(undefined);
@@ -343,10 +347,14 @@ $(function () {
         };
 
         self._processJobData = function (data) {
-            if (data.file) {
+            if (data.file && data.file.origin && data.file.path) {
                 const currentFileKey = self.calcFileKey();
                 const futureFileKey = self.calcFileKey(data.file);
-                if (currentFileKey !== futureFileKey) {
+                if (
+                    currentFileKey !== futureFileKey &&
+                    !currentFileKey.startsWith(futureFileKey + ":") &&
+                    !futureFileKey.startsWith(currentFileKey + ":")
+                ) {
                     self._loadFileData(data.file.origin, data.file.path);
                 }
             } else {
