@@ -84,6 +84,9 @@ def _create_lastmodified(path, recursive):
             storage = path
             path_in_storage = None
 
+        if storage not in fileManager.registered_storages:
+            return None
+
         try:
             return fileManager.last_modified(
                 storage, path=path_in_storage, recursive=recursive

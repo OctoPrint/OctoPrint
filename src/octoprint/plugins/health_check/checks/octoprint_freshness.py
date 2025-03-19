@@ -1,7 +1,7 @@
 from packaging.version import Version, parse
 
 if __name__ == "__main__":
-    __package__ = "octoprint.plugins.healthcheck.checks.octoprint_freshness"
+    __package__ = "octoprint.plugins.health_check.checks.octoprint_freshness"
 
 from . import CheckResult, HealthCheck, Result
 
@@ -30,6 +30,11 @@ class OctoPrintFreshnessCheck(HealthCheck):
         octoprint = get_octoprint_version(base=True)
 
         # octoprint = parse("1.8.6")  # for testing
+        # octoprint = parse("0+unknown")  # for testing
+
+        if octoprint.major == 0:
+            # 0+unknown and similar get ignored
+            return
 
         newer = _newer_versions(octoprint, self.versions)
         if not newer:
@@ -105,6 +110,7 @@ if __name__ == "__main__":
 
     print("Newer:")
     newer = _newer_versions(parse("1.8.6"), versions)
+    # newer = _newer_versions(parse("0+unknown"), versions)
     print(repr(newer))
 
     print("Latest per minor:")
