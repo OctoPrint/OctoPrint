@@ -34,14 +34,12 @@ thanks to everyone who contributed!
   * Erik Ableson
   * Ernesto Martinez
   * Franziska Kunsmann
-  * George Jeng
   * Happy House
   * Hog Duske
   * James Fryman
   * James Nangano
   * Jason Kitchens
   * JCsGotThis
-  * Jeff Moe
   * John Cassel
   * Justin Kaufman
   * Kaile Riser
@@ -80,4 +78,4 @@ thanks to everyone who contributed!
   * Timothy Efinger
   * Ulrich Kempken
 
-and 2767 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 2775 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!

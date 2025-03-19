@@ -230,8 +230,9 @@ def serialList():
             candidates += hook(candidates)
         except Exception:
             logging.getLogger(__name__).exception(
-                "Error while retrieving additional "
-                "serial port names from hook {}".format(name)
+                "Error while retrieving additional serial port names from hook {}".format(
+                    name
+                )
             )
 
     # blacklisted ports
@@ -768,6 +769,7 @@ class MachineCom:
         self._sdFileLongName = False
         self._sdFiles = {}
         self._sdFilesAvailable = threading.Event()
+        self._prevSdFiles = {}
         self._sdFileToSelect = None
         self._sdFileToSelectUser = None
         self._ignore_select = False
@@ -2544,6 +2546,16 @@ class MachineCom:
                                 # sanitize timestamp, when creating a file through serial the firmware usually doesn't know the date
                                 # and sets something ridiculously low (e.g. 2000-01-01), so let's ignore timestamps like that here
                                 timestamp = None
+
+                            existing = self._prevSdFiles.get(filename)
+                            if existing:
+                                if size is None:
+                                    size = existing.size
+                                if timestamp is None:
+                                    timestamp = existing.timestamp
+                                if longname is None:
+                                    longname = existing.longname
+
                             self._sdFiles[filename] = SDFileData(
                                 name=filename,
                                 size=size,
@@ -3048,6 +3060,7 @@ class MachineCom:
                         self.refreshSdFiles()
                         self._callback.on_comm_sd_state_change(self._sdAvailable)
                     elif "Begin file list" in line:
+                        self._prevSdFiles = self._sdFiles
                         self._sdFiles = {}
                         self._sdFileList = True
                     elif "End file list" in line:
@@ -3136,6 +3149,17 @@ class MachineCom:
                         self._currentFile = PrintingSdFileInformation(
                             name, size, user=user
                         )
+
+                        if name in self._sdFiles:
+                            # update list with size
+                            data = self._sdFiles[name]
+                            self._sdFiles[name] = SDFileData(
+                                name=name,
+                                size=size,
+                                timestamp=data.timestamp,
+                                longname=data.longname,
+                            )
+
                     elif "File selected" in line:
                         if self._ignore_select:
                             self._ignore_select = False
@@ -3428,7 +3452,7 @@ class MachineCom:
             self._detection_retry = self.DETECTION_RETRIES
 
             log(
-                "Performing autodetection with {} " "port/baudrate candidates: {}".format(
+                "Performing autodetection with {} port/baudrate candidates: {}".format(
                     len(self._detection_candidates),
                     ", ".join(f"{x[0]}@{x[1]}" for x in self._detection_candidates),
                 )
@@ -4879,7 +4903,7 @@ class MachineCom:
 
             except Exception:
                 self._logger.exception(
-                    "Error while processing hook {name} for phase " "{phase}:".format(
+                    "Error while processing hook {name} for phase {phase}:".format(
                         name=name,
                         phase=phase,
                     ),
@@ -4962,8 +4986,7 @@ class MachineCom:
                 hook(self, phase, atcommand, parameters, tags=tags)
             except Exception:
                 self._logger.exception(
-                    "Error while processing hook {} for "
-                    "phase {} and command {}:".format(
+                    "Error while processing hook {} for phase {} and command {}:".format(
                         name, phase, to_unicode(atcommand, errors="replace")
                     ),
                     extra={"plugin": name},
