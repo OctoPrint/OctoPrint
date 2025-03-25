@@ -741,7 +741,8 @@ class PrinterStateConnection(
         )
         self._authed = True
 
-        self._keep_alive.start()
+        if not self._keep_alive.is_alive:
+            self._keep_alive.start()
 
         for name, hook in self._authed_hooks.items():
             try:
