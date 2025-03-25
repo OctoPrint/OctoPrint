@@ -197,7 +197,7 @@ def wizardState():
             )
         except Exception:
             logging.getLogger(__name__).exception(
-                "There was an error fetching wizard " "details for {}, ignoring".format(
+                "There was an error fetching wizard details for {}, ignoring".format(
                     name
                 ),
                 extra={"plugin": name},
@@ -251,9 +251,7 @@ def wizardFinish():
                 seen_wizards[name] = implementation.get_wizard_version()
         except Exception:
             logging.getLogger(__name__).exception(
-                "There was an error finishing the " "wizard for {}, ignoring".format(
-                    name
-                ),
+                f"There was an error finishing the wizard for {name}, ignoring",
                 extra={"plugin": name},
             )
 
@@ -304,15 +302,12 @@ def login():
         password = data["pass"]
         remote_addr = request.remote_addr
 
-        if "remember" in data and data["remember"] in valid_boolean_trues:
-            remember = True
-        else:
-            remember = False
-
-        if "usersession.id" in session:
-            _logout(current_user)
+        remember = "remember" in data and data["remember"] in valid_boolean_trues
 
         reauthenticate = current_user and current_user.get_id() == username
+
+        if "usersession.id" in session and not reauthenticate:
+            _logout(current_user)
 
         user = octoprint.server.userManager.find_user(username)
         if user is not None:
@@ -323,9 +318,8 @@ def login():
                     )
                     abort(403)
 
-                ## MFA check
-
                 if not reauthenticate:
+                    ## MFA check
                     mfa_options = []
                     for mfa in octoprint.server.pluginManager.get_implementations(
                         octoprint.plugin.MfaPlugin
@@ -369,27 +363,35 @@ def login():
                         response.__rate_limit_exempt__ = True
                         return response
 
-                ## Actual login starts here
+                    ## Active login
+                    user = octoprint.server.userManager.login_user(user)
+                    session["usersession.id"] = user.session
+                    session["usersession.signature"] = session_signature(
+                        username, user.session
+                    )
+                    g.user = user
 
-                user = octoprint.server.userManager.login_user(user)
-                session["usersession.id"] = user.session
-                session["usersession.signature"] = session_signature(
-                    username, user.session
-                )
-                g.user = user
+                    login_user(user, remember=remember)
+                    identity_changed.send(
+                        current_app._get_current_object(),
+                        identity=Identity(user.get_id()),
+                    )
 
-                login_user(user, remember=remember)
-                identity_changed.send(
-                    current_app._get_current_object(), identity=Identity(user.get_id())
-                )
+                    logging.getLogger(__name__).info(
+                        "Actively logging in user {} from {}".format(
+                            user.get_id(), remote_addr
+                        )
+                    )
+
+                else:
+                    logging.getLogger(__name__).info(
+                        "Reauthenticating user {} from {}".format(
+                            user.get_id(), remote_addr
+                        )
+                    )
+
                 session["login_mechanism"] = LoginMechanism.PASSWORD
                 session["credentials_seen"] = datetime.datetime.now().timestamp()
-
-                logging.getLogger(__name__).info(
-                    "Actively logging in user {} from {}".format(
-                        user.get_id(), remote_addr
-                    )
-                )
 
                 response = user.as_dict()
                 response["_is_external_client"] = s().getBoolean(
@@ -406,10 +408,18 @@ def login():
                 r = make_response(jsonify(response))
                 r.delete_cookie("active_logout")
 
-                eventManager().fire(
-                    Events.USER_LOGGED_IN, payload={"username": user.get_id()}
-                )
-                auth_log(f"Logging in user {username} from {remote_addr} via credentials")
+                if reauthenticate:
+                    auth_log(
+                        f"Reauthenticating user {username} from {remote_addr} via credentials"
+                    )
+                else:
+                    eventManager().fire(
+                        Events.USER_LOGGED_IN, payload={"username": user.get_id()}
+                    )
+
+                    auth_log(
+                        f"Logging in user {username} from {remote_addr} via credentials"
+                    )
 
                 return r
 
