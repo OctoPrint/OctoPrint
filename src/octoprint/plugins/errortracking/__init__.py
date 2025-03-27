@@ -54,7 +54,7 @@ IGNORED_EXCEPTIONS = [
         Exception,
         lambda exc, logger, plugin, cb: logger.startswith("octoprint.plugins.astroprint")
         or plugin == "astroprint"
-        or cb.startswith("octoprint_astroprint."),
+        or (cb and cb.startswith("octoprint_astroprint.")),
     ),
 ]
 
@@ -224,7 +224,7 @@ def _enable_errortracking():
 
         sentry_sdk.init(url_server, release=version, before_send=_before_send)
 
-        scope = sentry_sdk.get_isolation_scope()
+        scope = sentry_sdk.get_global_scope()
         scope.user = {"id": unique_id}
 
         logging.getLogger("octoprint.plugins.errortracking").info(
