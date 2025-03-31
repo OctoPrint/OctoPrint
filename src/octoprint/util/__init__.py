@@ -27,7 +27,7 @@ from collections.abc import Iterable, MutableMapping, Set
 from functools import wraps
 from glob import escape as glob_escape  # noqa: F401
 from time import monotonic as monotonic_time  # noqa: F401
-from typing import Union
+from typing import IO, Optional, Union
 
 from frozendict import frozendict
 
@@ -582,6 +582,9 @@ def dict_merge(a, b, leaf_merger=None, in_place=False):
     if b is None:
         b = {}
 
+    if not isinstance(a, dict):
+        raise ValueError("a must be a dict")
+
     if not isinstance(b, dict):
         return b
 
@@ -1114,19 +1117,26 @@ BOMS = {
 }
 
 
-def get_bom(filename, encoding):
+def get_bom(file_obj: Union[str, IO], encoding: str) -> Optional[bytes]:
     """
     Check if the file has a BOM and if so return it.
 
     Params:
-        filename (str): The file to check.
+        file_obj (str or IO): The file to check, either a path or an IO object.
         encoding (str): The encoding to check for.
 
     Returns:
         (bytes) the BOM or None if there is no BOM.
     """
-    with open(filename, mode="rb") as f:
-        header = f.read(4)
+
+    if isinstance(file_obj, str):
+        with open(file_obj, mode="rb") as f:
+            header = f.read(4)
+    else:
+        pos = file_obj.tell()
+        file_obj.seek(0)
+        header = file_obj.read(4)
+        file_obj.seek(pos)
 
     for enc, bom in BOMS.items():
         if header.startswith(bom) and encoding.lower() == enc:

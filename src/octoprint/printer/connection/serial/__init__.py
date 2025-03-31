@@ -1,12 +1,12 @@
 import copy
 import logging
 import os
-from concurrent.futures import Future
 
 import octoprint.util as util
 from octoprint.events import Events, eventManager
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
+from octoprint.filemanager.storage import StorageCapabilities
 from octoprint.printer import (
     CommunicationHealth,
     ErrorInformation,
@@ -24,8 +24,9 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     connector = "serial"
     name = "Serial Connection"
 
-    can_upload_printer_file = True
-    can_download_printer_file = False
+    storage_capabilities = StorageCapabilities(
+        write_file=True, remove_file=True, metadata=True
+    )
 
     @classmethod
     def connection_options(cls) -> dict:
@@ -61,7 +62,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
         self._comm = None
 
-        self._upload_future = None
+        self._upload_callback = None
         self._last_position = None
 
     @property
@@ -315,7 +316,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         return True
 
     @property
-    def job_progress(self):
+    def job_progress(self) -> JobProgress:
         if self._comm is None:
             return None
 
@@ -500,19 +501,23 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             result.append(pf)
         return result
 
-    def upload_printer_file(self, source, target, *args, **kwargs):
+    def upload_printer_file(
+        self, source, target, progress_callback: callable = None, *args, **kwargs
+    ):
         if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
             self._logger.error("No connection to printer or printer is busy")
             return
 
-        self._upload_future = Future()
+        if progress_callback is not None:
+            self._upload_callback = progress_callback
+
         remote = self._comm.startFileTransfer(
             source,
             target,
             special=not valid_file_type(target, "gcode"),
             tags=kwargs.get("tags", set()),
         )
-        return remote, self._upload_future
+        return remote
 
     def delete_printer_file(self, path, *args, **kwargs):
         if not self._comm or not self._comm.isSdReady():
@@ -613,6 +618,8 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     def on_comm_progress(self):
         self._listener.on_printer_job_progress()
+        if self._upload_callback:
+            self._upload_callback(progress=int(self.job_progress.progress * 100))
 
     def on_comm_z_change(self, newZ):
         # intentionally disabled - event now gets triggered in comm, no more push upwards
@@ -673,6 +680,8 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         )
         super().set_job(job)
         self._listener.on_printer_files_upload_start(job)
+        if self._upload_callback:
+            self._upload_callback(progress=0)
 
     def on_comm_file_transfer_done(
         self, local_filename, remote_filename, elapsed, failed=False
@@ -680,9 +689,12 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._listener.on_printer_files_upload_done(
             self.current_job, elapsed, failed=failed
         )
-        if self._upload_future:
-            self._upload_future.set_result((self.current_job, elapsed, failed))
-            self._upload_future = None
+        if self._upload_callback:
+            if failed:
+                self._upload_callback(failed=True)
+            else:
+                self._upload_callback(done=True)
+            self._upload_callback = None
         super().set_job(None)
 
     def on_comm_file_transfer_failed(self, local_filename, remote_filename, elapsed):

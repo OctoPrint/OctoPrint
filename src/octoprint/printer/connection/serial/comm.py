@@ -11,6 +11,7 @@ import contextlib
 import copy
 import fnmatch
 import glob
+import io
 import logging
 import os
 import queue
@@ -19,6 +20,7 @@ import threading
 import time
 from collections import deque, namedtuple
 from functools import partial
+from typing import IO, Union
 
 import serial
 import wrapt
@@ -1553,7 +1555,9 @@ class MachineCom:
 
         return remote_name
 
-    def startFileTransfer(self, path, filename, remote=None, special=False, tags=None):
+    def startFileTransfer(
+        self, path_or_file, filename, remote=None, special=False, tags=None
+    ):
         if not self.isOperational() or self.isBusy():
             self._logger.info("Printer is not operational or busy")
             return
@@ -1569,10 +1573,12 @@ class MachineCom:
 
             if special:
                 self._currentFile = SpecialStreamingGcodeFileInformation(
-                    path, filename, remote
+                    path_or_file, filename, remote
                 )
             else:
-                self._currentFile = StreamingGcodeFileInformation(path, filename, remote)
+                self._currentFile = StreamingGcodeFileInformation(
+                    path_or_file, filename, remote
+                )
             self._currentFile.start()
 
             self.sendCommand(
@@ -1660,6 +1666,8 @@ class MachineCom:
                 },
             )
         else:
+            if self._currentFile:
+                self._currentFile.close()
             self._currentFile = PrintingGcodeFileInformation(
                 filename,
                 offsets_callback=self.getOffsets,
@@ -1674,7 +1682,10 @@ class MachineCom:
         if self.isBusy():
             return
 
+        if self._currentFile:
+            self._currentFile.close()
         self._currentFile = None
+
         self._callback.on_comm_file_selected(None, None, False, user=None)
 
     def _cancel_preparation_failed(self):
@@ -5894,21 +5905,43 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
     """
 
     def __init__(
-        self, filename, offsets_callback=None, current_tool_callback=None, user=None
+        self,
+        path_or_file: Union[str, IO],
+        offsets_callback=None,
+        current_tool_callback=None,
+        user=None,
+        close_on_eof=True,
     ):
+        if isinstance(path_or_file, str):
+            filename = path_or_file
+            close_on_eof = True
+        else:
+            if isinstance(path_or_file, io.FileIO):
+                filename = path_or_file.name
+            else:
+                filename = "unknown"
+
         PrintingFileInformation.__init__(self, filename, user=user)
 
-        self._handle = None
+        self._handle = None if isinstance(path_or_file, str) else path_or_file
         self._handle_mutex = threading.RLock()
 
         self._offsets_callback = offsets_callback
         self._current_tool_callback = current_tool_callback
+        self._close_on_eof = close_on_eof
 
-        if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
-            raise OSError("File %s does not exist" % self._filename)
-        self._size = os.stat(self._filename).st_size
-        self._pos = 0
         self._read_lines = 0
+        if self._handle:
+            self._pos = self._handle.tell()
+
+            self._handle.seek(os.SEEK_END)
+            self._size = self._handle.tell()
+            self._handle.seek(self._pos)
+        else:
+            self._pos = 0
+            if not os.path.exists(self._filename) or not os.path.isfile(self._filename):
+                raise OSError(f"File {self._filename} does not exist")
+            self._size = os.stat(self._filename).st_size
 
     def seek(self, offset):
         with self._handle_mutex:
@@ -5925,17 +5958,21 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
         """
         PrintingFileInformation.start(self)
         with self._handle_mutex:
-            bom = get_bom(self._filename, encoding="utf-8-sig")
-            self._handle = open(
-                self._filename, encoding="utf-8-sig", errors="replace", newline=""
-            )
-            self._pos = self._handle.tell()
-            if bom:
-                # Apparently we found an utf-8 bom in the file.
-                # We need to add its length to our pos because it will
-                # be stripped transparently and we'll have no chance
-                # catching that.
-                self._pos += len(bom)
+            if self._handle:
+                # we initially got a file object
+                self._pos = self._handle.tell()
+            else:
+                bom = get_bom(self._filename, encoding="utf-8-sig")
+                self._handle = open(
+                    self._filename, encoding="utf-8-sig", errors="replace", newline=""
+                )
+                self._pos = self._handle.tell()
+                if bom:
+                    # Apparently we found an utf-8 bom in the file.
+                    # We need to add its length to our pos because it will
+                    # be stripped transparently and we'll have no chance
+                    # catching that.
+                    self._pos += len(bom)
             self._read_lines = 0
 
     def close(self):
@@ -5988,7 +6025,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
                     line = self._handle.readline()
                     self._pos += len(line.encode("utf-8"))
 
-                    if not line:
+                    if not line and self._close_on_eof:
                         self.close()
                     processed = self._process(line, offsets, current_tool)
                 self._read_lines += 1
@@ -6008,20 +6045,12 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 
 class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
-    def __init__(self, path, localFilename, remoteFilename, user=None):
-        PrintingGcodeFileInformation.__init__(self, path, user=user)
-        self._localFilename = localFilename
-        self._remoteFilename = remoteFilename
+    def __init__(self, path_or_file, local_name, remote_name, user=None):
+        PrintingGcodeFileInformation.__init__(self, path_or_file, user=user)
 
     def start(self):
         PrintingGcodeFileInformation.start(self)
         self._start_time = time.monotonic()
-
-    def getLocalFilename(self):
-        return self._localFilename
-
-    def getRemoteFilename(self):
-        return self._remoteFilename
 
     def _process(self, line, offsets, current_tool):
         return process_gcode_line(line)

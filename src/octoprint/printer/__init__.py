@@ -19,12 +19,12 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import re
-from concurrent.futures import Future
-from typing import Union
+from typing import IO, Optional, Union
 
 from pydantic import computed_field
 
 from octoprint.filemanager.destinations import FileDestinations
+from octoprint.filemanager.storage import MetadataEntry, StorageCapabilities
 from octoprint.printer.job import JobProgress, PrintJob
 from octoprint.schema import BaseModel
 from octoprint.settings import settings
@@ -553,8 +553,7 @@ class PrinterFile(BaseModel):
 
 
 class PrinterFilesMixin:
-    can_upload_printer_file = True
-    can_download_printer_file = True
+    storage_capabilities = StorageCapabilities()
 
     @property
     def printer_files_mounted(self) -> bool:
@@ -569,18 +568,57 @@ class PrinterFilesMixin:
     def refresh_printer_files(self, blocking=False, timeout=10, *args, **kwargs) -> None:
         pass
 
-    def get_printer_files(self, refresh=False, *args, **kwargs) -> list:
+    def get_printer_files(
+        self, refresh=False, recursive=False, *args, **kwargs
+    ) -> list[PrinterFile]:
         return []
 
-    def upload_printer_file(
-        self, source: str, target: str, *args, **kwargs
-    ) -> tuple[str, Future]:
+    def create_printer_folder(self, target: str, *args, **kwargs) -> None:
         pass
 
-    def download_printer_file(self, path: str, *args, **kwargs) -> Future:
+    def delete_printer_folder(
+        self, target: str, recursive: bool = False, *args, **kwargs
+    ) -> None:
+        pass
+
+    def copy_printer_folder(self, source: str, target: str, *args, **kwargs) -> None:
+        pass
+
+    def move_printer_folder(self, source: str, target: str, *args, **kwargs) -> None:
+        pass
+
+    def upload_printer_file(
+        self,
+        path_or_file: Union[str, IO],
+        path: str,
+        progress_callback: callable,
+        *args,
+        **kwargs,
+    ) -> str:
+        pass
+
+    def download_printer_file(
+        self, path: str, progress_callback: callable, *args, **kwargs
+    ) -> IO:
         return None
 
     def delete_printer_file(self, path: str, *args, **kwargs) -> None:
+        pass
+
+    def copy_printer_file(self, source: str, target: str, *args, **kwargs) -> None:
+        pass
+
+    def move_printer_file(self, source: str, target: str, *args, **kwargs) -> None:
+        pass
+
+    def get_printer_file_metadata(
+        self, path: str, *args, **kwargs
+    ) -> Optional[MetadataEntry]:
+        return None
+
+    def set_printer_file_metadata(
+        self, path: str, metadata: MetadataEntry, *args, **kwargs
+    ) -> None:
         pass
 
 

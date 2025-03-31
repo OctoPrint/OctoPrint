@@ -3,10 +3,86 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+from typing import IO, Optional
+
+from octoprint.filemanager.util import AbstractFileWrapper
+from octoprint.schema import BaseModel, BaseModelExtra
+from octoprint.util import deprecated
+
+
+class StorageCapabilities(BaseModel):
+    write_file: bool = False
+    read_file: bool = False
+    remove_file: bool = False
+    copy_file: bool = False
+    move_file: bool = False
+
+    add_folder: bool = False
+    remove_folder: bool = False
+    copy_folder: bool = False
+    move_folder: bool = False
+
+    metadata: bool = False
+
+
+class HistoryEntry(BaseModel):
+    timestamp: float
+    success: bool
+    printerProfile: str
+
+
+class AnalysisVolume(BaseModel):
+    minX: float
+    minY: float
+    minZ: float
+    maxX: float
+    maxY: float
+    maxZ: float
+
+
+class AnalysisDimensions(BaseModel):
+    width: float
+    height: float
+    depth: float
+
+
+class AnalysisFilamentUse(BaseModel):
+    length: float
+    volume: float
+
+
+class AnalysisResult(BaseModel):
+    _empty: bool = False
+    printingArea: AnalysisVolume
+    dimensions: AnalysisDimensions
+    travelArea: AnalysisVolume
+    travelDimensions: AnalysisDimensions
+    estimatedPrintTime: float
+    filament: dict[str, AnalysisFilamentUse]
+
+
+class Statistics(BaseModel):
+    averagePrintTime: dict[str, float]
+    lastPrintTime: dict[str, float]
+
+
+class MetadataEntry(BaseModelExtra):
+    display: Optional[str] = None
+    analysis: Optional[AnalysisResult] = None
+    history: list[HistoryEntry] = []
+    statistics: Optional[Statistics] = None
+    # TODO: remove the following
+    # hash: Optional[str] = None
+    # links: list = []
+    # notes: list = []
+
+
 class StorageInterface:
     """
     Interface of storage adapters for OctoPrint.
     """
+
+    capabilities = StorageCapabilities()
 
     # noinspection PyUnreachableCode
     @property
@@ -28,20 +104,6 @@ class StorageInterface:
         # empty generator pattern, yield is intentionally unreachable
         return
         yield
-
-    def last_modified(self, path=None, recursive=False):
-        """
-        Get the last modification date of the specified ``path`` or ``path``'s subtree.
-
-        Args:
-            path (str or None): Path for which to determine the subtree's last modification date. If left out or
-                set to None, defatuls to storage root.
-            recursive (bool): Whether to determine only the date of the specified ``path`` (False, default) or
-                the whole ``path``'s subtree (True).
-
-        Returns: (float) The last modification date of the indicated subtree
-        """
-        raise NotImplementedError()
 
     def get_size(self, path=None, recursive=False) -> int:
         """
@@ -66,6 +128,12 @@ class StorageInterface:
                 the whole ``path``'s subtree (True).
         """
         raise NotImplementedError()
+
+    @deprecated(
+        "last_modified has been deprecated in favor of get_lastmodified", since="1.12.0"
+    )
+    def last_modified(self, *args, **kwargs):
+        return self.get_lastmodified(*args, **kwargs)
 
     def file_in_path(self, path, filepath):
         """
@@ -208,27 +276,34 @@ class StorageInterface:
 
     def add_file(
         self,
-        path,
-        file_object,
-        printer_profile=None,
-        links=None,
-        allow_overwrite=False,
-        display=None,
-        user=None,
-    ):
+        path: str,
+        data: AbstractFileWrapper,
+        allow_overwrite: bool = False,
+        display: str = None,
+        user: str = None,
+        progress_callback: callable = None,
+        *args,
+        **kwargs,
+    ) -> str:
         """
         Adds the file ``file_object`` as ``path``
 
-        :param string path:            the file's new path, will be sanitized
-        :param object file_object:     a file object that provides a ``save`` method which will be called with the destination path
-                                       where the object should then store its contents
-        :param object printer_profile: the printer profile associated with this file (if any)
-        :param list links:             any links to add with the file
-        :param bool allow_overwrite:   if set to True no error will be raised if the file already exists and the existing file
-                                       and its metadata will just be silently overwritten
-        :param str display:            display name of the file
-        :param str user:               user who added the file, if known
-        :return: the sanitized name of the file to be used for future references to it
+        Arguments:
+          path(str): the file's new path, will be sanitized
+          data(AbstractFileWrapper): a file object to save as the file's contents
+          allow_overwrite(bool): if the file already exists and this is set, an error will be raised
+          display(str): display name of the file
+          user(str): user who added the file, if known
+          progress_callback(callable): callback to send progress information to
+
+        Returns:
+          (str) the new filename
+        """
+        raise NotImplementedError()
+
+    def read_file(self, path: str) -> IO:
+        """
+        Returns a future to read the contents of the file.
         """
         raise NotImplementedError()
 
@@ -450,6 +525,7 @@ class StorageError(Exception):
     ALREADY_EXISTS = "already_exists"
     SOURCE_EQUALS_DESTINATION = "source_equals_destination"
     NOT_EMPTY = "not_empty"
+    UNSUPPORTED = "unsupported"
 
     def __init__(self, message, code=None, cause=None):
         Exception.__init__(self, message)

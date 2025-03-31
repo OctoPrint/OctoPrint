@@ -15,6 +15,7 @@ from octoprint.util import yaml
 
 from .analysis import AnalysisQueue, QueueEntry  # noqa: F401
 from .destinations import FileDestinations  # noqa: F401
+from .storage import StorageCapabilities, StorageError, StorageInterface
 from .storage.local import LocalFileStorage  # noqa: F401
 from .util import AbstractFileWrapper, DiskFileWrapper, StreamWrapper  # noqa: F401
 
@@ -338,11 +339,14 @@ class FileManager:
     def add_storage(self, storage_type, storage_manager):
         self._storage_managers[storage_type] = storage_manager
         self._determine_analysis_backlog(storage_type, storage_manager)
+        self._logger.info(f"Added storage manager for {storage_type}")
 
-    def remove_storage(self, type):
-        if type not in self._storage_managers:
-            return
-        del self._storage_managers[type]
+    def remove_storage(self, storage_type):
+        try:
+            del self._storage_managers[storage_type]
+            self._logger.info(f"Removed storage manager for {storage_type}")
+        except KeyError:
+            pass
 
     @property
     def registered_storages(self):
@@ -688,16 +692,22 @@ class FileManager:
 
     def add_file(
         self,
-        location,
-        path,
-        file_object,
-        links=None,
-        allow_overwrite=False,
+        location: str,
+        path: str,
+        file_object: AbstractFileWrapper,
+        allow_overwrite: bool = False,
         printer_profile=None,
         analysis=None,
-        display=None,
-        user=None,
+        display: str = None,
+        user: str = None,
+        progress_callback: callable = None,
     ):
+        if not self._storage(location).add_file:
+            raise StorageError(
+                f"Storage {location} does not support adding file",
+                code=StorageError.UNSUPPORTED,
+            )
+
         if printer_profile is None:
             printer_profile = self._printer_profile_manager.get_current_or_default()
 
@@ -708,7 +718,6 @@ class FileManager:
                 hook_file_object = hook(
                     path_in_storage,
                     file_object,
-                    links=links,
                     printer_profile=printer_profile,
                     allow_overwrite=allow_overwrite,
                 )
@@ -731,11 +740,10 @@ class FileManager:
         path_in_storage = self._storage(location).add_file(
             path_in_storage,
             file_object,
-            links=links,
-            printer_profile=printer_profile,
             allow_overwrite=allow_overwrite,
             display=display,
             user=user,
+            progress_callback=progress_callback,
         )
 
         queue_entry = self._analysis_queue_entry(
@@ -1073,9 +1081,12 @@ class FileManager:
         return self._storage(location).path_in_storage(path)
 
     def last_modified(self, location, path=None, recursive=False):
-        return self._storage(location).last_modified(path=path, recursive=recursive)
+        return self._storage(location).get_lastmodified(path=path, recursive=recursive)
 
-    def _storage(self, location):
+    def capabilities(self, location) -> StorageCapabilities:
+        return self._storage(location).capabilities
+
+    def _storage(self, location: str) -> StorageInterface:
         if location not in self._storage_managers:
             raise NoSuchStorage(f"No storage configured for destination {location}")
         return self._storage_managers[location]

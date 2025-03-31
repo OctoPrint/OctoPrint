@@ -25,6 +25,7 @@ from octoprint.filemanager import (
     valid_file_type,
 )
 from octoprint.filemanager.analysis import AnalysisQueue
+from octoprint.filemanager.storage.printer import PrinterFileStorage
 from octoprint.plugin import ProgressPlugin, plugin_manager
 from octoprint.printer import (
     PrinterCallback,
@@ -455,6 +456,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         """
         Closes the connection to the printer.
         """
+        self._file_manager.remove_storage(FileDestinations.SDCARD)
+
         eventManager().fire(Events.DISCONNECTING)
         if self._connection is not None:
             self._connection.disconnect()
@@ -1477,6 +1480,12 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             self._logger.exception("Error while trying to persist print recovery data")
 
     def on_printer_files_available(self, available):
+        if available:
+            storage = PrinterFileStorage(self._connection)
+            self._file_manager.add_storage(FileDestinations.SDCARD, storage)
+        else:
+            self._file_manager.remove_storage(FileDestinations.SDCARD)
+
         self._stateMonitor.set_state(
             self._dict(
                 text=self.get_state_string(),

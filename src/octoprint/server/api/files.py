@@ -70,11 +70,9 @@ def _create_lastmodified(path, recursive):
                 )
                 lms.append(None)
 
-        if any(filter(lambda x: x is None, lms)):
-            # we return None if ANY of the involved storages returned None
-            return None
+        lms = filter(lambda x: x is not None, lms)
 
-        # if we reach this point, we return the maximum of all dates
+        # return the maximum of all dates
         return max(lms)
 
     else:
@@ -128,7 +126,7 @@ def _create_etag(path, filter, recursive, lm=None):
     else:
         storage = path
 
-    if path == "" or storage == FileDestinations.SDCARD:
+    if path == "" or storage == FileDestinations.SDCARD:  # TODO
         # include sd data in etag
         hash_update(repr(sorted(printer.get_sd_files(), key=lambda x: sv(x["name"]))))
 
@@ -157,13 +155,13 @@ def readGcodeFiles():
     recursive = request.values.get("recursive", "false") in valid_boolean_trues
     force = request.values.get("force", "false") in valid_boolean_trues
 
-    files = _getFileList(
-        FileDestinations.LOCAL,
-        filter=filter,
-        recursive=recursive,
-        allow_from_cache=not force,
-    )
-    files.extend(_getFileList(FileDestinations.SDCARD, allow_from_cache=not force))
+    files = []
+    for target in fileManager.registered_storages:
+        files.extend(
+            _getFileList(
+                target, filter=filter, recursive=recursive, allow_from_cache=not force
+            )
+        )
 
     usage = psutil.disk_usage(settings().getBaseFolder("uploads", check_writable=False))
     return jsonify(files=files, free=usage.free, total=usage.total)
@@ -274,7 +272,7 @@ def readGcodeFilesForOrigin(origin):
     or request.values.get("_refresh", False),
 )
 def readGcodeFile(target, filename):
-    if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+    if target not in fileManager.registered_storages:
         abort(404)
 
     if not _validate(target, filename):
@@ -312,212 +310,161 @@ def _getFileDetails(origin, path, recursive=True):
 def _getFileList(
     origin, path=None, filter=None, recursive=False, level=0, allow_from_cache=True
 ):
-    if origin == FileDestinations.SDCARD:
-        sdFileList = printer.get_sd_files(refresh=not allow_from_cache)
+    # PERF: Only retrieve the extension tree once
+    extension_tree = octoprint.filemanager.full_extension_tree()
 
-        files = []
-        if sdFileList is not None:
-            for f in sdFileList:
-                type_path = octoprint.filemanager.get_file_type(f["name"])
-                if not type_path:
-                    # only supported extensions
-                    continue
-                else:
-                    file_type = type_path[0]
+    filter_func = None
+    if filter:
+        filter_func = lambda entry, entry_data: octoprint.filemanager.valid_file_type(
+            entry, type=filter, tree=extension_tree
+        )
 
-                file = {
-                    "type": file_type,
-                    "typePath": type_path,
-                    "name": f["name"],
-                    "display": f["display"] if f["display"] else f["name"],
-                    "path": f["name"],
-                    "origin": FileDestinations.SDCARD,
-                    "refs": {
-                        "resource": url_for(
-                            ".readGcodeFile",
-                            target=FileDestinations.SDCARD,
-                            filename=f["name"],
-                            _external=True,
-                        )
-                    },
-                }
-                if f["size"] is not None:
-                    file.update({"size": f["size"]})
-                if f["date"] is not None:
-                    file.update({"date": f["date"]})
-                files.append(file)
-    else:
-        # PERF: Only retrieve the extension tree once
-        extension_tree = octoprint.filemanager.full_extension_tree()
-
-        filter_func = None
-        if filter:
-            filter_func = lambda entry, entry_data: octoprint.filemanager.valid_file_type(
-                entry, type=filter, tree=extension_tree
+    with _file_cache_mutex:
+        cache_key = f"{origin}:{path}:{recursive}:{filter}"
+        files, lastmodified = _file_cache.get(cache_key, ([], None))
+        # recursive needs to be True for lastmodified queries so we get lastmodified of whole subtree - #3422
+        if (
+            not allow_from_cache
+            or lastmodified is None
+            or lastmodified < fileManager.last_modified(origin, path=path, recursive=True)
+        ):
+            files = list(
+                fileManager.list_files(
+                    origin,
+                    path=path,
+                    filter=filter_func,
+                    recursive=recursive,
+                    level=level,
+                    force_refresh=not allow_from_cache,
+                )[origin].values()
             )
+            lastmodified = fileManager.last_modified(origin, path=path, recursive=True)
+            _file_cache[cache_key] = (files, lastmodified)
 
-        with _file_cache_mutex:
-            cache_key = f"{origin}:{path}:{recursive}:{filter}"
-            files, lastmodified = _file_cache.get(cache_key, ([], None))
-            # recursive needs to be True for lastmodified queries so we get lastmodified of whole subtree - #3422
-            if (
-                not allow_from_cache
-                or lastmodified is None
-                or lastmodified
-                < fileManager.last_modified(origin, path=path, recursive=True)
-            ):
-                files = list(
-                    fileManager.list_files(
-                        origin,
-                        path=path,
-                        filter=filter_func,
-                        recursive=recursive,
-                        level=level,
-                        force_refresh=not allow_from_cache,
-                    )[origin].values()
-                )
-                lastmodified = fileManager.last_modified(
-                    origin, path=path, recursive=True
-                )
-                _file_cache[cache_key] = (files, lastmodified)
+    def analyse_recursively(files, path=None):
+        if path is None:
+            path = ""
 
-        def analyse_recursively(files, path=None):
-            if path is None:
-                path = ""
+        result = []
+        for file_or_folder in files:
+            # make a shallow copy in order to not accidentally modify the cached data
+            file_or_folder = dict(file_or_folder)
 
-            result = []
-            for file_or_folder in files:
-                # make a shallow copy in order to not accidentally modify the cached data
-                file_or_folder = dict(file_or_folder)
+            file_or_folder["origin"] = origin
 
-                file_or_folder["origin"] = FileDestinations.LOCAL
+            if file_or_folder["type"] == "folder":
+                if "children" in file_or_folder:
+                    children = analyse_recursively(
+                        file_or_folder["children"].values(),
+                        path + file_or_folder["name"] + "/",
+                    )
+                    latest_print = None
+                    success = 0
+                    failure = 0
+                    for child in children:
+                        if (
+                            "prints" not in child
+                            or "last" not in child["prints"]
+                            or "date" not in child["prints"]["last"]
+                        ):
+                            continue
 
-                if file_or_folder["type"] == "folder":
-                    if "children" in file_or_folder:
-                        children = analyse_recursively(
-                            file_or_folder["children"].values(),
-                            path + file_or_folder["name"] + "/",
-                        )
-                        latest_print = None
-                        success = 0
-                        failure = 0
-                        for child in children:
-                            if (
-                                "prints" not in child
-                                or "last" not in child["prints"]
-                                or "date" not in child["prints"]["last"]
-                            ):
-                                continue
+                        success += child["prints"].get("success", 0)
+                        failure += child["prints"].get("failure", 0)
 
-                            success += child["prints"].get("success", 0)
-                            failure += child["prints"].get("failure", 0)
+                        if (
+                            latest_print is None
+                            or child["prints"]["last"]["date"] > latest_print["date"]
+                        ):
+                            latest_print = child["prints"]["last"]
 
-                            if (
-                                latest_print is None
-                                or child["prints"]["last"]["date"] > latest_print["date"]
-                            ):
-                                latest_print = child["prints"]["last"]
+                    file_or_folder["children"] = children
+                    file_or_folder["prints"] = {
+                        "success": success,
+                        "failure": failure,
+                    }
+                    if latest_print:
+                        file_or_folder["prints"]["last"] = latest_print
 
-                        file_or_folder["children"] = children
-                        file_or_folder["prints"] = {
+                file_or_folder["refs"] = {
+                    "resource": url_for(
+                        ".readGcodeFile",
+                        target=origin,
+                        filename=path + file_or_folder["name"],
+                        _external=True,
+                    )
+                }
+            else:
+                if "analysis" in file_or_folder and octoprint.filemanager.valid_file_type(
+                    file_or_folder["name"], type="gcode", tree=extension_tree
+                ):
+                    file_or_folder["gcodeAnalysis"] = file_or_folder["analysis"]
+                    del file_or_folder["analysis"]
+
+                if "history" in file_or_folder and octoprint.filemanager.valid_file_type(
+                    file_or_folder["name"], type="gcode", tree=extension_tree
+                ):
+                    # convert print log
+                    history = file_or_folder["history"]
+                    del file_or_folder["history"]
+                    success = 0
+                    failure = 0
+                    last = None
+                    for entry in history:
+                        success += 1 if "success" in entry and entry["success"] else 0
+                        failure += 1 if "success" in entry and not entry["success"] else 0
+                        if not last or (
+                            "timestamp" in entry
+                            and "timestamp" in last
+                            and entry["timestamp"] > last["timestamp"]
+                        ):
+                            last = entry
+                    if last:
+                        prints = {
                             "success": success,
                             "failure": failure,
+                            "last": {
+                                "success": last["success"],
+                                "date": last["timestamp"],
+                            },
                         }
-                        if latest_print:
-                            file_or_folder["prints"]["last"] = latest_print
+                        if "printTime" in last:
+                            prints["last"]["printTime"] = last["printTime"]
+                        file_or_folder["prints"] = prints
 
-                    file_or_folder["refs"] = {
-                        "resource": url_for(
-                            ".readGcodeFile",
-                            target=FileDestinations.LOCAL,
-                            filename=path + file_or_folder["name"],
-                            _external=True,
-                        )
-                    }
-                else:
-                    if (
-                        "analysis" in file_or_folder
-                        and octoprint.filemanager.valid_file_type(
-                            file_or_folder["name"], type="gcode", tree=extension_tree
-                        )
-                    ):
-                        file_or_folder["gcodeAnalysis"] = file_or_folder["analysis"]
-                        del file_or_folder["analysis"]
+                file_or_folder["refs"] = {
+                    "resource": url_for(
+                        ".readGcodeFile",
+                        target=origin,
+                        filename=file_or_folder["path"],
+                        _external=True,
+                    )
+                }
 
-                    if (
-                        "history" in file_or_folder
-                        and octoprint.filemanager.valid_file_type(
-                            file_or_folder["name"], type="gcode", tree=extension_tree
-                        )
-                    ):
-                        # convert print log
-                        history = file_or_folder["history"]
-                        del file_or_folder["history"]
-                        success = 0
-                        failure = 0
-                        last = None
-                        for entry in history:
-                            success += 1 if "success" in entry and entry["success"] else 0
-                            failure += (
-                                1 if "success" in entry and not entry["success"] else 0
-                            )
-                            if not last or (
-                                "timestamp" in entry
-                                and "timestamp" in last
-                                and entry["timestamp"] > last["timestamp"]
-                            ):
-                                last = entry
-                        if last:
-                            prints = {
-                                "success": success,
-                                "failure": failure,
-                                "last": {
-                                    "success": last["success"],
-                                    "date": last["timestamp"],
-                                },
-                            }
-                            if "printTime" in last:
-                                prints["last"]["printTime"] = last["printTime"]
-                            file_or_folder["prints"] = prints
+                if fileManager.capabilities(origin).read_file:
+                    quoted_path = urlquote(file_or_folder["path"])
+                    url = (
+                        url_for("index", _external=True)
+                        + f"downloads/files/{origin}/{quoted_path}"
+                    )
+                    file_or_folder["refs"]["download"] = url
 
-                    file_or_folder["refs"] = {
-                        "resource": url_for(
-                            ".readGcodeFile",
-                            target=FileDestinations.LOCAL,
-                            filename=file_or_folder["path"],
-                            _external=True,
-                        ),
-                        "download": url_for("index", _external=True)
-                        + "downloads/files/"
-                        + FileDestinations.LOCAL
-                        + "/"
-                        + urlquote(file_or_folder["path"]),
-                    }
+            result.append(file_or_folder)
 
-                result.append(file_or_folder)
+        return result
 
-            return result
-
-        files = analyse_recursively(files)
-
-    return files
+    return analyse_recursively(files)
 
 
 def _verifyFileExists(origin, filename):
-    if origin == FileDestinations.SDCARD:
-        return filename in (x["name"] for x in printer.get_sd_files())
-    else:
-        return fileManager.file_exists(origin, filename)
+    return fileManager.file_exists(origin, filename)
 
 
 def _verifyFolderExists(origin, foldername):
-    if origin == FileDestinations.SDCARD:
-        return False
-    else:
-        return fileManager.folder_exists(origin, foldername)
+    return fileManager.folder_exists(origin, foldername)
 
 
-def _isBusy(target, path):
+def _isBusy(target, path):  # TODO
     currentOrigin, currentPath = _getCurrentFile()
     if (
         currentPath is not None
@@ -548,15 +495,14 @@ def uploadGcodeFile(target):
     user = current_user.get_name()
 
     if input_upload_name in request.values and input_upload_path in request.values:
-        if target not in [
-            FileDestinations.LOCAL,
-            FileDestinations.SDCARD,
-        ]:
+        upload_name = request.values[input_upload_name]
+        upload_path = request.values[input_upload_path]
+
+        if target not in fileManager.registered_storages:
             abort(404)
 
-        upload = octoprint.filemanager.util.DiskFileWrapper(
-            request.values[input_upload_name], request.values[input_upload_path]
-        )
+        if not fileManager.capabilities(target).write_file:
+            abort(400, description="storage does not support adding new files")
 
         # Store any additional user data the caller may have passed.
         userdata = None
@@ -569,10 +515,7 @@ def uploadGcodeFile(target):
                 abort(400, description="userdata contains invalid JSON")
 
         # check preconditions for SD upload
-        sd = target == FileDestinations.SDCARD
-        if sd:
-            if not settings().getBoolean(["feature", "sdSupport"]):
-                abort(404)
+        if target == FileDestinations.SDCARD:
             _verify_sd_upload_preconditions()
 
         # evaluate select and print parameter and if set check permissions & preconditions
@@ -604,20 +547,22 @@ def uploadGcodeFile(target):
 
         # determine future filename of file to be uploaded, abort if it can't be uploaded
         try:
-            # FileDestinations.LOCAL = should normally be target, but can't because SDCard handling isn't implemented yet
-            canonPath, canonFilename = fileManager.canonicalize(
-                FileDestinations.LOCAL, upload.filename
+            canonicalizedPath, canonFilename = fileManager.canonicalize(
+                target, upload_name
             )
             if request.values.get("path"):
-                canonPath = request.values.get("path")
+                canonicalizedPath = request.values.get("path")
             if request.values.get("filename"):
                 canonFilename = request.values.get("filename")
 
-            futurePath = fileManager.sanitize_path(FileDestinations.LOCAL, canonPath)
+            futurePath = fileManager.sanitize_path(target, canonicalizedPath)
             futureFilename = fileManager.sanitize_name(
                 FileDestinations.LOCAL, canonFilename
             )
         except Exception:
+            logging.getLogger(__name__).exception(
+                f"Error canonicalizing {upload_name} against {target}"
+            )
             canonFilename = None
             futurePath = None
             futureFilename = None
@@ -626,30 +571,25 @@ def uploadGcodeFile(target):
             abort(400, description="Can not upload file, invalid file name")
 
         # prohibit overwriting currently selected file while it's being printed
-        futureFullPath = fileManager.join_path(
-            FileDestinations.LOCAL, futurePath, futureFilename
-        )
-        futureFullPathInStorage = fileManager.path_in_storage(
-            FileDestinations.LOCAL, futureFullPath
-        )
+        futureFullPath = fileManager.join_path(target, futurePath, futureFilename)
+        futureFullPathInStorage = fileManager.path_in_storage(target, futureFullPath)
 
         if (
-            str(printer.active_job)
-            == f"{FileDestinations.SDCARD if sd else FileDestinations.LOCAL}:{futureFullPathInStorage}"
-        ):
+            str(printer.active_job) == f"{target}:{futureFullPathInStorage}"
+        ):  # this should no longer require to be a full path in storage
             abort(
                 409,
                 description="Trying to overwrite file that is currently being printed",
             )
 
         if (
-            fileManager.file_exists(FileDestinations.LOCAL, futureFullPathInStorage)
+            fileManager.file_exists(target, futureFullPathInStorage)
             and request.values.get("noOverwrite") in valid_boolean_trues
         ):
             abort(409, description="File already exists and noOverwrite was set")
 
         if (
-            fileManager.file_exists(FileDestinations.LOCAL, futureFullPathInStorage)
+            fileManager.file_exists(target, futureFullPathInStorage)
             and not Permissions.FILES_DELETE.can()
         ):
             abort(
@@ -657,80 +597,43 @@ def uploadGcodeFile(target):
                 description="File already exists, cannot overwrite due to a lack of permissions",
             )
 
-        reselect = (
-            str(printer.active_job)
-            == f"{FileDestinations.SDCARD if sd else FileDestinations.LOCAL}:{futureFullPathInStorage}"
-        )
+        reselect = str(printer.active_job) == f"{target}:{futureFullPathInStorage}"
 
-        def fileProcessingFinished(filename, absFilename, destination):
-            """
-            Callback for when the file processing (upload, optional slicing, addition to analysis queue) has
-            finished.
+        upload_done = False
 
-            Depending on the file's destination triggers either streaming to SD card or directly calls to_select.
-            """
-
-            if (
-                destination == FileDestinations.SDCARD
-                and octoprint.filemanager.valid_file_type(filename, "machinecode")
-            ):
-                return filename, printer.add_sd_file(
-                    filename,
-                    absFilename,
-                    on_success=selectAndOrPrint,
-                    tags={"source:api", "api:files.sd"},
-                )
-            else:
-                selectAndOrPrint(filename, absFilename, destination)
-                return filename
-
-        def selectAndOrPrint(filename, absFilename, destination):
-            """
-            Callback for when the file is ready to be selected and optionally printed. For SD file uploads this is only
-            the case after they have finished streaming to the printer, which is why this callback is also used
-            for the corresponding call to addSdFile.
-
-            Selects the just uploaded file if either to_select or to_print are True, or if the
-            exact file is already selected, such reloading it.
-            """
-            if octoprint.filemanager.valid_file_type(added_file, "gcode") and (
-                to_select or to_print or reselect
-            ):
-                job = PrintJob(storage=destination, path=absFilename, owner=user)
-                printer.set_job(job, print_after_select=to_print)
+        def progress_callback(progress=None, done=False, failed=False):
+            global upload_done
+            if done or failed:
+                upload_done = True
 
         try:
+            upload = octoprint.filemanager.util.DiskFileWrapper(upload_name, upload_path)
+
             added_file = fileManager.add_file(
-                FileDestinations.LOCAL,
+                target,
                 futureFullPathInStorage,
                 upload,
                 allow_overwrite=True,
                 display=canonFilename,
                 user=user,
+                progress_callback=progress_callback,
             )
         except (OSError, StorageError) as e:
             _abortWithException(e)
-        else:
-            filename = fileProcessingFinished(
-                added_file,
-                fileManager.path_on_disk(FileDestinations.LOCAL, added_file),
-                target,
-            )
-            done = not sd
+
+        if octoprint.filemanager.valid_file_type(added_file, "gcode") and (
+            to_select or to_print or reselect
+        ):
+            job = PrintJob(storage=target, path=added_file, owner=user)
+            printer.set_job(job, printer_after_select=to_print)
 
         if userdata is not None:
             # upload included userdata, add this now to the metadata
-            fileManager.set_additional_metadata(
-                FileDestinations.LOCAL, added_file, "userdata", userdata
-            )
-
-        sdFilename = None
-        if isinstance(filename, tuple):
-            filename, sdFilename = filename
+            fileManager.set_additional_metadata(target, added_file, "userdata", userdata)
 
         payload = {
             "name": futureFilename,
-            "path": filename,
+            "path": added_file,
             "target": target,
             "select": select_request,
             "print": print_request,
@@ -741,70 +644,52 @@ def uploadGcodeFile(target):
             payload["userdata"] = userdata
         eventManager.fire(Events.UPLOAD, payload)
 
-        files = {}
-        location = url_for(
-            ".readGcodeFile",
-            target=FileDestinations.LOCAL,
-            filename=filename,
-            _external=True,
-        )
-        files.update(
-            {
-                FileDestinations.LOCAL: {
-                    "name": futureFilename,
-                    "path": filename,
-                    "origin": FileDestinations.LOCAL,
-                    "refs": {
-                        "resource": location,
-                        "download": url_for("index", _external=True)
-                        + "downloads/files/"
-                        + FileDestinations.LOCAL
-                        + "/"
-                        + urlquote(filename),
-                    },
-                }
-            }
-        )
-
-        if sd and sdFilename:
-            location = url_for(
-                ".readGcodeFile",
-                target=FileDestinations.SDCARD,
-                filename=sdFilename,
-                _external=True,
-            )
-            files.update(
-                {
-                    FileDestinations.SDCARD: {
-                        "name": sdFilename,
-                        "path": sdFilename,
-                        "origin": FileDestinations.SDCARD,
-                        "refs": {"resource": location},
-                    }
-                }
+        entry = {
+            "name": futureFilename,
+            "path": added_file,
+            "origin": target,
+            "refs": {
+                "resource": url_for(
+                    ".readGcodeFile",
+                    target=target,
+                    filename=added_file,
+                    _external=True,
+                ),
+            },
+        }
+        if fileManager.capabilities(target).read_file:
+            quoted_name = urlquote(added_file)
+            entry["refs"]["download"] = (
+                url_for("index", _external=True)
+                + f"downloads/files/{target}/{quoted_name}"
             )
 
         r = make_response(
             jsonify(
-                files=files,
-                done=done,
+                files={target: entry},
+                done=upload_done,
                 effectiveSelect=to_select,
                 effectivePrint=to_print,
             ),
             201,
         )
-        r.headers["Location"] = location
+        r.headers["Location"] = entry["refs"]["resource"]
         return r
 
     elif "foldername" in request.values:
         foldername = request.values["foldername"]
 
-        if target not in [FileDestinations.LOCAL]:
+        if (
+            target not in fileManager.registered_storages
+            or not fileManager.capabilities(target).add_folder
+        ):
             abort(400, description="target is invalid")
 
-        canonPath, canonName = fileManager.canonicalize(target, foldername)
-        futurePath = fileManager.sanitize_path(target, canonPath)
-        futureName = fileManager.sanitize_name(target, canonName)
+        canonicalizedPath, canonicalizedName = fileManager.canonicalize(
+            target, foldername
+        )
+        futurePath = fileManager.sanitize_path(target, canonicalizedPath)
+        futureName = fileManager.sanitize_name(target, canonicalizedName)
         if not futureName or not futurePath:
             abort(400, description="folder name is empty")
 
@@ -821,27 +706,28 @@ def uploadGcodeFile(target):
             added_folder = fileManager.add_folder(
                 target,
                 futureFullPath,
-                display=canonName,
+                display=canonicalizedName,
                 user=user,
             )
         except (OSError, StorageError) as e:
             _abortWithException(e)
 
-        location = url_for(
-            ".readGcodeFile",
-            target=FileDestinations.LOCAL,
-            filename=added_folder,
-            _external=True,
-        )
         folder = {
             "name": futureName,
             "path": added_folder,
             "origin": target,
-            "refs": {"resource": location},
+            "refs": {
+                "resource": url_for(
+                    ".readGcodeFile",
+                    target=target,
+                    filename=added_folder,
+                    _external=True,
+                )
+            },
         }
 
         r = make_response(jsonify(folder=folder, done=True), 201)
-        r.headers["Location"] = location
+        r.headers["Location"] = folder["refs"]["resource"]
         return r
 
     else:
@@ -901,9 +787,6 @@ def gcodeFileCommand(filename, target):
                             description="Printer is not operational, cannot directly start printing",
                         )
                     start_print = True
-
-            if target != FileDestinations.SDCARD:
-                filename = fileManager.path_on_disk(target, filename)
 
             job = PrintJob(storage=target, path=filename, owner=user)
             printer.set_job(job, print_after_select=start_print)
@@ -1135,7 +1018,7 @@ def gcodeFileCommand(filename, target):
     elif command == "copy" or command == "move":
         with Permissions.FILES_UPLOAD.require(403):
             # Copy and move are only possible on local storage
-            if target not in [FileDestinations.LOCAL]:
+            if target not in fileManager.registered_storages:
                 abort(400, description=f"Unsupported target for {command}")
 
             if not _verifyFileExists(target, filename) and not _verifyFolderExists(
@@ -1182,6 +1065,11 @@ def gcodeFileCommand(filename, target):
 
             try:
                 if command == "copy":
+                    if (is_file and not fileManager.capabilities(target).copy_file) or (
+                        is_folder and not fileManager.capabilities(target).copy_folder
+                    ):
+                        abort(400, description="Storage does not support this operation")
+
                     # destination already there? error...
                     if _verifyFileExists(target, destination) or _verifyFolderExists(
                         target, destination
@@ -1207,6 +1095,15 @@ def gcodeFileCommand(filename, target):
                             or _verifyFolderExists(target, destination)
                         ) and sanitized_destination != filename:
                             abort(409, description="File or folder does already exist")
+
+                        if (
+                            is_file and not fileManager.capabilities(target).move_file
+                        ) or (
+                            is_folder and not fileManager.capabilities(target).move_folder
+                        ):
+                            abort(
+                                400, description="Storage does not support this operation"
+                            )
 
                         # deselect the file if it's currently selected
                         currentOrigin, currentFilename = _getCurrentFile()
@@ -1239,10 +1136,10 @@ def gcodeFileCommand(filename, target):
             result = {
                 "name": name,
                 "path": destination,
-                "origin": FileDestinations.LOCAL,
+                "origin": target,
                 "refs": {"resource": location},
             }
-            if is_file:
+            if is_file and fileManager.capabilities(target).read_file:
                 result["refs"]["download"] = (
                     url_for("index", _external=True)
                     + "downloads/files/"
@@ -1255,7 +1152,7 @@ def gcodeFileCommand(filename, target):
             r.headers["Location"] = location
             return r
 
-    elif command == "uploadSd":
+    elif command == "uploadSd":  # TODO: add copy/move between storages
         if target not in [FileDestinations.LOCAL]:
             abort(400, description=f"Unsupported target for {command}")
 
@@ -1326,10 +1223,13 @@ def deleteGcodeFile(filename, target):
     ):
         abort(404)
 
-    if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+    if target not in fileManager.registered_storages:
         abort(404)
 
     if _verifyFileExists(target, filename):
+        if not fileManager.capabilities(target).remove_folder:
+            abort(400, description=f"Files on {target} cannot be deleted")
+
         if _isBusy(target, filename):
             abort(409, description="Trying to delete a file that is currently in use")
 
@@ -1343,15 +1243,15 @@ def deleteGcodeFile(filename, target):
             printer.set_job(None)
 
         # delete it
-        if target == FileDestinations.SDCARD:
-            printer.delete_sd_file(filename, tags={"source:api", "api:files.sd"})
-        else:
-            try:
-                fileManager.remove_file(target, filename)
-            except (OSError, StorageError) as e:
-                _abortWithException(e)
+        try:
+            fileManager.remove_file(target, filename)
+        except (OSError, StorageError) as e:
+            _abortWithException(e)
 
     elif _verifyFolderExists(target, filename):
+        if not fileManager.capabilities(target).remove_folder:
+            abort(400, description=f"Folders on {target} cannot be deleted")
+
         if _isBusy(target, filename):
             abort(
                 409,
@@ -1395,6 +1295,8 @@ def _abortWithException(error):
             abort(400, description="Source and destination are the same folder")
         elif error.code == StorageError.NOT_EMPTY:
             abort(409, description="Folder is not empty")
+        elif error.code == StorageError.UNSUPPORTED:
+            abort(400, description="Operation is unsupported on this storage type")
         elif error.code == StorageError.UNKNOWN:
             abort(500, description=str(error.cause).split(":")[0])
         else:

@@ -13,6 +13,7 @@ from os import scandir, walk
 import pylru
 
 import octoprint.filemanager
+from octoprint.filemanager.util import AbstractFileWrapper
 from octoprint.util import (
     atomic_write,
     is_hidden_path,
@@ -23,7 +24,7 @@ from octoprint.util import (
 )
 from octoprint.util.files import sanitize_filename
 
-from . import StorageError, StorageInterface
+from . import StorageCapabilities, StorageError, StorageInterface
 
 
 class LocalFileStorage(StorageInterface):
@@ -35,6 +36,19 @@ class LocalFileStorage(StorageInterface):
 
     This storage type implements :func:`path_on_disk`.
     """
+
+    capabilities = StorageCapabilities(
+        write_file=True,
+        read_file=True,
+        remove_file=True,
+        copy_file=True,
+        move_file=True,
+        add_folder=True,
+        remove_folder=True,
+        copy_folder=True,
+        move_folder=True,
+        metadata=True,
+    )
 
     def __init__(self, basefolder, create=False, really_universal=False):
         """
@@ -480,13 +494,12 @@ class LocalFileStorage(StorageInterface):
 
     def add_file(
         self,
-        path,
-        file_object,
-        printer_profile=None,
-        links=None,
+        path: str,
+        file_obj: AbstractFileWrapper,
         allow_overwrite=False,
         display=None,
         user=None,
+        progress_callback=None,
     ):
         display_path, display_name = self.canonicalize(path)
         path = self.sanitize_path(display_path)
@@ -519,7 +532,7 @@ class LocalFileStorage(StorageInterface):
             os.makedirs(path)
 
         # save the file
-        file_object.save(file_path)
+        file_obj.save(file_path)
 
         # save the file's hash to the metadata of the folder
         file_hash = self._create_hash(file_path)
@@ -542,24 +555,29 @@ class LocalFileStorage(StorageInterface):
         if metadata_dirty:
             self._update_metadata_entry(path, name, metadata)
 
-        # process any links that were also provided for adding to the file
-        if not links:
-            links = []
-
-        if printer_profile is not None:
-            links.append(
-                (
-                    "printerprofile",
-                    {"id": printer_profile["id"], "name": printer_profile["name"]},
-                )
-            )
-
-        self._add_links(name, path, links)
-
         # touch the file to set last access and modification time to now
         os.utime(file_path, None)
 
+        if progress_callback:
+            progress_callback(done=True)
         return self.path_in_storage((path, name))
+
+    def read_file(self, path):
+        path, name = self.sanitize(path)
+        file_path = os.path.join(path, name)
+
+        if not os.path.exists(file_path):
+            raise StorageError(
+                f"{name} in {path} does not exist", code=StorageError.DOES_NOT_EXIST
+            )
+
+        if not os.path.isfile(file_path):
+            raise StorageError(
+                f"{name} in {path} is not a file",
+                code=StorageError.INVALID_FILE,
+            )
+
+        return open(file_path, mode="rb")
 
     def remove_file(self, path):
         path, name = self.sanitize(path)
