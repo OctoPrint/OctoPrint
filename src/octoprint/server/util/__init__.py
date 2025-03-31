@@ -208,8 +208,9 @@ def get_user_for_apikey(apikey: str) -> "Optional[octoprint.access.users.User]":
                         break
                 except Exception:
                     logging.getLogger(__name__).exception(
-                        "Error running api key validator "
-                        "for plugin {} and key {}".format(name, apikey),
+                        "Error running api key validator for plugin {} and key {}".format(
+                            name, apikey
+                        ),
                         extra={"plugin": name},
                     )
 
@@ -505,14 +506,16 @@ def validate_local_redirect(url, allowed_paths):
     Returns:
         bool: Whether the `url` passed validation or not.
     """
-    from urllib.parse import urlparse
+    from urllib.parse import urljoin, urlparse
 
     parsed = urlparse(url)
+    path = urljoin("/", parsed.path)
+
     return (
         parsed.scheme == ""
         and parsed.netloc == ""
         and any(
-            (parsed.path.startswith(x[:-1]) if x.endswith("*") else parsed.path == x)
+            (path.startswith(x[:-1]) if x.endswith("*") else path == x)
             for x in allowed_paths
         )
     )
