@@ -49,7 +49,8 @@ body:
         step by step, and what happened that you did not expect.
 
         Provide a clear and concise description of what the problem is and include as many
-        details as possible.
+        details as possible. Remember that we cannot see your screen, we cannot access your instance,
+        we need your help to be able to understand what's going wrong in the first place.
       placeholder: |
         1. ...
         2. ...
@@ -79,7 +80,7 @@ body:
         too long" or "I have a long print running right now" are **not** a reason to skip testing in safe mode, neither is "I do not know how to
         enable it" as you can find info on that [here](https://docs.octoprint.org/en/master/features/safemode.html).
 
-        If you really *cannot* test in safe mode at all, leave a short explanation as to why. If you can but just not right now, then wait with reporting until you can!
+        If you really *cannot* test in safe mode at all, leave a short explanation as to why. If you can but just not right now, then please wait with reporting until you can!
   - type: markdown
     attributes:
       value: |
@@ -101,11 +102,11 @@ body:
       required: true
   - type: input
     attributes:
-      label: Printer model & used firmware incl. version
+      label: Browser and version of browser, operating system running browser
       description: If applicable, always include if unsure
   - type: input
     attributes:
-      label: Browser and version of browser, operating system running browser
+      label: Printer model & used firmware incl. version
       description: If applicable, always include if unsure
   - type: markdown
     attributes:
@@ -125,7 +126,7 @@ body:
           * GCODE files with which to reproduce, if you are reporting an issue with
             GCODE file analysis or printing behaviour.
 
-        Please be aware that unless at least Systeminfo Bundle is included, your bug report
+        Please be aware that unless at least a Systeminfo Bundle is included, your bug report
         will not be processed and closed after a while.
   - type: checkboxes
     attributes:
