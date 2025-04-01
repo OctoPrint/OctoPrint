@@ -21,6 +21,7 @@ body:
       label: Additional information
   - type: checkboxes
     attributes:
+      label: Verification
       options:
         - label: I'm a maintainer or collaborator of OctoPrint and allowed to use this issue type
           required: true

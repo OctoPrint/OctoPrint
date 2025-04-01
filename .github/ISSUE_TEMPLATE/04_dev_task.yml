@@ -4,10 +4,13 @@ title: "[Task] "
 labels: ["task"]
 body:
   - type: textarea
+    attributes:
+      label: "The task"
     validations:
       required: true
   - type: checkboxes
     attributes:
+      label: Verification
       options:
         - label: I'm a maintainer or collaborator of OctoPrint and allowed to use this issue type
           required: true
