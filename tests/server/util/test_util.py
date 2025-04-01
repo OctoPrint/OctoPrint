@@ -34,6 +34,13 @@ PREFIXED_ALLOWED_PATHS = ["/octoprint" + x for x in DEFAULT_ALLOWED_PATHS]
         (" /\\/\\example.com", DEFAULT_ALLOWED_PATHS, False),
         ("\\/\\/example.com", DEFAULT_ALLOWED_PATHS, False),
         (" \\/\\/example.com", DEFAULT_ALLOWED_PATHS, False),
+        # path traversal URLs
+        ("/../evil", DEFAULT_ALLOWED_PATHS, False),
+        ("/recovery/../evil", DEFAULT_ALLOWED_PATHS, False),
+        ("/plugin/appkeys/auth/../evil", DEFAULT_ALLOWED_PATHS, False),
+        ("/octoprint/../evil", PREFIXED_ALLOWED_PATHS, False),
+        ("/octoprint/recovery/../evil", PREFIXED_ALLOWED_PATHS, False),
+        ("/octoprint/plugin/appkeys/auth/../evil", PREFIXED_ALLOWED_PATHS, False),
         # other stuff
         ("javascript:alert(document.cookie)", DEFAULT_ALLOWED_PATHS, False),
     ],
