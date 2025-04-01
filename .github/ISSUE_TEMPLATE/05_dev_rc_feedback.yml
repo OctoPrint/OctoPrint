@@ -6,11 +6,8 @@ body:
   - type: textarea
     attributes:
       label: "Feedback"
-      value: >-
-        Please provide *general* feedback on your experience with the VERSION Release Candidate here. An "All is working fine"
-        is valuable feedback as well, because it tells me that people in fact are testing the RC and just not finding any problems.
-        If you run into any bugs however, [**please open a full bug report**](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report)
-        and link it here! Thanks :)
+      value: |
+        Please provide *general* feedback on your experience with the VERSION Release Candidate here. An "All is working fine" is valuable feedback as well, because it tells me that people in fact are testing the RC and just not finding any problems. If you run into any bugs however, [**please open a full bug report**](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report) and link it here! Thanks :)
 
         #### Things to take a closer look at
 
