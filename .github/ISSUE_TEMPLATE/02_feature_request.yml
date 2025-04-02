@@ -1,6 +1,6 @@
 name: ✨ Request a feature
 description: Request a new feature to implement in OctoPrint
-title: "[Request]"
+title: "[Request] "
 body:
   - type: markdown
     attributes:
@@ -16,17 +16,17 @@ body:
 
   - type: textarea
     attributes:
-      label: Is your feature request related to a problem? Please describe.
-      description: A clear and concise description of what the problem is. Eg, "I'm always frustrated when [...]".
+      label: The problem
+      description: Please provide a clear and concise description of what kind of problem your requested feature is supposed to solve. Eg, "I'm always frustrated when [...]".
   - type: textarea
     attributes:
-      label: Describe the solution you'd like
-      description: A clear and concise description of what you want to happen. Explain why it needs to be included in OctoPrint's core and can't become a plugin.
+      label: Proposed solution
+      description: Please provide a clear and concise description of what you want to happen. Explain why it needs to be included in OctoPrint's core and can't become a plugin.
     validations:
       required: true
   - type: textarea
     attributes:
-      label: Describe alternatives you've considered
+      label: Alternative solutions
       description: A clear and concise description of any alternative solutions or features you've considered.
   - type: textarea
     attributes:
