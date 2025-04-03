@@ -53,13 +53,17 @@ class UserManager(GroupChangeListener):
         self._group_manager = group_manager
         self._group_manager.register_listener(self)
 
-        self._logger = logging.getLogger(__name__)
-        self._session_users_by_session = {}
-        self._sessionids_by_userid = {}
-
         if settings is None:
             settings = s()
         self._settings = settings
+
+        self._logger = logging.getLogger(__name__)
+
+        self._session_users_by_session = {}
+        self._sessionids_by_userid = {}
+        self._session_timeout = (
+            self._settings.getInt(["accessControl", "sessionStaleAfter"]) * 60
+        )
 
         self._login_status_listeners = []
 
@@ -156,7 +160,7 @@ class UserManager(GroupChangeListener):
         for session, user in list(self._session_users_by_session.items()):
             if not isinstance(user, SessionUser):
                 continue
-            if user.touched + (15 * 60) < time.monotonic():
+            if user.touched + self._session_timeout < time.monotonic():
                 self._logger.info(
                     f"Cleaning up user session {session} for user {user.get_id()}"
                 )
