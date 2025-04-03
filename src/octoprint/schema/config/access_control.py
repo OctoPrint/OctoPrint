@@ -65,3 +65,6 @@ class AccessControlConfig(BaseModel):
 
     defaultReauthenticationTimeout: int = 5
     """Default timeout after which to require reauthentication by a user for dangerous changes, in minutes. Defaults to 5 minutes. Set to 0 to disable reauthentication requirements (SECURITY IMPACT!)."""
+
+    sessionStaleAfter: int = 15
+    """Default time after which to consider a session stale due to no activity and to remove it."""
