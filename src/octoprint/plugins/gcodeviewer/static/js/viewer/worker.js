@@ -447,6 +447,11 @@ var doParse = async function () {
     var zLiftLayer = undefined;
     var zLiftMoves = [];
 
+    var scarfJoint = false;
+    var scarfJointMoves = [];
+    var scarfJointPossibleLayer = undefined;
+    var scarfJointActualLayer = undefined;
+
     var dcExtrude = false;
     var assumeNonDC = false;
 
@@ -727,7 +732,7 @@ var doParse = async function () {
         }
 
         if (typeof z !== "undefined" && z !== prevZ) {
-            if (!extrude && !zLift) {
+            if (!scarfJoint && !extrude && !zLift) {
                 // possible z-lift
                 zLift = true;
                 zLiftZ = maxLiftZ = prevZ;
@@ -738,8 +743,65 @@ var doParse = async function () {
                 maxLiftZ = z;
             }
 
-            layer = model.length;
-            prevZ = z;
+            // we have a Z increase while extruding
+            // this is most likely a scarf joint seam
+            if (extrude && z > prevZ) {
+                if (!scarfJoint) {
+                    console.log(
+                        "Starting new scarfjoint: prevZ " +
+                            prevZ +
+                            " layer " +
+                            layer +
+                            " zLift " +
+                            zLift
+                    );
+                    // so we think we detected a zLift but it was actually a
+                    // scarfJoint.
+                    if (zLift) {
+                        zLift = false;
+                        scarfJointMoves = zLiftMoves;
+                        zLiftMoves = [];
+                        zLiftZ = undefined;
+                        maxLiftZ = undefined;
+                        zLiftLayer = undefined;
+                    }
+                    scarfJoint = true;
+                    scarfJointStartZ = prevZ;
+                    if (scarfJointPossibleLayer >= model.length)
+                        scarfJointPossibleLayer = undefined;
+                    scarfJointActualLayer =
+                        scarfJointPossibleLayer !== undefined
+                            ? scarfJointPossibleLayer
+                            : layer;
+                    scarfJointPossibleLayer = undefined;
+                    console.log(
+                        "scarfJointActualLayer " +
+                            scarfJointActualLayer +
+                            " model.length " +
+                            model.length
+                    );
+                    console.log(" x " + x + " y " + y);
+                }
+                prevZ = z;
+            }
+
+            // if there is a change in Z but not
+            // a scarfJoint, start a new layer.
+            if (!scarfJoint) {
+                if (z < prevZ) {
+                    console.log(
+                        "Setting possible scarfjoint layer " + z + " layer " + layer
+                    );
+                    scarfJointPossibleLayer = layer;
+                }
+                console.log("Create new layer");
+                layer = model.length;
+                prevZ = z;
+            }
+        } else {
+            if (extrude && scarfJoint) {
+                scarfJoint = false;
+            }
         }
 
         if (extrude) {
@@ -784,6 +846,11 @@ var doParse = async function () {
                     command: command,
                     layer: layer
                 });
+            } else if (scarfJoint) {
+                scarfJointMoves.push({
+                    command: command,
+                    layer: layer
+                });
             } else {
                 if (zLiftMoves.length > 0) {
                     // there's something to be checked in the Z-lift cache
@@ -795,7 +862,7 @@ var doParse = async function () {
                                 );
                             // move command from move layer...
                             model[zLiftMove.layer].splice(
-                                model[layer].indexOf(zLiftMove.command),
+                                model[zLiftMove.layer].indexOf(zLiftMove.command),
                                 1
                             );
                             if (model[zLiftLayer] instanceof Uint8Array)
@@ -811,6 +878,14 @@ var doParse = async function () {
                             spliceFrom = l;
                         }
                         if (spliceFrom !== undefined) {
+                            console.log(
+                                "zlift layers " +
+                                    model.length +
+                                    " remove layer " +
+                                    spliceFrom +
+                                    " number " +
+                                    (model.length - spliceFrom)
+                            );
                             model.splice(spliceFrom, model.length - spliceFrom);
                         }
 
@@ -830,6 +905,85 @@ var doParse = async function () {
                     zLiftZ = undefined;
                     maxLiftZ = undefined;
                     zLiftLayer = undefined;
+                }
+
+                // so we have a scarf joint. we need to move them to the
+                // correcdt layer and we need to correct the z and prevZ
+                // fields.
+                if (scarfJointMoves.length > 0) {
+                    if (model[scarfJointActualLayer] === undefined) {
+                        model[model.length] = [];
+                        scarfJointActualLayer = model.length - 1;
+                    }
+                    console.log(
+                        "scarfjoint layer " +
+                            scarfJointActualLayer +
+                            " layer length " +
+                            model[scarfJointActualLayer].length +
+                            " prevZ " +
+                            prevZ +
+                            " scarfJointStartZ " +
+                            scarfJointStartZ +
+                            " scarfcommands " +
+                            scarfJointMoves.length
+                    );
+                    scarfJointMoves.forEach(function (scarfJointMove) {
+                        if (scarfJointActualLayer !== scarfJointMove.layer) {
+                            if (model[scarfJointMove.layer] instanceof Uint8Array)
+                                model[scarfJointMove.layer] = decompress(
+                                    model[scarfJointMove.layer]
+                                );
+                            // move command from joint layer...
+                            model[scarfJointMove.layer].splice(
+                                model[scarfJointMove.layer].indexOf(
+                                    scarfJointMove.command
+                                ),
+                                1
+                            );
+                            if (model[scarfJointActualLayer] instanceof Uint8Array)
+                                model[scarfJointActualLayer] = decompress(
+                                    model[scarfJointActualLayer]
+                                );
+                            // ... to actual layer
+                            model[scarfJointActualLayer].push(scarfJointMove.command);
+                        }
+
+                        // correct z and prevZ of the scarf commands.
+                        scarfJointMove.command.z = prevZ;
+                        scarfJointMove.command.prevZ = scarfJointStartZ;
+                        scarfJointStartZ = prevZ;
+                    });
+                    console.log(
+                        " move layer " +
+                            scarfJointMoves[0].layer +
+                            " length " +
+                            model[scarfJointMoves[0].layer].length
+                    );
+                    model[scarfJointMoves[0].layer].forEach(function (g) {
+                        console.log("X " + g.x + " y " + g.y + " z " + g.z);
+                    });
+
+                    // clean up empty layers at the end of the model
+                    var spliceFrom = undefined;
+                    for (var l = model.length - 1; l > 0; l--) {
+                        if (model[l].length > 0) break;
+                        spliceFrom = l;
+                    }
+                    if (spliceFrom !== undefined) {
+                        console.log(
+                            "remove layer " +
+                                spliceFrom +
+                                " number " +
+                                (model.length - spliceFrom)
+                        );
+                        model.splice(spliceFrom, model.length - spliceFrom);
+                    }
+
+                    layer = scarfJointActualLayer;
+
+                    scarfJointMoves = [];
+                    scarfJointStartZ = undefined;
+                    scarfJointActualLayer = undefined;
                 }
 
                 // have we progressed a layer?
