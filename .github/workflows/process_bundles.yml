@@ -1,0 +1,18 @@
+name: "Process systeminfo bundles"
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  process-bundles:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: OctoPrint/actions/process-systeminfo-bundles@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repo: ${{ github.repository }}
+          comment: ${{ github.event.comment.id }}
+          issue: ${{ github.event.issue.number }}
+          body: ${{ github.event_name == 'issue_comment' && github.event.comment.body || github.event.issue.body }}
