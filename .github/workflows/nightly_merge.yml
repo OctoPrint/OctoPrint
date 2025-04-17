@@ -41,11 +41,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🔀 Merge maintenance into devel
-        uses: robotology/gh-action-nightly-merge@v1.5.2
-        with:
-          stable_branch: "maintenance"
-          development_branch: "devel"
-          allow_ff: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # devel will be removed soon in favor of a branching strategy better fitting the project
+      #- name: 🔀 Merge maintenance into devel
+      #  uses: robotology/gh-action-nightly-merge@v1.5.2
+      #  with:
+      #    stable_branch: "maintenance"
+      #    development_branch: "devel"
+      #    allow_ff: false
+      #  env:
+      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
