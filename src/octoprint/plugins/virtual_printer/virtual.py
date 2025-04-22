@@ -618,7 +618,7 @@ class VirtualPrinter:
             return
 
         matchP = re.search(r"P([0-9]+)", data)
-        power = matchS.group(1) / 255.0
+        power = float(matchS.group(1)) / 255.0
         fan = int(matchP.group(1)) if matchP else 0
         if fan == 0:
             self.fanPower = power
