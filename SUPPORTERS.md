@@ -27,6 +27,7 @@ thanks to everyone who contributed!
   * David L Weiner
   * David OMeara
   * David Pitman
+  * DBDWJSasquatch_Printing_78
   * DeltaMaker 3D Printers
   * Dennis Breining
   * Dima Gorbenko
@@ -34,7 +35,6 @@ thanks to everyone who contributed!
   * Erik Ableson
   * Ernesto Martinez
   * Franziska Kunsmann
-  * Happy House
   * Hog Duske
   * James Fryman
   * James Nangano
@@ -46,12 +46,11 @@ thanks to everyone who contributed!
   * Kazuhiro Ogura
   * Keenan Newton
   * Kenneth Jiang
-  * Khaled Allen
   * Kureemii
   * Kurt Wubbels
   * Lachlan Bell
   * Lefteris Lertas
-  * John Olhoft
+  * LulzBot
   * Makespace Madrid
   * Marco van Dijk
   * Mark Greenwald
@@ -78,4 +77,4 @@ thanks to everyone who contributed!
   * Timothy Efinger
   * Ulrich Kempken
 
-and 2775 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 2722 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!

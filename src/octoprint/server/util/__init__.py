@@ -418,7 +418,7 @@ def require_fresh_login_with(permissions=None, user_id=None):
         "user_id": current_user.get_id(),
     }
     if (
-        _flask.request.headers.get("X-Preemptive-Recording", "no") == "no"
+        not _flask.g.get("preemptive_recording_active", False)
         and userManager.has_been_customized()
     ):
         if not credentials_checked_recently():
@@ -442,7 +442,7 @@ def require_login_with(permissions=None, user_id=None):
 
     login_kwargs = {"redirect": _flask.request.script_root + _flask.request.full_path}
     if (
-        _flask.request.headers.get("X-Preemptive-Recording", "no") == "no"
+        not _flask.g.get("preemptive_recording_active", False)
         and userManager.has_been_customized()
     ):
         requires_login = False
@@ -477,7 +477,7 @@ def require_login(*permissions):
         return None
 
     if (
-        _flask.request.headers.get("X-Preemptive-Recording", "no") == "no"
+        not _flask.g.get("preemptive_recording_active", False)
         and userManager.has_been_customized()
     ):
         if not has_permissions(*permissions):
