@@ -648,7 +648,7 @@ class Server:
         from flask_limiter import Limiter
         from flask_limiter.util import get_remote_address
 
-        app.config["RATELIMIT_STRATEGY"] = "fixed-window-elastic-expiry"
+        app.config["RATELIMIT_STRATEGY"] = "fixed-window"
 
         limiter = Limiter(
             key_func=get_remote_address,
