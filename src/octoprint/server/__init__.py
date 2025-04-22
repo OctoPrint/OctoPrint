@@ -648,7 +648,7 @@ class Server:
         from flask_limiter import Limiter
         from flask_limiter.util import get_remote_address
 
-        app.config["RATELIMIT_STRATEGY"] = "fixed-window-elastic-expiry"
+        app.config["RATELIMIT_STRATEGY"] = "fixed-window"
 
         limiter = Limiter(
             key_func=get_remote_address,
@@ -3002,13 +3002,12 @@ class Server:
                                 )
                             )
 
-                        headers = kwargs.get("headers", {})
-                        headers["X-Force-View"] = plugin if plugin else "_default"
-                        headers["X-Preemptive-Recording"] = "yes"
-                        kwargs["headers"] = headers
-
                         builder = EnvironBuilder(**kwargs)
-                        app(builder.get_environ(), lambda *a, **kw: None)
+                        environ = builder.get_environ()
+                        with app.request_context(environ):
+                            g.preemptive_recording_active = True
+                            g.preemptive_recording_view = plugin if plugin else "_default"
+                            app.full_dispatch_request()
 
                         logger.info(f"... done in {time.monotonic() - start:.2f}s")
                     except Exception:
