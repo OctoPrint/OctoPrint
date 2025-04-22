@@ -48,7 +48,7 @@ def patched_ifaddresses_netmask(addr):
         ("::ffff:192.168.1.1", [], True),
         ("::ffff:8.8.8.8", [], False),
         ("11.1.2.3", [], False),
-        ("11.1.2.3", ["11/8"], True),
+        ("11.1.2.3", ["11.0.0.0/8"], True),
         ("12.1.1.123", [], True),
         ("2a01:4f8:1c0c:6958::1:23", [], True),
         ("fe80::89f3:31bb:ced0:2093%wlan0", [], True),
@@ -210,3 +210,32 @@ def test_get_http_client_ip(remote_addr, header, trusted_proxies, expected):
         octoprint.util.net.get_http_client_ip(remote_addr, header, trusted_proxies)
         == expected
     )
+
+
+@pytest.mark.parametrize(
+    "proxies,add_localhost,expected",
+    [
+        (["10.0.0.1"], True, ["127.0.0.0/8", "::1", "10.0.0.1"]),
+        ([], True, ["127.0.0.0/8", "::1"]),
+        (None, True, ["127.0.0.0/8", "::1"]),
+        (["10.0.0.1"], False, ["10.0.0.1"]),
+        (None, False, []),
+    ],
+)
+def test_usable_trusted_proxies(proxies, add_localhost, expected):
+    assert octoprint.util.net.usable_trusted_proxies(proxies, add_localhost) == expected
+
+
+def test_usable_trusted_proxies_from_settings():
+    settings = mock.Mock()
+    settings.get.return_value = ["10.0.0.1"]
+    settings.getBoolean.return_value = True
+
+    with mock.patch.object(octoprint.util.net, "usable_trusted_proxies") as patched:
+        octoprint.util.net.usable_trusted_proxies_from_settings(settings)
+
+        settings.get.assert_called_once_with(["server", "reverseProxy", "trustedProxies"])
+        settings.getBoolean.assert_called_once_with(
+            ["server", "reverseProxy", "trustLocalhostProxies"]
+        )
+        patched.assert_called_once_with(["10.0.0.1"], add_localhost=True)

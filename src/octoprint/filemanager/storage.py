@@ -180,7 +180,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def add_folder(self, path, ignore_existing=True, display=None):
+    def add_folder(self, path, ignore_existing=True, display=None, user=None):
         """
         Adds a folder as ``path``
 
@@ -189,6 +189,7 @@ class StorageInterface:
         :param string path:          the path of the new folder
         :param bool ignore_existing: if set to True, no error will be raised if the folder to be added already exists
         :param str display:          display name of the folder
+        :param str user:             user who created the folder, if known
         :return: the sanitized name of the new folder to be used for future references to the folder
         """
         raise NotImplementedError()
@@ -233,6 +234,7 @@ class StorageInterface:
         links=None,
         allow_overwrite=False,
         display=None,
+        user=None,
     ):
         """
         Adds the file ``file_object`` as ``path``
@@ -245,6 +247,7 @@ class StorageInterface:
         :param bool allow_overwrite:   if set to True no error will be raised if the file already exists and the existing file
                                        and its metadata will just be silently overwritten
         :param str display:            display name of the file
+        :param str user:               user who added the file, if known
         :return: the sanitized name of the file to be used for future references to it
         """
         raise NotImplementedError()
@@ -727,7 +730,7 @@ class LocalFileStorage(StorageInterface):
             result = apply_filter(result, filter)
         return result
 
-    def add_folder(self, path, ignore_existing=True, display=None):
+    def add_folder(self, path, ignore_existing=True, display=None, user=None):
         display_path, display_name = self.canonicalize(path)
         path = self.sanitize_path(display_path)
         name = self.sanitize_name(display_name)
@@ -745,9 +748,18 @@ class LocalFileStorage(StorageInterface):
         else:
             os.mkdir(folder_path)
 
+        metadata = self._get_metadata_entry(path, name, default={})
+        metadata_dirty = False
+
         if display_name != name:
-            metadata = self._get_metadata_entry(path, name, default={})
             metadata["display"] = display_name
+            metadata_dirty = True
+
+        if user:
+            metadata["user"] = user
+            metadata_dirty = True
+
+        if metadata_dirty:
             self._update_metadata_entry(path, name, metadata)
 
         return self.path_in_storage((path, name))
@@ -884,7 +896,7 @@ class LocalFileStorage(StorageInterface):
                     destination_data["path"],
                 ),
                 cause=e,
-            )
+            ) from e
 
         self._set_display_metadata(destination_data, source_data=source_data)
 
@@ -912,7 +924,7 @@ class LocalFileStorage(StorageInterface):
                     destination_data["path"],
                 ),
                 cause=e,
-            )
+            ) from e
 
         self._set_display_metadata(destination_data, source_data=source_data)
         self._remove_metadata_entry(source_data["path"], source_data["name"])
@@ -928,6 +940,7 @@ class LocalFileStorage(StorageInterface):
         links=None,
         allow_overwrite=False,
         display=None,
+        user=None,
     ):
         display_path, display_name = self.canonicalize(path)
         path = self.sanitize_path(display_path)
@@ -976,6 +989,10 @@ class LocalFileStorage(StorageInterface):
             metadata["display"] = display_name
             metadata_dirty = True
 
+        if user and "user" not in metadata:
+            metadata["user"] = user
+            metadata_dirty = True
+
         if metadata_dirty:
             self._update_metadata_entry(path, name, metadata)
 
@@ -1013,7 +1030,7 @@ class LocalFileStorage(StorageInterface):
         try:
             os.remove(file_path)
         except Exception as e:
-            raise StorageError(f"Could not delete {name} in {path}", cause=e)
+            raise StorageError(f"Could not delete {name} in {path}", cause=e) from e
 
         self._remove_metadata_entry(path, name)
 
@@ -1040,7 +1057,7 @@ class LocalFileStorage(StorageInterface):
                     destination_data["path"],
                 ),
                 cause=e,
-            )
+            ) from e
 
         self._copy_metadata_entry(
             source_data["path"],
@@ -1080,7 +1097,7 @@ class LocalFileStorage(StorageInterface):
                     destination_data["path"],
                 ),
                 cause=e,
-            )
+            ) from e
 
         self._copy_metadata_entry(
             source_data["path"],
@@ -1095,7 +1112,7 @@ class LocalFileStorage(StorageInterface):
 
     def has_analysis(self, path):
         metadata = self.get_metadata(path)
-        return "analysis" in metadata
+        return metadata and "analysis" in metadata
 
     def get_metadata(self, path):
         path, name = self.sanitize(path)

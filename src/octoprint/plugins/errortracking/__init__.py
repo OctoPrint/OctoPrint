@@ -7,7 +7,6 @@ import logging
 import requests.exceptions
 import serial
 import tornado.websocket
-from flask import jsonify
 from flask_babel import gettext
 
 import octoprint.plugin
@@ -18,10 +17,10 @@ from octoprint.util.version import (
 )
 
 SENTRY_URL_SERVER = (
-    "https://29b1e6277b6d466f2a54ce5ce294d53a@o118517.ingest.us.sentry.io/1373987"
+    "https://fa574f20076d26e22b68be95ea0a9880@o118517.ingest.us.sentry.io/1373987"
 )
 SENTRY_URL_COREUI = (
-    "https://f3ff884d1875cd4f697a7099041d29c4@o118517.ingest.us.sentry.io/1374096"
+    "https://f14b867b12c5f47f2316de8232be0bc0@o118517.ingest.us.sentry.io/1374096"
 )
 
 SETTINGS_DEFAULTS = {
@@ -55,7 +54,7 @@ IGNORED_EXCEPTIONS = [
         Exception,
         lambda exc, logger, plugin, cb: logger.startswith("octoprint.plugins.astroprint")
         or plugin == "astroprint"
-        or cb.startswith("octoprint_astroprint."),
+        or (cb and cb.startswith("octoprint_astroprint.")),
     ),
 ]
 
@@ -75,7 +74,6 @@ class ErrorTrackingPlugin(
     octoprint.plugin.SettingsPlugin,
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
-    octoprint.plugin.SimpleApiPlugin,
 ):
     def get_template_configs(self):
         return [
@@ -119,9 +117,6 @@ class ErrorTrackingPlugin(
 
         if old_enabled != enabled:
             _enable_errortracking()
-
-    def on_api_get(self, request):
-        return jsonify(**self.get_template_vars())
 
 
 _enabled = False
@@ -200,11 +195,8 @@ def _enable_errortracking():
 
             if event.get("exception") and event["exception"].get("values"):
                 handled = not any(
-                    map(
-                        lambda x: x.get("mechanism")
-                        and not x["mechanism"].get("handled", True),
-                        event["exception"]["values"],
-                    )
+                    x.get("mechanism") and not x["mechanism"].get("handled", True)
+                    for x in event["exception"]["values"]
                 )
 
             if handled:
@@ -232,8 +224,8 @@ def _enable_errortracking():
 
         sentry_sdk.init(url_server, release=version, before_send=_before_send)
 
-        with sentry_sdk.configure_scope() as scope:
-            scope.user = {"id": unique_id}
+        scope = sentry_sdk.get_global_scope()
+        scope.user = {"id": unique_id}
 
         logging.getLogger("octoprint.plugins.errortracking").info(
             "Initialized error tracking"

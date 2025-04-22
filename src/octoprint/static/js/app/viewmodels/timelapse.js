@@ -14,6 +14,7 @@ $(function () {
         self.defaultInterval = 10;
         self.defaultRetractionZHop = 0;
         self.defaultMinDelay = 5.0;
+        self.defaultRenderAfterPrint = "always";
 
         self.timelapseType = ko.observable(undefined);
         self.timelapseTimedInterval = ko.observable(self.defaultInterval);
@@ -21,6 +22,7 @@ $(function () {
         self.timelapseFps = ko.observable(self.defaultFps);
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
+        self.timelapseRenderAfterPrint = ko.observable(self.defaultRenderAfterPrint);
         self.snapshotWebcam = ko.pureComputed(function () {
             var snapshotWebcamName = self.settings.webcam_snapshotWebcam();
             return self.settings.webcam_webcams().find(function (w) {
@@ -138,6 +140,9 @@ $(function () {
             self.isDirty(true);
         });
         self.timelapseMinDelay.subscribe(function () {
+            self.isDirty(true);
+        });
+        self.timelapseRenderAfterPrint.subscribe(() => {
             self.isDirty(true);
         });
         self.persist.subscribe(function () {
@@ -275,6 +280,12 @@ $(function () {
                 self.timelapseFps(config.fps);
             } else {
                 self.timelapseFps(self.defaultFps);
+            }
+
+            if (config.renderAfterPrint !== undefined) {
+                self.timelapseRenderAfterPrint(config.renderAfterPrint);
+            } else {
+                self.timelapseRenderAfterPrint(self.defaultRenderAfterPrint);
             }
 
             self.persist(false);
@@ -598,6 +609,7 @@ $(function () {
                 type: self.timelapseType(),
                 postRoll: self.timelapsePostRoll(),
                 fps: self.timelapseFps(),
+                renderAfterPrint: self.timelapseRenderAfterPrint(),
                 save: self.persist()
             };
 
@@ -618,7 +630,7 @@ $(function () {
             self.fromConfig(self.serverConfig());
         };
 
-        self.displayTimelapsePopup = function (options) {
+        self.displayTimelapsePopup = function (options, tag) {
             if (self.timelapsePopup !== undefined) {
                 self.timelapsePopup.remove();
             }
@@ -634,6 +646,17 @@ $(function () {
             });
 
             self.timelapsePopup = new PNotify(options);
+            self.timelapsePopup._tag = tag;
+        };
+
+        self.hideTimelapsePopup = function (tag) {
+            if (
+                self.timelapsePopup !== undefined &&
+                (!tag || self.timelapsePopup._tag === tag)
+            ) {
+                self.timelapsePopup.remove();
+                self.timelapsePopup = undefined;
+            }
         };
 
         self.onDataUpdaterReconnect = function () {
@@ -678,11 +701,18 @@ $(function () {
                 }
             }
 
-            self.displayTimelapsePopup({
-                title: title,
-                text: text,
-                hide: false
-            });
+            self.displayTimelapsePopup(
+                {
+                    title: title,
+                    text: text,
+                    hide: false
+                },
+                "postroll"
+            );
+        };
+
+        self.onEventPostRollEnd = function (payload) {
+            self.hideTimelapsePopup("postroll");
         };
 
         // 3 consecutive capture fails trigger error popup
@@ -743,16 +773,19 @@ $(function () {
         };
 
         self.onEventMovieRendering = function (payload) {
-            self.displayTimelapsePopup({
-                title: gettext("Rendering timelapse"),
-                text: _.sprintf(
-                    gettext(
-                        "Now rendering timelapse %(movie_prefix)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."
+            self.displayTimelapsePopup(
+                {
+                    title: gettext("Rendering timelapse"),
+                    text: _.sprintf(
+                        gettext(
+                            "Now rendering timelapse %(movie_prefix)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."
+                        ),
+                        {movie_prefix: _.escape(payload.movie_prefix)}
                     ),
-                    {movie_prefix: _.escape(payload.movie_prefix)}
-                ),
-                hide: false
-            });
+                    hide: false
+                },
+                "rendering"
+            );
 
             self.renderProgress(0);
             self.renderTarget(payload.movie_prefix);
@@ -808,12 +841,15 @@ $(function () {
                     "</p>";
             }
 
-            self.displayTimelapsePopup({
-                title: title,
-                text: html,
-                type: "error",
-                hide: false
-            });
+            self.displayTimelapsePopup(
+                {
+                    title: title,
+                    text: html,
+                    type: "error",
+                    hide: false
+                },
+                "error"
+            );
 
             self.renderProgress(0);
             self.renderTarget(undefined);
@@ -821,21 +857,24 @@ $(function () {
         };
 
         self.onEventMovieDone = function (payload) {
-            self.displayTimelapsePopup({
-                title: gettext("Timelapse ready"),
-                text: _.sprintf(
-                    gettext("New timelapse %(movie_prefix)s is done rendering."),
-                    {movie_prefix: _.escape(payload.movie_prefix)}
-                ),
-                type: "success",
-                callbacks: {
-                    before_close: function (notice) {
-                        if (self.timelapsePopup === notice) {
-                            self.timelapsePopup = undefined;
+            self.displayTimelapsePopup(
+                {
+                    title: gettext("Timelapse ready"),
+                    text: _.sprintf(
+                        gettext("New timelapse %(movie_prefix)s is done rendering."),
+                        {movie_prefix: _.escape(payload.movie_prefix)}
+                    ),
+                    type: "success",
+                    callbacks: {
+                        before_close: function (notice) {
+                            if (self.timelapsePopup === notice) {
+                                self.timelapsePopup = undefined;
+                            }
                         }
                     }
-                }
-            });
+                },
+                "ready"
+            );
             self.requestData();
 
             self.renderProgress(0);

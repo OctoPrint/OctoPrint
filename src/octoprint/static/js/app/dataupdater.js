@@ -303,7 +303,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                                 addClass: "btn-primary",
                                 click: function () {
                                     self._reloadPopup.remove();
-                                    location.reload(true);
+                                    OctoPrint.coreui.reload(true);
                                 }
                             }
                         ]
@@ -522,7 +522,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                         "View model " +
                             viewModel.name +
                             " is using legacy event handler " +
-                            legacyEventHandlers[type] +
+                            type +
                             ", new handler is called " +
                             legacyEventHandlers[type]
                     );

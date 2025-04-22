@@ -620,7 +620,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
             # directly use data from buffer
             body = self._buffer
 
-        self.request.headers["Content-Length"] = len(body)
+        self.request.headers["Content-Length"] = str(len(body))
 
         try:
             # call the configured fallback with request and body to use
@@ -1012,12 +1012,9 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 
         import re
 
-        self._max_body_sizes = list(
-            map(
-                lambda x: (x[0], re.compile(x[1]), x[2]),
-                self.params.max_body_sizes or [],
-            )
-        )
+        self._max_body_sizes = [
+            (x[0], re.compile(x[1]), x[2]) for x in self.params.max_body_sizes or []
+        ]
         self._default_max_body_size = (
             self.params.default_max_body_size or self.stream.max_buffer_size
         )
@@ -1057,7 +1054,7 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
                 raise tornado.httputil.HTTPInputError(
                     "Only integer Content-Length is allowed: %s"
                     % headers["Content-Length"]
-                )
+                ) from None
 
             max_content_length = self._get_max_content_length(
                 self._request_start_line.method, self._request_start_line.path
@@ -1115,7 +1112,7 @@ class CustomHTTP1ConnectionParameters(tornado.http1connection.HTTP1ConnectionPar
     """
 
     def __init__(self, *args, **kwargs):
-        max_body_sizes = kwargs.pop("max_body_sizes", list())
+        max_body_sizes = kwargs.pop("max_body_sizes", [])
         default_max_body_size = kwargs.pop("default_max_body_size", None)
 
         tornado.http1connection.HTTP1ConnectionParameters.__init__(self, *args, **kwargs)
@@ -1394,7 +1391,7 @@ class UrlProxyHandler(
             if hasattr(e, "response") and e.response:
                 self.handle_response(e.response)
             else:
-                raise tornado.web.HTTPError(500)
+                raise tornado.web.HTTPError(500) from e
 
     def handle_response(self, response):
         if response.error and not isinstance(response.error, tornado.web.HTTPError):
@@ -1435,7 +1432,7 @@ class UrlProxyHandler(
         if not self._basename:
             return None
 
-        typeValue = list(x.strip() for x in content_type.split(";"))
+        typeValue = [x.strip() for x in content_type.split(";")]
         if len(typeValue) == 0:
             return None
 
@@ -1718,8 +1715,8 @@ class DynamicZipBundleHandler(StaticZipBundleHandler):
                 data = json.loads(self.request.body)
             else:
                 data = self.request.body_arguments
-        except Exception:
-            raise tornado.web.HTTPError(400)
+        except Exception as exc:
+            raise tornado.web.HTTPError(400) from exc
 
         return self._get_files_zip(
             list(map(octoprint.util.to_unicode, data.get("files", [])))
@@ -1869,22 +1866,14 @@ def access_validation_factory(app, validator, *args):
 
         wsgi_environ = WsgiInputContainer.environ(request)
         with app.request_context(wsgi_environ):
-            session = app.session_interface.open_session(app, flask.request)
-            user_id = session.get("_user_id")
-            user = None
-
-            # Yes, using protected methods is ugly. But these used to be publicly available in former versions
-            # of flask-login, there are no replacements, and seeing them renamed & hidden in a minor version release
-            # without any mention in the changelog means the public API ain't strictly stable either, so we might
-            # as well make our life easier here and just use them...
-            if user_id is not None and app.login_manager._user_callback is not None:
-                user = app.login_manager._user_callback(user_id)
-            app.login_manager._update_request_context_with_user(user)
-
             try:
+                app.session_interface.open_session(app, flask.request)
+                app.login_manager._load_user()
                 validator(flask.request, *args)
             except HTTPException as e:
-                raise tornado.web.HTTPError(e.code)
+                raise tornado.web.HTTPError(e.code) from e
+            except Exception as e:
+                raise tornado.web.HTTPError(500) from e
 
     return f
 

@@ -52,7 +52,7 @@ class SystemCommandManager:
             raise
         except Exception:
             self._logger.exception(f"Error while executing command: {command}")
-            raise CommandlineError(None, "", "")
+            raise CommandlineError(None, "", "") from None
 
         return True
 
@@ -60,7 +60,7 @@ class SystemCommandManager:
         return settings().get(["server", "commands", cmd])
 
     def has_command(self, cmd):
-        return self.get_command(cmd) is not None
+        return bool(self.get_command(cmd))
 
     def get_server_restart_command(self):
         return self.get_command(self.SERVER_RESTART_COMMAND)
@@ -72,13 +72,13 @@ class SystemCommandManager:
         return self.get_command(self.SYSTEM_SHUTDOWN_COMMAND)
 
     def has_server_restart_command(self):
-        return self.get_server_restart_command() is not None
+        return bool(self.get_server_restart_command())
 
     def has_system_restart_command(self):
-        return self.get_system_restart_command() is not None
+        return bool(self.get_system_restart_command())
 
     def has_system_shutdown_command(self):
-        return self.get_system_shutdown_command() is not None
+        return bool(self.get_system_shutdown_command())
 
     def perform_server_restart(self):
         return self.execute(self.get_server_restart_command())

@@ -4,7 +4,6 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "The MIT License <http://opensource.org/licenses/MIT>"
 __copyright__ = "Copyright (C) 2015 Gina Häußge - Released under terms of the MIT License"
 
-from typing import Any
 
 import sphinx.highlighting
 from docutils import nodes
@@ -13,7 +12,6 @@ from pygments import highlight
 from pygments.filters import ErrorToken, VisibleWhitespaceFilter
 from pygments.lexers.python import PythonConsoleLexer
 from pygments.util import ClassNotFound
-from six import text_type
 from sphinx.directives.code import CodeBlock
 from sphinx.ext import doctest
 
@@ -186,9 +184,9 @@ class PygmentsBridgeExt:
                 lexer = sphinx.highlighting.lexers[lang]
             else:
                 try:
-                    lexer = sphinx.highlighting.lexers[
-                        lang
-                    ] = sphinx.highlighting.get_lexer_by_name(lang, **opts or {})
+                    lexer = sphinx.highlighting.lexers[lang] = (
+                        sphinx.highlighting.get_lexer_by_name(lang, **opts or {})
+                    )
                 except ClassNotFound:
                     if warn:
                         warn("Pygments lexer name %r is not known" % lang)

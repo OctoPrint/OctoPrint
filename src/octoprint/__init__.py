@@ -95,7 +95,7 @@ def init_platform(
     try:
         settings = init_settings(basedir, configfile, overlays=overlays)
     except Exception as ex:
-        raise FatalStartupError("Could not initialize settings manager", cause=ex)
+        raise FatalStartupError("Could not initialize settings manager", cause=ex) from ex
     kwargs["settings"] = settings
     if callable(after_settings_init):
         after_settings_init(**kwargs)
@@ -113,7 +113,7 @@ def init_platform(
             disable_color=disable_color,
         )
     except Exception as ex:
-        raise FatalStartupError("Could not initialize logging", cause=ex)
+        raise FatalStartupError("Could not initialize logging", cause=ex) from ex
 
     kwargs["logger"] = logger
     if callable(after_logging):
@@ -141,14 +141,16 @@ def init_platform(
     try:
         settings.sanity_check_folders()
     except Exception as ex:
-        raise FatalStartupError("Configured folders didn't pass sanity check", cause=ex)
+        raise FatalStartupError(
+            "Configured folders didn't pass sanity check", cause=ex
+        ) from ex
     if callable(after_settings_valid):
         after_settings_valid(**kwargs)
 
     try:
         event_manager = init_event_manager(settings)
     except Exception as ex:
-        raise FatalStartupError("Could not initialize event manager", cause=ex)
+        raise FatalStartupError("Could not initialize event manager", cause=ex) from ex
 
     kwargs["event_manager"] = event_manager
     if callable(after_event_manager):
@@ -157,7 +159,9 @@ def init_platform(
     try:
         connectivity_checker = init_connectivity_checker(settings, event_manager)
     except Exception as ex:
-        raise FatalStartupError("Could not initialize connectivity checker", cause=ex)
+        raise FatalStartupError(
+            "Could not initialize connectivity checker", cause=ex
+        ) from ex
 
     kwargs["connectivity_checker"] = connectivity_checker
     if callable(after_connectivity_checker):
@@ -171,7 +175,7 @@ def init_platform(
             connectivity_checker=connectivity_checker,
         )
     except Exception as ex:
-        raise FatalStartupError("Could not initialize plugin manager", cause=ex)
+        raise FatalStartupError("Could not initialize plugin manager", cause=ex) from ex
 
     kwargs["plugin_manager"] = plugin_manager
     if callable(after_plugin_manager):
@@ -180,7 +184,9 @@ def init_platform(
     try:
         environment_detector = init_environment_detector(plugin_manager)
     except Exception as ex:
-        raise FatalStartupError("Could not initialize environment detector", cause=ex)
+        raise FatalStartupError(
+            "Could not initialize environment detector", cause=ex
+        ) from ex
 
     kwargs["environment_detector"] = environment_detector
     if callable(after_environment_detector):
@@ -207,7 +213,7 @@ def init_settings(basedir, configfile, overlays=None):
             init=True, basedir=basedir, configfile=configfile, overlays=overlays
         )
     except InvalidSettings as e:
-        raise FatalStartupError(str(e))
+        raise FatalStartupError(str(e)) from e
 
 
 def preinit_logging(
@@ -329,6 +335,16 @@ def init_logging(
                         settings.getBaseFolder("logs"), "tornado.log"
                     ),
                 },
+                "tornadoToConsole": {
+                    "class": "octoprint.logging.handlers.WrappingHandler",
+                    "level": "WARN",
+                    "handler": "console",
+                },
+                "tornadoToFile": {
+                    "class": "octoprint.logging.handlers.WrappingHandler",
+                    "level": "WARN",
+                    "handler": "file",
+                },
                 "authFile": {
                     "class": "octoprint.logging.handlers.AuthLogHandler",
                     "level": "DEBUG",
@@ -377,9 +393,11 @@ def init_logging(
                 "PLUGIN_TIMINGS.octoprint.plugin": {"level": "INFO"},
                 "tornado.access": {
                     "level": "INFO",
-                    "handlers": ["tornadoFile"],
+                    "handlers": ["tornadoFile", "tornadoToConsole", "tornadoToFile"],
                     "propagate": False,
                 },
+                "tornado": {"level": "ERROR"},
+                "sentry_sdk.errors": {"level": "ERROR"},
                 "octoprint": {"level": "INFO"},
                 "octoprint.util": {"level": "INFO"},
                 "octoprint.plugins": {"level": "INFO"},
@@ -388,6 +406,8 @@ def init_logging(
         }
 
     if debug or verbosity > 0:
+        default_config["handlers"]["tornadoToConsole"]["level"] = "INFO"
+        default_config["handlers"]["tornadoToFile"]["level"] = "INFO"
         default_config["loggers"]["octoprint"]["level"] = "DEBUG"
         default_config["root"]["level"] = "INFO"
     if verbosity > 1:
@@ -533,7 +553,7 @@ def init_settings_plugin_config_migration_and_cleanup(plugin_manager):
             )
         except Exception:
             logging.getLogger(__name__).exception(
-                "Error while trying to migrate settings for " "plugin %s, ignoring it",
+                "Error while trying to migrate settings for plugin %s, ignoring it",
                 implementation._identifier,
                 extra={"plugin": implementation._identifier},
             )
@@ -563,7 +583,7 @@ def init_webcam_compat_overlay(settings, plugin_manager):
         logging.getLogger(__name__).info(
             f"Installing webcam compat overlay for configured default webcam {default_webcam}"
         )
-        overlay = {"webcam": default_webcam.config.compat.dict(by_alias=True)}
+        overlay = {"webcam": default_webcam.config.compat.model_dump(by_alias=True)}
         settings.add_overlay(
             overlay,
             key="webcam_compat",
@@ -677,6 +697,7 @@ def init_pluginsystem(
     plugin_entry_points = ["octoprint.plugin"]
     plugin_disabled_list = settings.get(["plugins", "_disabled"])
     plugin_sorting_order = settings.get(["plugins", "_sortingOrder"], merged=True)
+    plugin_flags = settings.get(["plugins", "_flags"], merged=True)
 
     plugin_blacklist = []
     if not ignore_blacklist and settings.getBoolean(
@@ -712,6 +733,7 @@ def init_pluginsystem(
         plugin_blacklist=plugin_blacklist,
         plugin_validators=plugin_validators,
         compatibility_ignored_list=compatibility_ignored_list,
+        plugin_flags=plugin_flags,
     )
 
     settings_overlays = {}
@@ -800,8 +822,8 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
         return []
 
     def format_blacklist(entries):
-        format_entry = (
-            lambda x: f"{x[0]} ({x[1]})"
+        format_entry = lambda x: (
+            f"{x[0]} ({x[1]})"
             if isinstance(x, (list, tuple)) and len(x) == 2
             else f"{x} (any)"
         )

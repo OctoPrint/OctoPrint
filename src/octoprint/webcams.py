@@ -9,7 +9,7 @@ from octoprint.schema.webcam import Webcam
 
 
 def get_webcams(plugin_manager=None):
-    webcams = dict()
+    webcams = {}
 
     def success_callback(name, plugin, result):
         nonlocal webcams
@@ -95,7 +95,7 @@ def __get_webcam_by_setting(setting, fallbackFilter, settings=None, plugin_manag
 
 def get_webcams_as_dicts(plugin_manager=None):
     def to_dict(webcam):
-        webcam_dict = webcam.config.dict()
+        webcam_dict = webcam.config.model_dump()
         webcam_dict["provider"] = webcam.providerIdentifier
         return webcam_dict
 

@@ -177,14 +177,12 @@ class SlicingManager:
         Returns:
             (list of str) Identifiers of all available configured slicers.
         """
-        return list(
-            map(
-                lambda slicer: slicer.get_slicer_properties()["type"],
-                filter(
-                    lambda slicer: slicer.is_slicer_configured(), self._slicers.values()
-                ),
+        return [
+            slicer.get_slicer_properties()["type"]
+            for slicer in filter(
+                lambda slicer: slicer.is_slicer_configured(), self._slicers.values()
             )
-        )
+        ]
 
     @property
     def default_slicer(self):
@@ -570,7 +568,7 @@ class SlicingManager:
         except ProfileException as e:
             raise e
         except Exception as e:
-            raise CouldNotDeleteProfile(slicer, name, cause=e)
+            raise CouldNotDeleteProfile(slicer, name, cause=e) from e
         else:
             octoprint.events.eventManager().fire(
                 octoprint.events.Events.SLICING_PROFILE_DELETED,

@@ -2,87 +2,139 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2019 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
+from dataclasses import dataclass
+from typing import Iterable, Optional
 
-import pkg_resources
 import requests
+from packaging.specifiers import InvalidSpecifier, SpecifierSet
+from packaging.version import Version
+from packaging.version import parse as parse_version
 
 from octoprint.util.version import (
     get_comparable_version,
-    is_prerelease,
-    is_python_compatible,
+    safe_get_package_version,
 )
 
-INFO_URL = "https://pypi.org/pypi/{package}/json"
+INDEX_URL = "https://pypi.org/simple/{package}"
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.pypi_release")
 
 
-def _filter_out_latest(releases, include_prerelease=False, python_version=None):
-    """
-    Filters out the newest of all matching releases.
-
-    Tests:
-
-        >>> requires_py2 = ">=2.7.9,<3"
-        >>> requires_py23 = ">=2.7.9, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
-        >>> requires_py3 = ">=3.6, <4"
-        >>> releases = {"1.3.12": [dict(requires_python=requires_py2, upload_time_iso_8601="2019-10-22T10:06:03.190293Z")], "1.4.0rc1": [dict(requires_python=requires_py23, upload_time_iso_8601="2019-11-22T10:06:03.190293Z")], "2.0.0rc1": [dict(requires_python=requires_py3, upload_time_iso_8601="2020-10-22T10:06:03.190293Z")]}
-        >>> _filter_out_latest(releases, python_version="2.7.9")
-        '1.3.12'
-        >>> _filter_out_latest(releases, include_prerelease=True, python_version="2.7.9")
-        '1.4.0rc1'
-        >>> _filter_out_latest(releases, include_prerelease=True, python_version="3.6.0")
-        '2.0.0rc1'
-        >>> _filter_out_latest(releases, python_version="3.6.0")
-    """
-    releases = [{"version": k, "data": v[0]} for k, v in releases.items()]
-
-    # filter out prereleases and versions incompatible to our python
-    filter_function = lambda release: not is_prerelease(
-        release["version"]
-    ) and is_python_compatible(
-        release["data"].get("requires_python", ""), python_version=python_version
-    )
-    if include_prerelease:
-        filter_function = lambda release: is_python_compatible(
-            release["data"].get("requires_python", ""), python_version=python_version
-        )
-
-    releases = list(filter(filter_function, releases))
-    if not releases:
-        return None
-
-    # sort by upload date
-    releases = sorted(
-        releases, key=lambda release: release["data"].get("upload_time_iso_8601", "")
-    )
-
-    # latest release = last in list
-    latest = releases[-1]
-
-    return latest["version"]
+@dataclass
+class ReleaseFile:
+    filename: str
+    python_requires: str
 
 
-def _get_latest_release(package, include_prerelease):
+@dataclass
+class Release:
+    version: Version
+    python_requires: Optional[SpecifierSet]
+
+
+def _fetch_files(package: str) -> Iterable[ReleaseFile]:
     from ..exceptions import NetworkError
 
     try:
-        r = requests.get(INFO_URL.format(package=package), timeout=(3.05, 7))
+        r = requests.get(
+            INDEX_URL.format(package=package),
+            headers={"Accept": "application/vnd.pypi.simple.v1+json"},
+            timeout=(3.05, 7),
+        )
+        r.raise_for_status()
     except requests.ConnectionError as exc:
-        raise NetworkError(cause=exc)
-
-    if not r.status_code == requests.codes.ok:
-        return None
+        raise NetworkError(cause=exc) from exc
 
     data = r.json()
-    if "info" not in data or "version" not in data["info"]:
+    files = data.get("files", [])
+    return [ReleaseFile(x["filename"], x.get("requires-python")) for x in files]
+
+
+def _parse_version_from_filename(filename) -> Version:
+    """
+    >>> _parse_version_from_filename("importlib_metadata-8.4.0.tar.gz")
+    <Version('8.4.0')>
+    >>> _parse_version_from_filename("zeroconf-0.133.0-pp39-pypy39_pp73-win_amd64.whl")
+    <Version('0.133.0')>
+    >>> _parse_version_from_filename("OctoPrint-1.10.0rc4.sdist.tar.gz")
+    <Version('1.10.0rc4')>
+    >>> _parse_version_from_filename("example-0.1.foo.bar.fnord.baz.blub.tar.gz")
+    <Version('0.1')>
+    >>> _parse_version_from_filename("example.tar.gz")
+    >>> _parse_version_from_filename("example-a-b-c.tar.gz")
+    """
+    # filename format: project-version[.tar.gz|[-build]-python-abi-platform.whl]
+    parts = filename.split("-")
+    if len(parts) < 2:
         return None
 
-    requires_python = data["info"].get("requires_python")
-    if requires_python and not is_python_compatible(requires_python):
+    version = parts[1]
+
+    while version:
+        try:
+            return parse_version(version)
+        except ValueError:
+            if "." in version:
+                former = version
+                version, _ = version.rsplit(".", 1)
+                if version == former:
+                    break
+            else:
+                break
+
+    return None
+
+
+def _releases_from_files(files: Iterable[ReleaseFile]) -> Iterable[Release]:
+    """
+    >>> file1 = ReleaseFile("example-0.1.tar.gz", ">=3.7")
+    >>> file2 = ReleaseFile("example-0.1-py3-any-none.whl", ">=3.7")
+    >>> file3 = ReleaseFile("example-0.2.tar.gz", ">=3.8")
+    >>> file4 = ReleaseFile("example-0.3-py3-any-non-whl", None)
+    >>> _releases_from_files([file1, file2, file3, file4])
+    [Release(version=<Version('0.1')>, python_requires=<SpecifierSet('>=3.7')>), Release(version=<Version('0.2')>, python_requires=<SpecifierSet('>=3.8')>), Release(version=<Version('0.3')>, python_requires=None)]
+    """
+    releases = {}
+
+    for f in files:
+        try:
+            version = _parse_version_from_filename(f.filename)
+        except ValueError:
+            continue
+
+        if version in releases:
+            continue
+
+        python_requires = None
+        if f.python_requires:
+            try:
+                python_requires = SpecifierSet(f.python_requires)
+            except InvalidSpecifier:
+                continue
+
+        releases[version] = Release(version, python_requires)
+
+    return list(releases.values())
+
+
+def _get_latest_release(package: str, include_prerelease: bool = False) -> Optional[str]:
+    import platform
+
+    python_version = platform.python_version()
+
+    files = _fetch_files(package)
+    releases = filter(
+        lambda x: (not x.python_requires or python_version in x.python_requires)
+        and (not x.version.is_prerelease or include_prerelease),
+        _releases_from_files(files),
+    )
+
+    if not releases:
         return None
 
-    return _filter_out_latest(data["releases"], include_prerelease=include_prerelease)
+    releases = sorted(releases, key=lambda x: x.version, reverse=True)
+    latest = releases[0]
+    return str(latest.version)
 
 
 def _is_current(release_information):
@@ -102,12 +154,7 @@ def get_latest(target, check, online=True, *args, **kwargs):
         raise CannotUpdateOffline()
 
     package = check.get("package")
-
-    distribution = pkg_resources.get_distribution(package)
-    if distribution:
-        local_version = distribution.version
-    else:
-        local_version = None
+    local_version = safe_get_package_version(package)
 
     remote_version = _get_latest_release(
         package, include_prerelease=check.get("prerelease", False)
@@ -125,3 +172,9 @@ def get_latest(target, check, online=True, *args, **kwargs):
     )
 
     return information, _is_current(information)
+
+
+if __name__ == "__main__":
+    __package__ = "octoprint.plugins.softwareupdate.version_checks"
+    latest = _get_latest_release("pip", include_prerelease=True)
+    print(repr(latest))

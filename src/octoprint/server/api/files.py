@@ -10,6 +10,7 @@ from urllib.parse import quote as urlquote
 
 import psutil
 from flask import abort, jsonify, make_response, request, url_for
+from werkzeug.exceptions import HTTPException
 
 import octoprint.filemanager
 import octoprint.filemanager.storage
@@ -81,6 +82,9 @@ def _create_lastmodified(path, recursive):
         else:
             storage = path
             path_in_storage = None
+
+        if storage not in fileManager.registered_storages:
+            return None
 
         try:
             return fileManager.last_modified(
@@ -537,6 +541,9 @@ def uploadGcodeFile(target):
     input_upload_path = (
         input_name + "." + settings().get(["server", "uploads", "pathSuffix"])
     )
+
+    user = current_user.get_name()
+
     if input_upload_name in request.values and input_upload_path in request.values:
         if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
             abort(404)
@@ -556,24 +563,11 @@ def uploadGcodeFile(target):
                 abort(400, description="userdata contains invalid JSON")
 
         # check preconditions for SD upload
-        if target == FileDestinations.SDCARD and not settings().getBoolean(
-            ["feature", "sdSupport"]
-        ):
-            abort(404)
-
         sd = target == FileDestinations.SDCARD
         if sd:
-            # validate that all preconditions for SD upload are met before attempting it
-            if not (
-                printer.is_operational()
-                and not (printer.is_printing() or printer.is_paused())
-            ):
-                abort(
-                    409,
-                    description="Can not upload to SD card, printer is either not operational or already busy",
-                )
-            if not printer.is_sd_ready():
-                abort(409, description="Can not upload to SD card, not yet initialized")
+            if not settings().getBoolean(["feature", "sdSupport"]):
+                abort(404)
+            _verify_sd_upload_preconditions()
 
         # evaluate select and print parameter and if set check permissions & preconditions
         # and adjust as necessary
@@ -656,8 +650,6 @@ def uploadGcodeFile(target):
 
         reselect = printer.is_current_file(futureFullPathInStorage, sd)
 
-        user = current_user.get_name()
-
         def fileProcessingFinished(filename, absFilename, destination):
             """
             Callback for when the file processing (upload, optional slicing, addition to analysis queue) has
@@ -706,6 +698,7 @@ def uploadGcodeFile(target):
                 upload,
                 allow_overwrite=True,
                 display=canonFilename,
+                user=user,
             )
         except (OSError, StorageError) as e:
             _abortWithException(e)
@@ -818,7 +811,10 @@ def uploadGcodeFile(target):
 
         try:
             added_folder = fileManager.add_folder(
-                target, futureFullPath, display=canonName
+                target,
+                futureFullPath,
+                display=canonName,
+                user=user,
             )
         except (OSError, StorageError) as e:
             _abortWithException(e)
@@ -861,6 +857,7 @@ def gcodeFileCommand(filename, target):
         "analyse": [],
         "copy": ["destination"],
         "move": ["destination"],
+        "uploadSd": [],
     }
 
     command, data, response = get_json_command_from_request(request, valid_commands)
@@ -946,12 +943,10 @@ def gcodeFileCommand(filename, target):
                 abort(404)
 
             if not any(
-                [
-                    octoprint.filemanager.valid_file_type(filename, type=source_file_type)
-                    for source_file_type in slicer_instance.get_slicer_properties().get(
-                        "source_file_types", ["model"]
-                    )
-                ]
+                octoprint.filemanager.valid_file_type(filename, type=source_file_type)
+                for source_file_type in slicer_instance.get_slicer_properties().get(
+                    "source_file_types", ["model"]
+                )
             ):
                 abort(415, description="Cannot slice file, not a model file")
 
@@ -1168,9 +1163,12 @@ def gcodeFileCommand(filename, target):
                 ):
                     abort(409, description="File or folder does already exist")
 
+            except HTTPException:
+                raise
             except Exception:
                 abort(
-                    409, description="Exception thrown by storage, bad folder/file name?"
+                    409,
+                    description="Exception thrown by storage, bad folder/file name?",
                 )
 
             is_file = fileManager.file_exists(target, filename)
@@ -1251,6 +1249,59 @@ def gcodeFileCommand(filename, target):
                 )
 
             r = make_response(jsonify(result), 201)
+            r.headers["Location"] = location
+            return r
+
+    elif command == "uploadSd":
+        if target not in [FileDestinations.LOCAL]:
+            abort(400, description=f"Unsupported target for {command}")
+
+        if not settings().getBoolean(["feature", "sdSupport"]):
+            abort(400, "Invalid command,SD support is disabled")
+
+        _verify_sd_upload_preconditions()
+
+        with Permissions.FILES_UPLOAD.require(403):
+            if not _verifyFileExists(target, filename) and not _verifyFolderExists(
+                target, filename
+            ):
+                abort(404)
+
+            select = data.get("select") in valid_boolean_trues
+            print = data.get("print") in valid_boolean_trues
+
+            def selectAndOrPrint(filename, *args):
+                if select or print:
+                    printer.select_file(filename, FileDestinations.SDCARD, print)
+
+            path = fileManager.path_on_disk(FileDestinations.LOCAL, filename)
+            remote = printer.add_sd_file(
+                filename,
+                path,
+                on_success=selectAndOrPrint,
+                tags={"source:api", "api:files.sd"},
+            )
+
+            location = url_for(
+                ".readGcodeFile",
+                target=FileDestinations.SDCARD,
+                filename=remote,
+                _external=True,
+            )
+
+            r = make_response(
+                jsonify(
+                    file={
+                        "name": remote,
+                        "path": remote,
+                        "origin": FileDestinations.SDCARD,
+                        "refs": {"resource": location},
+                    },
+                    effectiveSelect=select,
+                    effectivePrint=print,
+                ),
+                201,
+            )
             r.headers["Location"] = location
             return r
 
@@ -1366,8 +1417,21 @@ def _validate(target, filename):
         return True
     else:
         return filename == "/".join(
-            map(lambda x: fileManager.sanitize_name(target, x), filename.split("/"))
+            fileManager.sanitize_name(target, x) for x in filename.split("/")
         )
+
+
+def _verify_sd_upload_preconditions():
+    # validate that all preconditions for SD upload are met before attempting it
+    if not (
+        printer.is_operational() and not (printer.is_printing() or printer.is_paused())
+    ):
+        abort(
+            409,
+            description="Can not upload to SD card, printer is either not operational or already busy",
+        )
+    if not printer.is_sd_ready():
+        abort(409, description="Can not upload to SD card, not yet initialized")
 
 
 class WerkzeugFileWrapper(octoprint.filemanager.util.AbstractFileWrapper):

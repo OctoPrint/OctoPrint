@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import concurrent.futures
 import hashlib
 import logging
+import os
 import time
 from urllib.parse import urlencode
 
@@ -282,22 +283,15 @@ class TrackingPlugin(
         plugins = self._plugin_manager.enabled_plugins
         plugins_thirdparty = [plugin for plugin in plugins.values() if not plugin.bundled]
         payload["plugins"] = ",".join(
-            map(
-                lambda x: "{}:{}".format(
-                    x.key.lower(), x.version.lower() if x.version else "?"
-                ),
-                plugins_thirdparty,
-            )
+            "{}:{}".format(x.key.lower(), x.version.lower() if x.version else "?")
+            for x in plugins_thirdparty
         )
 
         if self._helpers_get_unlocked_achievements and self._settings.get_boolean(
             ["events", "achievements"]
         ):
             payload["achievements"] = ",".join(
-                map(
-                    lambda x: x.key.lower(),
-                    self._helpers_get_unlocked_achievements(),
-                )
+                x.key.lower() for x in self._helpers_get_unlocked_achievements()
             )
 
         self._track("pong", body=True, **payload)
@@ -544,6 +538,9 @@ class TrackingPlugin(
         if not unique_id:
             return
 
+        if os.environ.get("CI") or os.environ.get("OCTOPRINT_DISABLE_TRACKING"):
+            return
+
         server = self._settings.get(["server"])
         url = server.format(id=unique_id, event=event)
         # Don't print the URL or UUID! That would expose the UUID in forums/tickets
@@ -571,6 +568,7 @@ class TrackingPlugin(
         payload = {
             "version": get_octoprint_version_string(),
             "os": self._environment["os"]["id"],
+            "platform": self._environment["os"]["platform"],
             "bits": self._environment["os"]["bits"],
             "python": self._environment["python"]["version"],
             "pip": self._environment["python"]["pip"],

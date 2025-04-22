@@ -56,7 +56,7 @@ class PluginTestCase(unittest.TestCase):
 
         logging.basicConfig(level=logging.DEBUG)
 
-        # TODO mock pkg_resources to return some defined entry_points
+        # TODO mock some defined entry_points
 
         import os
 
@@ -245,7 +245,7 @@ class PluginTestCase(unittest.TestCase):
         )
         self.assertListEqual(
             ["mixed_plugin", "startup_plugin"],
-            list(map(lambda x: x._identifier, implementations)),
+            [x._identifier for x in implementations],
         )
 
         implementations = self.plugin_manager.get_implementations(
@@ -253,22 +253,20 @@ class PluginTestCase(unittest.TestCase):
         )
         self.assertListEqual(
             ["mixed_plugin", "settings_plugin"],
-            list(map(lambda x: x._identifier, implementations)),
+            [x._identifier for x in implementations],
         )
 
         implementations = self.plugin_manager.get_implementations(
             octoprint.plugin.StartupPlugin, octoprint.plugin.SettingsPlugin
         )
-        self.assertListEqual(
-            ["mixed_plugin"], list(map(lambda x: x._identifier, implementations))
-        )
+        self.assertListEqual(["mixed_plugin"], [x._identifier for x in implementations])
 
         implementations = self.plugin_manager.get_implementations(
             octoprint.plugin.AssetPlugin
         )
         self.assertListEqual(
             ["asset_plugin"],
-            list(map(lambda x: x._identifier, implementations)),
+            [x._identifier for x in implementations],
         )
 
     def test_get_filtered_implementations(self):
@@ -283,7 +281,7 @@ class PluginTestCase(unittest.TestCase):
         )
         self.assertListEqual(
             ["startup_plugin", "mixed_plugin"],
-            list(map(lambda x: x._identifier, implementations)),
+            [x._identifier for x in implementations],
         )
 
     def test_client_registration(self):

@@ -86,10 +86,12 @@ class OctoPrintPluginCommands(click.MultiCommand):
             self.plugin_manager = init_pluginsystem(
                 self.settings, safe_mode=get_ctx_obj_option(ctx, "safe_mode", False)
             )
-        except FatalStartupError as e:
-            click.echo(str(e), err=True)
+        except FatalStartupError as exc:
+            from traceback import format_exc
+
+            click.echo(format_exc(), err=True)
             click.echo(
-                "There was a fatal error initializing the settings or the plugin system.",
+                f"There was a fatal error initializing the settings or the plugin system: {str(exc)}",
                 err=True,
             )
             ctx.exit(-1)
@@ -101,7 +103,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 
     def list_commands(self, ctx):
         self._initialize(ctx)
-        result = [name for name in self._get_commands()]
+        result = list(self._get_commands())
         result.sort()
         return result
 

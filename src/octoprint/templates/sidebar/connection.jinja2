@@ -1,4 +1,4 @@
-<div style="margin-bottom: 10px" class="alert alert-error" data-bind="visible: !validPort()"><small>{% trans link="<a href='https://faq.octoprint.org/no-candidates' target='_blank' rel='noopener noreferer'>", endlink="</a>", refresh="<a href='javascript:void(0)' data-bind='click: $root.requestData'>", endrefresh="</a>" %}
+<div style="margin-bottom: 10px" class="alert alert-error" data-bind="visible: !validPort()"><small>{% trans link="<a href='https://faq.octoprint.org/no-candidates' target='_blank' rel='noopener noreferer'>"|safe, endlink="</a>"|safe, refresh="<a href='javascript:void(0)' data-bind='click: $root.requestData'>"|safe, endrefresh="</a>"|safe %}
     No serial port found, are you sure your printer is physically connected and supported?
     Try {{ refresh }}refreshing{{ endrefresh }} and if that doesn't help please see {{ link }}the FAQ{{ endlink }}.
 {% endtrans %}</small></div>

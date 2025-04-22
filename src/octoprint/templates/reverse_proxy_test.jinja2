@@ -13,8 +13,8 @@
 
     <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap.min.css") }}">
     <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap-responsive.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-5.15.1/css/all.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-5.15.1/css/v4-shims.min") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-6.5.1/css/all.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-6.5.1/css/v4-shims.min.css") }}">
 
     {% for url in theming %}
         <link rel="stylesheet" href="{{ url|e }}">
@@ -134,7 +134,7 @@
                 Your server side Client IP was determined to be {{ client_ip|e }}. Your <code>X-Forwarded-For</code> header
                 {% if headers["X-Forwarded-For"] %} (<code>{{ headers["X-Forwarded-For"]|e }}</code>){% endif %} might
                 have influenced that. Make sure that this is the IP that OctoPrint should be seeing. It will be the right most
-                IP in the <code>X-Forwarded-For</code> header that is not among your <strong>configured trusted downstreams</strong>:
+                IP in the <code>X-Forwarded-For</code> header that is not among your <strong>trusted proxies</strong>:
             </p>
 
             <ul>

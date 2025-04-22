@@ -5,7 +5,7 @@
 {% assets "less_core" %}<link rel="preload" as="style" href="{{ ASSET_URL }}">{% endassets %}
 {% assets "less_plugins" %}<link rel="preload" as="style" href="{{ ASSET_URL }}">{% endassets %}
 
-{% for fa in ("fa-brands-400", "fa-regular-400", "fa-solid-900", "fa-v4compatibility") %}
-    <link rel="preload" as="font" href="{{ url_for('static', filename='vendor/fontawesome-6.1.1/webfonts/' + fa + '.woff2') }}" type="font/woff2" crossorigin="anonymous">
+{% for fa in ("fa-regular-400", "fa-solid-900") %}
+    <link rel="preload" as="font" href="{{ url_for('static', filename='vendor/font-awesome-6.5.1/webfonts/' + fa + '.woff2') }}" type="font/woff2" crossorigin="anonymous">
 {% endfor %}
 <link rel="preload" as="font" href="{{ url_for('static', filename='vendor/font-awesome-3.2.1/fonts/fontawesome-webfont.woff') }}?v=3.2.1" type="font/woff" crossorigin="anonymous">

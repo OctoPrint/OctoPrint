@@ -4,7 +4,7 @@ __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms
 import pytest
 
 DEFAULT_ALLOWED_PATHS = ["/", "/recovery/", "/plugin/appkeys/auth/*"]
-PREFIXED_ALLOWED_PATHS = list(map(lambda x: "/octoprint" + x, DEFAULT_ALLOWED_PATHS))
+PREFIXED_ALLOWED_PATHS = ["/octoprint" + x for x in DEFAULT_ALLOWED_PATHS]
 
 
 @pytest.mark.parametrize(
@@ -34,6 +34,13 @@ PREFIXED_ALLOWED_PATHS = list(map(lambda x: "/octoprint" + x, DEFAULT_ALLOWED_PA
         (" /\\/\\example.com", DEFAULT_ALLOWED_PATHS, False),
         ("\\/\\/example.com", DEFAULT_ALLOWED_PATHS, False),
         (" \\/\\/example.com", DEFAULT_ALLOWED_PATHS, False),
+        # path traversal URLs
+        ("/../evil", DEFAULT_ALLOWED_PATHS, False),
+        ("/recovery/../evil", DEFAULT_ALLOWED_PATHS, False),
+        ("/plugin/appkeys/auth/../evil", DEFAULT_ALLOWED_PATHS, False),
+        ("/octoprint/../evil", PREFIXED_ALLOWED_PATHS, False),
+        ("/octoprint/recovery/../evil", PREFIXED_ALLOWED_PATHS, False),
+        ("/octoprint/plugin/appkeys/auth/../evil", PREFIXED_ALLOWED_PATHS, False),
         # other stuff
         ("javascript:alert(document.cookie)", DEFAULT_ALLOWED_PATHS, False),
     ],

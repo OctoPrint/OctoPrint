@@ -41,10 +41,21 @@ from octoprint.util.version import (
 
 from . import cli, exceptions, updaters, util, version_checks
 
-# OctoPi 0.16+
-MINIMUM_PYTHON = "2.7.13"
-MINIMUM_SETUPTOOLS = "40.7.1"
-MINIMUM_PIP = "19.0.1"
+# OctoPi 0.17 w/ Python 3
+MINIMUM_PYTHON = "3.7"
+MINIMUM_SETUPTOOLS = "40.8"
+MINIMUM_PIP = "20.3"
+
+# OctoPi 0.18+
+# MINIMUM_PYTHON = "3.7"
+# MINIMUM_SETUPTOOLS = "51.1"
+# MINIMUM_PIP = "20.3"
+
+# OctoPi 1.0.0+
+# MINIMUM_PYTHON = "3.9"
+# MINIMUM_SETUPTOOLS = "44.1"
+# MINIMUM_PIP = "22.3"
+
 
 DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -341,7 +352,7 @@ class SoftwareUpdatePlugin(
             return self._configured_checks
 
     def _check_environment(self):
-        import pkg_resources
+        from octoprint.util.version import safe_get_package_version
 
         local_pip = create_pip_caller(
             command=self._settings.global_get(["server", "commands", "localPipCommand"])
@@ -350,7 +361,7 @@ class SoftwareUpdatePlugin(
         # check python and setuptools version
         versions = {
             "python": get_python_version_string(),
-            "setuptools": pkg_resources.get_distribution("setuptools").version,
+            "setuptools": safe_get_package_version("setuptools", "n/a"),
             "pip": local_pip.version_string,
         }
         supported = (
@@ -392,7 +403,7 @@ class SoftwareUpdatePlugin(
             storage_info[key] = info
 
         if len(storage_info):
-            free_storage = min(*list(map(lambda x: x["free"], storage_info.values())))
+            free_storage = min(*[x["free"] for x in storage_info.values()])
         else:
             free_storage = None
 
@@ -546,11 +557,9 @@ class SoftwareUpdatePlugin(
                 - datetime.timedelta(minutes=self._settings.get_int(["updatelog_cutoff"]))
             ).strftime(DATETIME_FORMAT)
             data = sorted(
-                list(
-                    filter(
-                        lambda x: x.get("datetime") and x["datetime"] > cutoff,
-                        data,
-                    )
+                filter(
+                    lambda x: x.get("datetime") and x["datetime"] > cutoff,
+                    data,
                 ),
                 key=lambda x: x["datetime"],
             )
@@ -671,13 +680,13 @@ class SoftwareUpdatePlugin(
                     "restart": "octoprint",
                     "stable_branch": {
                         "branch": "master",
-                        "commitish": ["master"],
+                        "commitish": ["master", "main"],
                         "name": "Stable",
                     },
                     "prerelease_branches": [
                         {
                             "branch": "rc/maintenance",
-                            "commitish": ["rc/maintenance"],  # maintenance RCs
+                            "commitish": ["rc/maintenance", "next"],  # maintenance RCs
                             "name": "Maintenance RCs",
                         },
                         {
@@ -685,6 +694,7 @@ class SoftwareUpdatePlugin(
                             "commitish": [
                                 "rc/maintenance",
                                 "rc/devel",
+                                "next",
                             ],  # devel & maintenance RCs
                             "name": "Devel RCs",
                         },
@@ -1131,12 +1141,12 @@ class SoftwareUpdatePlugin(
         request_data = flask.request.values
 
         if "targets" in request_data or "check" in request_data:
-            check_targets = list(
-                map(
-                    lambda x: x.strip(),
-                    request_data.get("targets", request_data.get("check", "")).split(","),
+            check_targets = [
+                x.strip()
+                for x in request_data.get("targets", request_data.get("check", "")).split(
+                    ","
                 )
-            )
+            ]
         else:
             check_targets = None
 
@@ -1154,7 +1164,7 @@ class SoftwareUpdatePlugin(
                     update_possible,
                 ) = self.get_current_versions(check_targets=check_targets, force=force)
 
-                storage = list()
+                storage = []
                 for key, name in (
                     ("python", gettext("Python package installation folder")),
                     ("plugins", gettext("Plugin folder")),
@@ -1319,12 +1329,9 @@ class SoftwareUpdatePlugin(
             flask.abort(400, description="Invalid JSON")
 
         if "targets" in json_data or "checks" in json_data:
-            targets = list(
-                map(
-                    lambda x: x.strip(),
-                    json_data.get("targets", json_data.get("check", [])),
-                )
-            )
+            targets = [
+                x.strip() for x in json_data.get("targets", json_data.get("check", []))
+            ]
         else:
             targets = None
 
@@ -1428,10 +1435,8 @@ class SoftwareUpdatePlugin(
                     valid_channel = data["channel"] == populated_check[
                         "stable_branch"
                     ].get("branch") or any(
-                        map(
-                            lambda x: data["channel"] == x.get("branch"),
-                            populated_check["prerelease_branches"],
-                        )
+                        data["channel"] == x.get("branch")
+                        for x in populated_check["prerelease_branches"]
                     )
                     prerelease = data["channel"] != populated_check["stable_branch"].get(
                         "branch"
@@ -2330,7 +2335,7 @@ class SoftwareUpdatePlugin(
             self._logger.exception(f"Error while restarting of type {restart_type}")
             self._logger.warning(f"Restart stdout:\n{e.stdout}")
             self._logger.warning(f"Restart stderr:\n{e.stderr}")
-            raise exceptions.RestartFailed()
+            raise exceptions.RestartFailed() from e
 
     def _populated_check(self, target, check):
         from flask_babel import gettext
@@ -2361,7 +2366,7 @@ class SoftwareUpdatePlugin(
                 result["current"] = VERSION
 
         elif target == "pip":
-            import pkg_resources
+            from octoprint.util.version import safe_get_package_version
 
             displayName = check.get("displayName")
             if displayName is None:
@@ -2372,9 +2377,7 @@ class SoftwareUpdatePlugin(
             displayVersion = check.get("displayVersion")
             if displayVersion is None:
                 # displayVersion missing or set to None
-                distribution = pkg_resources.get_distribution("pip")
-                if distribution:
-                    displayVersion = distribution.version
+                displayVersion = safe_get_package_version("pip")
             result["displayVersion"] = to_unicode(displayVersion, errors="replace")
 
             result["pip_command"] = check.get(
@@ -2451,7 +2454,7 @@ class SoftwareUpdatePlugin(
 
     def _log(self, lines, prefix=None, stream=None, strip=True):
         if strip:
-            lines = list(map(lambda x: x.strip(), lines))
+            lines = [x.strip() for x in lines]
 
         self._send_client_message(
             "loglines",

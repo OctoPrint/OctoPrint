@@ -9,8 +9,9 @@ from octoprint.vendor.with_attrs_docs import with_attrs_docs
 
 
 class LayoutEnum(str, Enum):
-    horizontal = "horizontal"
     vertical = "vertical"
+    horizontal = "horizontal"
+    horizontal_grid = "horizontal_grid"
 
 
 class ControlSliderInputConfig(BaseModel):

@@ -8,7 +8,7 @@ $(function () {
         self.lastCommandResponse = undefined;
         self.systemActions = ko.observableArray([]);
 
-        self._startupNotification = undefined;
+        self._flaggedFoldersNotification = undefined;
 
         self.requestData = function () {
             self.requestCommandData();
@@ -67,7 +67,8 @@ $(function () {
             const startupData = response.startup;
 
             if (startupData.flagged_basefolders) {
-                if (self._startupNotification) self._startupNotification.remove();
+                if (self._flaggedFoldersNotification)
+                    self._flaggedFoldersNotification.remove();
 
                 let html =
                     "<p>" +
@@ -92,7 +93,7 @@ $(function () {
                     ) +
                     "</p>";
 
-                self._startupNotification = new PNotify({
+                self._flaggedFoldersNotification = new PNotify({
                     title: gettext("Warning"),
                     text: html,
                     type: "warning",

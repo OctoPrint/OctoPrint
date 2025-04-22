@@ -6,6 +6,8 @@ import threading
 import requests
 from flask_babel import gettext
 
+import octoprint.access
+import octoprint.access.permissions
 import octoprint.plugin
 from octoprint.schema.webcam import RatioEnum, Webcam, WebcamCompatibility
 from octoprint.webcams import WebcamNotAbleToTakeSnapshotException
@@ -103,13 +105,13 @@ class ClassicWebcamPlugin(
                     snapshotTimeout=snapshotTimeout,
                     snapshotSslValidation=snapshotSslValidation,
                 ),
-                extras=dict(
-                    stream=stream,
-                    streamTimeout=streamTimeout,
-                    streamRatio=streamRatio,
-                    streamWebrtcIceServers=webRtcServers,
-                    cacheBuster=cacheBuster,
-                ),
+                extras={
+                    "stream": stream,
+                    "streamTimeout": streamTimeout,
+                    "streamRatio": streamRatio,
+                    "streamWebrtcIceServers": webRtcServers,
+                    "cacheBuster": cacheBuster,
+                },
             ),
         ]
 
@@ -130,31 +132,60 @@ class ClassicWebcamPlugin(
 
         with self._capture_mutex:
             self._logger.debug(f"Capturing image from {snapshot_url}")
-            r = requests.get(
-                snapshot_url,
-                stream=True,
-                timeout=self._settings.get_int(["snapshotTimeout"]),
-                verify=self._settings.get_boolean(["snapshotSslValidation"]),
-            )
+
+            auth = self._settings.get(["snapshotAuth"])
+
+            params = {
+                "stream": True,
+                "timeout": self._settings.get_int(["snapshotTimeout"]),
+                "verify": self._settings.get_boolean(["snapshotSslValidation"]),
+            }
+            if auth in ["basic", "digest"]:
+                username = self._settings.get(["snapshotUsername"])
+                password = self._settings.get(["snapshotPassword"])
+
+                if auth == "basic":
+                    params["auth"] = requests.auth.HTTPBasicAuth(username, password)
+                elif auth == "digest":
+                    params["auth"] = requests.auth.HTTPDigestAuth(username, password)
+            elif auth == "bearer":
+                token = self._settings.get(["snapshotBearerToken"])
+                params["headers"] = {"Authorization": f"Bearer {token}"}
+
+            r = requests.get(snapshot_url, **params)
             r.raise_for_status()
             return r.iter_content(chunk_size=1024)
 
     # ~~ SettingsPlugin API
 
     def get_settings_defaults(self):
-        return dict(
-            flipH=False,
-            flipV=False,
-            rotate90=False,
-            stream="",
-            streamTimeout=5,
-            streamRatio="16:9",
-            streamWebrtcIceServers=["stun:stun.l.google.com:19302"],
-            snapshot="",
-            cacheBuster=False,
-            snapshotSslValidation=True,
-            snapshotTimeout=5,
-        )
+        return {
+            "flipH": False,
+            "flipV": False,
+            "rotate90": False,
+            "stream": "",
+            "streamTimeout": 5,
+            "streamRatio": "16:9",
+            "streamWebrtcIceServers": ["stun:stun.l.google.com:19302"],
+            "snapshot": "",
+            "cacheBuster": False,
+            "snapshotSslValidation": True,
+            "snapshotAuth": "none",
+            "snapshotUsername": "",
+            "snapshotPassword": "",
+            "snapshotBearerToken": "",
+            "snapshotTimeout": 5,
+        }
+
+    def get_settings_restricted_paths(self):
+        return {
+            octoprint.access.permissions.Permissions.SETTINGS: [
+                "snapshotAuth",
+                "snapshotUsername",
+                "snapshotPassword",
+                "snapshotBearerToken",
+            ]
+        }
 
     def get_settings_version(self):
         return 1

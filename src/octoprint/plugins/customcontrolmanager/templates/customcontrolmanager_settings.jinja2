@@ -1,0 +1,280 @@
+<h3>{{ _('Custom Controls') }}</h3>
+<div class="customcontrolmananger-controls-container">
+    <div class="customcontrolmananger-add-controls-prompt">
+        <div class="muted">{{ _('You currently don\'t have any custom controls defined. Why not add some using the buttons below?') }}</div>
+    </div>
+    <!-- ko template: { name: $root.getTemplate, foreach: controls } --><!-- /ko -->
+</div>
+
+<div class="customcontrolmananger-add-buttons">
+    <button class="btn" data-bind="click: function() { $root.addControl() }"><i class="fa-regular fa-square-plus"></i> {{ _('Add control') }}</button>
+    <button class="btn" data-bind="click: function() { $root.addContainer() }"><i class="fa-solid fa-folder-plus"></i> {{ _('Add container') }}</button>
+</div>
+
+<!-- Templates for custom controls -->
+<script type="text/html" id="customcontrolmanager-container-nameless">
+    <div class="custom-section">
+        <!-- ko template: { name: 'customcontrolmanager-container', data: $data } --><!-- /ko -->
+    </div>
+</script>
+<script type="text/html" id="customcontrolmanager-container-collapsable">
+    <div class="custom-section">
+        <h1 data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.custom-section', container: '> div' }"><i class="fas" data-bind="css: {'fa-caret-down': !collapsed(), 'fa-caret-right': collapsed()}"></i> <span data-bind="text: name"></span></h1>
+        <!-- ko template: { name: 'customcontrolmanager-container', data: $data } --><!-- /ko -->
+    </div>
+</script>
+<script type="text/html" id="customcontrolmanager-container">
+    <!-- ko if: layout() === 'vertical' -->
+    <div class="custom-section-vertical custom-section-content" data-bind="template: { name: $root.getTemplate, foreach: children }, css: {hide: collapsed() && name()}"></div>
+    <!-- /ko -->
+
+    <!-- ko if: layout() === 'horizontal' -->
+    <div class="custom-section-horizontal custom-section-content" data-bind="template: { name: $root.getTemplate, foreach: children }, css: {hide: collapsed() && name()}"></div>
+    <!-- /ko -->
+
+    <!-- ko if: layout() === 'horizontal_grid' -->
+    <div class="row-fluid custom-section-horizontal-grid custom-section-content" data-bind="css: {hide: collapsed() && name()}">
+        <!-- ko foreach: children -->
+        <div data-bind="template: { name: $root.getTemplate }, css: $root.rowCss($data)"></div>
+        <!-- /ko -->
+    </div>
+    <!-- /ko -->
+
+    <div class="container-orientation" data-bind="text: layout"></div>
+    <!-- ko template: { name: 'customcontrolmanager-management-buttons-section', data: $data } --><!-- /ko -->
+</script>
+<script type="text/html" id="customcontrolmanager-control">
+    <div class="form-inline custom-control" onsubmit="return false;">
+        <!-- ko template: { name: 'customcontrolmanager-control-input', data: $data, if: $data.input } --><!-- /ko -->
+        <!-- ko template: { name: 'customcontrolmanager-control-command', data: $data, if: $data.command || $data.commands || $data.script || $data.javascript } --><!-- /ko -->
+        <!-- ko template: { name: 'customcontrolmanager-control-output', data: $data, if: $data.template } --><!-- /ko -->
+
+        <!-- ko template: { name: 'customcontrolmanager-management-buttons-control', data: $data } --><!-- /ko -->
+    </div>
+</script>
+<script type="text/html" id="customcontrolmanager-control-input">
+    <!-- ko foreach: input -->
+        <label style="cursor: default" data-bind="text: name"></label>
+        <!-- ko if: slider -->
+            <input type="number" style="width: 100px" data-bind="slider: {value: value, min: slider.min, max: slider.max, step: slider.step}" disabled>
+        <!-- /ko -->
+        <!-- ko ifnot: slider -->
+            <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value" disabled>
+        <!-- /ko -->
+    <!-- /ko -->
+</script>
+<script type="text/html" id="customcontrolmanager-control-output">
+    <label style="cursor: default">{{ _('output goes here...') }}</label>
+</script>
+<script type="text/html" id="customcontrolmanager-control-command">
+    <button class="btn" data-bind="text: name, css: additionalClasses" disabled></button>
+</script>
+<script type="text/html" id="customcontrolmanager-management-buttons-control">
+    <div class="btn-group management-buttons">
+        <button class="btn btn-mini btn-primary" data-bind="click: function() { $root.editControl($data) }"><i class="fa-solid fa-pencil"></i></button>
+        <button class="btn btn-mini btn-danger" data-bind="click: function () { $root.deleteControl($data) }"><i class="fa-solid fa-trash"></i></button>
+    </div>
+</script>
+<script type="text/html" id="customcontrolmanager-management-buttons-section">
+    <div class="btn-group management-buttons">
+        <button class="btn btn-mini" data-bind="click: function () { $root.addControl($data) }"><i class="fa-regular fa-square-plus"></i></button>
+        <button class="btn btn-mini" data-bind="click: function () { $root.addContainer($data) }"><i class="fa-solid fa-folder-plus"></i></button>
+        <button class="btn btn-mini btn-primary" data-bind="click: function() { $root.editControl($data) }"><i class="fa-solid fa-pencil"></i></button>
+        <button class="btn btn-mini btn-danger" data-bind="click: function () { $root.deleteControl($data) }"><i class="fa-solid fa-trash"></i></button>
+    </div>
+</script>
+<!-- End of templates for custom controls -->
+
+<!-- Editor dialog -->
+<div id="customcontrolmanager-editor" class="modal hide">
+    <div class="modal-header">
+        <h3 data-bind="text: editor.title"></h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal">
+            <!-- ko if: editor.type() !== "container" -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('Control type') }}</label>
+                    <div class="controls">
+                        <select data-bind="options: editor.controlTypes, optionsText: 'name', optionsValue: 'key', value: editor.type, valueAllowUnset: false"></select>
+                    </div>
+                </div>
+            <!-- /ko -->
+
+            <!-- ko if: editor.type() === "command" || editor.type() === "script" || editor.type() === "container" -->
+                <div class="control-group" data-bind="css: { error: editor.nameError }">
+                    <label class="control-label">{{ _('Title') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" data-bind="value: editor.control().name, valueUpdate: 'keyup'"></input>
+                    </div>
+                </div>
+            <!-- /ko -->
+
+            <!-- ko if: editor.type() === "container" -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('Layout') }}</label>
+                    <div class="controls">
+                        <select data-bind="options: editor.layouts, optionsText: 'name', optionsValue: 'key', value: editor.control().layout, valueAllowUnset: false"></select>
+                    </div>
+                </div>
+                <!-- ko if: editor.control().name -->
+                    <div class="control-group">
+                        <div class="controls">
+                            <label class="checkbox">
+                                <input type="checkbox" data-bind="checked: editor.control().collapsed"> {{ _('Collapse by default') }}
+                            </label>
+                        </div>
+                    </div>
+                <!-- /ko -->
+            <!-- /ko -->
+
+            <!-- ko if: editor.type() == "command" -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('Commands') }}</label>
+                    <div class="controls">
+                        <textarea rows="5" data-bind="value: editor.commandsMultiline"></textarea>
+                    </div>
+                </div>
+            <!-- /ko -->
+
+            <!-- ko if: editor.type() === "script" -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('Script') }}</label>
+                    <div class="controls">
+                        <input type="text" class="input-block-level" data-bind="value: editor.control().script"></input>
+                    </div>
+                </div>
+            <!-- /ko -->
+
+            <!-- ko if: editor.type() === "command" || editor.type() === "script" -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('Parameters') }}</label>
+                    <div class="controls">
+                        <p class="customcontrolmanager-editor-noinput help-block" data-bind="visible: !editor.control().input || !editor.control().input()">
+                            {{ _('There are currently no parameters defined, you may add some with the buttons below.') }}
+                        </p>
+                        <div class="customcontrolmanager-editor-input" data-bind="foreach: editor.control().input, visible: editor.control().input">
+                            <!-- ko ifnot: slider -->
+                                <div class="customcontrolmanager-editor-input-text">
+                                    <button class="btn btn-danger btn-small pull-right" data-bind="click: function() { $root.editor.removeInput($data) }"><i class="fa-solid fa-trash"></i></button>
+                                    <h4>{{ _('Text parameter') }}</h4>
+                                    <div class="form-inline">
+                                        <div class="control-labeled">
+                                            <label>{{ _('Name') }}</label>
+                                            <input type="text" class="input-small" placeholder="{{ _('Name') }}" data-bind="value: name">
+                                        </div>
+                                        <div class="control-labeled">
+                                            <label>{{ _('Parameter') }}</label>
+                                        <input type="text" class="input-small" placeholder="{{ _('Parameter') }}" data-bind="value: parameter">
+                                        </div>
+                                        <div class="control-labeled">
+                                            <label>{{ _('Default') }}</label>
+                                        <input type="text" class="input-small" placeholder="{{ _('Default') }}" data-bind="value: $data.default">
+                                        </div>
+                                    </div>
+                                </div>
+                            <!-- /ko -->
+                            <!-- ko if: slider -->
+                            <div class="customcontrolmanager-editor-input-slider">
+                                <button class="btn btn-danger btn-small pull-right" data-bind="click: function() { $root.editor.removeInput($data) }"><i class="fa-solid fa-trash"></i></button>
+                                <h4>{{ _('Slider') }}</h4>
+                                <div class="form-inline">
+                                    <div class="control-labeled">
+                                        <label>{{ _('Name') }}</label>
+                                        <input type="text" class="input-small" placeholder="{{ _('Name') }}" data-bind="value: name">
+                                    </div>
+                                    <div class="control-labeled">
+                                        <label>{{ _('Parameter') }}</label>
+                                        <input type="text" class="input-small" placeholder="{{ _('Parameter') }}" data-bind="value: parameter">
+                                    </div>
+                                    <div class="control-labeled">
+                                        <label>{{ _('Default') }}</label>
+                                        <input type="text" class="input-small" placeholder="{{ _('Default') }}" data-bind="value: $data.default">
+                                    </div>
+                                    <div class="control-labeled">
+                                        <label>{{ _('Min') }}</label>
+                                        <input type="number" class="input-small" placeholder="{{ _('Min') }}" data-bind="value: slider.min">
+                                    </div>
+                                    <div class="control-labeled">
+                                        <label>{{ _('Max') }}</label>
+                                        <input type="number" class="input-small" placeholder="{{ _('Max') }}" data-bind="value: slider.max">
+                                    </div>
+                                    <div class="control-labeled">
+                                        <label>{{ _('Step') }}</label>
+                                        <input type="number" class="input-small" placeholder="{{ _('Step') }}" data-bind="value: slider.step">
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- /ko -->
+                        </div>
+                        <div class="pull-right">
+                            <button title="{{ _('Add text parameter') }}" class="btn" data-bind="click: function() { editor.addInput() }"><i class="fa-solid fa-font"></i> Add text input</button>
+                            <button title="{{ _('Add slider') }}" class="btn" data-bind="click: function() { editor.addSliderInput() }"><i class="fa-solid fa-sliders"></i> Add slider</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: editor.useConfirm"> {{ _('Require confirmation') }}
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ko if: editor.useConfirm() -->
+                    <div class="control-group">
+                        <label class="control-label">{{ _('Confirmation message') }}</label>
+                        <div class="controls">
+                            <input type="text" class="input-block-level" data-bind="value: editor.control().confirm"></input>
+                        </div>
+                    </div>
+                <!-- /ko -->
+            <!-- /ko -->
+
+            <!-- ko if: editor.type() === "command" || editor.type() === "output" -->
+                <div class="control-group" data-bind="visible: editor.type() === 'command'">
+                    <div class="controls">
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: editor.useOutput"> {{ _('Parse command output') }}
+                        </label>
+                    </div>
+                </div>
+                <!-- ko if: editor.type() === "output" || editor.useOutput() -->
+                    <div class="control-group">
+                        <label class="control-label">{{ _('Regex') }}</label>
+                        <div class="controls">
+                            <input type="text" class="input-block-level" data-bind="value: editor.control().regex"></input>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">{{ _('Template') }}</label>
+                        <div class="controls">
+                            <input type="text" class="input-block-level" data-bind="value: editor.control().template"></input>
+                        </div>
+                    </div>
+                <!-- /ko -->
+            <!-- /ko -->
+
+            <!-- ko if: editor.useGrid() -->
+                <div class="control-group">
+                    <label class="control-label">{{ _('Width') }}</label>
+                    <div class="controls">
+                        <input type="number" min="0" max="12" step="1" data-bind="value: editor.control().width, valueAllowUnset: false"></input>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label">{{ _('Offset') }}</label>
+                    <div class="controls">
+                        <input type="number" min="0" max="12" step="1" data-bind="value: editor.control().offset, valueAllowUnset: true"></input>
+                    </div>
+                </div>
+            <!-- /ko -->
+        </form>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:void()" class="btn" data-dismiss="modal">{{ _('Cancel') }}</a>
+        <a href="javascript:void()" data-bind="click: editor.handleConfirm, disable: editor.nameError, css: { disabled: editor.nameError }" class="btn btn-primary" data-dismiss="modal" aria-hidden="true">{{ _('Confirm') }}</a>
+    </div>
+</div>
+<!-- End of editor dialog -->

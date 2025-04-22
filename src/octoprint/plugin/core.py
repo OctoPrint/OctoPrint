@@ -23,33 +23,56 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import fnmatch
+import importlib.machinery
+import importlib.util
 import inspect
 import logging
 import os
+import string
+import sys
 from collections import OrderedDict, defaultdict, namedtuple
 from os import scandir
 
-import pkg_resources
-import pkginfo
+from packaging.specifiers import SpecifierSet
 
-import octoprint.vendor.imp as imp
+try:
+    import importlib.metadata as meta
+except ImportError:  # Python 3.7
+    import importlib_metadata as meta
+
 from octoprint.util import sv, time_this, to_unicode
 from octoprint.util.version import get_python_version_string, is_python_compatible
 
+SUFFIXES = importlib.machinery.SOURCE_SUFFIXES + importlib.machinery.BYTECODE_SUFFIXES
+
 
 # noinspection PyDeprecation
-def _find_module(name, path=None):
+def _find_spec(module_name, name=None, path=None):
     if path is not None:
-        spec = imp.find_module(name, [path])
+        if name is None:
+            name = module_name
+
+        candidates = [os.path.join(path, name, f"__init__{ext}") for ext in SUFFIXES] + [
+            os.path.join(path, f"{name}{ext}") for ext in SUFFIXES
+        ]
+
+        for p in candidates:
+            if os.path.exists(p):
+                return importlib.util.spec_from_file_location(module_name, p)
+        else:
+            return None
+
     else:
-        spec = imp.find_module(name)
-    return spec[1], spec
+        return importlib.util.find_spec(module_name)
 
 
 # noinspection PyDeprecation
-def _load_module(name, spec):
-    f, filename, details = spec
-    return imp.load_module(name, f, filename, details)
+def _load_module(spec):
+    module = importlib.util.module_from_spec(spec)
+    if spec.name not in sys.modules:
+        sys.modules[spec.name] = module
+    spec.loader.exec_module(sys.modules[spec.name])
+    return sys.modules[spec.name]
 
 
 def parse_plugin_metadata(path):
@@ -86,12 +109,41 @@ def parse_plugin_metadata(path):
         all_relevant = assignments + function_defs
 
         def extract_target_ids(node):
-            return list(
-                map(
-                    lambda x: x.id,
-                    filter(lambda x: isinstance(x, ast.Name), node.targets),
-                )
-            )
+            return [x.id for x in filter(lambda x: isinstance(x, ast.Name), node.targets)]
+
+        if sys.version_info >= (3, 8, 0):
+
+            def extract_value(node):
+                if isinstance(node, ast.Constant):
+                    return node.value
+
+                elif (
+                    isinstance(node, ast.Call)
+                    and hasattr(node, "func")
+                    and node.func.id == "gettext"
+                    and node.args
+                    and isinstance(node.args[0], ast.Constant)
+                ):
+                    return node.args[0].value
+
+                return None
+
+        else:  # Python 3.7
+
+            def extract_value(node):
+                if isinstance(node, ast.Str):
+                    return node.s
+
+                elif (
+                    isinstance(node, ast.Call)
+                    and hasattr(node, "func")
+                    and node.func.id == "gettext"
+                    and node.args
+                    and isinstance(node.args[0], ast.Str)
+                ):
+                    return node.args[0].s
+
+                return None
 
         def extract_names(node):
             if isinstance(node, ast.Assign):
@@ -115,21 +167,9 @@ def parse_plugin_metadata(path):
             for a in reversed(assignments):
                 targets = extract_target_ids(a)
                 if key in targets:
-                    if isinstance(a.value, ast.Constant):
-                        result[key] = a.value.value
-
-                    elif isinstance(a.value, ast.Str):
-                        result[key] = a.value.s
-
-                    elif (
-                        isinstance(a.value, ast.Call)
-                        and hasattr(a.value, "func")
-                        and a.value.func.id == "gettext"
-                        and a.value.args
-                        and isinstance(a.value.args[0], ast.Str)
-                    ):
-                        result[key] = a.value.args[0].s
-
+                    value = extract_value(a.value)
+                    if value:
+                        result[key] = value
                     break
 
         for key in (ControlProperties.attr_hidden,):
@@ -146,7 +186,7 @@ def parse_plugin_metadata(path):
 
         for a in reversed(all_relevant):
             targets = extract_names(a)
-            if any(map(lambda x: x in targets, ControlProperties.all())):
+            if any(x in targets for x in ControlProperties.all()):
                 result["has_control_properties"] = True
                 break
 
@@ -375,6 +415,9 @@ class PluginInfo:
         self.invalid_syntax = False
         """Whether invalid syntax was encountered while trying to load this plugin."""
 
+        self.flags = []
+        """Additional flags assigned to the plugin through config."""
+
         self._name = name
         self._version = version
         self._description = description
@@ -511,9 +554,7 @@ class PluginInfo:
             object: The plugin's implementation if it matches all of the requested ``types``, None otherwise.
         """
 
-        if self.implementation and all(
-            map(lambda t: isinstance(self.implementation, t), types)
-        ):
+        if self.implementation and all(isinstance(self.implementation, t) for t in types):
             return self.implementation
         else:
             return None
@@ -831,6 +872,7 @@ class PluginManager:
         plugin_restart_needing_hooks=None,
         plugin_obsolete_hooks=None,
         plugin_considered_bundled=None,
+        plugin_flags=None,
         plugin_validators=None,
         compatibility_ignored_list=None,
     ):
@@ -854,15 +896,15 @@ class PluginManager:
             compatibility_ignored_list = []
         if plugin_considered_bundled is None:
             plugin_considered_bundled = []
+        if plugin_flags is None:
+            plugin_flags = {}
 
         processed_blacklist = []
         for entry in plugin_blacklist:
             if isinstance(entry, (tuple, list)):
                 key, version = entry
                 try:
-                    processed_blacklist.append(
-                        (key, pkg_resources.Requirement.parse(key + version))
-                    )
+                    processed_blacklist.append((key, SpecifierSet(version)))
                 except Exception:
                     self.logger.warning(
                         "Invalid version requirement {} for blacklist "
@@ -883,6 +925,7 @@ class PluginManager:
         self.logging_prefix = logging_prefix
         self.compatibility_ignored_list = compatibility_ignored_list
         self.plugin_considered_bundled = plugin_considered_bundled
+        self.plugin_flags = plugin_flags
 
         self.enabled_plugins = {}
         self.disabled_plugins = {}
@@ -941,7 +984,7 @@ class PluginManager:
                 (dict) dictionary of registered hooks and their handlers
         """
         return {
-            key: list(map(lambda v: (v[1], v[2]), value))
+            key: [(v[1], v[2]) for v in value]
             for key, value in self._plugin_hooks.items()
         }
 
@@ -1082,111 +1125,105 @@ class PluginManager:
         added = OrderedDict()
         found = []
 
-        # let's make sure we have a current working set ...
-        working_set = pkg_resources.WorkingSet()
-
-        # ... including the user's site packages
-        import site
-        import sys
-
-        if site.ENABLE_USER_SITE:
-            if site.USER_SITE not in working_set.entries:
-                working_set.add_entry(site.USER_SITE)
-            if site.USER_SITE not in sys.path:
-                site.addsitedir(site.USER_SITE)
-
         if not isinstance(groups, (list, tuple)):
             groups = [groups]
 
-        def wrapped(gen):
-            # to protect against some issues in installed packages that make iteration over entry points
-            # fall on its face - e.g. https://groups.google.com/forum/#!msg/octoprint/DyXdqhR0U7c/kKMUsMmIBgAJ
-            for entry in gen:
+        for group in groups:
+            for dist in meta.distributions():
                 try:
-                    yield entry
+                    # to protect against some issues in installed packages that make iteration over entry points
+                    # fall on its face - e.g. https://groups.google.com/forum/#!msg/octoprint/DyXdqhR0U7c/kKMUsMmIBgAJ
+                    entry_points = [ep for ep in dist.entry_points if ep.group == group]
                 except Exception:
                     self.logger.exception(
                         "Something went wrong while processing the entry points of a package in the "
                         "Python environment - broken entry_points.txt in some package?"
                     )
 
-        for group in groups:
-            for entry_point in wrapped(
-                working_set.iter_entry_points(group=group, name=None)
-            ):
-                try:
-                    key = entry_point.name
-                    module_name = entry_point.module_name
-                    version = entry_point.dist.version
-
-                    found.append(key)
-                    if (
-                        key in existing
-                        or key in added
-                        or (
-                            ignore_uninstalled
-                            and key in self.marked_plugins["uninstalled"]
-                        )
-                    ):
-                        # plugin is already defined or marked as uninstalled, ignore it
-                        continue
-
-                    bundled = key in self.plugin_considered_bundled
-                    kwargs = {
-                        "module_name": module_name,
-                        "version": version,
-                        "bundled": bundled,
-                    }
-                    package_name = entry_point.dist.project_name
+                for entry_point in entry_points:
                     try:
-                        entry_point_metadata = EntryPointMetadata(entry_point)
-                    except Exception:
+                        key = entry_point.name
+                        module_name = entry_point.value
+
+                        found.append(key)
+                        if (
+                            key in existing
+                            or key in added
+                            or (
+                                ignore_uninstalled
+                                and key in self.marked_plugins["uninstalled"]
+                            )
+                        ):
+                            # plugin is already defined or marked as uninstalled, ignore it
+                            continue
+
+                        # See https://packaging.python.org/en/latest/specifications/core-metadata/#core-metadata
+                        # or PEP 566 for available metadata fields
+                        metadata = dist.metadata
+                        if (
+                            not metadata
+                            or "Name" not in metadata
+                            or "Version" not in metadata
+                        ):
+                            continue
+
+                        package_name = dist.metadata["Name"]
+                        version = dist.metadata["Version"]
+
+                        kwargs = {
+                            "name": package_name,
+                            "module_name": module_name,
+                            "version": version,
+                            "bundled": key in self.plugin_considered_bundled,
+                            "summary": metadata.get("Summary"),
+                            "author": metadata.get("Author"),
+                        }
+
+                        if "License-Expression" in metadata:
+                            kwargs["license"] = metadata["License-Expression"]
+                        elif "License" in metadata:
+                            kwargs["license"] = metadata["License"]
+
+                        if "Home-page" in metadata:
+                            kwargs["url"] = metadata["Home-page"]
+                        elif "Project-URL" in metadata:
+                            for entry in metadata.get_all("Project-URL"):
+                                label, url = map(str.strip, entry.split(",", 1))
+                                label = normalize_project_url_label(label)
+                                if label == "homepage":
+                                    kwargs["url"] = url
+                                    break
+
+                        plugin = self._import_plugin_from_module(key, **kwargs)
+                        if plugin:
+                            plugin.origin = EntryPointOrigin(
+                                "entry_point", group, module_name, package_name, version
+                            )
+                            plugin.enabled = False
+
+                            # plugin is manageable if its location is writable and OctoPrint
+                            # is either not running from a virtual env or the plugin is
+                            # installed in that virtual env - the virtual env's pip will not
+                            # allow us to uninstall stuff that is installed outside
+                            # of the virtual env, so this check is necessary
+                            plugin.managable = os.access(plugin.location, os.W_OK) and (
+                                not self._python_virtual_env
+                                or is_sub_path_of(plugin.location, self._python_prefix)
+                                or is_editable_install(
+                                    self._python_install_dir,
+                                    package_name,
+                                    module_name,
+                                    plugin.location,
+                                )
+                            )
+
+                            added[key] = plugin
+                    except Exception as _:
                         self.logger.exception(
-                            "Something went wrong while retrieving metadata for module {}".format(
-                                module_name
+                            "Error processing entry point {!r} for group {}".format(
+                                entry_point, group
                             )
                         )
-                    else:
-                        kwargs.update(
-                            {
-                                "name": entry_point_metadata.name,
-                                "summary": entry_point_metadata.summary,
-                                "author": entry_point_metadata.author,
-                                "url": entry_point_metadata.home_page,
-                                "license": entry_point_metadata.license,
-                            }
-                        )
-
-                    plugin = self._import_plugin_from_module(key, **kwargs)
-                    if plugin:
-                        plugin.origin = EntryPointOrigin(
-                            "entry_point", group, module_name, package_name, version
-                        )
-                        plugin.enabled = False
-
-                        # plugin is manageable if its location is writable and OctoPrint
-                        # is either not running from a virtual env or the plugin is
-                        # installed in that virtual env - the virtual env's pip will not
-                        # allow us to uninstall stuff that is installed outside
-                        # of the virtual env, so this check is necessary
-                        plugin.managable = os.access(plugin.location, os.W_OK) and (
-                            not self._python_virtual_env
-                            or is_sub_path_of(plugin.location, self._python_prefix)
-                            or is_editable_install(
-                                self._python_install_dir,
-                                package_name,
-                                module_name,
-                                plugin.location,
-                            )
-                        )
-
-                        added[key] = plugin
-                except Exception:
-                    self.logger.exception(
-                        "Error processing entry point {!r} for group {}".format(
-                            entry_point, group
-                        )
-                    )
 
         return added, found
 
@@ -1203,17 +1240,24 @@ class PluginManager:
         license=None,
         bundled=False,
     ):
+        if module_name is None:
+            module_name = key
+
         # TODO error handling
         try:
             if folder:
-                location, spec = _find_module(key, path=folder)
+                spec = _find_spec(module_name, name=key, path=folder)
             elif module_name:
-                location, spec = _find_module(module_name)
+                spec = _find_spec(module_name)
             else:
                 return None
         except Exception:
             self.logger.exception(f"Could not locate plugin {key}")
             return None
+
+        location = spec.origin
+        if os.path.basename(location).startswith("__init__."):
+            location = os.path.dirname(location)
 
         # Create a simple dummy entry first ...
         plugin = PluginInfo(
@@ -1228,6 +1272,7 @@ class PluginManager:
             license=license,
         )
         plugin.bundled = bundled
+        plugin.flags = self.plugin_flags.get(key, [])
 
         if self._is_plugin_disabled(key):
             self.logger.info(f"Plugin {plugin} is disabled.")
@@ -1265,7 +1310,6 @@ class PluginManager:
         return self._import_plugin(
             key,
             spec,
-            module_name=module_name,
             name=name,
             location=plugin.location,
             version=version,
@@ -1281,7 +1325,6 @@ class PluginManager:
         self,
         key,
         spec,
-        module_name=None,
         name=None,
         location=None,
         version=None,
@@ -1293,10 +1336,7 @@ class PluginManager:
         parsed_metadata=None,
     ):
         try:
-            if module_name:
-                module = _load_module(module_name, spec)
-            else:
-                module = _load_module(key, spec)
+            module = _load_module(spec)
 
             plugin = PluginInfo(
                 key,
@@ -1312,6 +1352,7 @@ class PluginManager:
             )
 
             plugin.bundled = bundled
+            plugin.flags = self.plugin_flags.get(key, [])
         except Exception:
             self.logger.exception(f"Error loading plugin {key}")
             return None
@@ -1362,10 +1403,7 @@ class PluginManager:
         self.logger.info(
             "Loading plugins from {folders} and installed plugin packages...".format(
                 folders=", ".join(
-                    map(
-                        lambda x: x[0] if isinstance(x, tuple) else str(x),
-                        self.plugin_folders,
-                    )
+                    x[0] if isinstance(x, tuple) else str(x) for x in self.plugin_folders
                 )
             )
         )
@@ -1462,7 +1500,7 @@ class PluginManager:
                 "Found {count} plugin(s) providing {implementations} mixin implementations, {hooks} hook handlers".format(
                     count=len(self.enabled_plugins) + len(self.disabled_plugins),
                     implementations=len(self.plugin_implementations),
-                    hooks=sum(map(lambda x: len(x), self.plugin_hooks.values())),
+                    hooks=sum(len(x) for x in self.plugin_hooks.values()),
                 )
             )
 
@@ -1798,10 +1836,7 @@ class PluginManager:
         plugin_hooks = plugin.hooks.keys()
 
         return any(
-            map(
-                lambda hook: PluginManager.hook_matches_hooks(hook, *hooks),
-                plugin_hooks,
-            )
+            PluginManager.hook_matches_hooks(hook, *hooks) for hook in plugin_hooks
         )
 
     @staticmethod
@@ -1833,7 +1868,7 @@ class PluginManager:
         if not hook:
             return False
 
-        return any(map(lambda h: fnmatch.fnmatch(hook, h), hooks))
+        return any(fnmatch.fnmatch(hook, h) for h in hooks)
 
     @staticmethod
     def mixins_matching_bases(klass, *bases):
@@ -2034,9 +2069,17 @@ class PluginManager:
         if len(all_plugins) <= 0:
             _log("No plugins available")
         else:
-            formatted_plugins = "\n".join(
-                map(
-                    lambda x: "| "
+            bundled_plugins = [x for x in all_plugins if x.bundled]
+            third_party_plugins = [x for x in all_plugins if not x.bundled]
+
+            formatted_plugins = "\n"
+            for headline, plugins in (
+                ("Bundled Plugins", bundled_plugins),
+                ("Third Party Plugins", third_party_plugins),
+            ):
+                formatted_plugins += f"| {headline} ({len(plugins)})\n"
+                formatted_plugins += "\n".join(
+                    "|  "
                     + x.long_str(
                         show_bundled=show_bundled,
                         bundled_strs=bundled_str,
@@ -2044,16 +2087,22 @@ class PluginManager:
                         location_str=location_str,
                         show_enabled=show_enabled,
                         enabled_strs=enabled_str,
-                    ),
-                    sorted(self.plugins.values(), key=lambda x: str(x).lower()),
+                    )
+                    for x in sorted(plugins, key=lambda x: str(x).lower())
                 )
-            )
+                formatted_plugins += "\n"
+
             legend = "Prefix legend: {1} = disabled, {2} = blacklisted, {3} = incompatible".format(
                 *enabled_str
             )
+
             _log(
-                "{count} plugin(s) registered with the system:\n{plugins}\n{legend}".format(
-                    count=len(all_plugins), plugins=formatted_plugins, legend=legend
+                "{count} plugin(s) registered with the system ({bundled} bundled & {third_party} third party):{plugins}{legend}".format(
+                    count=len(all_plugins),
+                    bundled=len(bundled_plugins),
+                    third_party=len(third_party_plugins),
+                    plugins=formatted_plugins,
+                    legend=legend,
                 )
             )
 
@@ -2289,7 +2338,7 @@ class PluginManager:
             try:
                 int(order)
             except ValueError:
-                raise ValueError("Hook order is not a number")
+                raise ValueError(f"Hook order is not a number: {order}") from None
 
             return callback, order
 
@@ -2339,30 +2388,11 @@ def is_editable_install(install_dir, package, module, location):
     return False
 
 
-class EntryPointMetadata(pkginfo.Distribution):
-    def __init__(self, entry_point):
-        self.entry_point = entry_point
-        self.extractMetadata()
-
-    def read(self):
-        import warnings
-
-        metadata_files = ("METADATA", "PKG-INFO")  # wheel  # egg
-
-        if self.entry_point and self.entry_point.dist:
-            for metadata_file in metadata_files:
-                try:
-                    return self.entry_point.dist.get_metadata(metadata_file)
-                except OSError:  # noqa: B014
-                    # file not found, metadata file might be missing, ignore
-                    pass
-
-        warnings.warn(
-            "No package metadata found for package {}".format(
-                self.entry_point.module_name
-            ),
-            stacklevel=2,
-        )
+def normalize_project_url_label(label: str) -> str:
+    # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#label-normalization
+    chars_to_remove = string.puctuation + string.whitespace
+    removal_map = str.maketrans("", "", chars_to_remove)
+    return label.translate(removal_map).lower()
 
 
 class Plugin:

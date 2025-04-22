@@ -8,6 +8,7 @@ import logging
 import os
 import re
 from collections import defaultdict
+from functools import partial
 
 from flask import (
     Response,
@@ -49,7 +50,7 @@ from octoprint.server.util.csrf import add_csrf_cookie
 from octoprint.server.util.flask import credentials_checked_recently
 from octoprint.settings import settings
 from octoprint.util import sv, to_bytes, to_unicode
-from octoprint.util.version import get_python_version_string
+from octoprint.util.version import get_octoprint_version, get_python_version_string
 
 from . import util
 
@@ -73,7 +74,7 @@ def _preemptive_unless(base_url=None, additional_unless=None):
         or not (base_url.startswith("http://") or base_url.startswith("https://"))
     )
 
-    recording_disabled = request.headers.get("X-Preemptive-Recording", "no") == "yes"
+    recording_disabled = g.get("preemptive_recording_active", False)
 
     if callable(additional_unless):
         return recording_disabled or disabled_for_root or additional_unless()
@@ -177,6 +178,9 @@ def _locale_str(locale):
     return str(locale) if locale else "en"
 
 
+_mfa_login_forms = None
+
+
 @app.route("/login")
 @app.route("/login/")
 def login():
@@ -217,9 +221,9 @@ def login():
     permissions = sorted(
         filter(
             lambda x: x is not None and isinstance(x, OctoPrintPermission),
-            map(
-                lambda x: getattr(Permissions, x.strip()),
-                request.args.get("permissions", "").split(","),
+            (
+                getattr(Permissions, x.strip())
+                for x in request.args.get("permissions", "").split(",")
             ),
         ),
         key=lambda x: x.get_name(),
@@ -240,7 +244,7 @@ def login():
     render_kwargs = {
         "theming": [],
         "redirect_url": redirect_url,
-        "permission_names": map(lambda x: x.get_name(), permissions),
+        "permission_names": (x.get_name() for x in permissions),
         "user_id": user_id,
         "logged_in": not current_user.is_anonymous,
         "reauthenticate": reauthenticate,
@@ -257,11 +261,64 @@ def login():
     except Exception:
         _logger.exception("Error processing theming CSS, ignoring")
 
+    # fetch all MFA login forms
+
+    global _mfa_login_forms
+    if _mfa_login_forms is None:
+        mfa_plugins = pluginManager.get_implementations(octoprint.plugin.MfaPlugin)
+        mfa_config_keys = {"type", "name", "template"}
+        mfa_rules = {
+            "mfa_login": {
+                "div": lambda x: f"mfa_login_{x}",
+                "template": lambda x: f"{x}_mfa_login.jinja2",
+                "to_entry": lambda x: x,
+            }
+        }
+        forms = []
+        for plugin in mfa_plugins:
+            try:
+                # all MfaPlugins are also TemplatePlugins, so we can use the same method here
+                configs = plugin.get_template_configs()
+
+                # preprocess the mfa login template to only include config keys that are supported here
+                def cleanup(config):
+                    return {k: v for k, v in config.items() if k in mfa_config_keys}
+
+                configs = [cleanup(x) for x in configs if x["type"] == "mfa_login"]
+                includes = _process_template_configs(
+                    plugin._identifier, plugin, configs, mfa_rules
+                )
+
+                if includes["mfa_login"]:
+                    mfa_login = includes["mfa_login"][0]
+                    forms.append(
+                        {
+                            "id": mfa_login["_div"],
+                            "template": mfa_login["template"],
+                            "title": mfa_login["name"],
+                        }
+                    )
+            except Exception:
+                _logger.exception(
+                    f"Error while calling plugin {plugin._identifier}, skipping it",
+                    extra={"plugin": plugin._identifier},
+                )
+        _mfa_login_forms = forms
+
+    render_kwargs["forms"] = _mfa_login_forms
+
+    # render the login dialog
     resp = make_response(render_template("login.jinja2", **render_kwargs))
     return add_csrf_cookie(resp)
 
 
 @app.route("/recovery")
+@app.route("/rescue/")
+@app.route("/rescue")
+def recovery_redirect():
+    return redirect(url_for("recovery"))
+
+
 @app.route("/recovery/")
 def recovery():
     response = require_fresh_login_with(permissions=[Permissions.ADMIN])
@@ -368,6 +425,24 @@ def in_cache():
 
 
 @app.route("/reverse_proxy_test")
+@app.route("/reverse_proxy_check")
+@app.route("/reverse_proxy_check/")
+@app.route("/reverse-proxy-test")
+@app.route("/reverse-proxy-test/")
+@app.route("/reverse-proxy-check")
+@app.route("/reverse-proxy-check/")
+@app.route("/proxy_test")
+@app.route("/proxy_test/")
+@app.route("/proxy_check")
+@app.route("/proxy_check/")
+@app.route("/proxy-test")
+@app.route("/proxy-test/")
+@app.route("/proxy-check")
+@app.route("/proxy-check/")
+def reverse_proxy_test_redirect():
+    return redirect(url_for("reverse_proxy_test"))
+
+
 @app.route("/reverse_proxy_test/")
 def reverse_proxy_test():
     from octoprint.server.util.flask import get_reverse_proxy_info
@@ -378,7 +453,7 @@ def reverse_proxy_test():
         if response:
             return response
 
-    kwargs = get_reverse_proxy_info().dict()
+    kwargs = get_reverse_proxy_info().model_dump()
 
     try:
         return render_template(
@@ -424,7 +499,7 @@ def index():
     # if we need to refresh our template cache or it's not yet set, process it
     fetch_template_data(refresh=force_refresh)
 
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
 
     enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
     enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])
@@ -691,7 +766,7 @@ def index():
 
     response = None
 
-    forced_view = request.headers.get("X-Force-View", None)
+    forced_view = getattr(g, "preemptive_recording_view", None)
 
     if forced_view:
         # we have view forced by the preemptive cache
@@ -708,9 +783,9 @@ def index():
                     if _logger.isEnabledFor(logging.DEBUG) and isinstance(
                         response, Response
                     ):
-                        response.headers[
-                            "X-Ui-Plugin"
-                        ] = plugin.implementation._identifier
+                        response.headers["X-Ui-Plugin"] = (
+                            plugin.implementation._identifier
+                        )
         else:
             response = require_login_with(permissions=default_permissions)
             if not response:
@@ -783,15 +858,20 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
             _logger.exception("Error while collecting available locales")
 
     permissions = [permission.as_dict() for permission in Permissions.all()]
-    filetypes = list(sorted(full_extension_tree().keys()))
-    extensions = list(map(lambda ext: f".{ext}", get_all_extensions()))
+    filetypes = sorted(full_extension_tree().keys())
+    extensions = [f".{ext}" for ext in get_all_extensions()]
 
     # ~~ prepare full set of template vars for rendering
 
     render_kwargs = {
         "debug": debug,
         "firstRun": first_run,
-        "version": {"number": VERSION, "display": DISPLAY_VERSION, "branch": BRANCH},
+        "version": {
+            "number": VERSION,
+            "display": DISPLAY_VERSION,
+            "branch": BRANCH,
+            "base": get_octoprint_version().base_version,
+        },
         "python_version": get_python_version_string(),
         "templates": templates,
         "pluginNames": plugin_names,
@@ -851,6 +931,11 @@ def fetch_template_data(refresh=False):
             "template": lambda x: x + "_usersettings.jinja2",
             "to_entry": lambda data: (data["name"], data),
         },
+        "usersettings_mfa": {
+            "div": lambda x: "usersettings_mfa_plugin_" + x,
+            "template": lambda x: x + "_usersettings_mfa.jinja2",
+            "to_entry": lambda data: (data["name"], data),
+        },
         "wizard": {
             "div": lambda x: "wizard_plugin_" + x,
             "template": lambda x: x + "_wizard.jinja2",
@@ -896,6 +981,7 @@ def fetch_template_data(refresh=False):
             "custom_add_order": lambda missing: ["section_plugins"] + missing,
         },
         "usersettings": {"add": "append", "key": "name"},
+        "usersettings_mfa": {"add": "append", "key": "name"},
         "wizard": {"add": "append", "key": "name", "key_extractor": wizard_key_extractor},
         "webcam": {"add": "append", "key": "name"},
         "about": {"add": "append", "key": "name"},
@@ -932,11 +1018,11 @@ def fetch_template_data(refresh=False):
                 if "div" not in rule:
                     # default div name: <hook plugin>_<template_key>_plugin_<plugin>
                     div = f"{name}_{key}_plugin_"
-                    rule["div"] = lambda x: div + x
+                    rule["div"] = partial(lambda d, x: d + x, div)
                 if "template" not in rule:
                     # default template name: <plugin>_plugin_<hook plugin>_<template key>.jinja2
                     template = f"_plugin_{name}_{key}.jinja2"
-                    rule["template"] = lambda x: x + template
+                    rule["template"] = partial(lambda t, x: x + t, template)
                 if "to_entry" not in rule:
                     # default to_entry assumes existing "name" property to be used as label for 2-tuple entry data structure (<name>, <properties>)
                     rule["to_entry"] = lambda data: (data["name"], data)
@@ -1322,7 +1408,7 @@ def fetch_template_data(refresh=False):
             )
 
         if not wizard_required or wizard_ignored:
-            includes["wizard"] = list()
+            includes["wizard"] = []
 
         for t in template_types:
             plugin_aliases[t] = {}
@@ -1417,25 +1503,25 @@ def fetch_template_data(refresh=False):
                 template_sorting[t]["key_extractor"]
             ):
 
-                def create_safe_extractor(extractor):
+                def create_safe_extractor(t, extractor):
                     def f(x, k):
                         try:
-                            return extractor(x, k)
+                            return extractor(x, k)  # noqa: B023
                         except Exception:
                             _logger.exception(
-                                "Error while extracting sorting keys for template {}".format(
-                                    t
-                                )
+                                f"Error while extracting sorting keys for template {t}"
                             )
                             return None
 
                     return f
 
-                extractor = create_safe_extractor(template_sorting[t]["key_extractor"])
+                extractor = partial(create_safe_extractor, t)(
+                    template_sorting[t]["key_extractor"]
+                )
 
             sort_key = template_sorting[t]["key"]
 
-            def key_func(x):
+            def key_func(t, extractor, sort_key, x):
                 config = templates[t]["entries"][x]
                 entry_order = config_extractor(config, "order", default_value=None)
                 return (
@@ -1444,15 +1530,17 @@ def fetch_template_data(refresh=False):
                     sv(extractor(config, sort_key)),
                 )
 
-            sorted_missing = sorted(missing_in_order, key=key_func)
+            sorted_missing = sorted(
+                missing_in_order, key=partial(key_func, t, extractor, sort_key)
+            )
         else:
 
-            def key_func(x):
+            def key_func(t, x):
                 config = templates[t]["entries"][x]
                 entry_order = config_extractor(config, "order", default_value=None)
                 return entry_order is None, sv(entry_order)
 
-            sorted_missing = sorted(missing_in_order, key=key_func)
+            sorted_missing = sorted(missing_in_order, key=partial(key_func, t))
 
         if template_sorting[t]["add"] == "prepend":
             templates[t]["order"] = sorted_missing + templates[t]["order"]

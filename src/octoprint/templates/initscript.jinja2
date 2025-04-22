@@ -23,11 +23,11 @@
     // sockjs should define CLOSE_NORMAL for us, but they don't (from ws spec)
     var SOCKJS_CLOSE_NORMAL = 1000;
 
-    var VERSION = "{{ version.number|e }}";
-    var DISPLAY_VERSION = "{{ version.display|e }}";
-    var BRANCH = "{{ version.branch|e }}";
-    var PYTHON_VERSION = "{{ python_version|e }}";
-    var LOCALE = "{{ g.locale|e }}";
+    var VERSION = "{{ version.number }}";
+    var DISPLAY_VERSION = "{{ version.display }}";
+    var BRANCH = "{{ version.branch }}";
+    var PYTHON_VERSION = "{{ python_version }}";
+    var LOCALE = "{{ g.locale }}";
     var AVAILABLE_LOCALES = {{ locales|tojson }};
     var SUPPORTED_FILETYPES = {{ supportedFiletypes|tojson }};
     var SUPPORTED_EXTENSIONS = {{ supportedExtensions|tojson }};
@@ -40,7 +40,7 @@
     var OCTOPRINT_ADDITIONAL_BINDINGS = [];
 
     // deprecated stuff only kept for backwards compatibility goes here
-    var CONFIG_WEBCAM_STREAM = "{{ webcamStream|e }}"; // deprecated, only left for compatibility reasons
+    var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}"; // deprecated, only left for compatibility reasons
     var CONFIG_ACCESS_CONTROL = true; // deprecated, only left for compatibility reasons
     var CONFIG_ACCESS_CONTROL_ACTIVE = {% if accessControlActive -%} true; {% else %} false; {%- endif %}; // deprecated, only left for compatibility reasons
     var UI_API_KEY = ""; // deprecated, only left for compatibility reasons

@@ -148,10 +148,47 @@
 
     OctoPrintClient.prototype.getCookie = function (name) {
         name = this.getCookieName(name);
-        return ("; " + document.cookie)
-            .split("; " + name + "=")
-            .pop()
-            .split(";")[0];
+        const cookies = document.cookie
+            .split("; ")
+            .filter((x) => x.startsWith(name + "="));
+        if (cookies.length === 0) return false;
+
+        return decodeURIComponent(cookies.shift().split("=")[1]);
+    };
+
+    OctoPrintClient.prototype.setCookie = function (name, value, opts) {
+        name = encodeURIComponent(this.getCookieName(name));
+        value = encodeURIComponent(value);
+
+        const url = this.getParsedBaseUrl();
+        const path = opts.path || false;
+        const expires = opts.expires || false;
+        const maxage = opts.maxage || false;
+        const secure = opts.secure || url.protocol === "https:";
+
+        let cookie = `${name}=${value}; path=${path}`;
+
+        if (path) {
+            cookie += `; path=${path}`;
+        }
+
+        if (expires) {
+            cookie += `; expires=${
+                expires instanceof Date ? expires.toUTCString() : expires
+            }`;
+        } else if (maxage) {
+            cookie += `; max-age=${maxage}`;
+        }
+
+        if (secure) {
+            cookie += "; secure";
+        }
+
+        document.cookie = cookie;
+    };
+
+    OctoPrintClient.prototype.deleteCookie = function (name) {
+        this.setCookie(name, "", {maxage: -1});
     };
 
     OctoPrintClient.prototype.getRequestHeaders = function (method, additional, opts) {

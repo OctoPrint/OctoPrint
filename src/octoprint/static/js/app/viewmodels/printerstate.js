@@ -75,17 +75,45 @@ $(function () {
             );
         });
 
-        self.filename = ko.observable(undefined);
-        self.filepath = ko.observable(undefined);
-        self.filedisplay = ko.observable(undefined);
-        self.filesize = ko.observable(undefined);
+        self.filedata = ko.observable(undefined);
         self.filepos = ko.observable(undefined);
-        self.filedate = ko.observable(undefined);
+
+        self.filename = ko.pureComputed(() => {
+            return self.filedata() ? self.filedata()["name"] : undefined;
+        });
+        self.filepath = ko.pureComputed(() => {
+            return self.filedata() ? self.filedata()["path"] : undefined;
+        });
+        self.filedisplay = ko.pureComputed(() => {
+            return self.filedata() ? self.filedata()["display"] : undefined;
+        });
+        self.filesize = ko.pureComputed(() => {
+            return self.filedata() ? self.filedata()["size"] : undefined;
+        });
+        self.filedate = ko.pureComputed(() => {
+            return self.filedata() ? self.filedata()["date"] : undefined;
+        });
+        self.sd = ko.pureComputed(() => {
+            return self.filedata() ? self.filedata()["origin"] === "sdcard" : undefined;
+        });
+
+        self.calcFileKey = (data) => {
+            if (data === undefined) {
+                data = self.filedata();
+            }
+            if (data === undefined) return "";
+
+            const d = {origin: null, path: null, size: null, date: null, ...data};
+            return `${d.origin}:${d.path}:${d.size}:${d.date}`.replace(
+                /(null)?(:null)+$/,
+                ""
+            );
+        };
+
         self.progress = ko.observable(undefined);
         self.printTime = ko.observable(undefined);
         self.printTimeLeft = ko.observable(undefined);
         self.printTimeLeftOrigin = ko.observable(undefined);
-        self.sd = ko.observable(undefined);
         self.timelapse = ko.observable(undefined);
         self.user = ko.observable(undefined);
 
@@ -319,20 +347,18 @@ $(function () {
         };
 
         self._processJobData = function (data) {
-            if (data.file) {
-                self.filename(data.file.name);
-                self.filepath(data.file.path);
-                self.filesize(data.file.size);
-                self.filedisplay(data.file.display);
-                self.filedate(data.file.date);
-                self.sd(data.file.origin === "sdcard");
+            if (data.file && data.file.origin && data.file.path) {
+                const currentFileKey = self.calcFileKey();
+                const futureFileKey = self.calcFileKey(data.file);
+                if (
+                    currentFileKey !== futureFileKey &&
+                    !currentFileKey.startsWith(futureFileKey + ":") &&
+                    !futureFileKey.startsWith(currentFileKey + ":")
+                ) {
+                    self._loadFileData(data.file.origin, data.file.path);
+                }
             } else {
-                self.filename(undefined);
-                self.filepath(undefined);
-                self.filesize(undefined);
-                self.filedisplay(undefined);
-                self.filedate(undefined);
-                self.sd(undefined);
+                self.filedata(undefined);
             }
 
             self.estimatedPrintTime(data.estimatedPrintTime);
@@ -400,6 +426,12 @@ $(function () {
             self.resendRatio(data.ratio);
         };
 
+        self._loadFileData = (origin, path) => {
+            OctoPrint.files.get(origin, path).then((data) => {
+                self.filedata(data);
+            });
+        };
+
         self._checkResendRatioCriticality = function () {
             if (self.resendRatioCritical()) {
                 if (self.resendRatioNotification === undefined) {
@@ -431,7 +463,7 @@ $(function () {
             if (self.isPaused()) {
                 showConfirmationDialog({
                     message: gettext(
-                        "This will restart the print job from the beginning."
+                        "This will restart the print job from the beginning. Please ensure that the print bed is clear."
                     ),
                     onproceed: function () {
                         OctoPrint.job.restart();
@@ -448,7 +480,8 @@ $(function () {
                         self.allViewModels,
                         "onBeforePrintStart",
                         function (method) {
-                            prevented = prevented || method(callback) === false;
+                            prevented =
+                                prevented || method(callback, self.filedata()) === false;
                         }
                     );
 
@@ -462,7 +495,7 @@ $(function () {
                 } else {
                     showConfirmationDialog({
                         message: gettext(
-                            "This will start a new print job. Please check that the print bed is clear."
+                            "This will start a new print job. Please ensure that the print bed is clear."
                         ),
                         question: gettext("Do you want to start the print job now?"),
                         cancel: gettext("No"),

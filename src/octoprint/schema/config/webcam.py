@@ -14,6 +14,13 @@ class TimelapseTypeEnum(str, Enum):
     timed = "timed"
 
 
+class RenderAfterPrintEnum(str, Enum):
+    off = "off"
+    always = "always"
+    success = "success"
+    failure = "failure"
+
+
 @with_attrs_docs
 class TimelapseOptions(BaseModel):
     interval: Optional[int] = None
@@ -36,6 +43,9 @@ class TimelapseConfig(BaseModel):
 
     postRoll: int = 0
     """The number of seconds in the rendered video to add after a finished print. The exact way how the additional images will be recorded depends on timelapse type. `zchange` timelapses will take one final picture and add it `fps * postRoll` times. `timed` timelapses continue to record just like at the beginning, so the recording will continue another `fps * postRoll * interval` seconds. This behaviour can be overridden by setting the `capturePostRoll` option to `false`, in which case the post roll will be created identically to `zchange` mode."""
+
+    renderAfterPrint: RenderAfterPrintEnum = RenderAfterPrintEnum.always
+    """Determines whether rendering the timelapse should be done automatically after the print is finished. This can be done always, only after successful prints, only after failed prints, or never."""
 
     options: TimelapseOptions = TimelapseOptions()
     """Additional options depending on the timelapse type."""
@@ -75,6 +85,9 @@ class WebcamConfig(BaseModel):
 
     cleanTmpAfterDays: int = 7
     """After how many days unrendered timelapses will be deleted."""
+
+    renderAfterPrintDelay: int = 0
+    """Delay to wait for after print end before rendering timelapse, in seconds. If another print gets started during this time, the rendering will be postponed."""
 
     defaultWebcam: str = "classic"
     """The name of the default webcam"""

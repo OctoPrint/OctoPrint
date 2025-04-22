@@ -530,7 +530,7 @@ $(function () {
                     "The command <code>%(command)s</code> was not sent " +
                         "to the printer:"
                 ) +
-                "</p><p><pre>%(message)s</pre></p>";
+                "</p><p>%(message)s</p>";
 
             new PNotify({
                 title: gettext("Suppressed command"),

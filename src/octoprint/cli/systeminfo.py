@@ -48,7 +48,10 @@ def get_systeminfo(
         "octoprint": {"version": __version__, "last_safe_mode": last_safe_mode},
         "connectivity": connectivity_checker.as_dict(),
         "env": environment_detector.environment,
-        "systeminfo": {"generated": datetime.datetime.utcnow().isoformat()[:19] + "Z"},
+        "systeminfo": {
+            "generated": datetime.datetime.now(datetime.timezone.utc).isoformat()[:19]
+            + "Z"
+        },
     }
 
     # flatten and filter

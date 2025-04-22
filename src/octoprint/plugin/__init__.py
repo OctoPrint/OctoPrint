@@ -25,6 +25,12 @@ from octoprint.plugin.types import OctoPrintPlugin, SettingsPlugin
 from octoprint.settings import settings as s
 from octoprint.util import deprecated
 
+
+class PluginFlags:
+    AUTOESCAPE_ON = "autoescape_on"
+    AUTOESCAPE_OFF = "autoescape_off"
+
+
 # singleton
 _instance = None
 
@@ -44,6 +50,7 @@ def plugin_manager(
     plugin_restart_needing_hooks=None,
     plugin_obsolete_hooks=None,
     plugin_considered_bundled=None,
+    plugin_flags=None,
     plugin_validators=None,
     compatibility_ignored_list=None,
 ):
@@ -76,6 +83,8 @@ def plugin_manager(
             not be enabled since they might depend on functionality that is no longer available.
         plugin_considered_bundled (list): A list of plugin identifiers that are considered bundled plugins even if
             installed separately.
+        plugin_flags (dict): A dict mapping plugin identifiers to additional flags used to override certain behaviours using
+            configuration.
         plugin_validators (list): A list of additional plugin validators through which to process each plugin.
         compatibility_ignored_list (list): A list of plugin keys for which it will be ignored if they are flagged as
             incompatible. This is for development purposes only and should not be used in production.
@@ -129,6 +138,7 @@ def plugin_manager(
                 plugin_restart_needing_hooks=plugin_restart_needing_hooks,
                 plugin_obsolete_hooks=plugin_obsolete_hooks,
                 plugin_considered_bundled=plugin_considered_bundled,
+                plugin_flags=plugin_flags,
                 plugin_validators=plugin_validators,
                 compatibility_ignored_list=compatibility_ignored_list,
             )
@@ -475,7 +485,7 @@ class PluginSettings:
 
     def _prefix_path(self, path=None):
         if path is None:
-            path = list()
+            path = []
         return ["plugins", self.plugin_key] + path
 
     def global_has(self, path, **kwargs):

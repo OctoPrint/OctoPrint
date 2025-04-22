@@ -191,7 +191,7 @@ class CommandlineCaller:
             if not lines:
                 return []
             processed = self._preprocess_lines(
-                *map(lambda x: to_unicode(x, errors="replace"), lines)
+                *(to_unicode(x, errors="replace") for x in lines)
             )
             if logged:
                 logger(*processed)

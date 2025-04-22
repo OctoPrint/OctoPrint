@@ -369,7 +369,9 @@ class BackupPlugin(
 
     def route_hook(self, *args, **kwargs):
         from octoprint.server import app
-        from octoprint.server.util.flask import permission_and_fresh_credentials_validator
+        from octoprint.server.util.flask import (
+            permission_and_fresh_credentials_validator,
+        )
         from octoprint.server.util.tornado import (
             LargeResponseHandler,
             access_validation_factory,
@@ -395,7 +397,9 @@ class BackupPlugin(
                         status_code=404,
                     ),
                     "access_validation": access_validation_factory(
-                        app, permission_and_fresh_credentials_validator, Permissions.ADMIN
+                        app,
+                        permission_and_fresh_credentials_validator,
+                        Permissions.ADMIN,
                     ),
                 },
             )
@@ -546,9 +550,9 @@ class BackupPlugin(
             plugin_info = plugin_manager.get_plugin_info("pluginmanager")
             if plugin_info and plugin_info.implementation:
                 default_settings_overlay = {"plugins": {}}
-                default_settings_overlay["plugins"][
-                    "pluginmanager"
-                ] = plugin_info.implementation.get_settings_defaults()
+                default_settings_overlay["plugins"]["pluginmanager"] = (
+                    plugin_info.implementation.get_settings_defaults()
+                )
                 settings.add_overlay(default_settings_overlay, at_end=True)
 
             if not os.path.isabs(path):
@@ -749,13 +753,8 @@ class BackupPlugin(
 
                 assert isinstance(unknown_plugins, list)
                 assert all(
-                    map(
-                        lambda x: isinstance(x, dict)
-                        and "key" in x
-                        and "name" in x
-                        and "url" in x,
-                        unknown_plugins,
-                    )
+                    isinstance(x, dict) and "key" in x and "name" in x and "url" in x
+                    for x in unknown_plugins
                 )
 
                 installed_plugins = self._plugin_manager.plugins
@@ -794,21 +793,30 @@ class BackupPlugin(
     @classmethod
     def _clean_dir_backup(cls, basedir, on_log_progress=None):
         basedir_backup = basedir + ".bck"
+        basedir_zip = os.path.join(basedir, "basedir_before_restore.bck.zip")
 
-        if os.path.exists(basedir_backup):
+        if os.path.exists(basedir_backup) or os.path.exists(basedir_zip):
 
             def remove_bck():
                 if callable(on_log_progress):
                     on_log_progress(
                         "Found config folder backup from prior restore, deleting it..."
                     )
-                shutil.rmtree(basedir_backup)
+
+                if os.path.exists(basedir_backup):
+                    shutil.rmtree(basedir_backup)
+                if os.path.exists(basedir_zip):
+                    os.remove(basedir_zip)
+
                 if callable(on_log_progress):
                     on_log_progress("... deleted.")
 
             thread = threading.Thread(target=remove_bck)
             thread.daemon = True
             thread.start()
+            return thread
+
+        return None
 
     @classmethod
     def _get_disk_size(cls, path, ignored=None):
@@ -933,7 +941,7 @@ class BackupPlugin(
                     exclude.append("timelapse_tmp")
 
                 current_excludes = list(exclude)
-                additional_excludes = list()
+                additional_excludes = []
                 plugin_data = settings.global_get_basefolder("data")
                 for plugin, hook in plugin_manager.get_hooks(
                     "octoprint.plugin.backup.additional_excludes"
@@ -947,12 +955,12 @@ class BackupPlugin(
                                     os.path.join(plugin_data, plugin)
                                 )
                             else:
-                                current_excludes += map(
-                                    lambda x: os.path.join("data", plugin, x), additional
+                                current_excludes += (
+                                    os.path.join("data", plugin, x) for x in additional
                                 )
-                                additional_excludes += map(
-                                    lambda x: os.path.join(plugin_data, plugin, x),
-                                    additional,
+                                additional_excludes += (
+                                    os.path.join(plugin_data, plugin, x)
+                                    for x in additional
                                 )
                     except Exception:
                         logger.exception(
@@ -1017,7 +1025,10 @@ class BackupPlugin(
                         on_backup_start(name, temporary_path, exclude)
 
                     with zipfile.ZipFile(
-                        temporary_path, mode="w", compression=compression, allowZip64=True
+                        temporary_path,
+                        mode="w",
+                        compression=compression,
+                        allowZip64=True,
                     ) as zip:
 
                         def add_to_zip(source, target, ignored=None):
@@ -1138,9 +1149,16 @@ class BackupPlugin(
         on_restore_done=None,
         on_restore_failed=None,
     ):
-        if not cls._restore_supported(settings):
+        def log_progress(line):
+            if callable(on_log_progress):
+                on_log_progress(line)
+
+        def log_error(line, exc_info=None):
             if callable(on_log_error):
-                on_log_error("Restore is not supported on this operating system")
+                on_log_error(line, exc_info)
+
+        if not cls._restore_supported(settings):
+            log_error("Restore is not supported on this operating system")
             if callable(on_restore_failed):
                 on_restore_failed(path)
             return False
@@ -1152,7 +1170,9 @@ class BackupPlugin(
         )
 
         basedir = settings._basedir
-        cls._clean_dir_backup(basedir, on_log_progress=on_log_progress)
+        thread = cls._clean_dir_backup(basedir, on_log_progress=on_log_progress)
+        if thread:
+            thread.join()
 
         repo_url = settings.global_get(["plugins", "pluginmanager", "repository"])
         if not repo_url:
@@ -1209,8 +1229,7 @@ class BackupPlugin(
                         # unzip to temporary folder
                         temp = tempfile.mkdtemp()
                         try:
-                            if callable(on_log_progress):
-                                on_log_progress(f"Unpacking backup to {temp}...")
+                            log_progress(f"Unpacking backup to {temp}...")
 
                             abstemp = os.path.abspath(temp)
                             dirs = {}
@@ -1251,8 +1270,7 @@ class BackupPlugin(
                                     on_restore_failed(path)
                                 return False
 
-                            if callable(on_log_progress):
-                                on_log_progress("Unpacked")
+                            log_progress("Unpacked")
 
                             # install available plugins
                             plugins = []
@@ -1285,26 +1303,18 @@ class BackupPlugin(
                                     # no repo, all plugins are not installable
                                     unknown_plugins = plugins
 
-                                if callable(on_log_progress):
-                                    if known_plugins:
-                                        on_log_progress(
-                                            "Known and installable plugins: {}".format(
-                                                ", ".join(
-                                                    map(lambda x: x["id"], known_plugins)
-                                                )
-                                            )
+                                if known_plugins:
+                                    log_progress(
+                                        "Known and installable plugins: {}".format(
+                                            ", ".join(x["id"] for x in known_plugins)
                                         )
-                                    if unknown_plugins:
-                                        on_log_progress(
-                                            "Unknown plugins: {}".format(
-                                                ", ".join(
-                                                    map(
-                                                        lambda x: x["key"],
-                                                        unknown_plugins,
-                                                    )
-                                                )
-                                            )
+                                    )
+                                if unknown_plugins:
+                                    log_progress(
+                                        "Unknown plugins: {}".format(
+                                            ", ".join(x["key"] for x in unknown_plugins)
                                         )
+                                    )
 
                                 if callable(on_install_plugins):
                                     on_install_plugins(known_plugins)
@@ -1313,40 +1323,134 @@ class BackupPlugin(
                                     on_report_unknown_plugins(unknown_plugins)
 
                             # move config data
-                            basedir_backup = basedir + ".bck"
                             basedir_extracted = os.path.join(temp, "basedir")
 
-                            if callable(on_log_progress):
-                                on_log_progress(
-                                    f"Renaming {basedir} to {basedir_backup}..."
-                                )
-                            shutil.move(basedir, basedir_backup)
+                            class InitialMoveError(Exception):
+                                pass
 
-                            try:
-                                if callable(on_log_progress):
-                                    on_log_progress(
+                            def _restore_via_move():
+                                basedir_backup = basedir + ".bck"
+
+                                log_progress(f"Renaming {basedir} to {basedir_backup}...")
+
+                                try:
+                                    shutil.move(basedir, basedir_backup)
+                                except Exception as exc:
+                                    # initial move failed
+                                    raise InitialMoveError() from exc
+
+                                try:
+                                    log_progress(
                                         f"Moving {basedir_extracted} to {basedir}..."
                                     )
-                                shutil.move(basedir_extracted, basedir)
-                            except Exception:
-                                if callable(on_log_error):
-                                    on_log_error(
+                                    shutil.move(basedir_extracted, basedir)
+                                    return True
+                                except Exception:
+                                    log_error(
                                         "Error while restoring config data",
                                         exc_info=sys.exc_info(),
                                     )
-                                    on_log_error("Rolling back old config data")
+                                    log_error("Rolling back old config data")
 
-                                shutil.move(basedir_backup, basedir)
+                                    shutil.move(basedir_backup, basedir)
 
-                                if callable(on_restore_failed):
-                                    on_restore_failed(path)
-                                return False
+                                    if callable(on_restore_failed):
+                                        on_restore_failed(path)
+                                    return False
+
+                            def _restore_via_copy():
+                                def clear_dir(dir, ignore=None):
+                                    if ignore is None:
+                                        ignore = []
+
+                                    for entry in os.scandir(dir):
+                                        if entry.path in ignore:
+                                            continue
+
+                                        if entry.is_dir():
+                                            shutil.rmtree(entry.path)
+                                        else:
+                                            os.remove(entry.path)
+
+                                def zip_dir(dir, path, ignore=None):
+                                    if ignore is None:
+                                        ignore = []
+
+                                    with zipfile.ZipFile(path, "w") as zip:
+                                        for root, _, files in os.walk(
+                                            dir, followlinks=True
+                                        ):
+                                            for file in files:
+                                                if os.path.join(root, file) in ignore:
+                                                    continue
+                                                zip.write(
+                                                    os.path.join(root, file),
+                                                    os.path.relpath(
+                                                        os.path.join(root, file), dir
+                                                    ),
+                                                )
+
+                                basedir_backup = os.path.join(
+                                    basedir,
+                                    "basedir_before_restore.bck.zip",
+                                )
+
+                                try:
+                                    log_progress(
+                                        f"Archiving {basedir} as {basedir_backup}..."
+                                    )
+                                    zip_dir(
+                                        basedir, basedir_backup, ignore=[basedir_backup]
+                                    )  # we can't use shutil.make_archive here, it doesn't support ignoring files
+                                except Exception:
+                                    log_error(
+                                        "Error while archiving old config data",
+                                        exc_info=sys.exc_info(),
+                                    )
+                                    if callable(on_restore_failed):
+                                        on_restore_failed(path)
+                                    return False
+
+                                try:
+                                    log_progress(f"Clearing out {basedir}...")
+                                    clear_dir(basedir, ignore=[basedir_backup])
+
+                                    log_progress(
+                                        f"Copying {basedir_extracted} to {basedir}..."
+                                    )
+                                    shutil.copytree(
+                                        basedir_extracted, basedir, dirs_exist_ok=True
+                                    )
+                                    return True
+                                except Exception:
+                                    log_error(
+                                        "Error while restoring config data",
+                                        exc_info=sys.exc_info(),
+                                    )
+                                    log_error("Rolling back old config data")
+
+                                    clear_dir(basedir, ignore=[basedir_backup])
+                                    shutil.unpack_archive(basedir_backup, basedir, "zip")
+
+                                    if callable(on_restore_failed):
+                                        on_restore_failed(path)
+                                    return False
+
+                            try:
+                                if not _restore_via_move():
+                                    return False
+                            except InitialMoveError:
+                                # this will happen if OctoPrint can't rename it's basedir, e.g. because
+                                # /etc/octoprint is being used as basedir and the user running OctoPrint
+                                # doesn't have the permissions to rename it
+                                log_error(
+                                    "Initial move of config data failed, trying to restore via copy instead"
+                                )
+                                if not _restore_via_copy():
+                                    return False
 
                             if unknown_plugins:
-                                if callable(on_log_progress):
-                                    on_log_progress(
-                                        "Writing info file about unknown plugins"
-                                    )
+                                log_progress("Writing info file about unknown plugins")
 
                                 if not os.path.isdir(datafolder):
                                     os.makedirs(datafolder)
@@ -1358,13 +1462,12 @@ class BackupPlugin(
                                     with open(unknown_plugins_path, mode="wb") as f:
                                         f.write(to_bytes(json.dumps(unknown_plugins)))
                                 except Exception:
-                                    if callable(on_log_error):
-                                        on_log_error(
-                                            "Could not persist list of unknown plugins to {}".format(
-                                                unknown_plugins_path
-                                            ),
-                                            exc_info=sys.exc_info(),
-                                        )
+                                    log_error(
+                                        "Could not persist list of unknown plugins to {}".format(
+                                            unknown_plugins_path
+                                        ),
+                                        exc_info=sys.exc_info(),
+                                    )
 
                         finally:
                             for plugin, hook in plugin_manager.get_hooks(
@@ -1378,16 +1481,14 @@ class BackupPlugin(
                                         extra={"plugin": plugin},
                                     )
 
-                            if callable(on_log_progress):
-                                on_log_progress("Removing temporary unpacked folder")
+                            log_progress("Removing temporary unpacked folder")
                             shutil.rmtree(temp)
 
                 except Exception:
                     restore_error = True
                     exc_info = sys.exc_info()
                     try:
-                        if callable(on_log_error):
-                            on_log_error("Error while running restore", exc_info=exc_info)
+                        log_error("Error while running restore", exc_info=exc_info)
                         if callable(on_restore_failed):
                             on_restore_failed(path)
                     finally:
@@ -1396,8 +1497,7 @@ class BackupPlugin(
 
                 finally:
                     # remove zip
-                    if callable(on_log_progress):
-                        on_log_progress("Removing temporary zip")
+                    log_progress("Removing temporary zip")
                     os.remove(path)
 
             finally:
@@ -1423,29 +1523,26 @@ class BackupPlugin(
             if restart_command:
                 import sarge
 
-                if callable(on_log_progress):
-                    on_log_progress("Restarting...")
+                log_progress("Restarting...")
                 if callable(on_restore_done):
                     on_restore_done(path)
 
                 try:
                     sarge.run(restart_command, close_fds=True, async_=True)
                 except Exception:
-                    if callable(on_log_error):
-                        on_log_error(
-                            f"Error while restarting via command {restart_command}",
-                            exc_info=sys.exc_info(),
-                        )
-                        on_log_error("Please restart OctoPrint manually")
+                    log_error(
+                        f"Error while restarting via command {restart_command}",
+                        exc_info=sys.exc_info(),
+                    )
+                    log_error("Please restart OctoPrint manually")
                     return False
 
             else:
                 if callable(on_restore_done):
                     on_restore_done(path)
-                if callable(on_log_error):
-                    on_log_error(
-                        "No restart command configured. Please restart OctoPrint manually."
-                    )
+                log_error(
+                    "No restart command configured. Please restart OctoPrint manually."
+                )
 
         return True
 

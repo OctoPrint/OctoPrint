@@ -23,6 +23,10 @@
             pass: password,
             remember: !!remember
         };
+        if (opts && opts.additionalPayload) {
+            data = {...data, ...opts.additionalPayload};
+            delete opts.additionalPayload;
+        }
         return this.base.postJson(loginUrl, data, opts);
     };
 

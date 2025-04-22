@@ -59,11 +59,10 @@
   * [Flask-Markdown](http://github.com/dcolish/flask-markdown): BSD
   * [Flask-Principal](http://packages.python.org/Flask-Principal/): MIT
   * [frozendict](https://github.com/slezica/python-frozendict): MIT
-  * [netaddr](https://github.com/drkjam/netaddr/): BSD
+  * [netaddr](https://github.com/netaddr/netaddr/): BSD
   * [netifaces](https://github.com/al45tair/netifaces): MIT
-  * [passlib](https://passlib.readthedocs.io/): BSD
+  * [passlib/libpass](https://passlib.readthedocs.io/): BSD
   * [pathvalidate](https://pathvalidate.readthedocs.io/en/latest/index.html): MIT
-  * [pkginfo](http://pypi.python.org/pypi/pkginfo/): Python
   * [psutil](https://github.com/giampaolo/psutil): BSD
   * [pydantic](https://github.com/pydantic/pydantic): MIT
   * [pylru](https://github.com/jlhutch/pylru): GPLv2

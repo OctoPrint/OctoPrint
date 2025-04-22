@@ -30,10 +30,9 @@ from octoprint.printer import (
 from octoprint.printer.estimation import PrintTimeEstimator
 from octoprint.schema import BaseModel
 from octoprint.settings import settings
-from octoprint.util import InvariantContainer
+from octoprint.util import InvariantContainer, to_unicode
 from octoprint.util import comm as comm
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import to_unicode
 
 
 class ErrorInformation(BaseModel):
@@ -200,7 +199,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
     @property
     def error_info(self):
-        return self._error_info.dict() if self._error_info else None
+        return self._error_info.model_dump() if self._error_info else None
 
     # ~~ handling of PrinterCallbacks
 
@@ -559,9 +558,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
                 raise ValueError(f"axes is neither a list nor a string: {axes}")
 
         validated_axes = list(
-            filter(
-                lambda x: x in PrinterInterface.valid_axes, map(lambda x: x.lower(), axes)
-            )
+            filter(lambda x: x in PrinterInterface.valid_axes, (x.lower() for x in axes))
         )
         if len(axes) != len(validated_axes):
             raise ValueError(f"axes contains invalid axes: {axes}")
@@ -569,7 +566,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self.commands(
             [
                 "G91",
-                "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_axes)),
+                "G28 %s" % " ".join("%s0" % x.upper() for x in validated_axes),
                 "G90",
             ],
             tags=kwargs.get("tags", set) | {"trigger:printer.home"},
@@ -609,7 +606,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
     def set_temperature(self, heater, value, *args, **kwargs):
         if not PrinterInterface.valid_heater_regex.match(heater):
             raise ValueError(
-                'heater must match "tool[0-9]+", "bed" or "chamber": {heater}'.format(
+                'heater must match "tool", "tool([0-9])", "bed" or "chamber": {heater}'.format(
                     heater=heater
                 )
             )
@@ -619,7 +616,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
         tags = kwargs.get("tags", set()) | {"trigger:printer.set_temperature"}
 
-        if heater.startswith("tool"):
+        if heater == "tool":
+            # set current tool, whatever that might be
+            self.commands(f"M104 S{value}", tags=tags)
+
+        elif heater.startswith("tool"):
+            # set specific tool
             printer_profile = self._printerProfileManager.get_current_or_default()
             extruder_count = printer_profile["extruder"]["count"]
             shared_nozzle = printer_profile["extruder"]["sharedNozzle"]
@@ -643,7 +645,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
             raise ValueError("offsets must be a dict")
 
         validated_keys = list(
-            filter(lambda x: PrinterInterface.valid_heater_regex.match(x), offsets.keys())
+            filter(
+                lambda x: PrinterInterface.valid_heater_regex_no_current.match(x),
+                offsets.keys(),
+            )
         )
         validated_values = list(
             filter(lambda x: isinstance(x, (int, float)), offsets.values())
@@ -941,12 +946,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         if kwargs.get("refresh"):
             self.refresh_sd_files(blocking=True)
 
-        return list(
-            map(
-                lambda x: {"name": x[0][1:], "size": x[1], "display": x[2], "date": x[3]},
-                self._comm.getSdFiles(),
-            )
-        )
+        return [
+            {"name": x[0][1:], "size": x[1], "display": x[2], "date": x[3]}
+            for x in self._comm.getSdFiles()
+        ]
 
     def add_sd_file(
         self, filename, path, on_success=None, on_failure=None, *args, **kwargs
@@ -1016,7 +1019,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
     def _get_free_remote_name(self, filename):
         self.refresh_sd_files(blocking=True)
-        existingSdFiles = list(map(lambda x: x[0], self._comm.getSdFiles()))
+        existingSdFiles = [x[0] for x in self._comm.getSdFiles()]
 
         if valid_file_type(filename, "gcode"):
             # figure out remote filename
@@ -1846,7 +1849,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
         self, local_filename, remote_filename, filesize, user=None
     ):
         eventManager().fire(
-            Events.TRANSFER_STARTED, {"local": local_filename, "remote": remote_filename}
+            Events.TRANSFER_STARTED,
+            {"local": local_filename, "remote": remote_filename},
         )
 
         self._sdStreaming = True

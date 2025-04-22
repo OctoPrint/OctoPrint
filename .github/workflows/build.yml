@@ -6,6 +6,13 @@ on:
     types: [published]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  DEFAULT_PYTHON: "3.12"
+
 jobs:
   build:
     name: 🔨 Build distribution
@@ -14,10 +21,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: 🏗 Set up Python 3.12
+      - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.DEFAULT_PYTHON }}
       - name: 🏗 Install build dependencies
         run: |
           python -m pip install setuptools wheel --user
@@ -51,13 +58,13 @@ jobs:
 
   pre-commit:
     name: 🧹 Pre-commit
-    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we update precommit to python 3.12
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: 🏗 Set up Python 3.12
+      - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ env.DEFAULT_PYTHON }}
       - name: 🚀 Run pre-commit
         run: |
           pip install pre-commit
@@ -67,7 +74,7 @@ jobs:
     name: 🧪 Unit tests
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
     runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
     steps:
       - uses: actions/checkout@v4
@@ -75,6 +82,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - name: 🧰 Determine cache key
+        run: |
+          hash=$(cat setup.py | sha256sum | cut -d" " -f1)
+          echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-setuppy-$hash" >> $GITHUB_ENV
+      - name: 🧰 Cache pip cache
+        uses: actions/cache@v4
+        id: pip-cache
+        with:
+          path: "~/.cache/pip"
+          key: "${{ env.CACHE_KEY }}"
       - name: 🏗 Set up test dependencies
         run: |
           pip install -e .[develop]
@@ -101,7 +118,7 @@ jobs:
     needs: build
     strategy:
       matrix:
-        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
         installable: ["wheel", "sdist"]
     runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
     steps:
@@ -114,106 +131,71 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: 🚀 Install wheel
+      - name: 🧰 Determine installable & cache key for wheel
         if: matrix.installable == 'wheel'
         run: |
-          pip install dist/*.whl
-      - name: 🚀 Install source tarball
+          wheel=$(ls dist/*.whl | head -n1)
+          echo "INSTALLABLE=$wheel" >> $GITHUB_ENV
+
+          metadata=$(unzip -l "$wheel" | grep METADATA | tr -s " " | cut -d" " -f 5)
+          hash=$(unzip -p "$wheel" "$metadata" | grep "Requires-Dist:" | sort  | sha256sum | cut -d" " -f1)
+          echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-wheel-$hash" >> $GITHUB_ENV
+      - name: 🧰 Determine installable & cache key for sdist
         if: matrix.installable == 'sdist'
         run: |
-          sdist=$(ls dist/*.tar.gz | grep -v source)
-          pip install "$sdist"
+          sdist=$(ls dist/*.tar.gz | grep -v source | head -n1)
+          echo "INSTALLABLE=$sdist" >> $GITHUB_ENV
+
+          setup=$(tar -ztf "$sdist" | grep setup.py | grep -v testballoon)
+          hash=$(tar -axzf "$sdist" "$setup" -O | sha256sum | cut -d" " -f1)
+          echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-setuppy-$hash" >> $GITHUB_ENV
+      - name: 🧰 Cache pip cache
+        uses: actions/cache@v4
+        id: pip-cache
+        with:
+          path: "~/.cache/pip"
+          key: "${{ env.CACHE_KEY }}"
+      - name: 🚀 Install OctoPrint
+        run: |
+          pip install ${{ env.INSTALLABLE }}
 
   test-e2e:
     name: 🧪 E2E tests
     needs: build
-    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7 & upgrade Playwright
+    runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
     strategy:
       matrix:
-        python: ["3.7", "3.12"]
+        python: ["3.7", "3.12", "3.13"]
     steps:
-      - name: ⬇ Checkout code
-        uses: actions/checkout@v4
-
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist
 
-      - name: 🏗 Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python }}
-
-      - name: 🏗 Install OctoPrint build
+      - name: 🧰 Determine installable & cache key
         run: |
-          pip install dist/*.whl
+          wheel=$(ls ${{ github.workspace }}/dist/*.whl | head -n1)
+          echo "INSTALLABLE=$wheel" >> $GITHUB_ENV
 
-      - name: 🏗 Create base config for test server
-        run: |
-          mkdir e2econfig
-          cp -r .github/fixtures/with_acl/* e2econfig
+          metadata=$(unzip -l "$wheel" | grep METADATA | tr -s " " | cut -d" " -f 5)
+          hash=$(unzip -p "$wheel" "$metadata" | grep "Requires-Dist:" | sort  | sha256sum | cut -d" " -f1)
+          echo "CACHE_KEY=${{ github.job }}-${{ runner.os }}-python-${{ matrix.python }}-wheel-$hash" >> $GITHUB_ENV
 
-      - name: 🏗 Prepare Playwright env
-        working-directory: ./tests/playwright
-        run: |
-          npm ci
-          PLAYWRIGHT_VERSION=$(npm ls --json @playwright/test | jq --raw-output '.dependencies["@playwright/test"].version')
-          echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
-
-      - name: 🧰 Cache Playwright browser binaries
+      - name: 🧰 Cache pip cache
         uses: actions/cache@v4
-        id: playwright-cache
+        id: pip-cache
         with:
-          path: "~/.cache/ms-playwright"
-          key: "${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}"
-          restore-keys: |
-            ${{ runner.os }}-playwright-
+          path: "~/.cache/pip"
+          key: "${{ env.CACHE_KEY }}"
 
-      - name: 🏗 Install Playwright browser binaries & OS dependencies
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        working-directory: ./tests/playwright
-        run: |
-          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
-          npx playwright install --with-deps
-
-      - name: 🏗 Install Playwright OS dependencies
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        working-directory: ./tests/playwright
-        run: |
-          sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
-          npx playwright install-deps
-
-      - name: 🎭 Run Playwright
-        working-directory: ./tests/playwright
-        run: |
-          npx playwright test
-        env:
-          OCTOPRINT_SERVER_BASE: ${{ github.workspace }}/e2econfig
-
-      - name: 🔎 Check octoprint.log for errors
-        run: |
-          log=${{ github.workspace }}/e2econfig/logs/octoprint.log
-          if grep "\- ERROR \-" $log; then
-            echo "::error::Errors were logged to octoprint.log"
-            grep -Pazo '(?m)^\N+\- ERROR \-\N*\n(^\N*?\n)*?(?=\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} \- )' $log
-            exit 1
-          fi
-
-      - name: ⬆ Upload Playwright report
-        uses: actions/upload-artifact@v4
-        if: always()
+      - name: 🎭 Run E2E
+        uses: OctoPrint/actions/e2e@main
         with:
-          name: playwright-report-py${{ matrix.python }}
-          path: tests/playwright/playwright-report
-
-      - name: ⬆ Upload OctoPrint logs
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: octoprint-logs-py${{ matrix.python }}
-          path: ${{ github.workspace }}/e2econfig/logs
+          ref: ${{ github.ref }}
+          octoprint: ${{ env.INSTALLABLE }}
+          python: ${{ matrix.python }}
+          suffix: "-py${{ matrix.python }}"
 
   publish-on-release:
     name: 📦 Publish build & source on GitHub release
@@ -253,6 +235,11 @@ jobs:
     needs:
       - publish-on-release
     runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/OctoPrint
+    permissions:
+      id-token: write
     steps:
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4
@@ -274,6 +261,11 @@ jobs:
     if: github.event_name == 'release' && github.repository == 'OctoPrint/OctoPrint'
     needs: publish-on-testpypi
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/OctoPrint
+    permissions:
+      id-token: write
     steps:
       - name: ⬇ Download build result
         uses: actions/download-artifact@v4

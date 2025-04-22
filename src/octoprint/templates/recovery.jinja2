@@ -13,8 +13,8 @@
 
     <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap.min.css") }}">
     <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap-responsive.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-5.15.1/css/all.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-5.15.1/css/v4-shims.min") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-6.5.1/css/all.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-6.5.1/css/v4-shims.min.css") }}">
     <link rel="stylesheet" href="{{ url_for("static", filename="css/recovery.css") }}">
 
     {% for url in theming %}
@@ -95,7 +95,7 @@
 
                     <h2>{{ _('Create backup') }}</h2>
                     <form class="form-horizontal" onsubmit="return false;">
-                        <div class="control-group" title="{{ _('All files in the uploads folder and subfolders. These are the files in the Files List, plus any metadata that has been generated for those files.')|edq }}">
+                        <div class="control-group" title="{{ _('All files in the uploads folder and subfolders. These are the files in the Files List, plus any metadata that has been generated for those files.') }}">
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files (& associated metadata) from backup') }}
@@ -142,7 +142,7 @@
                     </table>
                     <p data-bind="visible: backups().length > 0">
                         <strong>{{ _("Note:") }}</strong>
-                        {% trans marker="<strong class='text-error'>!</strong>" %}
+                        {% trans marker="<strong class='text-error'>!</strong>"|safe %}
                             OctoPrint currently only allows uploading backups of a maximum size of
                             {{ plugin_backup_max_upload_size_str }} via the UI. Backups larger than this can only be restored by command line,
                             or by adjusting the size by removing large contents (like timelapses) from the
@@ -184,7 +184,7 @@
                 <div class="control-group">
                     <label class="control-label">{{ _('Password') }}</label>
                     <div class="controls">
-                        <input type="password" class="input-block-level" data-bind="value: reauthenticatePass" placeholder="{{ _("Password")|edq }}">
+                        <input type="password" class="input-block-level" data-bind="value: reauthenticatePass" placeholder="{{ _("Password") }}">
                         <span class="help-block text-error" data-bind="visible: reauthenticateFailed">{{ _('Reauthentication failed. Wrong password?') }}</span>
                     </div>
                 </div>

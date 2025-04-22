@@ -22,6 +22,13 @@ $(function () {
                 self.settings.settings.plugins.classicwebcam.snapshotTimeout;
             self.snapshotSslValidation =
                 self.settings.settings.plugins.classicwebcam.snapshotSslValidation;
+            self.snapshotAuth = self.settings.settings.plugins.classicwebcam.snapshotAuth;
+            self.snapshotUsername =
+                self.settings.settings.plugins.classicwebcam.snapshotUsername;
+            self.snapshotPassword =
+                self.settings.settings.plugins.classicwebcam.snapshotPassword;
+            self.snapshotBearerToken =
+                self.settings.settings.plugins.classicwebcam.snapshotBearerToken;
             self.flipH = self.settings.settings.plugins.classicwebcam.flipH;
             self.flipV = self.settings.settings.plugins.classicwebcam.flipV;
             self.rotate90 = self.settings.settings.plugins.classicwebcam.rotate90;
@@ -65,6 +72,16 @@ $(function () {
         self.streamValid = ko.pureComputed(function () {
             var url = self.streamUrlEscaped();
             return !url || validateWebcamUrl(url);
+        });
+
+        self.snapshotUrlContainsAuth = ko.pureComputed(() => {
+            const urlStr = self.snapshotUrl();
+            try {
+                const url = new URL(urlStr);
+                return !!(url.username || url.password);
+            } catch (e) {
+                return false;
+            }
         });
 
         self.testWebcamStreamUrlBusy = ko.observable(false);
@@ -140,7 +157,7 @@ $(function () {
         };
 
         self.testWebcamSnapshotUrlBusy = ko.observable(false);
-        self.testWebcamSnapshotUrl = function (viewModel, event) {
+        self.testWebcamSnapshotUrl = (viewModel, event) => {
             if (!self.snapshotUrl()) {
                 return;
             }
@@ -149,22 +166,39 @@ $(function () {
                 return;
             }
 
-            var errorText = gettext(
+            let errorText = gettext(
                 "Could not retrieve snapshot URL, please double check the URL"
             );
-            var errorTitle = gettext("Snapshot test failed");
+            let errorTitle = gettext("Snapshot test failed");
 
             self.testWebcamSnapshotUrlBusy(true);
+
+            const params = {
+                method: "GET",
+                response: "bytes",
+                timeout: self.snapshotTimeout(),
+                validSsl: self.snapshotSslValidation(),
+                content_type_whitelist: ["image/*"],
+                content_type_guess: true
+            };
+
+            if (self.snapshotAuth() === "basic") {
+                params.basicAuth = {
+                    username: self.snapshotUsername(),
+                    password: self.snapshotPassword()
+                };
+            } else if (self.snapshotAuth() === "digest") {
+                params.digestAuth = {
+                    username: self.snapshotUsername(),
+                    password: self.snapshotPassword()
+                };
+            } else if (self.snapshotAuth() === "bearer") {
+                params.bearerAuth = self.snapshotBearerToken();
+            }
+
             OctoPrint.util
-                .testUrl(self.snapshotUrl(), {
-                    method: "GET",
-                    response: "bytes",
-                    timeout: self.settings.settings.webcam.snapshotTimeout(),
-                    validSsl: self.settings.settings.webcam.snapshotSslValidation(),
-                    content_type_whitelist: ["image/*"],
-                    content_type_guess: true
-                })
-                .done(function (response) {
+                .testUrl(self.snapshotUrl(), params)
+                .done((response) => {
                     if (!response.result) {
                         if (
                             response.status &&
@@ -186,7 +220,7 @@ $(function () {
                         showMessageDialog({
                             title: errorTitle,
                             message: errorText,
-                            onclose: function () {
+                            onclose: () => {
                                 self.testWebcamSnapshotUrlBusy(false);
                             }
                         });

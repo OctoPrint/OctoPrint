@@ -67,16 +67,31 @@ $(function () {
                 user = self.loginState.currentUser();
             }
 
+            var process = function (user) {
+                self.currentUser(user);
+                self.userSettingsDialog
+                    .modal({
+                        minHeight: function () {
+                            return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
+                        }
+                    })
+                    .css({
+                        "margin-left": function () {
+                            return -($(this).width() / 2);
+                        }
+                    });
+            };
+
             // make sure we have the current user data, see #2534
             self.requestData(user.name)
-                .done(() => {
-                    self.userSettingsDialog.modal("show");
+                .done((data) => {
+                    process(data);
                 })
                 .fail(() => {
                     log.warn(
                         "Could not fetch current user data, proceeding with client side data copy"
                     );
-                    self.fromResponse(user);
+                    process(user);
                 });
         };
 

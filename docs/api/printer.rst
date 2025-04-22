@@ -351,8 +351,8 @@ Issue a tool command
    target
      Sets the given target temperature on the printer's tools. Additional parameters:
 
-     * ``targets``: Target temperature(s) to set, properties must match the format ``tool{n}`` with ``n`` being the
-       tool's index starting with 0. A value of `0` will turn the heater off.
+     * ``targets``: Target temperature(s) to set, properties must match the format ``tool`` or ``tool{n}`` with ``n`` being the
+       tool's index starting with 0. ``tool`` signifies the currently active extruder. A target value of `0` will turn the heater off.
 
    offset
      Sets the given temperature offset on the printer's tools. Additional parameters:
@@ -400,6 +400,28 @@ Issue a tool command
         "targets": {
           "tool0": 220,
           "tool1": 205
+        }
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   **Example Target Temperature Request (Current Tool Only)**
+
+   Set the target temperature for the printer's currently active hotend to 220°C.
+
+   .. sourcecode:: http
+
+      POST /api/printer/tool HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "target",
+        "targets": {
+          "tool": 220
         }
       }
 

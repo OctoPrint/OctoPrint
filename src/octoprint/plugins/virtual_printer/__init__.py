@@ -27,7 +27,12 @@ class VirtualPrinterPlugin(
             "smoothieTemperatureReporting": False,
             "klipperTemperatureReporting": False,
             "reprapfwM114": False,
-            "sdFiles": {"size": True, "longname": False, "longname_quoted": True},
+            "sdFiles": {
+                "size": True,
+                "longname": False,
+                "longname_quoted": True,
+                "upper_case": False,
+            },
             "throttle": 0.01,
             "sendWait": True,
             "waitInterval": 1.0,

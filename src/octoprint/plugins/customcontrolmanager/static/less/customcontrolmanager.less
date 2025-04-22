@@ -1,0 +1,176 @@
+#settings_plugin_customcontrolmanager {
+  .customcontrolmananger-add-buttons {
+    text-align: center;
+  }
+
+  .customcontrolmananger-controls-container {
+    border: 2px solid #eeeeee;
+    border-radius: 0.2em;
+    margin: auto;
+    padding: 0.5em;
+
+    min-height: 400px;
+    width: 588px;
+
+    margin-bottom: 1em;
+
+    .customcontrolmananger-add-controls-prompt {
+      display: none;
+      height: 400px;
+      padding: 0;
+      margin: 0;
+      align-items: center;
+      justify-content: center;
+
+      div {
+        width: 50%;
+        text-align: center;
+      }
+    }
+    .customcontrolmananger-add-controls-prompt:only-child {
+      display: flex;
+    }
+
+    .custom-section {
+      position: relative;
+
+      h1 {
+        cursor: pointer;
+        display: block;
+        width: 100%;
+        padding: 0;
+        margin-bottom: 20px;
+        font-size: 21px;
+        line-height: 40px;
+        color: #333;
+        border: 0;
+        border-bottom-width: 0px;
+        border-bottom-style: none;
+        border-bottom-color: currentcolor;
+        border-bottom: 1px solid #e5e5e5;
+        font-weight: 400;
+      }
+
+      &:has(.custom-section-horizontal) {
+        border: 1px dotted blue;
+
+        > .container-orientation {
+          background-color: blue;
+        }
+      }
+
+      &:has(.custom-section-vertical) {
+        border: 1px dotted red;
+
+        > .container-orientation {
+          background-color: red;
+        }
+      }
+
+      &:has(.custom-section-horizontal-grid) {
+        border: 1px dotted green;
+
+        > .container-orientation {
+          background-color: green;
+        }
+      }
+
+      &:not(:has(> h1)) {
+        padding-top: 20px;
+      }
+
+      .custom-section-content:not(:has(.custom-control)) {
+        padding-bottom: 20px;
+      }
+
+      .container-orientation {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+
+        display: inline-block;
+        padding: 0 0.5em;
+        color: white;
+        font-size: 0.8em;
+        border-top-left-radius: 0.5em;
+      }
+    }
+
+    .custom-section-horizontal > .custom-control {
+      display: inline-block;
+    }
+
+    .custom-section_vertical > .custom-control {
+      display: block;
+    }
+
+    .custom-control {
+      border: 1px dotted grey;
+      margin: 0 0 20px;
+
+      .slider {
+        margin-left: 10px;
+        margin-right: 10px;
+        margin-bottom: 2px;
+
+        .slider-handle {
+          width: 14px;
+          height: 14px;
+          margin-left: -7px;
+          margin-top: -3px;
+        }
+      }
+    }
+
+    .custom-section,
+    .custom-control {
+      position: relative;
+
+      .management-buttons {
+        position: absolute;
+        right: 1em;
+        top: 1em;
+        display: none;
+      }
+
+      &:hover > .management-buttons {
+        display: block;
+      }
+    }
+  }
+}
+
+#customcontrolmanager-editor {
+  textarea {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .customcontrolmanager-editor-noinput {
+    margin-bottom: 0.5em;
+  }
+
+  .customcontrolmanager-editor-input-text,
+  .customcontrolmanager-editor-input-slider {
+    padding: 0.5em;
+    border: 1px solid #cccccc;
+    border-radius: 0.2em;
+    margin-bottom: 0.5em;
+
+    h4 {
+      margin-top: 0;
+      margin-bottom: 1em;
+      vertical-align: middle;
+    }
+
+    input {
+      margin-bottom: 0.2em;
+    }
+
+    form {
+      margin: 0;
+    }
+  }
+}

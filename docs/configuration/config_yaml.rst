@@ -921,9 +921,18 @@ Use the following settings to configure the server:
        # the connecting client's IP address. A reverse proxy on the same machine as OctoPrint (e.g. as
        # found on OctoPi) will be handled correctly by the default setting of 127.0.0.1 and ::1, further
        # proxies in front of that you'll have to add yourself.
-       trustedDownstream:
-       - 127.0.0.1
-       - "::1"
+
+       # List of trusted proxy servers for which to ignore the IP address when trying to determine
+       # the connecting client's IP address. A reverse proxy on the same machine as OctoPrint (e.g. as
+       # found on OctoPi) will be handled correctly by default through `trustLocalhostProxies`, further
+       # proxies in front of that you'll have to add yourself here.
+       trustedProxies: []
+
+       # Whether to trust the local machine to act as a reverse proxy. Defaults to true, will ensure
+       # that `127.0.0.0/8` and `::1` will always be considered to be included in `trustedProxies`. If
+       # you want to explicitly disable trusting the local machine, set this to false and don't include
+       # the local machine in trustedProxies (as in, don't include "127.0.0.1", "127.0.0.0/8" or "::1").
+       trustLocalhostProxies: true
 
      # Whether to allow OctoPrint to be embedded in a frame or not. Note that depending on your setup you might
      # have to set SameSite to None, Secure to true and serve OctoPrint through a reverse proxy that enables https
@@ -1203,6 +1212,9 @@ Use the following settings to configure webcam support:
      # Whether to include a "created with OctoPrint" watermark in the generated timelapse movies
      watermark: true
 
+     # Delay to wait for after print end before rendering timelapse, in seconds. If another print gets started during this time, the rendering will be postponed.
+     renderAfterPrintDelay: 0
+
      # Whether to flip the webcam horizontally
      flipH: false
 
@@ -1226,6 +1238,10 @@ Use the following settings to configure webcam support:
        # record just like at the beginning, so the recording will continue another
        # fps * postRoll * interval seconds. Zchange timelapses will take one final picture and add it fps * postRoll
        postRoll: 0
+
+       # Determines whether rendering the timelapse should be done automatically after the print is finished.
+       # This can be done always, only after successful prints, only after failed prints, or never.
+       renderAfterPrint: always
 
        # Additional options depending on the timelapse type. All timelapses take a postRoll and an fps setting.
        options:

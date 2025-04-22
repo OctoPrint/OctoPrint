@@ -9,7 +9,7 @@
             dsn: errortracking_url_coreui,
             release: VERSION,
             allowUrls: [
-                // only include errors raise in HTML, packed core & client
+                // only include errors raised in HTML, packed core, client & localeJs
                 {% assets "js_client" %}"{{ ASSET_URL }}",{% endassets %}
                 {% assets "js_core" %}"{{ ASSET_URL }}",{% endassets %}
                 {% if g.locale %}"{{ url_for('localeJs', locale=g.locale, domain='messages') }}"{% endif %}

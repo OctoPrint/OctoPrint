@@ -13,8 +13,8 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-responsive.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/font-awesome-5.15.1/css/all.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/font-awesome-5.15.1/css/v4-shims.css') }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-6.5.1/css/all.min.css") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-6.5.1/css/v4-shims.min.css") }}">
     <link rel="stylesheet" href="{{ url_for('plugin.appkeys.static', filename='css/authdialog.css') }}">
 
     {% for url in theming %}
@@ -25,9 +25,9 @@
 
     <script>
         var BASE_URL = "{{ url_for('index') }}";
-        var USER_TOKEN = "{{ user_token|e }}";
+        var USER_TOKEN = "{{ user_token }}";
         var DECISION_URL = "{{ url_for('plugin.appkeys.handle_decision', user_token=user_token) }}";
-        var REDIRECT_URL = "{{ redirect_url|e }}";
+        var REDIRECT_URL = "{{ redirect_url }}";
     </script>
     <script src="{{ url_for('static', filename='js/lib/jquery/jquery.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/lib/sockjs.min.js') }}"></script>
@@ -45,8 +45,8 @@
         <form id="auth-choice" class="form-auth">
             <h2 class="form-auth-heading" data-test-id="login-title">{{ _('Access Request') }}</h2>
 
-            <p>{{ _("Hello %(user)s!", user=user|e) }}</p>
-            <p>{{ request_text | format(app=app|e) }}</p>
+            <p>{{ _("Hello %(user)s!", user=user) }}</p>
+            <p>{{ request_text | format(app=app) }}</p>
             <p>{% trans %}
                 Do you want to allow access to this application with your user account?
             {% endtrans %}</p>

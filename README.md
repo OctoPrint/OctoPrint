@@ -9,14 +9,13 @@
   <a href="https://community.octoprint.org"><img src="https://img.shields.io/discourse/users?label=forum&logo=discourse&logoColor=white&server=https%3A%2F%2Fcommunity.octoprint.org" alt="Community Forum"/></a>
   <a href="https://discord.octoprint.org"><img src="https://img.shields.io/discord/704958479194128507?label=discord&logo=discord&logoColor=white" alt="Discord"/></a>
   <a href="https://octoprint.org/conduct/"><img src="https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg" alt="Contributor Covenant"/></a>
-  <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"/></a>
-  <a href="https://github.com/prettier/prettier"><img src="https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square" alt="Code style: prettier"/></a>
-  <a href="https://pycqa.github.io/isort/"><img src="https://img.shields.io/badge/%20imports-isort-%231674b1" alt="Imports: isort"/></a>
+  <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/badge/code%20style-ruff-261230" alt="Linting & formatting: ruff"/></a>
+  <a href="https://github.com/prettier/prettier"><img src="https://img.shields.io/badge/code_style-prettier-ff69b4.svg" alt="Code style: prettier"/></a>
   <a href="https://github.com/pre-commit/pre-commit"><img src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white" alt="pre-commit"/></a>
 </p>
 
 OctoPrint provides a snappy web interface for controlling consumer 3D printers. It is Free Software
-and released under the [GNU Affero General Public License V3](https://www.gnu.org/licenses/agpl-3.0.html).
+and released under the [GNU Affero General Public License V3](https://www.gnu.org/licenses/agpl-3.0.html)[^1].
 
 Its website can be found at [octoprint.org](https://octoprint.org/?utm_source=github&utm_medium=readme).
 
@@ -40,6 +39,9 @@ You are currently looking at the source code repository of OctoPrint. If you alr
 want to find out how to use it, [the documentation](https://docs.octoprint.org/) might be of more interest for you. You might also want to subscribe to join
 [the community forum at community.octoprint.org](https://community.octoprint.org) where there are other active users who might be
 able to help you with any questions you might have.
+
+[^1]: Where another license applies to a specific file or folder, that is noted inside the file itself or a folder README. For licenses of both linked and
+      vendored third party dependencies, see also THIRDPARTYLICENSES.md.
 
 ## Contributing
 
@@ -86,7 +88,9 @@ access control as necessary.
 OctoPrint depends on a few python modules to do its job. Those are automatically installed when installing
 OctoPrint via `pip`.
 
-OctoPrint currently supports Python 3.7, 3.8, 3.9, 3.10, 3.11 and 3.12.
+OctoPrint currently supports Python 3.7, 3.8, 3.9, 3.10, 3.11, 3.12 and 3.13.
+
+Support for Python 3.7 and 3.8 will be dropped with OctoPrint 1.12.0.
 
 ## Usage
 

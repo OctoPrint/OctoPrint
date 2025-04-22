@@ -21,9 +21,9 @@ click.disable_unicode_literals_warning = True
 def cli(ctx):
     """Basic config manipulation."""
     logging.basicConfig(
-        level=logging.DEBUG
-        if get_ctx_obj_option(ctx, "verbosity", 0) > 0
-        else logging.WARN
+        level=(
+            logging.DEBUG if get_ctx_obj_option(ctx, "verbosity", 0) > 0 else logging.WARN
+        )
     )
     try:
         ctx.obj.settings = init_settings(
@@ -34,9 +34,14 @@ def cli(ctx):
         ctx.obj.plugin_manager = init_pluginsystem(
             ctx.obj.settings, safe_mode=get_ctx_obj_option(ctx, "safe_mode", False)
         )
-    except FatalStartupError as e:
-        click.echo(str(e), err=True)
-        click.echo("There was a fatal error initializing the settings manager.", err=True)
+    except FatalStartupError as exc:
+        from traceback import format_exc
+
+        click.echo(format_exc(), err=True)
+        click.echo(
+            f"There was a fatal error initializing the settings manager: {str(exc)}",
+            err=True,
+        )
         ctx.exit(-1)
 
 

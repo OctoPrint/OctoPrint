@@ -419,7 +419,7 @@ function ItemListHelper(
 function formatSize(bytes) {
     if (!bytes) return "-";
 
-    var units = ["bytes", "KB", "MB", "GB"];
+    var units = ["B", "KB", "MB", "GB"];
     for (var i = 0; i < units.length; i++) {
         if (bytes < 1024) {
             return _.sprintf("%3.1f%s", bytes, units[i]);
@@ -1014,6 +1014,164 @@ function showSelectionDialog(options) {
             modal.modal("hide");
         });
     });
+
+    return modal;
+}
+
+function showTextboxDialog(msg, onacknowledge, options) {
+    options = options || {};
+    if (_.isPlainObject(msg)) {
+        options = msg;
+    } else {
+        options.message = msg;
+        options.onproceed = onacknowledge;
+    }
+
+    const title = options.title || gettext("Enter value");
+
+    const message = options.message || gettext("Please enter a new value:");
+
+    const html = options.html;
+
+    const cancel = options.cancel || gettext("Cancel");
+    let proceed = options.proceed || gettext("Proceed");
+    if (!_.isArray(proceed)) {
+        proceed = [proceed];
+    }
+
+    const proceedClass = options.proceedClass || "primary";
+    const onproceed = options.onproceed || undefined;
+    const oncancel = options.oncancel || undefined;
+    const onclose = options.onclose || undefined;
+    const dialogClass = options.dialogClass || "";
+    const nofade = options.nofade || false;
+    const noclose = options.noclose || false;
+    const inputClass = options.inputClass || "";
+    const inputClassOk = options.inputClassOk || "";
+    const inputClassNok = options.inputClassNok || "error";
+    const validator = options.validator || undefined;
+    const placeholder = options.placeholder || undefined;
+    const value = options.value || "";
+
+    const modalTitle = $("<h3></h3>")
+        .css({
+            "overflow": "hidden",
+            "text-overflow": "ellipsis"
+        })
+        .text(title);
+
+    const modalBody = html ? $(html) : $("<p>" + message + "</p>");
+
+    const textInput = $("<input type='text' class='input-block-level' />");
+    textInput.addClass(inputClass);
+    textInput.val(value);
+    if (placeholder) {
+        textInput.attr("placeholder", placeholder);
+    }
+
+    const textInputError = $("<span class='help-block' style='display: none'></span>");
+
+    const textInputWrapper = $("<div class='control-group'></div>").append(
+        $("<div class='controls'></div>").append(textInput).append(textInputError)
+    );
+    const form = $("<form></form>").append(textInputWrapper);
+
+    const cancelButton = $('<a href="javascript:void(0)" class="btn">' + cancel + "</a>")
+        .attr("data-dismiss", "modal")
+        .attr("aria-hidden", "true");
+
+    const proceedButtons = [];
+    _.each(proceed, function (text) {
+        proceedButtons.push(
+            $('<a href="javascript:void(0)" class="btn">' + text + "</a>").addClass(
+                "btn-" + proceedClass
+            )
+        );
+    });
+
+    const modal = $("<div></div>").addClass("modal hide");
+    if (!nofade) {
+        modal.addClass("fade-in");
+    }
+
+    const buttons = $("<div></div>").addClass("modal-footer").append(cancelButton);
+    _.each(proceedButtons, function (button) {
+        buttons.append(button);
+    });
+
+    const modalHeader = $("<div></div>").addClass("modal-header");
+    if (!noclose) {
+        modalHeader.append(
+            $(
+                '<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>'
+            )
+        );
+    }
+    modalHeader.append(modalTitle);
+    modal
+        .addClass(dialogClass)
+        .append(modalHeader)
+        .append($("<div></div>").addClass("modal-body").append(modalBody).append(form))
+        .append(buttons);
+    modal.on("hidden", function (event) {
+        if (onclose && _.isFunction(onclose)) {
+            onclose(event);
+        }
+    });
+
+    const modalOptions = {};
+    if (noclose) {
+        modalOptions.backdrop = "static";
+        modalOptions.keyboard = false;
+    }
+    modal.modal(modalOptions);
+
+    _.each(proceedButtons, (button, idx) => {
+        button.click((e) => {
+            e.preventDefault();
+            const value = textInput.val();
+            if (onproceed && _.isFunction(onproceed)) {
+                onproceed(value, idx, e);
+            }
+            modal.modal("hide");
+        });
+    });
+    cancelButton.click((e) => {
+        if (oncancel && _.isFunction(oncancel)) {
+            oncancel(e);
+        }
+    });
+    form.on("submit", () => {
+        proceedButtons[0].click();
+    });
+    if (validator && _.isFunction(validator)) {
+        textInput.on("input", () => {
+            const value = textInput.val();
+            const validated = validator(value);
+            if (validated === true) {
+                textInputWrapper.removeClass(inputClassNok);
+                textInputWrapper.addClass(inputClassOk);
+                textInputError.hide();
+                _.each(proceedButtons, (btn) => {
+                    btn.removeAttr("disabled");
+                    btn.removeClass("disabled");
+                });
+            } else {
+                textInputWrapper.removeClass(inputClassOk);
+                textInputWrapper.addClass(inputClassNok);
+                if (_.isString(validated)) {
+                    textInputError.text(validated);
+                    textInputError.show();
+                }
+                _.each(proceedButtons, (btn) => {
+                    btn.attr("disabled", "disabled");
+                    btn.addClass("disabled");
+                });
+            }
+        });
+    }
+
+    textInput.focus();
 
     return modal;
 }
@@ -1764,4 +1922,13 @@ var startWebRTC = function (videoElement, streamUrl, iceServers) {
 
 var fetchWindowLocation = function () {
     return window.location;
+};
+
+const xhrErrorJson = function (xhr) {
+    if (!xhr.responseText) return null;
+    try {
+        return JSON.parse(xhr.responseText);
+    } catch (e) {
+        return null;
+    }
 };

@@ -30,7 +30,7 @@ def printerState():
             excludes = list(
                 filter(
                     lambda x: x in ["temperature", "sd", "state"],
-                    map(lambda x: x.strip(), excludeStr.split(",")),
+                    (x.strip() for x in excludeStr.split(",")),
                 )
             )
 
@@ -83,14 +83,15 @@ def printerToolCommand():
     if response is not None:
         return response
 
-    validation_regex = re.compile(r"tool\d+")
+    validation_regex_current = re.compile(r"tool\d*")
+    validation_regex_specific = re.compile(r"tool\d+")
 
     tags = {"source:api", "api:printer.tool"}
 
     ##~~ tool selection
     if command == "select":
         tool = data["tool"]
-        if not isinstance(tool, str) or re.match(validation_regex, tool) is None:
+        if not isinstance(tool, str) or re.match(validation_regex_specific, tool) is None:
             abort(400, description="tool is invalid")
 
         printer.change_tool(tool, tags=tags)
@@ -102,7 +103,7 @@ def printerToolCommand():
         # make sure the targets are valid and the values are numbers
         validated_values = {}
         for tool, value in targets.items():
-            if re.match(validation_regex, tool) is None:
+            if re.match(validation_regex_current, tool) is None:
                 abort(400, description="targets contains invalid tool")
             if not isinstance(value, (int, float)):
                 abort(400, description="targets contains invalid value")
@@ -119,7 +120,7 @@ def printerToolCommand():
         # make sure the targets are valid, the values are numbers and in the range [-50, 50]
         validated_values = {}
         for tool, value in offsets.items():
-            if re.match(validation_regex, tool) is None:
+            if re.match(validation_regex_specific, tool) is None:
                 abort(400, description="offsets contains invalid tool")
             if not isinstance(value, (int, float)) or not -50 <= value <= 50:
                 abort(400, description="offsets contains invalid value")
@@ -465,9 +466,7 @@ def _get_temperature_data(preprocessor):
 
         limit = min(limit, len(history))
 
-        tempData.update(
-            {"history": list(map(lambda x: preprocessor(x), history[-limit:]))}
-        )
+        tempData.update({"history": [preprocessor(x) for x in history[-limit:]]})
 
     return preprocessor(tempData)
 

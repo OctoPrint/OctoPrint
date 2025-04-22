@@ -42,7 +42,7 @@ from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated, yaml
 from octoprint.util.json import JsonEncoding
-from octoprint.util.net import is_lan_address
+from octoprint.util.net import is_lan_address, usable_trusted_proxies_from_settings
 from octoprint.util.tz import UTC_TZ, is_timezone_aware
 
 # ~~ monkey patching
@@ -110,12 +110,9 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                 # plugin translations
                 plugins = octoprint.plugin.plugin_manager().enabled_plugins
                 for name, plugin in plugins.items():
-                    dirs = list(
-                        map(
-                            lambda x: os.path.join(x, "_plugins", name),
-                            additional_folders,
-                        )
-                    ) + [os.path.join(plugin.location, "translations")]
+                    dirs = [
+                        os.path.join(x, "_plugins", name) for x in additional_folders
+                    ] + [os.path.join(plugin.location, "translations")]
                     for dirname in dirs:
                         if not os.path.isdir(dirname):
                             continue
@@ -371,7 +368,7 @@ class ReverseProxiedEnvironment:
             # Scheme might be something like "https,https" if doubly-reverse-proxied
             # without stripping original scheme header first, make sure to only use
             # the first entry in such a case. See #1391.
-            scheme, _ = map(lambda x: x.strip(), scheme.split(",", 1))
+            scheme, _ = (x.strip() for x in scheme.split(",", 1))
         if scheme is not None:
             environ["wsgi.url_scheme"] = scheme
 
@@ -442,10 +439,11 @@ def encode_remember_me_cookie(value):
         remember_key = userManager.signature_key_for_user(
             name, current_app.config["SECRET_KEY"]
         )
-        timestamp = datetime.utcnow().timestamp()
+        timestamp = datetime.now(timezone.utc).timestamp()
         return encode_cookie(f"{name}|{timestamp}", key=remember_key)
     except Exception:
-        pass
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            logging.getLogger().exception("Error while encoding remember_me cookie")
 
     return ""
 
@@ -465,14 +463,13 @@ def decode_remember_me_cookie(value):
             cookie = decode_cookie(value, key=signature_key)
             if cookie:
                 # still valid?
-                if (
-                    datetime.fromtimestamp(float(created))
-                    + timedelta(seconds=current_app.config["REMEMBER_COOKIE_DURATION"])
-                    > datetime.utcnow()
-                ):
+                if datetime.fromtimestamp(float(created), timezone.utc) + timedelta(
+                    seconds=current_app.config["REMEMBER_COOKIE_DURATION"]
+                ) > datetime.now(timezone.utc):
                     return encode_cookie(name)
         except Exception:
-            pass
+            if logging.getLogger().isEnabledFor(logging.DEBUG):
+                logging.getLogger().exception("Error while decoding remember_me cookie")
 
     raise ValueError("Invalid remember me cookie")
 
@@ -522,7 +519,10 @@ class OctoPrintFlaskRequest(flask.Request):
                     result[key] = process_value(key, value)
             except ValueError:
                 # ignore broken cookies
-                pass
+                if logging.getLogger().isEnabledFor(logging.DEBUG):
+                    logging.getLogger().exception(
+                        f"Ignoring cookie {key}, can't process value {value!r}"
+                    )
 
         result.update(desuffixed)
         return result
@@ -570,7 +570,7 @@ class OctoPrintFlaskResponse(flask.Response):
 
         # add request specific cookie suffix to name
         flask.Response.set_cookie(
-            self, key + flask.request.cookie_suffix, value=value, *args, **kwargs
+            self, key + flask.request.cookie_suffix, *args, value=value, **kwargs
         )
 
     def delete_cookie(self, key, path="/", domain=None):
@@ -588,7 +588,9 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
         return flask.request.endpoint != "static"
 
     def save_session(self, app, session, response):
-        if flask.g.get("login_via_apikey", False):
+        from octoprint.server.util import LoginMechanism
+
+        if session.get("_login_mechanism") == LoginMechanism.APIKEY:
             return
         return super().save_session(app, session, response)
 
@@ -732,9 +734,9 @@ def passive_login():
                         logger.info(
                             f"Logging in user {autologin_as} from {remote_address} via autologin"
                         )
-                        flask.session[
-                            "login_mechanism"
-                        ] = octoprint.server.util.LoginMechanism.AUTOLOGIN
+                        flask.session["login_mechanism"] = (
+                            octoprint.server.util.LoginMechanism.AUTOLOGIN
+                        )
                         flask.session["credentials_seen"] = False
                         return autologin_user
             except Exception:
@@ -1108,7 +1110,7 @@ class PreemptiveCache:
 
     def get_data(self, root):
         cache_data = self.get_all_data()
-        return cache_data.get(root, list())
+        return cache_data.get(root, [])
 
     def set_all_data(self, data):
         from octoprint.util import atomic_write
@@ -1729,7 +1731,7 @@ def get_json_command_from_request(request, valid_commands):
         flask.abort(400, description="command is invalid")
 
     command = data["command"]
-    if any(map(lambda x: x not in data, valid_commands[command])):
+    if any(x not in data for x in valid_commands[command]):
         flask.abort(400, description="Mandatory parameters missing")
 
     return command, data, None
@@ -1941,12 +1943,10 @@ def collect_plugin_assets(preferred_stylesheet="css"):
             continue
 
         def asset_exists(category, asset):
-            exists = os.path.exists(os.path.join(basefolder, asset))
+            exists = os.path.exists(os.path.join(basefolder, asset))  # noqa: B023
             if not exists:
                 logger.warning(
-                    "Plugin {} is referring to non existing {} asset {}".format(
-                        name, category, asset
-                    )
+                    f"Plugin {name} is referring to non existing {category} asset {asset}"  # noqa: B023
                 )
             return exists
 
@@ -2047,9 +2047,7 @@ def get_reverse_proxy_info():
         if header in flask.request.headers:
             headers[header] = flask.request.headers[header]
 
-    trusted_downstreams = settings().get(["server", "reverseProxy", "trustedDownstream"])
-    if not trusted_downstreams:
-        trusted_downstreams = []
+    trusted_proxies = usable_trusted_proxies_from_settings(settings())
 
     return ReverseProxyInfo(
         client_ip=flask.request.remote_addr,
@@ -2058,6 +2056,6 @@ def get_reverse_proxy_info():
         server_port=int(flask.request.environ.get("SERVER_PORT")),
         server_path=flask.request.script_root if flask.request.script_root else "/",
         cookie_suffix=get_cookie_suffix(flask.request),
-        trusted_proxies=trusted_downstreams,
+        trusted_proxies=trusted_proxies,
         headers=headers,
     )

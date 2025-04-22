@@ -34,25 +34,34 @@ _timelapse_cache_mutex = threading.RLock()
 
 
 def _config_for_timelapse(timelapse):
-    if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
-        return {
-            "type": "zchange",
+    if timelapse is not None:
+        config = {
             "postRoll": timelapse.post_roll,
             "fps": timelapse.fps,
-            "retractionZHop": timelapse.retraction_zhop,
-            "minDelay": timelapse.min_delay,
+            "renderAfterPrint": timelapse.render_after_print,
         }
-    elif timelapse is not None and isinstance(
-        timelapse, octoprint.timelapse.TimedTimelapse
-    ):
-        return {
-            "type": "timed",
-            "postRoll": timelapse.post_roll,
-            "fps": timelapse.fps,
-            "interval": timelapse.interval,
-        }
-    else:
-        return {"type": "off"}
+
+        if isinstance(timelapse, octoprint.timelapse.ZTimelapse):
+            config.update(
+                {
+                    "type": "zchange",
+                    "retractionZHop": timelapse.retraction_zhop,
+                    "minDelay": timelapse.min_delay,
+                }
+            )
+            return config
+
+        elif isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
+            config.update(
+                {
+                    "type": "timed",
+                    "postRoll": timelapse.post_roll,
+                    "interval": timelapse.interval,
+                }
+            )
+            return config
+
+    return {"type": "off"}
 
 
 def _lastmodified(unrendered):
@@ -107,7 +116,11 @@ def getTimelapseData():
     force = request.values.get("force", "false") in valid_boolean_trues
     unrendered = request.values.get("unrendered", "false") in valid_boolean_trues
 
-    global _timelapse_cache_finished_lastmodified, _timelapse_cache_finished, _timelapse_cache_unrendered_lastmodified, _timelapse_cache_unrendered
+    global \
+        _timelapse_cache_finished_lastmodified, \
+        _timelapse_cache_finished, \
+        _timelapse_cache_unrendered_lastmodified, \
+        _timelapse_cache_unrendered
     with _timelapse_cache_mutex:
         current_lastmodified_finished = octoprint.timelapse.last_modified_finished()
         current_lastmodified_unrendered = octoprint.timelapse.last_modified_unrendered()
@@ -245,7 +258,13 @@ def setTimelapseConfig():
         data = request.values
 
     if "type" in data:
-        config = {"type": data["type"], "postRoll": 0, "fps": 25, "options": {}}
+        config = {
+            "type": data["type"],
+            "postRoll": 0,
+            "fps": 25,
+            "renderAfterPrint": "always",
+            "options": {},
+        }
 
         if "postRoll" in data:
             try:
@@ -301,6 +320,17 @@ def setTimelapseConfig():
                     config["options"]["minDelay"] = minDelay
                 else:
                     abort(400, description="minDelay is invalid")
+
+        if "renderAfterPrint" in data:
+            try:
+                renderAfterPrint = str(data["renderAfterPrint"])
+            except ValueError:
+                abort(400, description="renderAfterPrint is invalid")
+            else:
+                if renderAfterPrint in ["always", "success", "failure", "never"]:
+                    config["renderAfterPrint"] = renderAfterPrint
+                else:
+                    abort(400, description="renderAfterPrint is invalid")
 
         if (
             admin_permission.can()

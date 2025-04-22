@@ -117,17 +117,41 @@ def get_lan_ranges(additional_private=None):
                     )
                 )
 
-    subnets += list(netaddr.ip.IPV4_PRIVATE) + [
+    subnets += list(netaddr.ip.IPV4_PRIVATE_USE) + [
         netaddr.ip.IPV4_LOOPBACK,
         netaddr.ip.IPV4_LINK_LOCAL,
     ]
     if HAS_V6:
-        subnets += list(netaddr.ip.IPV6_PRIVATE) + [
-            netaddr.IPNetwork(netaddr.ip.IPV6_LOOPBACK),
+        subnets += [
+            netaddr.ip.IPV6_UNIQUE_LOCAL,
+            netaddr.ip.IPV6_LOOPBACK,
             netaddr.ip.IPV6_LINK_LOCAL,
         ]
 
     return subnets
+
+
+def usable_trusted_proxies(proxies, add_localhost=True):
+    if proxies is None or not isinstance(proxies, list):
+        logging.getLogger(__name__).warning("Invalid trusted proxies, using defaults")
+        proxies = []
+
+    if add_localhost:
+        return ["127.0.0.0/8", "::1"] + proxies
+    else:
+        return proxies
+
+
+def usable_trusted_proxies_from_settings(settings):
+    configured_trusted_proxies = settings.get(
+        ["server", "reverseProxy", "trustedProxies"]
+    )
+    trust_localhost_proxies = settings.getBoolean(
+        ["server", "reverseProxy", "trustLocalhostProxies"]
+    )
+    return usable_trusted_proxies(
+        configured_trusted_proxies, add_localhost=trust_localhost_proxies
+    )
 
 
 def is_lan_address(address, additional_private=None):
@@ -140,7 +164,7 @@ def is_lan_address(address, additional_private=None):
         ip = netaddr.IPAddress(address)
         subnets = get_lan_ranges(additional_private=additional_private)
 
-        if any(map(lambda subnet: ip in subnet, subnets)):
+        if any(ip in subnet for subnet in subnets):
             return True
 
         return False

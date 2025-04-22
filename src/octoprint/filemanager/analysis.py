@@ -12,9 +12,8 @@ import time
 
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
-from octoprint.util import dict_merge
+from octoprint.util import dict_merge, yaml
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import yaml
 from octoprint.util.platform import CLOSE_FDS
 
 EMPTY_RESULT = {
@@ -436,16 +435,14 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
         import sarge
 
         if self._current.analysis and all(
-            map(
-                lambda x: x in self._current.analysis,
-                (
-                    "printingArea",
-                    "dimensions",
-                    "travelArea",
-                    "travelDimensions",
-                    "estimatedPrintTime",
-                    "filament",
-                ),
+            x in self._current.analysis
+            for x in (
+                "printingArea",
+                "dimensions",
+                "travelArea",
+                "travelDimensions",
+                "estimatedPrintTime",
+                "filament",
             )
         ):
             return self._current.analysis

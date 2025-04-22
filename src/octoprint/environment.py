@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 import copy
 import logging
 import os
+import platform
 import sys
 import threading
 
@@ -69,7 +70,7 @@ class EnvironmentDetector:
     def _detect_os(self):
         return {
             "id": get_os(),
-            "platform": sys.platform,
+            "platform": platform.platform(),
             "bits": 64 if sys.maxsize > 2**32 else 32,
         }
 
@@ -96,9 +97,9 @@ class EnvironmentDetector:
 
         # try to find pip version
         try:
-            import pkg_resources
+            from octoprint.util.version import get_package_version
 
-            result["pip"] = pkg_resources.get_distribution("pip").version
+            result["pip"] = get_package_version("pip")
         except Exception:
             self._logger.exception("Error detecting pip version")
 
@@ -166,9 +167,7 @@ class EnvironmentDetector:
             environment = copy.deepcopy(self._cache)
 
         dumped_environment = yaml.dump(environment, pretty=True).strip()
-        environment_lines = "\n".join(
-            map(lambda x: f"|  {x}", dumped_environment.split("\n"))
-        )
+        environment_lines = "\n".join(f"|  {x}" for x in dumped_environment.split("\n"))
         return "Detected environment is Python {} under {} ({}). Details:\n{}".format(
             environment["python"]["version"],
             environment["os"]["id"].title(),

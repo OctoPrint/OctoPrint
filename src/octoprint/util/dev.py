@@ -55,12 +55,9 @@ def log_duration(log=None, with_args=False):
     def decorator(f):
         def wrapped(*args, **kwargs):
             if with_args:
-                args_str = ", ".join(map(lambda x: repr(x), args))
+                args_str = ", ".join(repr(x) for x in args)
                 kwargs_str = ", ".join(
-                    map(
-                        lambda item: f"{item[0]}={repr(item[1])}",
-                        kwargs.items(),
-                    )
+                    f"{item[0]}={repr(item[1])}" for item in kwargs.items()
                 )
                 sep = ", " if args_str and kwargs_str else ""
                 arguments = "".join([args_str, sep, kwargs_str])

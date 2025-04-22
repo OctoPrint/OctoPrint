@@ -107,13 +107,13 @@ def _execute(command, **kwargs):
         while p.commands[0].poll() is None:
             lines = p.stderr.readlines(timeout=0.5)
             if lines:
-                lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
+                lines = [_to_unicode(x, errors="replace") for x in lines]
                 _log_stderr(*lines)
                 all_stderr += lines
 
             lines = p.stdout.readlines(timeout=0.5)
             if lines:
-                lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
+                lines = [_to_unicode(x, errors="replace") for x in lines]
                 _log_stdout(*lines)
                 all_stdout += lines
 
@@ -122,13 +122,13 @@ def _execute(command, **kwargs):
 
     lines = p.stderr.readlines()
     if lines:
-        lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
+        lines = [_to_unicode(x, errors="replace") for x in lines]
         _log_stderr(*lines)
         all_stderr += lines
 
     lines = p.stdout.readlines()
     if lines:
-        lines = list(map(lambda x: _to_unicode(x, errors="replace"), lines))
+        lines = [_to_unicode(x, errors="replace") for x in lines]
         _log_stdout(*lines)
         all_stdout += lines
 
@@ -203,7 +203,7 @@ def _to_error(*lines):
             lines = [
                 repr(lines[0]),
             ]
-    return "\n".join(map(lambda x: _to_unicode(x, errors="replace"), lines))
+    return "\n".join(_to_unicode(x, errors="replace") for x in lines)
 
 
 def _rescue_changes(git_executable, folder):

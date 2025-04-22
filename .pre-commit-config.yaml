@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.10
+  python: python3.12
 exclude: ^(src/octoprint/vendor/|src/octoprint/static/js/lib|src/octoprint/static/vendor|src/octoprint_setuptools|tests/static/js/lib|tests/util/_files|scripts/|translations/|.*\.css|.*\.svg)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -21,39 +21,12 @@ repos:
       - id: pyupgrade
         args: ["--py37-plus"]
         exclude: "setup.py|src/octoprint_setuptools/__init__.py"
-  - repo: https://github.com/OctoPrint/codemods
-    rev: "0.6.3"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.2
     hooks:
-      - id: codemod_batch
-        args:
-          [
-            "--check",
-            "not_in",
-            "--check",
-            "detect_past_builtins_imports",
-            "--ignore",
-            "src/octoprint/vendor",
-            "--ignore",
-            "setup.py",
-            "--ignore",
-            "src/octoprint_setuptools/__init__.py"
-          ]
-  - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.10.1
-    hooks:
-      - id: isort
-  - repo: https://github.com/psf/black
-    rev: 23.1.0
-    hooks:
-      - id: black
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-        args: [--config=setup.cfg]
-        additional_dependencies:
-          - flake8-bugbear==23.2.13
-        exclude: ^(docs/)
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v2.7.1
     hooks:
@@ -69,3 +42,10 @@ repos:
     hooks:
       - id: codespell
         exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|tests/playwright|scripts/)
+  - repo: https://github.com/OctoPrint/pre-commit-lessc
+    rev: 4.2.0
+    hooks:
+      - id: lessc
+        args: ["--wrapper-quiet", "--clean-css=--s1 --advanced --compatibility=ie8"]
+        additional_dependencies: ["less-plugin-clean-css"]
+        files: ^(src/octoprint/static/less/(octoprint|recovery|login)\.less|src/octoprint/plugins/.*/static/less/.*\.less$)

@@ -1,3 +1,4 @@
+/* HLS.js, Apache License 2.0 */
 typeof window !== "undefined" &&
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
@@ -21475,4 +21476,3 @@ var logger = exportedLogger;
 
 /******/ })["default"];
 });
-//# sourceMappingURL=hls.js.map

@@ -15,6 +15,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import glob
 import os
+import re
 import shutil
 from distutils.command.clean import clean as _clean
 
@@ -158,10 +159,10 @@ class CleanCommand(_clean):
             )
 
 
-def _normalize_locale(l):
+def _normalize_locale(locale):
     from babel.core import Locale
 
-    return str(Locale.parse(l))
+    return str(Locale.parse(locale))
 
 
 class NewTranslation(Command):
@@ -471,7 +472,7 @@ class PackTranslation(Command):
 
         import datetime
 
-        now = datetime.datetime.utcnow().replace(microsecond=0)
+        now = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0)
 
         if self.target is None:
             self.target = self.__class__.source_dir
@@ -526,7 +527,7 @@ def get_babel_commandclasses(
     copyright_holder="The OctoPrint Project",
 ):
     try:
-        import babel
+        import babel  # noqa: F401
     except ImportError:
         return {}
 
@@ -583,22 +584,20 @@ def create_plugin_setup_parameters(
     package=None,
     dependency_links=None,
 ):
-    import pkg_resources
-
     if package is None:
         package = "octoprint_{identifier}".format(**locals())
 
     if additional_data is None:
-        additional_data = list()
+        additional_data = []
 
     if additional_packages is None:
-        additional_packages = list()
+        additional_packages = []
 
     if ignored_packages is None:
-        ignored_packages = list()
+        ignored_packages = []
 
     if dependency_links is None:
-        dependency_links = list()
+        dependency_links = []
 
     if requires is None:
         requires = ["OctoPrint"]
@@ -623,7 +622,7 @@ def create_plugin_setup_parameters(
         raise ValueError("eggs must be a list")
 
     egg = "{name}*.egg-info".format(
-        name=pkg_resources.to_filename(pkg_resources.safe_name(name))
+        name=re.sub("[^A-Za-z0-9.]+", "-", name).replace("-", "_")
     )
     if egg not in eggs:
         eggs = [egg] + eggs

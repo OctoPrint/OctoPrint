@@ -17,7 +17,7 @@ click.disable_unicode_literals_warning = True
 
 def _to_settings_path(path):
     if not isinstance(path, (list, tuple)):
-        path = list(filter(lambda x: x, map(lambda x: x.strip(), path.split("."))))
+        path = list(filter(lambda x: x, (x.strip() for x in path.split("."))))
     return path
 
 
@@ -46,9 +46,14 @@ def _init_pluginsettings(ctx):
         ctx.obj.plugin_manager = init_pluginsystem(
             ctx.obj.settings, safe_mode=get_ctx_obj_option(ctx, "safe_mode", False)
         )
-    except FatalStartupError as e:
-        click.echo(str(e), err=True)
-        click.echo("There was a fatal error initializing the plugin manager.", err=True)
+    except FatalStartupError as exc:
+        from traceback import format_exc
+
+        click.echo(format_exc(), err=True)
+        click.echo(
+            f"There was a fatal error initializing the plugin manager: {str(exc)}",
+            err=True,
+        )
         ctx.exit(-1)
 
 
@@ -60,9 +65,9 @@ def _init_pluginsettings(ctx):
 def cli(ctx):
     """Basic config manipulation."""
     logging.basicConfig(
-        level=logging.DEBUG
-        if get_ctx_obj_option(ctx, "verbosity", 0) > 0
-        else logging.WARN
+        level=(
+            logging.DEBUG if get_ctx_obj_option(ctx, "verbosity", 0) > 0 else logging.WARN
+        )
     )
     try:
         ctx.obj.settings = init_settings(
@@ -70,9 +75,14 @@ def cli(ctx):
             get_ctx_obj_option(ctx, "configfile", None),
             overlays=get_ctx_obj_option(ctx, "overlays", None),
         )
-    except FatalStartupError as e:
-        click.echo(str(e), err=True)
-        click.echo("There was a fatal error initializing the settings manager.", err=True)
+    except FatalStartupError as exc:
+        from traceback import format_exc
+
+        click.echo(format_exc(), err=True)
+        click.echo(
+            f"There was a fatal error initializing the settings manager: {str(exc)}",
+            err=True,
+        )
         ctx.exit(-1)
 
 

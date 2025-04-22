@@ -32,8 +32,6 @@ from octoprint.server.util import (
     corsRequestHandler,
     corsResponseHandler,
     csrfRequestHandler,
-    loginFromApiKeyRequestHandler,
-    loginFromAuthorizationHeaderRequestHandler,
     noCachingExceptGetResponseHandler,
 )
 from octoprint.server.util.flask import (
@@ -70,8 +68,6 @@ VERSION = "0.1"
 api.after_request(noCachingExceptGetResponseHandler)
 
 api.before_request(corsRequestHandler)
-api.before_request(loginFromAuthorizationHeaderRequestHandler)
-api.before_request(loginFromApiKeyRequestHandler)
 api.before_request(csrfRequestHandler)
 api.after_request(corsResponseHandler)
 
@@ -201,8 +197,9 @@ def wizardState():
             )
         except Exception:
             logging.getLogger(__name__).exception(
-                "There was an error fetching wizard "
-                "details for {}, ignoring".format(name),
+                "There was an error fetching wizard details for {}, ignoring".format(
+                    name
+                ),
                 extra={"plugin": name},
             )
         else:
@@ -254,8 +251,7 @@ def wizardFinish():
                 seen_wizards[name] = implementation.get_wizard_version()
         except Exception:
             logging.getLogger(__name__).exception(
-                "There was an error finishing the "
-                "wizard for {}, ignoring".format(name),
+                f"There was an error finishing the wizard for {name}, ignoring",
                 extra={"plugin": name},
             )
 
@@ -290,10 +286,13 @@ def serverStatus():
 @api.route("/login", methods=["POST"])
 @limit(
     "3/minute;5/10 minutes;10/hour",
-    deduct_when=lambda response: response.status_code == 403,
+    deduct_when=lambda response: response.status_code == 403
+    and not getattr(response, "__rate_limit_exempt__", False),
     error_message="You have made too many failed login attempts. Please try again later.",
 )
 def login():
+    from octoprint.plugin.types import WrongMfaCredentials
+
     data = request.get_json(silent=True)
     if not data:
         data = request.values
@@ -303,12 +302,11 @@ def login():
         password = data["pass"]
         remote_addr = request.remote_addr
 
-        if "remember" in data and data["remember"] in valid_boolean_trues:
-            remember = True
-        else:
-            remember = False
+        remember = "remember" in data and data["remember"] in valid_boolean_trues
 
-        if "usersession.id" in session:
+        reauthenticate = current_user and current_user.get_id() == username
+
+        if "usersession.id" in session and not reauthenticate:
             _logout(current_user)
 
         user = octoprint.server.userManager.find_user(username)
@@ -320,25 +318,80 @@ def login():
                     )
                     abort(403)
 
-                user = octoprint.server.userManager.login_user(user)
-                session["usersession.id"] = user.session
-                session["usersession.signature"] = session_signature(
-                    username, user.session
-                )
-                g.user = user
+                if not reauthenticate:
+                    ## MFA check
+                    mfa_options = []
+                    for mfa in octoprint.server.pluginManager.get_implementations(
+                        octoprint.plugin.MfaPlugin
+                    ):
+                        if not mfa.is_mfa_enabled(user):
+                            # MFA not enabled for this user, so nothing to do here
+                            continue
 
-                login_user(user, remember=remember)
-                identity_changed.send(
-                    current_app._get_current_object(), identity=Identity(user.get_id())
-                )
+                        try:
+                            if mfa.has_mfa_credentials(request, user, data):
+                                # MFA credentials are there and correct, no need to check further
+                                mfa_options.clear()
+                                break
+
+                            mfa_options.append(mfa._identifier)
+                        except WrongMfaCredentials as exc:
+                            # MFA credentials are there but wrong, abort
+                            auth_log(
+                                f"Failed login attempt for user {username} from {remote_addr}, wrong 2FA credentials"
+                            )
+                            return make_response(
+                                jsonify(
+                                    error="Wrong two-factor authentication credentials",
+                                    mfa_error=str(exc),
+                                ),
+                                403,
+                            )
+
+                    if len(mfa_options):
+                        # MFA required, abort
+                        auth_log(
+                            f"Two-factor authentication required to log in {username} from {remote_addr}"
+                        )
+                        response = make_response(
+                            jsonify(
+                                error="Two-factor authentication required",
+                                mfa=mfa_options,
+                            ),
+                            403,
+                        )
+                        response.__rate_limit_exempt__ = True
+                        return response
+
+                    ## Active login
+                    user = octoprint.server.userManager.login_user(user)
+                    session["usersession.id"] = user.session
+                    session["usersession.signature"] = session_signature(
+                        username, user.session
+                    )
+                    g.user = user
+
+                    login_user(user, remember=remember)
+                    identity_changed.send(
+                        current_app._get_current_object(),
+                        identity=Identity(user.get_id()),
+                    )
+
+                    logging.getLogger(__name__).info(
+                        "Actively logging in user {} from {}".format(
+                            user.get_id(), remote_addr
+                        )
+                    )
+
+                else:
+                    logging.getLogger(__name__).info(
+                        "Reauthenticating user {} from {}".format(
+                            user.get_id(), remote_addr
+                        )
+                    )
+
                 session["login_mechanism"] = LoginMechanism.PASSWORD
                 session["credentials_seen"] = datetime.datetime.now().timestamp()
-
-                logging.getLogger(__name__).info(
-                    "Actively logging in user {} from {}".format(
-                        user.get_id(), remote_addr
-                    )
-                )
 
                 response = user.as_dict()
                 response["_is_external_client"] = s().getBoolean(
@@ -355,10 +408,18 @@ def login():
                 r = make_response(jsonify(response))
                 r.delete_cookie("active_logout")
 
-                eventManager().fire(
-                    Events.USER_LOGGED_IN, payload={"username": user.get_id()}
-                )
-                auth_log(f"Logging in user {username} from {remote_addr} via credentials")
+                if reauthenticate:
+                    auth_log(
+                        f"Reauthenticating user {username} from {remote_addr} via credentials"
+                    )
+                else:
+                    eventManager().fire(
+                        Events.USER_LOGGED_IN, payload={"username": user.get_id()}
+                    )
+
+                    auth_log(
+                        f"Logging in user {username} from {remote_addr} via credentials"
+                    )
 
                 return r
 
@@ -537,7 +598,7 @@ def _test_path(data):
     access_mapping = {"r": os.R_OK, "w": os.W_OK, "x": os.X_OK}
     if check_access:
         mode = 0
-        for a in map(lambda x: access_mapping[x], check_access):
+        for a in (access_mapping[x] for x in check_access):
             mode |= a
         access = os.access(path, mode)
     else:
@@ -609,22 +670,57 @@ def _test_url(data):
         "timeout": StatusCodeRange(start=0, end=1),
     }
 
-    url = data["url"]
-    method = data.get("method", "HEAD")
-    timeout = 3.0
-    valid_ssl = True
     check_status = [status_ranges["normal"]]
     content_type_whitelist = None
     content_type_blacklist = None
 
+    params = {
+        "method": data.get("method", "HEAD"),
+        "url": data["url"],
+        "timeout": 3.0,
+        "verify": True,
+    }
+
     if "timeout" in data:
         try:
-            timeout = float(data["timeout"])
+            params["timeout"] = float(data["timeout"])
         except Exception:
             abort(400, description="timeout is invalid")
 
     if "validSsl" in data:
-        valid_ssl = data["validSsl"] in valid_boolean_trues
+        params["verify"] = data["validSsl"] in valid_boolean_trues
+
+    if "basicAuth" in data:
+        if not isinstance(data["basicAuth"], dict):
+            abort(400, description="basicAuth must be a dictionary")
+
+        if "username" not in data["basicAuth"] or "password" not in data["basicAuth"]:
+            abort(400, description="basicAuth must contain username and password")
+
+        from requests.auth import HTTPBasicAuth
+
+        params["auth"] = HTTPBasicAuth(
+            data["basicAuth"]["username"], data["basicAuth"]["password"]
+        )
+
+    elif "digestAuth" in data:
+        if not isinstance(data["digestAuth"], dict):
+            abort(400, description="digestAuth must be a dictionary")
+
+        if "username" not in data["digestAuth"] or "password" not in data["digestAuth"]:
+            abort(400, description="digestAuth must contain username and password")
+
+        from requests.auth import HTTPDigestAuth
+
+        params["auth"] = HTTPDigestAuth(
+            data["digestAuth"]["username"], data["digestAuth"]["password"]
+        )
+
+    elif "bearerAuth" in data:
+        if not isinstance(data["bearerAuth"], str):
+            abort(400, description="bearerAuth must be a string")
+
+        params["headers"] = {"Authorization": f"Bearer {data['bearerAuth']}"}
 
     if "status" in data:
         request_status = data["status"]
@@ -660,11 +756,9 @@ def _test_url(data):
     outcome = True
     status = 0
     try:
-        with requests.request(
-            method=method, url=url, timeout=timeout, verify=valid_ssl, stream=True
-        ) as response:
+        with requests.request(**params) as response:
             status = response.status_code
-            outcome = outcome and any(map(lambda x: status in x, check_status))
+            outcome = outcome and any(status in x for x in check_status)
             content_type = response.headers.get("content-type")
 
             response_result = {
@@ -684,16 +778,12 @@ def _test_url(data):
             parsed_content_type = util.parse_mime_type(content_type)
 
             in_whitelist = content_type_whitelist is None or any(
-                map(
-                    lambda x: util.mime_type_matches(parsed_content_type, x),
-                    content_type_whitelist,
-                )
+                util.mime_type_matches(parsed_content_type, x)
+                for x in content_type_whitelist
             )
             in_blacklist = content_type_blacklist is not None and any(
-                map(
-                    lambda x: util.mime_type_matches(parsed_content_type, x),
-                    content_type_blacklist,
-                )
+                util.mime_type_matches(parsed_content_type, x)
+                for x in content_type_blacklist
             )
 
             if not in_whitelist or in_blacklist:
@@ -716,11 +806,11 @@ def _test_url(data):
                 response_result["content"] = content
     except Exception:
         logging.getLogger(__name__).exception(
-            f"Error while running a test {method} request on {url}"
+            f"Error while running a test {params['method']} request on {params['url']}"
         )
         outcome = False
 
-    result = {"url": url, "status": status, "result": outcome}
+    result = {"url": params["url"], "status": status, "result": outcome}
     if response_result:
         result["response"] = response_result
 

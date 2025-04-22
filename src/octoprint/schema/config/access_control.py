@@ -1,7 +1,7 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
@@ -51,8 +51,20 @@ class AccessControlConfig(BaseModel):
     remoteUserHeader: str = "REMOTE_USER"
     """Header used by the reverse proxy to convey the authenticated user."""
 
+    trustRemoteGroups: bool = False
+    """Whether to trust remote groups headers. If you have setup authentication in front of OctoPrint and the groups names you use there match OctoPrint accounts, by setting this to true the user's groups will be set to the groups provided in the header. **ONLY ENABLE THIS** if your OctoPrint instance is only accessible through a connection locked down through an authenticating reverse proxy!"""
+
+    remoteGroupsHeader: str = "REMOTE_GROUPS"
+    """Header used by the reverse proxy to convey the authenticated user's groups."""
+
+    remoteGroupsMapping: Dict[str, str] = {}
+    """Mapping from groups in the header to groups in OctoPrint."""
+
     addRemoteUsers: bool = False
     """If a remote user is not found, add them. Use this only if all users from the remote system can use OctoPrint."""
 
     defaultReauthenticationTimeout: int = 5
     """Default timeout after which to require reauthentication by a user for dangerous changes, in minutes. Defaults to 5 minutes. Set to 0 to disable reauthentication requirements (SECURITY IMPACT!)."""
+
+    sessionStaleAfter: int = 15
+    """Default time after which to consider a session stale due to no activity and to remove it."""

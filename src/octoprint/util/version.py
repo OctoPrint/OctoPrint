@@ -6,9 +6,38 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import logging
 
-import pkg_resources
+from packaging.version import parse as parse_version
 
 from octoprint import __version__
+
+try:
+    import importlib.metadata as meta
+except ImportError:  # Python 3.7
+    import importlib_metadata as meta
+
+
+def get_package_version(package):
+    return meta.version(package)
+
+
+def safe_get_package_version(package, default=None):
+    try:
+        return get_package_version(package)
+    except meta.PackageNotFoundError:
+        return default
+
+
+def is_version_compatible(version, specifier):
+    from packaging.specifiers import SpecifierSet
+    from packaging.version import Version
+
+    if not isinstance(version, Version):
+        version = Version(version)
+
+    if not isinstance(specifier, SpecifierSet):
+        specifier = SpecifierSet(specifier)
+
+    return version in specifier
 
 
 def get_octoprint_version_string():
@@ -63,8 +92,7 @@ def is_octoprint_compatible(*compatibility_entries, **kwargs):
             ):
                 octo_compat = f">={octo_compat}"
 
-            s = pkg_resources.Requirement.parse("OctoPrint" + octo_compat)
-            if octoprint_version in s:
+            if is_version_compatible(octoprint_version, octo_compat):
                 break
         except Exception:
             logger.exception(
@@ -98,8 +126,7 @@ def is_python_compatible(compat, **kwargs):
     if python_version is None:
         python_version = get_python_version_string()
 
-    s = pkg_resources.Requirement.parse("Python" + compat)
-    return python_version in s
+    return is_version_compatible(python_version, compat)
 
 
 def get_comparable_version(version_string, cut=None, **kwargs):
@@ -120,48 +147,32 @@ def get_comparable_version(version_string, cut=None, **kwargs):
         raise ValueError("level must be a positive integer")
 
     version_string = normalize_version(version_string)
-    version = pkg_resources.parse_version(version_string)
+    version = parse_version(version_string)
 
     if cut is not None:
-        if isinstance(version, tuple):
-            # old setuptools
-            base_version = []
-            for part in version:
-                if part.startswith("*"):
-                    break
-                base_version.append(part)
-            if 0 < cut < len(base_version):
-                base_version = base_version[:-cut]
-            base_version.append("*final")
-            version = tuple(base_version)
-        else:
-            # new setuptools
-            version = pkg_resources.parse_version(version.base_version)
-            if cut is not None:
-                parts = version.base_version.split(".")
-                if 0 < cut < len(parts):
-                    reduced = parts[:-cut]
-                    version = pkg_resources.parse_version(
-                        ".".join(str(x) for x in reduced)
-                    )
+        version = parse_version(version.base_version)
+        if cut is not None:
+            parts = version.base_version.split(".")
+            if 0 < cut < len(parts):
+                reduced = parts[:-cut]
+                version = parse_version(".".join(str(x) for x in reduced))
 
     return version
 
 
 def is_stable(version):
     """
-    >>> import pkg_resources
-    >>> is_stable(pkg_resources.parse_version("1.3.6rc3"))
+    >>> is_stable("1.3.6rc3")
     False
-    >>> is_stable(pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
+    >>> is_stable("1.3.6rc3.dev2+g1234")
     False
-    >>> is_stable(pkg_resources.parse_version("1.3.6"))
+    >>> is_stable("1.3.6")
     True
-    >>> is_stable(pkg_resources.parse_version("1.3.6.post1+g1234"))
+    >>> is_stable("1.3.6.post1+g1234")
     True
-    >>> is_stable(pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
+    >>> is_stable("1.3.6.post1.dev0+g1234")
     False
-    >>> is_stable(pkg_resources.parse_version("1.3.7.dev123+g23545"))
+    >>> is_stable("1.3.7.dev123+g23545")
     False
     """
 
@@ -171,51 +182,34 @@ def is_stable(version):
     if not is_release(version):
         return False
 
-    if isinstance(version, tuple):
-        return "*a" not in version and "*b" not in version and "*c" not in version
-    else:
-        return not version.is_prerelease
+    return not version.is_prerelease
 
 
 def is_release(version):
     """
-    >>> import pkg_resources
-    >>> is_release(pkg_resources.parse_version("1.3.6rc3"))
+    >>> is_release("1.3.6rc3")
     True
-    >>> is_release(pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
+    >>> is_release("1.3.6rc3.dev2+g1234")
     False
-    >>> is_release(pkg_resources.parse_version("1.3.6"))
+    >>> is_release("1.3.6")
     True
-    >>> is_release(pkg_resources.parse_version("1.3.6.post1+g1234"))
+    >>> is_release("1.3.6.post1+g1234")
     True
-    >>> is_release(pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
+    >>> is_release("1.3.6.post1.dev0+g1234")
     False
-    >>> is_release(pkg_resources.parse_version("1.3.7.dev123+g23545"))
+    >>> is_release("1.3.7.dev123+g23545")
     False
     """
 
     if isinstance(version, str):
         version = get_comparable_version(version)
-
-    if isinstance(version, tuple):
-        # old setuptools
-        return "*@" not in version
-    else:
-        # new setuptools
-        return "dev" not in version.public
-    pass
+    return "dev" not in version.public
 
 
 def is_prerelease(version):
     if isinstance(version, str):
         version = get_comparable_version(version)
-
-    if isinstance(version, tuple):
-        # old setuptools
-        return any(map(lambda x: x in version, ("*a", "*b", "*c", "*rc")))
-    else:
-        # new setuptools
-        return version.is_prerelease
+    return version.is_prerelease
 
 
 def normalize_version(version):

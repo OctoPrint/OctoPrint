@@ -57,7 +57,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
         return result
 
     def list_commands(self, ctx):
-        result = [name for name in self._get_commands()]
+        result = list(self._get_commands())
         result.sort()
         return result
 
@@ -261,38 +261,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
             help="List all available files and exit",
         )
         def command(files, all_files, list_files):
-            import shutil
-            from pathlib import Path
-
-            # src/octoprint
-            octoprint_base = Path(__file__).parent.parent
-
-            available_files = {}
-            for less_file in Path(octoprint_base, "static", "less").glob("*.less"):
-                # Check corresponding css file exists
-                # Less files can be imported, not all need building
-                css_file = Path(less_file.parent.parent, "css", f"{less_file.stem}.css")
-                if css_file.exists():
-                    available_files[less_file.stem] = {
-                        "source": str(less_file),
-                        "output": str(css_file),
-                    }
-
-            path_to_plugins = Path(octoprint_base, "plugins")
-            for plugin in Path(path_to_plugins).iterdir():
-                for less_file in Path(plugin, "static", "less").glob("*.less"):
-                    name = f"plugin_{plugin.name}"
-                    if less_file.stem != plugin.name:
-                        name += f"_{less_file.stem}"
-                    # Check there is a corresponding CSS file first
-                    css_file = Path(
-                        less_file.parent.parent, "css", f"{less_file.stem}.css"
-                    )
-                    if css_file.exists():
-                        available_files[name] = {
-                            "source": str(less_file),
-                            "output": str(css_file),
-                        }
+            available_files = self._get_available_less_files()
 
             if list_files:
                 click.echo("Available files to build:")
@@ -309,45 +278,181 @@ class OctoPrintDevelCommands(click.MultiCommand):
                 )
                 sys.exit(1)
 
-            # Check that lessc is installed
-            less = shutil.which("lessc")
-
-            # Check that less-plugin-clean-css is installed
-            if less:
-                _, _, stderr = self.command_caller.call(
-                    [less, "--clean-css"], logged=False
-                )
-                clean_css = not any(
-                    map(lambda x: "Unable to load plugin clean-css" in x, stderr)
-                )
-            else:
-                clean_css = False
-
-            if not less or not clean_css:
-                click.echo(
-                    "lessc or less-plugin-clean-css is not installed/not available, please install it first"
-                )
-                click.echo(
-                    "Try `npm i -g less less-plugin-clean-css` to install both (note that it does NOT say 'lessc' in this command!)"
-                )
-                sys.exit(1)
+            less = self._get_lessc()
 
             for less_file in files:
-                if less_file not in available_files.keys():
+                file_data = available_files.get(less_file)
+                if file_data is None:
                     click.echo(f"Unknown file {less_file}")
                     sys.exit(1)
 
-                # Build command line, with necessary options
-                less_command = [
+                self._run_lessc(
                     less,
-                    "--clean-css=--s1 --advanced --compatibility=ie8",
-                    available_files[less_file]["source"],
-                    available_files[less_file]["output"],
-                ]
-
-                self.command_caller.call(less_command)
+                    file_data["source"],
+                    file_data["output"],
+                )
 
         return command
+
+    def css_watch(self):
+        @click.command("watch")
+        @click.option(
+            "--file",
+            "-f",
+            "files",
+            multiple=True,
+            help="Specify files to watch & build, for a list of options use --list",
+        )
+        @click.option(
+            "--all", "all_files", is_flag=True, help="Watch & build all less files"
+        )
+        @click.option(
+            "--list", "list_files", is_flag=True, help="List all available files and exit"
+        )
+        def command(files, all_files, list_files):
+            import os
+            import time
+
+            from watchdog.events import FileSystemEventHandler
+            from watchdog.observers import Observer
+
+            available_files = self._get_available_less_files()
+
+            if list_files:
+                click.echo("Available files to build:")
+                for name in available_files.keys():
+                    click.echo(f"- {name}")
+                sys.exit(0)
+
+            if all_files:
+                files = available_files.keys()
+
+            if not files:
+                click.echo(
+                    "No files specified. Use `--file <file>` to specify individual files, or `--all` to build all."
+                )
+                sys.exit(1)
+
+            lessc = self._get_lessc()
+
+            class LesscEventHandler(FileSystemEventHandler):
+                def __init__(self, files, compiler):
+                    super().__init__()
+                    self._files = files
+                    self._compiler = compiler
+
+                def dispatch(self, event):
+                    if event.is_directory:
+                        return
+
+                    path = os.fsdecode(event.src_path)
+                    if path in self._files.keys():
+                        super().dispatch(event)
+
+                def on_modified(self, event):
+                    less_file = os.fsdecode(event.src_path)
+
+                    click.echo(
+                        f"\nModification of {less_file} detected, compiling to CSS..."
+                    )
+
+                    css_file = self._files[less_file]
+                    self._compiler(less_file, css_file)
+
+            octoprint_base = str(self._get_octoprint_base())
+            selected = {
+                v["source"]: v["output"] for k, v in available_files.items() if k in files
+            }
+            compiler = lambda l, c: self._run_lessc(lessc, l, c)
+            handler = LesscEventHandler(selected, compiler)
+
+            observer = Observer()
+            observer.schedule(handler, octoprint_base, recursive=True)
+            observer.start()
+
+            click.echo(f"Selected files: {', '.join(files)}")
+            click.echo("Starting to watch selected files, hit Ctrl+C to stop...")
+            try:
+                while True:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                observer.stop()
+            observer.join()
+
+        return command
+
+    def _get_octoprint_base(self):
+        from pathlib import Path
+
+        return Path(__file__).parent.parent
+
+    def _get_available_less_files(self) -> dict:
+        from pathlib import Path
+
+        # src/octoprint
+        octoprint_base = self._get_octoprint_base()
+
+        available_files = {}
+        for less_file in Path(octoprint_base, "static", "less").glob("*.less"):
+            # Check corresponding css file exists
+            # Less files can be imported, not all need building
+            css_file = Path(less_file.parent.parent, "css", f"{less_file.stem}.css")
+            if css_file.exists():
+                available_files[less_file.stem] = {
+                    "source": str(less_file),
+                    "output": str(css_file),
+                }
+
+        path_to_plugins = Path(octoprint_base, "plugins")
+        for plugin in Path(path_to_plugins).iterdir():
+            for less_file in Path(plugin, "static", "less").glob("*.less"):
+                name = f"plugin_{plugin.name}"
+                if less_file.stem != plugin.name:
+                    name += f"_{less_file.stem}"
+                # Check there is a corresponding CSS file first
+                css_file = Path(less_file.parent.parent, "css", f"{less_file.stem}.css")
+                if css_file.exists():
+                    available_files[name] = {
+                        "source": str(less_file),
+                        "output": str(css_file),
+                    }
+
+        return available_files
+
+    def _get_lessc(self):
+        import shutil
+
+        # Check that lessc is installed
+        less = shutil.which("lessc")
+
+        # Check that less-plugin-clean-css is installed
+        if less:
+            _, _, stderr = self.command_caller.call([less, "--clean-css"], logged=False)
+            clean_css = not any("Unable to load plugin clean-css" in x for x in stderr)
+        else:
+            clean_css = False
+
+        if not less or not clean_css:
+            click.echo(
+                "lessc or less-plugin-clean-css is not installed/not available, please install it first"
+            )
+            click.echo(
+                "Try `npm i -g less less-plugin-clean-css` to install both (note that it does NOT say 'lessc' in this command!)"
+            )
+            sys.exit(1)
+
+        return less
+
+    def _run_lessc(self, lessc, source, target):
+        # Build command line, with necessary options
+        less_command = [
+            lessc,
+            "--clean-css=--s1 --advanced --compatibility=ie8",
+            source,
+            target,
+        ]
+
+        self.command_caller.call(less_command)
 
 
 @click.group(cls=OctoPrintDevelCommands)

@@ -10,8 +10,9 @@ import sys
 import threading
 from typing import List
 
-import pkg_resources
 import sarge
+from packaging.requirements import Requirement
+from packaging.version import parse as parse_version
 
 from octoprint.util.platform import CLOSE_FDS
 
@@ -146,11 +147,11 @@ class UnknownPip(Exception):
 
 
 class PipCaller(CommandlineCaller):
-    process_dependency_links = pkg_resources.Requirement.parse("pip>=1.5")
-    no_cache_dir = pkg_resources.Requirement.parse("pip>=1.6")
-    disable_pip_version_check = pkg_resources.Requirement.parse("pip>=6.0")
-    no_use_wheel = pkg_resources.Requirement.parse("pip==1.5.0")
-    broken = pkg_resources.Requirement.parse("pip>=6.0.1,<=6.0.3")
+    process_dependency_links = Requirement("pip>=1.5").specifier
+    no_cache_dir = Requirement("pip>=1.6").specifier
+    disable_pip_version_check = Requirement("pip>=6.0").specifier
+    no_use_wheel = Requirement("pip==1.5.0").specifier
+    broken = Requirement("pip>=6.0.1,<=6.0.3").specifier
 
     @classmethod
     def clean_install_command(cls, args, pip_version, virtual_env, use_user, force_user):
@@ -483,7 +484,7 @@ class PipCaller(CommandlineCaller):
                     )
                 )
 
-            split_output = list(map(lambda x: x.strip(), output.split()))
+            split_output = [x.strip() for x in output.split()]
             if len(split_output) < 2:
                 self._logger.warning(
                     "pip command returned unparsable output, can't determine version: {}".format(
@@ -494,7 +495,7 @@ class PipCaller(CommandlineCaller):
             version_segment = split_output[1]
 
             try:
-                pip_version = pkg_resources.parse_version(version_segment)
+                pip_version = parse_version(version_segment)
             except Exception:
                 self._logger.exception(
                     "Error while trying to parse version string from pip command"

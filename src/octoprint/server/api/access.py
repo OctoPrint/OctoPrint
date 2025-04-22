@@ -32,7 +32,7 @@ def get_permissions():
 @no_firstrun_access
 @Permissions.ADMIN.require(403)
 def get_groups():
-    return jsonify(groups=list(map(lambda g: g.as_dict(), groupManager.groups)))
+    return jsonify(groups=[g.as_dict() for g in groupManager.groups])
 
 
 @api.route("/access/groups", methods=["POST"])
@@ -383,8 +383,8 @@ def generate_apikey_for_user(username):
 
 
 def _to_external_permissions(*permissions):
-    return list(map(lambda p: p.get_name(), permissions))
+    return [p.get_name() for p in permissions]
 
 
 def _to_external_groups(*groups):
-    return list(map(lambda g: g.get_name(), groups))
+    return [g.get_name() for g in groups]

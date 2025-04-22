@@ -390,9 +390,21 @@ class gcode:
 
             if ";" in line:
                 comment = line[line.find(";") + 1 :].strip()
-                if comment.startswith("filament_diameter"):
-                    # Slic3r
+                if comment.startswith("filament_diameter") and "=" in comment:
+                    # Slic3r & PrusaSlicer
                     filamentValue = comment.split("=", 1)[1].strip()
+                    try:
+                        self._filamentDiameter = float(filamentValue)
+                    except ValueError:
+                        try:
+                            self._filamentDiameter = float(
+                                filamentValue.split(",")[0].strip()
+                            )
+                        except ValueError:
+                            self._filamentDiameter = 0.0
+                elif comment.startswith("filament_diameter") and ":" in comment:
+                    # BambuStudio & OrcaSlicer
+                    filamentValue = comment.split(":", 1)[1].strip()
                     try:
                         self._filamentDiameter = float(filamentValue)
                     except ValueError:
@@ -793,13 +805,12 @@ class gcode:
         self.totalMoveTimeMinute = totalMoveTimeMinute
 
     def _parseCuraProfileString(self, comment, prefix):
-        return {
-            key: value
-            for (key, value) in map(
+        return dict(
+            map(
                 lambda x: x.split(b"=", 1),
                 zlib.decompress(base64.b64decode(comment[len(prefix) :])).split(b"\b"),
             )
-        }
+        )
 
     def _intersectsAngle(self, start, end, angle):
         if end < start and angle == 0:

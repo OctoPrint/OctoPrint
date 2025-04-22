@@ -14,7 +14,6 @@ import time
 from datetime import datetime
 
 import filetype
-import pkg_resources
 import pylru
 import requests
 import sarge
@@ -103,6 +102,12 @@ def map_repository_entry(entry):
         else:
             # we default to only assume py2 compatibility for now
             result["is_compatible"]["python"] = is_python_compatible(">=2.7,<3")
+
+    if "attributes" not in result:
+        result["attributes"] = []
+
+    if result.get("abandoned"):
+        result["attributes"].append("abandoned")
 
     return result
 
@@ -287,7 +292,26 @@ class PluginManagerPlugin(
                 )
 
         # decouple repository fetching from server startup
-        self._fetch_all_data(do_async=True)
+        def backup_plugin_export():
+            import json
+
+            if not self._repository_available:
+                return
+
+            plugins = self.generate_plugins_json(
+                self._settings,
+                self._plugin_manager,
+                repo_plugins=self._repository_plugins_by_id,
+            )
+
+            export_path = os.path.join(
+                self._settings._basedir, "backup_plugin_export.json"
+            )
+            with open(export_path, "w", encoding="utf-8") as f:
+                json.dump(plugins, f, indent=2, allow_nan=False)
+            self._logger.info(f"Saved a current plugin export to {export_path}")
+
+        self._fetch_all_data(do_async=True, cb=backup_plugin_export)
 
     ##~~ SettingsPlugin
 
@@ -295,6 +319,7 @@ class PluginManagerPlugin(
         return {
             "repository": DEFAULT_PLUGIN_REPOSITORY,
             "repository_ttl": 24 * 60,
+            "repository_restricted": True,
             "notices": DEFAULT_PLUGIN_NOTICES,
             "notices_ttl": 6 * 60,
             "pip_args": None,
@@ -399,35 +424,32 @@ class PluginManagerPlugin(
                 description="File doesn't have a valid extension for a plugin archive or a single file plugin",
             )
 
-        ext = exts[0]
-        archive = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
-        archive.close()
-        shutil.copy(upload_path, archive.name)
-
-        def perform_install(source, name, force=False):
-            try:
-                self.command_install(
-                    path=source,
-                    name=name,
-                    force=force,
-                )
-            finally:
-                try:
-                    os.remove(archive.name)
-                except Exception as e:
-                    self._logger.warning(
-                        "Could not remove temporary file {path} again: {message}".format(
-                            path=archive.name, message=str(e)
-                        )
-                    )
-
         with self._install_lock:
             if self._install_task is not None:
                 abort(409, description="There's already a plugin being installed")
 
+            tmp_folder = tempfile.TemporaryDirectory()
+            archive = os.path.join(tmp_folder.name, upload_name)
+            shutil.copy(upload_path, archive)
+
+            def perform_install(source, name, force=False):
+                try:
+                    self.command_install(
+                        path=source,
+                        name=name,
+                        force=force,
+                    )
+                finally:
+                    try:
+                        shutil.rmtree(tmp_folder)
+                    except Exception as e:
+                        self._logger.warning(
+                            f"Could not remove temporary folder {tmp_folder} again: {str(e)}"
+                        )
+
             self._install_task = threading.Thread(
                 target=perform_install,
-                args=(archive.name, upload_name),
+                args=(archive, upload_name),
                 kwargs={
                     "force": "force" in flask.request.values
                     and flask.request.values["force"] in valid_boolean_trues
@@ -1171,9 +1193,7 @@ class PluginManagerPlugin(
             self._send_result_notification("install", result, partial=partial)
             return result
 
-        installed = list(
-            map(lambda x: x.strip(), result_line[len(OUTPUT_SUCCESS) :].split(" "))
-        )
+        installed = [x.strip() for x in result_line[len(OUTPUT_SUCCESS) :].split(" ")]
         all_plugins_after = self._plugin_manager.find_plugins(
             existing={}, ignore_uninstalled=False
         )
@@ -1704,7 +1724,7 @@ class PluginManagerPlugin(
         result = {
             "result": True,
             "needs_restart": len(cleaned_up) > 0,
-            "cleaned_up": sorted(list(cleaned_up)),
+            "cleaned_up": sorted(cleaned_up),
         }
         self._send_result_notification("cleanup_all", result)
         self._logger.info(f"Cleaned up all data, {len(cleaned_up)} left overs removed")
@@ -1856,7 +1876,7 @@ class PluginManagerPlugin(
 
         if additional_args is not None:
             inapplicable_arguments = self.__class__.PIP_INAPPLICABLE_ARGUMENTS.get(
-                args[0], list()
+                args[0], []
             )
             for inapplicable_argument in inapplicable_arguments:
                 additional_args = re.sub(
@@ -1890,7 +1910,7 @@ class PluginManagerPlugin(
 
     def _log(self, lines, prefix=None, stream=None, strip=True):
         if strip:
-            lines = list(map(lambda x: x.strip(), lines))
+            lines = [x.strip() for x in lines]
 
         self._plugin_manager.send_plugin_message(
             self._identifier,
@@ -1968,10 +1988,12 @@ class PluginManagerPlugin(
             {"id": plugin.key, "version": plugin.version},
         )
 
-    def _fetch_all_data(self, do_async=False):
+    def _fetch_all_data(self, do_async=False, cb=None):
         def run():
             self._repository_available = self._fetch_repository_from_disk()
             self._notices_available = self._fetch_notices_from_disk()
+            if callable(cb):
+                cb()
 
         if do_async:
             thread = threading.Thread(target=run)
@@ -2275,9 +2297,11 @@ class PluginManagerPlugin(
             "key": plugin.key,
             "name": plugin.name,
             "description": plugin.description,
-            "disabling_discouraged": gettext(plugin.disabling_discouraged)
-            if plugin.disabling_discouraged
-            else False,
+            "disabling_discouraged": (
+                gettext(plugin.disabling_discouraged)
+                if plugin.disabling_discouraged
+                else False
+            ),
             "author": plugin.author,
             "version": plugin.version,
             "url": plugin.url,
@@ -2308,6 +2332,7 @@ class PluginManagerPlugin(
             ),
             "origin": plugin.origin.type,
             "notifications": self._get_notifications(plugin),
+            "attributes": self._get_attributes(plugin),
         }
 
     def _get_notifications(self, plugin):
@@ -2351,10 +2376,22 @@ class PluginManagerPlugin(
             "important": notification.get("important", False),
         }
 
+    def _get_attributes(self, plugin):
+        key = plugin.key
+        if (
+            not self._repository_plugins_by_id
+            or key not in self._repository_plugins_by_id
+        ):
+            return []
+
+        return self._repository_plugins_by_id[key].get("attributes", [])
+
 
 @pylru.lrudecorator(size=127)
 def parse_requirement(line):
-    return pkg_resources.Requirement.parse(line)
+    from packaging.requirements import Requirement
+
+    return Requirement(line).specifier
 
 
 def _filter_relevant_notification(notification, plugin_version, octoprint_version):
@@ -2362,12 +2399,10 @@ def _filter_relevant_notification(notification, plugin_version, octoprint_versio
         pluginversions = notification["pluginversions"]
 
         is_range = lambda x: "=" in x or ">" in x or "<" in x
-        version_ranges = list(
-            map(
-                lambda x: parse_requirement(notification["plugin"] + x),
-                filter(is_range, pluginversions),
-            )
-        )
+        version_ranges = [
+            parse_requirement(notification["plugin"] + x)
+            for x in filter(is_range, pluginversions)
+        ]
         versions = list(filter(lambda x: not is_range(x), pluginversions))
     elif "versions" in notification:
         version_ranges = []
@@ -2383,7 +2418,7 @@ def _filter_relevant_notification(notification, plugin_version, octoprint_versio
             or (
                 plugin_version
                 and version_ranges
-                and (any(map(lambda v: plugin_version in v, version_ranges)))
+                and (any(plugin_version in v for v in version_ranges))
             )
             or (plugin_version and versions and plugin_version in versions)
         )

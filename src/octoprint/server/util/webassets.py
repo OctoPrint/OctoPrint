@@ -137,8 +137,7 @@ class GzipFile(Filter):
                     f.write(data.encode("utf8"))
             except Exception:
                 logging.getLogger(__name__).exception(
-                    "Error writing gzipped "
-                    "output of {} to {}".format(output_path, gzipped_output_path)
+                    f"Error writing gzipped output of {output_path} to {gzipped_output_path}"
                 )
                 try:
                     os.remove(gzipped_output_path)
@@ -172,7 +171,7 @@ _PLUGIN_BUNDLE_WRAPPER_PREFIX = """// JS assets for plugin {plugin}
         """
 _PLUGIN_BUNDLE_WRAPPER_SUFFIX = """
     }} catch (error) {{
-        log.error("Error in JS assets for plugin {plugin}:", `${{exc.message}}\n${{exc.stack || exc}}`);
+        log.error("Error in JS assets for plugin {plugin}:", `${{error.message}}\n${{error.stack || error}}`);
     }}
 }})();
 """

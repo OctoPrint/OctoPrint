@@ -18,6 +18,7 @@ import re
 import threading
 import time
 from collections import deque, namedtuple
+from functools import partial
 
 import serial
 import wrapt
@@ -933,7 +934,7 @@ class MachineCom:
 
     def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
         log = "Last lines in terminal:\n" + "\n".join(
-            map(lambda x: f"| {x}", list(self._terminal_log))
+            f"| {x}" for x in list(self._terminal_log)
         )
         if message is not None:
             log = message + "\n| " + log
@@ -1365,10 +1366,10 @@ class MachineCom:
 
                 def to_list(data, t):
                     if isinstance(data, str):
-                        data = list(s.strip() for s in data.split("\n"))
+                        data = [s.strip() for s in data.split("\n")]
 
                     if isinstance(data, (list, tuple)):
-                        return list(map(lambda x: (x, t), data))
+                        return [(x, t) for x in data]
                     else:
                         return None
 
@@ -1376,7 +1377,7 @@ class MachineCom:
                 if len(retval) == 4:
                     additional_tags |= set(retval[3])
 
-                prefix, suffix = map(lambda x: to_list(x, additional_tags), retval[0:2])
+                prefix, suffix = (to_list(x, additional_tags) for x in retval[0:2])
                 if prefix:
                     scriptLinesPrefix = list(prefix) + scriptLinesPrefix
                 if suffix:
@@ -1444,7 +1445,7 @@ class MachineCom:
 
             self.sendCommand(line, part_of_job=part_of_job, tags=ttu)
 
-        return "\n".join(map(lambda x: x if isinstance(x, str) else x[0], scriptLines))
+        return "\n".join(x if isinstance(x, str) else x[0] for x in scriptLines)
 
     def startPrint(self, pos=None, tags=None, external_sd=False, user=None):
         if not self.isOperational() or self.isPrinting():
@@ -1539,7 +1540,7 @@ class MachineCom:
         ):
             # figure out remote filename
             self.refreshSdFiles(blocking=True)
-            existingSdFiles = list(map(lambda x: x[0], self.getSdFiles()))
+            existingSdFiles = [x[0] for x in self.getSdFiles()]
             remote_name = get_dos_filename(
                 filename,
                 existing_filenames=existingSdFiles,
@@ -2010,17 +2011,15 @@ class MachineCom:
                     )
 
     def getSdFiles(self):
-        return list(
-            map(
-                lambda x: (
-                    x.name,
-                    x.size,
-                    x.longname if x.longname else x.name,
-                    x.timestamp,
-                ),
-                self._sdFiles.values(),
+        return [
+            (
+                x.name,
+                x.size,
+                x.longname if x.longname else x.name,
+                x.timestamp,
             )
-        )
+            for x in self._sdFiles.values()
+        ]
 
     def deleteSdFile(self, filename, tags=None):
         if not self._sdEnabled:
@@ -2057,6 +2056,9 @@ class MachineCom:
             self._logger.debug(
                 "Deferring sd file refresh until capability report is processed"
             )
+            return
+
+        if not self._sdAvailable:
             return
 
         if tags is None:
@@ -2265,6 +2267,10 @@ class MachineCom:
             ["serial", "externalHeatupDetection"]
         )
 
+        wait_for_start = settings().getBoolean(["serial", "waitForStartOnConnect"])
+
+        suppress_2nd_hello = settings().getBoolean(["serial", "suppressSecondHello"])
+
         self._consecutive_timeouts = 0
 
         # Open the serial port
@@ -2275,7 +2281,7 @@ class MachineCom:
             self._changeState(self.STATE_OPEN_SERIAL)
             if not self._open_serial(self._port, self._baudrate):
                 return
-            try_hello = not settings().getBoolean(["serial", "waitForStartOnConnect"])
+            try_hello = not wait_for_start
             self._changeState(self.STATE_CONNECTING)
             self._timeout = self._ok_timeout = self._get_new_communication_timeout()
         else:
@@ -2299,9 +2305,10 @@ class MachineCom:
         if try_hello:
             self.sayHello()
 
-            # we send a second one right away because sometimes there's garbage on the line on first connect
-            # that can kill oks
-            self.sayHello()
+            if not suppress_2nd_hello:
+                # we send a second one right away because sometimes there's garbage on the line on first connect
+                # that can kill oks
+                self.sayHello()
 
         while self._monitoring_active:
             try:
@@ -2346,7 +2353,7 @@ class MachineCom:
                             1,
                         )
 
-                        def busyIntervalSet():
+                        def busyIntervalSet(busy_interval):
                             self._logger.info(
                                 "Telling the printer to set the busy interval to our "
                                 '"communicationBusy" timeout - 1s = {}s'.format(
@@ -2359,7 +2366,8 @@ class MachineCom:
                             )
 
                         self._set_busy_protocol_interval(
-                            interval=busy_interval, callback=busyIntervalSet
+                            interval=busy_interval,
+                            callback=partial(busyIntervalSet, busy_interval),
                         )
 
                     if self._state not in (
@@ -3221,7 +3229,8 @@ class MachineCom:
                 elif self._state == self.STATE_CONNECTING:
                     if "start" in line and not startSeen:
                         startSeen = True
-                        self.sayHello()
+                        if wait_for_start:
+                            self.sayHello()
                     elif line.startswith("ok") or (supportWait and line == "wait"):
                         if line == "wait":
                             # if it was a wait we probably missed an ok, so let's simulate that now
@@ -3422,15 +3431,9 @@ class MachineCom:
             self._detection_retry = self.DETECTION_RETRIES
 
             log(
-                "Performing autodetection with {} "
-                "port/baudrate candidates: {}".format(
+                "Performing autodetection with {} " "port/baudrate candidates: {}".format(
                     len(self._detection_candidates),
-                    ", ".join(
-                        map(
-                            lambda x: f"{x[0]}@{x[1]}",
-                            self._detection_candidates,
-                        )
-                    ),
+                    ", ".join(f"{x[0]}@{x[1]}" for x in self._detection_candidates),
                 )
             )
 
@@ -4067,7 +4070,7 @@ class MachineCom:
 
                 if not self._ignore_errors:
                     if self._disconnect_on_errors or any(
-                        map(lambda x: x in lower_line, self._fatal_errors)
+                        x in lower_line for x in self._fatal_errors
                     ):
                         self._trigger_error(stripped_error, "firmware")
 
@@ -4879,8 +4882,7 @@ class MachineCom:
 
             except Exception:
                 self._logger.exception(
-                    "Error while processing hook {name} for phase "
-                    "{phase}:".format(
+                    "Error while processing hook {name} for phase " "{phase}:".format(
                         name=name,
                         phase=phase,
                     ),
@@ -4971,7 +4973,7 @@ class MachineCom:
                 )
 
         # trigger built-in handler if available
-        handler = getattr(self, f"_atcommand_{atcommand}_{phase}", None)
+        handler = getattr(self, f"_atcommand_{atcommand.lower()}_{phase}", None)
         if callable(handler):
             try:
                 handler(atcommand, parameters, tags=tags)
@@ -5119,6 +5121,12 @@ class MachineCom:
 
     ## gcode
 
+    NOT_SENDING_T = (
+        "Not {action} T{tool}, that tool doesn't exist according to the printer profile or "
+        "was reported as invalid by the firmware. Make sure your printer profile is set up "
+        "correctly in OctoPrint, with the number of extruders set to all available extruders."
+    )
+
     def _gcode_T_queuing(
         self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
     ):
@@ -5128,11 +5136,7 @@ class MachineCom:
             new_tool = int(toolMatch.group("value"))
 
             if not self._validate_tool(new_tool):
-                message = (
-                    "Not queuing T{}, that tool doesn't exist according to the printer profile or "
-                    "was reported as invalid by the firmware. Make sure your "
-                    "printer profile is set up correctly.".format(new_tool)
-                )
+                message = self.NOT_SENDING_T.format(action="queuing", tool=new_tool)
                 self._log("Warn: " + message)
                 eventManager().fire(
                     Events.COMMAND_SUPPRESSED,
@@ -5171,12 +5175,7 @@ class MachineCom:
         if toolMatch:
             new_tool = int(toolMatch.group("value"))
             if not self._validate_tool(new_tool):
-                message = (
-                    "Not sending T{}, that tool doesn't exist according to "
-                    "the printer profile or was reported as invalid by the "
-                    "firmware. Make sure your printer profile is set up "
-                    "correctly.".format(new_tool)
-                )
+                message = self.NOT_SENDING_T.format(action="sending", tool=new_tool)
                 self._log("Warn: " + message)
                 self._logger.warning(message)
                 eventManager().fire(
@@ -5626,8 +5625,8 @@ class MachineCom:
                 return self._emergency_force_send(
                     cmd,
                     f"Force-sending {gcode} to the printer",
-                    gcode=gcode,
                     *args,
+                    gcode=gcode,
                     **kwargs,
                 )
 
@@ -5641,7 +5640,7 @@ class MachineCom:
                 self.setPause(True)
 
             if gcode in self._blocked_commands:
-                message = "Not sending {} to printer, it's configured as a blocked command".format(
+                message = "Not sending {} to printer as it's configured as a blocked command".format(
                     gcode
                 )
                 self._log("Info: " + message)
@@ -5657,7 +5656,7 @@ class MachineCom:
                 return (None,)
 
             if gcode in self._ignored_commands:
-                message = "Not sending {} to printer, it's configured as an ignored command".format(
+                message = "Not sending {} to printer as it's configured as an ignored command".format(
                     gcode
                 )
                 self._log("Info: " + message)
@@ -6205,7 +6204,7 @@ class SendQueue(PrependableQueue):
 
 
 _temp_command_regex = re.compile(
-    r"^M(?P<command>104|109|140|190)(\s+T(?P<tool>\d+)|\s+[SR](?P<temperature>[-+]?\d*\.?\d*))+"
+    r"^M(?P<command>104|109|140|190|141|191)(\s+T(?P<tool>\d+)|\s+[SR](?P<temperature>[-+]?\d*\.?\d*))+"
 )
 
 
@@ -6234,6 +6233,10 @@ def apply_temperature_offsets(line, offsets, current_tool=None):
     elif groups["command"] in ("140", "190"):
         # bed temperature
         offset = offsets["bed"] if "bed" in offsets else 0
+
+    elif groups["command"] in ("141", "191"):
+        # chamber temperature
+        offset = offsets["chamber"] if "chamber" in offsets else 0
 
     if offset == 0:
         return line
@@ -6306,9 +6309,7 @@ def convert_pause_triggers(configured_triggers):
     result = {}
     for t in triggers.keys():
         if len(triggers[t]) > 0:
-            result[t] = re.compile(
-                "|".join(map(lambda pattern: f"({pattern})", triggers[t]))
-            )
+            result[t] = re.compile("|".join(f"({pattern})" for pattern in triggers[t]))
     return result
 
 

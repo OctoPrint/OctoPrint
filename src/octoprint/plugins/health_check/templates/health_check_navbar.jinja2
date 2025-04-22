@@ -1,0 +1,8 @@
+<a class="pull-right" href="javascript:void(0)" data-bind="click: function() { showHealthCheckDialog(); }, hidden: checkResults().length === 0" title="{{ _('Health Checks') }}" aria-label="{{ _('Health Checks') }}">
+    <span class="fa-layers fa-fw" data-bind="visible: unackedCheckResults">
+        <i class="fas fa-triangle-exclamation"></i>
+        <i class="fas fa-circle" data-fa-transform="shrink-6 right-6 up-3" data-bind="style: { color: bubbleColor }"></i>
+        <span class="fa-layers-text fa-inverse" data-fa-transform="shrink-7 right-6 up-2" data-bind="text: checkResults().length"></span>
+    </span>
+    <i class="fas fa-triangle-exclamation" data-bind="hidden: unackedCheckResults"></i>
+</a>

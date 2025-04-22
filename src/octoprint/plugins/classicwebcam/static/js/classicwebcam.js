@@ -2,6 +2,9 @@ $(function () {
     function ClassicWebcamViewModel(parameters) {
         var self = this;
 
+        const TRANSPARENT_GIF =
+            "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
         self.loginState = parameters[0];
         self.settings = parameters[1];
         self.webcamStreamVisible = false;
@@ -127,7 +130,7 @@ $(function () {
             var timeout = self.settings.streamTimeout() || 5;
             self.webcamDisableTimeout = setTimeout(function () {
                 log.debug("Unloading webcam stream after", timeout, "seconds");
-                $("#webcam_image").attr("src", "");
+                $("#webcam_image").attr("src", TRANSPARENT_GIF);
                 self.webcamLoaded(false);
             }, timeout * 1000);
         };
@@ -164,6 +167,11 @@ $(function () {
 
         self.onWebcamLoaded = function () {
             if (self.webcamLoaded()) return;
+
+            if ($("#webcam_image").attr("src") === TRANSPARENT_GIF) {
+                self.onWebcamErrored();
+                return;
+            }
 
             log.debug("Webcam stream loaded");
             self.webcamLoaded(true);

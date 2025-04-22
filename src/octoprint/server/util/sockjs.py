@@ -181,11 +181,12 @@ class PrinterStateConnection(
 
     @staticmethod
     def _get_remote_address(info):
-        from octoprint.util.net import get_http_client_ip
+        from octoprint.util.net import (
+            get_http_client_ip,
+            usable_trusted_proxies_from_settings,
+        )
 
-        trusted_proxies = settings().get(["server", "reverseProxy", "trustedDownstream"])
-        if not trusted_proxies or not isinstance(trusted_proxies, list):
-            trusted_proxies = []
+        trusted_proxies = usable_trusted_proxies_from_settings(settings())
 
         return get_http_client_ip(
             info.ip, info.headers.get("X-Forwarded-For"), trusted_proxies
@@ -196,6 +197,9 @@ class PrinterStateConnection(
             return
         if not isinstance(self._user, SessionUser):
             return
+        self._logger.debug(
+            f"Browser session of {self._user.get_name()} still active, keeping it alive"
+        )
         self._user.touch()
 
     def __str__(self):
@@ -352,7 +356,7 @@ class PrinterStateConnection(
                     try:
                         return re.compile(value)
                     except Exception:
-                        raise ValueError("value must be a valid regex")
+                        raise ValueError("value must be a valid regex") from None
                 elif isinstance(value, bool):
                     return value
                 else:
@@ -510,9 +514,7 @@ class PrinterStateConnection(
     def sendEvent(self, type, payload=None):
         permissions = self._event_permissions.get(type, self._event_permissions["*"])
         permissions = [x(self._user) if callable(x) else x for x in permissions]
-        if not self._user or not all(
-            map(lambda p: self._user.has_permission(p), permissions)
-        ):
+        if not self._user or not all(self._user.has_permission(p) for p in permissions):
             return
 
         processors = self._event_payload_processors.get(
@@ -695,14 +697,10 @@ class PrinterStateConnection(
         if permissions is None:
             permissions = self._emit_permissions.get(type, self._emit_permissions["*"])
             permissions = (
-                permissions(payload)
-                if callable(permissions)
-                else [x for x in permissions]
+                permissions(payload) if callable(permissions) else list(permissions)
             )
 
-        if not self._user or not all(
-            map(lambda p: self._user.has_permission(p), permissions)
-        ):
+        if not self._user or not all(self._user.has_permission(p) for p in permissions):
             if not self._authed:
                 with self._unauthed_backlog_mutex:
                     if len(self._unauthed_backlog) < self._unauthed_backlog_max:
@@ -746,7 +744,8 @@ class PrinterStateConnection(
         )
         self._authed = True
 
-        self._keep_alive.start()
+        if not self._keep_alive.is_alive():
+            self._keep_alive.start()
 
         for name, hook in self._authed_hooks.items():
             try:

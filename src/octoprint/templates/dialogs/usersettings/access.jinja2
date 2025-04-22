@@ -34,7 +34,7 @@
             <label class="control-label" for="userSettings-access_apikey">{{ _('Current API Key') }}</label>
             <div class="controls" data-bind="visible: apiKeyVisible">
                 <div class="input-append input-block-level">
-                    <input type="text" readonly="readonly" id="userSettings-access_apikey" data-bind="value: access_apikey, attr: {placeholder: '{{ _('N/A')|esq }}'}">
+                    <input type="text" readonly="readonly" id="userSettings-access_apikey" data-bind="value: access_apikey, attr: {placeholder: '{{ _('N/A') }}'}">
                     <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: copyApikey, css: {'disabled': !access_apikey()}"><i class="fas fa-copy"></i></a>
                     <a class="btn add-on" title="Generate new API Key" data-bind="click: generateApikey"><i class="fas fa-sync"></i></a>
                     <a class="btn btn-danger add-on" title="Delete API Key" data-bind="click: deleteApikey, css: {'disabled': !access_apikey()}"><i class="far fa-trash-alt"></i></a>
@@ -52,4 +52,14 @@
             </div>
         </div>
     </fieldset>
+
+    {% for key in templates.usersettings_mfa.order %}
+        {% set entry, data = templates.usersettings_mfa.entries[key] %}
+        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+        <fieldset id="{{ data._div }}" data-test-id="usersettings-mfa-{{ data._div }}-content" {% if "classes" in data %}class="{{ data.classes|join(' ') }}"{% endif %}" {% if "styles" in data %}style="{{ data.styles|join(', ') }}"{% endif %}>
+            <legend>2FA: {{ entry|e }}</legend>
+            {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template ignore missing %}{% endtry %}
+        </fieldset>
+        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+    {% endfor %}
 </form>

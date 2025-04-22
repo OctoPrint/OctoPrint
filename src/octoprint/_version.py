@@ -1,7 +1,8 @@
 """
 This file is responsible for calculating the version of OctoPrint.
 
-It's based heavily on versioneer and miniver.
+It's based heavily on versioneer and miniver and licensed under
+CC0 <https://creativecommons.org/publicdomain/zero/1.0/>.
 
 The version is calculated as follows:
 
@@ -10,21 +11,27 @@ imported and the version is read from there. This is the case for
 source distributions created by `setup.py sdist` as well as binary distributions
 built by `setup.py bdist` and `setup.py bdist_wheel`.
 
-If no such file exists, the version is calculated from git and the provided set
-of branch version rules. If the current branch matches one of the rules, the
-version is calculated as `<tag>.dev<distance>+g<short>` where `<tag>` is the
-virtual tag associated with the current branch, `<distance>` is the distance of
-the current HEAD from the reference commit of the branch and `<short>` is the
-short SHA1 of the current HEAD. If the current branch does not match any of the
-rules, the version is the closest tag reachable from the current HEAD.
+If no such file exists, but there are expanded keywords, the version will be
+calculated from those. If a tag can be determined, that will be used as the version:
+`<tag>`. If a branch can be determined and that matches a virtual tag, that virtual
+tag will be used and the version will be `<tag>.dev+unknown.g<short>`.
 
-If the current HEAD is dirty, the version as calculated from a matching branch
-rule is appended with `.dirty`. Versions from a closest tag instead get
-`.post<distance>.dev0` appended.
+If static file exists, and no expanded keywords exist either, the version is
+calculated from git and the provided set of branch version rules. If the current
+branch matches one of the rules, the version is calculated as
+`<tag>.dev<distance>+g<short>` where `<tag>` is the virtual tag associated with
+the current branch, `<distance>` is the distance of the current HEAD from the
+reference commit of the branch and `<short>` is the short SHA1 of the current HEAD.
+If the current branch does not match any of the rules, the version is the closest
+tag reachable from the current HEAD.
 
 If no tag can be determined but a commit hash, the version is `0+unknown.g<short>`.
 
 If no commit hash can be determined either, the version is `0+unknown`.
+
+If the current HEAD is dirty, the version as calculated from a matching branch
+rule is appended with `.dirty`. Versions from a closest tag instead get
+`.post<distance>.dev0` appended.
 """
 
 import errno
@@ -44,21 +51,21 @@ BRANCH_VERSIONS = """
 #
 # The data is processed from top to bottom, the first matching line wins.
 
-# maintenance is currently the branch for preparation of maintenance release 1.10.0
+# maintenance is currently the branch for preparation of maintenance release 1.12.0
 # so are any fix/... and improve/... branches
-maintenance 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
-fix/.* 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
-improve/.* 1.10.0 cd955e9a46782119b36cc22b8dea5652ebbf9774
+maintenance 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
+fix/.* 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
+improve/.* 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
 
 # staging/bugfix is the branch for preparation of the 1.10.x bugfix releases
 # so are any bug/... branches
-staging/bugfix 1.10.3 ad9ebcaa0ef91950652fb2561b7c06b79d95a455
-bug/.* 1.10.3 ad9ebcaa0ef91950652fb2561b7c06b79d95a455
+staging/bugfix 1.10.4 9701568a6f3dcf356e5e800a49da6ffac128cae5
+bug/.* 1.10.4 9701568a6f3dcf356e5e800a49da6ffac128cae5
 
-# staging/maintenance is currently the branch for preparation of 1.10.0rc5
+# staging/maintenance is currently the branch for preparation of 1.11.0rc8
 # so is regressionfix/...
-staging/maintenance 1.10.0rc5 https://data.octoprint.org/#achievements
-regressionfix/.* 1.10.0rc5 https://data.octoprint.org/#achievements
+staging/maintenance 1.11.0rc8 82247d9679259c50a6552eb4cedbe16e9c4f8476
+regressionfix/.* 1.11.0rc8 82247d9679259c50a6552eb4cedbe16e9c4f8476
 
 # staging/devel is currently inactive (but has the 1.4.1rc4 namespace)
 staging/devel 1.4.1rc4 650d54d1885409fa1d411eb54b9e8c7ff428910f
@@ -222,7 +229,7 @@ def _parse_branch_versions():
             continue
 
         try:
-            split_line = list(map(lambda x: x.strip(), line.split()))
+            split_line = [x.strip() for x in line.split()]
             if not len(split_line):
                 continue
             if len(split_line) != 3:
@@ -285,7 +292,7 @@ def _get_data_from_git():
         "short": short,
     }
 
-    if any([vars[x] is None and "{" + x + "}" in template for x in vars]):
+    if any(vars[x] is None and "{" + x + "}" in template for x in vars):
         if short is None:
             template = FALLBACK
         else:
@@ -340,8 +347,31 @@ def _get_data_from_keywords():
     ]
     branch = branches[0] if branches else None
 
+    virtual_tag = None
+    if branch is not None:
+        if _verbose:
+            print(f"Branch     : {branch}")
+
+        lookup = _parse_branch_versions()
+        for matcher, vt, _ in lookup:
+            if not matcher.match(branch):
+                continue
+
+            virtual_tag = vt
+            if _verbose:
+                print(f"Virtual tag: {virtual_tag}")
+            break
+
+    if _verbose:
+        print(f"SHA        : {git_full}")
+        print(f"Short      : {git_full[:8]}")
+
     if tag is None:
-        template = FALLBACK_WITH_SHA
+        if virtual_tag is not None:
+            tag = virtual_tag
+            template = "{tag}.dev+unknown.g{short}"
+        else:
+            template = FALLBACK_WITH_SHA
     else:
         template = "{tag}"
 
@@ -423,7 +453,7 @@ def get_cmdclass(pkg_source_path):
         def run(self):
             print(get_data()["version"])
 
-    return dict(sdist=_sdist, build_py=_build_py, version=version)
+    return {"sdist": _sdist, "build_py": _build_py, "version": version}
 
 
 if __name__ == "__main__":

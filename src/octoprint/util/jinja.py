@@ -55,12 +55,27 @@ class FilteredFileSystemLoader(FileSystemLoader):
         return result
 
     def _combined_filter(self, path):
-        filter_results = map(
-            lambda x: not os.path.exists(os.path.join(x, path))
-            or self.path_filter(os.path.join(x, path)),
-            self.searchpath,
+        filter_results = (
+            not os.path.exists(os.path.join(x, path))
+            or self.path_filter(os.path.join(x, path))
+            for x in self.searchpath
         )
         return all(filter_results)
+
+
+class PostProcessWrapperLoader(BaseLoader):
+    def __init__(self, loader: BaseLoader, postprocessing=None):
+        self.loader: BaseLoader = loader
+        self.postprocessing = postprocessing
+
+    def get_source(self, environment, template):
+        content = self.loader.get_source(environment, template)
+        if callable(self.postprocessing):
+            content = (self.postprocessing(content[0]), content[1], content[2])
+        return content
+
+    def list_templates(self):
+        return self.loader.list_templates()
 
 
 class SelectedFilesLoader(BaseLoader):
@@ -95,18 +110,6 @@ class SelectedFilesLoader(BaseLoader):
 
     def list_templates(self):
         return self.files.keys()
-
-
-class SelectedFilesWithConversionLoader(SelectedFilesLoader):
-    def __init__(self, files, encoding="utf-8", conversion=None):
-        SelectedFilesLoader.__init__(self, files, encoding=encoding)
-        self.conversion = conversion
-
-    def get_source(self, environment, template):
-        contents = SelectedFilesLoader.get_source(self, environment, template)
-        if callable(self.conversion):
-            contents = self.conversion(contents[0]), contents[1], contents[2]
-        return contents
 
 
 class PrefixChoiceLoader(BaseLoader):
@@ -277,6 +280,18 @@ class ExceptionHandlerExtension(Extension):
 
 
 trycatch = ExceptionHandlerExtension
+
+
+class AutoescExtension(Extension):
+    tags = {"autoesc"}
+
+    def parse(self, parser):
+        node = nodes.EvalContextModifier(lineno=next(parser.stream).lineno)
+        node.options = [nodes.Keyword("autoescape", parser.parse_expression())]
+        return node
+
+
+autoesc = AutoescExtension
 
 
 class MarkdownFilter:

@@ -11,6 +11,7 @@ from flask_login import current_user
 import octoprint.plugin
 import octoprint.util
 from octoprint.access.permissions import Permissions
+from octoprint.schema.config.controls import ContainerConfig, ControlConfig
 from octoprint.server import pluginManager, printer, userManager
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import (
@@ -368,6 +369,7 @@ def getSettings():
             "ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
             "ffmpegVideoCodec": s.get(["webcam", "ffmpegVideoCodec"]),
             "watermark": s.getBoolean(["webcam", "watermark"]),
+            "renderAfterPrintDelay": s.getInt(["webcam", "renderAfterPrintDelay"]),
             # webcams & defaults
             "webcams": webcamsDict,
             "defaultWebcam": None,
@@ -412,6 +414,11 @@ def getSettings():
             )
     else:
         data["webcam"] = {}
+
+    if Permissions.CONTROL.can():
+        data["controls"] = s.get(["controls"])
+    else:
+        data["controls"] = []
 
     if Permissions.ADMIN.can():
         data["accessControl"] = {
@@ -643,10 +650,7 @@ def _saveSettings(data):
         if "ffmpegCommandline" in data["webcam"]:
             commandline = data["webcam"]["ffmpegCommandline"]
             if not all(
-                map(
-                    lambda x: "{" + x + "}" in commandline,
-                    ("ffmpeg", "input", "output"),
-                )
+                "{" + x + "}" in commandline for x in ("ffmpeg", "input", "output")
             ):
                 abort(
                     400,
@@ -686,6 +690,11 @@ def _saveSettings(data):
             s.set(["webcam", "ffmpegVideoCodec"], data["webcam"]["ffmpegVideoCodec"])
         if "watermark" in data["webcam"]:
             s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
+        if "renderAfterPrintDelay" in data["webcam"]:
+            s.setInt(
+                ["webcam", "renderAfterPrintDelay"],
+                data["webcam"]["renderAfterPrintDelay"],
+            )
         if "defaultWebcam" in data["webcam"]:
             s.set(["webcam", "defaultWebcam"], data["webcam"]["defaultWebcam"])
         if "snapshotWebcam" in data["webcam"]:
@@ -1049,11 +1058,9 @@ def _saveSettings(data):
                 data["serial"]["capEmergencyParser"],
             )
         if "capExtendedM20" in data["serial"]:
-            (
-                s.setBoolean(
-                    ["serial", "capabilities", "extended_m20"],
-                    data["serial"]["capExtendedM20"],
-                ),
+            s.setBoolean(
+                ["serial", "capabilities", "extended_m20"],
+                data["serial"]["capExtendedM20"],
             )
         if "capLfnWrite" in data["serial"]:
             s.setBoolean(
@@ -1143,6 +1150,30 @@ def _saveSettings(data):
                 s.saveScript(
                     "gcode", name, script.replace("\r\n", "\n").replace("\r", "\n")
                 )
+
+    if "controls" in data and isinstance(data["controls"], list):
+
+        def sanitize_control(control):
+            if not isinstance(control, dict):
+                return None
+
+            try:
+                if "children" in control:
+                    return ContainerConfig(**control)
+                else:
+                    return ControlConfig(**control)
+            except Exception:
+                logger.exception("Error validating custom control")
+
+            return None
+
+        sanitized = [sanitize_control(item) for item in data["controls"]]
+        if any(x is None for x in sanitized):
+            logging.getLogger(
+                "There were invalid custom controls provided, not saving..."
+            )
+        else:
+            s.set(["controls"], data["controls"])
 
     if "server" in data:
         if "commands" in data["server"]:

@@ -1,0 +1,52 @@
+<div id="plugin_health_check_dialog" class="modal hide fade-in" tabindex="-1" role="dialog" aria-labelledby="plugin_health_check_dialog_label" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h3 id="plugin_health_check_dialog_label"><i class="fas fa-triangle-exclamation"></i> {{ _('Health Check Results') }}</h3>
+    </div>
+    <div class="modal-body">
+        <div class="full-sized-box">
+
+            <div data-bind="visible: checkResults().length">
+                <!-- ko if: issueResults().length -->
+                <h3>{{ _('Issues') }} (<span data-bind="text: issueResults().length"></span>)</h2>
+                <p>{% trans %}
+                    The following issues were found with your OctoPrint installation. You should solve them as soon as possible.
+                {% endtrans %}</p>
+                <!-- ko foreach: issueResults -->
+                <div class="plugin_health_check_alert alert alert-block alert-error">
+                    <h4 class="plugin_health_check_header"><a href="javascript:void(0)" data-bind="click: function() { $root.toggleAcked($data) }"><i class="fas" data-bind="css: {'fa-envelope': !acked(), 'fa-envelope-open': acked()}" title="Mark as seen"></i></a> <span data-bind="text: title"></span></h4>
+                    <div class="plugin_health_check_content" data-bind="html: html"></div>
+                </div>
+                <!-- /ko -->
+                <!-- /ko -->
+
+                <!-- ko if: warningResults().length -->
+                <h3>{{ _('Warnings') }} (<span data-bind="text: warningResults().length"></span>)</h2>
+                <p>{% trans %}
+                    The following warnings were found with your OctoPrint installation. You should look into them sooner rather than later.
+                {% endtrans %}</p>
+                <!-- ko foreach: warningResults -->
+                <div class="plugin_health_check_alert alert alert-block">
+                    <h4 class="plugin_health_check_header"><a href="javascript:void(0)" data-bind="click: function() { $root.toggleAcked($data) }"><i class="fas" data-bind="css: {'fa-envelope': !acked(), 'fa-envelope-open': acked()}" title="Mark as seen"></i></a> <span data-bind="text: title"></span></h4>
+                    <div class="plugin_health_check_content" data-bind="html: html"></div>
+                </div>
+                <!-- /ko -->
+                <!-- /ko -->
+
+                <p data-bind="visible: unackedCheckResults">
+                    <a href="javascript:void()" data-bind="click: ackAllCheckResults">{{ _('Mark all as read') }}</a>
+                </p>
+            </div>
+
+            <div data-bind="visible: checkResults().length === 0">
+                <p>{% trans %}
+                    All health checks are green!
+                {% endtrans %}</p>
+            </div>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
+    </div>
+</div>

@@ -1,0 +1,193 @@
+<div id="plugin_uploadmanager_dialog" class="modal hide fade-in large">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h3><i class="fa-solid fa-folder-tree"></i> {{ _('Upload Manager') }}</h3>
+    </div>
+    <div class="modal-body">
+        <div class="full-sized-box flex-column">
+            <form class="form-search" data-bind="submit: performSearch">
+                <div class="search-query-with-clear" data-bind="css: {'active-clear': searchQuery}">
+                    <input type="search" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="Search...">
+                    <span class="search-clear" data-bind="click: clearSearchQuery"><i class="fas fa-times"></i></span>
+                </div>
+            </form>
+
+            <div class="btn-toolbar flex-row">
+                <div class="btn-group">
+                    <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="far fa-square"></i> <span class="caret"></span></button>
+                    <ul class="dropdown-menu">
+                        <li><a href="javascript:void(0)" data-bind="click: selectAll">{{ _('Select all') }}</a></li>
+                        <li class="divider"></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.selectAllOfOrigin('local') }">{{ _('Select all stored locally') }}</a></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.selectAllOfOrigin('sdcard') }">{{ _('Select all stored on printer') }}</a></li>
+                        <li class="divider"></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.selectAllOfType('machinecode') }">{{ _('Select all machinecode files') }}</a></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.selectAllOfType('model') }">{{ _('Select all model files') }}</a></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.selectAllOfType('folder') }">{{ _('Select all folders') }}</a></li>
+                        <li class="divider"></li>
+                        <li><a href="javascript:void(0)" data-bind="click: invertSelection">{{ _('Invert selection') }}</a></li>
+                        <li><a href="javascript:void(0)" data-bind="click: deselectAll">{{ _('Clear selection') }}</a></li>
+                    </ul>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-small" title="{{ _('Create Folder') }}" data-bind="click: $root.showAddFolderDialog, css: { disabled: !$root.loginState.isUser() }"><i class="fa-solid fa-folder-plus"></i></button>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-small" title="{{ _('Rename...') }}" data-bind="click: $root.rename, css: { disabled: !$root.enableRename() }"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn btn-small" title="{{ _('Copy to...') }}" data-bind="click: function() { $root.showCopyMoveDialog('copy') }, css: { disabled: !$root.enableCopy() }"><i class="fa-solid fa-copy"></i></button>
+                    <button class="btn btn-small" title="{{ _('Move to...') }}" data-bind="click: function() { $root.showCopyMoveDialog('move') }, css: { disabled: !$root.enableCopy() }"><i class="fa-solid fa-scissors"></i></button>
+                    <button class="btn btn-small" title="{{ _('Remove...') }}" data-bind="click: $root.remove, css: { disabled: !$root.enableRemove() }"><i class="fa-solid fa-trash"></i></button>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-small" title="{{ _('Slice...') }}" data-bind="click: $root.slice, css: { disabled: !$root.enableSlicing() }, visible: $root.slicingAvailable"><i class="fa-solid fa-layer-group"></i></button>
+                    {% if enableSdSupport %}
+                    <button class="btn btn-small" title="{{ _('Upload to SD') }}" data-bind="click: $root.uploadSD, css: { disabled: !$root.enableUploadSD() }"><i class="fa-solid fa-sd-card"></i></button>
+                    {% endif %}
+                    <button class="btn btn-small" title="{{ _('Load') }}" data-bind="click: function() { $root.loadFile(false); }, css: { disabled: !$root.enableLoad(false) }"><i class="fa-solid fa-folder-open"></i></button>
+                    <button class="btn btn-small" title="{{ _('Load and Print') }}" data-bind="click: function() { $root.loadFile(true); }, css: { disabled: !$root.enableLoad(true) }"><i class="fa-solid fa-print"></i></button>
+                </div>
+
+                <div class="btn-group">
+                    <a class="btn btn-small" title="{{ _('Download') }}" data-bind="attr: {href: $root.downloadUrl }, css: { disabled: !$root.enableDownload() }"><i class="fa-solid fa-cloud-arrow-down"></i></a>
+                </div>
+
+                <div class="flex-grow"></div>
+
+                <div class="btn-group">
+                    <button class="btn btn-small" data-bind="click: function() { listStyle('folders_files') }, css: { active: listStyle() == 'folders_files' }" title="{{ _('Sort folders before files') | edq }}"><i class="fa-solid fa-folder"></i> <i class="fa-solid fa-greater-than"></i> <i class="fa-solid fa-file"></i></button>
+                    <button class="btn btn-small" data-bind="click: function() { listStyle('files_folders') }, css: { active: listStyle() == 'files_folders' }" title="{{ _('Sort files before folders') | edq }}"><i class="fa-solid fa-file"></i> <i class="fa-solid fa-greater-than"></i> <i class="fa-solid fa-folder"></i></button>
+                    <button class="btn btn-small" data-bind="click: function() { listStyle('mixed') }, css: { active: listStyle() == 'mixed' }" title="{{ _('Sort files and folders together') | edq }}"><i class="fa-solid fa-folder"></i> <i class="fa-solid fa-equals"></i> <i class="fa-solid fa-file"></i></button>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa-solid fa-filter"></i> <span class="caret"></span></button>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.listStyle('folders_files'); }"><i class="icon-ok" data-bind="style: {visibility: listStyle() == 'folders_files' ? 'visible' : 'hidden'}"></i> {{ _('Sort by Folders, Files') }}</a></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.listStyle('files_folders'); }"><i class="icon-ok" data-bind="style: {visibility: listStyle() == 'files_folders' ? 'visible' : 'hidden'}"></i> {{ _('Sort by Files, Folders') }}</a></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.listStyle('mixed'); }"><i class="icon-ok" data-bind="style: {visibility: listStyle() == 'mixed' ? 'visible' : 'hidden'}"></i> {{ _('Mixed') }}</a></li>
+                        <li class="divider"></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.listHelper.toggleFilter('machinecode'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'machinecode') ? 'visible' : 'hidden'}"></i> {{ _('Only show GCode files') }}</a></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.listHelper.toggleFilter('model'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'model') ? 'visible' : 'hidden'}"></i> {{ _('Only show STL files') }}</a></li>
+                        {% if enableSdSupport %}
+                            <li class="divider"></li>
+                            <li><a href="javascript:void(0)" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored locally') }}</a></li>
+                            <li><a href="javascript:void(0)" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored on SD') }}</a></li>
+                        {% endif %}
+                        <li class="divider"></li>
+                        <li><a href="javascript:void(0)" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> {{ _('Hide successfully printed files') }}</a></li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <div class="table-wrapper">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th class="icon">&nbsp;</th>
+                            <th class="title"><span data-bind="click: function() {toggleSort('name')}">{{ _('Name') }}</a>&nbsp;<i data-bind="class: columnIcon('name')"></i></th>
+                            <th class="uploaded"><span data-bind="click: function() {toggleSort('upload')}">{{ _('Uploaded') }}</a>&nbsp;<i data-bind="class: columnIcon('upload')"></i></th>
+                            <th class="printed"><span data-bind="click: function() {toggleSort('lastPrint')}">{{ _('Last Printed') }}</a>&nbsp;<i data-bind="class: columnIcon('lastPrint')"></i></th>
+                            <th class="size"><span data-bind="click: function() {toggleSort('size')}">{{ _('Size') }}</a>&nbsp;<i data-bind="class: columnIcon('size')"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- ko if: currentPath() != "" -->
+                        <tr>
+                            <td class="icon"><i class="icon-arrow-left"></i></td>
+                            <td data-bind="click: $root.navigateUp" colspan="4">{{  _('Back') }}</td>
+                        </tr>
+                        <!-- /ko -->
+
+                        <!-- ko foreach: $root.filesAndFolders -->
+                        <tr data-bind="click.single: $root.handleSingleClick, click.double: $root.handleDoubleClick, event: { contextmenu: $root.handleContextMenu }, css: { 'info': $root.isSelected($data) }, template: { name: $root.templateFor($data), data: $data }, style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }"></tr>
+                        <!-- /ko -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer">
+                <small class="muted" data-bind="text: selectionText"></small>
+                <span data-bind="visible: selectedFiles().length > 0">
+                    &middot;
+                    <small class="muted" data-bind="text: selectionSize"></small>
+                </span>
+            </div>
+
+            <script type="text/html" id="uploadmanager_template_machinecode">
+                <td class="icon">
+                    <i class="fa-regular fa-file-lines"></i>
+                </td>
+                <td class="title" data-bind="css: $root.files.getSuccessClass($data)">
+                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
+                </td>
+                <td class="uploaded" data-bind="text: formatDate(date)"></td>
+                <td class="printed" data-bind="text: formatDate($root.lastPrint($data))"></td>
+                <td class="size" data-bind="text: formatSize(size)"></td>
+            </script>
+
+            <script type="text/html" id="uploadmanager_template_model">
+                <td class="icon">
+                    <i class="fa-regular fa-file-image"></i>
+                </td>
+                <td class="title">
+                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
+                </td>
+                <td class="uploaded" data-bind="text: formatDate(date)"></td>
+                <td class="printed"></td>
+                <td class="size" data-bind="text: formatSize(size)"></td>
+            </script>
+
+            <script type="text/html" id="uploadmanager_template_folder">
+                <td class="icon">
+                    <i class="fa-regular fa-folder"></i>
+                </td>
+                <td class="title">
+                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
+                </td>
+                <td class="uploaded" data-bind="text: formatDate(date)"></td>
+                <td class="printed" data-bind="text: formatDate($root.lastPrint($data))"></td>
+                <td class="size" data-bind="text: formatSize(size)"></td>
+            </script>
+
+            <script type="text/html" id="uploadmanager_template_sdcard">
+                <td class="icon">
+                    <i class="fa-solid fa-sd-card"></i>
+                </td>
+                <td class="title">
+                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
+                </td>
+                <td class="uploaded" data-bind="text: formatDate(date)"></td>
+                <td class="printed" data-bind="text: formatDate($root.lastPrint($data))"></td>
+                <td class="size" data-bind="text: formatSize(size)"></td>
+            </script>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:void(0)" class="btn btn-primary" data-dismiss="modal">{{ _('Close') }}</a>
+    </div>
+</div>
+
+<div id="plugin_uploadmanager_copymove" class="modal hide fade-in">
+    <div class="modal-header">
+        <a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3 data-id="title"></h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-vertical" action="javascript:void(0)">
+            <div class="control-group">
+                <label class="control-label">{{ _('Select the destination folder') }} ({{ _('Currently:') }} <span data-id="source"></span>)</label>
+                <div class="controls">
+                    <select data-id="select" class="input-block-level" required></select>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
+        <a href="javascript:void(0)" class="btn btn-primary" data-id="proceed">{{ _('Continue') }}</a>
+    </div>
+</div>

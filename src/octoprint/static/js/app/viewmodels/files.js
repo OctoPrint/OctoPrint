@@ -691,7 +691,7 @@ $(function () {
                 var options = {
                     message: _.sprintf(
                         gettext(
-                            'You are about to delete the folder "%(folder)s" which still contains files and/or sub folders.'
+                            'You are about to delete the folder "%(folder)s" forever which still contains files and/or sub folders.'
                         ),
                         {folder: _.escape(folder.name)}
                     ),
@@ -705,7 +705,7 @@ $(function () {
             }
         };
 
-        self.loadFile = function (data, printAfterLoad) {
+        self.loadFile = (data, printAfterLoad) => {
             if (!self.loginState.hasPermission(self.access.permissions.FILES_SELECT))
                 return;
 
@@ -713,45 +713,46 @@ $(function () {
                 return;
             }
 
-            var proceed = function (p) {
-                var prevented = false;
-                var callback = function () {
-                    OctoPrint.files.select(data.origin, data.path, p);
+            const proceed = (print) => {
+                const callback = () => {
+                    OctoPrint.files.select(data.origin, data.path, print);
                 };
 
-                if (p) {
+                if (print) {
+                    let prevented = false;
                     callViewModels(
                         self.allViewModels,
                         "onBeforePrintStart",
                         function (method) {
-                            prevented = prevented || method(callback) === false;
+                            prevented = prevented || method(callback, data) === false;
                         }
                     );
-                }
-
-                if (!prevented) {
+                    if (!prevented) callback();
+                } else {
                     callback();
                 }
             };
 
             if (
                 printAfterLoad &&
-                self.listHelper.isSelectedByMatcher(function (item) {
-                    return item && item.origin === data.origin && item.path === data.path;
-                }) &&
+                self.listHelper.isSelectedByMatcher(
+                    (item) =>
+                        item && item.origin === data.origin && item.path === data.path
+                ) &&
                 self.enablePrint(data)
             ) {
                 // file was already selected, just start the print job
+                // self.printerState.print will take care of confirmation, onBeforePrintStart, etc.
                 self.printerState.print();
             } else {
                 // select file, start print job (if requested and within dimensions)
-                var withinPrintDimensions = self.evaluatePrintDimensions(data, true);
-                var print = printAfterLoad && withinPrintDimensions;
+                const withinPrintDimensions = self.evaluatePrintDimensions(data, true);
+                const print = printAfterLoad && withinPrintDimensions;
 
                 if (print && self.settingsViewModel.feature_printStartConfirmation()) {
                     showConfirmationDialog({
                         message: gettext(
-                            "This will start a new print job. Please check that the print bed is clear."
+                            "This will start a new print job. Please ensure that the print bed is clear."
                         ),
                         question: gettext("Do you want to start the print job now?"),
                         cancel: gettext("No"),
@@ -818,7 +819,13 @@ $(function () {
                 return;
             }
 
-            self._removeEntry(file, event);
+            const message = _.sprintf(
+                gettext('You are about to delete "%(file)s" forever.'),
+                {file: file.name}
+            );
+            showConfirmationDialog(message, () => {
+                self._removeEntry(file, event);
+            });
         };
 
         self.sliceFile = function (file) {
@@ -1069,6 +1076,9 @@ $(function () {
 
         self.getAdditionalData = function (data) {
             var output = "";
+            if (data["user"]) {
+                output += gettext("Uploaded by") + ": " + data["user"] + "<br>";
+            }
             if (data["gcodeAnalysis"]) {
                 if (
                     data["gcodeAnalysis"]["_empty"] ||
@@ -1331,15 +1341,33 @@ $(function () {
             if (query !== undefined && query.trim() !== "") {
                 query = query.toLocaleLowerCase();
 
-                var recursiveSearch = function (entry) {
+                let user = null;
+
+                const parts = query.split(" ");
+                // first or last part is a user: filter, apply it and adjust the query
+                if (parts[0].startsWith("user:")) {
+                    // first part is a user: filter
+                    user = parts[0].substring("user:".length);
+                    query = query.substring(parts[0].length).trim();
+                }
+                if (parts.length > 1 && parts[parts.length - 1].startsWith("user:")) {
+                    // last part is a user: filter
+                    user = parts[parts.length - 1].substring("user:".length);
+                    query = query
+                        .substring(0, query.length - parts[parts.length - 1].length - 1)
+                        .trim();
+                }
+
+                const recursiveSearch = (entry) => {
                     if (entry === undefined) {
                         return false;
                     }
 
-                    var success =
-                        (entry["display"] &&
+                    const success =
+                        (user === null || entry["user"] === user) &&
+                        ((entry["display"] &&
                             entry["display"].toLocaleLowerCase().indexOf(query) > -1) ||
-                        entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+                            entry["name"].toLocaleLowerCase().indexOf(query) > -1);
                     if (!success && entry["type"] === "folder" && entry["children"]) {
                         return _.any(entry["children"], recursiveSearch);
                     }

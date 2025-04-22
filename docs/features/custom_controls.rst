@@ -96,7 +96,7 @@ attribute wrapping more controls.
 
 .. hint::
 
-   Take a look at the `Custom Control Editor plugin <http://plugins.octoprint.org/plugins/customControl/>`_
+   Take a look at the bundled :ref:`Custom Control Manager plugin <sec-bundledplugins-customcontrolmanager>`_
    which allows you configuring your Custom Controls through OctoPrint's
    settings interface without the need to manually edit the configuration
    file.
@@ -123,8 +123,10 @@ Containers
    * - ``name``
      - (Optional) A name to display above the container, basically a section header
    * - ``layout``
-     - (Optional) The layout to use for laying out the contained children, either from top to bottom (``vertical``) or
-       from left to right (``horizontal``). Defaults to a ``vertical`` layout.
+     - (Optional) The layout to use for laying out the contained children, either from top to bottom (``vertical``),
+       from left to right (``horizontal``), or in a left to right grid with optional ``width`` and ``offset`` on children. Defaults to a ``vertical`` layout.
+   * - ``collapsed``
+     - (Optional) Whether to have the container collapsed by default, if it has a ``name``. Defaults to ``false``.
 
 .. _sec-features-custom_controls-types-controls:
 

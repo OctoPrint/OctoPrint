@@ -152,6 +152,7 @@ $(function () {
         self.webcam_ffmpegThreads = ko.observable(undefined);
         self.webcam_ffmpegVideoCodec = ko.observable(undefined);
         self.webcam_watermark = ko.observable(undefined);
+        self.webcam_renderAfterPrintDelay = ko.observable(undefined);
         self.webcam_defaultWebcam = ko.observable(undefined);
         self.webcam_snapshotWebcam = ko.observable(undefined);
         self.webcam_webcams = ko.observableArray([]);

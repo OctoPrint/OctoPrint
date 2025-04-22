@@ -197,9 +197,7 @@ def deactivate_command(ctx, username):
 
 def _print_list(users):
     click.echo(f"{len(users)} users registered in the system:")
-    for user in sorted(
-        map(lambda x: x.as_dict(), users), key=lambda x: sv(x.get("name"))
-    ):
+    for user in sorted((x.as_dict() for x in users), key=lambda x: sv(x.get("name"))):
         click.echo(f"\t{_user_to_line(user)}")
 
 

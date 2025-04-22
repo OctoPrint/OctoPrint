@@ -221,9 +221,7 @@ class DiscoveryPlugin(
         txt_record = self._format_zeroconf_txt(txt_record)
 
         key = (reg_type, port)
-        addresses = list(
-            map(lambda x: socket.inet_aton(x), self.get_interface_addresses())
-        )
+        addresses = [socket.inet_aton(x) for x in self.get_interface_addresses()]
 
         try:
             info = zeroconf.ServiceInfo(
@@ -349,7 +347,7 @@ class DiscoveryPlugin(
                             "txt_record": info.properties,
                         }
 
-                    for address in map(lambda x: socket.inet_ntoa(x), info.addresses):
+                    for address in (socket.inet_ntoa(x) for x in info.addresses):
                         result.append(to_result(info, address))
 
         self._logger.debug(f"Browsing Zeroconf for {service_type}")

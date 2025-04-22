@@ -270,6 +270,8 @@ $(function () {
 
         self.toggling = ko.observable(false);
 
+        self.unlockingRepository = ko.observable(false);
+
         self.restartCommandSpec = undefined;
         self.systemViewModel.systemActions.subscribe(function () {
             var lastResponse = self.systemViewModel.lastCommandResponse;
@@ -1164,6 +1166,38 @@ $(function () {
 
         self.showRepository = () => {
             self.loginState.reauthenticateIfNecessary(() => {
+                if (
+                    self.settingsViewModel.settings.plugins.pluginmanager.repository_restricted()
+                ) {
+                    self._showRestrictedDialog();
+                } else {
+                    self._showRepositoryDialog();
+                }
+            });
+        };
+
+        self.unlockRepository = () => {
+            self.settingsViewModel.settings.plugins.pluginmanager.repository_restricted(
+                false
+            );
+            self.unlockingRepository(true);
+            self.settingsViewModel
+                .saveData()
+                .done(() => {
+                    self.restrictedDialog.modal("hide");
+                    self.showRepository();
+                })
+                .always(() => {
+                    self.unlockingRepository(false);
+                });
+        };
+
+        self._showRestrictedDialog = () => {
+            self.restrictedDialog.modal("show");
+        };
+
+        self._showRepositoryDialog = () => {
+            self.loginState.reauthenticateIfNecessary(() => {
                 self.repositoryDialog.modal({
                     minHeight: function () {
                         return Math.max($.fn.modal.defaults.maxHeight() - 80, 250);
@@ -1890,7 +1924,7 @@ $(function () {
                                 click: function () {
                                     if (refreshClicked) return;
                                     refreshClicked = true;
-                                    location.reload(true);
+                                    OctoPrint.coreui.reload(true);
                                 }
                             }
                         ]
@@ -2299,6 +2333,7 @@ $(function () {
             self.workingDialog = $("#settings_plugin_pluginmanager_workingdialog");
             self.workingOutput = $("#settings_plugin_pluginmanager_workingdialog_output");
             self.repositoryDialog = $("#settings_plugin_pluginmanager_repositorydialog");
+            self.restrictedDialog = $("#settings_plugin_pluginmanager_restricted");
         };
 
         self.onDataUpdaterPluginMessage = function (plugin, data) {

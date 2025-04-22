@@ -1,6 +1,6 @@
 from typing import Dict
 
-from pydantic import BaseModel
+from octoprint.schema import BaseModel
 
 
 class StatsBase(BaseModel):

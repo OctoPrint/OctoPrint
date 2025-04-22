@@ -752,7 +752,7 @@ class VirtualPrinter:
             return ""
 
         volume = profile["volume"]
-        if any([x not in volume for x in ["width", "depth", "height", "origin"]]):
+        if any(x not in volume for x in ["width", "depth", "height", "origin"]):
             return ""
 
         origin_ll = volume["origin"] == "lowerleft"
@@ -1495,7 +1495,11 @@ class VirtualPrinter:
                 self._logger.exception("While handling %r", data)
 
     def _listSd(self, incl_long=False, incl_timestamp=False):
-        line = "{dosname}"
+        line = (
+            "{dosname}"
+            if not self._settings.get_boolean(["sdFiles", "upper_case"])
+            else "{dosname_upper}"
+        )
         if self._settings.get_boolean(["sdFiles", "size"]):
             line += " {size}"
             if self._settings.get_boolean(["sdFiles", "timestamp"]) or incl_timestamp:
@@ -1507,7 +1511,7 @@ class VirtualPrinter:
                     line += " {name}"
 
         self._send("Begin file list")
-        for item in map(lambda x: line.format(**x), self._getSdFiles()):
+        for item in (line.format(**x) for x in self._getSdFiles()):
             self._send(item)
         self._send("End file list")
 
@@ -1525,6 +1529,7 @@ class VirtualPrinter:
                 "name": entry.name,
                 "path": entry.path,
                 "dosname": dosname,
+                "dosname_upper": dosname.upper(),
                 "size": entry.stat().st_size,
                 "timestamp": unix_timestamp_to_m20_timestamp(entry.stat().st_mtime),
             }
@@ -1601,7 +1606,7 @@ class VirtualPrinter:
 
     def _generatePositionOutput(self) -> str:
         m114FormatString = self._settings.get(["m114FormatString"])
-        e = {index: value for index, value in enumerate(self._lastE)}
+        e = dict(enumerate(self._lastE))
         e["current"] = self._lastE[self.currentExtruder]
         e["all"] = " ".join(
             [
@@ -1666,10 +1671,8 @@ class VirtualPrinter:
                 temps["C"] = (self.chamberTemp, self.chamberTargetTemp)
 
         output = " ".join(
-            map(
-                lambda x: template.format(heater=x[0], actual=x[1][0], target=x[1][1]),
-                temps.items(),
-            )
+            template.format(heater=x[0], actual=x[1][0], target=x[1][1])
+            for x in temps.items()
         )
         output += " @:64\n"
         return output
@@ -1688,7 +1691,7 @@ class VirtualPrinter:
         self, line: str, wait: bool = False, support_r: bool = False
     ) -> None:
         only_wait_if_higher = True
-        tool = 0
+        tool = self.currentExtruder
         toolMatch = re.search(r"T([0-9]+)", line)
         if toolMatch:
             tool = int(toolMatch.group(1))
@@ -2162,7 +2165,7 @@ class VirtualPrinter:
                 self._logger.info(
                     "Incoming queue is full, raising SerialTimeoutException"
                 )
-                raise SerialTimeoutException()
+                raise SerialTimeoutException() from None
 
     def readline(self) -> bytes:
         if self._debug_awol:
