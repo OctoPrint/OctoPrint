@@ -116,6 +116,7 @@ jobs:
   test-install:
     name: 🧪 Installation tests
     needs: build
+    if: github.event_name != 'push' || github.ref != 'refs/heads/master'
     strategy:
       matrix:
         python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
