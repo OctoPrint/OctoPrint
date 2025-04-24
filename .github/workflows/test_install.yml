@@ -59,6 +59,10 @@ jobs:
         run: |
           mkdir e2econfig
           cp -r src/.github/fixtures/with_acl/* e2econfig
+
+          # ensure enabled rate limiter
+          yq -i '.devel.enableRateLimiter = true' e2econfig/config.yaml
+
       - name: 🧪 Start OctoPrint server
         run: |
           timeout -k 10s 30s octoprint serve --basedir e2econfig &
