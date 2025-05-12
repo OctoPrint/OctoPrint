@@ -40,8 +40,7 @@ $(function () {
         self.isLoading = ko.observable(undefined);
 
         self.enableConnect = ko.pureComputed(function () {
-            //return self.enablePort() || !self.isErrorOrClosed();
-            return true; // enable always for now, until we have an auto refresh in 1.9.0
+            return self.enablePort() || !self.isErrorOrClosed();
         });
 
         self.buttonText = ko.pureComputed(function () {
