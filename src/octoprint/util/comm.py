@@ -233,8 +233,9 @@ def serialList():
             candidates += hook(candidates)
         except Exception:
             logging.getLogger(__name__).exception(
-                "Error while retrieving additional "
-                "serial port names from hook {}".format(name)
+                "Error while retrieving additional serial port names from hook {}".format(
+                    name
+                )
             )
 
     # blacklisted ports
@@ -3229,8 +3230,7 @@ class MachineCom:
                 elif self._state == self.STATE_CONNECTING:
                     if "start" in line and not startSeen:
                         startSeen = True
-                        if wait_for_start:
-                            self.sayHello()
+                        self.sayHello()
                     elif line.startswith("ok") or (supportWait and line == "wait"):
                         if line == "wait":
                             # if it was a wait we probably missed an ok, so let's simulate that now
@@ -3431,7 +3431,7 @@ class MachineCom:
             self._detection_retry = self.DETECTION_RETRIES
 
             log(
-                "Performing autodetection with {} " "port/baudrate candidates: {}".format(
+                "Performing autodetection with {} port/baudrate candidates: {}".format(
                     len(self._detection_candidates),
                     ", ".join(f"{x[0]}@{x[1]}" for x in self._detection_candidates),
                 )
@@ -4882,7 +4882,7 @@ class MachineCom:
 
             except Exception:
                 self._logger.exception(
-                    "Error while processing hook {name} for phase " "{phase}:".format(
+                    "Error while processing hook {name} for phase {phase}:".format(
                         name=name,
                         phase=phase,
                     ),
@@ -4965,8 +4965,7 @@ class MachineCom:
                 hook(self, phase, atcommand, parameters, tags=tags)
             except Exception:
                 self._logger.exception(
-                    "Error while processing hook {} for "
-                    "phase {} and command {}:".format(
+                    "Error while processing hook {} for phase {} and command {}:".format(
                         name, phase, to_unicode(atcommand, errors="replace")
                     ),
                     extra={"plugin": name},
