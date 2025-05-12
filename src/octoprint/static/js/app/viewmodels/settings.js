@@ -166,6 +166,7 @@ $(function () {
         self.feature_printStartConfirmation = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
         self.feature_uploadOverwriteConfirmation = ko.observable(undefined);
+        self.feature_fileDeleteConfirmation = ko.observable(undefined);
         self.feature_g90InfluencesExtruder = ko.observable(undefined);
         self.feature_autoUppercaseBlacklist = ko.observable(undefined);
         self.feature_enableDragDropUpload = ko.observable(undefined);

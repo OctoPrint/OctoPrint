@@ -819,13 +819,18 @@ $(function () {
                 return;
             }
 
-            const message = _.sprintf(
-                gettext('You are about to delete "%(file)s" forever.'),
-                {file: file.name}
-            );
-            showConfirmationDialog(message, () => {
+            const proceed = () => {
                 self._removeEntry(file, event);
-            });
+            };
+            if (self.settingsViewModel.feature_fileDeleteConfirmation()) {
+                const message = _.sprintf(
+                    gettext('You are about to delete "%(file)s" forever.'),
+                    {file: file.name}
+                );
+                showConfirmationDialog(message, proceed);
+            } else {
+                proceed();
+            }
         };
 
         self.sliceFile = function (file) {

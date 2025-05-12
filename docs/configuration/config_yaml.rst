@@ -440,8 +440,17 @@ Use the following settings to enable or disable OctoPrint features:
      # Whether to enable model size detection and warning (true) or not (false)
      modelSizeDetection: true
 
+     # Whether to show a confirmation on print start (true) or not (false)
+     printStartConfirmation: bool = False
+
      # Whether to show a confirmation on print cancelling (true) or not (false)
      printCancelConfirmation: true
+
+     # Whether to show a confirmation when about to overwrite an uploaded file
+     uploadOverwriteConfirmation: bool = True
+
+     # Whether to show a confirmation when about to delete a file
+     fileDeleteConfirmation: bool = True
 
      # Commands that should never be auto-uppercased when sent to the printer through the Terminal tab.
      # Defaults to only M117.

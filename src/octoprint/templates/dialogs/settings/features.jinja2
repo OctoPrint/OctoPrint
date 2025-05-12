@@ -45,6 +45,14 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
+                <input type="checkbox" data-bind="checked: feature_fileDeleteConfirmation" id="settings-fileDeleteConfirmation"> {{ _('Confirm before deleting a file') }} <span class="label label-important">{{ _('Warning') }}</span>
+            </label>
+            <span class="help-block">{{ _('Be advised that what\'s gone is gone. If you need to delete multiple files, it\'s safer to use the bundled upload manager for bulk deletion instead of disabling the confirmation here.') }}</span>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_enableDragDropUpload" id="settings-enableDragDropUpload"> {{ _('Enable drag and drop upload overlay') }}
             </label>
         </div>

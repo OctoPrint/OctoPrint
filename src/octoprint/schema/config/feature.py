@@ -34,6 +34,10 @@ class FeatureConfig(BaseModel):
     """Whether to show a confirmation on print cancelling (true) or not (false)"""
 
     uploadOverwriteConfirmation: bool = True
+    """Whether to show a confirmation when about to overwrite an uploaded file"""
+
+    fileDeleteConfirmation: bool = True
+    """Whether to show a confirmation when about to delete a file"""
 
     autoUppercaseBlacklist: List[str] = ["M117", "M118", "M707", "M708"]
     """Commands that should never be auto-uppercased when sent to the printer through the Terminal tab."""
