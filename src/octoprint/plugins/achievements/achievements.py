@@ -75,7 +75,7 @@ class Achievements(metaclass=AchievementsMetaClass):
 
     TINKERER = Achievement(
         name="The Tinkerer",
-        description="Install a plugin from a URL.",
+        description="Install a plugin from a URL or an uploaded file.",
     )
 
     BETTER_SAFE_THAN_SORRY = Achievement(
