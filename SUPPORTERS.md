@@ -15,7 +15,7 @@ thanks to everyone who contributed!
   * Boris Hussein
   * Brad Jackson
   * Bradford Benn
-  * Brandon Robertson
+  * Bret Wortman
   * Chloe Martin
   * Christian Petropolis
   * Christian Wolf
@@ -35,7 +35,6 @@ thanks to everyone who contributed!
   * Erik Ableson
   * Ernesto Martinez
   * Franziska Kunsmann
-  * Hog Duske
   * James Fryman
   * James Nangano
   * Jason Kitchens
@@ -61,7 +60,6 @@ thanks to everyone who contributed!
   * Michael Aumock
   * Michael Badagliacco
   * Mike Labanov
-  * Mosaic Manufacturing
   * Norman Jaffe
   * Randy C. Will
   * Ranjib Dey
@@ -77,4 +75,4 @@ thanks to everyone who contributed!
   * Timothy Efinger
   * Ulrich Kempken
 
-and 2722 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 2674 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
