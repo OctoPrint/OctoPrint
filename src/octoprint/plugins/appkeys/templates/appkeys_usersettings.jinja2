@@ -16,7 +16,7 @@
             <td class="settings_plugin_appkeys_app">
                 <span data-bind="text: app_id"></span>
             </td>
-            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke') }}" class="far fa-trash-alt" data-bind="click: function() { $parent.revokeKey($data) }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Details') }}" class="fas fa-search" data-bind="click: function() { $parent.showKeyDetails($data) }"></a></td>
+            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.revokeKey($data) }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Details')|edq }}" class="fas fa-search" data-bind="click: function() { $parent.showKeyDetails($data) }"></a></td>
         </tr>
         </tbody>
     </table>

@@ -16,12 +16,12 @@
                 <label class="control-label">{{ _('New Offset') }}</label>
                 <div class="controls">
                     <div class="input-prepend input-append">
-                        <button type="button" class="btn btn-input-dec" data-bind="click: $root.decrementChangeOffset" title="{{ _('-1') }}"><i class="fas fa-minus"></i></button>
+                        <button type="button" class="btn btn-input-dec" data-bind="click: $root.decrementChangeOffset" title="{{ _('-1')|edq }}"><i class="fas fa-minus"></i></button>
                         <input type="number" min="-50" max="50" class="input-mini input-nospin" style="width: 30px" data-bind="value: changingOffset.newOffset, event: { focus: function(d, e) {$root.handleFocus(e, 'target', changingOffset.item);}, keyup: function(d, e) {$root.handleEnter(e, 'offset', changingOffset.item);} }">
                         <span class="add-on">&deg;C</span>
-                        <button type="button" class="btn btn-input-inc" data-bind="click: $root.incrementChangeOffset" title="{{ _('+1') }}"><i class="fas fa-plus"></i></button>
+                        <button type="button" class="btn btn-input-inc" data-bind="click: $root.incrementChangeOffset" title="{{ _('+1')|edq }}"><i class="fas fa-plus"></i></button>
                     </div>
-                    <button type="button" class="btn" data-bind="click: $root.deleteChangeOffset" title="{{ _('Delete Offset') }}"><i class="fas fa-trash-alt"></i></button>
+                    <button type="button" class="btn" data-bind="click: $root.deleteChangeOffset" title="{{ _('Delete Offset')|edq }}"><i class="fas fa-trash-alt"></i></button>
                     <span class="help-block">{{ _('Hint: Hitting <kbd>Enter</kbd> in the input field will also submit the form') }}</span>
                 </div>
             </div>
