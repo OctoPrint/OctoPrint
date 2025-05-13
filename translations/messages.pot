@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.11.0.dev366+gc1ca5463f\n"
+"Project-Id-Version: OctoPrint 1.11.1.dev13+gfb6fece93.dirty\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2025-01-27 16:27+0100\n"
+"POT-Creation-Date: 2025-05-13 11:05+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -240,13 +240,13 @@ msgstr ""
 
 #: src/octoprint/plugins/achievements/static/js/achievements.js:351
 #: src/octoprint/static/js/app/viewmodels/files.js:759
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:494
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:502
 msgid "Yes"
 msgstr ""
 
 #: src/octoprint/plugins/achievements/static/js/achievements.js:352
 #: src/octoprint/static/js/app/viewmodels/files.js:758
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:493
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:501
 msgid "No"
 msgstr ""
 
@@ -446,7 +446,7 @@ msgid "Always"
 msgstr ""
 
 #: src/octoprint/plugins/action_command_prompt/templates/action_command_prompt_settings.jinja2:14
-#: src/octoprint/templates/dialogs/settings/features.jinja2:93
+#: src/octoprint/templates/dialogs/settings/features.jinja2:100
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:90
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:348
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:446
@@ -568,7 +568,7 @@ msgstr ""
 #: src/octoprint/plugins/appkeys/templates/appkeys.jinja2:36
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:126
 #: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:71
-#: src/octoprint/plugins/health_check/templates/health_check.jinja2:46
+#: src/octoprint/plugins/health_check/templates/health_check.jinja2:50
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:223
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:270
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:432
@@ -1311,7 +1311,7 @@ msgstr ""
 
 #: src/octoprint/plugins/classicwebcam/templates/snippets/classicwebcamCacheBuster.jinja2:7
 #: src/octoprint/plugins/gcodeviewer/templates/gcodeviewer_tab.jinja2:126
-#: src/octoprint/plugins/health_check/static/js/health_check.js:196
+#: src/octoprint/plugins/health_check/static/js/health_check.js:217
 #: src/octoprint/plugins/softwareupdate/templates/snippets/pipEnableCheck.jinja2:4
 #: src/octoprint/static/js/app/viewmodels/system.js:97
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:58
@@ -1845,7 +1845,7 @@ msgstr ""
 msgid "Output"
 msgstr ""
 
-#: src/octoprint/plugins/customcontrolmanager/static/js/customcontrolmanager.js:519
+#: src/octoprint/plugins/customcontrolmanager/static/js/customcontrolmanager.js:523
 #, python-format
 msgid "You are about to delete the custom control with id %(id)s."
 msgstr ""
@@ -2202,7 +2202,7 @@ msgid "Ready!"
 msgstr ""
 
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:700
-#: src/octoprint/static/js/app/viewmodels/files.js:1095
+#: src/octoprint/static/js/app/viewmodels/files.js:1100
 msgid "Model size"
 msgstr ""
 
@@ -2237,15 +2237,15 @@ msgstr ""
 
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:760
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:769
-#: src/octoprint/static/js/app/viewmodels/files.js:1110
-#: src/octoprint/static/js/app/viewmodels/files.js:1126
+#: src/octoprint/static/js/app/viewmodels/files.js:1115
+#: src/octoprint/static/js/app/viewmodels/files.js:1131
 msgid "Filament"
 msgstr ""
 
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:771
 #: src/octoprint/static/js/app/viewmodels/control.js:220
-#: src/octoprint/static/js/app/viewmodels/files.js:1128
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:378
+#: src/octoprint/static/js/app/viewmodels/files.js:1133
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:386
 #: src/octoprint/static/js/app/viewmodels/temperature.js:153
 #: src/octoprint/static/js/app/viewmodels/temperature.js:164
 #: src/octoprint/static/js/app/viewmodels/temperature.js:411
@@ -2253,7 +2253,7 @@ msgid "Tool"
 msgstr ""
 
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:783
-#: src/octoprint/static/js/app/viewmodels/files.js:1138
+#: src/octoprint/static/js/app/viewmodels/files.js:1143
 msgid "Estimated print time"
 msgstr ""
 
@@ -2501,89 +2501,89 @@ msgstr ""
 msgid "Allows to perform health checks and view their results"
 msgstr ""
 
-#: src/octoprint/plugins/health_check/__init__.py:224
+#: src/octoprint/plugins/health_check/__init__.py:228
 msgid ""
 "Without this plugin you might miss problematic issues with your OctoPrint"
 " installation."
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:145
+#: src/octoprint/plugins/health_check/static/js/health_check.js:166
 #, python-format
 msgid "Your Python version %(python)s is nearing its end of life (%(date)s)."
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:148
+#: src/octoprint/plugins/health_check/static/js/health_check.js:169
 msgid "Soon to be outdated Python"
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:150
+#: src/octoprint/plugins/health_check/static/js/health_check.js:171
 #, python-format
 msgid "Your Python version %(python)s is past its end of life (%(date)s)."
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:153
-#: src/octoprint/plugins/health_check/static/js/health_check.js:214
+#: src/octoprint/plugins/health_check/static/js/health_check.js:174
+#: src/octoprint/plugins/health_check/static/js/health_check.js:235
 msgid "Outdated Python"
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:158
+#: src/octoprint/plugins/health_check/static/js/health_check.js:179
 #, python-format
 msgid ""
 "OctoPrint %(octoprint)s will be the last version to support this Python "
 "version."
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:164
+#: src/octoprint/plugins/health_check/static/js/health_check.js:185
 msgid "A future version of OctoPrint will drop support for this Python version."
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:178
+#: src/octoprint/plugins/health_check/static/js/health_check.js:199
 msgid "You should upgrade as soon as possible!"
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:181
+#: src/octoprint/plugins/health_check/static/js/health_check.js:202
 msgid "Please refer to the FAQ for recommended upgrade workflows:"
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:188
+#: src/octoprint/plugins/health_check/static/js/health_check.js:209
 msgid ""
 "This will be shown again every 30 days until you have upgraded your "
 "Python."
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:225
+#: src/octoprint/plugins/health_check/static/js/health_check.js:246
 msgid "Your OctoPrint version is outdated."
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:228
+#: src/octoprint/plugins/health_check/static/js/health_check.js:249
 #, python-format
 msgid ""
 "There are %(count)d newer releases. You have "
 "<strong>%(current)s</strong>, the latest is <strong>%(latest)s</strong>."
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:238
+#: src/octoprint/plugins/health_check/static/js/health_check.js:259
 msgid "You should update as soon as possible."
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:242
+#: src/octoprint/plugins/health_check/static/js/health_check.js:263
 msgid "Outdated OctoPrint"
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:254
+#: src/octoprint/plugins/health_check/static/js/health_check.js:275
 msgid "One or more folders that OctoPrint uses are starting to run out of space."
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:259
+#: src/octoprint/plugins/health_check/static/js/health_check.js:280
 msgid "One or more folders that OctoPrint uses are about to run out of space."
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:264
+#: src/octoprint/plugins/health_check/static/js/health_check.js:285
 #, python-format
 msgid "%(usage)f%% filled"
 msgstr ""
 
-#: src/octoprint/plugins/health_check/static/js/health_check.js:287
+#: src/octoprint/plugins/health_check/static/js/health_check.js:308
 msgid ""
 "Please free up some space to ensure OctoPrint will continue to function "
 "as expected."
@@ -2617,7 +2617,11 @@ msgid ""
 "                "
 msgstr ""
 
-#: src/octoprint/plugins/health_check/templates/health_check.jinja2:38
+#: src/octoprint/plugins/health_check/templates/health_check.jinja2:37
+msgid "Mark all as read"
+msgstr ""
+
+#: src/octoprint/plugins/health_check/templates/health_check.jinja2:42
 msgid ""
 "\n"
 "                    All health checks are green!\n"
@@ -3812,56 +3816,56 @@ msgstr ""
 msgid "Save"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:157
+#: src/octoprint/plugins/softwareupdate/__init__.py:159
 msgid "Allows to check for software updates"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:164
+#: src/octoprint/plugins/softwareupdate/__init__.py:166
 msgid "Allows to perform software updates"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:172
+#: src/octoprint/plugins/softwareupdate/__init__.py:174
 msgid "Allows to configure software update"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1166
+#: src/octoprint/plugins/softwareupdate/__init__.py:1169
 msgid "Python package installation folder"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1167
+#: src/octoprint/plugins/softwareupdate/__init__.py:1170
 msgid "Plugin folder"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1168
+#: src/octoprint/plugins/softwareupdate/__init__.py:1171
 msgid "System temporary files"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1200
+#: src/octoprint/plugins/softwareupdate/__init__.py:1203
 #: src/octoprint/templates/footer.jinja2:4
 msgid "Python"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1207
-#: src/octoprint/plugins/softwareupdate/__init__.py:2371
+#: src/octoprint/plugins/softwareupdate/__init__.py:1210
+#: src/octoprint/plugins/softwareupdate/__init__.py:2374
 msgid "pip"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1214
+#: src/octoprint/plugins/softwareupdate/__init__.py:1217
 msgid "setuptools"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1492
-#: src/octoprint/plugins/softwareupdate/__init__.py:1509
+#: src/octoprint/plugins/softwareupdate/__init__.py:1495
+#: src/octoprint/plugins/softwareupdate/__init__.py:1512
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_wizard_settings.jinja2:1
 msgid "Software Update"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:1499
+#: src/octoprint/plugins/softwareupdate/__init__.py:1502
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_wizard_update.jinja2:1
 msgid "Update?"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:2349
+#: src/octoprint/plugins/softwareupdate/__init__.py:2352
 #: src/octoprint/server/views.py:1212
 #: src/octoprint/static/js/app/viewmodels/appearance.js:106
 #: src/octoprint/static/js/app/viewmodels/appearance.js:110
@@ -3873,7 +3877,7 @@ msgstr ""
 msgid "OctoPrint"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:2568
+#: src/octoprint/plugins/softwareupdate/__init__.py:2571
 msgid ""
 "Without this plugin OctoPrint will no longer be able to update itself or "
 "any of your installed plugins which might put your system at risk."
@@ -3897,7 +3901,7 @@ msgid "%(name)s: %(version)s"
 msgstr ""
 
 #: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:406
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:290
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:294
 #: src/octoprint/templates/sidebar/files.jinja2:22
 #: src/octoprint/templates/sidebar/files.jinja2:37
 #: src/octoprint/templates/sidebar/files.jinja2:51
@@ -4811,7 +4815,7 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:739
-#: src/octoprint/static/js/app/viewmodels/files.js:823
+#: src/octoprint/static/js/app/viewmodels/files.js:827
 #, python-format
 msgid "You are about to delete \"%(file)s\" forever."
 msgstr ""
@@ -4969,7 +4973,7 @@ msgid "Currently:"
 msgstr ""
 
 #: src/octoprint/plugins/uploadmanager/templates/uploadmanager.jinja2:191
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:251
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:255
 msgid "Continue"
 msgstr ""
 
@@ -5219,8 +5223,8 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/static/js/app/dataupdater.js:339
-#: src/octoprint/static/js/app/viewmodels/files.js:1536
-#: src/octoprint/static/js/app/viewmodels/files.js:1545
+#: src/octoprint/static/js/app/viewmodels/files.js:1541
+#: src/octoprint/static/js/app/viewmodels/files.js:1550
 #, python-format
 msgid "Slicing ... (%(percentage)d%%)"
 msgstr ""
@@ -5414,7 +5418,7 @@ msgstr ""
 #: src/octoprint/static/js/app/helpers.js:815
 #: src/octoprint/static/js/app/viewmodels/access.js:296
 #: src/octoprint/static/js/app/viewmodels/access.js:787
-#: src/octoprint/static/js/app/viewmodels/connection.js:188
+#: src/octoprint/static/js/app/viewmodels/connection.js:187
 msgid "Are you sure?"
 msgstr ""
 
@@ -5567,21 +5571,21 @@ msgstr ""
 msgid "You are about to delete the group \"%(name)s\"."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:48
+#: src/octoprint/static/js/app/viewmodels/connection.js:47
 #: src/octoprint/templates/sidebar/connection.jinja2:17
 msgid "Connect"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:49
-#: src/octoprint/static/js/app/viewmodels/connection.js:201
+#: src/octoprint/static/js/app/viewmodels/connection.js:48
+#: src/octoprint/static/js/app/viewmodels/connection.js:200
 msgid "Disconnect"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:53
+#: src/octoprint/static/js/app/viewmodels/connection.js:52
 msgid "No serial port found"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:189
+#: src/octoprint/static/js/app/viewmodels/connection.js:188
 msgid ""
 "<p><strong>You are about to disconnect from the printer while a print is "
 "in progress.</strong></p><p>Disconnecting while a print is in progress "
@@ -5590,11 +5594,11 @@ msgid ""
 "OctoPrint or reconnect to the printer could interrupt the print.<p>"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:197
+#: src/octoprint/static/js/app/viewmodels/connection.js:196
 msgid "Are you sure you want to disconnect from the printer?"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/connection.js:200
+#: src/octoprint/static/js/app/viewmodels/connection.js:199
 msgid "Stay Connected"
 msgstr ""
 
@@ -5642,210 +5646,210 @@ msgid "Only show %(type)s files"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:754
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:489
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:497
 msgid ""
 "This will start a new print job. Please ensure that the print bed is "
 "clear."
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:757
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:492
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:500
 msgid "Do you want to start the print job now?"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:873
+#: src/octoprint/static/js/app/viewmodels/files.js:878
 msgid "Unable to move file or folder"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:877
+#: src/octoprint/static/js/app/viewmodels/files.js:882
 msgid "to"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:937
+#: src/octoprint/static/js/app/viewmodels/files.js:942
 msgid "Could not remove entry. Please check octoprint.log for possible reasons."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:947
+#: src/octoprint/static/js/app/viewmodels/files.js:952
 msgid "Failed to remove entry"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1080
+#: src/octoprint/static/js/app/viewmodels/files.js:1085
 msgid "Uploaded by"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1090
+#: src/octoprint/static/js/app/viewmodels/files.js:1095
 msgid "Model contains no extrusion.<br>"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1152
+#: src/octoprint/static/js/app/viewmodels/files.js:1157
 msgid "Last printed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1158
+#: src/octoprint/static/js/app/viewmodels/files.js:1163
 msgid "Last print time"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1237
+#: src/octoprint/static/js/app/viewmodels/files.js:1242
 #, python-format
 msgid "%(culprit)s exceeds print volume in %(dimension)s.<br>"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1244
-#: src/octoprint/static/js/app/viewmodels/files.js:1248
-#: src/octoprint/static/js/app/viewmodels/files.js:1252
+#: src/octoprint/static/js/app/viewmodels/files.js:1249
+#: src/octoprint/static/js/app/viewmodels/files.js:1253
+#: src/octoprint/static/js/app/viewmodels/files.js:1257
 msgid "Object"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1244
-#: src/octoprint/static/js/app/viewmodels/files.js:1258
+#: src/octoprint/static/js/app/viewmodels/files.js:1249
+#: src/octoprint/static/js/app/viewmodels/files.js:1263
 msgid "width"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1248
-#: src/octoprint/static/js/app/viewmodels/files.js:1262
+#: src/octoprint/static/js/app/viewmodels/files.js:1253
+#: src/octoprint/static/js/app/viewmodels/files.js:1267
 msgid "depth"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1252
-#: src/octoprint/static/js/app/viewmodels/files.js:1266
+#: src/octoprint/static/js/app/viewmodels/files.js:1257
+#: src/octoprint/static/js/app/viewmodels/files.js:1271
 msgid "height"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1258
-#: src/octoprint/static/js/app/viewmodels/files.js:1262
-#: src/octoprint/static/js/app/viewmodels/files.js:1266
+#: src/octoprint/static/js/app/viewmodels/files.js:1263
+#: src/octoprint/static/js/app/viewmodels/files.js:1267
+#: src/octoprint/static/js/app/viewmodels/files.js:1271
 msgid "Travel"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1284
+#: src/octoprint/static/js/app/viewmodels/files.js:1289
 msgid ""
 "Travel area: (%(travel.minX).2f, %(travel.minY).2f, %(travel.minZ).2f) "
 "&times; (%(travel.maxX).2f, %(travel.maxY).2f, %(travel.maxZ).2f)"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1291
+#: src/octoprint/static/js/app/viewmodels/files.js:1296
 msgid ""
 "Object's bounding box: (%(object.minX).2f, %(object.minY).2f, "
 "%(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, "
 "%(object.maxZ).2f)"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1298
+#: src/octoprint/static/js/app/viewmodels/files.js:1303
 msgid ""
 "Print volume: (%(profile.minX).2f, %(profile.minY).2f, "
 "%(profile.minZ).2f) &times; (%(profile.maxX).2f, %(profile.maxY).2f, "
 "%(profile.maxZ).2f)"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1308
+#: src/octoprint/static/js/app/viewmodels/files.js:1313
 #, python-format
 msgid ""
 "%(culprit)s in %(name)s exceeds the print volume of the currently "
 "selected printer profile, be careful when printing this."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1323
+#: src/octoprint/static/js/app/viewmodels/files.js:1328
 #, python-format
 msgid "%(culprit)s exceeds print volume"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1539
+#: src/octoprint/static/js/app/viewmodels/files.js:1544
 msgid "Slicing ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1566
+#: src/octoprint/static/js/app/viewmodels/files.js:1571
 msgid "Slicing done"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1568
+#: src/octoprint/static/js/app/viewmodels/files.js:1573
 #, python-format
 msgid "Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1588
+#: src/octoprint/static/js/app/viewmodels/files.js:1593
 #, python-format
 msgid "Could not slice %(stl)s to %(gcode)s: %(reason)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1596
+#: src/octoprint/static/js/app/viewmodels/files.js:1601
 msgid "Slicing failed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1615
+#: src/octoprint/static/js/app/viewmodels/files.js:1620
 msgid "Streaming ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1625
+#: src/octoprint/static/js/app/viewmodels/files.js:1630
 msgid "Streaming done"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1627
+#: src/octoprint/static/js/app/viewmodels/files.js:1632
 #, python-format
 msgid "Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1649
+#: src/octoprint/static/js/app/viewmodels/files.js:1654
 msgid "Streaming failed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1651
+#: src/octoprint/static/js/app/viewmodels/files.js:1656
 #, python-format
 msgid "Did not finish streaming %(local)s to %(remote)s on SD"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1742
+#: src/octoprint/static/js/app/viewmodels/files.js:1747
 #, python-format
 msgid "File already exists: %(name)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1839
+#: src/octoprint/static/js/app/viewmodels/files.js:1844
 msgid "Could not upload the file. There is not enough disk space remaining."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1846
+#: src/octoprint/static/js/app/viewmodels/files.js:1851
 #, python-format
 msgid "Free Space: %(freespace)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1850
+#: src/octoprint/static/js/app/viewmodels/files.js:1855
 #, python-format
 msgid "File Size: %(filesize)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1898
+#: src/octoprint/static/js/app/viewmodels/files.js:1903
 msgid "Refreshing list ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1918
+#: src/octoprint/static/js/app/viewmodels/files.js:1923
 msgid ""
 "Could not upload the file to the printer's SD. Make sure the SD is "
 "initialized and the printer is not busy with a print already."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1922
+#: src/octoprint/static/js/app/viewmodels/files.js:1927
 msgid ""
 "Could not upload the file, overwrite not possible. Make sure it is not "
 "already printing and that you have allowed overwriting."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1931
+#: src/octoprint/static/js/app/viewmodels/files.js:1936
 #, python-format
 msgid ""
 "Could not upload the file. Make sure that it is a readable, valid file "
 "with one of these extensions: %(extensions)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1940
+#: src/octoprint/static/js/app/viewmodels/files.js:1945
 msgid ""
 "Could not upload the file. Please check octoprint.log for possible "
 "reasons."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1966
+#: src/octoprint/static/js/app/viewmodels/files.js:1971
 msgid "Saving ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:1966
+#: src/octoprint/static/js/app/viewmodels/files.js:1971
 msgid "Uploading ..."
 msgstr ""
 
@@ -6054,80 +6058,80 @@ msgstr ""
 msgid "Edit Printer Profile \"%(name)s\""
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:127
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:131
 msgid "Restarts the print job from the beginning"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:130
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:134
 msgid "Starts the print job"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:131
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:135
 msgid "Resumes the print job"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:132
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:136
 msgid "Pauses the print job"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:170
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:174
 msgid "Still stabilizing..."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:190
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:194
 msgid ""
 "Based on a linear approximation (very low accuracy, especially at the "
 "beginning of the print)"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:195
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:199
 msgid "Based on the estimate from analysis of file (medium accuracy)"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:200
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:204
 msgid "Based on a mix of estimate from analysis and calculation (medium accuracy)"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:205
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:209
 msgid ""
 "Based on the average total of past prints of this model with the same "
 "printer profile (usually good accuracy)"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:210
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:214
 msgid ""
 "Based on a mix of average total from past prints and calculation (usually"
 " good accuracy)"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:215
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:219
 msgid "Based on the calculated estimate (best accuracy)"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:252
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:256
 #: src/octoprint/static/js/app/viewmodels/temperature.js:536
 #: src/octoprint/templates/sidebar/state.jinja2:30
 msgid "Pause"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:262
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:266
 #: src/octoprint/templates/tabs/timelapse.jinja2:16
 msgid "On Z Change"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:265
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:269
 #: src/octoprint/templates/tabs/timelapse.jinja2:15
 msgid "Timed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:269
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:273
 #: src/octoprint/templates/tabs/timelapse.jinja2:27
 #: src/octoprint/templates/tabs/timelapse.jinja2:38
 #: src/octoprint/templates/tabs/timelapse.jinja2:58
 msgid "sec"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:430
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:438
 #, python-format
 msgid ""
 "<p>%(ratio)d%% of transmitted lines have triggered resend requests. The "
@@ -6136,25 +6140,25 @@ msgid ""
 "target='_blank'>this FAQ entry</a> on tips on how to solve this.</p>"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:442
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:450
 msgid "Critical resend ratio!"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:457
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:465
 msgid ""
 "This will restart the print job from the beginning. Please ensure that "
 "the print bed is clear."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:519
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:527
 msgid "This will cancel your print."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:520
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:528
 msgid "No, continue the print"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:521
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:529
 msgid "Yes, cancel the print"
 msgstr ""
 
@@ -6172,68 +6176,68 @@ msgstr ""
 msgid "Autodetect from browser"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:452
+#: src/octoprint/static/js/app/viewmodels/settings.js:453
 msgid "The path doesn't exist"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:454
+#: src/octoprint/static/js/app/viewmodels/settings.js:455
 msgid "The path is not a file"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:457
+#: src/octoprint/static/js/app/viewmodels/settings.js:458
 msgid "The path is not an executable"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:461
-#: src/octoprint/static/js/app/viewmodels/settings.js:562
+#: src/octoprint/static/js/app/viewmodels/settings.js:462
+#: src/octoprint/static/js/app/viewmodels/settings.js:563
 msgid "The path is valid"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:486
+#: src/octoprint/static/js/app/viewmodels/settings.js:487
 msgid "The server is not reachable"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:489
+#: src/octoprint/static/js/app/viewmodels/settings.js:490
 msgid "The server is reachable"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:510
+#: src/octoprint/static/js/app/viewmodels/settings.js:511
 msgid "Name cannot be resolved"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:514
+#: src/octoprint/static/js/app/viewmodels/settings.js:515
 msgid "Name can be resolved"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:546
+#: src/octoprint/static/js/app/viewmodels/settings.js:547
 msgid "The path is a broken symlink."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:550
+#: src/octoprint/static/js/app/viewmodels/settings.js:551
 msgid "The path does not exist and cannot be created."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:554
+#: src/octoprint/static/js/app/viewmodels/settings.js:555
 msgid "The path is not a folder."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:558
+#: src/octoprint/static/js/app/viewmodels/settings.js:559
 msgid "The path is not writable."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:698
+#: src/octoprint/static/js/app/viewmodels/settings.js:699
 #: src/octoprint/static/js/app/viewmodels/usersettings.js:174
 msgid ""
 "This will generate a new API Key. The old API Key will cease to function "
 "immediately."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:717
+#: src/octoprint/static/js/app/viewmodels/settings.js:718
 #: src/octoprint/static/js/app/viewmodels/usersettings.js:189
 msgid "This will delete the API Key. It will cease to to function immediately."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:1300
+#: src/octoprint/static/js/app/viewmodels/settings.js:1301
 #, python-format
 msgid ""
 "<p>You have Autologin enabled. This means that you will be automatically "
@@ -6245,11 +6249,11 @@ msgid ""
 "rel='noopener noreferer'>Read more in the FAQ</a>.</p>"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:1308
+#: src/octoprint/static/js/app/viewmodels/settings.js:1309
 msgid "Autologin Heads-up"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/settings.js:1317
+#: src/octoprint/static/js/app/viewmodels/settings.js:1318
 msgid "Got it!"
 msgstr ""
 
@@ -7320,59 +7324,63 @@ msgid "Confirm before overwriting a file by upload"
 msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/features.jinja2:48
-msgid "Enable drag and drop upload overlay"
+msgid "Confirm before deleting a file"
 msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/features.jinja2:55
-msgid "Enable SD support"
+msgid "Enable drag and drop upload overlay"
 msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/features.jinja2:62
+msgid "Enable SD support"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:69
 msgid "Enable Keyboard Control"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/features.jinja2:70
+#: src/octoprint/templates/dialogs/settings/features.jinja2:77
 msgid "<code>G90</code>/<code>G91</code> overrides relative extruder mode"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/features.jinja2:70
+#: src/octoprint/templates/dialogs/settings/features.jinja2:77
 msgid "Smoothieware"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/features.jinja2:70
+#: src/octoprint/templates/dialogs/settings/features.jinja2:77
 msgid "Marlin 2+"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/features.jinja2:71
+#: src/octoprint/templates/dialogs/settings/features.jinja2:78
 msgid ""
 "This is used by the GCODE analysis in the backend and the viewer in the "
 "frontend to interpret your sliced files correctly."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/features.jinja2:75
+#: src/octoprint/templates/dialogs/settings/features.jinja2:82
 msgid "Commands to not completely auto uppercase in the terminal tab"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/features.jinja2:76
+#: src/octoprint/templates/dialogs/settings/features.jinja2:83
 msgid "Terminal Auto Uppercase Blacklist"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/features.jinja2:79
+#: src/octoprint/templates/dialogs/settings/features.jinja2:86
 msgid ""
 "Use this to specify the commands that should not have their parameters "
 "automatically uppercased in the terminal tab. Just the G or M code, comma"
 " separated."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/features.jinja2:84
+#: src/octoprint/templates/dialogs/settings/features.jinja2:91
 msgid "Analyze gcode for time and model size estimates"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/features.jinja2:87
+#: src/octoprint/templates/dialogs/settings/features.jinja2:94
 msgid "Always "
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/features.jinja2:90
+#: src/octoprint/templates/dialogs/settings/features.jinja2:97
 msgid "Only when idle (not printing)"
 msgstr ""
 
