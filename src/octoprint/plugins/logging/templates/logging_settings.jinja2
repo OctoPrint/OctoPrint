@@ -85,14 +85,14 @@
                 </select>
             </div>
             <div class="span1">
-                <a title="{{ _('Remove') }}" aria-label="{{ _('Remove') }}" class="btn btn-danger" data-bind="click: $parent.removeLogger"><i class="icon-trash"></i></a>
+                <a title="{{ _('Remove')|edq }}" aria-label="{{ _('Remove')|edq }}" class="btn btn-danger" data-bind="click: $parent.removeLogger"><i class="icon-trash"></i></a>
             </div>
         </div>
     </div>
     <div>
         <div class="row-fluid" style="margin-bottom: 5px">
             <div class="span8">
-                <select class="input-block-level" data-bind="options: availableLoggersSorted, optionsCaption: '{{ _('Select a logger...') }}', value: availableLoggersName, event: { change: addLogger }"></select>
+                <select class="input-block-level" data-bind="options: availableLoggersSorted, optionsCaption: '{{ _('Select a logger...')|esq }}', value: availableLoggersName, event: { change: addLogger }"></select>
             </div>
             <div class="span3">
                 <select class="input-medium" data-bind="value: availableLoggersLevel">

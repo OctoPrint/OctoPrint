@@ -63,8 +63,8 @@
             <div class="pull-right">
                 <button class="btn btn-small" data-bind="click: $root.showRepository"><i class="fas fa-plus"></i> {{ _('Get More') }}</button>
                 <a class="btn btn-small" href="{{ url_for('index') }}plugin/pluginmanager/export"><i class="fas fa-download"></i> {{ _('Export') }}</a>
-                <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}" aria-label="{{ _('Plugin Configuration') }}"><i class="fas fa-wrench"></i></button>
-                <a class="btn btn-small" data-toggle="collapse" href="#pluginmanager_info" title="{{ _('Info') }}" aria-label="{{ _('Info') }}"><i class="fas fa-lg fa-info-circle text-info" data-bind="css: {'text-error': noticeCount() > 0, 'text-info': noticeCount() <=0 }"></i></a>
+                <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}" aria-label="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
+                <a class="btn btn-small" data-toggle="collapse" href="#pluginmanager_info" title="{{ _('Info')|edq }}" aria-label="{{ _('Info')|edq }}"><i class="fas fa-lg fa-info-circle text-info" data-bind="css: {'text-error': noticeCount() > 0, 'text-info': noticeCount() <=0 }"></i></a>
             </div>
             <div id="pluginmanager_info" class="collapse" data-bind="css: {'in': noticeCount() > 0}">
                 <div class="muted" data-bind="visible: pipAvailable()">
@@ -104,7 +104,7 @@
             <h3>{{ _('Installed Plugins') }}</h3>
 
             <div style="margin-bottom: 1em" class="clearfix">
-                <input type="text" class="input-block search-query pull-left" data-bind="value: listingSearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}" spellcheck="false">
+                <input type="text" class="input-block search-query pull-left" data-bind="value: listingSearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}" spellcheck="false">
 
                 <div class="pull-right">
                     <div class="btn-group">
@@ -118,14 +118,14 @@
                         </ul>
                     </div>
                     <div class="btn-group">
-                        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('bundled'); plugins.removeFilter('3rdparty'); }, css: {active: !_.contains(plugins.currentFilters(), 'bundled') && !_.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show both bundled and third-party plugins') }}" aria-label="{{ _('Show both bundled and third-party plugins') }}">All</button>
-                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('bundled') }, css: {active: _.contains(plugins.currentFilters(), 'bundled')}" title="{{ _('Show only bundled plugins') }}" aria-label="{{ _('Show only bundled plugins') }}">{{ _('Bundled') }}</button>
-                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('3rdparty') }, css: {active: _.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show only third-party plugins') }}" aria-label="{{ _('Show only third-party plugins') }}">{{ _('3rd party') }}</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('bundled'); plugins.removeFilter('3rdparty'); }, css: {active: !_.contains(plugins.currentFilters(), 'bundled') && !_.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show both bundled and third-party plugins')|edq }}" aria-label="{{ _('Show both bundled and third-party plugins')|edq }}">All</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('bundled') }, css: {active: _.contains(plugins.currentFilters(), 'bundled')}" title="{{ _('Show only bundled plugins')|edq }}" aria-label="{{ _('Show only bundled plugins')|edq }}">{{ _('Bundled') }}</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('3rdparty') }, css: {active: _.contains(plugins.currentFilters(), '3rdparty')}" title="{{ _('Show only third-party plugins')|edq }}" aria-label="{{ _('Show only third-party plugins')|edq }}">{{ _('3rd party') }}</button>
                     </div>
                     <div class="btn-group">
-                        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('enabled'); plugins.removeFilter('disabled'); }, css: {active: !_.contains(plugins.currentFilters(), 'enabled') && !_.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show both enabled and disabled plugins') }}" aria-label="{{ _('Show both enabled and disabled plugins') }}">All</button>
-                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('enabled') }, css: {active: _.contains(plugins.currentFilters(), 'enabled')}" title="{{ _('Show only enabled plugins') }}" aria-label="{{ _('Show only enabled plugins') }}">{{ _('Enabled') }}</button>
-                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('disabled') }, css: {active: _.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show only disabled plugins') }}" aria-label="{{ _('Show only disabled plugins') }}">{{ _('Disabled') }}</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.removeFilter('enabled'); plugins.removeFilter('disabled'); }, css: {active: !_.contains(plugins.currentFilters(), 'enabled') && !_.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show both enabled and disabled plugins')|edq }}" aria-label="{{ _('Show both enabled and disabled plugins')|edq }}">All</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('enabled') }, css: {active: _.contains(plugins.currentFilters(), 'enabled')}" title="{{ _('Show only enabled plugins')|edq }}" aria-label="{{ _('Show only enabled plugins')|edq }}">{{ _('Enabled') }}</button>
+                        <button class="btn btn-small" data-bind="click: function() { plugins.addFilter('disabled') }, css: {active: _.contains(plugins.currentFilters(), 'disabled')}" title="{{ _('Show only disabled plugins')|edq }}" aria-label="{{ _('Show only disabled plugins')|edq }}">{{ _('Disabled') }}</button>
                     </div>
                 </div>
             </div>
@@ -143,10 +143,10 @@
                 <tbody data-bind="foreach: plugins.paginatedItems">
                 <tr>
                     <td class="settings_plugin_plugin_manager_plugins_checkbox">
-                        <input type="checkbox" data-bind="value: key, checked: $root.selectedPlugins, enable: $root.enableBulk($data)" title="{{ _('Bundled and incompatible plugins do not support bulk operations') | edq }}" aria-label="{{ _('Bundled and incompatible plugins do not support bulk operations') | edq }}">
+                        <input type="checkbox" data-bind="value: key, checked: $root.selectedPlugins, enable: $root.enableBulk($data)" title="{{ _('Bundled and incompatible plugins do not support bulk operations')|edq | edq }}" aria-label="{{ _('Bundled and incompatible plugins do not support bulk operations')|edq }}">
                     </td>
                     <td class="settings_plugin_plugin_manager_plugins_name">
-                        <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint') }}" class="fas fa-th-large" data-bind="visible: bundled"></i> <i class="fas fa-lock" title="{{ _('Cannot be uninstalled through OctoPrint') }}" data-bind="visible: !managable"></i> <i class="fas fa-bolt" title="{{ _('Incompatible to OctoPrint or the underlying Python environment') }}" data-bind="visible: incompatible"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect') }}" class="fas fa-sync" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install') }}" class="fas fa-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall') }}" class="fas fa-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode') }}" class="fas fa-medkit" data-bind="visible: safe_mode_victim"></i> <i class="fas fa-exclamation-triangle" title="{{ _('There are notices available regarding this plugin') }}" data-bind="visible: notifications && notifications.length"></i> <i class="fas fa-ban" title="{{ _('This plugin is blacklisted') }}" data-bind="visible: blacklisted"></i></div>
+                        <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint')|edq }}" class="fas fa-th-large" data-bind="visible: bundled"></i> <i class="fas fa-lock" title="{{ _('Cannot be uninstalled through OctoPrint')|edq }}" data-bind="visible: !managable"></i> <i class="fas fa-bolt" title="{{ _('Incompatible to OctoPrint or the underlying Python environment')|edq }}" data-bind="visible: incompatible"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect')|edq }}" class="fas fa-sync" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install')|edq }}" class="fas fa-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall')|edq }}" class="fas fa-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode')|edq }}" class="fas fa-medkit" data-bind="visible: safe_mode_victim"></i> <i class="fas fa-exclamation-triangle" title="{{ _('There are notices available regarding this plugin')|edq }}" data-bind="visible: notifications && notifications.length"></i> <i class="fas fa-ban" title="{{ _('This plugin is blacklisted')|edq }}" data-bind="visible: blacklisted"></i></div>
                         <div data-bind="css: {muted: !enabled}">
                             <small class="prop" data-bind="visible: url"><i class="fas fa-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
                             <small class="prop" data-bind="visible: privacypolicy"><i class="fas fa-gavel"></i> <a data-bind="attr: {href: privacypolicy}" target="_blank" rel="noreferrer noopener">{{ _('Privacy Policy') }}</a></small>
@@ -167,7 +167,7 @@
                         </div>
                     </td>
                     <td class="settings_plugin_plugin_manager_plugins_actions">
-                        <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fas fa-eraser" title="{{ _('Cleanup Plugin Data') }}" aria-label="{{ _('Cleanup Plugin Data') }}" data-bind="css: {disabled: !$root.enableCleanup($data)}, enable: $root.enableCleanup($data), click: function() { $root.cleanupPlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="far fa-trash-alt" title="{{ _('Uninstall Plugin') }}" aria-label="{{ _('Uninstall Plugin') }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
+                        <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fas fa-eraser" title="{{ _('Cleanup Plugin Data')|edq }}" aria-label="{{ _('Cleanup Plugin Data')|edq }}" data-bind="css: {disabled: !$root.enableCleanup($data)}, enable: $root.enableCleanup($data), click: function() { $root.cleanupPlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="far fa-trash-alt" title="{{ _('Uninstall Plugin')|edq }}" aria-label="{{ _('Uninstall Plugin')|edq }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
                     </td>
                 </tr>
                 </tbody>
@@ -177,7 +177,7 @@
     </div>
     <div class="tab-pane" id="settings_plugin_pluginmanager_cleanup">
         <div class="pull-right">
-            <button class="btn btn-small" data-bind="click: function() { $root.requestOrphanData({refresh: true}) }" title="{{ _('Refresh') }}" aria-label="{{ _('Refresh') }}"><i class="fas fa-sync"></i></button>
+            <button class="btn btn-small" data-bind="click: function() { $root.requestOrphanData({refresh: true}) }" title="{{ _('Refresh')|edq }}" aria-label="{{ _('Refresh')|edq }}"><i class="fas fa-sync"></i></button>
         </div>
 
         <h3>{{ _('Cleanup') }}</h3>
@@ -197,7 +197,7 @@
                             <span data-bind="text: identifier"></span>
                         </td>
                         <td class="settings_plugin_plugin_manager_orphans_actions">
-                            <a href="javascript:void(0)" class="fas fa-eraser" title="{{ _('Cleanup Plugin Data') }}" aria-label="{{ _('Cleanup Plugin Data') }}" data-bind="click: function() { $root.cleanupPlugin($data.identifier) }"></a>
+                            <a href="javascript:void(0)" class="fas fa-eraser" title="{{ _('Cleanup Plugin Data')|edq }}" aria-label="{{ _('Cleanup Plugin Data')|edq }}" data-bind="click: function() { $root.cleanupPlugin($data.identifier) }"></a>
                         </td>
                     </tr>
                     </tbody>
@@ -289,7 +289,7 @@
 
             <div style="margin-bottom: 1em" class="clearfix">
                 <form class="form-search" data-bind="submit: performRepositorySearch">
-                    <input type="text" class="input-block search-query pull-left" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}" spellcheck="false">
+                    <input type="text" class="input-block search-query pull-left" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...')|edq }}" spellcheck="false">
                 </form>
                 <div class="dropdown pull-right">
                     <div class="btn-group">
@@ -334,9 +334,9 @@
                                 </div>
                                 <div>
                                     <span data-bind="text: title"></span>
-                                    <i class="fas fa-heartbeat" title="{{ _('Abandoned by its maintainer') }}" data-bind="visible: abandoned"></i>
-                                    <i class="fas fa-bolt" title="{{ _('Incompatible to OctoPrint or the underlying Python environment') }}" data-bind="visible: !$root.isCompatible($data)"></i>
-                                    <i class="fas fa-ban" title="{{ _('Disabled') }}" data-bind="visible: $data.disabled !== undefined"></i>
+                                    <i class="fas fa-heartbeat" title="{{ _('Abandoned by its maintainer')|edq }}" data-bind="visible: abandoned"></i>
+                                    <i class="fas fa-bolt" title="{{ _('Incompatible to OctoPrint or the underlying Python environment')|edq }}" data-bind="visible: !$root.isCompatible($data)"></i>
+                                    <i class="fas fa-ban" title="{{ _('Disabled')|edq }}" data-bind="visible: $data.disabled !== undefined"></i>
                                 </div>
                                 <div class="meta">
                                     <small class="prop" data-bind="visible: page"><i class="fas fa-info"></i>&nbsp;<a data-bind="attr: {href: page, title: page}" target="_blank">{{ _('Details') }}</a></small>
@@ -346,12 +346,12 @@
                                 </div>
                                 <div class="muted"><small data-bind="text: description">&nbsp;</small></div>
                                 <div class="stats">
-                                    <small class="prop" data-bind="visible: license" title="{{ _('License') }}"><i class="fas fa-section"></i> <span data-bind="text: license"></span></small>
-                                    <small class="prop" data-bind="visible: published" title="{{ _('Publication date') }}"><i class="fas fa-birthday-cake"></i> <span data-bind="text: published.substring(0, 10)"></span></small>
-                                    <small class="prop" data-bind="visible: $data.stats !== undefined" title="{{ _('Active instances past month') }}"><i class="fas fa-server"></i> <span data-bind="text: $data.stats !== undefined ? formatNumberK($data.stats.instances_month) : 0"></span></small>
-                                    <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.stars !== undefined" title="{{ _('Github stars') }}"><i class="fas fa-star"></i> <span data-bind="text: ($data.github !== undefined && $data.github.stars !== undefined) ? formatNumberK($data.github.stars) : 0"></span></small>
-                                    <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.last_push !== undefined" title="{{ _('Last push to main branch') }}"><i class="fas fa-sync"></i> <span data-bind="text: ($data.github !== undefined && $data.github.last_push !== undefined) ? $data.github.last_push.substring(0, 10) : ''"></span></small>
-                                    <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.latest_release != undefined && $data.github.latest_release.tag && $data.github.latest_release.date" title="{{ _('Latest release & date') }}"><i class="fas fa-tag"></i> <span data-bind="text: $data.github !== undefined && $data.github.latest_release !== undefined && $data.github.latest_release.tag ? $data.github.latest_release.tag : ''"></span> (<span data-bind="text: $data.github !== undefined && $data.github.latest_release !== undefined && $data.github.latest_release.date ? $data.github.latest_release.date.substring(0, 10) : ''"></span>)</small>
+                                    <small class="prop" data-bind="visible: license" title="{{ _('License')|edq }}"><i class="fas fa-section"></i> <span data-bind="text: license"></span></small>
+                                    <small class="prop" data-bind="visible: published" title="{{ _('Publication date')|edq }}"><i class="fas fa-birthday-cake"></i> <span data-bind="text: published.substring(0, 10)"></span></small>
+                                    <small class="prop" data-bind="visible: $data.stats !== undefined" title="{{ _('Active instances past month')|edq }}"><i class="fas fa-server"></i> <span data-bind="text: $data.stats !== undefined ? formatNumberK($data.stats.instances_month) : 0"></span></small>
+                                    <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.stars !== undefined" title="{{ _('Github stars')|edq }}"><i class="fas fa-star"></i> <span data-bind="text: ($data.github !== undefined && $data.github.stars !== undefined) ? formatNumberK($data.github.stars) : 0"></span></small>
+                                    <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.last_push !== undefined" title="{{ _('Last push to main branch')|edq }}"><i class="fas fa-sync"></i> <span data-bind="text: ($data.github !== undefined && $data.github.last_push !== undefined) ? $data.github.last_push.substring(0, 10) : ''"></span></small>
+                                    <small class="prop" data-bind="visible: $data.github !== undefined && $data.github.latest_release != undefined && $data.github.latest_release.tag && $data.github.latest_release.date" title="{{ _('Latest release & date')|edq }}"><i class="fas fa-tag"></i> <span data-bind="text: $data.github !== undefined && $data.github.latest_release !== undefined && $data.github.latest_release.tag ? $data.github.latest_release.tag : ''"></span> (<span data-bind="text: $data.github !== undefined && $data.github.latest_release !== undefined && $data.github.latest_release.date ? $data.github.latest_release.date.substring(0, 10) : ''"></span>)</small>
                                 </div>
                                 <div class="attributes">
                                     <small class="label label-important" data-bind="visible: $data.attributes.includes('abandoned')"><i class="fas fa-heartbeat"></i> {{ _('Abandoned') }}</small>
@@ -389,7 +389,7 @@
             <form class="form-inline" onsubmit="return false;">
                 <div class="control-group row-fluid" data-bind="css: {error: invalidUrl}">
                     <div class="span9">
-                        <input type="text" class="input-block-level" data-bind="value: installUrl, valueUpdate: 'input'" placeholder="{{ _('Enter URL...') }}" >
+                        <input type="text" class="input-block-level" data-bind="value: installUrl, valueUpdate: 'input'" placeholder="{{ _('Enter URL...')|edq }}" >
                     </div>
                     <button class="btn btn-primary span3" data-bind="enable: enableUrlInstall, css: {disabled: !enableUrlInstall()}, click: function() { if (enableUrlInstall()) { $root.installPlugin(); } }">{{ _('Install') }}</button>
                 </div>
@@ -443,7 +443,7 @@
             <fieldset>
                 <legend>{{ _('Confirmations') }}</legend>
 
-                <div class="control-group" title="{{ _('Confirm before disabling a plugin') }}">
+                <div class="control-group" title="{{ _('Confirm before disabling a plugin')|edq }}">
                     <div class="controls">
                         <label class="checkbox">
                             <input type="checkbox" data-bind="checked: config_confirmDisable"> {{ _('Confirm before disabling a plugin') }}
@@ -457,13 +457,13 @@
             <fieldset>
                 <legend>{{ _('Plugin repository configuration') }}</legend>
 
-                <div class="control-group" title="{{ _('URL of the Plugin Repository to use. You should normally not have to change this.') }}">
+                <div class="control-group" title="{{ _('URL of the Plugin Repository to use. You should normally not have to change this.')|edq }}">
                     <label class="control-label">{{ _('Repository URL') }}</label>
                     <div class="controls">
                         <input type="text" class="input-block-level" data-bind="value: config_repositoryUrl">
                     </div>
                 </div>
-                <div class="control-group" title="{{ _('How long to cache repository data, in minutes. You should normally not have to change this.') }}">
+                <div class="control-group" title="{{ _('How long to cache repository data, in minutes. You should normally not have to change this.')|edq }}">
                     <label class="control-label">{{ _('Repository cache TTL') }}</label>
                     <div class="controls">
                         <div class="input-append">
@@ -477,13 +477,13 @@
             <fieldset>
                 <legend>{{ _('Notices configuration') }}</legend>
 
-                <div class="control-group" title="{{ _('URL of the Notices source to use. You should normally not have to change this.') }}">
+                <div class="control-group" title="{{ _('URL of the Notices source to use. You should normally not have to change this.')|edq }}">
                     <label class="control-label">{{ _('Notices URL') }}</label>
                     <div class="controls">
                         <input type="text" class="input-block-level" data-bind="value: config_noticesUrl">
                     </div>
                 </div>
-                <div class="control-group" title="{{ _('How long to cache notices, in minutes. You should normally not have to change this.') }}">
+                <div class="control-group" title="{{ _('How long to cache notices, in minutes. You should normally not have to change this.')|edq }}">
                     <label class="control-label">{{ _('Notices cache TTL') }}</label>
                     <div class="controls">
                         <div class="input-append">
@@ -497,7 +497,7 @@
             <fieldset>
                 <legend>{{ _('pip configuration') }}</legend>
 
-                <div class="control-group" title="{{ _('Additional arguments for the pip command. You should normally not have to change this.') }}">
+                <div class="control-group" title="{{ _('Additional arguments for the pip command. You should normally not have to change this.')|edq }}">
                     <label class="control-label">{{ _('Additional arguments') }}</label>
                     <div class="controls">
                         <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">

@@ -11,6 +11,7 @@ import logging
 import os
 import threading
 import time
+from typing import Optional
 
 from frozendict import frozendict
 
@@ -37,9 +38,9 @@ from octoprint.util import get_fully_qualified_classname as fqcn
 class ErrorInformation(BaseModel):
     error: str
     reason: str
-    consequence: str = None
-    faq: str = None
-    logs: list[str] = None
+    consequence: Optional[str] = None
+    faq: Optional[str] = None
+    logs: Optional[list[str]] = None
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):

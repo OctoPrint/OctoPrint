@@ -13,7 +13,7 @@
                 <div class="control-group">
                     <label class="control-label">{{ _('Slicer') }}</label>
                     <div class="controls">
-                        <select data-bind="options: matchingSlicers, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicer...') }}', value: slicer, valueAllowUnset: true"></select>
+                        <select data-bind="options: matchingSlicers, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicer...')|esq }}', value: slicer, valueAllowUnset: true"></select>
                     </div>
                 </div>
                 <div class="control-group">
@@ -26,13 +26,13 @@
                 <div class="control-group">
                     <label class="control-label">{{ _('Slicing Profile') }}</label>
                     <div class="controls">
-                        <select data-bind="options: profiles, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicing profile...') }}', value: profile, valueAllowUnset: true"></select>
+                        <select data-bind="options: profiles, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicing profile...')|esq }}', value: profile, valueAllowUnset: true"></select>
                     </div>
                 </div>
                 <div class="control-group">
                     <label class="control-label">{{ _('Printer Profile') }}</label>
                     <div class="controls">
-                        <select data-bind="options: printerProfiles.profiles.items, optionsText: 'name', optionsValue: 'id', value: printerProfile, optionsCaption: '{{ _('Select a printer profile...') }}'"></select>
+                        <select data-bind="options: printerProfiles.profiles.items, optionsText: 'name', optionsValue: 'id', value: printerProfile, optionsCaption: '{{ _('Select a printer profile...')|esq }}'"></select>
                     </div>
                 </div>
                 <div class="control-group">

@@ -45,6 +45,13 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
+                <input type="checkbox" data-bind="checked: feature_fileDeleteConfirmation" id="settings-fileDeleteConfirmation"> {{ _('Confirm before deleting a file') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_enableDragDropUpload" id="settings-enableDragDropUpload"> {{ _('Enable drag and drop upload overlay') }}
             </label>
         </div>
@@ -72,7 +79,7 @@
             </label>
         </div>
     </div>
-    <div class="control-group" title="{{ _('Commands to not completely auto uppercase in the terminal tab') }}">
+    <div class="control-group" title="{{ _('Commands to not completely auto uppercase in the terminal tab')|edq }}">
         <label class="control-label" for="settings-featureAutoUppercaseBlacklist">{{ _('Terminal Auto Uppercase Blacklist') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" id="settings-featureAutoUppercaseBlacklist" data-bind="value: feature_autoUppercaseBlacklist">
