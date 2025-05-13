@@ -136,7 +136,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                                 break
                     else:
                         logger.debug(
-                            f"No translations for locale {locale} " f"from plugin {name}"
+                            f"No translations for locale {locale} from plugin {name}"
                         )
 
                 # core translations
@@ -147,8 +147,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
                     core_translations = support.Translations.load(dirname, [locale])
                     if isinstance(core_translations, support.Translations):
                         logger.debug(
-                            f"Using translation core folder {dirname} "
-                            f"for locale {locale}"
+                            f"Using translation core folder {dirname} for locale {locale}"
                         )
                         break
                 else:
@@ -1672,7 +1671,9 @@ def firstrun_only_access(func):
 
 
 def credentials_checked_recently():
-    minutes = settings().getInt(["accessControl", "defaultReauthenticationTimeout"])
+    minutes = settings().getInt(
+        ["accessControl", "defaultReauthenticationTimeout"], min=0
+    )
     if not minutes:
         return True
 
