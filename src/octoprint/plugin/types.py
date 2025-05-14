@@ -1482,6 +1482,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
     ``BlueprintPlugin`` implements :class:`~octoprint.plugins.core.RestartNeedingPlugin`.
 
     .. versionchanged:: 1.8.3
+    .. versionchanged:: 1.12.0
     """
 
     @staticmethod
@@ -1645,25 +1646,13 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
     # noinspection PyMethodMayBeStatic
     def is_blueprint_csrf_protected(self):
         """
-        Whether a blueprint's endpoints are :ref:`CSRF protected <sec-api-general-csrf>`. For now, this defaults to ``False`` to leave it up to
-        plugins to decide which endpoints *should* be protected. Long term, this will default to ``True`` and hence
-        enforce protection unless a plugin opts out by returning False here.
-
-        If you do not override this method in your mixin implementation, a warning will be logged to the console
-        to alert you of the requirement to make a decision here and to not rely on the default implementation, due to the
-        forthcoming change in implemented default behaviour.
+        Whether a blueprint's endpoints are :ref:`CSRF protected <sec-api-general-csrf>`. As of 1.12.0, this defaults to ``True``
+        and thus enforces protection unless a plugin opts out by returning False here.
 
         .. versionadded:: 1.8.3
+        .. versionchanged:: 1.12.0
         """
-        self._logger.warning(
-            "The Blueprint of this plugin is relying on the default implementation of "
-            "is_blueprint_csrf_protected (newly added in OctoPrint 1.8.3), which in a future version will "
-            "be switched from False to True for security reasons. Plugin authors should ensure they explicitly "
-            "declare the CSRF protection status in their BlueprintPlugin mixin implementation. "
-            "Recommendation is to enable CSRF protection and exempt views that must not use it with the "
-            "octoprint.plugin.BlueprintPlugin.csrf_exempt decorator."
-        )
-        return False
+        return True
 
     # noinspection PyMethodMayBeStatic
     def get_blueprint_api_prefixes(self):
