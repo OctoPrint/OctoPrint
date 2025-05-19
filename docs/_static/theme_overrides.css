@@ -1,1 +1,4 @@
 /* theme overrides go here */
+.objinfo-icon {
+    margin-right: 0;
+}

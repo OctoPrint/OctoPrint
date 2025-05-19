@@ -141,6 +141,8 @@ html_theme_options = {
             },
         },
     ],
+    "version_dropdown": True,
+    "version_json": "../versions.json",
 }
 
 html_static_path = ["_static"]
