@@ -5,9 +5,6 @@ Distributing your plugin
 
 You can distribute a plugin with OctoPrint via two ways.
 
-.. contents::
-   :local:
-
 .. _sec-plugins-distribution-manual:
 
 Manual file distribution

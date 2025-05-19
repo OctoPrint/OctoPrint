@@ -4,8 +4,6 @@
 Settings
 ********
 
-.. contents::
-
 .. _sec-api-settings-retrieve:
 
 Retrieve current settings

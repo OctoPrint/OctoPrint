@@ -28,10 +28,10 @@ Configuring the plugin
 
 The plugin supports the following configuration keys:
 
-  * ``enabled``:  Whether to enable error tracking. Defaults to ``false``.
-  * ``enabled_unreleased``: Whether to also enable tracking on unreleased OctoPrint versions (anything not stable releases
-    or release candidates). Defaults to ``false``.
-  * ``unique_id``: Unique instance identifier, auto generated on first activation
+* ``enabled``:  Whether to enable error tracking. Defaults to ``false``.
+* ``enabled_unreleased``: Whether to also enable tracking on unreleased OctoPrint versions (anything not stable releases
+  or release candidates). Defaults to ``false``.
+* ``unique_id``: Unique instance identifier, auto generated on first activation
 
 .. _sec-bundledplugins-errortracking-sourcecode:
 

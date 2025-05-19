@@ -4,8 +4,6 @@
 Common data model
 *****************
 
-.. contents::
-
 .. _sec-api-datamodel-printer:
 
 Printer related

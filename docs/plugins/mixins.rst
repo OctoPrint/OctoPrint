@@ -3,9 +3,6 @@
 Mixins
 ======
 
-.. contents::
-   :local:
-
 .. _sec-plugins-mixins-general:
 
 General Concepts
@@ -65,12 +62,12 @@ If a method is to be called on a plugin implementation for which a sorting conte
 documentation for information on this), OctoPrint's plugin subsystem will ensure that the order in which the implementation
 calls are done is as follows:
 
-  * Plugins with a return value that is not ``None`` for :meth:`~octoprint.plugin.core.SortablePlugin.get_sorting_key`
-    for the provided sorting context will be ordered among each other first. If the returned order number is equal for
-    two or more implementations, they will be sorted first by whether they come bundled with OctoPrint or not, then by
-    their identifier.
-  * After that follow plugins which returned ``None`` (the default). They are first sorted by whether they come bundled
-    with OctoPrint or not, then by their identifier.
+1. Plugins with a return value that is not ``None`` for :meth:`~octoprint.plugin.core.SortablePlugin.get_sorting_key`
+   for the provided sorting context will be ordered among each other first. If the returned order number is equal for
+   two or more implementations, they will be sorted first by whether they come bundled with OctoPrint or not, then by
+   their identifier.
+2. After that follow plugins which returned ``None`` (the default). They are first sorted by whether they come bundled
+   with OctoPrint or not, then by their identifier.
 
 Example: Consider four plugin implementations implementing the :class:`~octoprint.plugin.StartupPlugin` mixin, called
 ``plugin_a``, ``plugin_b``, ``plugin_c`` and ``plugin_d``, the latter coming bundled with OctoPrint. ``plugin_a``
@@ -191,9 +188,6 @@ Available plugin mixins
 -----------------------
 
 The following plugin mixins are currently available:
-
-.. contents::
-   :local:
 
 Please note that all plugin mixins inherit from :class:`~octoprint.plugin.core.Plugin` and
 :class:`~octoprint.plugin.types.OctoPrintPlugin`,  which also provide attributes of interest to plugin developers.

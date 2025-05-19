@@ -4,8 +4,6 @@
 Connection handling
 *******************
 
-.. contents::
-
 .. _sec-api-connection-current:
 
 Get connection settings

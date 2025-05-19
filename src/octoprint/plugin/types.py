@@ -484,31 +484,31 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
              - The name of the component, if not set the name of the plugin will be used. The name will be visible at
                a location depending on the ``type``:
 
-                 * ``navbar``: unused
-                 * ``sidebar``: sidebar heading
-                 * ``tab``: tab heading
-                 * ``settings`` and ``usersettings``: settings link
-                 * ``webcam``: selection button
-                 * ``wizard``: wizard link
-                 * ``mfa_login``: form heading
-                 * ``usersettings_mfa``: section heading
-                 * ``about``: about link
-                 * ``generic``: unused
+               * ``navbar``: unused
+               * ``sidebar``: sidebar heading
+               * ``tab``: tab heading
+               * ``settings`` and ``usersettings``: settings link
+               * ``webcam``: selection button
+               * ``wizard``: wizard link
+               * ``mfa_login``: form heading
+               * ``usersettings_mfa``: section heading
+               * ``about``: about link
+               * ``generic``: unused
 
            * - template
              - Name of the template to inject, default value depends on the ``type``:
 
-                 * ``navbar``: ``<plugin identifier>_navbar.jinja2``
-                 * ``sidebar``: ``<plugin identifier>_sidebar.jinja2``
-                 * ``tab``: ``<plugin identifier>_tab.jinja2``
-                 * ``settings``: ``<plugin identifier>_settings.jinja2``
-                 * ``usersettings``: ``<plugin identifier>_usersettings.jinja2``
-                 * ``webcam``: ``<plugin identifier>_webcam.jinja2``
-                 * ``wizard``: ``<plugin identifier>_wizard.jinja2``
-                 * ``mfa_login``: ``<plugin identifier>_mfa_login.jinja2``
-                 * ``usersettings_mfa``: ``<plugin identifier>_usersettings_mfa.jinja2``
-                 * ``about``: ``<plugin identifier>_about.jinja2``
-                 * ``generic``: ``<plugin identifier>.jinja2``
+               * ``navbar``: ``<plugin identifier>_navbar.jinja2``
+               * ``sidebar``: ``<plugin identifier>_sidebar.jinja2``
+               * ``tab``: ``<plugin identifier>_tab.jinja2``
+               * ``settings``: ``<plugin identifier>_settings.jinja2``
+               * ``usersettings``: ``<plugin identifier>_usersettings.jinja2``
+               * ``webcam``: ``<plugin identifier>_webcam.jinja2``
+               * ``wizard``: ``<plugin identifier>_wizard.jinja2``
+               * ``mfa_login``: ``<plugin identifier>_mfa_login.jinja2``
+               * ``usersettings_mfa``: ``<plugin identifier>_usersettings_mfa.jinja2``
+               * ``about``: ``<plugin identifier>_about.jinja2``
+               * ``generic``: ``<plugin identifier>.jinja2``
 
            * - suffix
              - Suffix to attach to the component identifier and the div identifier of the injected template. Will be
@@ -731,16 +731,16 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
     only exemplary) UI if the requesting client has a UserAgent string hinting
     at it being a mobile device:
 
-    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/__init__.py
+    .. literalinclude:: ../../docs/plugins/examples/dummy_mobile_ui/__init__.py
        :tab-width: 4
-       :caption: `dummy_mobile_ui/__init__.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/__init__.py>`_
+       :caption: dummy_mobile_ui/__init__.py
 
-    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2
+    .. literalinclude:: ../../docs/plugins/examples/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2
+       :language: html
        :tab-width: 4
-       :caption: `dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2 <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2>`_
+       :caption: dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2
 
-    Try installing the above plugin ``dummy_mobile_ui`` (also available in the
-    `plugin examples repository <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui>`_)
+    Try installing the above plugin ``dummy_mobile_ui``
     into your OctoPrint instance. If you access it from a regular desktop browser,
     you should still see the default UI. However if you access it from a mobile
     device (make sure to not have that request the desktop version of pages!)
@@ -1079,9 +1079,9 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
     OctoPrint will only display such wizard dialogs to the user which belong
     to plugins that
 
-      * report ``True`` in their :func:`is_wizard_required` method and
-      * have not yet been shown to the user in the version currently being reported
-        by the :meth:`~octoprint.plugin.WizardPlugin.get_wizard_version` method
+    * report ``True`` in their :func:`is_wizard_required` method and
+    * have not yet been shown to the user in the version currently being reported
+      by the :meth:`~octoprint.plugin.WizardPlugin.get_wizard_version` method
 
     Example: If a plugin with the identifier ``myplugin`` has a specific
     setting ``some_key`` it needs to have filled by the user in order to be
@@ -1212,9 +1212,9 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
         A wizard is ignored if
 
-          * the current and seen versions are identical
-          * the current version is None and the seen version is not
-          * the seen version is not None and the current version is less or equal than the seen one
+        * the current and seen versions are identical
+        * the current version is None and the seen version is not
+        * the seen version is not None and the current version is less or equal than the seen one
 
         .. code-block:: none
 
@@ -1449,12 +1449,10 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
        flask.url_for("plugin.myblueprintplugin.myEcho") # will return "/plugin/myblueprintplugin/echo"
 
-    .. warning::
+    .. note::
 
-       As of OctoPrint 1.8.3, endpoints provided through a ``BlueprintPlugin`` do **not** automatically fall under
-       OctoPrint's :ref:`CSRF protection <sec-api-general-csrf>`, for reasons of backwards compatibility. There will be a short grace period before this changes. You
-       can and should however already opt into CSRF protection for your endpoints by implementing ``is_blueprint_csrf_protected``
-       and returning ``True`` from it. You can exempt certain endpoints from CSRF protection by decorating them with
+       As of OctoPrint 1.12.0, endpoints provided through a ``BlueprintPlugin`` do now automatically fall under
+       OctoPrint's :ref:`CSRF protection <sec-api-general-csrf>`. You can exempt certain endpoints from CSRF protection by decorating them with
        ``@octoprint.plugin.BlueprintPlugin.csrf_exempt``.
 
        .. code-block:: python
@@ -1925,12 +1923,12 @@ class SettingsPlugin(OctoPrintPlugin):
         certain permissions, or never on the REST API.
 
         Return a ``dict`` with one of the following keys, mapping to a list of paths (as tuples or lists of
-        the path elements) for which to restrict access via the REST API accordingly.
+        the path elements) for which to restrict access via the REST API accordingly:
 
-           * An :py:class:`~octoprint.access.permissions.OctoPrintPermission` instance: Paths will only be available on the REST API for users with the permission
-           * ``admin``: Paths will only be available on the REST API for users with admin rights (any user with the SETTINGS permission)
-           * ``user``: Paths will only be available on the REST API when accessed as a logged in user
-           * ``never``: Paths will never be returned on the API
+        * An :py:class:`~octoprint.access.permissions.OctoPrintPermission` instance: Paths will only be available on the REST API for users with the permission
+        * ``admin``: Paths will only be available on the REST API for users with admin rights (any user with the SETTINGS permission)
+        * ``user``: Paths will only be available on the REST API when accessed as a logged in user
+        * ``never``: Paths will never be returned on the API
 
         Example:
 

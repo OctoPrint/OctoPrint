@@ -114,11 +114,11 @@ EXTRA_REQUIRES = {
     "plugins": ["cookiecutter>=2.6.0,<3"],  # update plugin tutorial when updating this
     # Dependencies for building the documentation
     "docs": [
-        "sphinx",
-        "sphinxcontrib-httpdomain",
-        "sphinxcontrib-mermaid",
-        "sphinx_rtd_theme",
-        "readthedocs-sphinx-ext",
+        "sphinx>=8.2.3,<9",
+        "sphinx-autobuild>=2024.10.3",
+        "sphinxcontrib-httpdomain>=1.8.1,<2",
+        "sphinx-immaterial>=0.13.5,<1",
+        "myst-parser>=4.0.1,<5",
     ],
 }
 

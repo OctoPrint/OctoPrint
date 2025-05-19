@@ -1,0 +1,9 @@
+###
+# This file is only here to make sure that something like
+#
+#    pip install -e .
+#
+# works as expected. Requirements can be found in setup.py.
+###
+
+.

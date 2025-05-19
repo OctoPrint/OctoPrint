@@ -12,8 +12,6 @@ settings.
 Note that many of these settings are available from the "Settings" menu in OctoPrint itself.
 They can also be configured via :ref:`config command line interface <sec-configuration-cli>`.
 
-.. contents::
-
 .. _sec-configuration-config_yaml-accesscontrol:
 
 Access Control

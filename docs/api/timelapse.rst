@@ -4,8 +4,6 @@
 Timelapse
 *********
 
-.. contents::
-
 .. _sec-api-timelapse-list:
 
 Retrieve a list of timelapses and the current config
