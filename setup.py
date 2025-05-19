@@ -38,7 +38,7 @@ core_deps = [
     "argon2-cffi>=23.1.0",
     "Babel>=2.16,<2.17 ; python_version>='3.8'",  # breaking changes can happen on minor version increases
     "cachelib>=0.13.0,<0.14 ; python_version>='3.8'",
-    "Click>=8.1.8,<9",
+    "Click>=8.1.8,!=8.2.0,<9",  # 8.2.0 has broken flags, see pallets/click#2894
     "colorlog>=6.9.0,<7",
     "emoji>=2.14.1,<3",
     "feedparser>=6.0.11,<7",
