@@ -54,7 +54,9 @@ else:
 
 def get_netmask(address) -> int:
     if isinstance(address, ifaddr.IP):
-        return address.network_prefix
+        addr = address.ip[0] if address.is_IPv6 else address.ip
+        prefix = address.network_prefix
+        return str(netaddr.IPNetwork(f"{addr}/{prefix}", flags=netaddr.NOHOST))
 
     # netifaces2 - see #5005
     netmask = address.get("mask")
