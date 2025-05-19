@@ -5,9 +5,11 @@ import logging
 import os
 import socket
 import sys
+from collections.abc import Generator
+from typing import Optional
 
+import ifaddr
 import netaddr
-import netifaces
 import requests
 import werkzeug.http
 from werkzeug.utils import secure_filename
@@ -50,13 +52,16 @@ else:
         HAS_V6 = False
 
 
-def get_netmask(address):
+def get_netmask(address) -> int:
+    if isinstance(address, ifaddr.IP):
+        return address.network_prefix
+
     # netifaces2 - see #5005
     netmask = address.get("mask")
     if netmask:
         return netmask
 
-    # netifaces
+    # netifaces (backwards comp)
     netmask = address.get("netmask")
     if netmask:
         return netmask
@@ -64,51 +69,48 @@ def get_netmask(address):
     raise ValueError(f"No netmask found in address: {address!r}")
 
 
-def get_lan_ranges(additional_private=None):
+def get_lan_ranges(
+    additional_private: Optional[list[str]] = None,
+) -> set[netaddr.IPNetwork]:
     logger = logging.getLogger(__name__)
 
     if additional_private is None or not isinstance(additional_private, (list, tuple)):
         additional_private = []
 
-    def to_ipnetwork(address):
-        prefix = get_netmask(address)
-        if "/" in prefix:
-            # v6 notation in netifaces output, e.g. "ffff:ffff:ffff:ffff::/64"
-            _, prefix = prefix.split("/")
+    def to_ipnetwork(address: ifaddr.IP) -> netaddr.IPNetwork:
+        prefix = address.network_prefix
+        addr = strip_interface_tag(address.ip[0] if address.is_IPv6 else address.ip)
+        return netaddr.IPNetwork(f"{addr}/{prefix}", flags=netaddr.NOHOST)
 
-        addr = strip_interface_tag(address["addr"])
-        return netaddr.IPNetwork(f"{addr}/{prefix}")
+    subnets = set()
 
-    subnets = []
-
-    for interface in netifaces.interfaces():
-        addrs = netifaces.ifaddresses(interface)
-        for v4 in addrs.get(socket.AF_INET, ()):
-            try:
-                subnets.append(to_ipnetwork(v4))
-            except Exception:
-                if logger.isEnabledFor(logging.DEBUG):
-                    logger.exception(
-                        "Error while trying to add v4 network to local subnets: {!r}".format(
-                            v4
-                        )
-                    )
-
-        if HAS_V6:
-            for v6 in addrs.get(socket.AF_INET6, ()):
+    for interface in ifaddr.get_adapters():
+        for ip in interface.ips:
+            if ip.is_IPv4:
                 try:
-                    subnets.append(to_ipnetwork(v6))
+                    subnets.add(to_ipnetwork(ip))
+                except Exception:
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.exception(
+                            "Error while trying to add v4 network to local subnets: {!r}".format(
+                                ip
+                            )
+                        )
+
+            if HAS_V6 and ip.is_IPv6:
+                try:
+                    subnets.add(to_ipnetwork(ip))
                 except Exception:
                     if logger.isEnabledFor(logging.DEBUG):
                         logger.exception(
                             "Error while trying to add v6 network to local subnets: {!r}".format(
-                                v6
+                                ip
                             )
                         )
 
     for additional in additional_private:
         try:
-            subnets.append(netaddr.IPNetwork(additional))
+            subnets.add(netaddr.IPNetwork(additional))
         except Exception:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.exception(
@@ -117,16 +119,16 @@ def get_lan_ranges(additional_private=None):
                     )
                 )
 
-    subnets += list(netaddr.ip.IPV4_PRIVATE_USE) + [
+    subnets |= set(netaddr.ip.IPV4_PRIVATE_USE) | {
         netaddr.ip.IPV4_LOOPBACK,
         netaddr.ip.IPV4_LINK_LOCAL,
-    ]
+    }
     if HAS_V6:
-        subnets += [
+        subnets |= {
             netaddr.ip.IPV6_UNIQUE_LOCAL,
             netaddr.ip.IPV6_LOOPBACK,
             netaddr.ip.IPV6_LINK_LOCAL,
-        ]
+        }
 
     return subnets
 
@@ -199,32 +201,40 @@ def unmap_v4_as_v6(address):
     return address
 
 
-def interface_addresses(family=None, interfaces=None, ignored=None):
+def interface_addresses(
+    family: Optional[int] = None,
+    interfaces: Optional[list[str]] = None,
+    ignored: Optional[list[str]] = None,
+) -> Generator[str, None, None]:
     """
     Retrieves all of the host's network interface addresses.
     """
 
-    import netifaces
-
     if not family:
-        family = netifaces.AF_INET
+        family = socket.AF_INET
+
+    assert family in (socket.AF_INET, socket.AF_INET6)
 
     if interfaces is None:
-        interfaces = netifaces.interfaces()
+        interfaces = ifaddr.get_adapters()
 
     if ignored is not None:
-        interfaces = [i for i in interfaces if i not in ignored]
+        interfaces = [i for i in interfaces if i.name not in ignored]
 
     for interface in interfaces:
-        try:
-            ifaddresses = netifaces.ifaddresses(interface)
-        except Exception:
-            continue
-        if family in ifaddresses:
-            for ifaddress in ifaddresses[family]:
-                address = netaddr.IPAddress(ifaddress["addr"])
-                if not address.is_link_local() and not address.is_loopback():
-                    yield ifaddress["addr"]
+        ips = [
+            ip
+            for ip in interface.ips
+            if (
+                (family == socket.AF_INET and ip.is_IPv4)
+                or (family == socket.AF_INET6 and ip.is_IPv6)
+            )
+        ]
+        for ip in ips:
+            ipstr = ip.ip if family == socket.AF_INET else ip.ip[0]
+            address = netaddr.IPAddress(ipstr)
+            if not address.is_link_local() and not address.is_loopback():
+                yield ipstr
 
 
 def address_for_client(

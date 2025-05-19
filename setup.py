@@ -49,11 +49,10 @@ core_deps = [
     "Flask-Limiter>=3.10.1,<3.11",
     "flask>=3.1,<3.2",  # breaking changes can happen on minor version increases (with deprecation warnings)
     "frozendict>=2.4.6,<3",
+    "ifaddr>=0.2.0,<0.3",  # breaking changes seem to happen on minor version increases, let's be a bit conservative here
     "limits<5",  # dependency of Flask-Limiter, v5 was released days before 1.11.0 and contains backwards incompatibilities, pinning upper limit out of caution
     "markdown>=3.7,<3.8",
     "netaddr>=1.3.0,<1.4",  # changelog hints at breaking changes on minor version increases
-    # "netifaces2>=0.0.21,<0.1",  # fork of netifaces in Rust, use rolled back due to build issues in some environments
-    "netifaces>=0.11.0,<0.12",
     "packaging",
     "libpass>=1.8.1,<2",
     "pathvalidate>=3.2.3,<4",
