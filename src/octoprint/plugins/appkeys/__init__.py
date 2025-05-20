@@ -415,6 +415,9 @@ class AppKeysPlugin(
 
         return NO_CONTENT
 
+    def is_api_protected(self):
+        return True
+
     ##~~ key validator hook
 
     def validate_api_key(self, api_key, *args, **kwargs):

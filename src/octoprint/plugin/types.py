@@ -1375,6 +1375,30 @@ class SimpleApiPlugin(OctoPrintPlugin):
         """
         return False
 
+    def is_api_protected(self) -> bool:
+        """
+        Whether a SimpleApi's endpoints requires a valid user to be logged in to access it. For now, this defaults to ``False`` to leave it up to
+        plugins to decide whether the endpoints *should* be protected. Long term, this will default to ``True`` and hence
+        enforce protection unless a plugin opts out by returning False here.
+
+        If you do not override this method in your mixin implementation, a warning will be logged to the console
+        to alert you of the requirement to make a decision here and to not rely on the default implementation, due to the
+        forthcoming change in implemented default behaviour.
+
+        Be advised that by returning ``True`` here, OctoPrint will only check whether a valid user is logged in before forwarding
+        the request to your implementation. However, you *really should* add additional permission checks specific to your plugin into your API
+        endpoints.
+
+        .. versionadded:: 1.11.2
+        """
+        self._logger.warning(
+            "The simple API of this plugin is relying on the default implementation of "
+            "is_api_protected (newly added in OctoPrint 1.11.2), which in a future version will "
+            "be switched from False to True for security reasons. Plugin authors should ensure they explicitly "
+            "declare the API protection status in their SimpleApiPlugin mixin implementation. "
+        )
+        return False
+
     # noinspection PyMethodMayBeStatic
     def on_api_command(self, command, data):
         """

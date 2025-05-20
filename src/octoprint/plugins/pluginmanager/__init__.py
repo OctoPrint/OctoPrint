@@ -891,6 +891,9 @@ class PluginManagerPlugin(
         result.update(**self._repository_response())
         return jsonify(**result)
 
+    def is_api_protected(self):
+        return True
+
     # noinspection PyMethodMayBeStatic
     def _is_archive(self, path):
         _, ext = os.path.splitext(path)

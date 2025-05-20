@@ -109,6 +109,9 @@ class TrackingPlugin(
             if all((browser_name, browser_version, os_name, os_version)):
                 self._track_webui_load(browser_name, browser_version, os_name, os_version)
 
+    def is_api_protected(self):
+        return True
+
     ##~~ EnvironmentDetectionPlugin
 
     def on_environment_detected(self, environment, *args, **kwargs):
