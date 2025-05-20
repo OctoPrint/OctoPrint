@@ -59,8 +59,8 @@ improve/.* 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
 
 # staging/bugfix is the branch for preparation of the 1.11.x bugfix releases
 # so are any bug/... branches
-staging/bugfix 1.11.1 98cc8494362a7b9d5e769cc08f7b7f388af579ac
-bug/.* 1.11.1 98cc8494362a7b9d5e769cc08f7b7f388af579ac
+staging/bugfix 1.11.2 70a82678c3ae78ff5187c347a92d220017327c27
+bug/.* 1.11.2 70a82678c3ae78ff5187c347a92d220017327c27
 
 # staging/maintenance is currently the branch for preparation of 1.11.0rc8
 # so is regressionfix/...
