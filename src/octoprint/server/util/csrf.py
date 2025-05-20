@@ -80,8 +80,8 @@ def validate_csrf_request(request):
         return
 
     session = getattr(flask, "session", {})
-    if len(session) == 0 or session.get("login_mechanism") == "apikey":
-        # empty session, not a browser context
+    if session and session.get("login_mechanism") == "apikey":
+        # API key authentication, bypass
         return
 
     if is_exempt(request.endpoint):
