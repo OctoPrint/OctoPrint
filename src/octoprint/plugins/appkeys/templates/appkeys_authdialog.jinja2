@@ -46,10 +46,13 @@
             <h2 class="form-auth-heading" data-test-id="login-title">{{ _('Access Request') }}</h2>
 
             <p>{{ _("Hello %(user)s!", user=user) }}</p>
-            <p>{{ request_text | format(app=app) }}</p>
+            <p>{{ request_text | safe | format(app=app, remote_address=remote_address) }}</p>
             <p>{% trans %}
-                Do you want to allow access to this application with your user account?
+                Do you want to give this client access with your user account?
             {% endtrans %}</p>
+            <p><strong>{% trans %}
+                This will allow this client to fully act on your behalf! Make absolutely sure you trust this client and understand why it requested access!
+            {% endtrans %}</strong></p>
 
             <button class="btn btn-block btn-primary" id="auth-grant" data-test-id="auth-grant" type="submit">{{ _('Allow') }}</button>
             <button class="btn btn-block" id="auth-reject" data-test-id="auth-reject" type="submit">{{ _('Deny') }}</button>

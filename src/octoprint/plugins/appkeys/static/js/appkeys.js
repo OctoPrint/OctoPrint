@@ -141,19 +141,26 @@ $(function () {
             return OctoPrint.plugins.appkeys.decide(token, false).done(self.requestData);
         };
 
-        self.promptForAccess = function (app, token) {
+        self.promptForAccess = function (app, remote_address, token) {
             var message = gettext(
-                '"<strong>%(app)s</strong>" has requested access to control OctoPrint through the API.'
+                'A client identifying itself as "<strong>%(app)s</strong>" has requested access to control OctoPrint through the API. The request originates from <code>%(remote_address)s</code>.'
             );
-            message = _.sprintf(message, {app: _.escape(app)});
+            message = _.sprintf(message, {
+                app: _.escape(app),
+                remote_address: _.escape(remote_address)
+            });
             message =
                 "<p>" +
                 message +
                 "</p><p>" +
                 gettext(
-                    "Do you want to allow access to this application with your user account?"
+                    "Do you want to give this client access with your user account?"
                 ) +
-                "</p>";
+                "</p><p><strong>" +
+                gettext(
+                    "This will allow this client to fully act on your behalf! Make absolutely sure you trust this client and understand why it requested access!"
+                ) +
+                "</strong></p>";
             return new PNotify({
                 title: gettext("Access Request"),
                 text: message,
@@ -206,6 +213,7 @@ $(function () {
                 app = data.app_name;
                 token = data.user_token;
                 user = data.user_id;
+                remote_address = data.remote_address;
 
                 if (user && user !== self.loginState.username()) {
                     return;
@@ -215,7 +223,11 @@ $(function () {
                     return;
                 }
 
-                self.openRequests[token] = self.promptForAccess(app, token);
+                self.openRequests[token] = self.promptForAccess(
+                    app,
+                    remote_address,
+                    token
+                );
             } else if (data.type === "end_request") {
                 token = data.user_token;
 
