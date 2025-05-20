@@ -27,10 +27,10 @@ jobs:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: 🏗 Install build dependencies
         run: |
-          python -m pip install setuptools wheel --user
+          python -m pip install build --user
       - name: 🔨 Build a binary wheel & an sdist tarball
         run: |
-          python setup.py sdist bdist_wheel
+          python -m build .
       - name: 🔨 Build a source tarball
         run: |
           # find the wheel
