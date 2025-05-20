@@ -175,6 +175,10 @@ class AppKeysPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/request", methods=["POST"])
     @octoprint.plugin.BlueprintPlugin.csrf_exempt()
+    @octoprint.plugin.BlueprintPlugin.limit(
+        "3/minute;5/10 minutes;10/hour",
+        error_message="You have made too many app key requests. Please try again later.",
+    )
     @no_firstrun_access
     def handle_request(self):
         data = flask.request.json
