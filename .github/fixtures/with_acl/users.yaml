@@ -1,7 +1,7 @@
 _version: 2
 admin:
   active: true
-  apikey: null
+  apikey: yo5a103LN7co50R4_IAeLvGoLm08BpdfvKngzfHPcPE
   groups:
     - admins
     - users
@@ -13,7 +13,7 @@ admin:
   settings: {}
 mfa:
   active: true
-  apikey: null
+  apikey: yo5a103LN7co50R4_IAeLvGoLm08BpdfvKngzfHPcPE
   groups:
     - users
   password: $argon2id$v=19$m=65536,t=3,p=4$7j1nzHmvFSJkTClFaO0dAw$eE1eH3Dv0Orqe1CTWmoQFaZepoTDr8+K6g+jO6Rjyd4
@@ -23,7 +23,7 @@ mfa:
   settings: {}
 user:
   active: true
-  apikey: null
+  apikey: yo5a103LN7co50R4_IAeLvGoLm08BpdfvKngzfHPcPE
   groups:
     - users
   password: $argon2id$v=19$m=65536,t=3,p=4$2/vfG2PsHSOktHbuXUvJeQ$x/NmCwo4r1ccv2C7e/CHlPRqkj8+L7Y9bQ8kutizFFA
