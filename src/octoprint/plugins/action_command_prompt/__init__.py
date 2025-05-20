@@ -141,6 +141,9 @@ class ActionCommandPromptPlugin(
         else:
             return flask.jsonify(text=self._prompt.text, choices=self._prompt.choices)
 
+    def is_api_protected(self):
+        return True
+
     # ~ TemplatePlugin
 
     def get_template_configs(self):

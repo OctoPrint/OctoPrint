@@ -209,6 +209,9 @@ class HealthCheckPlugin(
             health[k]["hash"] = v.hash
         return flask.jsonify(health=health)
 
+    def is_api_protected(self):
+        return True
+
     ##~~ TemplatePlugin
 
     def get_template_configs(self):

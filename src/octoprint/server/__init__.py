@@ -445,6 +445,7 @@ class Server:
         self._setup_command_triggers()
         self._setup_login_manager()
         self._setup_blueprints()
+        self._check_simple_api_plugins()
 
         ## Tornado initialization starts here
 
@@ -1855,6 +1856,20 @@ class Server:
                         ),
                         extra={"plugin": name},
                     )
+
+    def _check_simple_api_plugins(self):
+        api_plugins = octoprint.plugin.plugin_manager().get_implementations(
+            octoprint.plugin.SimpleApiPlugin
+        )
+        for plugin in api_plugins:
+            name = plugin._identifier
+            try:
+                plugin.is_api_protected()
+            except Exception:
+                self._logger.exception(
+                    f"Error checking is_api_protected of plugin {plugin}",
+                    extra={"plugin": name},
+                )
 
     def _start_event_loop(self):
         import asyncio
