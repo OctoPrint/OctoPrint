@@ -16,6 +16,7 @@ or **[creating pull requests](#pull-requests)**.
   * [Pull requests](#pull-requests)
   * [What do the branches mean?](#what-do-the-branches-mean)
   * [How OctoPrint is versioned](#how-octoprint-is-versioned)
+  * [On AI use when contributing to OctoPrint](#on-ai-use-when-contributing-to-octoprint)
   * [History](#history)
   * [Footnotes](#footnotes)
 
@@ -27,11 +28,30 @@ to **address problems in a timely manner** but also keep it possible for them
 to **fix bugs, add new and improve on existing functionality** instead of doing
 nothing but ticket management.
 
-![Ticket flow chart](https://i.imgur.com/cw19qHX.png)
+```mermaid
+flowchart TD
+    Choice{What's up?} -->|I need help/support/have questions or anything else| Community["`Please use the Community Forum or Discord, see help.octoprint.org`"]
+    Choice -->|I want to report a bug| ReadBug("`Read and follow **How to file a bug report** below`")
+    ReadBug --> Checklist("`**Checklist**:
+    - Right location? Octo**Print**, not OctoPi, no wifi/cam issues, no third party plugins, no forks
+    - Does the problem appear on the current version?
+    - Does the problem appear in safe mode?
+    - Is there no bug report yet for this problem?
+    `")
+    Checklist -->|This is a new bug| NewBug[Create a new bug report on GitHub using the corresponding form]
+    Checklist -->|There already is an issue for this bug| AddMeToo[Add a comment with a systeminfo bundle and reproduction steps]
+    Choice -->|I have a request for a feature, documentation, ...| NewFR[Create a new feature request on GitHub using the corresponding form]
+    Choice -->|I want to brainstorm a pull request or other possible changes| Community
+    style Community stroke:red
+    style NewBug stroke:green
+    style AddMeToo stroke:green
+    style NewFR stroke:green
+    style Checklist stroke:yellow
+```
 
 - **[Read the FAQ](https://faq.octoprint.org)**
 - If you want to report a **bug**, [read "How to file a bug report" below](#how-to-file-a-bug-report)
-  and *[use the provided template](#what-should-i-include-in-a-ticket)*.
+  and *[use the provided bug reporting form](#what-should-i-include-in-a-ticket)*.
   You do not need to do anything else with your ticket.
 - If you want to post a **feature request** or a **documentation request**, add `[Request]`
   to your issue's title (e.g. `[Request] Awesome new feature`). A question on how to run/change/setup
@@ -48,8 +68,7 @@ nothing but ticket management.
 No matter what kind of ticket you create, never mix two or more "ticket reasons"
 into one ticket: One ticket per bug, request, brainstorming thread please.
 
-> 👉 **Note**
->
+> [!NOTE]
 > A bot is in place that monitors new tickets, automatically
 > categorizes them and checks new bug reports for usage of the provided template.
 > That bot will only bother you if you open a ticket that appears to be a bug (no
@@ -59,8 +78,11 @@ into one ticket: One ticket per bug, request, brainstorming thread please.
 
 ## How to file a bug report
 
+> [!IMPORTANT]
+> Please also take note of the section ["AI use in Bug Reports and other issues"](#ai-use-in-bug-reports-and-other-issues) below.
+
 If you encounter an issue with OctoPrint, you are welcome to
-[submit a bug report](https://github.com/OctoPrint/OctoPrint/issues/new?template=bug_report.yml).
+[submit a bug report](https://github.com/OctoPrint/OctoPrint/issues/new?template=01_bug_report.yml).
 
 Before you do that for the first time though please take a moment to read the
 following section *completely* and also follow the instructions in the
@@ -135,123 +157,10 @@ there.
 First of all make sure your use **a descriptive title**. "It doesn't work"
 and similar unspecific complaints are NOT descriptive titles.
 
-**Always use the following template, even if only adding a "me too" to an
-existing ticket**:
+**Always use the [bug reporting form](https://github.com/OctoPrint/OctoPrint/issues/new?template=01_bug_report.yml)** for new bug reports.
 
-```
-<!--
-READ THE FOLLOWING FIRST:
-
-If not already done, please read the Contribution Guidelines that
-are linked to the right under "Helpful resources" > "Contributing".
-
-Also read the FAQ: https://faq.octoprint.org
-
-This is a bug and feature tracker, please only use it to report bugs
-or request features within OctoPrint (not OctoPi, not any OctoPrint
-plugins and not unofficial OctoPrint versions).
-
-Do not seek support here ("I need help with ...", "I have a
-question ..."), that belongs on the community forum at
-community.octoprint.org, NOT here.
-
-Mark requests with a "[Request]" prefix in the title please. For bug
-reports fully fill out the bug reporting template (if you don't know
-where to find some information - it's all described in the Contribution
-Guidelines linked up there in the big yellow box).
-
-When reporting a bug do NOT delete ANY lines from the template.
-
-Make sure any bug you want to report is still present with the CURRENT
-OctoPrint version and that it does not vanish when you start OctoPrint
-in safe mode - how to do that is also explained in the Contribution
-Guidelines linked up there in the big yellow box.
-
-Thank you!
--->
-
-#### What were you doing?
-
-<!--
-Please be as specific as possible here. The maintainers will need to
-reproduce your issue in order to fix it and that is not possible if they
-don't know what you did to get it to happen in the first place.
-
-Ideally provide exact steps to follow in order to reproduce your problem:
--->
-
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
-
-<!--
-If you encountered a problem with specific files of any sorts, make sure
-to also include a link to a file with which to reproduce the problem.
--->
-
-#### What did you expect to happen?
-
-#### What happened instead?
-
-#### Did the same happen when running OctoPrint in safe mode?
-
-<!--
-Test if you can reproduce your problem in safe mode. You can find information
-on how to enable safe mode in the Contribution Guidelines.
-
-If you can't reproduce in safe mode, this is a bug with one of your
-installed third party plugins. Don't open a ticket here!
-
-If you can't test this in safe mode, state why.
--->
-
-#### Version of OctoPrint
-
-<!--
-Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.
--->
-
-#### Printer model & used firmware incl. version
-
-<!--
-If applicable, always include if unsure.
--->
-
-#### Browser and version of browser, operating system running browser
-
-<!--
-If applicable, always include if unsure.
--->
-
-#### System Info Bundle
-
-<!--
-Directly uploaded here. ALWAYS INCLUDE.
-
-The Contribution Guidelines tell you where to find that.
--->
-
-#### Link to contents of Javascript console in the browser
-
-<!--
-Directly uploaded here or on gist.github.com or pastebin.com.
-If applicable - always include if unsure or reporting UI issues.
-
-The Contribution Guidelines tell you where to find that.
--->
-
-#### Screenshot(s)/video(s) showing the problem:
-
-<!--
-If applicable. Always include if unsure or reporting UI issues.
--->
-
-I have read the FAQ.
-```
-
-Provide the same kind and amount of information also when you are just adding on to an
-existing ticket!
+When adding a "me too" to an existing bug report, *always* include a system info bundle as well, and provide
+your reproduction steps.
 
 ### Where can I find the System Info Bundle?
 
@@ -277,6 +186,9 @@ the documentation, the bundled virtual printer plugin and OctoPrint's versioning
 and branching strategy.
 
 ## Pull requests
+
+> [!IMPORTANT]
+> Please also take note of the section ["AI use for Pull Requests"](#ai-use-for-pull-requests) below.
 
 1. If you want to add a new feature to OctoPrint, **please always first
    consider if it wouldn't be better suited for a plugin.** As a general rule
@@ -357,9 +269,52 @@ and branching strategy.
 12. Don't forget to **add yourself to the [AUTHORS](./AUTHORS.md)
     file** :)
 
-Template to use for Pull Request descriptions:
+Template to use for Pull Request descriptions (should get pre-filled automatically):
 
 ```
+<!--
+Thank you for your interest in contributing to OctoPrint, it's
+highly appreciated!
+
+Please make sure you have read the "guidelines for contributing" as
+linked just above this form, there's a section on Pull Requests in there
+as well which contains important information.
+
+As a summary, please make sure you have ticked all points on this
+checklist:
+-->
+
+  * [ ] Your changes are not possible to do through a plugin and relevant
+    to a large audience (ideally all users of OctoPrint)
+  * [ ] If your changes are large or otherwise disruptive: You have
+    made sure your changes don't interfere with current development by
+    talking it through with the maintainers, e.g. through a
+    Brainstorming ticket
+  * [ ] Your PR targets OctoPrint's `devel` branch if it's a completely
+    new feature, or `maintenance` if it's a bug fix or improvement of
+    existing functionality for the current stable version (no PRs
+    against `master` or anything else please)
+  * [ ] Your PR was opened from a custom branch on your repository
+    (no PRs from your version of `master`, `maintenance`, or `devel`
+    please), e.g. `dev/my_new_feature` or `fix/my_bugfix`
+  * [ ] Your PR only contains relevant changes: no unrelated files,
+    no dead code, ideally only one commit - rebase and squash your PR
+    if necessary!
+  * [ ] Your changes follow the existing coding style
+  * [ ] If your changes include style sheets: You have modified the
+    `.less` source files, not the `.css` files (those are generated
+    with `lessc`)
+  * [ ] You have tested your changes (please state how!) - ideally you
+    have added unit tests
+  * [ ] You have run the existing unit tests against your changes and
+    nothing broke
+  * [ ] You have added yourself to the `AUTHORS.md` file :)
+
+<!--
+Describe your PR further using the template provided below. The more
+details the better!
+-->
+
 #### What does this PR do and why is it necessary?
 
 #### How was it tested? How can it be tested by the reviewer?
@@ -371,6 +326,7 @@ Template to use for Pull Request descriptions:
 #### Screenshots (if appropriate)
 
 #### Further notes
+
 ```
 
 ## How is OctoPrint versioned?
@@ -380,6 +336,26 @@ See [the corresponding chapter in the documentation](https://docs.octoprint.org/
 ## What do the branches mean?
 
 See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/master/development/branches.html).
+
+## On AI use when contributing to OctoPrint
+
+What follows here are the guidelines for AI use when contributing to OctoPrint.
+
+When we say "AI use", we mean *all kinds* of Generative AI based chatbots (including GitHub's Copilot!), coding and other such tools.
+
+### AI use in bug reports and other issues
+
+If you use an AI tool to create a bug report or other issue for OctoPrint (even GitHub's Copilot!) you **must** reveal this fact in your report.
+
+If you find a problem, write the issue yourself using the provided issue form. If you struggle with language or phrasing, you can of course use any help with that that you want, but please make sure to write most of it yourself and don't just copy and paste an AI generated issue to the project. Those generated reports typically are too wordy and rarely to the point (in addition to the common fabricated details), and will in all likelihood nevertheless lack the information we actually need to be able to debug and fix your issue.
+
+### AI use for pull requests
+
+When contributing a pull request you always need to make sure that the proposal is good quality and a best effort that follows our guidelines. A basic rule of thumb is that if someone can spot that the contribution was made with the help of AI, you have more work to do.
+
+We can accept code written with the help of AI into the project, but the code must still follow coding standards, be written clearly, be documented, feature test cases and adhere to all the normal requirements we have. You also must understand it yourself and be able to explain it to us - no "vibe coding" please.
+
+Whatever kind of contribution you submit with your PR, be it code, documentation change, workflows, etc: If you prepared it with the help of an AI, you **must** reveal this fact in your PR!
 
 ## History
 
@@ -414,6 +390,7 @@ See [the corresponding chapter in the documentation](https://docs.octoprint.org/
   * 2021-02-04: Issue forms! \o/
   * 2021-03-04: Correct issue forms link
   * 2021-04-27: Systeminfo Bundles! \o/
+  * 2025-05-21: Guidelines regarding the use of AI
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add
