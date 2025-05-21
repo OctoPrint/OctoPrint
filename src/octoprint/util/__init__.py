@@ -1382,7 +1382,7 @@ class ResettableTimer(threading.Thread):
                 self.is_reset = False
             self._event.wait(self.interval)
 
-        if not self._event.isSet():
+        if not self._event.is_set():
             self.function(*self.args, **self.kwargs)
         with self._mutex:
             self._event.set()
