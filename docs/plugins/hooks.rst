@@ -1556,6 +1556,20 @@ octoprint.server.http.routes
    This is interesting for plugins which want to provide their own download URLs which will then be delivered statically
    following the same path structure as regular downloads.
 
+   .. warning::
+
+      Your custom routes will have no authentication requirements, no CSRF protection, no security at all by default.
+
+      If you implement a custom route **it is your responsibility to ensure that it is properly secured**!
+      You will have to do that yourself! OctoPrint will not do this for you!
+
+      Any custom route without any further check of CSRF protection and authentication will be accessible
+      to **everyone** who has network access to your OctoPrint instance. Be *very* careful about what kind of functionality
+      you allow in your custom routes and secure them to avoid critical security issues in your plugin.
+
+      You should only need to use custom routes in very isolated cases. For most situations, a :class:`~octoprint.plugin.BlueprintPlugin` or
+      even :class:`~octoprint.plugin.SimpleApiPlugin` is the better choice!
+
    ``server_routes`` will be a (read-only) list of the currently defined server routes, in case you want to check from
    your plugin against that.
 
