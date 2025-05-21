@@ -14,9 +14,9 @@ or **[creating pull requests](#pull-requests)**.
     * [Where can I find my browser's error console?](#where-can-i-find-my-browsers-error-console)
   * [Setting up a development environment](#setting-up-a-development-environment)
   * [Pull requests](#pull-requests)
-  * [On AI use when contributing to OctoPrint](#on-ai-use-when-contributing-to-octoprint)
   * [What do the branches mean?](#what-do-the-branches-mean)
   * [How OctoPrint is versioned](#how-octoprint-is-versioned)
+  * [On AI use when contributing to OctoPrint](#on-ai-use-when-contributing-to-octoprint)
   * [History](#history)
   * [Footnotes](#footnotes)
 
