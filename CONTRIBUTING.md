@@ -14,7 +14,7 @@ or **[creating pull requests](#pull-requests)**.
     * [Where can I find my browser's error console?](#where-can-i-find-my-browsers-error-console)
   * [Setting up a development environment](#setting-up-a-development-environment)
   * [Pull requests](#pull-requests)
-  * [On AI use in OctoPrint](#on-ai-use-in-octoprint)
+  * [On AI use when contributing to OctoPrint](#on-ai-use-when-contributing-to-octoprint)
   * [What do the branches mean?](#what-do-the-branches-mean)
   * [How OctoPrint is versioned](#how-octoprint-is-versioned)
   * [History](#history)
@@ -337,9 +337,11 @@ See [the corresponding chapter in the documentation](https://docs.octoprint.org/
 
 See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/master/development/branches.html).
 
-## On AI use in OctoPrint
+## On AI use when contributing to OctoPrint
 
-Guidelines for AI use when contributing to OctoPrint. When we say "AI use", we mean *all kinds* of Generative AI based chatbots (including GitHub's Copilot!), coding and other such tools.
+What follows here are the guidelines for AI use when contributing to OctoPrint.
+
+When we say "AI use", we mean *all kinds* of Generative AI based chatbots (including GitHub's Copilot!), coding and other such tools.
 
 ### AI use in bug reports and other issues
 
