@@ -193,6 +193,7 @@ jobs:
       - name: 🎭 Run E2E
         uses: OctoPrint/actions/e2e@main
         with:
+          repository: ${{ github.repository }}
           ref: ${{ github.ref }}
           octoprint: ${{ env.INSTALLABLE }}
           python: ${{ matrix.python }}
