@@ -34,10 +34,10 @@ jobs:
       - name: 🔨 Build a source tarball
         run: |
           # find the wheel
-          wheel=$(ls dist/*-py2.py3-none-any.whl)
+          wheel=$(ls dist/*-py3-none-any.whl)
 
           # strip the suffix to get the prefix
-          prefix=$(basename ${wheel%-py2.py3-none-any.whl})
+          prefix=$(basename ${wheel%-py3-none-any.whl})
 
           # create the source tarball
           git archive --prefix $prefix/ HEAD --output dist/$prefix.source.tar.gz
@@ -193,6 +193,7 @@ jobs:
       - name: 🎭 Run E2E
         uses: OctoPrint/actions/e2e@main
         with:
+          repository: ${{ github.repository }}
           ref: ${{ github.ref }}
           octoprint: ${{ env.INSTALLABLE }}
           python: ${{ matrix.python }}
