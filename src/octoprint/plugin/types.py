@@ -1792,9 +1792,9 @@ class SettingsPlugin(OctoPrintPlugin):
     default implementations do not fit your requirements.
 
 
-    .. warning::
+    .. important::
 
-       Make sure to protect sensitive information stored by your plugin that only logged in administrators (or users)
+       Make sure to protect sensitive information stored by your plugin that only users with specific permissions
        should have access to via :meth:`~octoprint.plugin.SettingsPlugin.get_settings_restricted_paths`. OctoPrint will
        return its settings on the REST API even to anonymous clients, but will filter out fields it knows are restricted,
        therefore you **must** make sure that you specify sensitive information accordingly to limit access as required!
@@ -1988,57 +1988,207 @@ class SettingsPlugin(OctoPrintPlugin):
         Example:
 
         .. code-block:: python
+           :linenos:
 
            def get_settings_defaults(self):
-               return dict(some=dict(admin_only=dict(path="path", foo="foo"),
-                                     user_only=dict(path="path", bar="bar")),
-                           another=dict(admin_only=dict(path="path"),
-                                        field="field"),
-                           path=dict(to=dict(never=dict(return="return"))),
-                           the=dict(webcam=dict(data="webcam")))
+               return {
+                   "some": {
+                       "admin_only": {
+                           "path": "path",  # ["some", "admin_only", "path"]
+                           "foo": "foo"
+                       },
+                       "user_only": {
+                           "path": "path",  # ["some", "user_only", "path"]
+                           "bar": "bar"
+                       }
+                   },
+                   "another": {
+                       "admin_only": {
+                           "path": "path"  # ["another", "admin_only", "path"]
+                       },
+                       "field": "field"
+                   },
+                   "path": {
+                       "to": {
+                           "never": {
+                               "return": "return"  # ["path", "to", "never", "return"]
+                           }
+                       }
+                   },
+                   "the": {
+                       "webcam": {
+                           "data": "data"  # ["the", "webcam", "data"]
+                       }
+                   }
+               }
 
            def get_settings_restricted_paths(self):
                from octoprint.access.permissions import Permissions
-               return {'admin':[["some", "admin_only", "path"], ["another", "admin_only", "path"],],
-                       'user':[["some", "user_only", "path"],],
-                       'never':[["path", "to", "never", "return"],],
-                       Permissions.WEBCAM:[["the", "webcam", "data"],]}
+               return {
+                   "admin": [
+                       ["some", "admin_only", "path"],
+                       ["another", "admin_only", "path"],
+                   ],
+                   "user": [
+                       ["some", "user_only", "path"]
+                   ],
+                   "never": [
+                       ["path", "to", "never", "return"]
+                   ],
+                   Permissions.WEBCAM: [
+                       ["the", "webcam", "data"]
+                   ]
+               }
 
-           # this will make the plugin return settings on the REST API like this for an anonymous user
-           #
-           #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
-           #                    user_only=dict(path=None, bar="bar")),
-           #          another=dict(admin_only=dict(path=None),
-           #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))),
-           #          the=dict(webcam=dict(data=None)))
-           #
-           # like this for a logged in user without the webcam permission
-           #
-           #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
-           #                    user_only=dict(path="path", bar="bar")),
-           #          another=dict(admin_only=dict(path=None),
-           #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))),
-           #          the=dict(webcam=dict(data=None)))
-           #
-           # like this for a logged in user with the webcam permission
-           #
-           #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
-           #                    user_only=dict(path="path", bar="bar")),
-           #          another=dict(admin_only=dict(path=None),
-           #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))),
-           #          the=dict(webcam=dict(data="webcam")))
-           #
-           # and like this for an admin user
-           #
-           #     dict(some=dict(admin_only=dict(path="path", foo="foo"),
-           #                    user_only=dict(path="path", bar="bar")),
-           #          another=dict(admin_only=dict(path="path"),
-           #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))),
-           #          the=dict(webcam=dict(data="webcam")))
+        This will make the plugin return settings on the REST API as follows:
+
+        * for an anonymous user:
+
+          .. code-block:: python
+             :linenos:
+             :emphasize-lines: 4,8,14,21,27
+
+             {
+                 "some": {
+                      "admin_only": {
+                          "path": None,  # ["some", "admin_only", "path"]
+                          "foo": "foo"
+                      },
+                      "user_only": {
+                          "path": None,  # ["some", "user_only", "path"]
+                          "bar": "bar"
+                      }
+                 },
+                 "another": {
+                     "admin_only": {
+                         "path": None  # ["another", "admin_only", "path"]
+                     },
+                     "field": "field"
+                 },
+                 "path": {
+                     "to": {
+                         "never": {
+                             "return": None  # ["path", "to", "never", "return"]
+                         }
+                     }
+                 },
+                 "the": {
+                     "webcam": {
+                         "data": None  # ["the", "webcam", "data"]
+                     }
+                 }
+             }
+
+        * for a logged in user *without* the webcam permission:
+
+          .. code-block:: python
+             :linenos:
+             :emphasize-lines: 4,8,14,21,27
+
+             {
+                 "some": {
+                      "admin_only": {
+                          "path": None,  # ["some", "admin_only", "path"]
+                          "foo": "foo"
+                      },
+                      "user_only": {
+                          "path": "path",  # ["some", "user_only", "path"]
+                          "bar": "bar"
+                      }
+                 },
+                 "another": {
+                     "admin_only": {
+                         "path": None  # ["another", "admin_only", "path"]
+                     },
+                     "field": "field"
+                 },
+                 "path": {
+                     "to": {
+                         "never": {
+                             "return": None  # ["path", "to", "never", "return"]
+                         }
+                     }
+                 },
+                 "the": {
+                     "webcam": {
+                         "data": None  # ["the", "webcam", "data"]
+                     }
+                 }
+             }
+
+        * for a logged in user *with* the webcam permission:
+
+          .. code-block:: python
+             :linenos:
+             :emphasize-lines: 4,8,14,21,27
+
+             {
+                 "some": {
+                      "admin_only": {
+                          "path": None,  # ["some", "admin_only", "path"]
+                          "foo": "foo"
+                      },
+                      "user_only": {
+                          "path": "path",  # ["some", "user_only", "path"]
+                          "bar": "bar"
+                      }
+                 },
+                 "another": {
+                     "admin_only": {
+                         "path": None  # ["another", "admin_only", "path"]
+                     },
+                     "field": "field"
+                 },
+                 "path": {
+                     "to": {
+                         "never": {
+                             "return": None  # ["path", "to", "never", "return"]
+                         }
+                     }
+                 },
+                 "the": {
+                     "webcam": {
+                         "data": "data"  # ["the", "webcam", "data"]
+                     }
+                 }
+             }
+
+        * and like this for an admin user
+
+          .. code-block:: python
+             :linenos:
+             :emphasize-lines: 4,8,14,21,27
+
+             {
+                 "some": {
+                      "admin_only": {
+                          "path": "path",  # ["some", "admin_only", "path"]
+                          "foo": "foo"
+                      },
+                      "user_only": {
+                          "path": "path",  # ["some", "user_only", "path"]
+                          "bar": "bar"
+                      }
+                 },
+                 "another": {
+                     "admin_only": {
+                         "path": "path"  # ["another", "admin_only", "path"]
+                     },
+                     "field": "field"
+                 },
+                 "path": {
+                     "to": {
+                         "never": {
+                             "return": None  # ["path", "to", "never", "return"]
+                         }
+                     }
+                 },
+                 "the": {
+                     "webcam": {
+                         "data": "data"  # ["the", "webcam", "data"]
+                     }
+                 }
+             }
 
         .. versionadded:: 1.2.17
         """
