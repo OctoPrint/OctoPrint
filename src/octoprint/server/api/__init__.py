@@ -35,6 +35,7 @@ from octoprint.server.util import (
     noCachingExceptGetResponseHandler,
 )
 from octoprint.server.util.flask import (
+    ensure_credentials_checked_recently,
     get_json_command_from_request,
     limit,
     no_firstrun_access,
@@ -503,6 +504,8 @@ def get_current_user():
 @no_firstrun_access
 @Permissions.ADMIN.require(403)
 def utilTest():
+    ensure_credentials_checked_recently()
+
     valid_commands = {
         "path": ["path"],
         "url": ["url"],
