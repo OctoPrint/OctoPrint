@@ -1798,6 +1798,10 @@ class SettingsPlugin(OctoPrintPlugin):
        should have access to via :meth:`~octoprint.plugin.SettingsPlugin.get_settings_restricted_paths`. OctoPrint will
        return its settings on the REST API even to anonymous clients, but will filter out fields it knows are restricted,
        therefore you **must** make sure that you specify sensitive information accordingly to limit access as required!
+
+       You should also protect any fields like server commands or endpoint URLs pinged by your plugin by enforcing a fresh
+       credential check and potential reauthentication. Since version 1.12.0 you can do this via
+       :meth:`~octoprint.plugin.SettingsPlugin.get_settings_reauth_requirements`.
     """
 
     config_version_key = "_config_version"
@@ -2191,6 +2195,43 @@ class SettingsPlugin(OctoPrintPlugin):
              }
 
         .. versionadded:: 1.2.17
+        """
+        return {}
+
+    def get_settings_reauth_requirements(self):
+        """
+        Retrieves a config tree of settings that require a fresh credential check and potential
+        reauthentication before they can be saved via the REST API.
+
+        Override this in a plugin if you have any sensitive settings, e.g. system commands, that should
+        require a fresh credential check from the user to write.
+
+        Return a ``dict`` with the tree of affected keys. Example:
+
+        .. code-block:: python
+
+           def get_settings_defaults(self):
+               return {
+                   "foo": {
+                       "a": 1,
+                       "b": 2,
+                       "c": 3,
+                   },
+                   "bar": {
+                       "some": 1,
+                       "other": 2,
+                       "settings": 3,
+                   }
+               }
+
+           def get_settings_reauth_requirements(self):
+               return {"foo": {"a": True}, "bar": True}
+
+        In this example, trying to write ``foo.a`` or any of ``bar.some``, ``bar.other`` or ``bar.settings``
+        will make OctoPrint check whether the credentials are still fresh, and if not abort the settings
+        save request, returning an :http:statuscode:`403`.
+
+        .. versionadded:: 1.12.0
         """
         return {}
 

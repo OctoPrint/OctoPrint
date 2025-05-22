@@ -130,6 +130,8 @@ $(function () {
         self.apiKeyVisible = ko.observable(false);
         self.revealingApiKey = ko.observable(false);
 
+        self.reauthReqs = undefined;
+
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
@@ -621,6 +623,8 @@ $(function () {
                     self.translationUploadFilename(undefined);
                 }
             });
+
+            self.requestReauthReqData();
         };
 
         self.onAllBound = function (allViewModels) {
@@ -884,6 +888,16 @@ $(function () {
 
         self.deleteLanguagePack = function (locale, pack) {
             OctoPrint.languages.delete(locale, pack).done(self.fromTranslationResponse);
+        };
+
+        self.requestReauthReqData = () => {
+            return OctoPrint.settings
+                .getReauthRequirements()
+                .done(self.fromReauthReqsResponse);
+        };
+
+        self.fromReauthReqsResponse = (response) => {
+            self.reauthReqs = response.requirements;
         };
 
         /**
@@ -1338,6 +1352,12 @@ $(function () {
             self.hide();
         };
 
+        self.changesRequireReauth = (data) => {
+            if (!self.reauthReqs) return false;
+            const requiresReauth = self.reauthReqs;
+            return recursiveMatch(requiresReauth, data);
+        };
+
         self.saveData = function (data, successCallback, setAsSending) {
             var options;
             if (_.isPlainObject(successCallback)) {
@@ -1367,31 +1387,54 @@ $(function () {
                 delete data.folder;
             }
 
-            self.active = true;
-            return OctoPrint.settings
-                .save(data)
-                .done(function (data, status, xhr) {
-                    self.ignoreNextUpdateEvent = !self.sawUpdateEventWhileSending;
-                    self.active = false;
+            const perform = () => {
+                self.active = true;
+                return OctoPrint.settings
+                    .save(data)
+                    .done(function (data, status, xhr) {
+                        self.ignoreNextUpdateEvent = !self.sawUpdateEventWhileSending;
+                        self.active = false;
 
-                    self.receiving(true);
-                    self.sending(false);
+                        self.receiving(true);
+                        self.sending(false);
 
-                    try {
-                        self.fromResponse(data);
-                        if (options.success) options.success(data, status, xhr);
-                    } finally {
-                        self.receiving(false);
-                    }
-                })
-                .fail(function (xhr, status, error) {
-                    self.sending(false);
-                    self.active = false;
-                    if (options.error) options.error(xhr, status, error);
-                })
-                .always(function (xhr, status) {
-                    if (options.complete) options.complete(xhr, status);
-                });
+                        try {
+                            self.fromResponse(data);
+                            if (options.success) options.success(data, status, xhr);
+                        } finally {
+                            self.receiving(false);
+                        }
+                    })
+                    .fail(function (xhr, status, error) {
+                        self.sending(false);
+                        self.active = false;
+                        if (options.error) options.error(xhr, status, error);
+                    })
+                    .always(function (xhr, status) {
+                        if (options.complete) options.complete(xhr, status);
+                    });
+            };
+
+            // do we need to reauthenticate?
+            if (self.changesRequireReauth(data)) {
+                const deferred = $.Deferred();
+                self.loginState
+                    .reauthenticateIfNecessary(() => {
+                        perform()
+                            .done(() => {
+                                deferred.resolveWith(arguments);
+                            })
+                            .fail(() => {
+                                deferred.rejectWith(arguments);
+                            });
+                    })
+                    .fail(() => {
+                        deferred.reject();
+                    });
+                return deferred.promise();
+            } else {
+                return perform();
+            }
         };
 
         self.onEventSettingsUpdated = function () {
@@ -1447,6 +1490,11 @@ $(function () {
             }
         };
 
+        self.onEventPluginPluginmanagerEnabledPlugin =
+            self.onEventPluginPluginmanagerDisabledPlugin = () => {
+                self.requestReauthReqData();
+            };
+
         self._resetScrollPosition = function () {
             $("#settings_dialog_content", self.settingsDialog).scrollTop(0);
 
@@ -1482,6 +1530,7 @@ $(function () {
             // the settings might have changed if the server was just restarted,
             // better refresh them now
             self.requestData();
+            self.requestReauthReqData();
         };
 
         self.onUserPermissionsChanged =
@@ -1491,6 +1540,7 @@ $(function () {
                     // we might have other user rights now, refresh (but only if startup has fully completed)
                     if (!self._startupComplete) return;
                     self.requestData();
+                    self.requestReauthReqData();
                 };
 
         self.onUserCredentialsOutdated = () => {
