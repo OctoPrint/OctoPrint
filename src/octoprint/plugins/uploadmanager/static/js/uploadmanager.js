@@ -62,21 +62,41 @@ $(function () {
                 },
                 lastPrintAsc: (a, b) => {
                     // sorts ascending
-                    if (b.prints && b.prints.last && b.prints.date) {
-                        if (a.prints.last.date > b.prints.last.date) return 1;
-                        if (a.prints.last.date < b.prints.last.date) return -1;
+                    const valA =
+                        a.prints && a.prints.last && a.prints.last.date
+                            ? a.prints.last.date
+                            : "";
+                    const valB =
+                        b.prints && b.prints.last && b.prints.last.date
+                            ? b.prints.last.date
+                            : "";
+
+                    if (valA > valB) {
+                        return 1;
+                    } else if (valA < valB) {
+                        return -1;
+                    } else {
                         return 0;
                     }
-                    return 1;
                 },
                 lastPrintDsc: (a, b) => {
                     // sorts descending
-                    if (b.prints && b.prints.last && b.prints.date) {
-                        if (a.prints.last.date > b.prints.last.date) return -1;
-                        if (a.prints.last.date < b.prints.last.date) return 1;
+                    const valA =
+                        a.prints && a.prints.last && a.prints.last.date
+                            ? a.prints.last.date
+                            : "";
+                    const valB =
+                        b.prints && b.prints.last && b.prints.last.date
+                            ? b.prints.last.date
+                            : "";
+
+                    if (valA > valB) {
+                        return -1;
+                    } else if (valA < valB) {
+                        return 1;
+                    } else {
                         return 0;
                     }
-                    return -1;
                 },
                 sizeAsc: (a, b) => {
                     // sorts ascending
