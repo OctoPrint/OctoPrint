@@ -1448,6 +1448,7 @@ $(function () {
                             });
                     })
                     .fail(() => {
+                        self.sending(false);
                         deferred.reject();
                     });
                 return deferred.promise();
