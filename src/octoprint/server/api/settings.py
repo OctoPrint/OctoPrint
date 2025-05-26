@@ -49,9 +49,12 @@ DEPRECATED_WEBCAM_KEYS = (
 
 REAUTHED_SETTINGS = {
     "server": {"commands": True},
-    "webcam": {"ffmpegPath": True},
+    "webcam": {
+        "ffmpegPath": True,
+        "ffmpegCommandline": True,
+        "ffmpegThumbnailCommandline": True,
+    },
     "system": {"actions": True},
-    "events": {"subscriptions": True},
 }
 
 
