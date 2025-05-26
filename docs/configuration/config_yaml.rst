@@ -1213,6 +1213,26 @@ Use the following settings to configure webcam support:
      # Videocodec to be used for encoding. Defaults to mpeg2video.
      ffmpegVideoCodec: mpeg2video
 
+     # The full commandline to use for rendering timelapse recordings through ffmpeg. Supports the following placeholders:
+     # 
+     # - ffmpeg: the ffmpeg command as defined under `webcam.ffmpeg`
+     # - fps: the fps setting as defined by the timelapse configuration
+     # - input: the path to the input files
+     # - videocodec: the video codec to use, as defined in `webcam.ffmpegVideoCodec`
+     # - threads: the number of threads to use, as defined in `webcam.ffmpegThreads`
+     # - bitrate: the bitrate to use, as defined in `webcam.bitrate`
+     # - containerformat: the container format to use, based on the selected codec
+     # - filters: the filter chain
+     # - output: the path to the output file
+     ffmpegCommandline: '{ffmpeg} -framerate {fps} -i "{input}" -vcodec {videocodec} -threads {threads} -b:v {bitrate} -f {containerformat} -y {filters} "{output}"'
+
+     # The full commandline to use for generating thumbnails through ffmpeg. Supports the following placeholders:
+     # 
+     # - ffmpeg: the ffmpeg command as defined under `webcam.ffmpeg`
+     # - input: the path to the input file
+     # - output: the path to the output file
+     ffmpegThumbnailCommandline: '{ffmpeg} -sseof -1 -i "{input}" -update 1 -q:v 0.7 "{output}"'
+
      # The bitrate to use for rendering the timelapse video. This gets directly passed to ffmpeg.
      bitrate: 5000k
 
