@@ -1870,6 +1870,8 @@ def access_validation_factory(app, validator, *args):
                 app.session_interface.open_session(app, flask.request)
                 app.login_manager._load_user()
                 validator(flask.request, *args)
+            except tornado.web.HTTPError:
+                raise
             except HTTPException as e:
                 raise tornado.web.HTTPError(e.code) from e
             except Exception as e:

@@ -171,8 +171,6 @@ $(function () {
             );
             let errorTitle = gettext("Snapshot test failed");
 
-            self.testWebcamSnapshotUrlBusy(true);
-
             const params = {
                 method: "GET",
                 response: "bytes",
@@ -196,70 +194,76 @@ $(function () {
                 params.bearerAuth = self.snapshotBearerToken();
             }
 
-            OctoPrint.util
-                .testUrl(self.snapshotUrl(), params)
-                .done((response) => {
-                    if (!response.result) {
-                        if (
-                            response.status &&
-                            response.response &&
-                            response.response.content_type
-                        ) {
-                            // we could contact the server, but something else was wrong, probably the mime type
-                            errorText = gettext(
-                                "Could retrieve the snapshot URL, but it didn't look like an " +
-                                    "image. Got this as a content type header: <code>%(content_type)s</code>. Please " +
-                                    "double check that the URL is returning static images, not multipart data " +
-                                    "or videos."
-                            );
-                            errorText = _.sprintf(errorText, {
-                                content_type: _.escape(response.response.content_type)
+            self.loginState.reauthenticateIfNecessary(() => {
+                self.testWebcamSnapshotUrlBusy(true);
+
+                OctoPrint.util
+                    .testUrl(self.snapshotUrl(), params)
+                    .done((response) => {
+                        if (!response.result) {
+                            if (
+                                response.status &&
+                                response.response &&
+                                response.response.content_type
+                            ) {
+                                // we could contact the server, but something else was wrong, probably the mime type
+                                errorText = gettext(
+                                    "Could retrieve the snapshot URL, but it didn't look like an " +
+                                        "image. Got this as a content type header: <code>%(content_type)s</code>. Please " +
+                                        "double check that the URL is returning static images, not multipart data " +
+                                        "or videos."
+                                );
+                                errorText = _.sprintf(errorText, {
+                                    content_type: _.escape(response.response.content_type)
+                                });
+                            }
+
+                            showMessageDialog({
+                                title: errorTitle,
+                                message: errorText,
+                                onclose: () => {
+                                    self.testWebcamSnapshotUrlBusy(false);
+                                }
                             });
+                            return;
                         }
 
+                        const content = response.response.content;
+                        const contentType = response.response.assumed_content_type;
+
+                        const text = gettext(
+                            "If you see your webcam snapshot picture below, the entered snapshot URL is ok."
+                        );
+                        const mimeType = contentType
+                            ? contentType.split(";")[0]
+                            : "image/jpeg";
+
+                        const textElement = $("<p></p>").text(text);
+                        const imgElement = $("<img>")
+                            .attr("src", "data:" + mimeType + ";base64," + content)
+                            .css("border", "1px solid black");
+                        const message = $("<p></p>")
+                            .append(textElement)
+                            .append(imgElement);
+
                         showMessageDialog({
-                            title: errorTitle,
-                            message: errorText,
-                            onclose: () => {
+                            title: gettext("Snapshot test"),
+                            message: message,
+                            onclose: function () {
                                 self.testWebcamSnapshotUrlBusy(false);
                             }
                         });
-                        return;
-                    }
-
-                    const content = response.response.content;
-                    const contentType = response.response.assumed_content_type;
-
-                    const text = gettext(
-                        "If you see your webcam snapshot picture below, the entered snapshot URL is ok."
-                    );
-                    const mimeType = contentType
-                        ? contentType.split(";")[0]
-                        : "image/jpeg";
-
-                    const textElement = $("<p></p>").text(text);
-                    const imgElement = $("<img>")
-                        .attr("src", "data:" + mimeType + ";base64," + content)
-                        .css("border", "1px solid black");
-                    const message = $("<p></p>").append(textElement).append(imgElement);
-
-                    showMessageDialog({
-                        title: gettext("Snapshot test"),
-                        message: message,
-                        onclose: function () {
-                            self.testWebcamSnapshotUrlBusy(false);
-                        }
+                    })
+                    .fail(function () {
+                        showMessageDialog({
+                            title: errorTitle,
+                            message: errorText,
+                            onclose: function () {
+                                self.testWebcamSnapshotUrlBusy(false);
+                            }
+                        });
                     });
-                })
-                .fail(function () {
-                    showMessageDialog({
-                        title: errorTitle,
-                        message: errorText,
-                        onclose: function () {
-                            self.testWebcamSnapshotUrlBusy(false);
-                        }
-                    });
-                });
+            });
         };
     }
 

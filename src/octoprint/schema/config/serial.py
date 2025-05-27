@@ -2,7 +2,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
@@ -122,16 +122,16 @@ class SerialConfig(BaseModel):
     maxWritePasses: int = 5
     """Maximum number of write attempts to serial during which nothing can be written before the communication with the printer is considered dead and OctoPrint will disconnect with an error"""
 
-    additionalPorts: List[str] = []
+    additionalPorts: list[str] = []
     """Use this to define additional patterns to consider for serial port listing. Must be a valid ["glob" pattern](http://docs.python.org/3/library/glob.html)"""
 
-    additionalBaudrates: List[int] = []
+    additionalBaudrates: list[int] = []
     """Use this to define additional baud rates to offer for connecting to serial ports. Must be a valid integer"""
 
-    blacklistedPorts: List[str] = []
-    blacklistedBaudrates: List[int] = []
+    blacklistedPorts: list[str] = []
+    blacklistedBaudrates: list[int] = []
 
-    longRunningCommands: List[str] = [
+    longRunningCommands: list[str] = [
         "G4",
         "G28",
         "G29",
@@ -143,18 +143,18 @@ class SerialConfig(BaseModel):
     ]
     """Commands which are known to take a long time to be acknowledged by the firmware, e.g. homing, dwelling, auto leveling etc."""
 
-    blockedCommands: List[str] = ["M0", "M1"]
+    blockedCommands: list[str] = ["M0", "M1"]
     """Commands which should not be sent to the printer, e.g. because they are known to block serial communication until physical interaction with the printer as is the case on most firmwares with the default M0 and M1."""
 
-    ignoredCommands: List[str] = []
+    ignoredCommands: list[str] = []
     """Commands which should not be sent to the printer and just silently ignored. An example of when you may wish to use this could be useful if you wish to manually change a filament on M600, by using that as a Pausing command."""
 
-    pausingCommands: List[str] = ["M0", "M1", "M25"]
+    pausingCommands: list[str] = ["M0", "M1", "M25"]
     """Commands which should cause OctoPrint to pause any ongoing prints."""
 
-    emergencyCommands: List[str] = ["M112", "M108", "M410"]
+    emergencyCommands: list[str] = ["M112", "M108", "M410"]
 
-    checksumRequiringCommands: List[str] = ["M110"]
+    checksumRequiringCommands: list[str] = ["M110"]
     """Commands which need to always be send with a checksum."""
 
     helloCommand: str = "M110 N0"

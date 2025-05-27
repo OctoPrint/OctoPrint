@@ -109,6 +109,9 @@ class TrackingPlugin(
             if all((browser_name, browser_version, os_name, os_version)):
                 self._track_webui_load(browser_name, browser_version, os_name, os_version)
 
+    def is_api_protected(self):
+        return True
+
     ##~~ EnvironmentDetectionPlugin
 
     def on_environment_detected(self, environment, *args, **kwargs):
@@ -602,6 +605,6 @@ __plugin_description__ = (
 __plugin_url__ = "https://tracking.octoprint.org"
 __plugin_author__ = "Gina Häußge"
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 
 __plugin_implementation__ = TrackingPlugin()

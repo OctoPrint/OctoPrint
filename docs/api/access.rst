@@ -1,10 +1,8 @@
 .. _sec-api-access:
 
 **************
-Access control
+Access Control
 **************
-
-.. contents::
 
 .. _sec-api-access-permissions:
 

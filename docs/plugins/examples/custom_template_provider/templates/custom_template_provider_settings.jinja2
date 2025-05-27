@@ -1,0 +1,9 @@
+<h3>{{ _('Awesome Template Injections') }}</h3>
+
+{% for key in templates.plugin_custom_template_provider_awesometemplate.order %}
+    {% set heading, config = templates.plugin_custom_template_provider_awesometemplate.entries[key] %}
+    <div id="{{ config._div }}">
+        <h4>{{ heading }}</h4>
+        {% include config.template ignore missing %}
+    </div>
+{% endfor %}

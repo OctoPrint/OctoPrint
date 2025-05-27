@@ -26,8 +26,8 @@ Configuring the plugin
 
 The plugin supports the following configuration keys:
 
-  * ``enable``: Whether to enable the support of notifications (enabled by default).
-  * ``enable_popup``: Whether to enable the additional display of notifications as popups in the UI (disabled by default).
+* ``enable``: Whether to enable the support of notifications (enabled by default).
+* ``enable_popup``: Whether to enable the additional display of notifications as popups in the UI (disabled by default).
 
 You can modify them either through the plugin's configuration dialog under Settings, or by directly editing ``config.yaml``.
 

@@ -141,6 +141,9 @@ class ActionCommandPromptPlugin(
         else:
             return flask.jsonify(text=self._prompt.text, choices=self._prompt.choices)
 
+    def is_api_protected(self):
+        return True
+
     # ~ TemplatePlugin
 
     def get_template_configs(self):
@@ -289,7 +292,7 @@ __plugin_disabling_discouraged__ = gettext(
     " confirmation or selection prompts in OctoPrint"
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 __plugin_implementation__ = ActionCommandPromptPlugin()
 __plugin_hooks__ = {
     "octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,

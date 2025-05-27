@@ -688,6 +688,13 @@ class BackupPlugin(
             )
             self._logger.error("Error while creating backup zip", exc_info=exc_info)
 
+        def on_backup_progress(name, progress):
+            self._send_client_message(
+                "backup_progress",
+                payload={"name": name, "progress": progress},
+            )
+            self._logger.info(f"Backup at {round(progress * 100)}%")
+
         thread = threading.Thread(
             target=self._create_backup,
             kwargs={
@@ -700,6 +707,7 @@ class BackupPlugin(
                 "on_backup_start": on_backup_start,
                 "on_backup_done": on_backup_done,
                 "on_backup_error": on_backup_error,
+                "on_backup_progress": on_backup_progress,
             },
         )
         thread.daemon = True
@@ -917,6 +925,7 @@ class BackupPlugin(
         on_backup_start=None,
         on_backup_done=None,
         on_backup_error=None,
+        on_backup_progress=None,
     ):
         if logger is None:
             logger = logging.getLogger(__name__)
@@ -1030,8 +1039,15 @@ class BackupPlugin(
                         compression=compression,
                         allowZip64=True,
                     ) as zip:
+                        backed_up_size = 0
+
+                        def report_progress():
+                            if callable(on_backup_progress):
+                                on_backup_progress(name, min(backed_up_size / size, 1.0))
 
                         def add_to_zip(source, target, ignored=None):
+                            nonlocal backed_up_size
+
                             if ignored is None:
                                 ignored = []
 
@@ -1045,8 +1061,11 @@ class BackupPlugin(
                                         os.path.join(target, entry.name),
                                         ignored=ignored,
                                     )
+
                             elif os.path.isfile(source):
                                 zip.write(source, arcname=target)
+                                backed_up_size += os.stat(source).st_size
+                                report_progress()
 
                         # add metadata
                         metadata = {
@@ -1604,7 +1623,7 @@ __plugin_disabling_discouraged__ = gettext(
     "& restore your OctoPrint settings and data."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 __plugin_implementation__ = BackupPlugin()
 __plugin_hooks__ = {
     "octoprint.server.http.routes": __plugin_implementation__.route_hook,

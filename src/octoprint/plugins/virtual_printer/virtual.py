@@ -10,7 +10,7 @@ import queue
 import re
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from serial import SerialTimeoutException
 
@@ -103,6 +103,7 @@ class VirtualPrinter:
 
         self.temp = [self._ambient_temperature] * self.temperatureCount
         self.targetTemp = [0.0] * self.temperatureCount
+        self.fanPower = 0.0
         self.bedTemp = self._ambient_temperature
         self.bedTargetTemp = 0.0
         self.chamberTemp = self._ambient_temperature
@@ -171,6 +172,7 @@ class VirtualPrinter:
         self._locked = self._settings.get_boolean(["locked"])
 
         self._temperature_reporter = None
+        self._fan_reporter = None
         self._sdstatus_reporter = None
         self._pos_reporter = None
 
@@ -295,6 +297,10 @@ class VirtualPrinter:
             if self._temperature_reporter is not None:
                 self._temperature_reporter.cancel()
                 self._temperature_reporter = None
+
+            if self._fan_reporter is not None:
+                self._fan_reporter.cancel()
+                self._fan_reporter = None
 
             if self._sdstatus_reporter is not None:
                 self._sdstatus_reporter.cancel()
@@ -606,6 +612,23 @@ class VirtualPrinter:
         self._processTemperatureQuery()
         return True
 
+    def _gcode_M106(self, data: str) -> None:
+        matchS = re.search(r"S([0-9]+)", data)
+        if matchS is None:
+            return
+
+        matchP = re.search(r"P([0-9]+)", data)
+        power = float(matchS.group(1)) / 255.0
+        fan = int(matchP.group(1)) if matchP else 0
+        if fan == 0:
+            self.fanPower = power
+
+    def _gcode_M107(self, data: str) -> None:
+        matchP = re.search(r"P([0-9]+)", data)
+        fan = int(matchP.group(1)) if matchP else 0
+        if fan == 0:
+            self.fanPower = 0
+
     # noinspection PyUnusedLocal
     def _gcode_M20(self, data: str) -> None:
         if self._sdCardReady:
@@ -721,7 +744,7 @@ class VirtualPrinter:
                     self._send(area_report)
 
     @staticmethod
-    def _generate_area_report(profile: Dict) -> str:
+    def _generate_area_report(profile: dict) -> str:
         """
         Generate a string with the area of the printer volume.
 
@@ -815,6 +838,23 @@ class VirtualPrinter:
                 self._send(f"echo:{text}")
             else:
                 self._send(text)
+
+    def _gcode_M123(self, data: str) -> None:
+        matchS = re.search(r"S([0-9]+)", data)
+        if matchS is not None:
+            interval = int(matchS.group(1))
+            if self._fan_reporter is not None:
+                self._fan_reporter.cancel()
+
+            if interval > 0:
+                self._fan_reporter = RepeatedTimer(
+                    interval, lambda: self._send(self._generateFanOutput())
+                )
+                self._fan_reporter.start()
+            else:
+                self._fan_reporter = None
+        else:
+            self._generateFanOutput()
 
     def _gcode_M154(self, data: str) -> None:
         matchS = re.search(r"S([0-9]+)", data)
@@ -1515,7 +1555,7 @@ class VirtualPrinter:
             self._send(item)
         self._send("End file list")
 
-    def _mappedSdList(self) -> Dict[str, Dict[str, Any]]:
+    def _mappedSdList(self) -> dict[str, dict[str, Any]]:
         result = {}
         for entry in os.scandir(self._virtualSd):
             if not entry.is_file():
@@ -1539,14 +1579,14 @@ class VirtualPrinter:
             result[dosname.lower()] = entry.name.lower()
         return result
 
-    def _getSdFileData(self, filename: str) -> Optional[Dict[str, Any]]:
+    def _getSdFileData(self, filename: str) -> Optional[dict[str, Any]]:
         files = self._mappedSdList()
         data = files.get(filename.lower())
         if isinstance(data, str):
             data = files.get(data.lower())
         return data
 
-    def _getSdFiles(self) -> List[Dict[str, Any]]:
+    def _getSdFiles(self) -> list[dict[str, Any]]:
         files = self._mappedSdList()
         return [x for x in files.values() if isinstance(x, dict)]
 
@@ -1676,6 +1716,37 @@ class VirtualPrinter:
         )
         output += " @:64\n"
         return output
+
+    def _generateFanOutput(self) -> str:
+        rpmTemplate = self._settings.get(["m123RPMFormatString"])
+        powerTemplate = self._settings.get(["m123PowerFormatString"])
+
+        speeds = collections.OrderedDict()
+
+        # send simulated fan speed data - there's 1 fan per extruder which turns on if the temperature of
+        # that extruder exceeds 50ºC.  Then there's a single part cooling fan.
+        if self.extruderCount > 1:
+            for i in range(0, self.extruderCount):
+                speeds[f"E{i}"] = 1.0 if self.temp[i] > 50 else 0.0
+        else:
+            extruder = "E"
+            if self._settings.get_boolean(["klipperTemperatureReporting"]):
+                extruder = "E0"
+
+            speeds[extruder] = 1.0 if self.temp[0] > 50 else 0.0
+
+        speeds["PRN1"] = self.fanPower
+
+        rpmOutput = " ".join(
+            rpmTemplate.format(
+                fan=x[0], rpm=int(x[1] * self._settings.get(["fanMaxSpeed"]))
+            )
+            for x in speeds.items()
+        )
+        powerOutput = " ".join(
+            powerTemplate.format(fan=x[0], power=int(x[1] * 255)) for x in speeds.items()
+        )
+        return rpmOutput + " " + powerOutput + "\n"
 
     def _processTemperatureQuery(self):
         includeOk = not self._okBeforeCommandOutput

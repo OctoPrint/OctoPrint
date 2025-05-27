@@ -8,8 +8,6 @@ Wizard
 
    All wizard operations require either the ``ADMIN`` permission or the ``firstRun`` flag to be ``true``.
 
-.. contents::
-
 .. _sec-api-wizard-retrieve:
 
 Retrieve additional data about registered wizards

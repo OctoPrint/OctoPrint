@@ -1,7 +1,7 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from typing import Dict, List, Optional
+from typing import Optional
 
 from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
@@ -30,7 +30,7 @@ class AccessControlConfig(BaseModel):
     autologinLocal: bool = False
     """If set to true, will automatically log on clients originating from any of the networks defined in `localNetworks` as the user defined in `autologinAs`."""
 
-    localNetworks: List[str] = ["127.0.0.0/8", "::1/128"]
+    localNetworks: list[str] = ["127.0.0.0/8", "::1/128"]
     """A list of networks or IPs for which an automatic logon as the user defined in `autologinAs` will take place. If available OctoPrint will evaluate the `X-Forwarded-For` HTTP header for determining the client's IP address. Defaults to anything originating from localhost."""
 
     autologinAs: Optional[str] = None
@@ -57,7 +57,7 @@ class AccessControlConfig(BaseModel):
     remoteGroupsHeader: str = "REMOTE_GROUPS"
     """Header used by the reverse proxy to convey the authenticated user's groups."""
 
-    remoteGroupsMapping: Dict[str, str] = {}
+    remoteGroupsMapping: dict[str, str] = {}
     """Mapping from groups in the header to groups in OctoPrint."""
 
     addRemoteUsers: bool = False

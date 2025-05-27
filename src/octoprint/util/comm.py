@@ -772,6 +772,7 @@ class MachineCom:
         self._sdFileLongName = False
         self._sdFiles = {}
         self._sdFilesAvailable = threading.Event()
+        self._prevSdFiles = {}
         self._sdFileToSelect = None
         self._sdFileToSelectUser = None
         self._ignore_select = False
@@ -2548,6 +2549,16 @@ class MachineCom:
                                 # sanitize timestamp, when creating a file through serial the firmware usually doesn't know the date
                                 # and sets something ridiculously low (e.g. 2000-01-01), so let's ignore timestamps like that here
                                 timestamp = None
+
+                            existing = self._prevSdFiles.get(filename)
+                            if existing:
+                                if size is None:
+                                    size = existing.size
+                                if timestamp is None:
+                                    timestamp = existing.timestamp
+                                if longname is None:
+                                    longname = existing.longname
+
                             self._sdFiles[filename] = SDFileData(
                                 name=filename,
                                 size=size,
@@ -3052,6 +3063,7 @@ class MachineCom:
                         self.refreshSdFiles()
                         self._callback.on_comm_sd_state_change(self._sdAvailable)
                     elif "Begin file list" in line:
+                        self._prevSdFiles = self._sdFiles
                         self._sdFiles = {}
                         self._sdFileList = True
                     elif "End file list" in line:
@@ -3140,6 +3152,17 @@ class MachineCom:
                         self._currentFile = PrintingSdFileInformation(
                             name, size, user=user
                         )
+
+                        if name in self._sdFiles:
+                            # update list with size
+                            data = self._sdFiles[name]
+                            self._sdFiles[name] = SDFileData(
+                                name=name,
+                                size=size,
+                                timestamp=data.timestamp,
+                                longname=data.longname,
+                            )
+
                     elif "File selected" in line:
                         if self._ignore_select:
                             self._ignore_select = False

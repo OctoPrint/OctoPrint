@@ -44,21 +44,21 @@ configuration of the existing channels through ``config.yaml``.
 
 The available configuration keys are:
 
-  * ``channels``: Configured announcement channels. A mapping from a unique identifier to a configuration structure
-    that follows this format:
+* ``channels``: Configured announcement channels. A mapping from a unique identifier to a configuration structure
+   that follows this format:
 
-    * ``name``: Name of the channel, used e.g. in the title of the displayed notifications.
-    * ``description``: Description of the channel.
-    * ``priority``: ``1`` for high priority announcements (red notification), ``2`` for regular ones (yellow notification).
-    * ``type``: Currently unused.
-    * ``url``: URL for the feed acting as notification source, must be RSS or Atom format.
+   * ``name``: Name of the channel, used e.g. in the title of the displayed notifications.
+   * ``description``: Description of the channel.
+   * ``priority``: ``1`` for high priority announcements (red notification), ``2`` for regular ones (yellow notification).
+   * ``type``: Currently unused.
+   * ``url``: URL for the feed acting as notification source, must be RSS or Atom format.
 
-  * ``enabled_channels``: List of identifiers of enabled channels.
-  * ``forced_channels``: List of identifiers of channels that cannot be disabled (currently only ``_important`` which is used sparingly).
-  * ``channel_order``: List of channel identifiers in the order they should appear in the UI.
-  * ``ttl``: Time to live of the channel cache in minutes (default: 6 hours).
-  * ``display_limit``: Limit of items to display per channel (default: 3).
-  * ``summary_limit``: Limit of characters to display from each channel entry (default: 300).
+* ``enabled_channels``: List of identifiers of enabled channels.
+* ``forced_channels``: List of identifiers of channels that cannot be disabled (currently only ``_important`` which is used sparingly).
+* ``channel_order``: List of channel identifiers in the order they should appear in the UI.
+* ``ttl``: Time to live of the channel cache in minutes (default: 6 hours).
+* ``display_limit``: Limit of items to display per channel (default: 3).
+* ``summary_limit``: Limit of characters to display from each channel entry (default: 300).
 
 .. _sec-bundledplugins-announcements-sourcecode:
 

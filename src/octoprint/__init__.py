@@ -28,7 +28,7 @@ urllib3_ssl = True
    a sound SSL environment or not."""
 
 version_info = sys.version_info
-if version_info.major == 3 and version_info.minor >= 8 and sys.platform == "win32":
+if sys.platform == "win32":
     # Python 3.8 makes proactor event loop the default on Windows, Tornado doesn't like that
     #
     # see https://github.com/tornadoweb/tornado/issues/2608
@@ -588,7 +588,7 @@ def init_webcam_compat_overlay(settings, plugin_manager):
             overlay,
             key="webcam_compat",
             at_end=True,
-            deprecated="Please use the webcam system introduced with 1.9.0, this compatibility layer will be removed in a future release.",
+            deprecated="Please use the webcam system at `octoprint.webcams` introduced with 1.9.0, this compatibility layer will be removed in a future release.",
             replace=True,
         )
 

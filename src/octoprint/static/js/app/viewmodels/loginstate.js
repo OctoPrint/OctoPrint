@@ -151,15 +151,27 @@ $(function () {
         };
 
         self.reauthenticateIfNecessary = (callback) => {
+            const deferred = $.Deferred();
+
             if (!self.checkCredentialsSeen()) {
-                self.forceReauthentication(callback);
+                self.forceReauthentication(callback)
+                    .done(() => {
+                        deferred.resolve();
+                    })
+                    .fail(() => {
+                        deferred.reject();
+                    });
             } else {
                 callback();
+                deferred.resolve();
             }
+
+            return deferred.promise();
         };
 
         self.forceReauthentication = (callback) => {
-            self.showReauthenticationDialog()
+            return self
+                .showReauthenticationDialog()
                 .done(() => {
                     callback();
                 })

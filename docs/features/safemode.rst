@@ -30,29 +30,29 @@ How to start OctoPrint in safe mode
 
 There exist three ways to start OctoPrint in safe mode:
 
-  * by selecting "Restart OctoPrint in safe mode" from the "System" menu,
-    if the "Restart OctoPrint" server command has been correctly configured (since OctoPrint 1.3.2,
-    see :numref:`fig-features-safemode-systemmenu`)
-  * by setting the flag ``server.startOnceInSafeMode`` in :ref:`config.yaml <sec-configuration-config_yaml>`
-    to ``true`` and restarting. To set this flag you have the following options:
+* by selecting "Restart OctoPrint in safe mode" from the "System" menu,
+  if the "Restart OctoPrint" server command has been correctly configured (since OctoPrint 1.3.2,
+  see :numref:`fig-features-safemode-systemmenu`)
+* by setting the flag ``server.startOnceInSafeMode`` in :ref:`config.yaml <sec-configuration-config_yaml>`
+  to ``true`` and restarting. To set this flag you have the following options:
 
-    * from command line run ``octoprint safemode`` (since OctoPrint 1.3.6)
-    * from command line run ``octoprint config set --bool server.startOnceInSafeMode true`` (fixed in OctoPrint 1.3.6)
-    * use the `Yamlpatcher Plugin <http://plugins.octoprint.org/plugins/yamlpatcher/>`_ and enter & apply the patch
-      ``[["set", "server.startOnceInSafeMode", true]]``
-    * edit ``config.yaml`` manually with a text editor, locate the ``server`` block if it already exists or create it
-      if it doesn't and add ``startOnceInSafeMode: true`` to it:
+  * from command line run ``octoprint safemode`` (since OctoPrint 1.3.6)
+  * from command line run ``octoprint config set --bool server.startOnceInSafeMode true`` (fixed in OctoPrint 1.3.6)
+  * use the `Yamlpatcher Plugin <http://plugins.octoprint.org/plugins/yamlpatcher/>`_ and enter & apply the patch
+    ``[["set", "server.startOnceInSafeMode", true]]``
+  * edit ``config.yaml`` manually with a text editor, locate the ``server`` block if it already exists or create it
+    if it doesn't and add ``startOnceInSafeMode: true`` to it:
 
-      .. code-block:: yaml
+    .. code-block:: yaml
 
-         # ...
-         server:
-           startOnceInSafeMode: true
-         # ...
+        # ...
+        server:
+          startOnceInSafeMode: true
+        # ...
 
-      Please also refer to the :ref:`YAML primer <sec-configuration-yaml>`.
-  * by starting OctoPrint with the command line parameter ``--safe``, e.g. ``octoprint serve --safe`` (don't forget to
-    shutdown OctoPrint first before doing this)
+    Please also refer to the :ref:`YAML primer <sec-configuration-yaml>`.
+* by starting OctoPrint with the command line parameter ``--safe``, e.g. ``octoprint serve --safe`` (don't forget to
+  shutdown OctoPrint first before doing this)
 
 The last two options will have OctoPrint enable safe mode only for the next server start - once you
 restart OctoPrint again, safe mode will be disabled again.
@@ -75,21 +75,21 @@ Differences of safe mode vs normal operation mode
 
 When OctoPrint is running in safe mode the following changes to its normal operation mode apply:
 
-  * OctoPrint will not enable any of the installed third party plugins. OctoPrint considers all plugins third
-    party plugins that do not ship with OctoPrint's sources, so any plugins installed either via `pip` or
-    into OctoPrint's plugin folder at ``~/.octoprint/plugins`` (Linux), ``%APPDATA%/OctoPrint/plugins`` (Windows) and
-    ``~/Library/Application Support/OctoPrint/plugins`` (macOS).
-  * OctoPrint will not enable any of the installed third party language packs. OctoPrint considers all language packs
-    third party language packs that do not ship with OctoPrint's sources, so any language plugins installed
-    through the language pack manager within settings and/or stored in the language pack folder at
-    ``~/.octoprint/translations`` (Linux), ``%APPDATA%/OctoPrint/translations`` (Windows) or
-    ``~/Library/Application Support/OctoPrint/translations`` (macOS).
-  * OctoPrint will still allow to uninstall third party plugins through the built-in Plugin Manager.
-  * OctoPrint will still allow to disable (bundled) plugins that are still enabled.
-  * OctoPrint will not allow to enable third party plugins.
-  * OctoPrint will still allow to manage language packs.
-  * OctoPrint's web interface will display a notification to remind you that it is running in
-    safe mode.
+* OctoPrint will not enable any of the installed third party plugins. OctoPrint considers all plugins third
+  party plugins that do not ship with OctoPrint's sources, so any plugins installed either via `pip` or
+  into OctoPrint's plugin folder at ``~/.octoprint/plugins`` (Linux), ``%APPDATA%/OctoPrint/plugins`` (Windows) and
+  ``~/Library/Application Support/OctoPrint/plugins`` (macOS).
+* OctoPrint will not enable any of the installed third party language packs. OctoPrint considers all language packs
+  third party language packs that do not ship with OctoPrint's sources, so any language plugins installed
+  through the language pack manager within settings and/or stored in the language pack folder at
+  ``~/.octoprint/translations`` (Linux), ``%APPDATA%/OctoPrint/translations`` (Windows) or
+  ``~/Library/Application Support/OctoPrint/translations`` (macOS).
+* OctoPrint will still allow to uninstall third party plugins through the built-in Plugin Manager.
+* OctoPrint will still allow to disable (bundled) plugins that are still enabled.
+* OctoPrint will not allow to enable third party plugins.
+* OctoPrint will still allow to manage language packs.
+* OctoPrint's web interface will display a notification to remind you that it is running in
+  safe mode.
 
 .. _fig-features-safemode-notification:
 .. figure:: ../images/features-safemode-notification.png

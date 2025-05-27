@@ -1932,3 +1932,28 @@ const xhrErrorJson = function (xhr) {
         return null;
     }
 };
+
+const recursiveMatch = (matcher, data) => {
+    /**
+     * Return whether any leaf from matcher is container in data.
+     *
+     * @param matcher A matcher tree matched against the data tree
+     * @param data The data tree to match the matcher tree against
+     * @returns true if any leaf in a matcher tree is present in the data tree
+     */
+
+    if (!_.isPlainObject(matcher)) return true;
+
+    // process all key-value-pairs here
+    let result = false;
+    _.forOwn(matcher, (value, key) => {
+        if (data && data[key]) {
+            if (_.isPlainObject(value) && _.keys(value).length !== 0) {
+                result = result || recursiveMatch(matcher[key], data[key]);
+            } else {
+                result = true;
+            }
+        }
+    });
+    return result;
+};

@@ -1,5 +1,3 @@
-from typing import List
-
 from packaging.version import Version, parse
 
 if __name__ == "__main__":
@@ -54,7 +52,7 @@ class OctoPrintFreshnessCheck(HealthCheck):
             return CheckResult(result=Result.WARNING, context=context)
 
 
-def _fetch_versions() -> List[Version]:
+def _fetch_versions() -> list[Version]:
     import requests
 
     r = requests.get(
@@ -69,7 +67,7 @@ def _fetch_versions() -> List[Version]:
     return versions
 
 
-def _newer_versions(version: Version, versions: List[Version]) -> List[Version]:
+def _newer_versions(version: Version, versions: list[Version]) -> list[Version]:
     """
     >>> versions = [parse("1.0.0"), parse("1.1.0"), parse("1.1.1"), parse("1.2.0rc1"), parse("1.2.0")]
     >>> _newer_versions(parse("1.1.0"), versions)
@@ -89,7 +87,7 @@ def _newer_versions(version: Version, versions: List[Version]) -> List[Version]:
     )
 
 
-def _latest_per_minor(versions: List[Version]) -> List[Version]:
+def _latest_per_minor(versions: list[Version]) -> list[Version]:
     """
     >>> versions = [parse("1.0.0"), parse("1.0.1"), parse("1.0.2"), parse("1.1.0"), parse("1.1.1"), parse("1.2.0"), parse("2.0.0"), parse("2.0.1")]
     >>> _latest_per_minor(versions)

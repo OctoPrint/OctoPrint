@@ -35,6 +35,7 @@ from octoprint.server.util import (
     noCachingExceptGetResponseHandler,
 )
 from octoprint.server.util.flask import (
+    ensure_credentials_checked_recently,
     get_json_command_from_request,
     limit,
     no_firstrun_access,
@@ -89,6 +90,14 @@ def pluginData(name):
         api_plugin = api_plugins[0]
         if api_plugin.is_api_adminonly() and not current_user.is_admin:
             abort(403)
+
+        if api_plugin.is_api_protected():
+            if (
+                current_user is None
+                or current_user.is_anonymous
+                or not current_user.is_active
+            ):
+                abort(403)
 
         response = api_plugin.on_api_get(request)
 
@@ -149,6 +158,14 @@ def pluginCommand(name):
 
         if api_plugin.is_api_adminonly() and not Permissions.ADMIN.can():
             abort(403)
+
+        if api_plugin.is_api_protected():
+            if (
+                current_user is None
+                or current_user.is_anonymous
+                or not current_user.is_active
+            ):
+                abort(403)
 
         command, data, response = get_json_command_from_request(request, valid_commands)
         if response is not None:
@@ -487,6 +504,8 @@ def get_current_user():
 @no_firstrun_access
 @Permissions.ADMIN.require(403)
 def utilTest():
+    ensure_credentials_checked_recently()
+
     valid_commands = {
         "path": ["path"],
         "url": ["url"],

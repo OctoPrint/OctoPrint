@@ -17,11 +17,11 @@ Basic Rules
 
 First of all some basic things to know about working with YAML files:
 
-  * Never use tabs outside of quoted strings, especially not for indentation. The tab character is illegal within
-    YAML files.
-  * Whitespace and indentation matters and plays an important part in structuring the data, so take special care
-    to stay consistent here.
-  * YAML's comments start with a ``#`` and go until the end of the line.
+* Never use tabs outside of quoted strings, especially not for indentation. The tab character is illegal within
+   YAML files.
+* Whitespace and indentation matters and plays an important part in structuring the data, so take special care
+   to stay consistent here.
+* YAML's comments start with a ``#`` and go until the end of the line.
 
 .. _sec-configuration-yaml-types:
 

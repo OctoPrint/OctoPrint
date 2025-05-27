@@ -23,26 +23,25 @@ Configuring the plugin
 
 The plugin supports the following configuration keys:
 
-  * ``enabled``:  Whether to enable usage tracking. Defaults to ``false``.
-  * ``unique_id``: Unique instance identifier, auto generated on first activation
-  * ``server``: The tracking server to track against. Defaults to a tracking endpoint on ``https://tracking.octoprint.org``.
-  * ``ping``: How often to send a ``ping`` tracking event, in seconds. Defaults to a 15min interval.
-  * ``events``: Granular configuration of enabled tracking events. All default to ``true``.
-
-    * ``achievements``: Whether to track achievement events (unlock)
-    * ``commerror``: Whether to track communication errors with the printer
-    * ``plugin``: Whether to track plugin related events (install, uninstall, ...)
-    * ``printer``: Whether to track printer related events (connected, firmware, ...)
-    * ``printer_safety_check``: Whether to track warnings of the Printer Safety Check plugin
-    * ``printjob``: Whether to track print job related events (start, completion, cancel, ...)
-    * ``startup``: Whether to track startup/shutdown events
-    * ``update``: Whether to track update related events (update successful or not, ...)
-    * ``throttled``: Whether to track throttle events detected on the underlying system
+* ``enabled``:  Whether to enable usage tracking. Defaults to ``false``.
+* ``unique_id``: Unique instance identifier, auto generated on first activation
+* ``server``: The tracking server to track against. Defaults to a tracking endpoint on ``https://tracking.octoprint.org``.
+* ``ping``: How often to send a ``ping`` tracking event, in seconds. Defaults to a 15min interval.
+* ``events``: Granular configuration of enabled tracking events. All default to ``true``.
+  * ``achievements``: Whether to track achievement events (unlock)
+  * ``commerror``: Whether to track communication errors with the printer
+  * ``plugin``: Whether to track plugin related events (install, uninstall, ...)
+  * ``printer``: Whether to track printer related events (connected, firmware, ...)
+  * ``printer_safety_check``: Whether to track warnings of the Printer Safety Check plugin
+  * ``printjob``: Whether to track print job related events (start, completion, cancel, ...)
+  * ``startup``: Whether to track startup/shutdown events
+  * ``update``: Whether to track update related events (update successful or not, ...)
+  * ``throttled``: Whether to track throttle events detected on the underlying system
 
 As of OctoPrint 1.11.0, the plugin also reacts to the following environment variables:
 
-  * ``OCTOPRINT_TRACKING_DISABLED``: If set, disables tracking entirely, overriding the configuration.
-  * ``CI``: If set, disables tracking entirely, overriding the configuration. Most common CI environments set this automatically.
+* ``OCTOPRINT_TRACKING_DISABLED``: If set, disables tracking entirely, overriding the configuration.
+* ``CI``: If set, disables tracking entirely, overriding the configuration. Most common CI environments set this automatically.
 
 .. _sec-bundledplugins-tracking-sourcecode:
 

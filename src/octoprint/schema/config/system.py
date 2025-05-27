@@ -1,7 +1,7 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field
 
@@ -29,5 +29,5 @@ class ActionConfig(BaseModel):
 
 @with_attrs_docs
 class SystemConfig(BaseModel):
-    actions: List[ActionConfig] = []
+    actions: list[ActionConfig] = []
     """A list of system actions to show in the UI."""

@@ -16,6 +16,7 @@ from octoprint.server import pluginManager, printer, userManager
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import (
     credentials_checked_recently,
+    ensure_credentials_checked_recently,
     no_firstrun_access,
     require_credentials_checked_recently,
     with_revalidation_checking,
@@ -45,6 +46,16 @@ DEPRECATED_WEBCAM_KEYS = (
     "flipV",
     "rotate90",
 )
+
+REAUTHED_SETTINGS = {
+    "server": {"commands": True},
+    "webcam": {
+        "ffmpegPath": True,
+        "ffmpegCommandline": True,
+        "ffmpegThumbnailCommandline": True,
+    },
+    "system": {"actions": True},
+}
 
 
 def _lastmodified():
@@ -97,7 +108,7 @@ def _etag(lm=None):
     # and likewise if the role of the user changes
     hash_update(repr(roles))
 
-    # of if the user reauthenticates
+    # or if the user reauthenticates
     hash_update(repr(credentials_checked_recently()))
 
     return hash.hexdigest()
@@ -295,7 +306,6 @@ def getSettings():
         },
         "system": {
             "actions": s.get(["system", "actions"]),
-            "events": s.get(["system", "events"]),
         },
         "terminalFilters": s.get(["terminalFilters"]),
         "scripts": {
@@ -538,8 +548,44 @@ def fetchTemplateData():
     return jsonify(order=result)
 
 
+@api.route("/settings/reauthReq", methods=["GET"])
+@no_firstrun_access
+@Permissions.SETTINGS.require(403)
+def fetchReauthRequirements():
+    return jsonify({"requirements": _reauth_requirements()})
+
+
+def _reauth_requirements():
+    logger = logging.getLogger(__name__)
+    require_reauth = {}
+    for plugin in octoprint.plugin.plugin_manager().get_implementations(
+        octoprint.plugin.SettingsPlugin
+    ):
+        plugin_id = plugin._identifier
+        try:
+            additional = plugin.get_settings_reauth_requirements()
+            if additional:
+                octoprint.util.dict_merge(
+                    require_reauth,
+                    {"plugins": {plugin_id: additional}},
+                    in_place=True,
+                )
+        except Exception:
+            logger.exception(
+                f"Could not determine reauth information for plugin {plugin._plugin_name}",
+                extra={"plugin": plugin_id},
+            )
+            abort(500)
+
+    octoprint.util.dict_merge(require_reauth, REAUTHED_SETTINGS, in_place=True)
+    return require_reauth
+
+
 def _saveSettings(data):
     logger = logging.getLogger(__name__)
+
+    if octoprint.util.dict_contains_any_keys(_reauth_requirements(), data):
+        ensure_credentials_checked_recently()
 
     s = settings()
 
@@ -1143,8 +1189,6 @@ def _saveSettings(data):
     if "system" in data:
         if "actions" in data["system"]:
             s.set(["system", "actions"], data["system"]["actions"])
-        if "events" in data["system"]:
-            s.set(["system", "events"], data["system"]["events"])
 
     if "scripts" in data:
         if "gcode" in data["scripts"] and isinstance(data["scripts"]["gcode"], dict):

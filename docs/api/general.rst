@@ -4,8 +4,6 @@
 General information
 *******************
 
-.. contents::
-
 .. _sec-api-general-authorization:
 
 Authorization
@@ -47,32 +45,12 @@ If the key is missing or invalid, OctoPrint will treat the request as it would a
 That means that any requests without or with an invalid API key targeting other API endpoints than :ref:`Login <sec-api-general-login>`
 will be denied with a :http:statuscode:`403`.
 
-.. warning::
-
-   If :ref:`Access Control <sec-features-access_control>` is disabled, OctoPrint will treat any unauthenticated anonymous requests and thus also requests
-   with an invalid or outright missing API key as requests with full admin rights!
-
-.. note::
-
-   The API key requirements changed in 1.3.11. Up to that version, even if Access Control was disabled, all requests needed to
-   be supplied with an API Key. To make the webinterface work under these circumstances, an unauthenticated anonymous API key was injected into the
-   HTML page and also available on the :ref:`Push API <sec-api-push>`. The presence and ready availability of this unauthenticated
-   anonymous "UI API key" caused confusion and false alarm among users and didn't contribute to the security of the platform in a
-   meaningful way, so it was finally abandoned in 1.3.11.
-
-.. _fig-api-general-globalapikey:
-.. figure:: ../images/settings-global-api-key.png
-   :align: center
-   :alt: Global API key in the API settings
-
-   The global API key can be found in the "API" settings
-
 .. _fig-api-general-userapikey:
 .. figure:: ../images/settings-user-api-key.png
    :align: center
    :alt: User specific API key location in user list
 
-   The user list in the "Access Control" settings shows the API key for users (if available)
+   The user list in the "Access Control" settings shows the API key for users
 
 .. _fig-api-general-changepassword:
 .. figure:: ../images/change-password-api-key.png
@@ -80,6 +58,13 @@ will be denied with a :http:statuscode:`403`.
    :alt: API key options in "Change password" dialog
 
    The API key options in the "Change password" dialog. Users can generate and revoke their custom API key here.
+
+.. _fig-api-general-globalapikey:
+.. figure:: ../images/settings-global-api-key.png
+   :align: center
+   :alt: Global API key in the API settings
+
+   The global API key can be found in the "API" settings, now deprecated
 
 .. _sec-api-general-contenttype:
 

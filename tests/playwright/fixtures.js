@@ -3,12 +3,14 @@ const {MD5} = require("crypto-js");
 
 const credentials = {
     username: process.env.OCTOPRINT_USERNAME || "admin",
-    password: process.env.OCTOPRINT_PASSWORD || "test"
+    password: process.env.OCTOPRINT_PASSWORD || "test",
+    apikey: process.env.OCTOPRINT_APIKEY || "yo5a103LN7co50R4_IAeLvGoLm08BpdfvKngzfHPcPE"
 };
 
 const mfaCredentials = {
     username: process.env.OCTOPRINT_MFA_USERNAME || "mfa",
     password: process.env.OCTOPRINT_MFA_PASSWORD || "mfa",
+    apikey: process.env.OCTOPRINT_APIKEY || "yo5a103LN7co50R4_IAeLvGoLm08BpdfvKngzfHPcPE",
     token: "secret"
 };
 

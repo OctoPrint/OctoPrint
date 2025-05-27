@@ -3,9 +3,6 @@
 Viewmodels
 ==========
 
-.. contents::
-   :local:
-
 When implementing frontend components, you'll sooner or later want to define your own `KnockoutJS view models <http://knockoutjs.com/>`_
 in order to provide custom functionality.
 
@@ -336,7 +333,7 @@ Lifecycle diagrams
 Web interface startup
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. mermaid::
+.. md-mermaid::
 
    sequenceDiagram
       participant Main
@@ -425,7 +422,7 @@ Web interface startup
 Web interface reconnect
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-.. mermaid::
+.. md-mermaid::
 
    sequenceDiagram
       participant onServerConnect

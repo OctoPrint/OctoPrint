@@ -5,10 +5,11 @@
         factory(global.OctoPrintClient, global.$);
     }
 })(this, function (OctoPrintClient, $) {
-    var url = "api/settings";
-    var apiKeyUrl = url + "/apikey";
+    const url = "api/settings";
+    const apiKeyUrl = url + "/apikey";
+    const reauthReqUrl = url + "/reauthReq";
 
-    var OctoPrintSettingsClient = function (base) {
+    const OctoPrintSettingsClient = function (base) {
         this.base = base;
     };
 
@@ -19,6 +20,10 @@
     OctoPrintSettingsClient.prototype.save = function (settings, opts) {
         settings = settings || {};
         return this.base.postJson(url, settings, opts);
+    };
+
+    OctoPrintSettingsClient.prototype.getReauthRequirements = function (opts) {
+        return this.base.get(reauthReqUrl);
     };
 
     OctoPrintSettingsClient.prototype.getPluginSettings = function (plugin, opts) {

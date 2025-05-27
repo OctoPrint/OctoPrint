@@ -209,6 +209,9 @@ class HealthCheckPlugin(
             health[k]["hash"] = v.hash
         return flask.jsonify(health=health)
 
+    def is_api_protected(self):
+        return True
+
     ##~~ TemplatePlugin
 
     def get_template_configs(self):
@@ -230,7 +233,7 @@ __plugin_disabling_discouraged__ = gettext(
     "OctoPrint installation."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 __plugin_implementation__ = HealthCheckPlugin()
 
 __plugin_hooks__ = {

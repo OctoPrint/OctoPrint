@@ -11,7 +11,7 @@ import logging
 import os
 import threading
 import time
-from typing import List, Optional
+from typing import Optional
 
 from frozendict import frozendict
 
@@ -40,7 +40,7 @@ class ErrorInformation(BaseModel):
     reason: str
     consequence: Optional[str] = None
     faq: Optional[str] = None
-    logs: Optional[List[str]] = None
+    logs: Optional[list[str]] = None
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):

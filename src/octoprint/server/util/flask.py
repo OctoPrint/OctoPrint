@@ -12,7 +12,7 @@ import os
 import threading
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 import flask
 import flask.json
@@ -29,7 +29,6 @@ from cachelib import BaseCache
 from flask import current_app
 from flask_login import COOKIE_NAME as REMEMBER_COOKIE_NAME
 from flask_login.utils import decode_cookie, encode_cookie
-from pydantic import BaseModel
 from werkzeug.local import LocalProxy
 from werkzeug.utils import cached_property
 
@@ -39,6 +38,7 @@ import octoprint.server
 import octoprint.vendor.flask_principal as flask_principal
 from octoprint.access import auth_log
 from octoprint.events import Events, eventManager
+from octoprint.schema import BaseModel
 from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated, yaml
 from octoprint.util.json import JsonEncoding
@@ -1424,17 +1424,9 @@ def check_lastmodified(lastmodified: Union[int, float, datetime]) -> bool:
         return False
 
     if isinstance(lastmodified, (int, float)):
-        # max(86400, lastmodified) is workaround for https://bugs.python.org/issue29097,
-        # present in CPython 3.6.x up to 3.7.1.
-        #
-        # I think it's fair to say that we'll never encounter lastmodified values older than
-        # 1970-01-02 so this is a safe workaround.
-        #
-        # Timestamps are defined as seconds since epoch aka 1970/01/01 00:00:00Z, so we
-        # use UTC as timezone here.
-        lastmodified = datetime.fromtimestamp(
-            max(86400, lastmodified), tz=UTC_TZ
-        ).replace(microsecond=0)
+        lastmodified = datetime.fromtimestamp(lastmodified, tz=UTC_TZ).replace(
+            microsecond=0
+        )
 
     if not isinstance(lastmodified, datetime):
         raise ValueError(
@@ -2027,8 +2019,8 @@ class ReverseProxyInfo(BaseModel):
     server_port: int
     server_path: str
     cookie_suffix: str
-    trusted_proxies: List[str] = []
-    headers: Dict[str, str] = {}
+    trusted_proxies: list[str] = []
+    headers: dict[str, str] = {}
 
 
 def get_reverse_proxy_info():

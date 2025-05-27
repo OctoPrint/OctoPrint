@@ -39,8 +39,8 @@ exclude = [
 line-length = 90
 indent-width = 4
 
-# Assume Python 3.7
-target-version = "py37"
+# Assume Python 3.9
+target-version = "py39"
 
 [tool.ruff.lint]
 select = ["B", "C", "E", "F", "I", "W", "B9"]

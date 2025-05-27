@@ -1,7 +1,7 @@
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from typing import List, Union
+from typing import Union
 
 from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
@@ -34,7 +34,7 @@ class Config(BaseModel):
     accessControl: AccessControlConfig = AccessControlConfig()
     api: ApiConfig = ApiConfig()
     appearance: AppearanceConfig = AppearanceConfig()
-    controls: List[Union[ControlConfig, ContainerConfig]] = []
+    controls: list[Union[ControlConfig, ContainerConfig]] = []
     devel: DevelConfig = DevelConfig()
     estimation: EstimationConfig = EstimationConfig()
     events: EventsConfig = EventsConfig()
@@ -50,5 +50,5 @@ class Config(BaseModel):
     slicing: SlicingConfig = SlicingConfig()
     system: SystemConfig = SystemConfig()
     temperature: TemperatureConfig = TemperatureConfig()
-    terminalFilters: List[TerminalFilterEntry] = DEFAULT_TERMINAL_FILTERS
+    terminalFilters: list[TerminalFilterEntry] = DEFAULT_TERMINAL_FILTERS
     webcam: WebcamConfig = WebcamConfig()
