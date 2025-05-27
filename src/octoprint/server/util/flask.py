@@ -29,7 +29,6 @@ from cachelib import BaseCache
 from flask import current_app
 from flask_login import COOKIE_NAME as REMEMBER_COOKIE_NAME
 from flask_login.utils import decode_cookie, encode_cookie
-from pydantic import BaseModel
 from werkzeug.local import LocalProxy
 from werkzeug.utils import cached_property
 
@@ -39,6 +38,7 @@ import octoprint.server
 import octoprint.vendor.flask_principal as flask_principal
 from octoprint.access import auth_log
 from octoprint.events import Events, eventManager
+from octoprint.schema import BaseModel
 from octoprint.settings import settings
 from octoprint.util import DefaultOrderedDict, deprecated, yaml
 from octoprint.util.json import JsonEncoding
