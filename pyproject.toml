@@ -1,6 +1,164 @@
 [build-system]
-requires = ["setuptools>=40.8.0", "wheel"]
+requires = ["setuptools>=80", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "OctoPrint"
+dynamic = ["version"]
+authors = [
+    {name = "Gina Häußge", email = "gina@octoprint.org"}
+]
+maintainers = [
+    {name = "Gina Häußge", email = "gina@octoprint.org"}
+]
+description = "The snappy web interface for your 3D printer"
+readme = {file = "README.md", content-type = "text/markdown"}
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE.txt", "THIRDPARTYLICENSES.md"]
+keywords = [
+    "3dprinting",
+    "3dprinter",
+    "3d-printing",
+    "3d-printer",
+    "octoprint"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Web Environment",
+    "Framework :: Flask",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Manufacturing",
+    "Intended Audience :: Other Audience",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Natural Language :: German",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: JavaScript",
+    "Topic :: Printing",
+]
+
+requires-python = ">=3.9, <3.14"
+
+dependencies = [
+    # bundled plugins
+    "OctoPrint-FileCheck>=2024.11.12",
+    "OctoPrint-FirmwareCheck>=2021.10.11",
+    "OctoPrint-PiSupport>=2023.10.10",
+
+    # core deps
+    "argon2-cffi>=23.1.0",
+    "Babel>=2.16,<2.17",  # breaking changes can happen on minor version increases
+    "cachelib>=0.13.0,<0.14",
+    "Click>=8.1.8,!=8.2.0,<9",  # 8.2.0 has broken flags, see pallets/click#2894
+    "colorlog>=6.9.0,<7",
+    "emoji>=2.14.1,<3",
+    "feedparser>=6.0.11,<7",
+    "filetype>=1.2.0,<2",
+    "Flask-Assets>=2.1.0,<3",
+    "Flask-Babel>=4.0.0,<5",
+    "Flask-Login>=0.6.3,<0.7",  # breaking changes can happen on minor version increases
+    "Flask-Limiter>=3.10.1,<3.11",
+    "flask>=3.1,<3.2",  # breaking changes can happen on minor version increases (with deprecation warnings)
+    "frozendict>=2.4.6,<3",
+    "ifaddr>=0.2.0,<0.3",  # breaking changes seem to happen on minor version increases, let's be a bit conservative here
+    "limits<5",  # dependency of Flask-Limiter, v5 was released days before 1.11.0 and contains backwards incompatibilities, pinning upper limit out of caution
+    "markdown>=3.7,<3.8",
+    "netaddr>=1.3.0,<1.4",  # changelog hints at breaking changes on minor version increases
+    "packaging",
+    "libpass>=1.8.1,<2",
+    "pathvalidate>=3.2.3,<4",
+    "psutil>=6.1.1,<7",
+    "pydantic>=2.10.6,<3",
+    "pylru>=1.2.1,<2",
+    "pyserial>=3.5,<4",
+    "pytz",
+    "PyYAML>=6.0.2,<7",  # changelog at https://github.com/yaml/pyyaml/blob/master/CHANGES
+    "requests>=2.32.3,<3",
+    "sarge==0.1.7.post1",
+    "semantic_version>=2.10.0,<3",
+    "sentry-sdk>=2.20.0,<3",
+    "setuptools",
+    "tornado>=6.4.2,<6.5",
+    "watchdog>=6,<7",
+    "websocket-client>=1.8.0,<1.9",  # breaking changes can happen on patch version increases, changelog incomplete
+    "werkzeug>=3.1.3,<3.2",  # breaking changes can happen on minor version increases
+    "wrapt>=1.17.2,<1.18",
+    "zeroconf>=0.141,<0.142",  # breaking changes can happen on minor version increases (despite semantic versioning)
+    "zipstream-ng>=1.8.0,<2.0.0",
+
+    # vendored deps
+    "blinker>=1.9.0,<1.10.0",  # dependency of flask_principal
+    "more-itertools>=10.6.0",  # dependency of class-doc
+    "regex",  # dependency of awesome-slugify
+    "unidecode",  # dependency of awesome-slugify
+
+    # plugin deps
+    # "OctoPrint-Setuptools>=1.0.3",  # makes sure plugins can import this on setup.py based install
+    "future",  # some plugins might still depend on this but not in their own requirements
+    "wheel",  # makes sure plugins can be built as wheels in OctoPrint's venv, see #4682
+
+    # OS specific deps
+    "appdirs ; sys_platform=='darwin'"
+]
+
+[project.optional-dependencies]
+develop = [
+    # Testing dependencies
+    "ddt",
+    "mock>=5.1.0,<6",
+    "pytest-doctest-custom>=1.0.0,<2",
+    "pytest>=8.3.4,<9",
+    # formatting, liniting, etc
+    "ruff",
+    # pre-commit
+    "pre-commit",
+    # profiler
+    "pyinstrument",
+    # go-task
+    "go-task-bin"
+]
+plugins = [
+    "cookiecutter>=2.6.0,<3"
+]
+docs = [
+    "sphinx>=8.2.3,<9",
+    "sphinx-autobuild>=2024.10.3",
+    "sphinxcontrib-httpdomain>=1.8.1,<2",
+    "sphinx-immaterial>=0.13.5,<1",
+    "myst-parser>=4.0.1,<5",
+]
+
+[project.scripts]
+octoprint = "octoprint:main"
+
+[project.urls]
+homepage = "https://octoprint.org"
+issues = "https://github.com/OctoPrint/OctoPrint/issues"
+source = "https://github.com/OctoPrint/OctoPrint"
+funding = "https://support.octoprint.org"
+documentation = "https://docs.octoprint.org"
+community = "https://help.octoprint.org"
+
+[tool.setuptools]
+include-package-data = true
+package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = {attr = "octoprint.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.ruff]
 exclude = [
@@ -87,3 +245,9 @@ docstring-code-format = false
 # This only has an effect when the `docstring-code-format` setting is
 # enabled.
 docstring-code-line-length = "dynamic"
+
+[tool.codespell]
+skip = '*.po,*.min.js,.git,*/vendor/*,*/lib/*,*/bootstrap/*,*/node_modules/*,*/translations/*,*/venv*,*/.*,*/build/*,*/_build/*,setup.cfg,AUTHORS.md'
+ignore-words = '.codespell_ignore_words'
+quiet-level = 3
+count = true

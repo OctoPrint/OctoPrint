@@ -1,0 +1,34 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  install:
+    cmds:
+      - python -m pip install -e .
+
+  install-dev:
+    cmds:
+      - python -m pip install -e ".[develop,plugins,docs]"
+
+  init-dev:
+    cmds:
+      - task: install-dev
+      - pre-commit install
+      - git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+  build:
+    cmds:
+      - python -m build --sdist --wheel
+
+  build-sdist:
+    cmds:
+      - python -m build --sdist
+
+  build-wheel:
+    cmds:
+      - python -m build --wheel
+
+  update-assets:
+    cmds:
+      - octoprint dev css:build --all
