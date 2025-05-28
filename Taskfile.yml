@@ -2,33 +2,86 @@
 
 version: "3"
 
+env:
+  LOCALES:
+    - de
+
 tasks:
   install:
+    desc: Installs OctoPrint into the current Python environment
     cmds:
       - python -m pip install -e .
 
   install-dev:
+    desc: Installs OctoPrint incl. develop, plugins & docs dependencies into the current Python environment
     cmds:
       - python -m pip install -e ".[develop,plugins,docs]"
 
   init-dev:
+    desc: Prepares a developmenet environment by installing necessary dependencies and activating pre-commit and blame ignore file
     cmds:
       - task: install-dev
       - pre-commit install
       - git config blame.ignoreRevsFile .git-blame-ignore-revs
 
+  ### Build related
+
   build:
+    desc: Builds sdist & wheel
     cmds:
       - python -m build --sdist --wheel
 
   build-sdist:
+    desc: Builds sdist
     cmds:
       - python -m build --sdist
 
   build-wheel:
+    desc: Builds wheel
     cmds:
       - python -m build --wheel
 
   update-assets:
+    desc: Updates all assets
     cmds:
       - octoprint dev css:build --all
+
+  ### Translation related
+
+  babel-extract:
+    desc: Update pot file from source
+    cmds:
+      - pybabel extract --mapping-file=babel.cfg --output-file=translations/messages.pot --msgid-bugs-address=i18n@octoprint.org --copyright-holder="The OctoPrint Project" .
+
+  babel-update:
+    desc: Update translation files from pot file
+    cmds:
+      - for:
+          var: LOCALES
+        cmd: pybabel update --input-file=translations/messages.pot --output-dir=translations --locale={{ .ITEM }}
+
+  babel-refresh:
+    desc: Update translation files from source
+    cmds:
+      - task: babel-extract
+      - task: babel-update
+
+  babel-compile:
+    desc: Compile translation files
+    cmds:
+      - pybabel compile --directory=translations
+
+  babel-bundle:
+    desc: Bundle translations
+    cmds:
+      - for:
+          var: LOCALES
+        cmd: |
+          locale="{{ .ITEM }}"
+          source="translations/${locale}"
+          target="src/octoprint/translations/${locale}"
+
+          [ ! -d "${target}" ] || rm -r "${target}"
+
+          echo "Copying translations for locale ${locale} from ${source} to ${target}..."
+          cp -r "${source}" "${target}"
