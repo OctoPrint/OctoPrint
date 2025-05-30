@@ -24,6 +24,11 @@ tasks:
       - pre-commit install
       - git config blame.ignoreRevsFile .git-blame-ignore-revs
 
+  check-deps:
+    desc: Lists outdated packages in the current venv
+    cmds:
+      - pip-check -H
+
   ### Build related
 
   build:
