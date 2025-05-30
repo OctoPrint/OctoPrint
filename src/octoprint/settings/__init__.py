@@ -2347,7 +2347,7 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
                 ) from exc
 
         else:
-            # not extisting, not allowed to create it
+            # not existing, not allowed to create it
             raise OSError(f"No such folder: {folder}")
 
     elif os.path.isfile(folder):
