@@ -215,13 +215,24 @@ class OctoPrintDevelCommands(click.MultiCommand):
             if not path:
                 path = os.getcwd()
 
+            has_setup_py = os.path.isfile(os.path.join(path, "setup.py"))
+            has_pyproject_toml = os.path.isfile(os.path.join(path, "pyproject.toml"))
+
             # check if this really looks like a plugin
-            if not os.path.isfile(os.path.join(path, "setup.py")):
+            if not has_setup_py and not has_pyproject_toml:
                 click.echo("This doesn't look like an OctoPrint plugin folder")
                 sys.exit(1)
 
+            args = [sys.executable, "-m", "pip", "install", "-e", "."]
+            if not has_pyproject_toml:
+                click.echo(
+                    "No pyproject.toml detected, adding --use-pep517 and --no-build-isolation to the pip call to improve compatibility with modern tooling..."
+                )
+                args += ["--use-pep517", "--no-build-isolation"]
+
             self.command_caller.call(
-                [sys.executable, "-m", "pip", "install", "-e", "."], cwd=path
+                args,
+                cwd=path,
             )
 
         return command
