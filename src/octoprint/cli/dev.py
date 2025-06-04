@@ -520,40 +520,40 @@ babel-bundle:
                 pyproject_toml = os.path.join(folder, "pyproject.toml")
                 click.echo(f"Generating {pyproject_toml}...")
 
-                doc = {
-                    "build-system": {
-                        "requires": ["setuptools>=67", "wheel"],
-                        "build-backend": "setuptools.build_meta",
-                    },
-                    "project": {
-                        "name": plugin_data["plugin_name"],
-                        "version": plugin_data["plugin_version"],
-                        "description": plugin_data["plugin_description"],
-                        "authors": [
-                            {
-                                "name": plugin_data["plugin_author"],
-                                "email": plugin_data["plugin_author_email"],
-                            }
-                        ],
-                        "license": plugin_data["plugin_license"],
-                        "requires-python": plugin_data["plugin_python_requires"],
-                        "dependencies": plugin_data["plugin_requires"],
-                        "entry-points": {
-                            "octoprint.plugin": {
-                                plugin_data["plugin_identifier"]: plugin_data[
-                                    "plugin_package"
-                                ]
-                            },
-                        },
-                        "urls": {"Homepage": plugin_data["plugin_url"]},
-                        "optional-dependencies": {"develop": ["go-task-bin"]},
-                    },
-                    "tool": {
-                        "setuptools": {
-                            "include-package-data": True,
-                            "packages": [plugin_data["plugin_package"]],
+                doc = {}
+                doc["build-system"] = {
+                    "requires": ["setuptools>=67", "wheel"],
+                    "build-backend": "setuptools.build_meta",
+                }
+                doc["project"] = {
+                    "name": plugin_data["plugin_name"],
+                    "version": plugin_data["plugin_version"],
+                    "description": plugin_data["plugin_description"],
+                    "authors": [
+                        {
+                            "name": plugin_data["plugin_author"],
+                            "email": plugin_data["plugin_author_email"],
                         }
+                    ],
+                    "license": plugin_data["plugin_license"],
+                    "requires-python": plugin_data["plugin_python_requires"],
+                    "dependencies": plugin_data["plugin_requires"],
+                    "entry-points": {
+                        "octoprint.plugin": {
+                            plugin_data["plugin_identifier"]: plugin_data[
+                                "plugin_package"
+                            ]
+                        },
                     },
+                    "urls": {"Homepage": plugin_data["plugin_url"]},
+                    "optional-dependencies": {"develop": ["go-task-bin"]},
+                }
+
+                doc["tool"] = {
+                    "setuptools": {
+                        "include-package-data": True,
+                        "packages": [plugin_data["plugin_package"]],
+                    }
                 }
 
                 if os.path.isfile(os.path.join(path, "README.md")):
@@ -570,7 +570,7 @@ babel-bundle:
                     with open(pyproject_toml, mode="rb") as f:
                         data = tomllib.load(f)
 
-                    doc = dict_merge(data, doc)
+                    doc = dict_merge(doc, data)
 
                 # ensure we are producing valid toml
                 try:
