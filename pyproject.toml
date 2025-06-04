@@ -127,7 +127,9 @@ develop = [
     "pyinstrument",
     # dev task related
     "go-task-bin",
-    "pip-check"
+    "pip-check",
+    'tomli>=1.1.0 ; python_version < "3.11"',
+    "tomli-w"
 ]
 plugins = [
     "cookiecutter>=2.6.0,<3"
