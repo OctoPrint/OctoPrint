@@ -53,6 +53,13 @@ tasks:
 
   ### Translation related
 
+  babel-new:
+    desc: Create a new translation for a locale, e.g. task babel-new -- de
+    cmds:
+      - task: babel-extract
+      - |
+        pybabel init --input-file=translations/messages.pot --output-dir=translations --locale="{{ .CLI_ARGS }}"
+
   babel-extract:
     desc: Update pot file from source
     cmds:
