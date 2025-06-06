@@ -108,7 +108,7 @@ and to apply available updates via ``octoprint plugins softwareupdate:update``. 
          that can be updated.
      - octoprint plugins softwareupdate:update --force
          This will force an update of all registered components
-         that can be updated, even if they don't have an updated
+         that can be updated, even if they don't have an update
          pending.
      - octoprint plugins softwareupdate:update octoprint
          This will only update OctoPrint and leave any further
