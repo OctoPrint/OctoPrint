@@ -127,7 +127,7 @@ Workflow with redirect to auth dialog
 Instead of asking the user to open the full blown OctoPrint interface to confirm the request,
 since OctoPrint 1.8.0 there also exists the alternative of redirecting the user to a
 basic auth dialog that allows logging in and confirming the request in a light-weight
-dialog. To implementat that, follow these steps:
+dialog. To implement that, follow these steps:
 
   1. The User opens the App and gets prompted to enter or select an instance URL. Optionally (recommended!) the User also
      enters their username which is also their user ID into the App.
