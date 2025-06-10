@@ -548,12 +548,29 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
 
         :param part: part which was closed
         """
+
+        def finish_file():
+            if "file" not in part:
+                return
+            part["file"].close()
+            del part["file"]
+
         name = part["name"]
+        if any(
+            name.endswith(b"." + suffix)
+            for suffix in map(octoprint.util.to_bytes, self._suffixes.values())
+        ):
+            # don't add any fields matching our internal suffixes, they shouldn't be there and can't be trusted
+            self._logger.debug(
+                f"Throwing away part with name {name}, it matches one of our internal suffixes"
+            )
+            finish_file()
+            return
+
         self._parts[name] = part
         if "file" in part:
             self._files.append(part["path"])
-            part["file"].close()
-            del part["file"]
+            finish_file()
 
     def _on_request_body_finish(self):
         """
