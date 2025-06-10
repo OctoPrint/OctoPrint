@@ -1,4 +1,4 @@
-<div class="control-group" title="{{ _('Aspect ratio of the webcam stream, either 16:9 or 4:3') }}">
+<div class="control-group" title="{{ _('Aspect ratio of the webcam stream, either 16:9 or 4:3')|edq }}">
     <label class="control-label" for="settings-webcamStreamRatio">{{ _('Stream aspect ratio') }}</label>
     <div class="controls">
         <select data-bind="options: available_ratios, value: streamRatio" id="settings-webcamStreamRatio"></select>

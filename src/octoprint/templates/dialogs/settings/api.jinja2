@@ -27,7 +27,7 @@
             <label class="control-label" for="settings-apikey">{{ _('Global API Key') }}</label>
             <div class="controls" data-bind="visible: apiKeyVisible">
                 <div class="input-append input-block-level">
-                    <input type="text" readonly="readonly" id="settings-apikey" data-bind="value: api_key, attr: {placeholder: '{{ _('N/A') }}'}">
+                    <input type="text" readonly="readonly" id="settings-apikey" data-bind="value: api_key, attr: {placeholder: '{{ _('N/A')|esq }}'}">
                     <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: copyApiKey, css: {'disabled': !api_key()}"><i class="fas fa-copy"></i></a>
                     <a class="btn add-on" title="Generate new API Key" data-bind="click: generateApiKey"><i class="fas fa-sync"></i></a>
                     <a class="btn btn-danger add-on" title="Delete API Key" data-bind="click: deleteApiKey, css: {'disabled': !api_key()}"><i class="far fa-trash-alt"></i></a>

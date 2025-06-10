@@ -29,15 +29,15 @@ these users.
 A predefined "Read-only Access" group with no users is configured which by default grants
 read-only access to the following parts of the UI to any users assigned to this group:
 
-  * printer state
-  * available gcode files and stats (upload is disabled)
-  * temperature
-  * webcam
-  * gcode viewer
-  * terminal output (sending commands is disabled)
-  * available timelapse movies
-  * any components provided through plugins which are enabled for anonymous
-    users
+* printer state
+* available gcode files and stats (upload is disabled)
+* temperature
+* webcam
+* gcode viewer
+* terminal output (sending commands is disabled)
+* available timelapse movies
+* any components provided through plugins which are enabled for anonymous
+  users
 
 Another predefined "Operator" group is the default group for newly created users and
 by default gives access to all aspects of OctoPrint that involve regular printer

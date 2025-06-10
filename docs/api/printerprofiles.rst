@@ -4,8 +4,6 @@
 Printer profile operations
 **************************
 
-.. contents::
-
 OctoPrint allows the management of Printer profiles that define a printer's physical properties (such as print volume,
 whether a heated bed is available, maximum speeds on its axes etc). The data stored within these profiles is used
 for both slicing and gcode visualization.

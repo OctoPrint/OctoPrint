@@ -130,6 +130,8 @@ $(function () {
         self.apiKeyVisible = ko.observable(false);
         self.revealingApiKey = ko.observable(false);
 
+        self.reauthReqs = undefined;
+
         self.appearance_name = ko.observable(undefined);
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
@@ -166,6 +168,7 @@ $(function () {
         self.feature_printStartConfirmation = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
         self.feature_uploadOverwriteConfirmation = ko.observable(undefined);
+        self.feature_fileDeleteConfirmation = ko.observable(undefined);
         self.feature_g90InfluencesExtruder = ko.observable(undefined);
         self.feature_autoUppercaseBlacklist = ko.observable(undefined);
         self.feature_enableDragDropUpload = ko.observable(undefined);
@@ -443,29 +446,35 @@ $(function () {
                 return;
             }
 
-            self.testWebcamFfmpegPathBusy(true);
-            OctoPrint.util
-                .testExecutable(self.webcam_ffmpegPath())
-                .done(function (response) {
-                    if (!response.result) {
-                        if (!response.exists) {
-                            self.webcam_ffmpegPathText(gettext("The path doesn't exist"));
-                        } else if (!response.typeok) {
-                            self.webcam_ffmpegPathText(gettext("The path is not a file"));
-                        } else if (!response.access) {
-                            self.webcam_ffmpegPathText(
-                                gettext("The path is not an executable")
-                            );
+            self.loginState.reauthenticateIfNecessary(() => {
+                self.testWebcamFfmpegPathBusy(true);
+                OctoPrint.util
+                    .testExecutable(self.webcam_ffmpegPath())
+                    .done(function (response) {
+                        if (!response.result) {
+                            if (!response.exists) {
+                                self.webcam_ffmpegPathText(
+                                    gettext("The path doesn't exist")
+                                );
+                            } else if (!response.typeok) {
+                                self.webcam_ffmpegPathText(
+                                    gettext("The path is not a file")
+                                );
+                            } else if (!response.access) {
+                                self.webcam_ffmpegPathText(
+                                    gettext("The path is not an executable")
+                                );
+                            }
+                        } else {
+                            self.webcam_ffmpegPathText(gettext("The path is valid"));
                         }
-                    } else {
-                        self.webcam_ffmpegPathText(gettext("The path is valid"));
-                    }
-                    self.webcam_ffmpegPathOk(response.result);
-                    self.webcam_ffmpegPathBroken(!response.result);
-                })
-                .always(function () {
-                    self.testWebcamFfmpegPathBusy(false);
-                });
+                        self.webcam_ffmpegPathOk(response.result);
+                        self.webcam_ffmpegPathBroken(!response.result);
+                    })
+                    .always(function () {
+                        self.testWebcamFfmpegPathBusy(false);
+                    });
+            });
         };
 
         self.testOnlineConnectivityConfigBusy = ko.observable(false);
@@ -474,26 +483,30 @@ $(function () {
             if (!self.server_onlineCheck_port()) return;
             if (self.testOnlineConnectivityConfigBusy()) return;
 
-            self.testOnlineConnectivityConfigBusy(true);
-            OctoPrint.util
-                .testServer(
-                    self.server_onlineCheck_host(),
-                    self.server_onlineCheck_port()
-                )
-                .done(function (response) {
-                    if (!response.result) {
-                        self.server_onlineCheckText(
-                            gettext("The server is not reachable")
-                        );
-                    } else {
-                        self.server_onlineCheckText(gettext("The server is reachable"));
-                    }
-                    self.server_onlineCheckOk(response.result);
-                    self.server_onlineCheckBroken(!response.result);
-                })
-                .always(function () {
-                    self.testOnlineConnectivityConfigBusy(false);
-                });
+            self.loginState.reauthenticateIfNecessary(() => {
+                self.testOnlineConnectivityConfigBusy(true);
+                OctoPrint.util
+                    .testServer(
+                        self.server_onlineCheck_host(),
+                        self.server_onlineCheck_port()
+                    )
+                    .done(function (response) {
+                        if (!response.result) {
+                            self.server_onlineCheckText(
+                                gettext("The server is not reachable")
+                            );
+                        } else {
+                            self.server_onlineCheckText(
+                                gettext("The server is reachable")
+                            );
+                        }
+                        self.server_onlineCheckOk(response.result);
+                        self.server_onlineCheckBroken(!response.result);
+                    })
+                    .always(function () {
+                        self.testOnlineConnectivityConfigBusy(false);
+                    });
+            });
         };
 
         self.testOnlineConnectivityResolutionConfigBusy = ko.observable(false);
@@ -501,34 +514,34 @@ $(function () {
             if (!self.server_onlineCheck_name()) return;
             if (self.testOnlineConnectivityResolutionConfigBusy()) return;
 
-            self.testOnlineConnectivityResolutionConfigBusy(true);
-            OctoPrint.util
-                .testResolution(self.server_onlineCheck_name())
-                .done(function (response) {
-                    if (!response.result) {
-                        self.server_onlineCheckResolutionText(
-                            gettext("Name cannot be resolved")
-                        );
-                    } else {
-                        self.server_onlineCheckResolutionText(
-                            gettext("Name can be resolved")
-                        );
-                    }
-                    self.server_onlineCheckResolutionOk(response.result);
-                    self.server_onlineCheckResolutionBroken(!response.result);
-                })
-                .always(function () {
-                    self.testOnlineConnectivityResolutionConfigBusy(false);
-                });
+            self.loginState.reauthenticateIfNecessary(() => {
+                self.testOnlineConnectivityResolutionConfigBusy(true);
+                OctoPrint.util
+                    .testResolution(self.server_onlineCheck_name())
+                    .done(function (response) {
+                        if (!response.result) {
+                            self.server_onlineCheckResolutionText(
+                                gettext("Name cannot be resolved")
+                            );
+                        } else {
+                            self.server_onlineCheckResolutionText(
+                                gettext("Name can be resolved")
+                            );
+                        }
+                        self.server_onlineCheckResolutionOk(response.result);
+                        self.server_onlineCheckResolutionBroken(!response.result);
+                    })
+                    .always(function () {
+                        self.testOnlineConnectivityResolutionConfigBusy(false);
+                    });
+            });
         };
 
         self.testFolderConfigBusy = ko.observable(false);
         self.testFolderConfig = function (folder) {
             var observable = "folder_" + folder;
             if (!self.hasOwnProperty(observable)) return;
-
             if (self.testFolderConfigBusy()) return;
-            self.testFolderConfigBusy(true);
 
             var opts = {
                 check_type: "dir",
@@ -537,36 +550,45 @@ $(function () {
                 check_writable_dir: true
             };
             var path = self[observable]();
-            OctoPrint.util
-                .testPath(path, opts)
-                .done(function (response) {
-                    if (!response.result) {
-                        if (response.broken_symlink) {
+
+            self.loginState.reauthenticateIfNecessary(() => {
+                self.testFolderConfigBusy(true);
+
+                OctoPrint.util
+                    .testPath(path, opts)
+                    .done(function (response) {
+                        if (!response.result) {
+                            if (response.broken_symlink) {
+                                self.testFolderConfigText[folder](
+                                    gettext("The path is a broken symlink.")
+                                );
+                            } else if (!response.exists) {
+                                self.testFolderConfigText[folder](
+                                    gettext(
+                                        "The path does not exist and cannot be created."
+                                    )
+                                );
+                            } else if (!response.typeok) {
+                                self.testFolderConfigText[folder](
+                                    gettext("The path is not a folder.")
+                                );
+                            } else if (!response.access) {
+                                self.testFolderConfigText[folder](
+                                    gettext("The path is not writable.")
+                                );
+                            }
+                        } else {
                             self.testFolderConfigText[folder](
-                                gettext("The path is a broken symlink.")
-                            );
-                        } else if (!response.exists) {
-                            self.testFolderConfigText[folder](
-                                gettext("The path does not exist and cannot be created.")
-                            );
-                        } else if (!response.typeok) {
-                            self.testFolderConfigText[folder](
-                                gettext("The path is not a folder.")
-                            );
-                        } else if (!response.access) {
-                            self.testFolderConfigText[folder](
-                                gettext("The path is not writable.")
+                                gettext("The path is valid")
                             );
                         }
-                    } else {
-                        self.testFolderConfigText[folder](gettext("The path is valid"));
-                    }
-                    self.testFolderConfigOk[folder](response.result);
-                    self.testFolderConfigBroken[folder](!response.result);
-                })
-                .always(function () {
-                    self.testFolderConfigBusy(false);
-                });
+                        self.testFolderConfigOk[folder](response.result);
+                        self.testFolderConfigBroken[folder](!response.result);
+                    })
+                    .always(function () {
+                        self.testFolderConfigBusy(false);
+                    });
+            });
         };
 
         self.onSettingsHidden = function () {
@@ -620,6 +642,8 @@ $(function () {
                     self.translationUploadFilename(undefined);
                 }
             });
+
+            self.requestReauthReqData();
         };
 
         self.onAllBound = function (allViewModels) {
@@ -883,6 +907,16 @@ $(function () {
 
         self.deleteLanguagePack = function (locale, pack) {
             OctoPrint.languages.delete(locale, pack).done(self.fromTranslationResponse);
+        };
+
+        self.requestReauthReqData = () => {
+            return OctoPrint.settings
+                .getReauthRequirements()
+                .done(self.fromReauthReqsResponse);
+        };
+
+        self.fromReauthReqsResponse = (response) => {
+            self.reauthReqs = response.requirements;
         };
 
         /**
@@ -1337,6 +1371,12 @@ $(function () {
             self.hide();
         };
 
+        self.changesRequireReauth = (data) => {
+            if (!self.reauthReqs) return false;
+            const requiresReauth = self.reauthReqs;
+            return recursiveMatch(requiresReauth, data);
+        };
+
         self.saveData = function (data, successCallback, setAsSending) {
             var options;
             if (_.isPlainObject(successCallback)) {
@@ -1366,31 +1406,55 @@ $(function () {
                 delete data.folder;
             }
 
-            self.active = true;
-            return OctoPrint.settings
-                .save(data)
-                .done(function (data, status, xhr) {
-                    self.ignoreNextUpdateEvent = !self.sawUpdateEventWhileSending;
-                    self.active = false;
+            const perform = () => {
+                self.active = true;
+                return OctoPrint.settings
+                    .save(data)
+                    .done(function (data, status, xhr) {
+                        self.ignoreNextUpdateEvent = !self.sawUpdateEventWhileSending;
+                        self.active = false;
 
-                    self.receiving(true);
-                    self.sending(false);
+                        self.receiving(true);
+                        self.sending(false);
 
-                    try {
-                        self.fromResponse(data);
-                        if (options.success) options.success(data, status, xhr);
-                    } finally {
-                        self.receiving(false);
-                    }
-                })
-                .fail(function (xhr, status, error) {
-                    self.sending(false);
-                    self.active = false;
-                    if (options.error) options.error(xhr, status, error);
-                })
-                .always(function (xhr, status) {
-                    if (options.complete) options.complete(xhr, status);
-                });
+                        try {
+                            self.fromResponse(data);
+                            if (options.success) options.success(data, status, xhr);
+                        } finally {
+                            self.receiving(false);
+                        }
+                    })
+                    .fail(function (xhr, status, error) {
+                        self.sending(false);
+                        self.active = false;
+                        if (options.error) options.error(xhr, status, error);
+                    })
+                    .always(function (xhr, status) {
+                        if (options.complete) options.complete(xhr, status);
+                    });
+            };
+
+            // do we need to reauthenticate?
+            if (self.changesRequireReauth(data)) {
+                const deferred = $.Deferred();
+                self.loginState
+                    .reauthenticateIfNecessary(() => {
+                        perform()
+                            .done(() => {
+                                deferred.resolveWith(arguments);
+                            })
+                            .fail(() => {
+                                deferred.rejectWith(arguments);
+                            });
+                    })
+                    .fail(() => {
+                        self.sending(false);
+                        deferred.reject();
+                    });
+                return deferred.promise();
+            } else {
+                return perform();
+            }
         };
 
         self.onEventSettingsUpdated = function () {
@@ -1446,6 +1510,11 @@ $(function () {
             }
         };
 
+        self.onEventPluginPluginmanagerEnabledPlugin =
+            self.onEventPluginPluginmanagerDisabledPlugin = () => {
+                self.requestReauthReqData();
+            };
+
         self._resetScrollPosition = function () {
             $("#settings_dialog_content", self.settingsDialog).scrollTop(0);
 
@@ -1481,6 +1550,7 @@ $(function () {
             // the settings might have changed if the server was just restarted,
             // better refresh them now
             self.requestData();
+            self.requestReauthReqData();
         };
 
         self.onUserPermissionsChanged =
@@ -1490,6 +1560,7 @@ $(function () {
                     // we might have other user rights now, refresh (but only if startup has fully completed)
                     if (!self._startupComplete) return;
                     self.requestData();
+                    self.requestReauthReqData();
                 };
 
         self.onUserCredentialsOutdated = () => {

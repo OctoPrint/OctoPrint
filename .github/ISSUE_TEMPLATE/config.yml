@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: 🤔 Have questions or need support?
-    url: https://community.octoprint.org
-    about: Please get in touch on the OctoPrint Community Forums!
+    url: https://help.octoprint.org
+    about: Please get in touch on one of the official support channels!
   - name: 💸 Want to donate?
     url: https://support.octoprint.org
     about: Please take a look at the various options to support OctoPrint's development financially!

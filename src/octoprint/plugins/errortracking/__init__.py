@@ -17,10 +17,10 @@ from octoprint.util.version import (
 )
 
 SENTRY_URL_SERVER = (
-    "https://b55f494fb5dbb066e9d3cb61d30b8910@o118517.ingest.us.sentry.io/1373987"
+    "https://5cb8409194b8c6c073d73cf56b5d801e@o118517.ingest.us.sentry.io/1373987"
 )
 SENTRY_URL_COREUI = (
-    "https://d5bc6bc55ec7a65054ceefe4fcc3ae0f@o118517.ingest.us.sentry.io/1374096"
+    "https://eeb1bb0aa54bf9301c77789e91b2cced@o118517.ingest.us.sentry.io/1374096"
 )
 
 SETTINGS_DEFAULTS = {
@@ -54,7 +54,7 @@ IGNORED_EXCEPTIONS = [
         Exception,
         lambda exc, logger, plugin, cb: logger.startswith("octoprint.plugins.astroprint")
         or plugin == "astroprint"
-        or cb.startswith("octoprint_astroprint."),
+        or (cb and cb.startswith("octoprint_astroprint.")),
     ),
 ]
 
@@ -224,7 +224,7 @@ def _enable_errortracking():
 
         sentry_sdk.init(url_server, release=version, before_send=_before_send)
 
-        scope = sentry_sdk.get_isolation_scope()
+        scope = sentry_sdk.get_global_scope()
         scope.user = {"id": unique_id}
 
         logging.getLogger("octoprint.plugins.errortracking").info(

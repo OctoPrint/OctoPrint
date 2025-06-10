@@ -3249,8 +3249,7 @@ class MachineCom:
                 elif self._state == self.STATE_CONNECTING:
                     if "start" in line and not startSeen:
                         startSeen = True
-                        if wait_for_start:
-                            self.sayHello()
+                        self.sayHello()
                     elif line.startswith("ok") or (supportWait and line == "wait"):
                         if line == "wait":
                             # if it was a wait we probably missed an ok, so let's simulate that now

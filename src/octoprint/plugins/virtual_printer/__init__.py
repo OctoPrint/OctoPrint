@@ -65,7 +65,10 @@ class VirtualPrinterPlugin(
             "m114FormatString": "X:{x} Y:{y} Z:{z} E:{e[current]} Count: A:{a} B:{b} C:{c}",
             "m105TargetFormatString": "{heater}:{actual:.2f}/ {target:.2f}",
             "m105NoTargetFormatString": "{heater}:{actual:.2f}",
+            "m123RPMFormatString": "{fan}:{rpm} RPM",
+            "m123PowerFormatString": "{fan}@:{power}",
             "ambientTemperature": 21.3,
+            "fanMaxSpeed": 4560,
             "errors": {
                 "checksum_mismatch": "Checksum mismatch",
                 "checksum_missing": "Missing checksum",

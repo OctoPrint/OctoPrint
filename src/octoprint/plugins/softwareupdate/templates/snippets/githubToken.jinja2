@@ -3,10 +3,10 @@
     <div class="controls">
         <div class="input-append input-block-level ">
             <!-- ko if : config_githubTokenSet -->
-            <input type="text" class="input-block-level" data-bind="value: config_githubToken" placeholder="{{ _('Token entered but hidden for privacy reasons') }}">
+            <input type="text" class="input-block-level" data-bind="value: config_githubToken" placeholder="{{ _('Token entered but hidden for privacy reasons')|edq }}">
             <!-- /ko -->
             <!-- ko ifnot : config_githubTokenSet -->
-            <input type="text" class="input-block-level" data-bind="value: config_githubToken" placeholder="{{ _('Enter a new token...') }}">
+            <input type="text" class="input-block-level" data-bind="value: config_githubToken" placeholder="{{ _('Enter a new token...')|edq }}">
             <!-- /ko -->
             <a class="btn add-on btn-danger" title="Delete GitHub Access Token" data-bind="click: function() { $root.deleteGithubTokenApiKey(); }, css: {'disabled': !$root.config_githubTokenSet()}"><i class="far fa-trash-alt"></i></a>
         </div>

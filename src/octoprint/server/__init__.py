@@ -445,6 +445,7 @@ class Server:
         self._setup_command_triggers()
         self._setup_login_manager()
         self._setup_blueprints()
+        self._check_simple_api_plugins()
 
         ## Tornado initialization starts here
 
@@ -648,7 +649,7 @@ class Server:
         from flask_limiter import Limiter
         from flask_limiter.util import get_remote_address
 
-        app.config["RATELIMIT_STRATEGY"] = "fixed-window-elastic-expiry"
+        app.config["RATELIMIT_STRATEGY"] = "fixed-window"
 
         limiter = Limiter(
             key_func=get_remote_address,
@@ -1856,6 +1857,20 @@ class Server:
                         extra={"plugin": name},
                     )
 
+    def _check_simple_api_plugins(self):
+        api_plugins = octoprint.plugin.plugin_manager().get_implementations(
+            octoprint.plugin.SimpleApiPlugin
+        )
+        for plugin in api_plugins:
+            name = plugin._identifier
+            try:
+                plugin.is_api_protected()
+            except Exception:
+                self._logger.exception(
+                    f"Error checking is_api_protected of plugin {plugin}",
+                    extra={"plugin": name},
+                )
+
     def _start_event_loop(self):
         import asyncio
 
@@ -3002,13 +3017,12 @@ class Server:
                                 )
                             )
 
-                        headers = kwargs.get("headers", {})
-                        headers["X-Force-View"] = plugin if plugin else "_default"
-                        headers["X-Preemptive-Recording"] = "yes"
-                        kwargs["headers"] = headers
-
                         builder = EnvironBuilder(**kwargs)
-                        app(builder.get_environ(), lambda *a, **kw: None)
+                        environ = builder.get_environ()
+                        with app.request_context(environ):
+                            g.preemptive_recording_active = True
+                            g.preemptive_recording_view = plugin if plugin else "_default"
+                            app.full_dispatch_request()
 
                         logger.info(f"... done in {time.monotonic() - start:.2f}s")
                     except Exception:

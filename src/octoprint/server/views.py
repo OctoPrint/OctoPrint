@@ -74,7 +74,7 @@ def _preemptive_unless(base_url=None, additional_unless=None):
         or not (base_url.startswith("http://") or base_url.startswith("https://"))
     )
 
-    recording_disabled = request.headers.get("X-Preemptive-Recording", "no") == "yes"
+    recording_disabled = g.get("preemptive_recording_active", False)
 
     if callable(additional_unless):
         return recording_disabled or disabled_for_root or additional_unless()
@@ -766,7 +766,7 @@ def index():
 
     response = None
 
-    forced_view = request.headers.get("X-Force-View", None)
+    forced_view = getattr(g, "preemptive_recording_view", None)
 
     if forced_view:
         # we have view forced by the preemptive cache

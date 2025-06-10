@@ -1132,3 +1132,70 @@ QUnit.cases(
     var result = rsplit(params.text, params.sep, params.limit);
     assert.deepEqual(result, params.expected, "As expected: " + String(params.expected));
 });
+
+QUnit.module("recursiveMatch");
+QUnit.cases(
+    (() => {
+        const params = [
+            {
+                matcher: {},
+                data: {
+                    a: {ba: {ca: {da: []}, cb: "test"}, bb: 123},
+                    b: "hello",
+                    c: "world"
+                },
+                expected: false
+            },
+            {
+                matcher: {a: {ba: {ca: true}}},
+                data: {},
+                expected: false
+            },
+            {
+                matcher: true,
+                data: {
+                    a: {ba: {ca: {da: []}, cb: "test"}, bb: 123},
+                    b: "hello",
+                    c: "world"
+                },
+                expected: true
+            },
+            {
+                matcher: {a: {ba: {ca: true}}},
+                data: {
+                    a: {ba: {ca: {da: []}, cb: "test"}, bb: 123},
+                    b: "hello",
+                    c: "world"
+                },
+                expected: true
+            },
+            {
+                matcher: {a: {ba: {ca: 1}}},
+                data: {
+                    a: {ba: {ca: {da: []}, cb: "test"}, bb: 123},
+                    b: "hello",
+                    c: "world"
+                },
+                expected: true
+            },
+            {
+                matcher: {a: {ba: {ca: {}}}},
+                data: {
+                    a: {ba: {ca: {da: []}, cb: "test"}, bb: 123},
+                    b: "hello",
+                    c: "world"
+                },
+                expected: true
+            }
+        ];
+
+        const cases = [];
+        params.forEach((param) => {
+            cases.push(param);
+        });
+        return cases;
+    })()
+).test("recursiveMatch", (params, assert) => {
+    const result = recursiveMatch(params.matcher, params.data);
+    assert.deepEqual(result, params.expected, "As expected: " + String(params.expected));
+});

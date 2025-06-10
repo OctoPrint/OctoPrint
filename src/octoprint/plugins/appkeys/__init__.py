@@ -30,11 +30,20 @@ class AppAlreadyExists(Exception):
 
 
 class PendingDecision:
-    def __init__(self, app_id, app_token, user_id, user_token, timeout_callback=None):
+    def __init__(
+        self,
+        app_id,
+        app_token,
+        user_id,
+        user_token,
+        remote_address,
+        timeout_callback=None,
+    ):
         self.app_id = app_id
         self.app_token = app_token
         self.user_id = user_id
         self.user_token = user_token
+        self.remote_address = remote_address
         self.created = time.monotonic()
 
         if callable(timeout_callback):
@@ -48,12 +57,11 @@ class PendingDecision:
             "app_id": self.app_id,
             "user_id": self.user_id,
             "user_token": self.user_token,
+            "remote_address": self.remote_address,
         }
 
     def __repr__(self):
-        return "PendingDecision({!r}, {!r}, {!r}, {!r}, timeout_callback=...)".format(
-            self.app_id, self.app_token, self.user_id, self.user_token
-        )
+        return f"PendingDecision({self.app_id!r}, {self.app_token!r}, {self.user_id!r}, {self.user_token!r}, {self.remote_address!r}, timeout_callback=...)"
 
 
 class ReadyDecision:
@@ -167,11 +175,15 @@ class AppKeysPlugin(
 
     @octoprint.plugin.BlueprintPlugin.route("/request", methods=["POST"])
     @octoprint.plugin.BlueprintPlugin.csrf_exempt()
+    @octoprint.plugin.BlueprintPlugin.limit(
+        "3/minute;5/10 minutes;10/hour",
+        error_message="You have made too many app key requests. Please try again later.",
+    )
     @no_firstrun_access
     def handle_request(self):
         data = flask.request.json
         if data is None:
-            flask.abort(400, description="Missing key request")
+            flask.abort(400, description="Missing data")
 
         if "app" not in data:
             flask.abort(400, description="No app name provided")
@@ -181,7 +193,11 @@ class AppKeysPlugin(
         if "user" in data and data["user"]:
             user_id = data["user"]
 
-        app_token, user_token = self._add_pending_decision(app_name, user_id=user_id)
+        remote_address = flask.request.remote_addr
+
+        app_token, user_token = self._add_pending_decision(
+            remote_address, app_name, user_id=user_id
+        )
         auth_dialog = flask.url_for(
             "plugin.appkeys.handle_auth_dialog", app_token=app_token, _external=True
         ) + (f"?user={user_id}" if user_id else "")
@@ -193,6 +209,7 @@ class AppKeysPlugin(
                 "app_name": app_name,
                 "user_token": user_token,
                 "user_id": user_id,
+                "remote_address": remote_address,
             },
         )
         response = flask.jsonify(app_token=app_token, auth_dialog=auth_dialog)
@@ -248,18 +265,20 @@ class AppKeysPlugin(
 
         app_id = pending.app_id
         user_token = pending.user_token
+        remote_address = pending.remote_address
         redirect_url = flask.request.args.get("redirect", "")
 
         response = flask.make_response(
             flask.render_template(
                 "plugin_appkeys/appkeys_authdialog.jinja2",
                 app=app_id,
+                remote_address=remote_address,
                 user=user_id,
                 user_token=user_token,
                 redirect_url=redirect_url,
                 theming=[],
                 request_text=gettext(
-                    '"<strong>%(app)s</strong>" has requested access to control OctoPrint through the API.'
+                    'A client identifying itself as "<strong>%(app)s</strong>" has requested access to control OctoPrint through the API. The request originates from <code>%(remote_address)s</code>.'
                 ),
             )
         )
@@ -396,6 +415,9 @@ class AppKeysPlugin(
 
         return NO_CONTENT
 
+    def is_api_protected(self):
+        return True
+
     ##~~ key validator hook
 
     def validate_api_key(self, api_key, *args, **kwargs):
@@ -403,7 +425,7 @@ class AppKeysPlugin(
 
     ##~~ Helpers
 
-    def _add_pending_decision(self, app_name, user_id=None):
+    def _add_pending_decision(self, remote_address, app_name, user_id=None):
         app_token = self._generate_key()
         user_token = self._generate_key()
 
@@ -415,6 +437,7 @@ class AppKeysPlugin(
                     app_token,
                     user_id,
                     user_token,
+                    remote_address,
                     timeout_callback=self._expire_pending,
                 )
             )

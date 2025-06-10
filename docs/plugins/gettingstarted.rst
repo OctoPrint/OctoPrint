@@ -3,9 +3,6 @@
 Plugin Tutorial
 ===============
 
-.. contents::
-   :local:
-
 Over the course of this little tutorial we'll build a full fledged, installable OctoPrint plugin that displays "Hello World!"
 at some locations throughout OctoPrint and also offers some other basic functionality to give you an idea of what
 you can achieve with OctoPrint's plugin system.
@@ -213,10 +210,10 @@ This will create a project structure in the ``OctoPrint-HelloWorld`` folder we j
 While we'll need some of those folders later on, we'll now delete everything that we don't need right now first, that
 will make it easier to understand what folder does what later on. Delete the following folders and anything in them:
 
-  * ``extras``
-  * ``translations``
-  * ``octoprint_helloworld/static``
-  * ``octoprint_helloworld/templates``
+* ``extras``
+* ``translations``
+* ``octoprint_helloworld/static``
+* ``octoprint_helloworld/templates``
 
 The final project structure should look like this for now::
 

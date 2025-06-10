@@ -20,20 +20,30 @@ class ConnectivityChecker:
     during connectivity check and only set ``online`` to ``True`` if that succeeds as well.
     """
 
-    def __init__(self, interval, host, port, name=None, enabled=True, on_change=None):
+    def __init__(
+        self,
+        interval,
+        host,
+        port,
+        name=None,
+        enabled=True,
+        force_offline=False,
+        on_change=None,
+    ):
         self._interval = interval
         self._host = host
         self._port = port
         self._name = name
         self._enabled = enabled
+        self._force_offline = force_offline
         self._on_change = on_change
 
         self._logger = logging.getLogger(__name__ + ".connectivity_checker")
 
-        # we initialize the online flag to True if we are not enabled (we don't know any better
-        # but these days it's probably a sane default)
-        self._connection_working = not self._enabled
-        self._resolution_working = not self._enabled or self._name is None
+        self._connection_working = not self._enabled and not self._force_offline
+        self._resolution_working = (
+            not self._enabled or self._name is None
+        ) and not self._force_offline
 
         self._check_worker = None
         self._check_mutex = threading.RLock()
@@ -48,7 +58,13 @@ class ConnectivityChecker:
 
     @property
     def _online(self):
+        if self._force_offline:
+            return False
         return self._connection_working and self._resolution_working
+
+    @property
+    def forced_offlined(self):
+        return self._force_offline
 
     @property
     def host(self):
@@ -122,6 +138,12 @@ class ConnectivityChecker:
             return self.online
 
     def log_full_report(self):
+        if not self._enabled:
+            self._logger.info(
+                "Connectivity check is disabled, assuming we are online and have functional name resolution"
+            )
+            return
+
         with self._check_mutex:
             self._logger.info(
                 "Connectivity state is currently: {}".format(

@@ -40,26 +40,26 @@ Workflow
 The workflow to receive an API key for a third party client/an app via the Application Keys Plugin should consist
 of the following steps:
 
-  1. The User opens the App and gets prompted to enter or select an instance URL. Optionally (recommended!) the User also
-     enters their username which is also their user ID into the App.
-  2. The App :ref:`probes for workflow support <sec-bundledplugins-appkeys-api-probe>` on the Server. If this request
-     doesn't get an HTTP :http:statuscode:`204` the App needs to direct the user to an alternative manual workflow
-     (copy-paste API key) and abort this one. Otherwise it proceeds to the next step.
-  3. The App sends an :ref:`Authorization request <sec-bundledplugins-appkey-datamodel-authrequest>` to the Server to start the
-     authorization process.
-  4. The Server triggers a confirmation dialog for the User on the Webinterface (unused here) and returns an endpoint to the
-     App to poll for a decision in the ``Location`` header of an HTTP :http:statuscode:`201`
-     and an :ref:`Authorization response <sec-bundledplugins-appkey-datamodel-authresponse>` (unused here).
-  5. The App uses the obtained request specific endpoint to poll for a decision every second. An HTTP :http:statuscode:`202`
-     signals that no decision has been made yet.
-  6. The User either accepts or denies the access request which makes the Webinterface send a
-     :ref:`decision request <sec-bundledplugins-appkey-datamodel-decisionrequest>` to the Server.
-  7. If the User accepted the request, the App receives an HTTP :http:statuscode:`200` with an attached
-     :ref:`API key response <sec-bundledplugins-appkey-datamodel-keyresponse>`. If they deny it, the App will receive
-     an HTTP :http:statuscode:`404`.
+1. The User opens the App and gets prompted to enter or select an instance URL. Optionally (recommended!) the User also
+   enters their username which is also their user ID into the App.
+2. The App :ref:`probes for workflow support <sec-bundledplugins-appkeys-api-probe>` on the Server. If this request
+   doesn't get an HTTP :http:statuscode:`204` the App needs to direct the user to an alternative manual workflow
+   (copy-paste API key) and abort this one. Otherwise it proceeds to the next step.
+3. The App sends an :ref:`Authorization request <sec-bundledplugins-appkey-datamodel-authrequest>` to the Server to start the
+   authorization process.
+4. The Server triggers a confirmation dialog for the User on the Webinterface (unused here) and returns an endpoint to the
+   App to poll for a decision in the ``Location`` header of an HTTP :http:statuscode:`201`
+   and an :ref:`Authorization response <sec-bundledplugins-appkey-datamodel-authresponse>` (unused here).
+5. The App uses the obtained request specific endpoint to poll for a decision every second. An HTTP :http:statuscode:`202`
+   signals that no decision has been made yet.
+6. The User either accepts or denies the access request which makes the Webinterface send a
+   :ref:`decision request <sec-bundledplugins-appkey-datamodel-decisionrequest>` to the Server.
+7. If the User accepted the request, the App receives an HTTP :http:statuscode:`200` with an attached
+   :ref:`API key response <sec-bundledplugins-appkey-datamodel-keyresponse>`. If they deny it, the App will receive
+   an HTTP :http:statuscode:`404`.
 
 
-.. mermaid::
+.. md-mermaid::
 
    sequenceDiagram
       participant User
@@ -127,29 +127,29 @@ Workflow with redirect to auth dialog
 Instead of asking the user to open the full blown OctoPrint interface to confirm the request,
 since OctoPrint 1.8.0 there also exists the alternative of redirecting the user to a
 basic auth dialog that allows logging in and confirming the request in a light-weight
-dialog. To implementat that, follow these steps:
+dialog. To implement that, follow these steps:
 
-  1. The User opens the App and gets prompted to enter or select an instance URL. Optionally (recommended!) the User also
-     enters their username which is also their user ID into the App.
-  2. The App :ref:`probes for workflow support <sec-bundledplugins-appkeys-api-probe>` on the Server. If this request
-     doesn't get an HTTP :http:statuscode:`204` the App needs to direct the user to an alternative manual workflow
-     (copy-paste API key) and abort this one. Otherwise it proceeds to the next step.
-  3. The App sends an :ref:`Authorization request <sec-bundledplugins-appkey-datamodel-authrequest>` to the Server to start the
-     authorization process.
-  4. The Server triggers a confirmation dialog for the User on the Webinterface (unused here) and returns an endpoint to the
-     App to poll for a decision in the ``Location`` header of an HTTP :http:statuscode:`201`
-     and an :ref:`Authorization response <sec-bundledplugins-appkey-datamodel-authresponse>`.
-  5. The App opens a browser window with the provided `auth_dialog` URL for the user to log in and confirm the request. At the
-     same time the App also uses the obtained request specific endpoint to poll for a decision every second. An HTTP :http:statuscode:`202`
-     signals that no decision has been made yet.
-  6. The User logs in and either accepts or denies the access request which makes the auth dialog send a
-     :ref:`decision request <sec-bundledplugins-appkey-datamodel-decisionrequest>` to the Server.
-  7. If the User accepted the request, the App receives an HTTP :http:statuscode:`200` with an attached
-     :ref:`API key response <sec-bundledplugins-appkey-datamodel-keyresponse>`. If they deny it, the App will receive
-     an HTTP :http:statuscode:`404`.
+1. The User opens the App and gets prompted to enter or select an instance URL. Optionally (recommended!) the User also
+   enters their username which is also their user ID into the App.
+2. The App :ref:`probes for workflow support <sec-bundledplugins-appkeys-api-probe>` on the Server. If this request
+   doesn't get an HTTP :http:statuscode:`204` the App needs to direct the user to an alternative manual workflow
+   (copy-paste API key) and abort this one. Otherwise it proceeds to the next step.
+3. The App sends an :ref:`Authorization request <sec-bundledplugins-appkey-datamodel-authrequest>` to the Server to start the
+   authorization process.
+4. The Server triggers a confirmation dialog for the User on the Webinterface (unused here) and returns an endpoint to the
+   App to poll for a decision in the ``Location`` header of an HTTP :http:statuscode:`201`
+   and an :ref:`Authorization response <sec-bundledplugins-appkey-datamodel-authresponse>`.
+5. The App opens a browser window with the provided `auth_dialog` URL for the user to log in and confirm the request. At the
+   same time the App also uses the obtained request specific endpoint to poll for a decision every second. An HTTP :http:statuscode:`202`
+   signals that no decision has been made yet.
+6. The User logs in and either accepts or denies the access request which makes the auth dialog send a
+   :ref:`decision request <sec-bundledplugins-appkey-datamodel-decisionrequest>` to the Server.
+7. If the User accepted the request, the App receives an HTTP :http:statuscode:`200` with an attached
+   :ref:`API key response <sec-bundledplugins-appkey-datamodel-keyresponse>`. If they deny it, the App will receive
+   an HTTP :http:statuscode:`404`.
 
 
-.. mermaid::
+.. md-mermaid::
 
    sequenceDiagram
       participant User
@@ -333,6 +333,11 @@ Issue an application key command
      associated application identifier provided in the ``app`` parameter. Keys for other users but the current one can
      be revoked by admins with the additional ``user`` parameter to specify the user id.
 
+     .. deprecated:: 1.10.0
+
+        Revoking a key by supplying the key itself has been deprecated as of OctoPrint 1.10.0. Use ``app`` and optionally
+        ``user`` instead.
+
    generate
      Generates a new application key for the user, using the application identifier provided as parameter ``app``. Keys
      for other users but the current one can be generated by admins with the additional ``user`` parameter to specify
@@ -341,11 +346,6 @@ Issue an application key command
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
    Requires user rights and a fresh credentials check.
-
-   .. deprecated:: 1.10.0
-
-      Revoking a key by supplying the key itself has been deprecated as of OctoPrint 1.10.0. Use ``app`` and optionally
-      ``user`` instead.
 
    **Example revoke request**
 
@@ -600,7 +600,7 @@ JavaScript Client Library
    :param string app: Application identifier
    :param string user: Optional user identifier
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.getKeys(opts)
 
@@ -609,7 +609,7 @@ JavaScript Client Library
    See :ref:`Fetch list of existing application keys <sec-bundledplugins-appkeys-api-fetchlist>` for more details.
 
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.getAllKeys(opts)
 
@@ -620,7 +620,7 @@ JavaScript Client Library
    See :ref:`Fetch list of existing application keys <sec-bundledplugins-appkeys-api-fetchlist>` for more details.
 
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.generateKey(app, opts)
 
@@ -630,7 +630,7 @@ JavaScript Client Library
 
    :param string app: Application identifier
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.revokeKey(key, opts)
 
@@ -645,7 +645,7 @@ JavaScript Client Library
 
    :param string key: Key to revoke
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.revokeKeyForApp(app, user, opts)
 
@@ -657,7 +657,7 @@ JavaScript Client Library
    :param string app: Application identifier
    :param string user: Optional user identifier
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.decide(token, decision, opts)
 
@@ -668,7 +668,7 @@ JavaScript Client Library
    :param string token: User token for which to make the decision, as pushed to the client via the socket.
    :param boolean decision: Whether to grant access (``true``) or not (``false``).
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.probe(opts)
 
@@ -677,7 +677,7 @@ JavaScript Client Library
    See :ref:`Probe for workflow support <sec-bundledplugins-appkeys-api-probe>` for more details.
 
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.request(app, opts)
 
@@ -686,7 +686,7 @@ JavaScript Client Library
    See :ref:`Start authorization process <sec-bundledplugins-appkeys-api-startauthprocess>` for more details.
 
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.requestForUser(app, user, opts)
 
@@ -695,7 +695,7 @@ JavaScript Client Library
    See :ref:`Start authorization process <sec-bundledplugins-appkeys-api-startauthprocess>` for more details.
 
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.checkDecision(token, opts)
 
@@ -704,7 +704,7 @@ JavaScript Client Library
    See :ref:`Poll for decision on existing request <sec-bundledplugins-appkeys-api-polldecision>` for more details.
 
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.plugins.appkeys.authenticate(app, user, opts)
 
@@ -728,7 +728,7 @@ JavaScript Client Library
    :param string app: Application identifier
    :param string user: Optional user identifier
    :param object opts: Additional options for the request
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+   :returns: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. _sec-bundledplugins-appkeys-sourcecode:
 

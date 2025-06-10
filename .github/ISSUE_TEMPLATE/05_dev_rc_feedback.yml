@@ -1,0 +1,58 @@
+name: "🧑‍💻 Internal: RC Feedback Ticket"
+description: Only use this issue type if you are a maintainer or collaborator of OctoPrint!
+title: "[RC Feedback] Feedback on the VERSION Release Candidate"
+labels: ["rc feedback"]
+body:
+  - type: textarea
+    attributes:
+      label: "Feedback"
+      value: |
+        Please provide *general* feedback on your experience with the VERSION Release Candidate here. An "All is working fine" is valuable feedback as well, because it tells me that people in fact are testing the RC and just not finding any problems. If you run into any bugs however, [**please open a full bug report**](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report) and link it here! Thanks :)
+
+        #### Things to take a closer look at
+
+        For this RC, these things should get a closer look while testing, if possible:
+
+        - Proper behaviour when using the included web interface as well as any third party clients at your disposal.
+        - ...
+
+        <!---
+
+        ### Update test matrix
+
+        [ insert screenshot here ]
+
+        *Releases aren't rolled out unless all tests in the update test matrix succeed.*
+
+        -->
+
+        ---
+
+        ### ❗👇 IMPORTANT 👇❗
+        ###
+        ### If you run into any obvious bugs not yet listed below, please *open a new ticket and follow ["How to file a bug report"](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report)*. I need full bug reports *with system info bundles* in the issue tracker, not just a statement somewhere that something doesn't work!
+        ###
+        ### Please respect the process and don't make the already very stressful RC phase any more difficult for me!
+        ###
+        ### ❗👆 IMPORTANT 👆❗
+
+        ---
+
+        ### Currently known issues
+
+        ### Unreproduced issues
+
+        ### Unreproduced and information for further analysis missing
+
+        ### Third party issues
+
+        ### Issues needing analysis
+
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: Verification
+      options:
+        - label: I'm a maintainer or collaborator of OctoPrint and allowed to use this issue type
+          required: true

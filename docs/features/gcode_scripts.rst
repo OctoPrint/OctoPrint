@@ -3,8 +3,6 @@
 GCODE Scripts
 =============
 
-.. contents::
-
 OctoPrint allows you to define custom GCODE scripts to be executed on specified occasions, e.g. when a print
 starts, when OctoPrint connects to a printer, or when a :ref:`button defined as a custom control <sec-features-custom_controls>`
 is clicked.
@@ -27,19 +25,19 @@ Predefined Scripts
 
 The following GCODE scripts are sent by OctoPrint automatically:
 
-  * ``afterPrinterConnected``: Sent after OctoPrint successfully connected to a printer. Defaults to an empty script.
-  * ``beforePrinterDisconnected``: Sent just before OctoPrint (actively) closes the connection to the printer. Defaults
-    to an empty script. Note that this will *not* be sent for unexpected connection cut offs, e.g. in case of errors
-    on the serial line, only when the user clicks the "Disconnect" button or the printer requests a disconnect via an
-    :ref:`action command <sec-features-action_commands>` .
-  * ``beforePrintStarted``: Sent just before a print job is started. Defaults to an empty script.
-  * ``afterPrintCancelled``: Sent just after a print job was cancelled. Defaults to the
-    :ref:`bundled script listed below <sec-features-gcode_scripts-bundled>`.
-  * ``afterPrintDone``: Sent just after a print job finished. Defaults to an empty script.
-  * ``afterPrintPaused``: Sent just after a print job was paused. Defaults to an empty script.
-  * ``beforePrintResumed``: Sent just before a print job is resumed. Defaults to an empty script.
-  * ``beforeToolChange``: Sent just before a tool change command (``Tn``) is issued.
-  * ``afterToolChange``: Sent just after a tool change command (``Tn``) is issued
+* ``afterPrinterConnected``: Sent after OctoPrint successfully connected to a printer. Defaults to an empty script.
+* ``beforePrinterDisconnected``: Sent just before OctoPrint (actively) closes the connection to the printer. Defaults
+  to an empty script. Note that this will *not* be sent for unexpected connection cut offs, e.g. in case of errors
+  on the serial line, only when the user clicks the "Disconnect" button or the printer requests a disconnect via an
+  :ref:`action command <sec-features-action_commands>` .
+* ``beforePrintStarted``: Sent just before a print job is started. Defaults to an empty script.
+* ``afterPrintCancelled``: Sent just after a print job was cancelled. Defaults to the
+  :ref:`bundled script listed below <sec-features-gcode_scripts-bundled>`.
+* ``afterPrintDone``: Sent just after a print job finished. Defaults to an empty script.
+* ``afterPrintPaused``: Sent just after a print job was paused. Defaults to an empty script.
+* ``beforePrintResumed``: Sent just before a print job is resumed. Defaults to an empty script.
+* ``beforeToolChange``: Sent just before a tool change command (``Tn``) is issued.
+* ``afterToolChange``: Sent just after a tool change command (``Tn``) is issued
 
 .. note::
 
@@ -71,53 +69,53 @@ Context
 
 All GCODE scripts have access to the following template variables through the template context:
 
-  * ``printer_profile``: The currently selected :ref:`Printer Profile <sec-modules-printer-profile>`, including
-    information such as the extruder count, the build volume size, the filament diameter etc. The individual properties
-    follow the common data model for :ref:`printer profiles <sec-api-printerprofiles-datamodel-profile>`.
-  * ``last_position``: Last position reported by the printer via `M114` (might be unset if no `M114` was sent so far!).
-    Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
-    current tool ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no
-    position could be retrieved from the printer or the values could not be tracked (in case of ``f`` and ``t``)!
-  * ``last_temperature``: Last actual and target temperature reported for all available tools and if available the
-    heated bed. This is a dictionary of key-value pairs. The keys are the indices of the available tools (``0``, ``1``,
-    ...) and ``b`` for the heated bed. The values are a dictionary consisting of ``actual`` and ``target`` keys mapped
-    to the corresponding temperature in degrees Celsius. Note that not all tools your printer has must necessarily be
-    present here, neither must the heated bed - it depends on whether OctoPrint has values for a tool or the bed. Also
-    note that ``actual`` and ``target`` might be ``None``.
-  * ``last_fanspeed``: Last fan speed set. It contains the value taken from command (M106 and M107) sent through OctoPrint.
-    The value might be ``None`` if no fan speed has been set.
-  * ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
-    and ``script.name`` respectively.
-  * ``plugins``: An object containing variables provided by plugins (e.g ``plugins.myplugin.myvariable``)
+* ``printer_profile``: The currently selected :ref:`Printer Profile <sec-modules-printer-profile>`, including
+  information such as the extruder count, the build volume size, the filament diameter etc. The individual properties
+  follow the common data model for :ref:`printer profiles <sec-api-printerprofiles-datamodel-profile>`.
+* ``last_position``: Last position reported by the printer via `M114` (might be unset if no `M114` was sent so far!).
+  Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
+  current tool ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no
+  position could be retrieved from the printer or the values could not be tracked (in case of ``f`` and ``t``)!
+* ``last_temperature``: Last actual and target temperature reported for all available tools and if available the
+  heated bed. This is a dictionary of key-value pairs. The keys are the indices of the available tools (``0``, ``1``,
+  ...) and ``b`` for the heated bed. The values are a dictionary consisting of ``actual`` and ``target`` keys mapped
+  to the corresponding temperature in degrees Celsius. Note that not all tools your printer has must necessarily be
+  present here, neither must the heated bed - it depends on whether OctoPrint has values for a tool or the bed. Also
+  note that ``actual`` and ``target`` might be ``None``.
+* ``last_fanspeed``: Last fan speed set. It contains the value taken from command (M106 and M107) sent through OctoPrint.
+  The value might be ``None`` if no fan speed has been set.
+* ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
+  and ``script.name`` respectively.
+* ``plugins``: An object containing variables provided by plugins (e.g ``plugins.myplugin.myvariable``)
 
 There are a few additional template variables available for the following specific scripts:
 
-  * ``afterPrintPaused`` and ``beforePrintResumed``
+* ``afterPrintPaused`` and ``beforePrintResumed``
 
-    * ``pause_position``: Position reported by the printer via ``M114`` immediately before the print was paused. See
-      ``last_position`` above for the structure to expect here.
+  * ``pause_position``: Position reported by the printer via ``M114`` immediately before the print was paused. See
+    ``last_position`` above for the structure to expect here.
 
-      **Please note:** This will not be available if you disable
-      "Log position on pause" under Settings > Serial > Advanced options!
-    * ``pause_temperature``: Last known temperature values when the print was paused. See ``last_temperature`` above
-      for the structure to expect here.
-    * ``pause_fanspeed``: Last known fan speed value when the print was paused. See ``last_fanspeed`` above for the structure to expect here.
+    **Please note:** This will not be available if you disable
+    "Log position on pause" under Settings > Serial > Advanced options!
+  * ``pause_temperature``: Last known temperature values when the print was paused. See ``last_temperature`` above
+    for the structure to expect here.
+  * ``pause_fanspeed``: Last known fan speed value when the print was paused. See ``last_fanspeed`` above for the structure to expect here.
 
-  * ``afterPrintCancelled``
+* ``afterPrintCancelled``
 
-    * ``cancel_position``: Position reported by the printer via ``M114`` immediately before the print was cancelled.
-      See ``last_position`` above for the structure to expect here.
+  * ``cancel_position``: Position reported by the printer via ``M114`` immediately before the print was cancelled.
+    See ``last_position`` above for the structure to expect here.
 
-      **Please note:** This will not be available if you disable
-      "Log position on cancel" under Settings > Serial > Advanced options!
-    * ``cancel_temperature``: Last known temperature values when the print was cancelled. See ``last_temperature`` above
-      for the structure to expect here.
-    * ``cancel_fanspeed``: Last known fan speed value when the print was cancelled. See ``last_fanspeed`` above for the structure to expect here.
+    **Please note:** This will not be available if you disable
+    "Log position on cancel" under Settings > Serial > Advanced options!
+  * ``cancel_temperature``: Last known temperature values when the print was cancelled. See ``last_temperature`` above
+    for the structure to expect here.
+  * ``cancel_fanspeed``: Last known fan speed value when the print was cancelled. See ``last_fanspeed`` above for the structure to expect here.
 
-  * ``beforeToolChange`` and ``afterToolChange``
+* ``beforeToolChange`` and ``afterToolChange``
 
-    * ``tool.old``: The number of the previous tool
-    * ``tool.new``: The number of the new tool
+  * ``tool.old``: The number of the previous tool
+  * ``tool.new``: The number of the new tool
 
 
 .. warning::
@@ -138,14 +136,14 @@ There are a few additional template variables available for the following specif
 The :ref:`predefined GCODE scripts <sec-features-gcode_scripts-predefined>` are also called with the following additional
 template variables:
 
-  * ``event``: The payload of the ``Connected``, ``PrintStarted``, ``PrintCancelled``, ``PrintDone``, ``PrintPaused`` or
-    ``PrintResumed`` event. See :ref:`the documentation of events <sec-events-available_events>` for the contained values.
+* ``event``: The payload of the ``Connected``, ``PrintStarted``, ``PrintCancelled``, ``PrintDone``, ``PrintPaused`` or
+  ``PrintResumed`` event. See :ref:`the documentation of events <sec-events-available_events>` for the contained values.
 
 GCODE scripts attached to :ref:`custom controls <sec-features-custom_controls>` are called with the following
 additional template variables:
 
-  * ``parameters``: The parameters as defined for the custom control, if it has any inputs.
-  * ``context``: Additional ``context`` included in the definition of the custom control.
+* ``parameters``: The parameters as defined for the custom control, if it has any inputs.
+* ``context``: Additional ``context`` included in the definition of the custom control.
 
 .. _sec-features-gcode_scripts-bundled:
 

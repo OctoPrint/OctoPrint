@@ -28,6 +28,7 @@ Cura/preferences.ini
 build
 dist
 pypy
+build.log
 
 *.orig
 *.codekit

@@ -28,13 +28,13 @@ Configuring the plugin
 
 The plugin supports the following configuration keys:
 
-  * ``enable``: Whether to always enable (``always``), disable (``never``) or ``detect`` support.
-  * ``enable_emergency_sending``: Will make the selection command be sent as an emergency command to jump the internal
-    send queue and even be sent to the printer if it's not signaling to be able to received. Only done if this is true
-    and the printer signals support for emergency command processing. Defaults to ``true``.
-  * ``enable_signaling``: If enabled, will send the configured command with the ``P1`` parameter to the printer to
-    signal prompt support of the host. Defaults to ``true``.
-  * ``command``: The command to send to the firmware on choice, defaults to ``M876``.
+* ``enable``: Whether to always enable (``always``), disable (``never``) or ``detect`` support.
+* ``enable_emergency_sending``: Will make the selection command be sent as an emergency command to jump the internal
+  send queue and even be sent to the printer if it's not signaling to be able to received. Only done if this is true
+  and the printer signals support for emergency command processing. Defaults to ``true``.
+* ``enable_signaling``: If enabled, will send the configured command with the ``P1`` parameter to the printer to
+  signal prompt support of the host. Defaults to ``true``.
+* ``command``: The command to send to the firmware on choice, defaults to ``M876``.
 
 You can modify them either through the plugin's configuration dialog under Settings, or by directly editing ``config.yaml``.
 

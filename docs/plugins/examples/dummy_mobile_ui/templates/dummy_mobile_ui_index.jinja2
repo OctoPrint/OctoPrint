@@ -1,0 +1,31 @@
+<html>
+    <head>
+        <title>Dummy Mobile OctoPrint UI</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/>
+    </head>
+    <body>
+        <h1>Dummy Mobile OctoPrint UI</h1>
+
+        <p>
+            Well hello there. Sadly, this is only a placeholder page used to
+            demonstrate how UiPlugins work. Hence the "Dummy" in the name.
+            Hope you are not too disappointed :)
+        </p>
+
+        <p>
+            Some data from the <code>render_kwargs</code> passed to this
+            template:
+        </p>
+
+        <ul>
+            <!--
+             We can include any render keywords arguments by their name,
+             using the regular Jinja templating functionality.
+             -->
+            <li>Version: {{ display_version }}</li>
+            <li>Debug: {{ debug }}</li>
+            <li>Template Count: {{ templates|length }}</li>
+            <li>Installed Plugins: {{ pluginNames|join(", ") }}</li>
+        </ul>
+    </body>
+</html>

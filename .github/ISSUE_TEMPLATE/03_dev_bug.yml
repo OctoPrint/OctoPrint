@@ -1,0 +1,27 @@
+name: "🧑‍💻 Internal: Dev Bug"
+description: Only use this issue type if you are a maintainer or collaborator of OctoPrint!
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: The problem
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Additional information
+  - type: checkboxes
+    attributes:
+      label: Verification
+      options:
+        - label: I'm a maintainer or collaborator of OctoPrint and allowed to use this issue type
+          required: true

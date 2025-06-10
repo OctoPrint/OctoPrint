@@ -10,8 +10,6 @@ Slicing
    a more general consumption. If you happen to want to develop against it, you should drop me an email to make sure I can give you a heads-up when
    something changes.
 
-.. contents::
-
 The Slicing API on one hand offers methods for managing slicing profiles stored within OctoPrint, on the other hand
 it will be extended in the future to also allow for multi extruder slicing (which currently is not possible with the
 ``slice`` command of the :ref:`File operations API <sec-api-fileops-filecommand>` and other things.

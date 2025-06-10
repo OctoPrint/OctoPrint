@@ -20,7 +20,7 @@
         </div>
 
         <div class="refresh_overlay">
-            <a data-bind="click: refreshWebcam" aria-label="{{ _('Refresh webcam view') }}"><i class="fas fa-refresh"></i></a>
+            <a data-bind="click: refreshWebcam" aria-label="{{ _('Refresh webcam view')|edq }}"><i class="fas fa-refresh"></i></a>
         </div>
 
         {% if templates.webcam.order|length > 1 %}
@@ -64,28 +64,28 @@
     <div id="control-jog-xy" class="jog-panel">
         <h1>X/Y</h1>
         <div>
-            <button id="control-yinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',1) }" aria-label="{{ _('Move front') }}"><i class="fas fa-arrow-up"></i></button>
+            <button id="control-yinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',1) }" aria-label="{{ _('Move front')|edq }}"><i class="fas fa-arrow-up"></i></button>
         </div>
         <div>
-            <button id="control-xdec" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',-1) }" aria-label="{{ _('Move left') }}"><i class="fas fa-arrow-left"></i></button>
-            <button id="control-xyhome" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() , click: function() { $root.sendHomeCommand(['x', 'y']) }" aria-label="{{ _('Home') }}"><i class="fas fa-home"></i></button>
-            <button id="control-xinc" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',1) }" aria-label="{{ _('Move right') }}"><i class="fas fa-arrow-right"></i></button>
+            <button id="control-xdec" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',-1) }" aria-label="{{ _('Move left')|edq }}"><i class="fas fa-arrow-left"></i></button>
+            <button id="control-xyhome" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() , click: function() { $root.sendHomeCommand(['x', 'y']) }" aria-label="{{ _('Home')|edq }}"><i class="fas fa-home"></i></button>
+            <button id="control-xinc" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',1) }" aria-label="{{ _('Move right')|edq }}"><i class="fas fa-arrow-right"></i></button>
         </div>
         <div>
-            <button id="control-ydec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',-1) }" aria-label="{{ _('Move back') }}"><i class="fas fa-arrow-down"></i></button>
+            <button id="control-ydec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',-1) }" aria-label="{{ _('Move back')|edq }}"><i class="fas fa-arrow-down"></i></button>
         </div>
     </div>
     <!-- Z jogging control panel -->
     <div id="control-jog-z" class="jog-panel">
         <h1>Z</h1>
         <div>
-            <button id="control-zinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',1) }" aria-label="{{ _('Move up') }}"><i class="fas fa-arrow-up"></i></button>
+            <button id="control-zinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',1) }" aria-label="{{ _('Move up')|edq }}"><i class="fas fa-arrow-up"></i></button>
         </div>
         <div>
-            <button id="control-zhome" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand(['z']) }" aria-label="{{ _('Home') }}"><i class="fas fa-home"></i></button>
+            <button id="control-zhome" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand(['z']) }" aria-label="{{ _('Home')|edq }}"><i class="fas fa-home"></i></button>
         </div>
         <div>
-            <button id="control-zdec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',-1) }" aria-label="{{ _('Move down') }}"><i class="fas fa-arrow-down"></i></button>
+            <button id="control-zdec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',-1) }" aria-label="{{ _('Move down')|edq }}"><i class="fas fa-arrow-down"></i></button>
         </div>
     </div>
 
@@ -100,7 +100,7 @@
 
     <!-- Feed rate -->
     <div id="control-jog-feedrate" class="jog-panel">
-        <label>{{ _('Feed rate modifier:') }} <a class="text-info" href="javascript:void(0)" data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _('Please note!') }}', content: '{{ _('The feed rate can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.') }}'}"><i class="fas fa-info-circle"></i></a></label>
+        <label>{{ _('Feed rate modifier:') }} <a class="text-info" href="javascript:void(0)" data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _('Please note!')|esq }}', content: '{{ _('The feed rate can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.')|esq }}'}"><i class="fas fa-info-circle"></i></a></label>
         <div class="input-append control-box">
             <input type="number" class="input-mini" min="1" step="1" data-bind="textInput: feedRate, event: { blur: resetFeedRateDisplay, focus: cancelFeedRateDisplayReset }, css: { pulsate_text_opacity: feedRateResetter() !== undefined }">
             <span class="add-on">%</span>
@@ -128,12 +128,12 @@
                     <li><a href="javascript:void(0)" data-bind="click: $root.sendSelectToolCommand, text: name(), enable: $root.isOperational()"></a></li>
                 </ul>
             </div>
-            <a class="text-info" style="display: inline-block; height: 30px; vertical-align: middle" href="javascript:void(0)" data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _('Please note!') }}', content: '{{ _('The selected tool can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.') }}'}"><i class="fas fa-info-circle"></i></a>
+            <a class="text-info" style="display: inline-block; height: 30px; vertical-align: middle" href="javascript:void(0)" data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _('Please note!')|esq }}', content: '{{ _('The selected tool can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.')|esq }}'}"><i class="fas fa-info-circle"></i></a>
         </div>
 
         <!-- Flow rate -->
         <div id="control-jog-flowrate">
-            <label>{{ _('Flow rate modifier:') }} <a class="text-info" href="javascript:void(0)" data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _('Please note!') }}', content: '{{ _('The flow rate can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.') }}'}"><i class="fas fa-info-circle"></i></a></label>
+            <label>{{ _('Flow rate modifier:') }} <a class="text-info" href="javascript:void(0)" data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _('Please note!')|esq }}', content: '{{ _('The flow rate can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.')|esq }}'}"><i class="fas fa-info-circle"></i></a></label>
             <div class="input-append control-box">
                 <input type="number" class="input-mini" min="1" step="1" data-bind="textInput: flowRate, event: { blur: resetFlowRateDisplay, focus: cancelFlowRateDisplayReset }, css: { pulsate_text_opacity: flowRateResetter() !== undefined }">
                 <span class="add-on">%</span>

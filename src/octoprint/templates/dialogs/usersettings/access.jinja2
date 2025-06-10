@@ -34,7 +34,7 @@
             <label class="control-label" for="userSettings-access_apikey">{{ _('Current API Key') }}</label>
             <div class="controls" data-bind="visible: apiKeyVisible">
                 <div class="input-append input-block-level">
-                    <input type="text" readonly="readonly" id="userSettings-access_apikey" data-bind="value: access_apikey, attr: {placeholder: '{{ _('N/A') }}'}">
+                    <input type="text" readonly="readonly" id="userSettings-access_apikey" data-bind="value: access_apikey, attr: {placeholder: '{{ _('N/A')|esq }}'}">
                     <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: copyApikey, css: {'disabled': !access_apikey()}"><i class="fas fa-copy"></i></a>
                     <a class="btn add-on" title="Generate new API Key" data-bind="click: generateApikey"><i class="fas fa-sync"></i></a>
                     <a class="btn btn-danger add-on" title="Delete API Key" data-bind="click: deleteApikey, css: {'disabled': !access_apikey()}"><i class="far fa-trash-alt"></i></a>

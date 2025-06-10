@@ -1,6 +1,6 @@
 <h3>{{ _("GCode Viewer") }}</h3>
 <form class="form-horizontal" onsubmit="return false;">
-    <div class="control-group" title="{{ _('Skip/hide gcode until this string')}}">
+    <div class="control-group" title="{{ _('Skip/hide gcode until this string')|edq }}">
         <label class="control-label" for="settings-gcodeviewer-skipUntilThis">{{ _('Skip to this') }}</label>
         <div class="controls">
             <input type="text" class="input-block-level" data-bind="value: settings.settings.plugins.gcodeviewer.skipUntilThis" id="settings-gcodeviewer-skipUntilThis" placeholder="; some comment at the start of your GCODE">
@@ -9,7 +9,7 @@
             </span>
         </div>
     </div>
-    <div class="control-group" title="{{ _('Maximum size for which the GCode Viewer autoloads the file for preview') }}">
+    <div class="control-group" title="{{ _('Maximum size for which the GCode Viewer autoloads the file for preview')|edq }}">
         <label class="control-label" for="settings-gcodeviewer-featureSizeThreshold">{{ _('File size threshold') }}</label>
         <div class="controls">
             <input type="text" class="input-mini text-right" data-bind="value: sizeThresholdStr" id="settings-gcodeviewer-featureSizeThreshold">

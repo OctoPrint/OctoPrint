@@ -4,6 +4,10 @@
 
     <h3>{{ _('Commands') }}</h3>
 
+    <p>{% trans %}
+        Changing any of the commands might require you to re-enter your password.
+    {% endtrans %}</p>
+
     {% include "snippets/settings/server/serverCommandServerRestart.jinja2" %}
     {% include "snippets/settings/server/serverCommandSystemRestart.jinja2" %}
     {% include "snippets/settings/server/serverCommandSystemShutdown.jinja2" %}

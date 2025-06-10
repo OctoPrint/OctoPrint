@@ -161,15 +161,15 @@
                                     <div class="form-inline">
                                         <div class="control-labeled">
                                             <label>{{ _('Name') }}</label>
-                                            <input type="text" class="input-small" placeholder="{{ _('Name') }}" data-bind="value: name">
+                                            <input type="text" class="input-small" placeholder="{{ _('Name')|edq }}" data-bind="value: name">
                                         </div>
                                         <div class="control-labeled">
                                             <label>{{ _('Parameter') }}</label>
-                                        <input type="text" class="input-small" placeholder="{{ _('Parameter') }}" data-bind="value: parameter">
+                                        <input type="text" class="input-small" placeholder="{{ _('Parameter')|edq }}" data-bind="value: parameter">
                                         </div>
                                         <div class="control-labeled">
                                             <label>{{ _('Default') }}</label>
-                                        <input type="text" class="input-small" placeholder="{{ _('Default') }}" data-bind="value: $data.default">
+                                        <input type="text" class="input-small" placeholder="{{ _('Default')|edq }}" data-bind="value: $data.default">
                                         </div>
                                     </div>
                                 </div>
@@ -181,35 +181,35 @@
                                 <div class="form-inline">
                                     <div class="control-labeled">
                                         <label>{{ _('Name') }}</label>
-                                        <input type="text" class="input-small" placeholder="{{ _('Name') }}" data-bind="value: name">
+                                        <input type="text" class="input-small" placeholder="{{ _('Name')|edq }}" data-bind="value: name">
                                     </div>
                                     <div class="control-labeled">
                                         <label>{{ _('Parameter') }}</label>
-                                        <input type="text" class="input-small" placeholder="{{ _('Parameter') }}" data-bind="value: parameter">
+                                        <input type="text" class="input-small" placeholder="{{ _('Parameter')|edq }}" data-bind="value: parameter">
                                     </div>
                                     <div class="control-labeled">
                                         <label>{{ _('Default') }}</label>
-                                        <input type="text" class="input-small" placeholder="{{ _('Default') }}" data-bind="value: $data.default">
+                                        <input type="text" class="input-small" placeholder="{{ _('Default')|edq }}" data-bind="value: $data.default">
                                     </div>
                                     <div class="control-labeled">
                                         <label>{{ _('Min') }}</label>
-                                        <input type="number" class="input-small" placeholder="{{ _('Min') }}" data-bind="value: slider.min">
+                                        <input type="number" class="input-small" placeholder="{{ _('Min')|edq }}" data-bind="value: slider.min">
                                     </div>
                                     <div class="control-labeled">
                                         <label>{{ _('Max') }}</label>
-                                        <input type="number" class="input-small" placeholder="{{ _('Max') }}" data-bind="value: slider.max">
+                                        <input type="number" class="input-small" placeholder="{{ _('Max')|edq }}" data-bind="value: slider.max">
                                     </div>
                                     <div class="control-labeled">
                                         <label>{{ _('Step') }}</label>
-                                        <input type="number" class="input-small" placeholder="{{ _('Step') }}" data-bind="value: slider.step">
+                                        <input type="number" class="input-small" placeholder="{{ _('Step')|edq }}" data-bind="value: slider.step">
                                     </div>
                                 </div>
                             </div>
                             <!-- /ko -->
                         </div>
                         <div class="pull-right">
-                            <button title="{{ _('Add text parameter') }}" class="btn" data-bind="click: function() { editor.addInput() }"><i class="fa-solid fa-font"></i> Add text input</button>
-                            <button title="{{ _('Add slider') }}" class="btn" data-bind="click: function() { editor.addSliderInput() }"><i class="fa-solid fa-sliders"></i> Add slider</button>
+                            <button title="{{ _('Add text parameter')|edq }}" class="btn" data-bind="click: function() { editor.addInput() }"><i class="fa-solid fa-font"></i> Add text input</button>
+                            <button title="{{ _('Add slider')|edq }}" class="btn" data-bind="click: function() { editor.addSliderInput() }"><i class="fa-solid fa-sliders"></i> Add slider</button>
                         </div>
                     </div>
                 </div>

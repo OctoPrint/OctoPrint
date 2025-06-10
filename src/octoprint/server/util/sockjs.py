@@ -197,6 +197,9 @@ class PrinterStateConnection(
             return
         if not isinstance(self._user, SessionUser):
             return
+        self._logger.debug(
+            f"Browser session of {self._user.get_name()} still active, keeping it alive"
+        )
         self._user.touch()
 
     def __str__(self):
@@ -741,7 +744,8 @@ class PrinterStateConnection(
         )
         self._authed = True
 
-        self._keep_alive.start()
+        if not self._keep_alive.is_alive():
+            self._keep_alive.start()
 
         for name, hook in self._authed_hooks.items():
             try:

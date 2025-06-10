@@ -15,21 +15,21 @@ or uploaded files.
 Installing from URL or file uploads currently supports the following file
 formats:
 
-  * ``.zip``, ``.tar.gz``, ``.tgz``, ``.tar``, ``.gz``, ``.whl``: Will be considered to be
-    plugin archive and installed via ``pip``.
-  * ``.py``: Will be considered to be a single file plugin and installed by copying it
-    into ``~/.octoprint/plugins``.
-  * ``.json``: Will be considered to be either a plugin manager export file (created by the Export button) or a manually created
-    list of URLs to install from, e.g.
+* ``.zip``, ``.tar.gz``, ``.tgz``, ``.tar``, ``.gz``, ``.whl``: Will be considered to be
+  plugin archive and installed via ``pip``.
+* ``.py``: Will be considered to be a single file plugin and installed by copying it
+  into ``~/.octoprint/plugins``.
+* ``.json``: Will be considered to be either a plugin manager export file (created by the Export button) or a manually created
+  list of URLs to install from, e.g.
 
-    .. code-block:: json
+  .. code-block:: json
 
-       [
-         "https://github.com/jneilliii/OctoPrint-BedLevelVisualizer/archive/master.zip",
-         "https://github.com/eyal0/OctoPrint-PrintTimeGenius/archive/master.zip"
-       ]
+      [
+        "https://github.com/jneilliii/OctoPrint-BedLevelVisualizer/archive/master.zip",
+        "https://github.com/eyal0/OctoPrint-PrintTimeGenius/archive/master.zip"
+      ]
 
-    The plugin manager will feed all contained URLs to the same logic as above.
+  The plugin manager will feed all contained URLs to the same logic as above.
 
 .. _fig-bundledplugins-pluginmanager-mainscreen:
 .. figure:: ../images/bundledplugins-pluginmanager-mainscreen.png
@@ -112,34 +112,34 @@ plugin_pluginmanager_install_plugin
 
   Payload:
 
-    * ``id``: the identifier of the installed plugin
-    * ``version``: the version of the installed plugin
-    * ``source``: source from which the plugin was installed, can be an URL or a path in the local file system
-    * ``source_type``: type of source from which the plugin was installed, can be ``url`` or ``path``
+  * ``id``: the identifier of the installed plugin
+  * ``version``: the version of the installed plugin
+  * ``source``: source from which the plugin was installed, can be an URL or a path in the local file system
+  * ``source_type``: type of source from which the plugin was installed, can be ``url`` or ``path``
 
 plugin_pluginmanager_uninstall_plugin
   A plugin was uninstalled.
 
   Payload:
 
-    * ``id``: the identifier of the uninstalled plugin
-    * ``version``: the version of the uninstalled plugin
+  * ``id``: the identifier of the uninstalled plugin
+  * ``version``: the version of the uninstalled plugin
 
 plugin_pluginmanager_enable_plugin
   A plugin was enabled.
 
   Payload:
 
-    * ``id``: the identifier of the enabled plugin
-    * ``version``: the version of the enabled plugin
+  * ``id``: the identifier of the enabled plugin
+  * ``version``: the version of the enabled plugin
 
 plugin_pluginmanager_disabled_plugin
   A plugin was disabled.
 
   Payload:
 
-    * ``id``: the identifier of the disabled plugin
-    * ``version``: the version of the disabled plugin
+  * ``id``: the identifier of the disabled plugin
+  * ``version``: the version of the disabled plugin
 
 .. _sec-bundledplugins-pluginmanager-hooks:
 
