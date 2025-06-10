@@ -627,8 +627,18 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         body = b""
         if self.is_multipart():
             # make sure we really processed all data in the buffer
-            while len(self._buffer):
+            buffer_len = len(self._buffer)
+            while buffer_len:
+                self._logger.debug("waiting for buffer to empty...")
                 self._process_multipart_data(self._buffer)
+
+                if len(self._buffer) == buffer_len:
+                    # no change between iterations, something fishy is going on, abort, abort!
+                    raise tornado.web.HTTPError(
+                        400,
+                        log_message="Invalid multipart/form-data: no final boundary found",
+                    )
+                buffer_len = len(self._buffer)
 
             # use rewritten body
             body = self._new_body
