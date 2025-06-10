@@ -487,7 +487,7 @@ tasks:
                     import pathlib
 
                     plugin_data["plugin_locales"] = [
-                        x
+                        x.name
                         for x in pathlib.Path(translation_folder).iterdir()
                         if x.is_dir()
                     ]
