@@ -19,13 +19,14 @@ testing against `http://127.0.0.1:5000/online.txt` and starting the server via
 The test suite requires the server to have the following configuration:
 
 - `devel.enableRateLimiter: false` in `config.yaml`
-- `devel.enableCsrfProtection: false` in `config.yaml`
+- `devel.enableCsrfProtection: false` in `config.yaml` (unless for `@csrf` tagged tests)
 - `plugins.virtual_printer.enabled: true` in `config.yaml`
-- admin account `admin` with password `test` (alternatively `OCTOPRINT_USERNAME` and `OCTOPRINT_PASSWORD` need to be configured)
+- `csrf_test` plugin installed (see `.github/fixtures/csrf_test.py`)
+- admin account `admin` with password `test` and api key `yo5a103LN7co50R4_IAeLvGoLm08BpdfvKngzfHPcPE` (alternatively `OCTOPRINT_USERNAME`, `OCTOPRINT_PASSWORD` and `OCTOPRINT_APIKEY` need to be configured)
 - first run completed, all wizards seen
 - if MFA tests are enabled:
   - `mfa_dummy` plugin installed (see `.github/fixtures/mfa_dummy`)
-  - user account `mfa` with password `test` (alternatively `OCTOPRINT_MFA_USERNAME` and `OCTOPRINT_MFA_PASSWORD` need to be configured)
+  - user account `mfa` with password `test` and api key `yo5a103LN7co50R4_IAeLvGoLm08BpdfvKngzfHPcPE` (alternatively `OCTOPRINT_MFA_USERNAME`, `OCTOPRINT_MFA_PASSWORD` and `OCTOPRINT_MFA_APIKEY` need to be configured)
 
 A compatible `config.yaml` and `users.yaml` can be found in `.github/fixtures/with_acl`.
 

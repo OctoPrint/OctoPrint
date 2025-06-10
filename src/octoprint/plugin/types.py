@@ -1375,6 +1375,30 @@ class SimpleApiPlugin(OctoPrintPlugin):
         """
         return False
 
+    def is_api_protected(self) -> bool:
+        """
+        Whether a SimpleApi's endpoints requires a valid user to be logged in to access it. For now, this defaults to ``False`` to leave it up to
+        plugins to decide whether the endpoints *should* be protected. Long term, this will default to ``True`` and hence
+        enforce protection unless a plugin opts out by returning False here.
+
+        If you do not override this method in your mixin implementation, a warning will be logged to the console
+        to alert you of the requirement to make a decision here and to not rely on the default implementation, due to the
+        forthcoming change in implemented default behaviour.
+
+        Be advised that by returning ``True`` here, OctoPrint will only check whether a valid user is logged in before forwarding
+        the request to your implementation. However, you *really should* add additional permission checks specific to your plugin into your API
+        endpoints.
+
+        .. versionadded:: 1.11.2
+        """
+        self._logger.warning(
+            "The simple API of this plugin is relying on the default implementation of "
+            "is_api_protected (newly added in OctoPrint 1.11.2), which in a future version will "
+            "be switched from False to True for security reasons. Plugin authors should ensure they explicitly "
+            "declare the API protection status in their SimpleApiPlugin mixin implementation. "
+        )
+        return False
+
     # noinspection PyMethodMayBeStatic
     def on_api_command(self, command, data):
         """
@@ -1554,6 +1578,28 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
         return decorator
 
+    @staticmethod
+    def limit(*args, **kwargs):
+        """
+        A decorator to rate limit a view method in your BlueprintPlugin.
+
+        See `the documentation for flask_limiter.Limiter.limit <https://flask-limiter.readthedocs.io/en/stable/api.html#flask_limiter.Limiter.limit>`_
+        for more information.
+
+        .. versionadded: 1.11.2
+        """
+
+        def decorator(f):
+            # We attach the decorator parameters directly to the function object, because that's the only place
+            # we can access right now.
+            # This neat little trick was adapted from the Flask-Classy project: https://pythonhosted.org/Flask-Classy/
+            if not hasattr(f, "_blueprint_limits") or f._blueprint_limits is None:
+                f._blueprint_limits = {}
+            f._blueprint_limits[f.__name__] = (args, kwargs)
+            return f
+
+        return decorator
+
     # noinspection PyProtectedMember
     def get_blueprint(self):
         """
@@ -1582,6 +1628,23 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
         for member in [x for x in dir(self) if not x.startswith("_")]:
             f = getattr(self, member)
 
+            if hasattr(f, "_blueprint_limits") and member in f._blueprint_limits:
+                # this attribute was annotated with our @limit decorator
+                from octoprint.server.util.flask import limit
+
+                limit_args, limit_kwargs = f._blueprint_limits[member]
+                f = limit(*limit_args, **limit_kwargs)(f)
+
+            if (
+                hasattr(f, "_blueprint_error_handler")
+                and member in f._blueprint_error_handler
+            ):
+                # this attribute was annotated with our @error_handler decorator
+                for code_or_exception in f._blueprint_error_handler[member]:
+                    f = blueprint.errorhandler(code_or_exception)(f)
+
+            # anything wrapping f MUST happen before we evaluate the @route decorator!
+
             if hasattr(f, "_blueprint_rules") and member in f._blueprint_rules:
                 # this attribute was annotated with our @route decorator
                 for blueprint_rule in f._blueprint_rules[member]:
@@ -1594,14 +1657,6 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
                         and member in f._blueprint_csrf_exempt
                     ):
                         add_exempt_view(f"plugin.{self._identifier}.{endpoint}")
-
-            if (
-                hasattr(f, "_blueprint_error_handler")
-                and member in f._blueprint_error_handler
-            ):
-                # this attribute was annotated with our @error_handler decorator
-                for code_or_exception in f._blueprint_error_handler[member]:
-                    blueprint.errorhandler(code_or_exception)(f)
 
         # cache and return the blueprint object
         self._blueprint = blueprint

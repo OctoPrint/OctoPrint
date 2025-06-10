@@ -2390,7 +2390,7 @@ def is_editable_install(install_dir, package, module, location):
 
 def normalize_project_url_label(label: str) -> str:
     # https://packaging.python.org/en/latest/specifications/well-known-project-urls/#label-normalization
-    chars_to_remove = string.puctuation + string.whitespace
+    chars_to_remove = string.punctuation + string.whitespace
     removal_map = str.maketrans("", "", chars_to_remove)
     return label.translate(removal_map).lower()
 

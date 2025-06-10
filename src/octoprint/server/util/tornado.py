@@ -548,12 +548,29 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
 
         :param part: part which was closed
         """
+
+        def finish_file():
+            if "file" not in part:
+                return
+            part["file"].close()
+            del part["file"]
+
         name = part["name"]
+        if any(
+            name.endswith(b"." + suffix)
+            for suffix in map(octoprint.util.to_bytes, self._suffixes.values())
+        ):
+            # don't add any fields matching our internal suffixes, they shouldn't be there and can't be trusted
+            self._logger.debug(
+                f"Throwing away part with name {name}, it matches one of our internal suffixes"
+            )
+            finish_file()
+            return
+
         self._parts[name] = part
         if "file" in part:
             self._files.append(part["path"])
-            part["file"].close()
-            del part["file"]
+            finish_file()
 
     def _on_request_body_finish(self):
         """
@@ -610,8 +627,18 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
         body = b""
         if self.is_multipart():
             # make sure we really processed all data in the buffer
-            while len(self._buffer):
+            buffer_len = len(self._buffer)
+            while buffer_len:
+                self._logger.debug("waiting for buffer to empty...")
                 self._process_multipart_data(self._buffer)
+
+                if len(self._buffer) == buffer_len:
+                    # no change between iterations, something fishy is going on, abort, abort!
+                    raise tornado.web.HTTPError(
+                        400,
+                        log_message="Invalid multipart/form-data: no final boundary found",
+                    )
+                buffer_len = len(self._buffer)
 
             # use rewritten body
             body = self._new_body
@@ -1870,6 +1897,8 @@ def access_validation_factory(app, validator, *args):
                 app.session_interface.open_session(app, flask.request)
                 app.login_manager._load_user()
                 validator(flask.request, *args)
+            except tornado.web.HTTPError:
+                raise
             except HTTPException as e:
                 raise tornado.web.HTTPError(e.code) from e
             except Exception as e:

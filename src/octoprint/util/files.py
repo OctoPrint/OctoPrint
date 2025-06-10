@@ -278,7 +278,7 @@ def search_through_file(path, term, regex=False):
     if regex:
         pattern = term
     else:
-        pattern = re.escape(term)
+        pattern = re.escape(term).replace(r"\ ", " ")
     compiled = re.compile(pattern)
 
     logger = logging.getLogger(__name__)
