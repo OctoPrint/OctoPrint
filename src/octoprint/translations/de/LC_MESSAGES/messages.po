@@ -3,10 +3,10 @@
 # This file is distributed under the same license as the OctoPrint project.
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.11.1\n"
+"Project-Id-Version: OctoPrint 1.11.2\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2025-05-13 11:05+0200\n"
-"PO-Revision-Date: 2025-05-13 11:00+0200\n"
+"POT-Creation-Date: 2025-06-10 10:01+0200\n"
+"PO-Revision-Date: 2025-06-10 10:01+0200\n"
 "Last-Translator: Gina Häußge <gina@octoprint.org>\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
@@ -153,28 +153,28 @@ msgstr ""
 msgid "Allows to manage settings and also to read sensitive settings"
 msgstr "Erlaubt vollen Zugriff auf alle Einstellungen"
 
-#: src/octoprint/plugins/achievements/__init__.py:98
+#: src/octoprint/plugins/achievements/__init__.py:97
 msgid "Allows to view the instance achievements & stats."
 msgstr ""
 "Erlaubt die Anzeige der Achievements & Instanz-Statistiken und "
 "Achievements."
 
-#: src/octoprint/plugins/achievements/__init__.py:107
+#: src/octoprint/plugins/achievements/__init__.py:106
 msgid "Allows to reset the instance achievements & stats."
 msgstr "Erlaubt das Zurücksetzen der Achievements & Instanz-Statistiken."
 
-#: src/octoprint/plugins/achievements/__init__.py:517
-#: src/octoprint/plugins/achievements/__init__.py:529
+#: src/octoprint/plugins/achievements/__init__.py:516
+#: src/octoprint/plugins/achievements/__init__.py:528
 #: src/octoprint/plugins/achievements/templates/achievements_about_achievements.jinja2:3
 #: src/octoprint/templates/footer.jinja2:10
 msgid "Achievements"
 msgstr "Achievements"
 
-#: src/octoprint/plugins/achievements/__init__.py:523
+#: src/octoprint/plugins/achievements/__init__.py:522
 msgid "Instance Stats"
 msgstr "Instanz-Statistiken"
 
-#: src/octoprint/plugins/achievements/__init__.py:745
+#: src/octoprint/plugins/achievements/__init__.py:744
 msgid ""
 "Without this plugin you will no longer be able to earn achievements and "
 "track stats about your OctoPrint instance."
@@ -398,12 +398,12 @@ msgstr "Erlaubt die Anzeige von Druckersicherheitswarnungen"
 msgid "Allows to clear printer notifications"
 msgstr "Erlaubt das Löschen von Druckerbenachrichtigungen"
 
-#: src/octoprint/plugins/action_command_notification/__init__.py:111
-#: src/octoprint/plugins/action_command_notification/__init__.py:116
+#: src/octoprint/plugins/action_command_notification/__init__.py:114
+#: src/octoprint/plugins/action_command_notification/__init__.py:119
 msgid "Printer Notifications"
 msgstr "Druckerbenachrichtigungen"
 
-#: src/octoprint/plugins/action_command_notification/__init__.py:163
+#: src/octoprint/plugins/action_command_notification/__init__.py:166
 msgid ""
 "Without this plugin your printer will no longer be able to trigger "
 "notifications in OctoPrint"
@@ -472,11 +472,11 @@ msgstr "Sortierung ändern"
 msgid "Allows to see and interact with printer prompts"
 msgstr "Erlaubt Zugriff auf Printerprompts"
 
-#: src/octoprint/plugins/action_command_prompt/__init__.py:150
+#: src/octoprint/plugins/action_command_prompt/__init__.py:153
 msgid "Printer Dialogs"
 msgstr "Printerdialoge"
 
-#: src/octoprint/plugins/action_command_prompt/__init__.py:287
+#: src/octoprint/plugins/action_command_prompt/__init__.py:290
 msgid ""
 "Without this plugin your printer will no longer be able to trigger "
 "confirmation or selection prompts in OctoPrint"
@@ -705,30 +705,31 @@ msgstr "Aktionen"
 msgid "Refresh Announcements"
 msgstr "Ankündigungen aktualisieren"
 
-#: src/octoprint/plugins/appkeys/__init__.py:129
+#: src/octoprint/plugins/appkeys/__init__.py:137
 msgid "Allows administrating all application keys"
 msgstr "Erlaubt die Administration aller Applicationkeys"
 
-#: src/octoprint/plugins/appkeys/__init__.py:137
+#: src/octoprint/plugins/appkeys/__init__.py:145
 msgid "Allows to grant app access"
 msgstr "Erlaubt Zugriffsgewährung für Apps"
 
-#: src/octoprint/plugins/appkeys/__init__.py:147
-#: src/octoprint/plugins/appkeys/__init__.py:148
+#: src/octoprint/plugins/appkeys/__init__.py:155
+#: src/octoprint/plugins/appkeys/__init__.py:156
 msgid "Application Keys"
 msgstr "Application Keys"
 
-#: src/octoprint/plugins/appkeys/__init__.py:261
+#: src/octoprint/plugins/appkeys/__init__.py:280
 #: src/octoprint/plugins/appkeys/static/js/appkeys.js:145
-#, python-format
+#, fuzzy, python-format
 msgid ""
-"\"<strong>%(app)s</strong>\" has requested access to control OctoPrint "
-"through the API."
+"A client identifying itself as \"<strong>%(app)s</strong>\" has requested"
+" access to control OctoPrint through the API. The request originates from"
+" <code>%(remote_address)s</code>."
 msgstr ""
-"\"<strong>%(app)s</strong>\" möchte Zugriff auf OctoPrint über die API "
-"haben."
+"Ein Client, der sich selbst als \"<strong>%(app)s</strong>\" identifiziert, möchte Zugriff auf OctoPrint über die API "
+"haben. Die Anfrage hierzu kommt von <code>%(remote_address)s</code>."
 
-#: src/octoprint/plugins/appkeys/__init__.py:611
+#: src/octoprint/plugins/appkeys/__init__.py:634
 msgid ""
 "Without this plugin third party clients will no longer be able to obtain "
 "an API key without you manually copy-pasting it."
@@ -742,7 +743,7 @@ msgid "You are about to revoke the application key for %(app)s."
 msgstr "Du bist im Begriff, den Application Key für %(app)s zu löschen."
 
 #: src/octoprint/plugins/appkeys/static/js/appkeys.js:131
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:307
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:319
 #: src/octoprint/plugins/appkeys/templates/appkeys_settings.jinja2:46
 #: src/octoprint/plugins/appkeys/templates/appkeys_usersettings.jinja2:19
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:342
@@ -752,61 +753,71 @@ msgstr "Du bist im Begriff, den Application Key für %(app)s zu löschen."
 msgid "Details"
 msgstr "Details"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:153
-msgid "Do you want to allow access to this application with your user account?"
-msgstr "Möchtest du dieser Applikation Zugriff mit deinem Nutzerkonto erlauben?"
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:156
+#, fuzzy
+msgid "Do you want to give this client access with your user account?"
+msgstr "Möchtest du diesem Client Zugriff mit deinem "
+"Nutzerkonto gewähren?"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:158
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:160
+msgid ""
+"This will allow this client to fully act on your behalf! Make absolutely "
+"sure you trust this client and understand why it requested access!"
+msgstr ""
+"Das wird diesem Client erlauben, vollständig in deinem Namen zu handeln! Stelle absolut sicher, "
+"dass du diesem Client vertraust und auch verstehst, warum er um Zugriff gebeten hat!"
+
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:165
 #: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:46
 msgid "Access Request"
 msgstr "Zugriffsanfrage"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:166
-#: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:54
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:173
+#: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:57
 msgid "Allow"
 msgstr "Erlauben"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:175
-#: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:55
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:182
+#: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:58
 msgid "Deny"
 msgstr "Ablehnen"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:322
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:334
 msgid "New key generated!"
 msgstr "Neuer Key erstellt!"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:333
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:345
 #, python-format
 msgid "You are about to revoke the application key for %(app)s for user %(user)s."
 msgstr ""
 "Du bist im Begriff, den Application Key für \"%(app)s\" und User %(user)s"
 " zu löschen."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:351
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:363
 #, python-format
 msgid "You are about to revoke %(count)d application keys."
 msgstr "Du bist im Begriff, %(count)d Application Keys zu löschen."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:426
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:438
 msgid "Revoking application keys"
 msgstr "Lösche Application Keys"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:427
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:439
 #, python-format
 msgid "Revoking %(count)d application keys..."
 msgstr "Lösche %(count)d Application Keys..."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:436
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:448
 #, python-format
 msgid "Revoked %(app)s for %(user)s..."
 msgstr "%(app)s für %(user)s gelöscht..."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:445
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:457
 #, python-format
 msgid "Revocation of %(app)s for user %(user)s failed, continuing..."
 msgstr "Löschen von %(app)s für User %(user)s fehlgeschlagen, fahre fort..."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:454
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:466
 #, python-format
 msgid "Deletion of %(app)s for user %(user)s failed: %(error)s"
 msgstr "Löschen von %(app)s für User %(user)s fehlgeschlagen: %(error)s"
@@ -847,18 +858,27 @@ msgid "Hello %(user)s!"
 msgstr "Hallo %(user)s!"
 
 #: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:50
+#, fuzzy
 msgid ""
 "\n"
-"                Do you want to allow access to this application with your"
-" user account?\n"
+"                Do you want to give this client access with your user "
+"account?\n"
 "            "
 msgstr ""
 "\n"
-"                Möchtest du dieser Applikation Zugriff mit deinem "
+"                Möchtest du diesem Client Zugriff mit deinem "
 "Nutzerkonto gewähren?\n"
 "            "
 
-#: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:59
+#: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:53
+msgid ""
+"\n"
+"                Das wird diesem Client erlauben, vollständig in deinem Namen zu handeln! Stelle absolut sicher, "
+"dass du diesem Client vertraust und auch verstehst, warum er um Zugriff gebeten hat!\n"
+"            "
+msgstr ""
+
+#: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:62
 msgid ""
 "\n"
 "                The access request has been processed. You may now close "
@@ -870,7 +890,7 @@ msgstr ""
 "Tab jetzt schließen.\n"
 "            "
 
-#: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:65
+#: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:68
 msgid ""
 "\n"
 "                Something went wrong while processing the access request."
@@ -882,7 +902,7 @@ msgstr ""
 "aufgetreten. Du kannst diesen Tab jetzt schließen.\n"
 "            "
 
-#: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:71
+#: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:74
 msgid ""
 "\n"
 "                The server has gone offline. You may now close this tab.\n"
@@ -1092,7 +1112,7 @@ msgstr "Lösche %(count)d Sicherungen..."
 
 #: src/octoprint/plugins/backup/static/js/backup.js:368
 #: src/octoprint/plugins/logging/static/js/logging.js:372
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:752
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:772
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:518
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:550
 #, python-format
@@ -1101,7 +1121,7 @@ msgstr "%(filename)s gelöscht..."
 
 #: src/octoprint/plugins/backup/static/js/backup.js:376
 #: src/octoprint/plugins/logging/static/js/logging.js:380
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:753
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:773
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:526
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:559
 #, python-format
@@ -1110,7 +1130,7 @@ msgstr "Löschen von %(filename)s fehlgeschlagen, fahre fort..."
 
 #: src/octoprint/plugins/backup/static/js/backup.js:380
 #: src/octoprint/plugins/logging/static/js/logging.js:384
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:754
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:774
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:530
 #, python-format
 msgid "Deletion of %(filename)s failed: %(error)s"
@@ -2901,7 +2921,7 @@ msgstr "Kompression erzwingen"
 msgid "Allows to perform health checks and view their results"
 msgstr "Erlaubt das Ausführen und die Auswertung von Healthchecks"
 
-#: src/octoprint/plugins/health_check/__init__.py:228
+#: src/octoprint/plugins/health_check/__init__.py:231
 msgid ""
 "Without this plugin you might miss problematic issues with your OctoPrint"
 " installation."
@@ -5310,8 +5330,8 @@ msgstr "Getrackter Branch"
 msgid "OctoPrint version tracking"
 msgstr "OctoPrint Versionstracking"
 
-#: src/octoprint/plugins/tracking/__init__.py:198
-#: src/octoprint/plugins/tracking/__init__.py:204
+#: src/octoprint/plugins/tracking/__init__.py:201
+#: src/octoprint/plugins/tracking/__init__.py:207
 #: src/octoprint/plugins/tracking/templates/tracking_settings.jinja2:1
 msgid "Anonymous Usage Tracking"
 msgstr "Anonymous Usage Tracking"
@@ -5502,116 +5522,116 @@ msgstr ""
 "target=\"_blank\" rel=\"noopener noreferrer\">Privacy Policy auf  "
 "tracking.octoprint.org</a>.\n"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:245
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:265
 #, python-format
 msgid "%(count)d selected"
 msgstr "%(count)d ausgewählt"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:255
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:275
 #, python-format
 msgid "Size: %(size)s"
 msgstr "Größe: %(size)s"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:545
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:565
 msgid "Create a new folder"
 msgstr "Neues Verzeichnis erstellen"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:546
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:566
 msgid "Please specify the name:"
 msgstr "Bitte gib den Namen ein:"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:553
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:596
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:573
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:616
 msgid "This name is already in use!"
 msgstr "Dieser Name wird bereits verwendet!"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:561
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:612
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:843
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:581
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:632
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:863
 msgid "Operation failed"
 msgstr "Prozess fehlgeschlagen"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:563
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:583
 #, python-format
 msgid "Creating new folder %(filename)s failed: %(error)s"
 msgstr "Erstellen von Verzeichnis %(filename)s fehlgeschlagen: %(error)s"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:586
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:606
 #, python-format
 msgid "Rename %(name)s"
 msgstr "%(name)s umbenennen"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:587
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:607
 msgid "Please specify the new name:"
 msgstr "Bitte definiere den neuen Namen:"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:614
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:634
 #, python-format
 msgid "Renaming %(filename)s failed: %(error)s"
 msgstr "Umbenennung von %(filename)s fehlgeschlagen: %(error)s"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:638
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:658
 msgid "Select destination for copy"
 msgstr "Wähle das Zielverzeichnis für die Kopie"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:640
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:660
 msgid "Select destination for move"
 msgstr "Wähle das Zielverzeichnis für das Verschieben"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:682
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:702
 msgid "Copying"
 msgstr "Kopiere"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:683
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:703
 #, python-format
 msgid "Copying %%(count)d items to %(destination)s..."
 msgstr "Kopiere %%(count)d Objekte nach %(destination)s..."
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:686
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:706
 #, python-format
 msgid "Copied %(filename)s..."
 msgstr "%(filename)s kopiert..."
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:687
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:707
 #, python-format
 msgid "Copying %(filename)s failed, continuing..."
 msgstr "Kopieren von %(filename)s fehlgeschlagen, fahre fort..."
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:688
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:708
 #, python-format
 msgid "Copying %(filename)s failed: %(error)s"
 msgstr "Kopieren von %(filename)s fehlgeschlagen: %(error)s"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:704
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:724
 msgid "Moving"
 msgstr "Verschiebe"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:705
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:725
 #, python-format
 msgid "Moving %%(count)d items to %(destination)s..."
 msgstr "Verschiebe %%(count)d Objekte nach %(destination)s..."
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:708
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:728
 #, python-format
 msgid "Moved %(filename)s..."
 msgstr "%(filename)s verschoben..."
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:709
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:729
 #, python-format
 msgid "Moving %(filename)s failed, continuing..."
 msgstr "Verschieben von %(filename)s fehlgeschlagen, fahre fort..."
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:710
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:730
 #, python-format
 msgid "Moving %(filename)s failed: %(error)s"
 msgstr "Verschieben von %(filename)s fehlgeschlagen: %(error)s"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:725
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:745
 #, python-format
 msgid "You are about to delete %(count)d items forever."
 msgstr "Du bist im Begriff %(count)d Objekte für immer zu löschen."
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:731
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:751
 #: src/octoprint/static/js/app/viewmodels/files.js:693
 #, python-format
 msgid ""
@@ -5621,17 +5641,17 @@ msgstr ""
 "Du bist im Begriff das Verzeichnis \"%(folder)s\" für immer zu löschen, "
 "das noch Dateien und/oder Unterverzeichnisse enthält."
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:739
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:759
 #: src/octoprint/static/js/app/viewmodels/files.js:827
 #, python-format
 msgid "You are about to delete \"%(file)s\" forever."
 msgstr "Du bist im Begriff, \"%(file)s\" für immer zu löschen."
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:750
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:770
 msgid "Deleting"
 msgstr "Lösche"
 
-#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:751
+#: src/octoprint/plugins/uploadmanager/static/js/uploadmanager.js:771
 #, python-format
 msgid "Deleting %(count)d items..."
 msgstr "Lösche %(count)d Objekte..."
@@ -10012,6 +10032,10 @@ msgstr "Logout"
 
 #: src/octoprint/templates/navbar/offlineindicator.jinja2:1
 msgid "There is no connection to the internet"
+msgstr "Es gibt keine Verbindung zum Internet"
+
+#: src/octoprint/templates/navbar/offlineindicator.jinja2:1
+msgid "There is no connection to the 'net"
 msgstr "Es gibt keine Verbindung zum Internet"
 
 #: src/octoprint/templates/navbar/settings.jinja2:1
