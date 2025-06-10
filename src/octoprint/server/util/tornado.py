@@ -1235,7 +1235,14 @@ class LargeResponseHandler(
             self._path_validation(path)
 
         if "cookie" in self.request.arguments:
-            self.set_cookie(self.request.arguments["cookie"][0], "true", path="/")
+            cookie_name = self.request.arguments["cookie"][0]
+            # Validate and sanitize the cookie name
+            if re.match(r"^[a-zA-Z0-9_-]{1,50}$", cookie_name):  # Allow alphanumeric, dashes, and underscores, max length 50
+                self.set_cookie(cookie_name, "true", path="/")
+            else:
+                logging.getLogger(__name__).warning(
+                    f"Invalid cookie name provided: {cookie_name}"
+                )
 
         if self.should_use_precompressed():
             if os.path.exists(os.path.join(self.root, path + ".gz")):
