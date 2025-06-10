@@ -310,8 +310,8 @@ class OctoPrintDevelCommands(click.MultiCommand):
 version: "3"
 
 env:
-LOCALES: {plugin_locales}  # list your included locales here, e.g. ["de", "fr"]
-TRANSLATIONS: "{plugin_package}/translations"  # translations folder, do not touch
+    LOCALES: {plugin_locales}  # list your included locales here, e.g. ["de", "fr"]
+    TRANSLATIONS: "{plugin_package}/translations"  # translations folder, do not touch
 
 """
 
