@@ -2,6 +2,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import re
 import sys
 
 import click
@@ -282,7 +283,6 @@ class OctoPrintDevelCommands(click.MultiCommand):
             """
 
             import os
-            import re
             from typing import Any
 
             from octoprint.util.files import search_through_file
@@ -389,7 +389,7 @@ babel-bundle:
         cp -r "${source}" "${target}"
 """
 
-            EXPECTED_PLUGIN_DATA = [
+            REQUIRED_PLUGIN_DATA = [
                 "plugin_identifier",
                 "plugin_package",
                 "plugin_name",
@@ -403,32 +403,10 @@ babel-bundle:
                 "plugin_additional_data",
                 "plugin_additional_packages",
                 "plugin_ignored_packages",
+            ]
+            EXPECTED_PLUGIN_DATA = REQUIRED_PLUGIN_DATA + [
                 "additional_setup_parameters",
             ]
-
-            SPDX_LICENSE_LUT = {
-                "agpl-3.0": "AGPL-3.0-or-later",
-                "agplv3": "AGPL-3.0-or-later",
-                "agpl v3": "AGPL-3.0-or-later",
-                "apache 2": "Apache-2.0",
-                "apache 2.0": "Apache-2.0",
-                "apache-2.0": "Apache-2.0",
-                "apache license 2.0": "Apache-2.0",
-                "bsd-3-clause": "BSD-3-Clause",
-                "cc by-nc-sa 4.0": "CC-BY-NC-SA-4.0",
-                "cc by-nd": "CC-BY-ND-4.0",
-                "gnu affero general public license": "LicenseRef-AGPL",
-                "gnu general public license v3.0": "GPL-3.0-or-later",
-                "gnuv3": "GPL-3.0-or-later",
-                "gnu v3.0": "GPL-3.0-or-later",
-                "gpl-3.0 License": "GPL-3.0-or-later",
-                "gplv3": "GPL-3.0-or-later",
-                "mit": "MIT",
-                "mit license": "MIT",
-                "unlicence": "Unlicense",
-            }  # extracted from plugins.octoprint.org/plugins.json on 2025-06-05
-
-            SPDX_IDSTRING_INVALID = re.compile(r"[^a-zA-Z0-9.-]")
 
             def _extract_plugin_data_from_setup_py(setup_py: str) -> dict[str, Any]:
                 import ast
@@ -463,6 +441,11 @@ babel-bundle:
                         field = str(node.targets[0].id)
                         plugin_data[field] = ast_value(node.value)
 
+                if not all(key in plugin_data for key in REQUIRED_PLUGIN_DATA):
+                    raise RuntimeError(
+                        f"setup.py does not contain all required keys, can't migrate. Required: {', '.join(REQUIRED_PLUGIN_DATA)}"
+                    )
+
                 return plugin_data
 
             def _validate_and_migrate_plugin_data(
@@ -470,27 +453,22 @@ babel-bundle:
             ):
                 click.echo("Validating and migrating plugin data...")
 
-                # license
-                if "plugin_license" not in plugin_data:
-                    raise RuntimeError("Plugin's setup.py is missing plugin_license")
-
-                from packaging.licenses import (
-                    InvalidLicenseExpression,
-                    canonicalize_license_expression,
-                )
-
+                # name
                 try:
-                    plugin_data["plugin_license"] = canonicalize_license_expression(
-                        SPDX_LICENSE_LUT.get(
-                            plugin_data["plugin_license"].lower(),
-                            plugin_data["plugin_license"],
-                        )
+                    plugin_data["plugin_name"] = _get_pep508_name(
+                        plugin_data["plugin_name"]
                     )
-                except InvalidLicenseExpression:
-                    license = SPDX_IDSTRING_INVALID.sub(
-                        "-", plugin_data["plugin_license"]
-                    )
-                    plugin_data["plugin_license"] = f"LicenseRef-{license}"
+                except ValueError as err:
+                    raise RuntimeError(
+                        "Project name is not PEP508 compliant and cannot automatically "
+                        "be converted. Please rename your plugin manually to match PEP508. "
+                        "See https://packaging.python.org/en/latest/specifications/name-normalization/ for details."
+                    ) from err
+
+                # license
+                plugin_data["plugin_license"] = _get_spdx_license(
+                    plugin_data["plugin_license"]
+                )
 
                 # python requires
                 plugin_data["plugin_python_requires"] = ">=3.7,<4"
@@ -873,3 +851,62 @@ babel-bundle:
 def cli():
     """Additional commands for development tasks."""
     pass
+
+
+def _get_pep508_name(name: str) -> str:
+    PROJECT_NAME_VALIDATOR = re.compile(
+        r"^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])$", flags=re.IGNORECASE
+    )
+
+    PROJECT_NAME_INVALID = re.compile(r"[^A-Z0-9.-]", flags=re.IGNORECASE)
+
+    if PROJECT_NAME_VALIDATOR.match(name):
+        return name
+
+    name = PROJECT_NAME_INVALID.sub("-", name)
+    if not PROJECT_NAME_VALIDATOR.match(name):
+        raise ValueError(f"{name} is not PEP508 compliant")
+
+    return name
+
+
+def _get_spdx_license(license: str) -> str:
+    SPDX_LICENSE_LUT = {
+        "agpl-3.0": "AGPL-3.0-or-later",
+        "agplv3": "AGPL-3.0-or-later",
+        "agpl v3": "AGPL-3.0-or-later",
+        "apache 2": "Apache-2.0",
+        "apache 2.0": "Apache-2.0",
+        "apache-2.0": "Apache-2.0",
+        "apache license 2.0": "Apache-2.0",
+        "bsd-3-clause": "BSD-3-Clause",
+        "cc by-nc-sa 4.0": "CC-BY-NC-SA-4.0",
+        "cc by-nd": "CC-BY-ND-4.0",
+        "gnu affero general public license": "LicenseRef-AGPL",
+        "gnu general public license v3.0": "GPL-3.0-or-later",
+        "gnuv3": "GPL-3.0-or-later",
+        "gnu v3.0": "GPL-3.0-or-later",
+        "gpl-3.0 license": "GPL-3.0-or-later",
+        "gplv3": "GPL-3.0-or-later",
+        "mit": "MIT",
+        "mit license": "MIT",
+        "unlicence": "Unlicense",
+    }  # extracted from plugins.octoprint.org/plugins.json on 2025-06-05
+
+    SPDX_IDSTRING_INVALID = re.compile(r"[^A-Z0-9.-]", flags=re.IGNORECASE)
+
+    from packaging.licenses import (
+        InvalidLicenseExpression,
+        canonicalize_license_expression,
+    )
+
+    try:
+        return canonicalize_license_expression(
+            SPDX_LICENSE_LUT.get(
+                license.lower(),
+                license,
+            )
+        )
+    except InvalidLicenseExpression:
+        license = SPDX_IDSTRING_INVALID.sub("-", license)
+        return f"LicenseRef-{license}"
