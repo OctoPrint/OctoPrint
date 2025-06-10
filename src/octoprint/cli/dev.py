@@ -317,76 +317,76 @@ TRANSLATIONS: "{plugin_package}/translations"  # translations folder, do not tou
 
             TASKFILE_TEMPLATE_BODY = """
 tasks:
-install:
-    desc: Installs the plugin into the current venv
-    cmds:
-    - "python -m pip install -e .[develop]"
+    install:
+        desc: Installs the plugin into the current venv
+        cmds:
+          - "python -m pip install -e .[develop]"
 
-### Build related
+    ### Build related
 
-build:
-    desc: Builds sdist & wheel
-    cmds:
-    - python -m build --sdist --wheel
+    build:
+        desc: Builds sdist & wheel
+        cmds:
+          - python -m build --sdist --wheel
 
-build-sdist:
-    desc: Builds sdist
-    cmds:
-    - python -m build --sdist
+    build-sdist:
+        desc: Builds sdist
+        cmds:
+          - python -m build --sdist
 
-build-wheel:
-    desc: Builds wheel
-    cmds:
-    - python -m build --wheel
+    build-wheel:
+        desc: Builds wheel
+        cmds:
+          - python -m build --wheel
 
-### Translation related
+    ### Translation related
 
-babel-new:
-    desc: Create a new translation for a locale
-    cmds:
-    - task: babel-extract
-    - |
-        pybabel init --input-file=translations/messages.pot --output-dir=translations --locale="{{ .CLI_ARGS }}"
+    babel-new:
+        desc: Create a new translation for a locale
+        cmds:
+          - task: babel-extract
+          - |
+                pybabel init --input-file=translations/messages.pot --output-dir=translations --locale="{{ .CLI_ARGS }}"
 
-babel-extract:
-    desc: Update pot file from source
-    cmds:
-    - pybabel extract --mapping-file=babel.cfg --output-file=translations/messages.pot --msgid-bugs-address=i18n@octoprint.org --copyright-holder="The OctoPrint Project" .
+    babel-extract:
+        desc: Update pot file from source
+        cmds:
+          - pybabel extract --mapping-file=babel.cfg --output-file=translations/messages.pot --msgid-bugs-address=i18n@octoprint.org --copyright-holder="The OctoPrint Project" .
 
-babel-update:
-    desc: Update translation files from pot file
-    cmds:
-    - for:
-        var: LOCALES
-        cmd: pybabel update --input-file=translations/messages.pot --output-dir=translations --locale={{ .ITEM }}
+    babel-update:
+        desc: Update translation files from pot file
+        cmds:
+          - for:
+                var: LOCALES
+            cmd: pybabel update --input-file=translations/messages.pot --output-dir=translations --locale={{ .ITEM }}
 
-babel-refresh:
-    desc: Update translation files from source
-    cmds:
-    - task: babel-extract
-    - task: babel-update
+    babel-refresh:
+        desc: Update translation files from source
+        cmds:
+          - task: babel-extract
+          - task: babel-update
 
-babel-compile:
-    desc: Compile translation files
-    cmds:
-    - pybabel compile --directory=translations
+    babel-compile:
+        desc: Compile translation files
+        cmds:
+          - pybabel compile --directory=translations
 
-babel-bundle:
-    desc: Bundle translations
-    preconditions:
-    - test -d {{ .TRANSLATIONS }}
-    cmds:
-    - for:
-        var: LOCALES
-        cmd: |
-        locale="{{ .ITEM }}"
-        source="translations/${locale}"
-        target="{{ .TRANSLATIONS }}/${locale}"
+    babel-bundle:
+        desc: Bundle translations
+        preconditions:
+          - test -d {{ .TRANSLATIONS }}
+        cmds:
+          - for:
+                var: LOCALES
+            cmd: |
+                locale="{{ .ITEM }}"
+                source="translations/${locale}"
+                target="{{ .TRANSLATIONS }}/${locale}"
 
-        [ ! -d "${target}" ] || rm -r "${target}"
+                [ ! -d "${target}" ] || rm -r "${target}"
 
-        echo "Copying translations for locale ${locale} from ${source} to ${target}..."
-        cp -r "${source}" "${target}"
+                echo "Copying translations for locale ${locale} from ${source} to ${target}..."
+                cp -r "${source}" "${target}"
 """
 
             REQUIRED_PLUGIN_DATA = [
