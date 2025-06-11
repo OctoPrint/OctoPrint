@@ -285,7 +285,10 @@ class OctoPrintDevelCommands(click.MultiCommand):
             import os
             from typing import Any
 
+            from packaging.specifiers import InvalidSpecifier, SpecifierSet
+
             from octoprint.util.files import search_through_file
+            from octoprint.util.version import is_version_compatible
 
             if not path:
                 path = os.getcwd()
@@ -387,6 +390,15 @@ tasks:
 
                 echo "Copying translations for locale ${locale} from ${source} to ${target}..."
                 cp -r "${source}" "${target}"
+
+"""
+
+            SETUP_PY_TEMPLATE = """
+import setuptools
+
+# we define the license string like this to be backwards compatible to setuptools<77
+setuptools.setup(license="{plugin_license}")
+
 """
 
             REQUIRED_PLUGIN_DATA = [
@@ -476,9 +488,17 @@ tasks:
                     "additional_setup_parameters" in plugin_data
                     and "python_requires" in plugin_data["additional_setup_parameters"]
                 ):
-                    plugin_data["plugin_python_requires"] = plugin_data[
-                        "additional_setup_parameters"
-                    ]["python_requires"]
+                    python_requires = plugin_data["additional_setup_parameters"][
+                        "python_requires"
+                    ]
+                    try:
+                        SpecifierSet(python_requires)
+                    except InvalidSpecifier:
+                        click.echo(
+                            "Found invalid python_requires specifier {python_requires}, falling back to >=3.7,<4"
+                        )
+                    else:
+                        plugin_data["plugin_python_requires"] = python_requires
 
                 # locales
                 plugin_data["plugin_locales"] = []
@@ -493,14 +513,16 @@ tasks:
                     ]
 
             def _generate_pyproject_toml(
-                folder: str, plugin_data: dict[str, Any]
+                folder: str, plugin_data: dict[str, Any], enable_pep639: bool = False
             ) -> None:
                 pyproject_toml = os.path.join(folder, "pyproject.toml")
                 click.echo(f"Generating {pyproject_toml}...")
 
+                min_setuptools = "77" if enable_pep639 else "68"
+
                 doc = {}
                 doc["build-system"] = {
-                    "requires": ["setuptools>=67", "wheel"],
+                    "requires": [f"setuptools>={min_setuptools}"],
                     "build-backend": "setuptools.build_meta",
                 }
                 doc["project"] = {
@@ -513,7 +535,6 @@ tasks:
                             "email": plugin_data["plugin_author_email"],
                         }
                     ],
-                    "license": plugin_data["plugin_license"],
                     "requires-python": plugin_data["plugin_python_requires"],
                     "dependencies": plugin_data["plugin_requires"],
                     "entry-points": {
@@ -527,11 +548,23 @@ tasks:
                     "optional-dependencies": {"develop": ["go-task-bin"]},
                 }
 
+                if enable_pep639:
+                    doc["project"]["license"] = plugin_data["plugin_license"]
+                else:
+                    doc["project"]["dynamic"] = ["license"]
+
                 doc["tool"] = {
                     "setuptools": {
                         "include-package-data": True,
-                        "packages": [plugin_data["plugin_package"]],
-                    }
+                        "packages": {
+                            "find": {
+                                "include": [
+                                    f"{plugin_data['plugin_package']}",
+                                    f"{plugin_data['plugin_package']}.*",
+                                ]
+                            }
+                        },
+                    },
                 }
 
                 if os.path.isfile(os.path.join(path, "README.md")):
@@ -562,6 +595,13 @@ tasks:
 
                 with open(pyproject_toml, "wb") as f:
                     tomli_w.dump(doc, f)
+
+            def _generate_setup_py(folder: str, plugin_data: dict[str, Any]) -> None:
+                setup_py = os.path.join(folder, "setup.py")
+                click.echo(f"Generating {setup_py}...")
+
+                with open(setup_py, mode="w") as f:
+                    f.write(SETUP_PY_TEMPLATE.format(**plugin_data))
 
             def _generate_taskfile(folder: str, plugin_data: dict[str, Any]) -> None:
                 taskfile = os.path.join(folder, "Taskfile.yml")
@@ -604,10 +644,14 @@ tasks:
 
                 return True
 
-            def _cleanup(folder: str) -> None:
+            def _cleanup(folder: str, enable_pep639: bool = False) -> None:
                 click.echo("Cleaning up...")
 
-                deprecated = ["setup.py", "requirements.txt"]
+                deprecated = (
+                    ["setup.py", "requirements.txt"]
+                    if enable_pep639
+                    else ["requirements.txt"]
+                )
                 for d in deprecated:
                     path = os.path.join(folder, d)
                     if os.path.isfile(path):
@@ -625,9 +669,26 @@ tasks:
 
             plugin_data = _extract_plugin_data_from_setup_py(setup_py)
             _validate_and_migrate_plugin_data(path, plugin_data)
-            _generate_pyproject_toml(path, plugin_data)
+
+            python_requires = plugin_data["plugin_python_requires"]
+            enable_pep639 = not is_version_compatible(
+                "3.7", python_requires
+            ) and not is_version_compatible(
+                "3.8", python_requires
+            )  # only go full PEP639 if the plugin doesn't support Python 3.7 & 3.8!
+
+            if enable_pep639:
+                click.echo("Plugin's python requirements indicate PEP639 compatibility")
+            else:
+                click.echo(
+                    "Plugin still supports EOL Python 3.7 or 3.8, not enabling PEP639"
+                )
+
+            _generate_pyproject_toml(path, plugin_data, enable_pep639=enable_pep639)
+            if not enable_pep639:
+                _generate_setup_py(path, plugin_data)
             _generate_taskfile(path, plugin_data)
-            _cleanup(path)
+            _cleanup(path, enable_pep639=enable_pep639)
 
             click.echo("... done!")
 
