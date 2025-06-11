@@ -162,6 +162,7 @@ version = {attr = "octoprint.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["octoprint*"]
 
 [tool.ruff]
 exclude = [
