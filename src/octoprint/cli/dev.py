@@ -661,10 +661,10 @@ setuptools.setup(license="{plugin_license}")
                 setup_cfg = os.path.join(folder, "setup.cfg")
                 if not _cleanup_setup_cfg(setup_cfg):
                     click.echo(
-                        "\tWARNING: Not removing {setup_cfg}, there might still be important tool settings in there"
+                        f"\tWARNING: Not removing {setup_cfg}, there might still be important tool settings in there"
                     )
                 else:
-                    click.echo("\tRemoving no longer needed {setup_cfg}...")
+                    click.echo(f"\tRemoving no longer needed {setup_cfg}...")
                     os.remove(setup_cfg)
 
             plugin_data = _extract_plugin_data_from_setup_py(setup_py)
