@@ -665,7 +665,7 @@ setuptools.setup(license="{plugin_license}")
                     )
                 else:
                     click.echo("\tRemoving no longer needed {setup_cfg}...")
-                    os.remove("setup.cfg")
+                    os.remove(setup_cfg)
 
             plugin_data = _extract_plugin_data_from_setup_py(setup_py)
             _validate_and_migrate_plugin_data(path, plugin_data)
