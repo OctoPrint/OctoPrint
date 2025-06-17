@@ -1234,9 +1234,6 @@ class LargeResponseHandler(
         if self._path_validation is not None:
             self._path_validation(path)
 
-        if "cookie" in self.request.arguments:
-            self.set_cookie(self.request.arguments["cookie"][0], "true", path="/")
-
         if self.should_use_precompressed():
             if os.path.exists(os.path.join(self.root, path + ".gz")):
                 self.set_header("Content-Encoding", "gzip")
