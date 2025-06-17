@@ -90,7 +90,11 @@ $(function () {
             self.keys.updateItems(response.keys);
             self.pending = response.pending;
             _.each(self.pending, function (data, token) {
-                self.openRequests[token] = self.promptForAccess(data.app_id, token);
+                self.openRequests[token] = self.promptForAccess(
+                    data.app_id,
+                    data.remote_address,
+                    token
+                );
             });
         };
 

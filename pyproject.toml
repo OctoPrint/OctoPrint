@@ -75,7 +75,7 @@ dependencies = [
     "limits<5",  # dependency of Flask-Limiter, v5 was released days before 1.11.0 and contains backwards incompatibilities, pinning upper limit out of caution
     "markdown>=3.7,<3.8",
     "netaddr>=1.3.0,<1.4",  # changelog hints at breaking changes on minor version increases
-    "packaging",
+    "packaging>=24.2",
     "libpass>=1.8.1,<2",
     "pathvalidate>=3.2.3,<4",
     "psutil>=6.1.1,<7",
@@ -162,6 +162,7 @@ version = {attr = "octoprint.__version__"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["octoprint*"]
 
 [tool.ruff]
 exclude = [

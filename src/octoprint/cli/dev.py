@@ -2,6 +2,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import re
 import sys
 
 import click
@@ -282,10 +283,12 @@ class OctoPrintDevelCommands(click.MultiCommand):
             """
 
             import os
-            import re
             from typing import Any
 
+            from packaging.specifiers import InvalidSpecifier, SpecifierSet
+
             from octoprint.util.files import search_through_file
+            from octoprint.util.version import is_version_compatible
 
             if not path:
                 path = os.getcwd()
@@ -310,86 +313,95 @@ class OctoPrintDevelCommands(click.MultiCommand):
 version: "3"
 
 env:
-LOCALES: {plugin_locales}  # list your included locales here, e.g. ["de", "fr"]
-TRANSLATIONS: "{plugin_package}/translations"  # translations folder, do not touch
+    LOCALES: {plugin_locales}  # list your included locales here, e.g. ["de", "fr"]
+    TRANSLATIONS: "{plugin_package}/translations"  # translations folder, do not touch
 
 """
 
             TASKFILE_TEMPLATE_BODY = """
 tasks:
-install:
-    desc: Installs the plugin into the current venv
-    cmds:
-    - "python -m pip install -e .[develop]"
+    install:
+        desc: Installs the plugin into the current venv
+        cmds:
+          - "python -m pip install -e .[develop]"
 
-### Build related
+    ### Build related
 
-build:
-    desc: Builds sdist & wheel
-    cmds:
-    - python -m build --sdist --wheel
+    build:
+        desc: Builds sdist & wheel
+        cmds:
+          - python -m build --sdist --wheel
 
-build-sdist:
-    desc: Builds sdist
-    cmds:
-    - python -m build --sdist
+    build-sdist:
+        desc: Builds sdist
+        cmds:
+          - python -m build --sdist
 
-build-wheel:
-    desc: Builds wheel
-    cmds:
-    - python -m build --wheel
+    build-wheel:
+        desc: Builds wheel
+        cmds:
+          - python -m build --wheel
 
-### Translation related
+    ### Translation related
 
-babel-new:
-    desc: Create a new translation for a locale
-    cmds:
-    - task: babel-extract
-    - |
-        pybabel init --input-file=translations/messages.pot --output-dir=translations --locale="{{ .CLI_ARGS }}"
+    babel-new:
+        desc: Create a new translation for a locale
+        cmds:
+          - task: babel-extract
+          - |
+                pybabel init --input-file=translations/messages.pot --output-dir=translations --locale="{{ .CLI_ARGS }}"
 
-babel-extract:
-    desc: Update pot file from source
-    cmds:
-    - pybabel extract --mapping-file=babel.cfg --output-file=translations/messages.pot --msgid-bugs-address=i18n@octoprint.org --copyright-holder="The OctoPrint Project" .
+    babel-extract:
+        desc: Update pot file from source
+        cmds:
+          - pybabel extract --mapping-file=babel.cfg --output-file=translations/messages.pot --msgid-bugs-address=i18n@octoprint.org --copyright-holder="The OctoPrint Project" .
 
-babel-update:
-    desc: Update translation files from pot file
-    cmds:
-    - for:
-        var: LOCALES
-        cmd: pybabel update --input-file=translations/messages.pot --output-dir=translations --locale={{ .ITEM }}
+    babel-update:
+        desc: Update translation files from pot file
+        cmds:
+          - for:
+                var: LOCALES
+            cmd: pybabel update --input-file=translations/messages.pot --output-dir=translations --locale={{ .ITEM }}
 
-babel-refresh:
-    desc: Update translation files from source
-    cmds:
-    - task: babel-extract
-    - task: babel-update
+    babel-refresh:
+        desc: Update translation files from source
+        cmds:
+          - task: babel-extract
+          - task: babel-update
 
-babel-compile:
-    desc: Compile translation files
-    cmds:
-    - pybabel compile --directory=translations
+    babel-compile:
+        desc: Compile translation files
+        cmds:
+          - pybabel compile --directory=translations
 
-babel-bundle:
-    desc: Bundle translations
-    preconditions:
-    - test -d {{ .TRANSLATIONS }}
-    cmds:
-    - for:
-        var: LOCALES
-        cmd: |
-        locale="{{ .ITEM }}"
-        source="translations/${locale}"
-        target="{{ .TRANSLATIONS }}/${locale}"
+    babel-bundle:
+        desc: Bundle translations
+        preconditions:
+          - test -d {{ .TRANSLATIONS }}
+        cmds:
+          - for:
+                var: LOCALES
+            cmd: |
+                locale="{{ .ITEM }}"
+                source="translations/${locale}"
+                target="{{ .TRANSLATIONS }}/${locale}"
 
-        [ ! -d "${target}" ] || rm -r "${target}"
+                [ ! -d "${target}" ] || rm -r "${target}"
 
-        echo "Copying translations for locale ${locale} from ${source} to ${target}..."
-        cp -r "${source}" "${target}"
+                echo "Copying translations for locale ${locale} from ${source} to ${target}..."
+                cp -r "${source}" "${target}"
+
 """
 
-            EXPECTED_PLUGIN_DATA = [
+            SETUP_PY_TEMPLATE = """
+import setuptools
+
+# we define the license string like this to be backwards compatible to setuptools<77
+setuptools.setup(license="{plugin_license}")
+
+"""
+
+            REQUIRED_PLUGIN_DATA = [
                 "plugin_identifier",
                 "plugin_package",
                 "plugin_name",
@@ -403,32 +415,10 @@ babel-bundle:
                 "plugin_additional_data",
                 "plugin_additional_packages",
                 "plugin_ignored_packages",
+            ]
+            EXPECTED_PLUGIN_DATA = REQUIRED_PLUGIN_DATA + [
                 "additional_setup_parameters",
             ]
-
-            SPDX_LICENSE_LUT = {
-                "agpl-3.0": "AGPL-3.0-or-later",
-                "agplv3": "AGPL-3.0-or-later",
-                "agpl v3": "AGPL-3.0-or-later",
-                "apache 2": "Apache-2.0",
-                "apache 2.0": "Apache-2.0",
-                "apache-2.0": "Apache-2.0",
-                "apache license 2.0": "Apache-2.0",
-                "bsd-3-clause": "BSD-3-Clause",
-                "cc by-nc-sa 4.0": "CC-BY-NC-SA-4.0",
-                "cc by-nd": "CC-BY-ND-4.0",
-                "gnu affero general public license": "LicenseRef-AGPL",
-                "gnu general public license v3.0": "GPL-3.0-or-later",
-                "gnuv3": "GPL-3.0-or-later",
-                "gnu v3.0": "GPL-3.0-or-later",
-                "gpl-3.0 License": "GPL-3.0-or-later",
-                "gplv3": "GPL-3.0-or-later",
-                "mit": "MIT",
-                "mit license": "MIT",
-                "unlicence": "Unlicense",
-            }  # extracted from plugins.octoprint.org/plugins.json on 2025-06-05
-
-            SPDX_IDSTRING_INVALID = re.compile(r"[^a-zA-Z0-9.-]")
 
             def _extract_plugin_data_from_setup_py(setup_py: str) -> dict[str, Any]:
                 import ast
@@ -463,6 +453,11 @@ babel-bundle:
                         field = str(node.targets[0].id)
                         plugin_data[field] = ast_value(node.value)
 
+                if not all(key in plugin_data for key in REQUIRED_PLUGIN_DATA):
+                    raise RuntimeError(
+                        f"setup.py does not contain all required keys, can't migrate. Required: {', '.join(REQUIRED_PLUGIN_DATA)}"
+                    )
+
                 return plugin_data
 
             def _validate_and_migrate_plugin_data(
@@ -470,27 +465,22 @@ babel-bundle:
             ):
                 click.echo("Validating and migrating plugin data...")
 
-                # license
-                if "plugin_license" not in plugin_data:
-                    raise RuntimeError("Plugin's setup.py is missing plugin_license")
-
-                from packaging.licenses import (
-                    InvalidLicenseExpression,
-                    canonicalize_license_expression,
-                )
-
+                # name
                 try:
-                    plugin_data["plugin_license"] = canonicalize_license_expression(
-                        SPDX_LICENSE_LUT.get(
-                            plugin_data["plugin_license"].lower(),
-                            plugin_data["plugin_license"],
-                        )
+                    plugin_data["plugin_name"] = _get_pep508_name(
+                        plugin_data["plugin_name"]
                     )
-                except InvalidLicenseExpression:
-                    license = SPDX_IDSTRING_INVALID.sub(
-                        "-", plugin_data["plugin_license"]
-                    )
-                    plugin_data["plugin_license"] = f"LicenseRef-{license}"
+                except ValueError as err:
+                    raise RuntimeError(
+                        "Project name is not PEP508 compliant and cannot automatically "
+                        "be converted. Please rename your plugin manually to match PEP508. "
+                        "See https://packaging.python.org/en/latest/specifications/name-normalization/ for details."
+                    ) from err
+
+                # license
+                plugin_data["plugin_license"] = _get_spdx_license(
+                    plugin_data["plugin_license"]
+                )
 
                 # python requires
                 plugin_data["plugin_python_requires"] = ">=3.7,<4"
@@ -498,9 +488,17 @@ babel-bundle:
                     "additional_setup_parameters" in plugin_data
                     and "python_requires" in plugin_data["additional_setup_parameters"]
                 ):
-                    plugin_data["plugin_python_requires"] = plugin_data[
-                        "additional_setup_parameters"
-                    ]["python_requires"]
+                    python_requires = plugin_data["additional_setup_parameters"][
+                        "python_requires"
+                    ]
+                    try:
+                        SpecifierSet(python_requires)
+                    except InvalidSpecifier:
+                        click.echo(
+                            "Found invalid python_requires specifier {python_requires}, falling back to >=3.7,<4"
+                        )
+                    else:
+                        plugin_data["plugin_python_requires"] = python_requires
 
                 # locales
                 plugin_data["plugin_locales"] = []
@@ -509,20 +507,22 @@ babel-bundle:
                     import pathlib
 
                     plugin_data["plugin_locales"] = [
-                        x
+                        x.name
                         for x in pathlib.Path(translation_folder).iterdir()
                         if x.is_dir()
                     ]
 
             def _generate_pyproject_toml(
-                folder: str, plugin_data: dict[str, Any]
+                folder: str, plugin_data: dict[str, Any], enable_pep639: bool = False
             ) -> None:
                 pyproject_toml = os.path.join(folder, "pyproject.toml")
                 click.echo(f"Generating {pyproject_toml}...")
 
+                min_setuptools = "77" if enable_pep639 else "68"
+
                 doc = {}
                 doc["build-system"] = {
-                    "requires": ["setuptools>=67", "wheel"],
+                    "requires": [f"setuptools>={min_setuptools}"],
                     "build-backend": "setuptools.build_meta",
                 }
                 doc["project"] = {
@@ -535,7 +535,6 @@ babel-bundle:
                             "email": plugin_data["plugin_author_email"],
                         }
                     ],
-                    "license": plugin_data["plugin_license"],
                     "requires-python": plugin_data["plugin_python_requires"],
                     "dependencies": plugin_data["plugin_requires"],
                     "entry-points": {
@@ -549,11 +548,23 @@ babel-bundle:
                     "optional-dependencies": {"develop": ["go-task-bin"]},
                 }
 
+                if enable_pep639:
+                    doc["project"]["license"] = plugin_data["plugin_license"]
+                else:
+                    doc["project"]["dynamic"] = ["license"]
+
                 doc["tool"] = {
                     "setuptools": {
                         "include-package-data": True,
-                        "packages": [plugin_data["plugin_package"]],
-                    }
+                        "packages": {
+                            "find": {
+                                "include": [
+                                    f"{plugin_data['plugin_package']}",
+                                    f"{plugin_data['plugin_package']}.*",
+                                ]
+                            }
+                        },
+                    },
                 }
 
                 if os.path.isfile(os.path.join(path, "README.md")):
@@ -584,6 +595,13 @@ babel-bundle:
 
                 with open(pyproject_toml, "wb") as f:
                     tomli_w.dump(doc, f)
+
+            def _generate_setup_py(folder: str, plugin_data: dict[str, Any]) -> None:
+                setup_py = os.path.join(folder, "setup.py")
+                click.echo(f"Generating {setup_py}...")
+
+                with open(setup_py, mode="w") as f:
+                    f.write(SETUP_PY_TEMPLATE.format(**plugin_data))
 
             def _generate_taskfile(folder: str, plugin_data: dict[str, Any]) -> None:
                 taskfile = os.path.join(folder, "Taskfile.yml")
@@ -626,10 +644,14 @@ babel-bundle:
 
                 return True
 
-            def _cleanup(folder: str) -> None:
+            def _cleanup(folder: str, enable_pep639: bool = False) -> None:
                 click.echo("Cleaning up...")
 
-                deprecated = ["setup.py", "requirements.txt"]
+                deprecated = (
+                    ["setup.py", "requirements.txt"]
+                    if enable_pep639
+                    else ["requirements.txt"]
+                )
                 for d in deprecated:
                     path = os.path.join(folder, d)
                     if os.path.isfile(path):
@@ -639,17 +661,34 @@ babel-bundle:
                 setup_cfg = os.path.join(folder, "setup.cfg")
                 if not _cleanup_setup_cfg(setup_cfg):
                     click.echo(
-                        "\tWARNING: Not removing {setup_cfg}, there might still be important tool settings in there"
+                        f"\tWARNING: Not removing {setup_cfg}, there might still be important tool settings in there"
                     )
                 else:
-                    click.echo("\tRemoving no longer needed {setup_cfg}...")
-                    os.remove("setup.cfg")
+                    click.echo(f"\tRemoving no longer needed {setup_cfg}...")
+                    os.remove(setup_cfg)
 
             plugin_data = _extract_plugin_data_from_setup_py(setup_py)
             _validate_and_migrate_plugin_data(path, plugin_data)
-            _generate_pyproject_toml(path, plugin_data)
+
+            python_requires = plugin_data["plugin_python_requires"]
+            enable_pep639 = not is_version_compatible(
+                "3.7", python_requires
+            ) and not is_version_compatible(
+                "3.8", python_requires
+            )  # only go full PEP639 if the plugin doesn't support Python 3.7 & 3.8!
+
+            if enable_pep639:
+                click.echo("Plugin's python requirements indicate PEP639 compatibility")
+            else:
+                click.echo(
+                    "Plugin still supports EOL Python 3.7 or 3.8, not enabling PEP639"
+                )
+
+            _generate_pyproject_toml(path, plugin_data, enable_pep639=enable_pep639)
+            if not enable_pep639:
+                _generate_setup_py(path, plugin_data)
             _generate_taskfile(path, plugin_data)
-            _cleanup(path)
+            _cleanup(path, enable_pep639=enable_pep639)
 
             click.echo("... done!")
 
@@ -873,3 +912,62 @@ babel-bundle:
 def cli():
     """Additional commands for development tasks."""
     pass
+
+
+def _get_pep508_name(name: str) -> str:
+    PROJECT_NAME_VALIDATOR = re.compile(
+        r"^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])$", flags=re.IGNORECASE
+    )
+
+    PROJECT_NAME_INVALID = re.compile(r"[^A-Z0-9.-]", flags=re.IGNORECASE)
+
+    if PROJECT_NAME_VALIDATOR.match(name):
+        return name
+
+    name = PROJECT_NAME_INVALID.sub("-", name)
+    if not PROJECT_NAME_VALIDATOR.match(name):
+        raise ValueError(f"{name} is not PEP508 compliant")
+
+    return name
+
+
+def _get_spdx_license(license: str) -> str:
+    SPDX_LICENSE_LUT = {
+        "agpl-3.0": "AGPL-3.0-or-later",
+        "agplv3": "AGPL-3.0-or-later",
+        "agpl v3": "AGPL-3.0-or-later",
+        "apache 2": "Apache-2.0",
+        "apache 2.0": "Apache-2.0",
+        "apache-2.0": "Apache-2.0",
+        "apache license 2.0": "Apache-2.0",
+        "bsd-3-clause": "BSD-3-Clause",
+        "cc by-nc-sa 4.0": "CC-BY-NC-SA-4.0",
+        "cc by-nd": "CC-BY-ND-4.0",
+        "gnu affero general public license": "LicenseRef-AGPL",
+        "gnu general public license v3.0": "GPL-3.0-or-later",
+        "gnuv3": "GPL-3.0-or-later",
+        "gnu v3.0": "GPL-3.0-or-later",
+        "gpl-3.0 license": "GPL-3.0-or-later",
+        "gplv3": "GPL-3.0-or-later",
+        "mit": "MIT",
+        "mit license": "MIT",
+        "unlicence": "Unlicense",
+    }  # extracted from plugins.octoprint.org/plugins.json on 2025-06-05
+
+    SPDX_IDSTRING_INVALID = re.compile(r"[^A-Z0-9.-]", flags=re.IGNORECASE)
+
+    from packaging.licenses import (
+        InvalidLicenseExpression,
+        canonicalize_license_expression,
+    )
+
+    try:
+        return canonicalize_license_expression(
+            SPDX_LICENSE_LUT.get(
+                license.lower(),
+                license,
+            )
+        )
+    except InvalidLicenseExpression:
+        license = SPDX_IDSTRING_INVALID.sub("-", license)
+        return f"LicenseRef-{license}"

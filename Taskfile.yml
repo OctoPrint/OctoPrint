@@ -29,6 +29,29 @@ tasks:
     cmds:
       - pip-check -H
 
+  pre-commit:
+    desc: Run pre-commit on all files
+    cmds:
+      - pre-commit run --all-files
+
+  test:
+    desc: Run test suites
+    cmds:
+      - task: test-unit
+      - task: test-e2e
+
+  test-unit:
+    desc: Run unit tests
+    cmds:
+      - pytest
+
+  test-e2e:
+    desc: Run e2e tests
+    cmds:
+      - |
+        cd tests/playwright
+        npx playwright test --grep-invert "@isolated|@csrf"
+
   ### Build related
 
   build:
