@@ -23,6 +23,10 @@ class StorageCapabilities(BaseModel):
     move_folder: bool = False
 
     metadata: bool = False
+    links: bool = False
+    history: bool = False
+
+    path_on_disk: bool = False
 
 
 class HistoryEntry(BaseModel):
@@ -392,6 +396,15 @@ class StorageInterface:
         :param rel: type of relation of the link to remove (currently ``model``, ``machinecode`` and ``web`` are supported)
         :param data: additional data of the link to remove, must match existing link
         """
+        raise NotImplementedError()
+
+    def add_history(self, path, data):
+        raise NotImplementedError()
+
+    def update_history(self, path, index, data):
+        raise NotImplementedError()
+
+    def remove_history(self, path, index):
         raise NotImplementedError()
 
     def get_additional_metadata(self, path, key):

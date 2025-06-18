@@ -182,22 +182,21 @@ class PrinterFileStorage(StorageInterface):
                 "File does already exist", code=StorageError.ALREADY_EXISTS
             )
 
-        with tempfile.NamedTemporaryFile(mode="wb", delete=False) as temp:
-            try:
-                file_object.save(temp.name)
-                temp.close()
+        temp = tempfile.NamedTemporaryFile(mode="wb", delete=False)
+        file_object.save(temp.name)
+        temp.close()
 
-                with open(temp.name, "rb") as f:
-                    return self._connection.upload_printer_file(
-                        f, path, progress_callback=progress_callback
-                    )
-            finally:
-                try:
-                    os.remove(temp.name)
-                except Exception:
-                    self._logger.exception(
-                        f"Error deleting temporary file for uploading {path}"
-                    )
+        def callback(*args, **kwargs):
+            if kwargs.get("failed", False) or kwargs.get("done", False):
+                os.remove(temp.name)
+            if progress_callback:
+                progress_callback(*args, **kwargs)
+
+        remote = self._connection.upload_printer_file(
+            temp.name, path, upload_callback=callback
+        )
+
+        return remote
 
     def read_file(self, path: str) -> IO:
         if not self.capabilities.read_file:
@@ -329,4 +328,4 @@ class PrinterFileStorage(StorageInterface):
         )
 
     def path_in_storage(self, path):
-        return self.canonicalize(path)
+        return self.join_path(*self.canonicalize(path))

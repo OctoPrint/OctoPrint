@@ -981,7 +981,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             return
 
         connection = cast(PrinterFilesMixin, self._connection)
-        if not connection.can_upload_printer_file:
+        if not connection.storage_capabilities.write_file:
             return
 
         self._streamingFinishedCallback = on_success
@@ -1043,7 +1043,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             # no plugin feels responsible, use the default implementation
             tags = kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"}
             local = self._file_manager.path_on_disk(FileDestinations.LOCAL, filename)
-            remote, _ = connection.upload_printer_file(local, path, tags=tags)
+            remote = connection.upload_printer_file(local, path, tags=tags)
             return remote
 
     def delete_sd_file(self, filename, *args, **kwargs):

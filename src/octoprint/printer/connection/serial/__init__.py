@@ -511,13 +511,17 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         if progress_callback is not None:
             self._upload_callback = progress_callback
 
-        remote = self._comm.startFileTransfer(
-            source,
-            target,
-            special=not valid_file_type(target, "gcode"),
-            tags=kwargs.get("tags", set()),
-        )
-        return remote
+        try:
+            return self._comm.startFileTransfer(
+                source,
+                target,
+                special=not valid_file_type(target, "gcode"),
+                tags=kwargs.get("tags", set()),
+            )
+        except Exception:
+            self._logger.exception("Error while starting file transfer")
+            if self._upload_callback:
+                self._upload_callback(failed=True)
 
     def delete_printer_file(self, path, *args, **kwargs):
         if not self._comm or not self._comm.isSdReady():

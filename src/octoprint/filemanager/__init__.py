@@ -702,9 +702,9 @@ class FileManager:
         user: str = None,
         progress_callback: callable = None,
     ):
-        if not self._storage(location).add_file:
+        if not self._storage(location).capabilities.write_file:
             raise StorageError(
-                f"Storage {location} does not support adding file",
+                f"Storage {location} does not support adding files",
                 code=StorageError.UNSUPPORTED,
             )
 
@@ -969,28 +969,21 @@ class FileManager:
 
     def log_print(self, location, path, timestamp, print_time, success, printer_profile):
         try:
-            if success:
-                self._storage(location).add_history(
-                    path,
-                    {
-                        "timestamp": timestamp,
-                        "printTime": print_time,
-                        "success": success,
-                        "printerProfile": printer_profile,
-                    },
+            if self._storage(location).capabilities.history:
+                data = {
+                    "timestamp": timestamp,
+                    "success": success,
+                    "printerProfile": printer_profile,
+                }
+                if success:
+                    data["printTime"] = print_time
+
+                self._storage(location).add_history(path, data)
+
+                eventManager().fire(
+                    Events.METADATA_STATISTICS_UPDATED,
+                    {"storage": location, "path": path},
                 )
-            else:
-                self._storage(location).add_history(
-                    path,
-                    {
-                        "timestamp": timestamp,
-                        "success": success,
-                        "printerProfile": printer_profile,
-                    },
-                )
-            eventManager().fire(
-                Events.METADATA_STATISTICS_UPDATED, {"storage": location, "path": path}
-            )
         except NoSuchStorage:
             # if there's no storage configured where to log the print, we'll just not log it
             pass
@@ -1104,12 +1097,16 @@ class FileManager:
         self._add_analysis_result(entry.location, entry.path, result)
 
     def _analysis_queue_entry(self, location, path, printer_profile=None, analysis=None):
+        storage = self._storage(location)
+        if not storage.capabilities.path_on_disk:
+            return None
+
         if printer_profile is None:
             printer_profile = self._printer_profile_manager.get_current_or_default()
 
-        path_in_storage = self._storage(location).path_in_storage(path)
-        absolute_path = self._storage(location).path_on_disk(path)
-        _, file_name = self._storage(location).split_path(path)
+        path_in_storage = storage.path_in_storage(path)
+        absolute_path = storage.path_on_disk(path)
+        _, file_name = storage.split_path(path)
         file_type = get_file_type(absolute_path)
 
         if file_type:

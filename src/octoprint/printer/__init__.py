@@ -56,8 +56,8 @@ class ErrorInformation(BaseModel):
     error: str
     reason: str
     consequence: str = None
-    faq: str = None
-    logs: list[str] = None
+    faq: str = Optional[None]
+    logs: list[str] = Optional[None]
 
 
 class FirmwareInformation(BaseModel):
@@ -591,14 +591,18 @@ class PrinterFilesMixin:
         self,
         path_or_file: Union[str, IO],
         path: str,
-        progress_callback: callable,
+        upload_callback: callable,
         *args,
         **kwargs,
     ) -> str:
         pass
 
     def download_printer_file(
-        self, path: str, progress_callback: callable, *args, **kwargs
+        self,
+        path: str,
+        download_callback: callable,
+        *args,
+        **kwargs,
     ) -> IO:
         return None
 

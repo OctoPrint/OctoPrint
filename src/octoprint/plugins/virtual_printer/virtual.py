@@ -468,9 +468,7 @@ class VirtualPrinter:
                     self._triggerResend(actual=linenumber)
                     continue
 
-                else:
-                    self.lastN = linenumber
-
+                self.lastN = linenumber
                 data = data.split(None, 1)[1].strip()
 
             data += b"\n"

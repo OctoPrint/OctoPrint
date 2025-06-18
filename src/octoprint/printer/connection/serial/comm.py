@@ -1566,7 +1566,9 @@ class MachineCom:
             tags = set()
 
         if remote is None:
-            remote = "/" + self._get_free_remote_name(filename)
+            remote = "/" + self._get_free_remote_name(
+                filename[1:] if filename[0] == "/" else filename
+            )
 
         with self._jobLock:
             self.resetLineNumbers(tags={"trigger:comm.start_file_transfer"})
@@ -1609,7 +1611,7 @@ class MachineCom:
             tags = set()
 
         with self._jobLock:
-            remote = self._currentFile.getRemoteFilename()
+            remote = self._currentFile.remote_name
 
             self._sendCommand(
                 "M29",
@@ -1621,7 +1623,7 @@ class MachineCom:
             if failed:
                 self.deleteSdFile(remote)
 
-            local = self._currentFile.getLocalFilename()
+            local = self._currentFile.local_name
             elapsed = self.getPrintTime()
 
             def finalize():
@@ -6047,10 +6049,20 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
     def __init__(self, path_or_file, local_name, remote_name, user=None):
         PrintingGcodeFileInformation.__init__(self, path_or_file, user=user)
+        self._local_name = local_name
+        self._remote_name = remote_name
 
     def start(self):
         PrintingGcodeFileInformation.start(self)
         self._start_time = time.monotonic()
+
+    @property
+    def local_name(self):
+        return self._local_name
+
+    @property
+    def remote_name(self):
+        return self._remote_name
 
     def _process(self, line, offsets, current_tool):
         return process_gcode_line(line)
