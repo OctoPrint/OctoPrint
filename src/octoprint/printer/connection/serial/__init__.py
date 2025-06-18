@@ -295,7 +295,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             return
 
         self._comm.selectFile(
-            "/" + job.path if job.storage != FileDestinations.LOCAL else job.path_on_disk,
+            job.path if job.storage != FileDestinations.LOCAL else job.path_on_disk,
             job.storage != FileDestinations.LOCAL,
             user=user,
             tags=tags,
@@ -479,6 +479,9 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             return False
         return self._comm.isSdReady()
 
+    def refresh_printer_files(self, blocking=False, timeout=10, *args, **kwargs):
+        self._comm.refreshSdFiles(blocking=blocking, timeout=timeout)
+
     def get_printer_files(self, refresh=False, *args, **kwargs):
         if not self.printer_files_mounted:
             return []
@@ -490,12 +493,12 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
         result = []
         for f in files:
-            pf = PrinterFile(path=f[0][1:], display=f[2], size=f[1], date=f[3])
+            pf = PrinterFile(path=f[0], display=f[2], size=f[1], date=f[3])
             if (
                 pf.size is None
                 and self._job
                 and self._job.storage == FileDestinations.SDCARD
-                and self._job.path == "/" + pf.path
+                and self._job.path == pf.path
             ):
                 pf.size = self._job.size
             result.append(pf)
@@ -527,7 +530,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         if not self._comm or not self._comm.isSdReady():
             return
         self._comm.deleteSdFile(
-            "/" + path,
+            path,
             tags=kwargs.get("tags", set()) | {"trigger:printer.delete_sd_file"},
         )
 

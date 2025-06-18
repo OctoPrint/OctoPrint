@@ -328,4 +328,8 @@ class PrinterFileStorage(StorageInterface):
         )
 
     def path_in_storage(self, path):
-        return self.join_path(*self.canonicalize(path))
+        pp, pf = self.canonicalize(path)
+        if not pp:
+            return pf
+        else:
+            return self.join_path(pp, pf)

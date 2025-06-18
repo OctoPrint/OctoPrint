@@ -1227,7 +1227,7 @@ def deleteGcodeFile(filename, target):
         abort(404)
 
     if _verifyFileExists(target, filename):
-        if not fileManager.capabilities(target).remove_folder:
+        if not fileManager.capabilities(target).remove_file:
             abort(400, description=f"Files on {target} cannot be deleted")
 
         if _isBusy(target, filename):

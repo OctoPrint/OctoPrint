@@ -772,6 +772,7 @@ class MachineCom:
         self._sdFileLongName = False
         self._sdFiles = {}
         self._sdFilesAvailable = threading.Event()
+        self._sdFilesPrefix = None
         self._prevSdFiles = {}
         self._sdFileToSelect = None
         self._sdFileToSelectUser = None
@@ -1566,9 +1567,10 @@ class MachineCom:
             tags = set()
 
         if remote is None:
-            remote = "/" + self._get_free_remote_name(
-                filename[1:] if filename[0] == "/" else filename
-            )
+            remote = self._get_free_remote_name(filename)
+
+        if self._sdFilesPrefix:
+            remote = self._sdFilesPrefix + remote
 
         with self._jobLock:
             self.resetLineNumbers(tags={"trigger:comm.start_file_transfer"})
@@ -2049,8 +2051,11 @@ class MachineCom:
             # do not delete a file from sd we are currently printing from
             return
 
+        if self._sdFilesPrefix and filename.startswith(self._sdFilesPrefix):
+            filename = filename[len(self._sdFilesPrefix) :]
+
         self.sendCommand(
-            "M30 %s" % filename.lower(),
+            f"M30 {filename.lower()}",
             tags=tags
             | {
                 "trigger:comm.delete_sd_file",
@@ -2549,9 +2554,14 @@ class MachineCom:
                                 )
                             )
                         else:
-                            if not filename.startswith("/"):
-                                # file from the root of the sd -- we'll prepend a /
-                                filename = "/" + filename
+                            if self._sdFilesPrefix is None:
+                                if filename[0] == "/":
+                                    self._sdFilesPrefix = "/"
+                                else:
+                                    self._sdFilesPrefix = ""
+                            elif self._sdFilesPrefix:
+                                filename = filename[len(self._sdFilesPrefix) :]
+
                             if self._sdLowerCase:
                                 filename = filename.lower()
                             if timestamp is not None and timestamp < MINIMAL_SD_TIMESTAMP:
