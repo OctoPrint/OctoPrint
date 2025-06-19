@@ -8,7 +8,7 @@
 
             <div data-bind="visible: checkResults().length">
                 <!-- ko if: issueResults().length -->
-                <h3>{{ _('Issues') }} (<span data-bind="text: issueResults().length"></span>)</h2>
+                <h3>{{ _('Issues') }} (<span data-bind="text: issueResults().length"></span>)</h3>
                 <p>{% trans %}
                     The following issues were found with your OctoPrint installation. You should solve them as soon as possible.
                 {% endtrans %}</p>
@@ -21,7 +21,7 @@
                 <!-- /ko -->
 
                 <!-- ko if: warningResults().length -->
-                <h3>{{ _('Warnings') }} (<span data-bind="text: warningResults().length"></span>)</h2>
+                <h3>{{ _('Warnings') }} (<span data-bind="text: warningResults().length"></span>)</h3>
                 <p>{% trans %}
                     The following warnings were found with your OctoPrint installation. You should look into them sooner rather than later.
                 {% endtrans %}</p>
