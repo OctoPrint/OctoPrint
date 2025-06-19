@@ -138,7 +138,7 @@
         <button class="btn btn-warning btn-block" data-bind="click: approveLargeFile">
             {{ _('Yes, please visualize %(name)s regardless of its size', name='<span data-bind="text: selectedFile.path"></span>'|safe) }}
         </button>
-    <p>
+    </p>
 
     <div data-bind="ifnot: ((settings.settings.plugins.gcodeviewer.alwaysCompress()) ||
 	((settings.settings.plugins.gcodeviewer.compressionSizeThreshold() > 0) &&
@@ -154,6 +154,6 @@
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: reader_forceCompression">{{ _('Force compression') }}
             </label>
-        <p>
+        </p>
     </div>
 </div>
