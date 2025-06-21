@@ -39,7 +39,7 @@ class StorageInterface:
 
         :return: an iterator yielding all un-analysed files in the storage
         """
-        # empty generator pattern, yield is intentionally unreachable
+        # empty generator pattern, yield is intentionally unreachables
         return
         yield
 
@@ -55,7 +55,7 @@ class StorageInterface:
 
         Args:
             path (str or None): Path for which to determine the subtree's last modification date. If left out or
-                set to None, defaluts to storage root.
+                set to None, defaults to storage root.
             recursive (bool): Whether to determine only the date of the specified ``path`` (False, default) or
                 the whole ``path``'s subtree (True).
 
