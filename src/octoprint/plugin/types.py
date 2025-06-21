@@ -198,7 +198,7 @@ class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 class ShutdownPlugin(OctoPrintPlugin, SortablePlugin):
     """
     The ``ShutdownPlugin`` allows hooking into the shutdown of OctoPrint. It's usually used in conjunction with the
-    :class:`StartupPlugin` mixin, to cleanly shut down additional services again that where started by the :class:`StartupPlugin`
+    :class:`StartupPlugin` mixin, to cleanly shut down additional services again that were started by the :class:`StartupPlugin`
     part of the plugin.
 
     ``ShutdownPlugin`` is a :class:`~octoprint.plugin.core.SortablePlugin` and provides a sorting context for

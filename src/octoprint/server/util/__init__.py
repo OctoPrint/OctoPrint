@@ -97,7 +97,7 @@ def corsResponseHandler(resp):
 
 def csrfRequestHandler():
     """
-    ``before_request`` handler for blueprints which checks for CRFS double token on
+    ``before_request`` handler for blueprints which checks for CSRF double token on
     relevant requests & methods.
     """
     from octoprint.server.util.csrf import validate_csrf_request

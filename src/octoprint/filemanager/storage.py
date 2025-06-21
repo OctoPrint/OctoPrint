@@ -55,7 +55,7 @@ class StorageInterface:
 
         Args:
             path (str or None): Path for which to determine the subtree's last modification date. If left out or
-                set to None, defatuls to storage root.
+                set to None, defaluts to storage root.
             recursive (bool): Whether to determine only the date of the specified ``path`` (False, default) or
                 the whole ``path``'s subtree (True).
 
@@ -80,7 +80,7 @@ class StorageInterface:
         Get the modification date of the specified ``path`` or ``path``'s subtree.
 
         Args:
-            path (str or None): Path for which to determine the modification date. If left our or
+            path (str or None): Path for which to determine the modification date. If left out or
                 set to None, defaults to storage root.
             recursive (bool): Whether to determine only the date of the specified ``path`` (False, default) or
                 the whole ``path``'s subtree (True).

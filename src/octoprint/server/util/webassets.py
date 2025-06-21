@@ -143,7 +143,7 @@ class GzipFile(Filter):
                     os.remove(gzipped_output_path)
                 except Exception:
                     logging.getLogger(__name__).exception(
-                        "Error removing broken " ".gz from {}".format(gzipped_output_path)
+                        f"Error removing broken .gz from {gzipped_output_path}"
                     )
 
 
