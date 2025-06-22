@@ -188,6 +188,7 @@ date of first contribution):
   * [Nathan Schulte](https://github.com/nmschulte)
   * [Michon van Dooren](https://github.com/MaienM)
   * [Hilton Shumway](https://github.com/Hillshum)
+  * [Will Schlitzer](https://github.com/willschlitzer)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
