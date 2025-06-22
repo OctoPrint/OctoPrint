@@ -2,6 +2,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import re
 import sys
 
 import click
@@ -255,6 +256,444 @@ class OctoPrintDevelCommands(click.MultiCommand):
 
         return command
 
+    def plugin_migrate_to_pyproject(self):
+        try:
+            import tomllib
+        except ImportError:
+            import tomli as tomllib  # Python < 3.11
+
+        try:
+            import tomli_w
+        except ImportError:
+            return None
+
+        @click.command("migrate-to-pyproject")
+        @click.option(
+            "--path", help="Path of the local plugin development folder to migrate"
+        )
+        @click.option(
+            "--force",
+            "force",
+            is_flag=True,
+            help="Force migration, even if setup.py looks wrong",
+        )
+        def command(path, force):
+            """
+            Migrates a plugin based on OctoPrint's setup.py template to the use of pyproject.toml and a Taskfile
+            """
+
+            import os
+            from typing import Any
+
+            from packaging.specifiers import InvalidSpecifier, SpecifierSet
+
+            from octoprint.util.files import search_through_file
+            from octoprint.util.version import is_version_compatible
+
+            if not path:
+                path = os.getcwd()
+
+            setup_py = os.path.join(path, "setup.py")
+            has_setup_py = os.path.isfile(setup_py)
+            if not has_setup_py:
+                click.echo("No setup.py found")
+                sys.exit(1)
+
+            if not force and not search_through_file(
+                setup_py, "import octoprint_setuptools"
+            ):
+                click.echo(
+                    "This doesn't look like a plugin based on OctoPrint's setup.py template"
+                )
+                sys.exit(1)
+
+            TASKFILE_TEMPLATE_HEADER = """
+# https://taskfile.dev
+
+version: "3"
+
+env:
+    LOCALES: {plugin_locales}  # list your included locales here, e.g. ["de", "fr"]
+    TRANSLATIONS: "{plugin_package}/translations"  # translations folder, do not touch
+
+"""
+
+            TASKFILE_TEMPLATE_BODY = """
+tasks:
+    install:
+        desc: Installs the plugin into the current venv
+        cmds:
+          - "python -m pip install -e .[develop]"
+
+    ### Build related
+
+    build:
+        desc: Builds sdist & wheel
+        cmds:
+          - python -m build --sdist --wheel
+
+    build-sdist:
+        desc: Builds sdist
+        cmds:
+          - python -m build --sdist
+
+    build-wheel:
+        desc: Builds wheel
+        cmds:
+          - python -m build --wheel
+
+    ### Translation related
+
+    babel-new:
+        desc: Create a new translation for a locale
+        cmds:
+          - task: babel-extract
+          - |
+                pybabel init --input-file=translations/messages.pot --output-dir=translations --locale="{{ .CLI_ARGS }}"
+
+    babel-extract:
+        desc: Update pot file from source
+        cmds:
+          - pybabel extract --mapping-file=babel.cfg --output-file=translations/messages.pot --msgid-bugs-address=i18n@octoprint.org --copyright-holder="The OctoPrint Project" .
+
+    babel-update:
+        desc: Update translation files from pot file
+        cmds:
+          - for:
+                var: LOCALES
+            cmd: pybabel update --input-file=translations/messages.pot --output-dir=translations --locale={{ .ITEM }}
+
+    babel-refresh:
+        desc: Update translation files from source
+        cmds:
+          - task: babel-extract
+          - task: babel-update
+
+    babel-compile:
+        desc: Compile translation files
+        cmds:
+          - pybabel compile --directory=translations
+
+    babel-bundle:
+        desc: Bundle translations
+        preconditions:
+          - test -d {{ .TRANSLATIONS }}
+        cmds:
+          - for:
+                var: LOCALES
+            cmd: |
+                locale="{{ .ITEM }}"
+                source="translations/${locale}"
+                target="{{ .TRANSLATIONS }}/${locale}"
+
+                [ ! -d "${target}" ] || rm -r "${target}"
+
+                echo "Copying translations for locale ${locale} from ${source} to ${target}..."
+                cp -r "${source}" "${target}"
+
+"""
+
+            SETUP_PY_TEMPLATE = """
+import setuptools
+
+# we define the license string like this to be backwards compatible to setuptools<77
+setuptools.setup(license="{plugin_license}")
+
+"""
+
+            REQUIRED_PLUGIN_DATA = [
+                "plugin_identifier",
+                "plugin_package",
+                "plugin_name",
+                "plugin_version",
+                "plugin_description",
+                "plugin_author",
+                "plugin_author_email",
+                "plugin_url",
+                "plugin_license",
+                "plugin_requires",
+                "plugin_additional_data",
+                "plugin_additional_packages",
+                "plugin_ignored_packages",
+            ]
+            EXPECTED_PLUGIN_DATA = REQUIRED_PLUGIN_DATA + [
+                "additional_setup_parameters",
+            ]
+
+            def _extract_plugin_data_from_setup_py(setup_py: str) -> dict[str, Any]:
+                import ast
+
+                click.echo(f"Extracting plugin data from {setup_py}...")
+
+                with open(setup_py) as f:
+                    contents = f.read()
+
+                def ast_value(node) -> Any:
+                    if isinstance(node, ast.Constant):
+                        return node.value
+                    elif isinstance(node, ast.List):
+                        return [ast_value(entry) for entry in node.elts]
+                    elif isinstance(node, ast.Dict):
+                        return {
+                            ast_value(key): ast_value(value)
+                            for key, value in zip(node.keys, node.values)
+                        }
+                    else:
+                        raise ValueError(f"Don't know how to parse {node!r}")
+
+                plugin_data = {}
+                mod = ast.parse(contents)
+                for node in mod.body:
+                    if (
+                        isinstance(node, ast.Assign)
+                        and len(node.targets) == 1
+                        and isinstance(node.targets[0], ast.Name)
+                        and node.targets[0].id in EXPECTED_PLUGIN_DATA
+                    ):
+                        field = str(node.targets[0].id)
+                        plugin_data[field] = ast_value(node.value)
+
+                if not all(key in plugin_data for key in REQUIRED_PLUGIN_DATA):
+                    raise RuntimeError(
+                        f"setup.py does not contain all required keys, can't migrate. Required: {', '.join(REQUIRED_PLUGIN_DATA)}"
+                    )
+
+                return plugin_data
+
+            def _validate_and_migrate_plugin_data(
+                folder: str, plugin_data: dict[str, Any]
+            ):
+                click.echo("Validating and migrating plugin data...")
+
+                # name
+                try:
+                    plugin_data["plugin_name"] = _get_pep508_name(
+                        plugin_data["plugin_name"]
+                    )
+                except ValueError as err:
+                    raise RuntimeError(
+                        "Project name is not PEP508 compliant and cannot automatically "
+                        "be converted. Please rename your plugin manually to match PEP508. "
+                        "See https://packaging.python.org/en/latest/specifications/name-normalization/ for details."
+                    ) from err
+
+                # license
+                plugin_data["plugin_license"] = _get_spdx_license(
+                    plugin_data["plugin_license"]
+                )
+
+                # python requires
+                plugin_data["plugin_python_requires"] = ">=3.7,<4"
+                if (
+                    "additional_setup_parameters" in plugin_data
+                    and "python_requires" in plugin_data["additional_setup_parameters"]
+                ):
+                    python_requires = plugin_data["additional_setup_parameters"][
+                        "python_requires"
+                    ]
+                    try:
+                        SpecifierSet(python_requires)
+                    except InvalidSpecifier:
+                        click.echo(
+                            "Found invalid python_requires specifier {python_requires}, falling back to >=3.7,<4"
+                        )
+                    else:
+                        plugin_data["plugin_python_requires"] = python_requires
+
+                # locales
+                plugin_data["plugin_locales"] = []
+                translation_folder = os.path.join(folder, "translations")
+                if os.path.isdir(translation_folder):
+                    import pathlib
+
+                    plugin_data["plugin_locales"] = [
+                        x.name
+                        for x in pathlib.Path(translation_folder).iterdir()
+                        if x.is_dir()
+                    ]
+
+            def _generate_pyproject_toml(
+                folder: str, plugin_data: dict[str, Any], enable_pep639: bool = False
+            ) -> None:
+                pyproject_toml = os.path.join(folder, "pyproject.toml")
+                click.echo(f"Generating {pyproject_toml}...")
+
+                min_setuptools = "77" if enable_pep639 else "68"
+
+                doc = {}
+                doc["build-system"] = {
+                    "requires": [f"setuptools>={min_setuptools}"],
+                    "build-backend": "setuptools.build_meta",
+                }
+                doc["project"] = {
+                    "name": plugin_data["plugin_name"],
+                    "version": plugin_data["plugin_version"],
+                    "description": plugin_data["plugin_description"],
+                    "authors": [
+                        {
+                            "name": plugin_data["plugin_author"],
+                            "email": plugin_data["plugin_author_email"],
+                        }
+                    ],
+                    "requires-python": plugin_data["plugin_python_requires"],
+                    "dependencies": plugin_data["plugin_requires"],
+                    "entry-points": {
+                        "octoprint.plugin": {
+                            plugin_data["plugin_identifier"]: plugin_data[
+                                "plugin_package"
+                            ]
+                        },
+                    },
+                    "urls": {"Homepage": plugin_data["plugin_url"]},
+                    "optional-dependencies": {"develop": ["go-task-bin"]},
+                }
+
+                if enable_pep639:
+                    doc["project"]["license"] = plugin_data["plugin_license"]
+                else:
+                    doc["project"]["dynamic"] = ["license"]
+
+                doc["tool"] = {
+                    "setuptools": {
+                        "include-package-data": True,
+                        "packages": {
+                            "find": {
+                                "include": [
+                                    f"{plugin_data['plugin_package']}",
+                                    f"{plugin_data['plugin_package']}.*",
+                                ]
+                            }
+                        },
+                    },
+                }
+
+                if os.path.isfile(os.path.join(path, "README.md")):
+                    doc["project"]["readme"] = {
+                        "file": "README.md",
+                        "content-type": "markdown",
+                    }
+
+                if os.path.isfile(pyproject_toml):
+                    # pyproject.toml already exists, so let's merge things
+                    from octoprint.util import dict_merge
+
+                    click.echo("\tFound an existing pyproject.toml, merging...")
+                    with open(pyproject_toml, mode="rb") as f:
+                        data = tomllib.load(f)
+
+                    doc = dict_merge(doc, data)
+
+                # ensure we are producing valid toml
+                try:
+                    tomllib.loads(tomli_w.dumps(doc))
+                except tomllib.TOMLDecodeError:
+                    click.echo(
+                        "Something went wrong here, generated TOML is invalid",
+                        file=sys.stderr,
+                    )
+                    sys.exit(1)
+
+                with open(pyproject_toml, "wb") as f:
+                    tomli_w.dump(doc, f)
+
+            def _generate_setup_py(folder: str, plugin_data: dict[str, Any]) -> None:
+                setup_py = os.path.join(folder, "setup.py")
+                click.echo(f"Generating {setup_py}...")
+
+                with open(setup_py, mode="w") as f:
+                    f.write(SETUP_PY_TEMPLATE.format(**plugin_data))
+
+            def _generate_taskfile(folder: str, plugin_data: dict[str, Any]) -> None:
+                taskfile = os.path.join(folder, "Taskfile.yml")
+                click.echo(f"Generating {taskfile}...")
+
+                with open(taskfile, mode="w") as f:
+                    f.write(TASKFILE_TEMPLATE_HEADER.format(**plugin_data))
+                    f.write(TASKFILE_TEMPLATE_BODY)
+
+            def _cleanup_setup_cfg(setup_cfg: str) -> bool:
+                import configparser
+
+                if not os.path.isfile(setup_cfg):
+                    return True
+
+                config = configparser.ConfigParser()
+                try:
+                    config.read(setup_cfg)
+                except configparser.ParsingError as exc:
+                    click.echo(
+                        f"Parsing error while reading {setup_cfg}: {exc}", file=sys.stderr
+                    )
+                    return False
+
+                if "bdist_wheel" in config:
+                    # remove `bdist_wheel.universal = 1` declaration, if it's there
+                    try:
+                        del config["bdist_wheel"]["universal"]
+                    except KeyError:
+                        pass
+
+                    if not len(config["bdist_wheel"]):
+                        del config["bdist_wheel"]
+
+                if len(config):
+                    # there's more in here
+                    with open(setup_cfg, "w") as f:
+                        config.write(f)
+                    return False
+
+                return True
+
+            def _cleanup(folder: str, enable_pep639: bool = False) -> None:
+                click.echo("Cleaning up...")
+
+                deprecated = (
+                    ["setup.py", "requirements.txt"]
+                    if enable_pep639
+                    else ["requirements.txt"]
+                )
+                for d in deprecated:
+                    path = os.path.join(folder, d)
+                    if os.path.isfile(path):
+                        click.echo(f"\tRemoving no longer needed {path}...")
+                        os.remove(path)
+
+                setup_cfg = os.path.join(folder, "setup.cfg")
+                if not _cleanup_setup_cfg(setup_cfg):
+                    click.echo(
+                        f"\tWARNING: Not removing {setup_cfg}, there might still be important tool settings in there"
+                    )
+                else:
+                    click.echo(f"\tRemoving no longer needed {setup_cfg}...")
+                    os.remove(setup_cfg)
+
+            plugin_data = _extract_plugin_data_from_setup_py(setup_py)
+            _validate_and_migrate_plugin_data(path, plugin_data)
+
+            python_requires = plugin_data["plugin_python_requires"]
+            enable_pep639 = not is_version_compatible(
+                "3.7", python_requires
+            ) and not is_version_compatible(
+                "3.8", python_requires
+            )  # only go full PEP639 if the plugin doesn't support Python 3.7 & 3.8!
+
+            if enable_pep639:
+                click.echo("Plugin's python requirements indicate PEP639 compatibility")
+            else:
+                click.echo(
+                    "Plugin still supports EOL Python 3.7 or 3.8, not enabling PEP639"
+                )
+
+            _generate_pyproject_toml(path, plugin_data, enable_pep639=enable_pep639)
+            if not enable_pep639:
+                _generate_setup_py(path, plugin_data)
+            _generate_taskfile(path, plugin_data)
+            _cleanup(path, enable_pep639=enable_pep639)
+
+            click.echo("... done!")
+
+        return command
+
     def css_build(self):
         @click.command("build")
         @click.option(
@@ -318,7 +757,10 @@ class OctoPrintDevelCommands(click.MultiCommand):
             "--all", "all_files", is_flag=True, help="Watch & build all less files"
         )
         @click.option(
-            "--list", "list_files", is_flag=True, help="List all available files and exit"
+            "--list",
+            "list_files",
+            is_flag=True,
+            help="List all available files and exit",
         )
         def command(files, all_files, list_files):
             import os
@@ -470,3 +912,62 @@ class OctoPrintDevelCommands(click.MultiCommand):
 def cli():
     """Additional commands for development tasks."""
     pass
+
+
+def _get_pep508_name(name: str) -> str:
+    PROJECT_NAME_VALIDATOR = re.compile(
+        r"^([A-Z0-9]|[A-Z0-9][A-Z0-9._-]*[A-Z0-9])$", flags=re.IGNORECASE
+    )
+
+    PROJECT_NAME_INVALID = re.compile(r"[^A-Z0-9.-]", flags=re.IGNORECASE)
+
+    if PROJECT_NAME_VALIDATOR.match(name):
+        return name
+
+    name = PROJECT_NAME_INVALID.sub("-", name)
+    if not PROJECT_NAME_VALIDATOR.match(name):
+        raise ValueError(f"{name} is not PEP508 compliant")
+
+    return name
+
+
+def _get_spdx_license(license: str) -> str:
+    SPDX_LICENSE_LUT = {
+        "agpl-3.0": "AGPL-3.0-or-later",
+        "agplv3": "AGPL-3.0-or-later",
+        "agpl v3": "AGPL-3.0-or-later",
+        "apache 2": "Apache-2.0",
+        "apache 2.0": "Apache-2.0",
+        "apache-2.0": "Apache-2.0",
+        "apache license 2.0": "Apache-2.0",
+        "bsd-3-clause": "BSD-3-Clause",
+        "cc by-nc-sa 4.0": "CC-BY-NC-SA-4.0",
+        "cc by-nd": "CC-BY-ND-4.0",
+        "gnu affero general public license": "LicenseRef-AGPL",
+        "gnu general public license v3.0": "GPL-3.0-or-later",
+        "gnuv3": "GPL-3.0-or-later",
+        "gnu v3.0": "GPL-3.0-or-later",
+        "gpl-3.0 license": "GPL-3.0-or-later",
+        "gplv3": "GPL-3.0-or-later",
+        "mit": "MIT",
+        "mit license": "MIT",
+        "unlicence": "Unlicense",
+    }  # extracted from plugins.octoprint.org/plugins.json on 2025-06-05
+
+    SPDX_IDSTRING_INVALID = re.compile(r"[^A-Z0-9.-]", flags=re.IGNORECASE)
+
+    from packaging.licenses import (
+        InvalidLicenseExpression,
+        canonicalize_license_expression,
+    )
+
+    try:
+        return canonicalize_license_expression(
+            SPDX_LICENSE_LUT.get(
+                license.lower(),
+                license,
+            )
+        )
+    except InvalidLicenseExpression:
+        license = SPDX_IDSTRING_INVALID.sub("-", license)
+        return f"LicenseRef-{license}"

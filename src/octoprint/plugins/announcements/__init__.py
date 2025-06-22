@@ -662,7 +662,7 @@ __plugin_disabling_discouraged__ = gettext(
     "regarding security or other critical issues concerning OctoPrint."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 __plugin_implementation__ = AnnouncementPlugin()
 
 __plugin_hooks__ = {

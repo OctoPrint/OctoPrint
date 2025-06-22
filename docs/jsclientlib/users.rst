@@ -102,5 +102,5 @@
 
 .. seealso::
 
-   :ref:`User API <sec-api-user>`
+   :ref:`User API <sec-api-access-users>`
        The documentation of the underlying user API.

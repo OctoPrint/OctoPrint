@@ -4,8 +4,6 @@
 File operations
 ***************
 
-.. contents::
-
 .. _sec-api-fileops-retrieveall:
 
 Retrieve all files

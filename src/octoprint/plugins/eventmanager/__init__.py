@@ -1,8 +1,10 @@
+import copy
+
 from flask_babel import gettext
 
 import octoprint.events
 import octoprint.plugin
-from octoprint.access import ADMIN_GROUP
+from octoprint.access.permissions import Permissions
 
 
 class EventManagerPlugin(
@@ -10,21 +12,37 @@ class EventManagerPlugin(
     octoprint.plugin.AssetPlugin,
     octoprint.plugin.TemplatePlugin,
 ):
+    # ~~ SettingsPlugin mixin
+
     def on_settings_load(self):
+        if not Permissions.SETTINGS.can():
+            return {"availableEvents": [], "subscriptions": []}
+
         my_settings = {
             "availableEvents": octoprint.events.all_events(),
             "subscriptions": [],
         }
+
         events = self._settings.global_get(["events"])
-        for event in events.get("subscriptions", []):
-            if "name" not in event:
-                event["name"] = event["command"]
-            if not isinstance(event["event"], list):
-                event["event"] = [event["event"]]
-        if events:
-            my_settings["subscriptions"] = sorted(
-                events.get("subscriptions", []), key=(lambda x: x["name"])
-            )
+        if events and events.get("subscriptions", []):
+            subs = events.get("subscriptions", [])
+            setting_subs = []
+            for sub in subs:
+                data = copy.deepcopy(sub)
+
+                if "name" not in data:
+                    # ensure name is set
+                    data["name"] = data["command"]
+
+                if not isinstance(data["event"], list):
+                    # ensure event list is a list
+                    data["event"] = [data["event"]]
+
+                setting_subs.append(data)
+
+            # sort by name
+            my_settings["subscriptions"] = sorted(setting_subs, key=(lambda x: x["name"]))
+
         return my_settings
 
     def on_settings_save(self, data):
@@ -33,8 +51,15 @@ class EventManagerPlugin(
                 ["events", "subscriptions"], data.get("subscriptions", [])
             )
 
+    def get_settings_reauth_requirements(self):
+        return {"subscriptions": True}
+
+    # ~~ AssetPlugin mixin
+
     def get_assets(self):
         return {"js": ["js/events.js"]}
+
+    # ~~ TemplatePlugin mixin
 
     def get_template_configs(self):
         return [
@@ -45,22 +70,9 @@ class EventManagerPlugin(
             }
         ]
 
-    def get_additional_permissions(self):
-        return [
-            {
-                "key": "MANAGE",
-                "name": "Event management",
-                "description": gettext(
-                    "Allows for the management of event subscriptions."
-                ),
-                "default_groups": [ADMIN_GROUP],
-                "roles": ["manage"],
-            }
-        ]
-
 
 __plugin_name__ = gettext("Event Manager")
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 __plugin_author__ = "jneilliii"
 __plugin_license__ = "AGPLv3"
 __plugin_description__ = gettext(

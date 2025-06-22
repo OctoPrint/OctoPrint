@@ -459,7 +459,7 @@ class PrinterInterface:
         """
         raise NotImplementedError()
 
-    def get_state_id(self, *args, **kwargs):
+    def get_state_id(self, *args, **kwargs) -> str:
         """
         Identifier of the current communication state.
 
@@ -483,6 +483,7 @@ class PrinterInterface:
         Returns:
              (str) A unique identifier corresponding to the current communication state.
         """
+        raise NotImplementedError()
 
     def get_current_data(self, *args, **kwargs):
         """

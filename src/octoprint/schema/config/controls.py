@@ -2,7 +2,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from octoprint.schema import BaseModel
 from octoprint.vendor.with_attrs_docs import with_attrs_docs
@@ -41,7 +41,7 @@ class ControlInputConfig(BaseModel):
 
 @with_attrs_docs
 class ContainerConfig(BaseModel):
-    children: "List[Union[ContainerConfig, ControlConfig]]" = []
+    children: "list[Union[ContainerConfig, ControlConfig]]" = []
     """A list of children controls or containers contained within this container."""
 
     name: Optional[str] = None
@@ -59,7 +59,7 @@ class ControlConfig(BaseModel):
     command: Optional[str] = None
     """A single GCODE command to send to the printer. Will be rendered as a button which sends the command to the printer upon click. The button text will be the value of the `name` attribute. Mutually exclusive with `commands` and `script`. The rendered button be disabled if the printer is currently offline or printing or alternatively if the requirements defined via the `enabled` attribute are not met."""
 
-    commands: Optional[List[str]] = None
+    commands: Optional[list[str]] = None
     """A list of GCODE commands to send to the printer. Will be rendered as a button which sends the commands to the printer upon click. The button text will be the value of the `name` attribute. Mutually exclusive with `command` and `script`. The rendered button will be disabled if the printer is currently offline or printing or alternatively if the requirements defined via the `enabled` attribute are not met."""
 
     script: Optional[str] = None
@@ -74,7 +74,7 @@ class ControlConfig(BaseModel):
     enabled: Optional[str] = None
     """A JavaScript snippet returning either `true` or `false` determining whether the control should be enabled or not. This allows to override the default logic for the enable state of the control (disabled if printer is offline). The JavaScript snippet is `eval`'d and processed in a context where the control it is part of is provided as local variable `data` and the `ControlViewModel` is available as `self`."""
 
-    input: Optional[List[ControlInputConfig]] = []
+    input: Optional[list[ControlInputConfig]] = []
     """A list of definitions of input parameters for a `command` or `commands`, to be rendered as additional input fields. `command`/`commands` may contain placeholders to be replaced by the values obtained from the user for the defined input fields."""
 
     regex: Optional[str] = None

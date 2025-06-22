@@ -69,17 +69,6 @@ def run_server(
 
             logger.info(get_divider_line("-"))
 
-        from octoprint import urllib3_ssl
-
-        if not urllib3_ssl:
-            logging.getLogger("octoprint.server").warning(
-                "requests/urllib3 will run in an insecure SSL environment. "
-                "You might see corresponding warnings logged later "
-                '("InsecurePlatformWarning"). It is recommended to either '
-                "update to a Python version >= 2.7.9 or alternatively "
-                "install PyOpenSSL plus its dependencies. For details see "
-                "https://urllib3.readthedocs.org/en/latest/security.html#openssl-pyopenssl"
-            )
         logger.info(get_divider_line("*"))
 
     def log_register_rollover(

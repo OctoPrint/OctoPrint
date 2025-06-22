@@ -5,7 +5,7 @@ Backup Plugin
 
 .. versionadded:: 1.3.10
 
-The OctoPrint Backup Plugin comes bundled with OctoPrint (starting with 1.3.10).
+The OctoPrint Backup Plugin comes bundled with OctoPrint.
 
 It allows the creation and restoration [#1]_ of backups of OctoPrint's settings, data and installed plugins [#2]_
 (but doesn't restore the same plugins versions [#3]_).
@@ -31,11 +31,12 @@ Configuring the plugin
 
 The plugin supports the following configuration keys:
 
-  * ``restore_unsupported``: If the system you are installing OctoPrint on doesn't support restoring backups or you
-    want to disable that feature for other reasons, set this to `true`. Alternatively you can also set the
-    environment variable `OCTOPRINT_BACKUP_RESTORE_UNSUPPORTED` to `true`. OctoPrint will then disable the restore
-    functionality. Under normal circumstances you should not have to touch this setting (OctoPrint will do its
-    best to autodetect whether it's able to perform restores), thus it is not exposed in the Settings dialog.
+``restore_unsupported``
+  If the system you are installing OctoPrint on doesn't support restoring backups or you
+  want to disable that feature for other reasons, set this to `true`. Alternatively you can also set the
+  environment variable `OCTOPRINT_BACKUP_RESTORE_UNSUPPORTED` to `true`. OctoPrint will then disable the restore
+  functionality. Under normal circumstances you should not have to touch this setting (OctoPrint will do its
+  best to autodetect whether it's able to perform restores), thus it is not exposed in the Settings dialog.
 
 .. _sec-bundledplugins-backup-cli:
 
@@ -86,9 +87,9 @@ plugin_backup_backup_created
 
   Payload:
 
-    * ``name``: the name of the backup
-    * ``path``: the path to the backup
-    * ``excludes``: the list of parts excluded from the backup
+  * ``name``: the name of the backup
+  * ``path``: the path to the backup
+  * ``excludes``: the list of parts excluded from the backup
 
   .. versionadded:: 1.5.0
 
@@ -102,7 +103,7 @@ Hooks
 octoprint.plugin.backup.additional_excludes
 +++++++++++++++++++++++++++++++++++++++++++
 
-.. py:function:: additional_excludes_hook(excludes, *args, **kwargs)
+.. py:function:: additional_excludes_hook(excludes: list, *args, **kwargs) -> list
 
    .. versionadded:: 1.5.0
 
@@ -168,9 +169,11 @@ octoprint.plugin.backup.additional_excludes
           "octoprint.plugin.backup.additional_excludes": __plugin_implementation__.additional_excludes_hook
       }
 
-   :param excludes list: A list of paths already flagged as excluded in the backup
-   :return: A list of paths to exclude, relative to your plugin's data folder
-   :rtype: list
+   Parameters:
+      excludes: A list of paths already flagged as excluded in the backup
+
+   Returns:
+      A list of paths to exclude, relative to your plugin's data folder
 
 .. _sec-bundledplugins-backup-hooks-before-backup:
 
@@ -188,14 +191,15 @@ octoprint.plugin.backup.before_backup
 octoprint.plugin.backup.after_backup
 ++++++++++++++++++++++++++++++++++++
 
-.. py:function:: after_backup_hook(error=False, *args, **kwargs)
+.. py:function:: after_backup_hook(error: bool = False, *args, **kwargs)
 
    .. versionadded:: 1.9.0
 
    Use this to perform actions right after a backup was created or backup creation failed. The ``error`` parameter will be set to ``True`` if
    the backup creation failed.
 
-   :param error bool: Whether the backup creation failed or not
+   Arguments:
+      error (bool): Whether the backup creation failed or not
 
 .. _sec-bundledplugins-backup-hooks-before-restore:
 
@@ -213,14 +217,15 @@ octoprint.plugin.backup.before_restore
 octoprint.plugin.backup.after_restore
 +++++++++++++++++++++++++++++++++++++
 
-.. py:function:: after_restore_hook(error=False, *args, **kwargs)
+.. py:function:: after_restore_hook(error: bool = False, *args, **kwargs)
 
    .. versionadded:: 1.9.0
 
    Use this to perform actions right after a backup was restored or backup restoration failed. The ``error`` parameter will be set to ``True`` if
    the backup restoration failed.
 
-   :param error bool: Whether the backup restoration failed or not
+   Arguments:
+      error (bool): Whether the backup creation failed or not
 
 .. _sec-bundledplugins-backup-helpers:
 

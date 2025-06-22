@@ -23,9 +23,9 @@ Lifecycle
 
 There are three sources of installed plugins that OctoPrint will check during start up:
 
-  * its own ``octoprint/plugins`` folder (this is where the bundled plugins reside),
-  * the ``plugins`` folder in its configuration directory (e.g. ``~/.octoprint/plugins`` on Linux),
-  * any Python packages registered for the entry point ``octoprint.plugin``.
+* its own ``octoprint/plugins`` folder (this is where the bundled plugins reside),
+* the ``plugins`` folder in its configuration directory (e.g. ``~/.octoprint/plugins`` on Linux),
+* any Python packages registered for the entry point ``octoprint.plugin``.
 
 Each plugin that OctoPrint finds it will first load, then enable. On enabling a plugin, OctoPrint will
 register its declared :ref:`hook handlers <sec-plugins-hooks>` and :ref:`helpers <sec-plugins-helpers>`, apply

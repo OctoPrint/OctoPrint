@@ -1,6 +1,6 @@
 default_language_version:
   python: python3.12
-exclude: ^(src/octoprint/vendor/|src/octoprint/static/js/lib|src/octoprint/static/vendor|src/octoprint_setuptools|tests/static/js/lib|tests/util/_files|scripts/|translations/|.*\.css|.*\.svg)
+exclude: ^(src/octoprint/vendor/|src/octoprint/static/js/lib|src/octoprint/static/vendor|src/octoprint_setuptools|tests/static/js/lib|tests/util/_files|scripts/|translations/|.*\.css|.*\.svg|docs/)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
@@ -19,7 +19,7 @@ repos:
     rev: v3.3.1
     hooks:
       - id: pyupgrade
-        args: ["--py37-plus"]
+        args: ["--py39-plus"]
         exclude: "setup.py|src/octoprint_setuptools/__init__.py"
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.2
@@ -38,7 +38,7 @@ repos:
         files: \.js$
         exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|docs/|scripts/|translations/)
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.2
+    rev: v2.4.1
     hooks:
       - id: codespell
         exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|tests/playwright|scripts/)

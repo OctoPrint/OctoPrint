@@ -8,8 +8,6 @@ Languages
 
    All language pack management operations require the ``SETTINGS`` permission.
 
-.. contents::
-
 .. _sec-api-languages-list:
 
 Retrieve installed language packs

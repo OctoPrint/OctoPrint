@@ -1,33 +1,4 @@
-/* style headlink for code block captions like other headlinks */
-.code-block-caption .headerlink {
-    display: none;
-    visibility: hidden;
-    font-size: 14px;
-    font-family: inherit;
-    font-style: normal;
-    font-weight: normal;
-    line-height: 1;
-    -webkit-font-smoothing: antialiased;
+/* theme overrides go here */
+.objinfo-icon {
+    margin-right: 0;
 }
-
-.code-block-caption:hover .headerlink {
-    display: inline-block;
-}
-
-.code-block-caption .headerlink:after {
-    visibility: visible;
-    content: "\f0c1";
-    font-family: FontAwesome;
-    display: inline-block;
-}
-
-/* make whitespace visualization in code listings not appear on same vertical position as dashes */
-.highlight .w {
-    vertical-align: 10%;
-}
-
-.rst-content .highlight>pre,
-.rst-content .linenodiv>pre {
-    line-height: 1.5;
-}
-

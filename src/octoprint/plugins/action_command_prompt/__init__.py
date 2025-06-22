@@ -292,7 +292,7 @@ __plugin_disabling_discouraged__ = gettext(
     " confirmation or selection prompts in OctoPrint"
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 __plugin_implementation__ = ActionCommandPromptPlugin()
 __plugin_hooks__ = {
     "octoprint.comm.protocol.action": __plugin_implementation__.action_command_handler,

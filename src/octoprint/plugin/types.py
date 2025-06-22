@@ -484,31 +484,31 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
              - The name of the component, if not set the name of the plugin will be used. The name will be visible at
                a location depending on the ``type``:
 
-                 * ``navbar``: unused
-                 * ``sidebar``: sidebar heading
-                 * ``tab``: tab heading
-                 * ``settings`` and ``usersettings``: settings link
-                 * ``webcam``: selection button
-                 * ``wizard``: wizard link
-                 * ``mfa_login``: form heading
-                 * ``usersettings_mfa``: section heading
-                 * ``about``: about link
-                 * ``generic``: unused
+               * ``navbar``: unused
+               * ``sidebar``: sidebar heading
+               * ``tab``: tab heading
+               * ``settings`` and ``usersettings``: settings link
+               * ``webcam``: selection button
+               * ``wizard``: wizard link
+               * ``mfa_login``: form heading
+               * ``usersettings_mfa``: section heading
+               * ``about``: about link
+               * ``generic``: unused
 
            * - template
              - Name of the template to inject, default value depends on the ``type``:
 
-                 * ``navbar``: ``<plugin identifier>_navbar.jinja2``
-                 * ``sidebar``: ``<plugin identifier>_sidebar.jinja2``
-                 * ``tab``: ``<plugin identifier>_tab.jinja2``
-                 * ``settings``: ``<plugin identifier>_settings.jinja2``
-                 * ``usersettings``: ``<plugin identifier>_usersettings.jinja2``
-                 * ``webcam``: ``<plugin identifier>_webcam.jinja2``
-                 * ``wizard``: ``<plugin identifier>_wizard.jinja2``
-                 * ``mfa_login``: ``<plugin identifier>_mfa_login.jinja2``
-                 * ``usersettings_mfa``: ``<plugin identifier>_usersettings_mfa.jinja2``
-                 * ``about``: ``<plugin identifier>_about.jinja2``
-                 * ``generic``: ``<plugin identifier>.jinja2``
+               * ``navbar``: ``<plugin identifier>_navbar.jinja2``
+               * ``sidebar``: ``<plugin identifier>_sidebar.jinja2``
+               * ``tab``: ``<plugin identifier>_tab.jinja2``
+               * ``settings``: ``<plugin identifier>_settings.jinja2``
+               * ``usersettings``: ``<plugin identifier>_usersettings.jinja2``
+               * ``webcam``: ``<plugin identifier>_webcam.jinja2``
+               * ``wizard``: ``<plugin identifier>_wizard.jinja2``
+               * ``mfa_login``: ``<plugin identifier>_mfa_login.jinja2``
+               * ``usersettings_mfa``: ``<plugin identifier>_usersettings_mfa.jinja2``
+               * ``about``: ``<plugin identifier>_about.jinja2``
+               * ``generic``: ``<plugin identifier>.jinja2``
 
            * - suffix
              - Suffix to attach to the component identifier and the div identifier of the injected template. Will be
@@ -731,16 +731,16 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
     only exemplary) UI if the requesting client has a UserAgent string hinting
     at it being a mobile device:
 
-    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/__init__.py
+    .. literalinclude:: ../../docs/plugins/examples/dummy_mobile_ui/__init__.py
        :tab-width: 4
-       :caption: `dummy_mobile_ui/__init__.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/__init__.py>`_
+       :caption: dummy_mobile_ui/__init__.py
 
-    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2
+    .. literalinclude:: ../../docs/plugins/examples/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2
+       :language: html
        :tab-width: 4
-       :caption: `dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2 <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2>`_
+       :caption: dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2
 
-    Try installing the above plugin ``dummy_mobile_ui`` (also available in the
-    `plugin examples repository <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui>`_)
+    Try installing the above plugin ``dummy_mobile_ui``
     into your OctoPrint instance. If you access it from a regular desktop browser,
     you should still see the default UI. However if you access it from a mobile
     device (make sure to not have that request the desktop version of pages!)
@@ -1079,9 +1079,9 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
     OctoPrint will only display such wizard dialogs to the user which belong
     to plugins that
 
-      * report ``True`` in their :func:`is_wizard_required` method and
-      * have not yet been shown to the user in the version currently being reported
-        by the :meth:`~octoprint.plugin.WizardPlugin.get_wizard_version` method
+    * report ``True`` in their :func:`is_wizard_required` method and
+    * have not yet been shown to the user in the version currently being reported
+      by the :meth:`~octoprint.plugin.WizardPlugin.get_wizard_version` method
 
     Example: If a plugin with the identifier ``myplugin`` has a specific
     setting ``some_key`` it needs to have filled by the user in order to be
@@ -1212,9 +1212,9 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
         A wizard is ignored if
 
-          * the current and seen versions are identical
-          * the current version is None and the seen version is not
-          * the seen version is not None and the current version is less or equal than the seen one
+        * the current and seen versions are identical
+        * the current version is None and the seen version is not
+        * the seen version is not None and the current version is less or equal than the seen one
 
         .. code-block:: none
 
@@ -1473,12 +1473,10 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
        flask.url_for("plugin.myblueprintplugin.myEcho") # will return "/plugin/myblueprintplugin/echo"
 
-    .. warning::
+    .. note::
 
-       As of OctoPrint 1.8.3, endpoints provided through a ``BlueprintPlugin`` do **not** automatically fall under
-       OctoPrint's :ref:`CSRF protection <sec-api-general-csrf>`, for reasons of backwards compatibility. There will be a short grace period before this changes. You
-       can and should however already opt into CSRF protection for your endpoints by implementing ``is_blueprint_csrf_protected``
-       and returning ``True`` from it. You can exempt certain endpoints from CSRF protection by decorating them with
+       As of OctoPrint 1.12.0, endpoints provided through a ``BlueprintPlugin`` do now automatically fall under
+       OctoPrint's :ref:`CSRF protection <sec-api-general-csrf>`. You can exempt certain endpoints from CSRF protection by decorating them with
        ``@octoprint.plugin.BlueprintPlugin.csrf_exempt``.
 
        .. code-block:: python
@@ -1506,6 +1504,7 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
     ``BlueprintPlugin`` implements :class:`~octoprint.plugins.core.RestartNeedingPlugin`.
 
     .. versionchanged:: 1.8.3
+    .. versionchanged:: 1.12.0
     """
 
     @staticmethod
@@ -1700,25 +1699,13 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
     # noinspection PyMethodMayBeStatic
     def is_blueprint_csrf_protected(self):
         """
-        Whether a blueprint's endpoints are :ref:`CSRF protected <sec-api-general-csrf>`. For now, this defaults to ``False`` to leave it up to
-        plugins to decide which endpoints *should* be protected. Long term, this will default to ``True`` and hence
-        enforce protection unless a plugin opts out by returning False here.
-
-        If you do not override this method in your mixin implementation, a warning will be logged to the console
-        to alert you of the requirement to make a decision here and to not rely on the default implementation, due to the
-        forthcoming change in implemented default behaviour.
+        Whether a blueprint's endpoints are :ref:`CSRF protected <sec-api-general-csrf>`. As of 1.12.0, this defaults to ``True``
+        and thus enforces protection unless a plugin opts out by returning False here.
 
         .. versionadded:: 1.8.3
+        .. versionchanged:: 1.12.0
         """
-        self._logger.warning(
-            "The Blueprint of this plugin is relying on the default implementation of "
-            "is_blueprint_csrf_protected (newly added in OctoPrint 1.8.3), which in a future version will "
-            "be switched from False to True for security reasons. Plugin authors should ensure they explicitly "
-            "declare the CSRF protection status in their BlueprintPlugin mixin implementation. "
-            "Recommendation is to enable CSRF protection and exempt views that must not use it with the "
-            "octoprint.plugin.BlueprintPlugin.csrf_exempt decorator."
-        )
-        return False
+        return True
 
     # noinspection PyMethodMayBeStatic
     def get_blueprint_api_prefixes(self):
@@ -1805,12 +1792,16 @@ class SettingsPlugin(OctoPrintPlugin):
     default implementations do not fit your requirements.
 
 
-    .. warning::
+    .. important::
 
-       Make sure to protect sensitive information stored by your plugin that only logged in administrators (or users)
+       Make sure to protect sensitive information stored by your plugin that only users with specific permissions
        should have access to via :meth:`~octoprint.plugin.SettingsPlugin.get_settings_restricted_paths`. OctoPrint will
        return its settings on the REST API even to anonymous clients, but will filter out fields it knows are restricted,
        therefore you **must** make sure that you specify sensitive information accordingly to limit access as required!
+
+       You should also protect any fields like server commands or endpoint URLs pinged by your plugin by enforcing a fresh
+       credential check and potential reauthentication. Since version 1.12.0 you can do this via
+       :meth:`~octoprint.plugin.SettingsPlugin.get_settings_reauth_requirements`.
     """
 
     config_version_key = "_config_version"
@@ -1991,69 +1982,256 @@ class SettingsPlugin(OctoPrintPlugin):
         certain permissions, or never on the REST API.
 
         Return a ``dict`` with one of the following keys, mapping to a list of paths (as tuples or lists of
-        the path elements) for which to restrict access via the REST API accordingly.
+        the path elements) for which to restrict access via the REST API accordingly:
 
-           * An :py:class:`~octoprint.access.permissions.OctoPrintPermission` instance: Paths will only be available on the REST API for users with the permission
-           * ``admin``: Paths will only be available on the REST API for users with admin rights (any user with the SETTINGS permission)
-           * ``user``: Paths will only be available on the REST API when accessed as a logged in user
-           * ``never``: Paths will never be returned on the API
+        * An :py:class:`~octoprint.access.permissions.OctoPrintPermission` instance: Paths will only be available on the REST API for users with the permission
+        * ``admin``: Paths will only be available on the REST API for users with admin rights (any user with the SETTINGS permission)
+        * ``user``: Paths will only be available on the REST API when accessed as a logged in user
+        * ``never``: Paths will never be returned on the API
 
         Example:
 
         .. code-block:: python
+           :linenos:
 
            def get_settings_defaults(self):
-               return dict(some=dict(admin_only=dict(path="path", foo="foo"),
-                                     user_only=dict(path="path", bar="bar")),
-                           another=dict(admin_only=dict(path="path"),
-                                        field="field"),
-                           path=dict(to=dict(never=dict(return="return"))),
-                           the=dict(webcam=dict(data="webcam")))
+               return {
+                   "some": {
+                       "admin_only": {
+                           "path": "path",  # ["some", "admin_only", "path"]
+                           "foo": "foo"
+                       },
+                       "user_only": {
+                           "path": "path",  # ["some", "user_only", "path"]
+                           "bar": "bar"
+                       }
+                   },
+                   "another": {
+                       "admin_only": {
+                           "path": "path"  # ["another", "admin_only", "path"]
+                       },
+                       "field": "field"
+                   },
+                   "path": {
+                       "to": {
+                           "never": {
+                               "return": "return"  # ["path", "to", "never", "return"]
+                           }
+                       }
+                   },
+                   "the": {
+                       "webcam": {
+                           "data": "data"  # ["the", "webcam", "data"]
+                       }
+                   }
+               }
 
            def get_settings_restricted_paths(self):
                from octoprint.access.permissions import Permissions
-               return {'admin':[["some", "admin_only", "path"], ["another", "admin_only", "path"],],
-                       'user':[["some", "user_only", "path"],],
-                       'never':[["path", "to", "never", "return"],],
-                       Permissions.WEBCAM:[["the", "webcam", "data"],]}
+               return {
+                   "admin": [
+                       ["some", "admin_only", "path"],
+                       ["another", "admin_only", "path"],
+                   ],
+                   "user": [
+                       ["some", "user_only", "path"]
+                   ],
+                   "never": [
+                       ["path", "to", "never", "return"]
+                   ],
+                   Permissions.WEBCAM: [
+                       ["the", "webcam", "data"]
+                   ]
+               }
 
-           # this will make the plugin return settings on the REST API like this for an anonymous user
-           #
-           #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
-           #                    user_only=dict(path=None, bar="bar")),
-           #          another=dict(admin_only=dict(path=None),
-           #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))),
-           #          the=dict(webcam=dict(data=None)))
-           #
-           # like this for a logged in user without the webcam permission
-           #
-           #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
-           #                    user_only=dict(path="path", bar="bar")),
-           #          another=dict(admin_only=dict(path=None),
-           #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))),
-           #          the=dict(webcam=dict(data=None)))
-           #
-           # like this for a logged in user with the webcam permission
-           #
-           #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
-           #                    user_only=dict(path="path", bar="bar")),
-           #          another=dict(admin_only=dict(path=None),
-           #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))),
-           #          the=dict(webcam=dict(data="webcam")))
-           #
-           # and like this for an admin user
-           #
-           #     dict(some=dict(admin_only=dict(path="path", foo="foo"),
-           #                    user_only=dict(path="path", bar="bar")),
-           #          another=dict(admin_only=dict(path="path"),
-           #                       field="field"),
-           #          path=dict(to=dict(never=dict(return=None))),
-           #          the=dict(webcam=dict(data="webcam")))
+        This will make the plugin return settings on the REST API as follows:
+
+        * for an anonymous user:
+
+          .. code-block:: python
+             :linenos:
+             :emphasize-lines: 4,8,14,21,27
+
+             {
+                 "some": {
+                      "admin_only": {
+                          "path": None,  # ["some", "admin_only", "path"]
+                          "foo": "foo"
+                      },
+                      "user_only": {
+                          "path": None,  # ["some", "user_only", "path"]
+                          "bar": "bar"
+                      }
+                 },
+                 "another": {
+                     "admin_only": {
+                         "path": None  # ["another", "admin_only", "path"]
+                     },
+                     "field": "field"
+                 },
+                 "path": {
+                     "to": {
+                         "never": {
+                             "return": None  # ["path", "to", "never", "return"]
+                         }
+                     }
+                 },
+                 "the": {
+                     "webcam": {
+                         "data": None  # ["the", "webcam", "data"]
+                     }
+                 }
+             }
+
+        * for a logged in user *without* the webcam permission:
+
+          .. code-block:: python
+             :linenos:
+             :emphasize-lines: 4,8,14,21,27
+
+             {
+                 "some": {
+                      "admin_only": {
+                          "path": None,  # ["some", "admin_only", "path"]
+                          "foo": "foo"
+                      },
+                      "user_only": {
+                          "path": "path",  # ["some", "user_only", "path"]
+                          "bar": "bar"
+                      }
+                 },
+                 "another": {
+                     "admin_only": {
+                         "path": None  # ["another", "admin_only", "path"]
+                     },
+                     "field": "field"
+                 },
+                 "path": {
+                     "to": {
+                         "never": {
+                             "return": None  # ["path", "to", "never", "return"]
+                         }
+                     }
+                 },
+                 "the": {
+                     "webcam": {
+                         "data": None  # ["the", "webcam", "data"]
+                     }
+                 }
+             }
+
+        * for a logged in user *with* the webcam permission:
+
+          .. code-block:: python
+             :linenos:
+             :emphasize-lines: 4,8,14,21,27
+
+             {
+                 "some": {
+                      "admin_only": {
+                          "path": None,  # ["some", "admin_only", "path"]
+                          "foo": "foo"
+                      },
+                      "user_only": {
+                          "path": "path",  # ["some", "user_only", "path"]
+                          "bar": "bar"
+                      }
+                 },
+                 "another": {
+                     "admin_only": {
+                         "path": None  # ["another", "admin_only", "path"]
+                     },
+                     "field": "field"
+                 },
+                 "path": {
+                     "to": {
+                         "never": {
+                             "return": None  # ["path", "to", "never", "return"]
+                         }
+                     }
+                 },
+                 "the": {
+                     "webcam": {
+                         "data": "data"  # ["the", "webcam", "data"]
+                     }
+                 }
+             }
+
+        * and like this for an admin user
+
+          .. code-block:: python
+             :linenos:
+             :emphasize-lines: 4,8,14,21,27
+
+             {
+                 "some": {
+                      "admin_only": {
+                          "path": "path",  # ["some", "admin_only", "path"]
+                          "foo": "foo"
+                      },
+                      "user_only": {
+                          "path": "path",  # ["some", "user_only", "path"]
+                          "bar": "bar"
+                      }
+                 },
+                 "another": {
+                     "admin_only": {
+                         "path": "path"  # ["another", "admin_only", "path"]
+                     },
+                     "field": "field"
+                 },
+                 "path": {
+                     "to": {
+                         "never": {
+                             "return": None  # ["path", "to", "never", "return"]
+                         }
+                     }
+                 },
+                 "the": {
+                     "webcam": {
+                         "data": "data"  # ["the", "webcam", "data"]
+                     }
+                 }
+             }
 
         .. versionadded:: 1.2.17
+        """
+        return {}
+
+    def get_settings_reauth_requirements(self):
+        """
+        Retrieves a config tree of settings that require a fresh credential check and potential
+        reauthentication before they can be saved via the REST API.
+
+        Override this in a plugin if you have any sensitive settings, e.g. system commands, that should
+        require a fresh credential check from the user to write.
+
+        Return a ``dict`` with the tree of affected keys. Example:
+
+        .. code-block:: python
+
+           def get_settings_defaults(self):
+               return {
+                   "foo": {
+                       "a": 1,
+                       "b": 2,
+                       "c": 3,
+                   },
+                   "bar": {
+                       "some": 1,
+                       "other": 2,
+                       "settings": 3,
+                   }
+               }
+
+           def get_settings_reauth_requirements(self):
+               return {"foo": {"a": True}, "bar": True}
+
+        In this example, trying to write ``foo.a`` or any of ``bar.some``, ``bar.other`` or ``bar.settings``
+        will make OctoPrint check whether the credentials are still fresh, and if not abort the settings
+        save request, returning an :http:statuscode:`403`.
+
+        .. versionadded:: 1.12.0
         """
         return {}
 

@@ -36,23 +36,23 @@ wrench icon in the upper right corner.
 
 There you can adjust the following settings:
 
-  * **OctoPrint version tracking**: Whether you want to track OctoPrint *releases* or every *commit*. Usually you want to
-    select "Release" here which is also the default, unless you are a developer.
-  * **Tracked branch** (if tracking is set to "Github Commit"): The branch that will be tracked if you set version tracking to "Github Commit".
-  * **OctoPrint ``pip`` target** (if tracking is set to "Release" or "Github Commit"): The argument that will be provided to ``pip`` when updating OctoPrint.
-    Usually you don't want to change this from its default value of ``https://github.com/OctoPrint/OctoPrint/archive/{target_version}.zip``.
-  * **OctoPrint checkout folder** (if tracking is set to "Local checkout"): This must be the path to OctoPrint's git checkout folder
-    (``/home/pi/OctoPrint`` for OctoPi or `manual installs following the Raspberry Pi setup guide <https://community.octoprint.org/t/setting-up-octoprint-on-a-raspberry-pi-running-raspbian/2337/>`_).
-    Note that since OctoPrint 1.3.6 you will no longer need to set this to be able to update to releases, only if you
-    want to be able to update against some bleeding edge git branch.
-  * **Enable ``pip`` update checks**: Whether to have OctoPrint automatically check for updates of
-    the ``pip`` tool that is used for updating most components.
-  * **Version cache TTL**: The "time to live" of the cache OctoPrint will use to temporarily persist the version information
-    for the various components registered with the plugin, so that they don't have to be queried from the internet every time
-    you load the page. Defaults to 24h, you usually shouldn't need to change that value.
-  * **Show notifications to users**: Whether to display update notifications (without "Update now" button) to users that cannot
-    apply updates.
-  * **Minimum free disk space**: The minimum amount of free disk space needed in order to allow software updates to be run.
+* **OctoPrint version tracking**: Whether you want to track OctoPrint *releases* or every *commit*. Usually you want to
+  select "Release" here which is also the default, unless you are a developer.
+* **Tracked branch** (if tracking is set to "Github Commit"): The branch that will be tracked if you set version tracking to "Github Commit".
+* **OctoPrint ``pip`` target** (if tracking is set to "Release" or "Github Commit"): The argument that will be provided to ``pip`` when updating OctoPrint.
+  Usually you don't want to change this from its default value of ``https://github.com/OctoPrint/OctoPrint/archive/{target_version}.zip``.
+* **OctoPrint checkout folder** (if tracking is set to "Local checkout"): This must be the path to OctoPrint's git checkout folder
+  (``/home/pi/OctoPrint`` for OctoPi or `manual installs following the Raspberry Pi setup guide <https://community.octoprint.org/t/setting-up-octoprint-on-a-raspberry-pi-running-raspbian/2337/>`_).
+  Note that since OctoPrint 1.3.6 you will no longer need to set this to be able to update to releases, only if you
+  want to be able to update against some bleeding edge git branch.
+* **Enable ``pip`` update checks**: Whether to have OctoPrint automatically check for updates of
+  the ``pip`` tool that is used for updating most components.
+* **Version cache TTL**: The "time to live" of the cache OctoPrint will use to temporarily persist the version information
+  for the various components registered with the plugin, so that they don't have to be queried from the internet every time
+  you load the page. Defaults to 24h, you usually shouldn't need to change that value.
+* **Show notifications to users**: Whether to display update notifications (without "Update now" button) to users that cannot
+  apply updates.
+* **Minimum free disk space**: The minimum amount of free disk space needed in order to allow software updates to be run.
 
 More settings are available by :ref:`editing the corresponding section in config.yaml <sec-bundledplugins-softwareupdate-configuration>`.
 
@@ -108,7 +108,7 @@ and to apply available updates via ``octoprint plugins softwareupdate:update``. 
          that can be updated.
      - octoprint plugins softwareupdate:update --force
          This will force an update of all registered components
-         that can be updated, even if they don't have an updated
+         that can be updated, even if they don't have an update
          pending.
      - octoprint plugins softwareupdate:update octoprint
          This will only update OctoPrint and leave any further
@@ -189,140 +189,140 @@ Version checks
 Version check types are configured through the ``type`` parameter. The following
 types are currently recognized:
 
-  * ``github_release``: Checks against releases published on Github. Additional
-    config parameters:
+* ``github_release``: Checks against releases published on Github. Additional
+  config parameters:
 
-    * ``user``: (mandatory) Github user the repository to check belongs to
-    * ``repo``: (mandatory) Github repository to check
-    * ``prerelease``: ``True`` or ``False``, default ``False``, set to
-      ``True`` to also include releases on Github marked as prerelease.
-    * ``prerelease_branches``: Prerelease channel definitions, optional. List of:
+  * ``user``: (mandatory) Github user the repository to check belongs to
+  * ``repo``: (mandatory) Github repository to check
+  * ``prerelease``: ``True`` or ``False``, default ``False``, set to
+    ``True`` to also include releases on Github marked as prerelease.
+  * ``prerelease_branches``: Prerelease channel definitions, optional. List of:
 
-      * ``branch``: Branch associated with the channel, acts as ID
-      * ``name``: Human readable name of the release channel
-      * ``commitish``: List of values to check against ``target_commitish``
-        field in Github release data - release will only be included if the
-        values match. Defaults to being unset, in which case the ``branch``
-        will be matched.
+    * ``branch``: Branch associated with the channel, acts as ID
+    * ``name``: Human readable name of the release channel
+    * ``commitish``: List of values to check against ``target_commitish``
+      field in Github release data - release will only be included if the
+      values match. Defaults to being unset, in which case the ``branch``
+      will be matched.
 
-      .. versionadded:: 1.2.16
-    * ``stable_branch``: Stable channel definition, optional. Structure:
+    .. versionadded:: 1.2.16
+  * ``stable_branch``: Stable channel definition, optional. Structure:
 
-      * ``branch``: Branch associated with the channel, acts as ID
-      * ``name``: Human readable name of the release channel
-      * ``commitish``: List of values to check against ``target_commitish``
-        field in Github release data - release will only be included if the
-        values match. Defaults to being unset, in which case the ``branch``
-        will be matched.
+    * ``branch``: Branch associated with the channel, acts as ID
+    * ``name``: Human readable name of the release channel
+    * ``commitish``: List of values to check against ``target_commitish``
+      field in Github release data - release will only be included if the
+      values match. Defaults to being unset, in which case the ``branch``
+      will be matched.
 
-      .. versionadded:: 1.2.16
-    * ``prerelease_channel``: Release channel to limit updates to. If set only
-      those releases will be included if their ``target_commitish`` matches
-      the ones associated with the release channel identified by this, either
-      included in ``prerelease_channels`` or the ``stable_channel``. Only
-      taken into account if ``prerelease`` is ``true``.
-      .. versionadded:: 1.2.16
+    .. versionadded:: 1.2.16
+  * ``prerelease_channel``: Release channel to limit updates to. If set only
+    those releases will be included if their ``target_commitish`` matches
+    the ones associated with the release channel identified by this, either
+    included in ``prerelease_channels`` or the ``stable_channel``. Only
+    taken into account if ``prerelease`` is ``true``.
+    .. versionadded:: 1.2.16
 
-    * ``release_compare``: Method to use to compare between current version
-      information and release versions on Github. One of ``python`` (version
-      comparison using ``packaging.version.parse``, newer version detected
-      if remote > current), ``semantic`` (version comparison using
-      ``semantic_version`` package, newer version detected if remote > current)
-      and ``unequal`` (string comparison, newer version detected if
-      remote != current).
+  * ``release_compare``: Method to use to compare between current version
+    information and release versions on Github. One of ``python`` (version
+    comparison using ``packaging.version.parse``, newer version detected
+    if remote > current), ``semantic`` (version comparison using
+    ``semantic_version`` package, newer version detected if remote > current)
+    and ``unequal`` (string comparison, newer version detected if
+    remote != current).
 
-  * ``github_commit``: Checks against commits pushed to Github. Additional
-    config parameters:
+* ``github_commit``: Checks against commits pushed to Github. Additional
+  config parameters:
 
-    * ``user``: (mandatory) Github user the repository to check belongs to
-    * ``repo``: (mandatory) Github repository to check
-    * ``branch``: Branch of the Github repository to check, defaults to
-      ``master`` if not set.
-    * ``current``: Current commit hash. Will be updated automatically.
+  * ``user``: (mandatory) Github user the repository to check belongs to
+  * ``repo``: (mandatory) Github repository to check
+  * ``branch``: Branch of the Github repository to check, defaults to
+    ``master`` if not set.
+  * ``current``: Current commit hash. Will be updated automatically.
 
-  * ``bitbucket_commit``: Checks against commits pushed to Bitbucket. Additional
-    config parameters:
+* ``bitbucket_commit``: Checks against commits pushed to Bitbucket. Additional
+  config parameters:
 
-    * ``user``: (mandatory) Bitbucket user the repository to check belongs to
-    * ``repo``: (mandatory) Bitbucket repository to check
-    * ``branch``: Branch of the Bitbucket repository to check, defaults to
-      ``master`` if not set.
-    * ``current``: Current commit hash. Will be updated automatically.
-    * ``api_user``: (mandatory only for private repositories) Bitbucket user name (not email address).
-      Requires ``api_password`` to be set. Hint: This is used for the check only. For the actual
-      download you might register your public SSH key as access key for the according repo and
-      configure this as pip URL in ``config.yaml``: ``git+ssh://git@bitbucket.org/my_user/my_repo.git@{target_version}``
-    * ``api_password``: (mandatory only for private repositories) App password. Requires
-      ``api_user`` to be set. **Important**: Never use your actual Bitbucket login password. Generate
-      a new app password. App passwords are user specific on Bitbucket.
+  * ``user``: (mandatory) Bitbucket user the repository to check belongs to
+  * ``repo``: (mandatory) Bitbucket repository to check
+  * ``branch``: Branch of the Bitbucket repository to check, defaults to
+    ``master`` if not set.
+  * ``current``: Current commit hash. Will be updated automatically.
+  * ``api_user``: (mandatory only for private repositories) Bitbucket user name (not email address).
+    Requires ``api_password`` to be set. Hint: This is used for the check only. For the actual
+    download you might register your public SSH key as access key for the according repo and
+    configure this as pip URL in ``config.yaml``: ``git+ssh://git@bitbucket.org/my_user/my_repo.git@{target_version}``
+  * ``api_password``: (mandatory only for private repositories) App password. Requires
+    ``api_user`` to be set. **Important**: Never use your actual Bitbucket login password. Generate
+    a new app password. App passwords are user specific on Bitbucket.
 
-    .. versionadded:: 1.3.5
+  .. versionadded:: 1.3.5
 
-  * ``git_commit``: Checks a local git repository for new commits on its
-    configured remote. Additional config parameters:
+* ``git_commit``: Checks a local git repository for new commits on its
+  configured remote. Additional config parameters:
 
-    * ``checkout_folder``: (mandatory) The full path to the folder with a valid git
-      repository to check.
+  * ``checkout_folder``: (mandatory) The full path to the folder with a valid git
+    repository to check.
 
-  * ``pypi_release``: Checks `pypi.org <https://pypi.org>`_ for new releases of a specified package. Additional
-    config parameters:
+* ``pypi_release``: Checks `pypi.org <https://pypi.org>`_ for new releases of a specified package. Additional
+  config parameters:
 
-    * ``package``: (mandatory) Name of the package which to check.
+  * ``package``: (mandatory) Name of the package which to check.
 
-    .. versionadded:: 1.4.0
+  .. versionadded:: 1.4.0
 
-  * ``httpheader``: Checks an HTTP header on a defined URL for changes. This can be used for easy checks
-    against things like ``ETag`` or ``Last-Modified`` headers. Additional
-    config parameters:
+* ``httpheader``: Checks an HTTP header on a defined URL for changes. This can be used for easy checks
+  against things like ``ETag`` or ``Last-Modified`` headers. Additional
+  config parameters:
 
-    * ``header_url`` or ``url``: (mandatory) URL to check. ``url`` can be used to avoid duplication in case of updater
-      methods such as ``single_file_plugin``.
-    * ``header_name``: (mandatory) HTTP header to check, case-insensitive, e.g. ``ETag`` or ``Last-Modified``.
-    * ``header_method``: HTTP request method to use for the check, defaults to ``HEAD``.
-    * ``header_prefix``: Prefix to use for the obtained value in the version display. If not provided ``header_name``
-      will be used. If set to an empty string, no prefix will be added.
+  * ``header_url`` or ``url``: (mandatory) URL to check. ``url`` can be used to avoid duplication in case of updater
+    methods such as ``single_file_plugin``.
+  * ``header_name``: (mandatory) HTTP header to check, case-insensitive, e.g. ``ETag`` or ``Last-Modified``.
+  * ``header_method``: HTTP request method to use for the check, defaults to ``HEAD``.
+  * ``header_prefix``: Prefix to use for the obtained value in the version display. If not provided ``header_name``
+    will be used. If set to an empty string, no prefix will be added.
 
-    .. versionadded:: 1.4.1
+  .. versionadded:: 1.4.1
 
-  * ``jsondata``: Checks the provided JSON endpoint for changes. The JSON endpoint must return an object with the
-    property ``version``, which should contain the latest version, e.g. ``{"version":"1.2.3"}``. Additional
-    config parameters:
+* ``jsondata``: Checks the provided JSON endpoint for changes. The JSON endpoint must return an object with the
+  property ``version``, which should contain the latest version, e.g. ``{"version":"1.2.3"}``. Additional
+  config parameters:
 
-    * ``jsondata``: (mandatory) URL from which to fetch the JSON data
+  * ``jsondata``: (mandatory) URL from which to fetch the JSON data
 
-    .. versionadded:: 1.4.1
+  .. versionadded:: 1.4.1
 
-  * ``command_line``: Uses a provided script to determine whether an update
-    is available. Additional config parameters:
+* ``command_line``: Uses a provided script to determine whether an update
+  is available. Additional config parameters:
 
-    * ``command``: (mandatory) The full path to the script to execute. The script is
-      expected to return a ``0`` return code if an update is available and to
-      return the display name of the available version as the final and
-      optionally the display name of the current version as the next to final
-      line on stdout.
+  * ``command``: (mandatory) The full path to the script to execute. The script is
+    expected to return a ``0`` return code if an update is available and to
+    return the display name of the available version as the final and
+    optionally the display name of the current version as the next to final
+    line on stdout.
 
-  * ``python_checker``: Can only be specified by plugins through the
-    :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. Additional config
-    parameters:
+* ``python_checker``: Can only be specified by plugins through the
+  :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. Additional config
+  parameters:
 
-    * ``python_checker``: (mandatory) A Python callable which returns version
-      information and whether the current version is up-to-date or not, see
-      below for details.
+  * ``python_checker``: (mandatory) A Python callable which returns version
+    information and whether the current version is up-to-date or not, see
+    below for details.
 
-  * ``always_current``: Always reports that no update is necessary. Useful for debugging
-    software update mechanisms during development. Additional config parameters:
+* ``always_current``: Always reports that no update is necessary. Useful for debugging
+  software update mechanisms during development. Additional config parameters:
 
-    * ``current_version``: Version to report for both local and remote version.
+  * ``current_version``: Version to report for both local and remote version.
 
-    .. versionadded:: 1.3.7
+  .. versionadded:: 1.3.7
 
-  * ``never_current``: Always reports that an update is necessary. Useful for debugging
-    software update mechanisms during development. Additional config parameters:
+* ``never_current``: Always reports that an update is necessary. Useful for debugging
+  software update mechanisms during development. Additional config parameters:
 
-    * ``local_version``: Current local version. Defaults to ``1.0.0``.
-    * ``remote_version``: Remote version to offer update to. Defaults to ``1.0.1``.
+  * ``local_version``: Current local version. Defaults to ``1.0.0``.
+  * ``remote_version``: Remote version to offer update to. Defaults to ``1.0.1``.
 
-    .. versionadded:: 1.3.7
+  .. versionadded:: 1.3.7
 
 .. _sec-bundledplugins-softwareupdate-configuration-updatemethods:
 
@@ -333,52 +333,52 @@ Update methods are specified via the ``method`` parameter. Some update methods a
 through the presence of their mandatory configuration parameters. The following methods are currently
 supported:
 
-  * ``pip``: Update by ``pip install``ing the supplied URL. May contain a
-    placeholder ``{target}`` which will be the most recent version specifier as retrieved from the update check.
-    Additional config parameters:
+* ``pip``: Update by ``pip install``ing the supplied URL. May contain a
+  placeholder ``{target}`` which will be the most recent version specifier as retrieved from the update check.
+  Additional config parameters:
 
-    * ``pip``: The URL to use for installing. Presence implies ``method: pip``.
-    * ``pip_command``: The command to use for installing. Defaults to the ``pip`` instance belong to OctoPrint's environment.
-    * ``pip_cwd``: The working directory to use for installing. Defaults to the current working directory.
-    * ``force_reinstall``: Whether to force reinstallation of the package. Defaults to ``false``. Helpful
-      for development and version checks that don't guarantee a Python package version change (e.g. commit based
-      version checks like ``git_commit``, ``github_commit``, ``bitbucket_commit``).
+  * ``pip``: The URL to use for installing. Presence implies ``method: pip``.
+  * ``pip_command``: The command to use for installing. Defaults to the ``pip`` instance belong to OctoPrint's environment.
+  * ``pip_cwd``: The working directory to use for installing. Defaults to the current working directory.
+  * ``force_reinstall``: Whether to force reinstallation of the package. Defaults to ``false``. Helpful
+    for development and version checks that don't guarantee a Python package version change (e.g. commit based
+    version checks like ``git_commit``, ``github_commit``, ``bitbucket_commit``).
 
-    .. versionchanged:: 1.8.0
+  .. versionchanged:: 1.8.0
 
-       Added ``force_reinstall`` parameter.
+      Added ``force_reinstall`` parameter.
 
-  * ``single_file_plugin``: Update a single file plugin by re-downloading it from a configured URL.
-    Additional config parameters:
+* ``single_file_plugin``: Update a single file plugin by re-downloading it from a configured URL.
+  Additional config parameters:
 
-    * ``url``: (mandatory) The URL from which to install the single file plugin. Must be a single self contained
-      python file.
+  * ``url``: (mandatory) The URL from which to install the single file plugin. Must be a single self contained
+    python file.
 
-  * ``update_script``: Update by executing a script.
-    Additional config parameters:
+* ``update_script``: Update by executing a script.
+  Additional config parameters:
 
-    * ``update_script``: (mandatory) The path of the script to run. May
-      contain placeholders ``{target}`` (for the most recent version specified
-      as retrieved from the update check), ``{branch}`` for the branch to switch
-      to access the release, ``{folder}`` for the working directory
-      of the script and ``{python}`` for the python executable OctoPrint is
-      running under. Presence implies ``method: update_script``.
-    * ``update_folder`` or ``checkout_folder``: (mandatory) The working directory.
-      ``checkout_folder`` can be used to avoid duplication in case of check
-      types such as ``git_commit``.
+  * ``update_script``: (mandatory) The path of the script to run. May
+    contain placeholders ``{target}`` (for the most recent version specified
+    as retrieved from the update check), ``{branch}`` for the branch to switch
+    to access the release, ``{folder}`` for the working directory
+    of the script and ``{python}`` for the python executable OctoPrint is
+    running under. Presence implies ``method: update_script``.
+  * ``update_folder`` or ``checkout_folder``: (mandatory) The working directory.
+    ``checkout_folder`` can be used to avoid duplication in case of check
+    types such as ``git_commit``.
 
-  * ``python_updater``: Update by executing a custom python callable.
-    Additional config parameters:
+* ``python_updater``: Update by executing a custom python callable.
+  Additional config parameters:
 
-    * ``python_updater``: (mandatory) Can only be specified by plugins through the
-      :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. A Python callable
-      which performs the update, see below for details. Presence implies ``method: python_updater``.
+  * ``python_updater``: (mandatory) Can only be specified by plugins through the
+    :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. A Python callable
+    which performs the update, see below for details. Presence implies ``method: python_updater``.
 
-  * ``sleep_a_bit``: Does nothing but block for a configurable ``duration`` and log
-    a countdown in the meantime. Useful for debugging software update mechanisms
-    during development.
+* ``sleep_a_bit``: Does nothing but block for a configurable ``duration`` and log
+  a countdown in the meantime. Useful for debugging software update mechanisms
+  during development.
 
-    .. versionadded:: 1.3.7
+  .. versionadded:: 1.3.7
 
 .. note::
 
@@ -585,18 +585,18 @@ plugin_softwareupdate_update_succeeded
 
   Payload:
 
-    * ``target``: update target
-    * ``from_version``: version from which was updated
-    * ``to_version``: version to which was updated
+  * ``target``: update target
+  * ``from_version``: version from which was updated
+  * ``to_version``: version to which was updated
 
 plugin_softwareupdate_update_failed
   An update failed.
 
   Payload:
 
-    * ``target``: update target
-    * ``from_version``: version from which was updated
-    * ``to_version``: version to which was updated
+  * ``target``: update target
+  * ``from_version``: version from which was updated
+  * ``to_version``: version to which was updated
 
 .. _sec-bundledplugins-softwareupdate-hooks:
 

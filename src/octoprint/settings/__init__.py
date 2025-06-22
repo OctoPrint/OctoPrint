@@ -29,7 +29,7 @@ import threading
 import time
 from collections import ChainMap, defaultdict
 from collections.abc import KeysView
-from typing import Any, Dict, List
+from typing import Any
 
 from yaml import YAMLError
 
@@ -177,7 +177,7 @@ class HierarchicalChainMap:
     """
 
     @staticmethod
-    def _flatten(d: Dict[str, Any], parent_key: str = "") -> Dict[str, Any]:
+    def _flatten(d: dict[str, Any], parent_key: str = "") -> dict[str, Any]:
         """
         Recursively flattens a hierarchical dictionary.
 
@@ -202,7 +202,7 @@ class HierarchicalChainMap:
         return dict(items)
 
     @staticmethod
-    def _unflatten(d: Dict[str, Any], prefix: str = "") -> Dict[str, Any]:
+    def _unflatten(d: dict[str, Any], prefix: str = "") -> dict[str, Any]:
         """
         Unflattens a flattened dictionary.
 
@@ -247,18 +247,18 @@ class HierarchicalChainMap:
         return result
 
     @staticmethod
-    def _path_to_key(path: List[str]) -> str:
+    def _path_to_key(path: list[str]) -> str:
         """Converts a path to a key."""
         return _CHAINMAP_SEP.join(path)
 
     @staticmethod
-    def from_layers(*layers: Dict[str, Any]) -> "HierarchicalChainMap":
+    def from_layers(*layers: dict[str, Any]) -> "HierarchicalChainMap":
         """Generates a new chain map from the provided layers."""
         result = HierarchicalChainMap()
         result._chainmap.maps = layers
         return result
 
-    def __init__(self, *maps: Dict[str, Any]):
+    def __init__(self, *maps: dict[str, Any]):
         self._chainmap = ChainMap(*map(self._flatten, maps))
         self._prefixed_keys = {}
 
@@ -271,7 +271,7 @@ class HierarchicalChainMap:
             current = self._chainmap
         return any(x in current for x in self._cached_prefixed_keys(prefix))
 
-    def _with_prefix(self, prefix: str, current: ChainMap = None) -> Dict[str, Any]:
+    def _with_prefix(self, prefix: str, current: ChainMap = None) -> dict[str, Any]:
         """
         Get a dict with all keys that start with the given prefix. This utilizes the
         cached prefix keys to avoid recomputing the list every time.
@@ -280,7 +280,7 @@ class HierarchicalChainMap:
             current = self._chainmap
         return {k: current[k] for k in self._cached_prefixed_keys(prefix) if k in current}
 
-    def _cached_prefixed_keys(self, prefix: str) -> List[str]:
+    def _cached_prefixed_keys(self, prefix: str) -> list[str]:
         """
         Get a list of keys that start with the given prefix. This is cached to avoid
         recomputing the list every time.
@@ -316,12 +316,12 @@ class HierarchicalChainMap:
         for prefix in to_delete:
             del self._prefixed_keys[prefix]
 
-    def deep_dict(self) -> Dict[str, Any]:
+    def deep_dict(self) -> dict[str, Any]:
         """Returns an unflattened copy of the current chainmap."""
         return self._unflatten(self._chainmap)
 
     def has_path(
-        self, path: List[str], only_local: bool = False, only_defaults: bool = False
+        self, path: list[str], only_local: bool = False, only_defaults: bool = False
     ) -> bool:
         """
         Checks if the given path exists in the current map.
@@ -351,7 +351,7 @@ class HierarchicalChainMap:
     )
     def get_by_path(
         self,
-        path: List[str],
+        path: list[str],
         only_local: bool = False,
         only_defaults: bool = False,
         merged: bool = False,
@@ -401,7 +401,7 @@ class HierarchicalChainMap:
             raise KeyError("Could not find entry for " + str(path))
         return result
 
-    def set_by_path(self, path: List[str], value: Any) -> None:
+    def set_by_path(self, path: list[str], value: Any) -> None:
         """
         Sets the value at the given path.
 
@@ -432,7 +432,7 @@ class HierarchicalChainMap:
             # finally set the new value
             current[key] = value
 
-    def del_by_path(self, path: List[str]) -> None:
+    def del_by_path(self, path: list[str]) -> None:
         """
         Deletes the value at the given path.
 
@@ -492,7 +492,7 @@ class HierarchicalChainMap:
 
         return len(to_delete) > 0
 
-    def _clean_upward_path(self, current: ChainMap, path: List[str]) -> None:
+    def _clean_upward_path(self, current: ChainMap, path: list[str]) -> None:
         """
         Cleans up the path upwards from the given path, getting rid of any empty dicts.
 
@@ -520,7 +520,7 @@ class HierarchicalChainMap:
                 pass
 
     def with_config_defaults(
-        self, config: Dict[str, Any] = None, defaults: Dict[str, Any] = None
+        self, config: dict[str, Any] = None, defaults: dict[str, Any] = None
     ) -> "HierarchicalChainMap":
         """
         Builds a new map with the following layers: provided config + any intermediary
@@ -551,7 +551,7 @@ class HierarchicalChainMap:
         layers = [config] + self._middle_layers() + defaults + [self._chainmap.maps[-1]]
         return self.with_layers(*layers)
 
-    def with_layers(self, *layers: Dict[str, Any]) -> "HierarchicalChainMap":
+    def with_layers(self, *layers: dict[str, Any]) -> "HierarchicalChainMap":
         """
         Builds a new map with the provided layers. Makes sure to copy the current prefix cache
         to the new map.
@@ -570,7 +570,7 @@ class HierarchicalChainMap:
         return chain
 
     @property
-    def top_map(self) -> Dict[str, Any]:
+    def top_map(self) -> dict[str, Any]:
         """This is the layer that is written to, unflattened"""
         return self._unflatten(self._chainmap.maps[0])
 
@@ -579,11 +579,11 @@ class HierarchicalChainMap:
         self._chainmap.maps[0] = self._flatten(value)
 
     @property
-    def bottom_map(self) -> Dict[str, Any]:
+    def bottom_map(self) -> dict[str, Any]:
         """The very bottom layer is the default layer, unflattened"""
         return self._unflatten(self._chainmap.maps[-1])
 
-    def insert_map(self, pos: int, d: Dict[str, Any]) -> None:
+    def insert_map(self, pos: int, d: dict[str, Any]) -> None:
         """
         Inserts a new map at the given position into the chainmap.
 
@@ -617,11 +617,11 @@ class HierarchicalChainMap:
         del self._chainmap.maps[pos]
 
     @property
-    def all_layers(self) -> List[Dict[str, Any]]:
+    def all_layers(self) -> list[dict[str, Any]]:
         """A list of all layers in this map, flattened."""
         return self._chainmap.maps
 
-    def _middle_layers(self) -> List[dict]:
+    def _middle_layers(self) -> list[dict]:
         """Returns all layers between the top and bottom layer, flattened."""
         if len(self._chainmap.maps) > 2:
             return self._chainmap.maps[1:-1]
@@ -2347,7 +2347,7 @@ def _validate_folder(folder, create=True, check_writable=True, deep_check_writab
                 ) from exc
 
         else:
-            # not extisting, not allowed to create it
+            # not existing, not allowed to create it
             raise OSError(f"No such folder: {folder}")
 
     elif os.path.isfile(folder):

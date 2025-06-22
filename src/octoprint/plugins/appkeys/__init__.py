@@ -423,6 +423,67 @@ class AppKeysPlugin(
     def validate_api_key(self, api_key, *args, **kwargs):
         return self._user_for_api_key(api_key)
 
+    ##~~ CLI hook
+
+    def cli_commands_hook(self, cli_group, pass_octoprint_ctx, *args, **kwargs):
+        import click
+
+        @click.command("request-key")
+        @click.option(
+            "--url",
+            "octoprint_url",
+            default="http://127.0.0.1:5000",
+            help="OctoPrint URL to request against",
+        )
+        @click.option("--user", default=None, help="User for whom to request the appkey")
+        @click.argument("app")
+        def request_command(octoprint_url, user, app):
+            """
+            Triggers the appkey request workflow for a provided app.
+            """
+
+            import sys
+            import time
+
+            import requests
+
+            payload = {
+                "app": app,
+            }
+            if user:
+                payload["user"] = user
+
+            response = requests.post(
+                f"{octoprint_url}/plugin/appkeys/request",
+                json=payload,
+            )
+            response.raise_for_status()
+
+            rdata = response.json()
+            click.echo(f"Authenticate at {rdata['auth_dialog']}")
+            click.echo("Awaiting decision ", nl=False)
+
+            poll_url = response.headers.get("Location")
+
+            while True:
+                response = requests.get(poll_url)
+
+                if response.status_code == 200:
+                    rdata = response.json()
+                    click.echo("")
+                    click.echo(f"Got key: {rdata['api_key']}")
+                    sys.exit(-1)
+                elif response.status_code == 202:
+                    click.echo(".", nl=False)
+                else:
+                    click.echo("")
+                    click.echo("Request denied!", err=True)
+                    sys.exit(-1)
+
+                time.sleep(1)
+
+        return [request_command]
+
     ##~~ Helpers
 
     def _add_pending_decision(self, remote_address, app_name, user_id=None):
@@ -636,9 +697,10 @@ __plugin_disabling_discouraged__ = gettext(
     "obtain an API key without you manually copy-pasting it."
 )
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 __plugin_implementation__ = AppKeysPlugin()
 __plugin_hooks__ = {
     "octoprint.accesscontrol.keyvalidator": __plugin_implementation__.validate_api_key,
     "octoprint.access.permissions": __plugin_implementation__.get_additional_permissions,
+    "octoprint.cli.commands": __plugin_implementation__.cli_commands_hook,
 }

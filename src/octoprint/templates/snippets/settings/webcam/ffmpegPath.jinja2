@@ -6,5 +6,6 @@
             <button class="btn" type="button" data-bind="click: testWebcamFfmpegPath, enable: webcam_ffmpegPath() && !testWebcamFfmpegPathBusy(), css: {disabled: !webcam_ffmpegPath() || testWebcamFfmpegPathBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testWebcamFfmpegPathBusy"></i> {{ _('Test') }}</button>
         </div>
         <span class="help-block" data-bind="visible: webcam_ffmpegPathBroken() || webcam_ffmpegPathOk(), text: webcam_ffmpegPathText"></span>
+        <span class="help-block">{{ _('Changing this might require you to re-enter your password.') }}</span>
     </div>
 </div>

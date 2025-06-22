@@ -221,13 +221,28 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
        # - heater: The heater id (eg. T0, T1, B)
        # - actual: The actual temperature of the heater
        # - target: The target temperature of heater
-       m105TargetFormatString: {heater}:{actual:.2f}/ {target:.2f}
+       m105TargetFormatString: "{heater}:{actual:.2f}/ {target:.2f}"
 
        # Response to M105 when there is no target
        # Placeholders:
        # - heater: The heater id (eg. T0, T1, B)
        # - actual: The actual temperature of the heater
-       m105NoTargetFormatString: {heater}:{actual:.2f}
+       m105NoTargetFormatString: "{heater}:{actual:.2f}"
+
+       # Response to M123 for fan RPM
+       # Placeholders:
+       # - fan: The fan id (e.g. E0)
+       # - rpm: The rotation speed of the fan
+       m123RPMFormatString: "{fan}:{rpm} RPM"
+
+       # Response to M123 for fan power level
+       # Placeholders:
+       # - fan: The fan id (e.g. E0)
+       # - power: The power level being delivered to the fan
+       m123RPMFormatString: "{fan}@:{power}"
+
+       # The maximum speed (in RPM) the virtual printer's virtual fans can spin at.
+       fanMaxSpeed: 4560
 
        # Enable virtual EEPROM
        # If enabled, a file `eeprom.json` will be created in the plugin data folder

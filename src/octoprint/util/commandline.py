@@ -8,7 +8,7 @@ import queue
 import re
 import time
 import warnings
-from typing import List, Optional, Tuple, Union
+from typing import Optional, Union
 
 import sarge
 
@@ -134,8 +134,8 @@ class CommandlineCaller:
         """Callback for stderr output"""
 
     def checked_call(
-        self, command: Union[str, List[str], Tuple[str]], **kwargs
-    ) -> Tuple[int, List[str], List[str]]:
+        self, command: Union[str, list[str], tuple[str]], **kwargs
+    ) -> tuple[int, list[str], list[str]]:
         """
         Calls a command and raises an error if it doesn't return with return code 0
 
@@ -159,13 +159,13 @@ class CommandlineCaller:
 
     def call(
         self,
-        command: Union[str, List[str], Tuple[str]],
+        command: Union[str, list[str], tuple[str]],
         delimiter: bytes = b"\n",
         buffer_size: int = -1,
         logged: bool = True,
         output_timeout: float = 0.5,
         **kwargs,
-    ) -> Tuple[Optional[int], List[str], List[str]]:
+    ) -> tuple[Optional[int], list[str], list[str]]:
         """
         Calls a command
 
@@ -220,7 +220,7 @@ class CommandlineCaller:
 
     def non_blocking_call(
         self,
-        command: Union[str, List, Tuple],
+        command: Union[str, list, tuple],
         delimiter: bytes = b"\n",
         buffer_size: int = -1,
         logged: bool = True,

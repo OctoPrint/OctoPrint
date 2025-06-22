@@ -717,7 +717,7 @@ def dict_minimal_mergediff(source, target):
     return result
 
 
-def dict_contains_keys(keys, dictionary):
+def dict_contains_all_keys(keys, dictionary):
     """
     Recursively deep-checks if ``dictionary`` contains all keys found in ``keys``.
 
@@ -726,14 +726,14 @@ def dict_contains_keys(keys, dictionary):
         >>> positive = dict(foo="some_other_bar", fnord=dict(b=100))
         >>> negative = dict(foo="some_other_bar", fnord=dict(b=100, d=20))
         >>> dictionary = dict(foo="bar", fnord=dict(a=1, b=2, c=3))
-        >>> dict_contains_keys(positive, dictionary)
+        >>> dict_contains_all_keys(positive, dictionary)
         True
-        >>> dict_contains_keys(negative, dictionary)
+        >>> dict_contains_all_keys(negative, dictionary)
         False
 
     Arguments:
-        a (dict): The dictionary to check for the keys from ``b``.
-        b (dict): The dictionary whose keys to check ``a`` for.
+        keys (dict): The dictionary whose keys to check ``dictionary`` for.
+        dictionary (dict): The dictionary to check for the keys from ``keys``.
 
     Returns:
         boolean: True if all keys found in ``b`` are also present in ``a``, False otherwise.
@@ -750,6 +750,44 @@ def dict_contains_keys(keys, dictionary):
                 return False
 
     return True
+
+
+dict_contains_keys = dict_contains_all_keys
+
+
+def dict_contains_any_keys(keys, dictionary):
+    """
+    Recursively deep-checks if ``dictionary`` contains any keys found in ``keys``.
+
+    Example::
+
+        >>> positive = dict(foo="some_other_bar")
+        >>> negative = dict(fnord=dict(e=True))
+        >>> dictionary = dict(foo="bar", fnord=dict(a=1, b=2, c=3))
+        >>> dict_contains_any_keys(positive, dictionary)
+        True
+        >>> dict_contains_any_keys(negative, dictionary)
+        False
+
+    Arguments:
+        keys (dict): The dictionary whose keys to check ``dictionary`` for.
+        dictionary (dict): The dictionary to check for the keys from ``keys``.
+
+    Returns:
+        boolean: True if any keys found in ``b`` are also present in ``a``, False otherwise.
+    """
+
+    if not isinstance(keys, dict) or not isinstance(dictionary, dict):
+        return False
+
+    for k, v in keys.items():
+        if dictionary and k in dictionary:
+            if isinstance(v, dict) and len(v) > 0:
+                if dict_contains_any_keys(v, dictionary[k]):
+                    return True
+            else:
+                return True
+    return False
 
 
 def dict_flatten(dictionary, prefix="", separator="."):
@@ -1382,7 +1420,7 @@ class ResettableTimer(threading.Thread):
                 self.is_reset = False
             self._event.wait(self.interval)
 
-        if not self._event.isSet():
+        if not self._event.is_set():
             self.function(*self.args, **self.kwargs)
         with self._mutex:
             self._event.set()

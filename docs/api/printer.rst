@@ -4,8 +4,6 @@
 Printer operations
 ******************
 
-.. contents::
-
 Printer control is mostly achieved through the use of commands, issued to resources reflecting components of the
 printer. OctoPrint currently knows the following components:
 

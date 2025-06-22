@@ -605,6 +605,6 @@ __plugin_description__ = (
 __plugin_url__ = "https://tracking.octoprint.org"
 __plugin_author__ = "Gina Häußge"
 __plugin_license__ = "AGPLv3"
-__plugin_pythoncompat__ = ">=3.7,<4"
+__plugin_pythoncompat__ = ">=3.9,<4"
 
 __plugin_implementation__ = TrackingPlugin()

@@ -4,8 +4,6 @@
 Settings
 ********
 
-.. contents::
-
 .. _sec-api-settings-retrieve:
 
 Retrieve current settings
@@ -362,55 +360,63 @@ mapped, with the following exceptions:
 
    * - Field
      - Notes
+   * - ``accessControl.*``
+     - Only ``autologinLocal`` and ``autologinHeadsupAcknowledged`` are mapped, and only for users with the ADMIN permission.
+   * - ``api.*``
+     - Only ``key`` and ``allowCrossOrigin`` are mapped, and ``key`` only for users with the ADMIN permission and a recent credential check.
+   * - ``appearance.components``
+     - Not mapped.
+   * - ``controls.*``
+     - Only returned for users with the CONTROL permission.
+   * - ``devel.*``
+     - Only ``pluginTimings`` is mapped.
+   * - ``estimation``
+     - Not mapped.
+   * - ``events.*``
+     - Not mapped (but ``events.subscriptions`` is mapped by the bundled EventManager plugin on its subtree)
    * - ``feature.gcodeViewer``
      - Maps to ``gcodeViewer.enabled`` in ``config.yaml``
    * - ``feature.sizeThreshold``
      - Maps to ``gcodeViewer.sizeThreshold`` in ``config.yaml``
    * - ``feature.mobileSizeThreshold``
      - Maps to ``gcodeViewer.mobileSizeThreshold`` in ``config.yaml``
-   * - ``folder.timelapseTmp``
-     - Maps to ``folder.timelapse_tmp`` in ``config.yaml``
-   * - ``plugins``
-     - Plugin settings as available from ``config.yaml`` and :class:`~octoprint.plugin.SettingsPlugin` implementations
-   * - ``scripts.gcode``
-     - Whole subtree of configured :ref:`GCODE scripts <sec-features-gcode_scripts>`
-   * - ``serial.port``
-     - Current serial port
-   * - ``serial.baudrate``
-     - Current serial baudrate
-   * - ``serial.portOptions``
-     - Available serial ports
-   * - ``serial.baudrateOptions``
-     - Available serial baudrates
-   * - ``serial.timeoutConnection``
-     - Maps to ``serial.timeout.connection`` in ``config.yaml``
-   * - ``serial.timeoutDetection``
-     - Maps to ``serial.timeout.detection`` in ``config.yaml``
-   * - ``serial.timeoutCommunication``
-     - Maps to ``serial.timeout.communication`` in ``config.yaml``
-   * - ``serial.timeoutTemperature``
-     - Maps to ``serial.timeout.temperature`` in ``config.yaml``
-   * - ``serial.timeoutTemperatureTargetSet``
-     - Maps to ``serial.timeout.temperatureTargetSet`` in ``config.yaml``
-   * - ``serial.timeoutSdStatus``
-     - Maps to ``serial.timeout.sdStatus`` in ``config.yaml``
-   * - ``serial.maxTimeoutsIdle``
-     - Maps to ``serial.maxCommunicationTimeouts.idle`` in ``config.yaml``
-   * - ``serial.maxTimeoutsPrinting``
-     - Maps to ``serial.maxCommunicationTimeouts.printing`` in ``config.yaml``
-   * - ``serial.maxTimeoutsLong``
-     - Maps to ``serial.maxCommunicationTimeouts.long`` in ``config.yaml``
-   * - ``system.actions``
-     - Whole subtree taken from ``config.yaml``
-   * - ``system.events``
-     - Whole subtree taken from ``config.yaml``
-   * - ``temperature.profiles``
-     - Whole subtree taken from ``config.yaml``
-   * - ``terminalFilters``
-     - Whole subtree taken from ``config.yaml``
-   * - ``webcam.streamUrl``
-     - Maps to ``webcam.stream`` in ``config.yaml``
-   * - ``webcam.snapshotUrl``
-     - Maps to ``webcam.snapshot`` in ``config.yaml``
-   * - ``webcam.ffmpegPath``
-     - Maps to ``webcam.ffmpeg`` in ``config.yaml``
+   * - ``folder.*``
+     - Only ``uploads``, ``timelapse`` and ``watched`` are mapped.
+   * - ``gcodeAnalysis.*``
+     - Only ``runAt`` and ``bedZ`` are mapped.
+   * - ``gcodeViewer.enabled``
+     - Mapped to ``feature.gcodeViewer``
+   * - ``gcodeViewer.sizeThreshold``
+     - Mapped to ``feature.sizeThreshold``
+   * - ``gcodeViewer.mobileSizeThreshold``
+     - Mapped to ``feature.mobileSizeThreshold``
+   * - ``plugins.*``
+     - Plugin settings as available from ``config.yaml`` and :class:`~octoprint.plugin.SettingsPlugin` implementations. All of ``plugins._*`` (e.g. ``plugins._disabled``) are not mapped.
+   * - ``printerProfiles.*``
+     - Not mapped, available on the dedicated :ref:`API endpoints <sec-api-printerprofiles>`.
+   * - ``serial.timeout.*``
+     - Mapped to ``serial.timeout*``
+   * - ``serial.maxCommunicationTimeouts.*``
+     - Mapped to ``serial.maxTimeouts*``
+   * - ``server.*``
+     - Only ``server.commands``, ``server.diskspace``, ``server.onlineCheck``, ``server.pluginBlacklist`` and ``server.allowFraming`` are mapped. Modifying ``server.commands`` requires a recent credentials check.
+   * - ``slicing.*``
+     - Only ``slicing.defaultslicer`` is mapped.
+   * - ``webcam.*``
+     - Only returned for users with the WEBCAM permission. Largely mapped to ``webcam.*``
+   * - ``webcam.ffmpeg``
+     - Mapped to ``webcam.ffmpegPath``
+   * - ``webcam.ffmpegThumbnailCommandline``
+     - Not mapped.
+   * - ``webcam.timelapse``
+     - Not mapped, available on the dedicated :ref:`API endpoints <sec-api-timelapse>`.
+   * - ``webcam.cleanTmpAfterDays``
+     - Not mapped.
+   * - Information about available webcam providers
+     - Mapped to ``webcam.webcams[]``, fields of each entry are: ``provider``, ``name``, ``displayName``, ``canSnapshot``, ``snapshotDisplay``, ``flipH``, ``flipV``, ``rotate90``, ``extras`` and ``compat.*``
+   * - Default webcam's config options ``flipH``, ``flipV``, ``rotate90`` and ``name``
+     - Mapped to ``webcam.flipH``, ``webcam.flipV``, ``webcam.rotate90`` and ``webcam.defaultWebcam``
+   * - Default webcam's compatibility layer ``stream``, ``streamRatio``, ``streamTimeout``, ``streamWebrtcIceServers``, ``snapshot``, ``snapshotTimeout``, ``snapshotSslValidation``, ``cacheBuster``
+     - Mapped to ``webcam.*``
+   * - Snapshot webcam's name
+     - Mapped to ``webcam.snapshotWebcam``
