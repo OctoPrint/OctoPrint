@@ -277,7 +277,13 @@ class OctoPrintDevelCommands(click.MultiCommand):
             is_flag=True,
             help="Force migration, even if setup.py looks wrong",
         )
-        def command(path, force):
+        @click.option(
+            "--rename-package",
+            "rename_package",
+            is_flag=True,
+            help="Automatically rename package to recommended naming scheme",
+        )
+        def command(path, force, rename_package):
             """
             Migrates a plugin based on OctoPrint's setup.py template to the use of pyproject.toml and a Taskfile
             """
@@ -477,6 +483,44 @@ setuptools.setup(license="{plugin_license}")
                         "See https://packaging.python.org/en/latest/specifications/name-normalization/ for details."
                     ) from err
 
+                # package folder
+                valid_package = re.compile(
+                    r"^([a-z0-9]|[a-z0-9][a-z0-9._]*[a-z0-9])$", flags=re.IGNORECASE
+                )
+                if valid_package.match(plugin_data["plugin_package"]):
+                    if (
+                        plugin_data["plugin_package"]
+                        != plugin_data["plugin_package"].lower()
+                    ):
+                        # package has mixed case, not recommended, warn or fix
+                        if rename_package:
+                            import shutil
+
+                            click.echo(
+                                f"\tPlugin package {plugin_data['plugin_package']} contains mixed case, renaming to {plugin_data['plugin_package'].lower()}..."
+                            )
+
+                            current = os.path.join(folder, plugin_data["plugin_package"])
+                            renamed = os.path.join(
+                                folder, plugin_data["plugin_package"].lower()
+                            )
+
+                            shutil.move(current, renamed)
+
+                            plugin_data["plugin_package"] = plugin_data[
+                                "plugin_package"
+                            ].lower()
+
+                        else:
+                            click.echo(
+                                f"\tWARNING: Plugin package {plugin_data['plugin_package']} contains mixed case, recommended to rename to {plugin_data['plugin_package'].lower()} (--rename-package)!"
+                            )
+
+                else:
+                    raise RuntimeError(
+                        "Package name contains unsupported characters. Please rename your plugin's package manually to only contain a-z, 0-9 and _."
+                    )
+
                 # license
                 plugin_data["plugin_license"] = _get_spdx_license(
                     plugin_data["plugin_license"]
@@ -611,6 +655,31 @@ setuptools.setup(license="{plugin_license}")
                     f.write(TASKFILE_TEMPLATE_HEADER.format(**plugin_data))
                     f.write(TASKFILE_TEMPLATE_BODY)
 
+            def _update_manifest_in(folder: str, plugin_data: dict[str, Any]) -> None:
+                manifest_in = os.path.join(folder, "MANIFEST.in")
+                click.echo(f"Updating {manifest_in} as necessary...")
+
+                manifest_in_exists = os.path.isfile(manifest_in)
+                required = [
+                    "include README.md",
+                    f"recursive-include {plugin_data['plugin_package']}/templates *",
+                    f"recursive-include {plugin_data['plugin_package']}/translations *",
+                    f"recursive-include {plugin_data['plugin_package']}/static *",
+                ]
+
+                lines = []
+                for req in required:
+                    pattern = req.replace(".", r"\.").replace("*", r"\*")
+                    if not manifest_in_exists or not search_through_file(
+                        manifest_in, pattern, regex=True
+                    ):
+                        click.echo(f'\tAdding "{req}"...')
+                        lines.append(req)
+
+                if lines:
+                    with open(manifest_in, mode="a") as f:
+                        f.write("\n".join(lines))
+
             def _cleanup_setup_cfg(setup_cfg: str) -> bool:
                 import configparser
 
@@ -661,7 +730,7 @@ setuptools.setup(license="{plugin_license}")
                 setup_cfg = os.path.join(folder, "setup.cfg")
                 if not _cleanup_setup_cfg(setup_cfg):
                     click.echo(
-                        f"\tWARNING: Not removing {setup_cfg}, there might still be important tool settings in there"
+                        f"\tWARNING: Not removing {setup_cfg}, there might still be important tool settings in there. MANUAL MERGE REQUIRED!"
                     )
                 else:
                     click.echo(f"\tRemoving no longer needed {setup_cfg}...")
@@ -688,9 +757,14 @@ setuptools.setup(license="{plugin_license}")
             if not enable_pep639:
                 _generate_setup_py(path, plugin_data)
             _generate_taskfile(path, plugin_data)
+            _update_manifest_in(path, plugin_data)
             _cleanup(path, enable_pep639=enable_pep639)
 
             click.echo("... done!")
+            click.echo()
+            click.echo(
+                "PLEASE REVIEW THE CHANGES THOROUGHLY AND MAKE SURE TO TEST YOUR PLUGIN AND ITS INSTALLATION!"
+            )
 
         return command
 
