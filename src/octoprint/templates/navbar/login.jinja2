@@ -1,21 +1,62 @@
-<a href="javascript:void(0)" data-test-id="login-menu" class="dropdown-toggle">
-    <i class="fas fa-user"></i> <span data-test-id="login-menu-title" data-bind="text: loginState.userMenuText, attr: {title: loginState.userMenuTitle}">{{ _('Login') }}</span>
+<a href="javascript:void(0)"
+   data-test-id="login-menu"
+   class="dropdown-toggle">
+    <i class="fas fa-user"></i> <span data-test-id="login-menu-title"
+       data-bind="text: loginState.userMenuText, attr: {title: loginState.userMenuTitle}">{{ _("Login") }}</span>
     <b class="caret"></b>
 </a>
-<div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
-    <form id="loginForm" data-bind="event: {'submit': loginState.prepareLogin }" onsubmit="return false; // this gets overwritten on view model bind">
-        <label for="login_user">{{ _('Username') }}</label>
-        <input type="text" id="login_user" data-test-id="login-username" name="username" data-bind="valueWithInit: loginState.loginUser" placeholder="{{ _('Username')|edq }}" autocapitalize="none" autocorrect="off">
-        <span class="pull-right"><small><a href="https://faq.octoprint.org/forgotten-password" target="_blank" rel="noreferrer noopener" tabindex="-1">{{ _('Forgot password?') }}</a></small></span>
-        <label for="login_pass">{{ _('Password') }}</label>
-        <input type="password" id="login_pass" data-test-id="login-password" name="password" data-bind="valueWithInit: loginState.loginPass" placeholder="{{ _('Password')|edq }}">
+<div id="login_dropdown_loggedout"
+     style="padding: 15px"
+     class="dropdown-menu"
+     data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
+    <form id="loginForm"
+          data-bind="event: {'submit': loginState.prepareLogin }"
+          onsubmit="return false; // this gets overwritten on view model bind">
+        <label for="login_user">{{ _("Username") }}</label>
+        <input type="text"
+               id="login_user"
+               data-test-id="login-username"
+               name="username"
+               data-bind="valueWithInit: loginState.loginUser"
+               placeholder="{{ _('Username') |edq }}"
+               autocapitalize="none"
+               autocorrect="off">
+        <span class="pull-right"><small><a href="https://faq.octoprint.org/forgotten-password"
+   target="_blank"
+   rel="noreferrer noopener"
+   tabindex="-1">{{ _("Forgot password?") }}</a></small></span>
+        <label for="login_pass">{{ _("Password") }}</label>
+        <input type="password"
+               id="login_pass"
+               data-test-id="login-password"
+               name="password"
+               data-bind="valueWithInit: loginState.loginPass"
+               placeholder="{{ _('Password') |edq }}">
         <label class="checkbox">
-            <input type="checkbox" id="login_remember" data-test-id="login-remember-me" data-bind="checked: loginState.loginRemember"> {{ _('Remember me') }}
+            <input type="checkbox"
+                   id="login_remember"
+                   data-test-id="login-remember-me"
+                   data-bind="checked: loginState.loginRemember">
+            {{ _("Remember me") }}
         </label>
-        <button type="submit" class="btn btn-block btn-primary" id="login_button" data-test-id="login-submit">{{ _('Login') }}</button>
+        <button type="submit"
+                class="btn btn-block btn-primary"
+                id="login_button"
+                data-test-id="login-submit">{{ _("Login") }}</button>
     </form>
 </div>
-<ul id="login_dropdown_loggedin" class="hide" data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
-    <li><a href="#" id="usersettings_button" data-bind="click: function() { usersettings.show(); }">{{ _('User Settings') }}</a></li>
-    <li><a href="#" id="logout_button" data-bind="click: loginState.logout, css: { disabled: !loginState.logoutSupported() }, attr: { title: loginState.logoutTooltip }" data-test-id="logout-submit">{{ _('Logout') }}</a></li>
+<ul id="login_dropdown_loggedin"
+    class="hide"
+    data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
+    <li>
+        <a href="#"
+           id="usersettings_button"
+           data-bind="click: function() { usersettings.show(); }">{{ _("User Settings") }}</a>
+    </li>
+    <li>
+        <a href="#"
+           id="logout_button"
+           data-bind="click: loginState.logout, css: { disabled: !loginState.logoutSupported() }, attr: { title: loginState.logoutTooltip }"
+           data-test-id="logout-submit">{{ _("Logout") }}</a>
+    </li>
 </ul>

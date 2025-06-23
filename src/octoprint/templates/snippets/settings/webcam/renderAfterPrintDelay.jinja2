@@ -1,10 +1,14 @@
-<div class="control-group" title="{{ _('Bitrate to use for encoding the timelapse video')|edq }}">
-    <label class="control-label" for="settings-webcamRenderAfterPrintDelay">{{ _('Render after print delay') }}</label>
+<div class="control-group"
+     title="{{ _('Bitrate to use for encoding the timelapse video') |edq }}">
+    <label class="control-label" for="settings-webcamRenderAfterPrintDelay">{{ _("Render after print delay") }}</label>
     <div class="controls">
         <div class="input-append">
-            <input type="text" class="input-mini text-right" data-bind="value: webcam_renderAfterPrintDelay" id="settings-webcamRenderAfterPrintDelay">
+            <input type="text"
+                   class="input-mini text-right"
+                   data-bind="value: webcam_renderAfterPrintDelay"
+                   id="settings-webcamRenderAfterPrintDelay">
             <span class="add-on">s</span>
         </div>
-        <span class="help-block">{{ _('Enter the delay to wait for with rendering after print completion. The render job will be enqueued and only run after the delay if no new print is running, otherwise rendering will be postponed further.') }}</span>
+        <span class="help-block">{{ _("Enter the delay to wait for with rendering after print completion. The render job will be enqueued and only run after the delay if no new print is running, otherwise rendering will be postponed further.") }}</span>
     </div>
 </div>

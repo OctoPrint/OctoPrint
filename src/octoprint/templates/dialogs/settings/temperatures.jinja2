@@ -1,38 +1,52 @@
 <form class="form-horizontal" onsubmit="return false;">
-    <h3>{{ _('Graph') }}</h3>
+    <h3>{{ _("Graph") }}</h3>
     <div class="control-group">
-        <label class="control-label" for="settings-temperatureCutoff">{{ _('Graph cutoff') }}</label>
+        <label class="control-label" for="settings-temperatureCutoff">{{ _("Graph cutoff") }}</label>
         <div class="controls">
             <div class="input-append">
-                <input type="number" min="1" class="input-mini text-right" data-bind="value: temperature_cutoff" id="settings-temperatureCutoff">
+                <input type="number"
+                       min="1"
+                       class="input-mini text-right"
+                       data-bind="value: temperature_cutoff"
+                       id="settings-temperatureCutoff">
                 <span class="add-on">min</span>
             </div>
-            <span class="help-block">{{ _('Needs a restart of OctoPrint to become active.') }}</span>
+            <span class="help-block">{{ _("Needs a restart of OctoPrint to become active.") }}</span>
         </div>
     </div>
-    <h3>{{ _('Fine adjustments') }}</h3>
+    <h3>{{ _("Fine adjustments") }}</h3>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: temperature_sendAutomatically"> {{ _('Send temperature fine adjustments automatically') }}
+                <input type="checkbox" data-bind="checked: temperature_sendAutomatically">
+                {{ _("Send temperature fine adjustments automatically") }}
             </label>
-            <span class="help-block">{{ _('Enable this to have temperature fine adjustments you do via the + or - button be sent to the printer automatically.') }}</span>
+            <span class="help-block">{{ _("Enable this to have temperature fine adjustments you do via the + or - button be sent to the printer automatically.") }}</span>
         </div>
     </div>
-    <div class="control-group" data-bind="visible: temperature_sendAutomatically">
-        <label class="control-label">{{ _('Sending delay') }}</label>
+    <div class="control-group"
+         data-bind="visible: temperature_sendAutomatically">
+        <label class="control-label">{{ _("Sending delay") }}</label>
         <div class="controls">
             <div class="input-append">
-                <input type="number" class="input-mini" min="0" max="30" data-bind="value: temperature_sendAutomaticallyAfter">
+                <input type="number"
+                       class="input-mini"
+                       min="0"
+                       max="30"
+                       data-bind="value: temperature_sendAutomaticallyAfter">
                 <span class="add-on">sec</span>
             </div>
-            <span class="help-block">{{ _('OctoPrint will use this delay to limit the number of sent temperature commands should you perform multiple fine adjustments in a short time.') }}</span>
+            <span class="help-block">{{ _("OctoPrint will use this delay to limit the number of sent temperature commands should you perform multiple fine adjustments in a short time.") }}</span>
         </div>
     </div>
-    <h3>{{ _('Presets') }}</h3>
+    <h3>{{ _("Presets") }}</h3>
     <div class="row-fluid">
-        <div class="offset4 span3"><h4>{{ _('Extruder') }}</h4></div>
-        <div class="span3"><h4>{{ _('Bed') }}</h4></div>
+        <div class="offset4 span3">
+            <h4>{{ _("Extruder") }}</h4>
+        </div>
+        <div class="span3">
+            <h4>{{ _("Bed") }}</h4>
+        </div>
     </div>
     <div data-bind="foreach: temperature_profiles">
         <div class="row-fluid" style="margin-bottom: 5px">
@@ -40,21 +54,33 @@
                 <input type="text" class="span12 text-right" data-bind="value: name">
             </div>
             <div class="input-append span3">
-                <input type="number" min="0" step="1" class="input-mini text-right" data-bind="value: extruder">
+                <input type="number"
+                       min="0"
+                       step="1"
+                       class="input-mini text-right"
+                       data-bind="value: extruder">
                 <span class="add-on">&deg;C</span>
             </div>
             <div class="input-append span3">
-                <input type="number" min="0" step="1" class="input-mini text-right" data-bind="value: bed">
+                <input type="number"
+                       min="0"
+                       step="1"
+                       class="input-mini text-right"
+                       data-bind="value: bed">
                 <span class="add-on">&deg;C</span>
             </div>
             <div class="span2">
-                <a title="Remove profile" class="btn btn-danger" data-bind="click: $parent.removeTemperatureProfile"><i class="far fa-trash-alt"></i></a>
+                <a title="Remove profile"
+                   class="btn btn-danger"
+                   data-bind="click: $parent.removeTemperatureProfile"><i class="far fa-trash-alt"></i></a>
             </div>
         </div>
     </div>
     <div class="row-fluid">
         <div class="offset10 span2">
-            <a title="Add Profile" class="btn btn-primary" data-bind="click: addTemperatureProfile"><i class="fas fa-plus"></i></a>
+            <a title="Add Profile"
+               class="btn btn-primary"
+               data-bind="click: addTemperatureProfile"><i class="fas fa-plus"></i></a>
         </div>
     </div>
 </form>

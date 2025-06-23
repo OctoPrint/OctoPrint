@@ -1,33 +1,45 @@
-<h3>{{ _('Access Control') }}</h3>
+<h3>{{ _("Access Control") }}</h3>
 
-{% trans %}<p>
+{% trans %}
+<p>
     It looks like you haven't configured access control yet, which is now mandatory.
     Please <strong>set up a username and password</strong> for the
     initial administrator account who will have full access to both the printer and
     OctoPrint's settings:
-</p>{% endtrans %}
+</p>
+{% endtrans %}
 <form class="form-horizontal" onsubmit="return false;">
-    <div class="control-group" data-bind="css: {error: !validUsername(), success: providedUsername() && validUsername()}">
-        <label class="control-label" for="first_run_username">{{ _('Username') }}</label>
+    <div class="control-group"
+         data-bind="css: {error: !validUsername(), success: providedUsername() && validUsername()}">
+        <label class="control-label" for="first_run_username">{{ _("Username") }}</label>
         <div class="controls">
-            <input type="text" class="input-medium" data-bind="value: username, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
-            <span class="help-inline" data-bind="visible: !validUsername()">{{ _('Invalid username') }}</span>
+            <input type="text"
+                   class="input-medium"
+                   data-bind="value: username, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
+            <span class="help-inline" data-bind="visible: !validUsername()">{{ _("Invalid username") }}</span>
         </div>
     </div>
     <div class="control-group" data-bind="css: {success: validPassword()}">
-        <label class="control-label" for="first_run_username">{{ _('Password') }}</label>
+        <label class="control-label" for="first_run_username">{{ _("Password") }}</label>
         <div class="controls">
-            <input type="password" class="input-medium" data-bind="value: password, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
+            <input type="password"
+                   class="input-medium"
+                   data-bind="value: password, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
         </div>
     </div>
-    <div class="control-group" data-bind="css: {error: passwordMismatch(), success: validPassword() && !passwordMismatch()}">
-        <label class="control-label" for="first_run_username">{{ _('Confirm Password') }}</label>
+    <div class="control-group"
+         data-bind="css: {error: passwordMismatch(), success: validPassword() && !passwordMismatch()}">
+        <label class="control-label" for="first_run_username">{{ _("Confirm Password") }}</label>
         <div class="controls">
-            <input type="password" class="input-medium" data-bind="value: confirmedPassword, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
-            <span class="help-inline" data-bind="visible: passwordMismatch()">{{ _('Passwords do not match') }}</span>
+            <input type="password"
+                   class="input-medium"
+                   data-bind="value: confirmedPassword, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
+            <span class="help-inline" data-bind="visible: passwordMismatch()">{{ _("Passwords do not match") }}</span>
         </div>
     </div>
     <div class="controls">
-        <a href="#" class="btn btn-primary" data-bind="click: function() { if(!setup()){createAccount()}}, enable: !setup() && validData(), css: {disabled: !validData() || setup()}">{{ _('Create Account') }}</a>
+        <a href="#"
+           class="btn btn-primary"
+           data-bind="click: function() { if(!setup()){createAccount()}}, enable: !setup() && validData(), css: {disabled: !validData() || setup()}">{{ _("Create Account") }}</a>
     </div>
 </form>

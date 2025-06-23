@@ -2,27 +2,29 @@
 <form class="form-horizontal" onsubmit="return false;">
     {% include "snippets/settings/server/serverAllowFraming.jinja2" %}
 
-    <h3>{{ _('Commands') }}</h3>
+    <h3>{{ _("Commands") }}</h3>
 
-    <p>{% trans %}
+    <p>
+        {% trans %}
         Changing any of the commands might require you to re-enter your password.
-    {% endtrans %}</p>
+    {% endtrans %}
+</p>
 
-    {% include "snippets/settings/server/serverCommandServerRestart.jinja2" %}
-    {% include "snippets/settings/server/serverCommandSystemRestart.jinja2" %}
-    {% include "snippets/settings/server/serverCommandSystemShutdown.jinja2" %}
+{% include "snippets/settings/server/serverCommandServerRestart.jinja2" %}
+{% include "snippets/settings/server/serverCommandSystemRestart.jinja2" %}
+{% include "snippets/settings/server/serverCommandSystemShutdown.jinja2" %}
 
-    <h3>{{ _('Connectivity check') }}</h3>
+<h3>{{ _("Connectivity check") }}</h3>
 
-    {% include "snippets/settings/server/serverOnlineCheckDescription.jinja2" %}
-    {% include "snippets/settings/server/serverOnlineCheck.jinja2" %}
+{% include "snippets/settings/server/serverOnlineCheckDescription.jinja2" %}
+{% include "snippets/settings/server/serverOnlineCheck.jinja2" %}
 
-    <h3>{{ _('Plugin blacklist processing') }}</h3>
+<h3>{{ _("Plugin blacklist processing") }}</h3>
 
-    {% include "snippets/settings/server/serverPluginBlacklistDescription.jinja2" %}
-    {% include "snippets/settings/server/serverPluginBlacklist.jinja2" %}
+{% include "snippets/settings/server/serverPluginBlacklistDescription.jinja2" %}
+{% include "snippets/settings/server/serverPluginBlacklist.jinja2" %}
 
-    <h3>{{ _('Debug options') }}</h3>
+<h3>{{ _("Debug options") }}</h3>
 
-    {% include "snippets/settings/server/serverPluginTimings.jinja2" %}
+{% include "snippets/settings/server/serverPluginTimings.jinja2" %}
 </form>

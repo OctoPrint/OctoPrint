@@ -1,32 +1,46 @@
-<div class="control-group" title="{{ _('What kind of authentication is needed for accessing the snapshot endpoint')|edq }}">
-    <label class="control-label" for="settings-webcamSnapshotAuth">{{ _('Snapshot authentication') }}</label>
+<div class="control-group"
+     title="{{ _('What kind of authentication is needed for accessing the snapshot endpoint') |edq }}">
+    <label class="control-label" for="settings-webcamSnapshotAuth">{{ _("Snapshot authentication") }}</label>
     <div class="controls">
-        <select data-bind="value: snapshotAuth, valueUpdate: 'afterkeydown'" id="settings-webcamSnapshotAuth">
-            <option value="none">{{ _('None') }}</option>
-            <option value="basic">{{ _('Basic') }}</option>
-            <option value="digest">{{ _('Digest') }}</option>
-            <option value="bearer">{{ _('Bearer Token') }}</option>
+        <select data-bind="value: snapshotAuth, valueUpdate: 'afterkeydown'"
+                id="settings-webcamSnapshotAuth">
+            <option value="none">{{ _("None") }}</option>
+            <option value="basic">{{ _("Basic") }}</option>
+            <option value="digest">{{ _("Digest") }}</option>
+            <option value="bearer">{{ _("Bearer Token") }}</option>
         </select>
     </div>
 </div>
 
-<div class="control-group" title="{{ _('Username needed for accessing the snapshot URL')|edq }}" data-bind="visible: snapshotAuth() === 'basic' || snapshotAuth() === 'digest'">
-    <label class="control-label" for="settings-webcamSnapshotUsername">{{ _('Snapshot username') }}</label>
+<div class="control-group"
+     title="{{ _('Username needed for accessing the snapshot URL') |edq }}"
+     data-bind="visible: snapshotAuth() === 'basic' || snapshotAuth() === 'digest'">
+    <label class="control-label" for="settings-webcamSnapshotUsername">{{ _("Snapshot username") }}</label>
     <div class="controls">
-        <input type="text" data-bind="value: snapshotUsername, valueUpdate: 'afterkeydown'" id="settings-webcamSnapshotUsername">
+        <input type="text"
+               data-bind="value: snapshotUsername, valueUpdate: 'afterkeydown'"
+               id="settings-webcamSnapshotUsername">
     </div>
 </div>
 
-<div class="control-group" title="{{ _('Password needed for accessing the snapshot URL')|edq }}" data-bind="visible: snapshotAuth() === 'basic' || snapshotAuth() === 'digest'">
-    <label class="control-label" for="settings-webcamSnapshotPassword">{{ _('Snapshot password') }}</label>
+<div class="control-group"
+     title="{{ _('Password needed for accessing the snapshot URL') |edq }}"
+     data-bind="visible: snapshotAuth() === 'basic' || snapshotAuth() === 'digest'">
+    <label class="control-label" for="settings-webcamSnapshotPassword">{{ _("Snapshot password") }}</label>
     <div class="controls">
-        <input type="password" data-bind="value: snapshotPassword, valueUpdate: 'afterkeydown'" id="settings-webcamSnapshotPassword">
+        <input type="password"
+               data-bind="value: snapshotPassword, valueUpdate: 'afterkeydown'"
+               id="settings-webcamSnapshotPassword">
     </div>
 </div>
 
-<div class="control-group" title="{{ _('Password needed for accessing the snapshot URL')|edq }}" data-bind="visible: snapshotAuth() === 'bearer'">
-    <label class="control-label" for="settings-webcamSnapshotBearerToken">{{ _('Snapshot bearer token') }}</label>
+<div class="control-group"
+     title="{{ _('Password needed for accessing the snapshot URL') |edq }}"
+     data-bind="visible: snapshotAuth() === 'bearer'">
+    <label class="control-label" for="settings-webcamSnapshotBearerToken">{{ _("Snapshot bearer token") }}</label>
     <div class="controls">
-        <input type="text" data-bind="value: snapshotBearerToken, valueUpdate: 'afterkeydown'" id="settings-webcamSnapshotBearerToken">
+        <input type="text"
+               data-bind="value: snapshotBearerToken, valueUpdate: 'afterkeydown'"
+               id="settings-webcamSnapshotBearerToken">
     </div>
 </div>

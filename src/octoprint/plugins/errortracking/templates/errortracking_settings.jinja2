@@ -1,4 +1,4 @@
-<h3>{{ _('Error Tracking') }}</h3>
+<h3>{{ _("Error Tracking") }}</h3>
 
 {% trans %}
 <p>
@@ -19,15 +19,21 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.errortracking.enabled"> {{ _('Enable error tracking') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.errortracking.enabled">
+                {{ _("Enable error tracking") }}
             </label>
-            <span class="help-block">{{ _('Please reload the page after enabling/disabling & saving') }}</span>
+            <span class="help-block">{{ _("Please reload the page after enabling/disabling & saving") }}</span>
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label" title="{{ _('Random unique instance ID')|edq }}">{{ _('Instance ID') }}</label>
+        <label class="control-label"
+               title="{{ _('Random unique instance ID') |edq }}">{{ _("Instance ID") }}</label>
         <div class="controls">
-            <span style="padding-top: 5px; margin-bottom: 5px; display: inline-block" data-bind="text: settings.plugins.errortracking.unique_id() || 'N/A'"></span>
+            <span style="padding-top: 5px;
+                         margin-bottom: 5px;
+                         display: inline-block"
+                  data-bind="text: settings.plugins.errortracking.unique_id() || 'N/A'"></span>
         </div>
     </div>
 </form>
@@ -36,7 +42,11 @@
 <p>
     The Error Tracking plugin is using a Sentry instance kindly provided by
     <a href="https://sentry.io/" target="_blank" rel="noopener noreferer">sentry.io</a>. For information on their service
-    please refer to their <a href="https://sentry.io/security/" target="_blank" rel="noopener noreferer">Security & Compliance documentation</a>
-    and their <a href="https://sentry.io/privacy/" target="_blank" rel="noopener noreferer">Privacy Policy</a>.
+    please refer to their <a href="https://sentry.io/security/"
+    target="_blank"
+    rel="noopener noreferer">Security & Compliance documentation</a>
+    and their <a href="https://sentry.io/privacy/"
+    target="_blank"
+    rel="noopener noreferer">Privacy Policy</a>.
 </p>
 {% endtrans %}

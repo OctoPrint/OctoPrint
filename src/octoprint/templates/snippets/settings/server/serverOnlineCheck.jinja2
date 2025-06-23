@@ -3,31 +3,35 @@
 <div data-bind="visible: server_onlineCheck_enabled">
     <div class="control-group">
         <div class="controls">
-            <p>{% trans %}
+            <p>
+                {% trans %}
                 Define a check interval, a host and a port to check against. If you don't know what to set here, the
                 default values (using Cloudflare's DNS server) should work. If you have concerns about using
                 that, define the IP and port of a different online server that you trust and that has a high
                 availability.
-            {% endtrans %}</p>
-        </div>
+            {% endtrans %}
+        </p>
     </div>
+</div>
 
-    {% include "snippets/settings/server/serverOnlineCheckInterval.jinja2" %}
-    {% include "snippets/settings/server/serverOnlineCheckHost.jinja2" %}
-    {% include "snippets/settings/server/serverOnlineCheckPort.jinja2" %}
-    {% include "snippets/settings/server/serverOnlineCheckTestConnectivity.jinja2" %}
+{% include "snippets/settings/server/serverOnlineCheckInterval.jinja2" %}
+{% include "snippets/settings/server/serverOnlineCheckHost.jinja2" %}
+{% include "snippets/settings/server/serverOnlineCheckPort.jinja2" %}
+{% include "snippets/settings/server/serverOnlineCheckTestConnectivity.jinja2" %}
 
-    <div class="control-group">
-        <div class="controls">
-            <p>{% trans %}
-                If you also want to check if name resolution works (strongly recommended), define a host name
-                to check name resolution against. If you don't know what to set here, the default value
-                (OctoPrint's domain) should work. If you don't want to perform regular resolution checks along
-                side with the general connectivity check, leave the field empty.
-            {% endtrans %}</p>
-        </div>
+<div class="control-group">
+    <div class="controls">
+        <p>
+            {% trans %}
+            If you also want to check if name resolution works (strongly recommended), define a host name
+            to check name resolution against. If you don't know what to set here, the default value
+            (OctoPrint's domain) should work. If you don't want to perform regular resolution checks along
+            side with the general connectivity check, leave the field empty.
+        {% endtrans %}
+    </p>
+</div>
 
-        {% include "snippets/settings/server/serverOnlineCheckName.jinja2" %}
-        {% include "snippets/settings/server/serverOnlineCheckTestResolution.jinja2" %}
-    </div>
+{% include "snippets/settings/server/serverOnlineCheckName.jinja2" %}
+{% include "snippets/settings/server/serverOnlineCheckTestResolution.jinja2" %}
+</div>
 </div>

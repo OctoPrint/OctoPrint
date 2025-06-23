@@ -1,17 +1,29 @@
-<h3>{{ _('System Information') }}</h3>
+<h3>{{ _("System Information") }}</h3>
 
-<p>{% trans %}Sharing a Systeminfo Bundle when requesting support on the forums or
-    when opening a new bug report is <strong>mandatory!</strong>{% endtrans %}</p>
+<p>
+    {% trans %}Sharing a Systeminfo Bundle when requesting support on the forums or
+    when opening a new bug report is <strong>mandatory!</strong>{% endtrans %}
+</p>
 
-<p>{% trans %}Download the bundle and share as provided. Do not rename, unpack,
-    repack or otherwise modify, provide <em>exactly</em> as downloaded.{% endtrans %}</p>
+<p>
+    {% trans %}Download the bundle and share as provided. Do not rename, unpack,
+    repack or otherwise modify, provide <em>exactly</em> as downloaded.{% endtrans %}
+</p>
 
-<p><a href="{{ url_for('index', _external=True) }}downloads/systeminfo.zip" class="btn btn-primary"><i class="fas fa-download"></i> {{ _('Download Systeminfo Bundle') }}</a></p>
+<p>
+    <a href="{{ url_for('index', _external=True) }}downloads/systeminfo.zip"
+       class="btn btn-primary"><i class="fas fa-download"></i> {{ _("Download Systeminfo Bundle") }}</a>
+</p>
 
-<p><small>{% trans %}You can view Systeminfo Bundles at <a href="https://bundleviewer.octoprint.org" target="_blank" rel="noopener noreferrer">bundleviewer.octoprint.org</a>{% endtrans %}</small></p>
+<p>
+    <small>{% trans %}You can view Systeminfo Bundles at <a href="https://bundleviewer.octoprint.org"
+    target="_blank"
+    rel="noopener noreferrer">bundleviewer.octoprint.org</a>{% endtrans %}</small>
+</p>
 
 <div data-bind="visible: devmode">
     <p data-bind="foreach: systeminfo">
-        <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span><br />
+        <strong data-bind="text: key"></strong>: <span data-bind="text: value"></span>
+        <br />
     </p>
 </div>

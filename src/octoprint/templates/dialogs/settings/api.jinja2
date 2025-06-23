@@ -1,18 +1,23 @@
 <form class="form-horizontal" onsubmit="return false;">
     <fieldset>
-        <h3>{{ _('CORS') }}</h3>
+        <h3>{{ _("CORS") }}</h3>
         <div class="control-group">
             <div class="controls">
                 <label class="checkbox">
-                    <input type="checkbox" id="settings-apiCors" data-bind="checked: api_allowCrossOrigin"> {{ _('Allow <a href="%(url)s">Cross Origin Resource Sharing (CORS)</a>', url = "https://en.wikipedia.org/wiki/Cross-origin_resource_sharing") }} <label class="label label-info">{{ _('Needs restart') }}</label>
+                    <input type="checkbox"
+                           id="settings-apiCors"
+                           data-bind="checked: api_allowCrossOrigin">
+                    {{ _('Allow <a href="%(url)s">Cross Origin Resource Sharing (CORS)</a>', url = "https://en.wikipedia.org/wiki/Cross-origin_resource_sharing") }}
+                    <label class="label label-info">{{ _("Needs restart") }}</label>
                 </label>
             </div>
         </div>
     </fieldset>
     <fieldset>
-        <h3>{{ _('Global API Key') }}</h3>
+        <h3>{{ _("Global API Key") }}</h3>
         <div class="alert">
-            <p>{% trans %}
+            <p>
+                {% trans %}
                 It is recommended to no longer use the global API key as it's one single key that gives full admin access
                 to your whole OctoPrint instance. <strong>It will be removed in OctoPrint 2.0</strong>.
                 Instead of using the global key you should create individual Application Keys for
@@ -20,30 +25,47 @@
                 creation and you can also revoke access to one app without having to change the keys for all other apps.
                 It's also recommended to create a user account without admin access and use that for third
                 party clients where possible.
-            {% endtrans %}</p>
-            <p><a href="javascript:void(0)" data-bind="click: function() { $root.selectTab('#settings_plugin_appkeys') }">{{ _('Access Application Keys') }}</a></p>
-        </div>
-        <div class="control-group">
-            <label class="control-label" for="settings-apikey">{{ _('Global API Key') }}</label>
-            <div class="controls" data-bind="visible: apiKeyVisible">
-                <div class="input-append input-block-level">
-                    <input type="text" readonly="readonly" id="settings-apikey" data-bind="value: api_key, attr: {placeholder: '{{ _('N/A')|esq }}'}">
-                    <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: copyApiKey, css: {'disabled': !api_key()}"><i class="fas fa-copy"></i></a>
-                    <a class="btn add-on" title="Generate new API Key" data-bind="click: generateApiKey"><i class="fas fa-sync"></i></a>
-                    <a class="btn btn-danger add-on" title="Delete API Key" data-bind="click: deleteApiKey, css: {'disabled': !api_key()}"><i class="far fa-trash-alt"></i></a>
-                </div>
-                <span class="help-block">{{ _('Please note that changes to the API key are applied immediately, without having to "Save" first.') }}</span>
+            {% endtrans %}
+        </p>
+        <p>
+            <a href="javascript:void(0)"
+               data-bind="click: function() { $root.selectTab('#settings_plugin_appkeys') }">{{ _("Access Application Keys") }}</a>
+        </p>
+    </div>
+    <div class="control-group">
+        <label class="control-label" for="settings-apikey">{{ _("Global API Key") }}</label>
+        <div class="controls" data-bind="visible: apiKeyVisible">
+            <div class="input-append input-block-level">
+                <input type="text"
+                       readonly="readonly"
+                       id="settings-apikey"
+                       data-bind="value: api_key, attr: {placeholder: '{{ _("N/A") |esq }}'}">
+                <a class="btn add-on"
+                   title="Copy API Key to clipboard"
+                   data-bind="click: copyApiKey, css: {'disabled': !api_key()}"><i class="fas fa-copy"></i></a>
+                <a class="btn add-on"
+                   title="Generate new API Key"
+                   data-bind="click: generateApiKey"><i class="fas fa-sync"></i></a>
+                <a class="btn btn-danger add-on"
+                   title="Delete API Key"
+                   data-bind="click: deleteApiKey, css: {'disabled': !api_key()}"><i class="far fa-trash-alt"></i></a>
             </div>
-            <div class="controls" data-bind="visible: !apiKeyVisible()">
-                <button class="btn" data-bind="click: revealApiKey, enabled: !revealingApiKey(), css: {disabled: revealingApiKey}"><i class="fas fa-spinner fa-spin" data-bind="visible: revealingApiKey"></i> {{ _('Reveal API Key') }}</button>
-            </div>
+            <span class="help-block">{{ _("Please note that changes to the API key are applied immediately, without having to \"Save\" first.") }}</span>
         </div>
-        <div class="control-group" data-bind="visible: api_key() && apiKeyVisible()">
-            <label class="control-label">{{ _('QR Code') }}</label>
-            <div class="controls">
-                <div data-bind="qrcode: {text: api_key, size: 180}"></div>
-            </div>
+        <div class="controls" data-bind="visible: !apiKeyVisible()">
+            <button class="btn"
+                    data-bind="click: revealApiKey, enabled: !revealingApiKey(), css: {disabled: revealingApiKey}">
+                <i class="fas fa-spinner fa-spin" data-bind="visible: revealingApiKey"></i> {{ _("Reveal API Key") }}
+            </button>
         </div>
-    </fieldset>
+    </div>
+    <div class="control-group"
+         data-bind="visible: api_key() && apiKeyVisible()">
+        <label class="control-label">{{ _("QR Code") }}</label>
+        <div class="controls">
+            <div data-bind="qrcode: {text: api_key, size: 180}"></div>
+        </div>
+    </div>
+</fieldset>
 
 </form>

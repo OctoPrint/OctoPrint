@@ -1,4 +1,4 @@
-<h3>{{ _('Anonymous Usage Tracking') }}</h3>
+<h3>{{ _("Anonymous Usage Tracking") }}</h3>
 
 {% include "snippets/trackingDescription.jinja2" %}
 
@@ -6,57 +6,89 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.enabled"> {{ _('Enable anonymous usage tracking') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.enabled">
+                {{ _("Enable anonymous usage tracking") }}
             </label>
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label" title="{{ _('Random unique instance ID')|edq }}">{{ _('Instance ID') }}</label>
+        <label class="control-label"
+               title="{{ _('Random unique instance ID') |edq }}">{{ _("Instance ID") }}</label>
         <div class="controls">
-            <span style="padding-top: 5px; margin-bottom: 5px; display: inline-block" data-bind="text: settings.plugins.tracking.unique_id() || 'N/A'"></span>
+            <span style="padding-top: 5px;
+                         margin-bottom: 5px;
+                         display: inline-block"
+                  data-bind="text: settings.plugins.tracking.unique_id() || 'N/A'"></span>
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label" title="{{ _('Events to track. The ping is mandatory.')|edq }}">{{ _('Tracked events') }}</label>
+        <label class="control-label"
+               title="{{ _('Events to track. The ping is mandatory.') |edq }}">{{ _("Tracked events") }}</label>
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" checked="checked" disabled="disabled"> {{ _('Regular ping every 15min (incl. uptime)') }}
+                <input type="checkbox" checked="checked" disabled="disabled">
+                {{ _("Regular ping every 15min (incl. uptime)") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.pong"> {{ _('Regular pong every 24h (incl. plugin list, and achievements if enabled)') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.pong">
+                {{ _("Regular pong every 24h (incl. plugin list, and achievements if enabled)") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.startup"> {{ _('Server startup & shutdown') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.startup">
+                {{ _("Server startup & shutdown") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.printer"> {{ _('Connected to printer') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.printer">
+                {{ _("Connected to printer") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.printer_safety_check"> {{ _('Printer Safety Check warnings') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.printer_safety_check">
+                {{ _("Printer Safety Check warnings") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.printjob"> {{ _('Print started/cancelled/finished') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.printjob">
+                {{ _("Print started/cancelled/finished") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.commerror"> {{ _('Errors in the communication with the printer and/or reported by the firmware') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.commerror">
+                {{ _("Errors in the communication with the printer and/or reported by the firmware") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.plugin"> {{ _('Plugin installed/uninstalled/enabled/disabled') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.plugin">
+                {{ _("Plugin installed/uninstalled/enabled/disabled") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.update"> {{ _('OctoPrint or a plugin updated successfully or unsuccessfully') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.update">
+                {{ _("OctoPrint or a plugin updated successfully or unsuccessfully") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.throttled"> {{ _('System got throttled/unthrottled (currently only detected on RPis)') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.throttled">
+                {{ _("System got throttled/unthrottled (currently only detected on RPis)") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.achievements"> {{ _('Achievements & achievement unlock events') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.achievements">
+                {{ _("Achievements & achievement unlock events") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.slicing"> {{ _('Onboard slicing actions') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.slicing">
+                {{ _("Onboard slicing actions") }}
             </label>
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.tracking.events.webui_load"> {{ _('Web interface load') }}
+                <input type="checkbox"
+                       data-bind="checked: settings.plugins.tracking.events.webui_load">
+                {{ _("Web interface load") }}
             </label>
         </div>
     </div>

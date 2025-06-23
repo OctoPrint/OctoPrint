@@ -2,11 +2,16 @@
     <div class="row-fluid">
         <div class="dropdown pull-right" aria-hidden="true">
             <div class="btn-group">
-                <button class="btn btn-small dropdown-toggle" data-toggle="dropdown" href="javascript:void(0)">
+                <button class="btn btn-small dropdown-toggle"
+                        data-toggle="dropdown"
+                        href="javascript:void(0)">
                     <i class="fas fa-wrench"></i>
                 </button>
                 <ul class="dropdown-menu pull-right">
-                    <li><a href="javascript:void(0)" data-bind="click: toggleStateMarks"><i class="fas fa-check" data-bind="style: {visibility: showStateMarks() ? 'visible' : 'hidden'}"></i> {{ _('Show state marks') }}</a></li>
+                    <li>
+                        <a href="javascript:void(0)" data-bind="click: toggleStateMarks"><i class="fas fa-check"
+   data-bind="style: {visibility: showStateMarks() ? 'visible' : 'hidden'}"></i> {{ _("Show state marks") }}</a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -17,28 +22,40 @@
 {% endif %}
 <div class="row-fluid">
 
-    <table id="temperature-table" class="table table-bordered table-hover" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
+    <table id="temperature-table"
+           class="table table-bordered table-hover"
+           data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
         <tr>
             <th class="temperature_tool"></th>
-            <th class="temperature_actual" title="{{ _('Current actual temperature as reported by your printer')|edq }}">{{ _('Actual') }}</th>
-            <th class="temperature_target" title="{{ _('Current target temperature as reported by your printer')|edq }}">
-                {{ _('Target') }}
+            <th class="temperature_actual"
+                title="{{ _('Current actual temperature as reported by your printer') |edq }}">{{ _("Actual") }}</th>
+            <th class="temperature_target"
+                title="{{ _('Current target temperature as reported by your printer') |edq }}">
+                {{ _("Target") }}
                 <div class="btn-group pull-right">
-                    <button class="btn btn-small dropdown-toggle" title="{{ _('Set temperature profile')|edq }}" aria-label="{{ _('Set temperature profile')|edq }}" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()"><span class="caret"></span></button>
+                    <button class="btn btn-small dropdown-toggle"
+                            title="{{ _('Set temperature profile') |edq }}"
+                            aria-label="{{ _('Set temperature profile') |edq }}"
+                            data-toggle="dropdown"
+                            data-bind="enable: $root.isOperational() && $root.loginState.hasPermissionKo($root.access.permissions.CONTROL)()">
+                        <span class="caret"></span>
+                    </button>
                     <ul class="dropdown-menu">
                         <li>
-                            <a href="javascript:void(0)" data-bind="click: $root.setTargetsToZero">{{ _('Off') }}</a>
+                            <a href="javascript:void(0)" data-bind="click: $root.setTargetsToZero">{{ _("Off") }}</a>
                         </li>
                         <li class="divider"></li>
                         <!-- ko foreach: $root.temperature_profiles -->
                         <li>
-                            <a href="javascript:void(0)" data-bind="click: function() { $root.setTargetsFromProfile($data);}, text: $root.profileText('all', $data)"></a>
+                            <a href="javascript:void(0)"
+                               data-bind="click: function() { $root.setTargetsFromProfile($data);}, text: $root.profileText('all', $data)"></a>
                         </li>
                         <!-- /ko -->
                     </ul>
                 </div>
             </th>
-            <th class="temperature_offset" title="{{ _('Offset to apply to temperature commands sent from files')|edq }}">{{ _('Offset') }}</th>
+            <th class="temperature_offset"
+                title="{{ _('Offset to apply to temperature commands sent from files') |edq }}">{{ _("Offset") }}</th>
         </tr>
         <!-- ko foreach: tools -->
         <tr data-bind="template: { name: 'temprow-template' }"></tr>

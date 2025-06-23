@@ -1,29 +1,29 @@
 <div class="alert alert-block">
     <p>
-        <strong>{{ _('Security Advice: ') }}</strong>
+        <strong>{{ _("Security Advice: ") }}</strong>
         {% trans %}
-            Please note that OctoPrint merely embeds a webcam stream & accesses a snapshot URL. It does not actually run its own webcam server
-            or interact directly with your camera. It thus can't impose access restrictions on it or enable/disable the stream for you. The
-            stream might be accessible for everyone who can connect to your OctoPrint instance, even unauthenticated.
-        {% endtrans %}
-    </p>
-    <p>
-        {{ _('Please see <a href="%(url)s" target="_blank">this FAQ entry</a> for more information.', url="http://faq.octoprint.org/external-webcam-server") }}
-    </p>
-    <p>
-        {% trans %}
-            And as always: Do not directly expose your OctoPrint instance on the public internet or any other hostile networks!
-        {% endtrans %}
-    </p>
+        Please note that OctoPrint merely embeds a webcam stream & accesses a snapshot URL. It does not actually run its own webcam server
+        or interact directly with your camera. It thus can't impose access restrictions on it or enable/disable the stream for you. The
+        stream might be accessible for everyone who can connect to your OctoPrint instance, even unauthenticated.
+    {% endtrans %}
+</p>
+<p>
+    {{ _('Please see <a href="%(url)s" target="_blank">this FAQ entry</a> for more information.', url="http://faq.octoprint.org/external-webcam-server") }}
+</p>
+<p>
+    {% trans %}
+    And as always: Do not directly expose your OctoPrint instance on the public internet or any other hostile networks!
+{% endtrans %}
+</p>
 </div>
 
-<h3>{{ _('Webcam Streaming') }}</h3>
+<h3>{{ _("Webcam Streaming") }}</h3>
 
 <form class="form-horizontal" onsubmit="return false;">
     {% include "snippets/settings/webcam/webcamEnabled.jinja2" %}
 </form>
 
-<h3>{{ _('Timelapse Recordings') }}</h3>
+<h3>{{ _("Timelapse Recordings") }}</h3>
 
 <form class="form-horizontal" onsubmit="return false;">
     {% include "snippets/settings/webcam/timelapseEnabled.jinja2" %}
@@ -32,8 +32,11 @@
     {% include "snippets/settings/webcam/watermark.jinja2" %}
     {% include "snippets/settings/webcam/renderAfterPrintDelay.jinja2" %}
     <div>
-        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="fas
-         fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div>
+            <small><a href="#"
+   class="muted"
+   data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="fas fa-caret-right"></i> {{ _("Advanced options") }}</a></small>
+        </div>
         <div class="hide">
             {% include "snippets/settings/webcam/ffmpegCommandline.jinja2" %}
             {% include "snippets/settings/webcam/ffmpegBitrate.jinja2" %}
@@ -43,9 +46,10 @@
     </div>
 </form>
 
-<h3>{{ _('Fallback Webcam') }}</h3>
+<h3>{{ _("Fallback Webcam") }}</h3>
 
-{% trans %}<p>
+{% trans %}
+<p>
     Select the webcam to fall back on to populate the stream and snapshot URLs on the settings
     API used by old clients that do not yet utilize the webcam plugin
     system introduced in OctoPrint 1.9.0. If the selected webcam does not
@@ -56,7 +60,8 @@
     Note that this does not affect the webcam stream options available
     in OctoPrint's core UI, nor the snapshot camera used for timelapse recordings.
     It is exclusively relevant for the compatibility layer provided on the settings API.
-</p>{% endtrans %}
+</p>
+{% endtrans %}
 
 <form class="form-horizontal" onsubmit="return false;">
     {% include "snippets/settings/webcam/defaultWebcam.jinja2" %}
