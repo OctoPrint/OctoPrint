@@ -32,14 +32,16 @@
             <div class="text webcam_error" data-bind="visible: !webcamLoaded() && webcamError()">
                 <p><strong>{{ _('Webcam stream not loaded') }}</strong></p>
                 <p data-bind="visible: !loginState.isAdmin()"><small>{{ _('It might not be configured correctly or require authentication. To have this fixed, get in touch with an administrator of this OctoPrint instance.') }}</small></p>
-                <p data-bind="visible: loginState.isAdmin"><small>{{ _('It might not be configured correctly or require authentication. You can change the URL of the stream under "Settings" > "Classic Webcam" > "Stream URL". If you don\'t have a webcam you can also just disable webcam support there.') }}</small></p>
+                <p data-bind="visible: loginState.isAdmin"><small>{% trans %}
+                    It might not be configured correctly or require authentication. You can change the URL of the stream under "Settings" > "Classic Webcam" > "Stream URL". If you don't have a webcam you can also just disable webcam support there.
+                {% endtrans %}</small></p>
                 <p data-bind="visible: loginState.isUser"><small>{{ _('Currently configured stream URL') }}: <a target="_blank" rel="noreferrer" data-bind="attr: {href: settings.streamUrl}, text: settings.streamUrl"></a></small></p>
             </div>
         </div>
         <div id="webcam_rotator" data-bind="css: { webcam_rotated: settings.rotate90(), webcam_unrotated: !settings.rotate90() }">
             <div class="webcam_fixed_ratio" data-bind="css: webcamRatioClass">
                 <div class="webcam_fixed_ratio_inner">
-                    <img id="webcam_image" data-bind="css: { flipH: settings.flipH(), flipV: settings.flipV() }, event: { load: onWebcamLoaded, error: onWebcamErrored }, visible: !webcamError()">
+                    {# djlint: off H006,H013 #}<img id="webcam_image" data-bind="css: { flipH: settings.flipH(), flipV: settings.flipV() }, event: { load: onWebcamLoaded, error: onWebcamErrored }, visible: !webcamError()">{# djlint: on #}
                 </div>
             </div>
         </div>

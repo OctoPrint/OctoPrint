@@ -21,7 +21,7 @@
         </ul>
     </div>
     <button class="btn btn-small" data-bind="click: removeMarkedFiles, enable: markedForDeletion().length > 0">{{ _('Delete selected') }}</button>
-    <a class="btn btn-small" data-bind="css: { disabled: !enableBulkDownload() }, attr: { href: bulkDownloadButtonUrl }">{{_('Download selected')}}</a>
+    <a class="btn btn-small" data-bind="css: { disabled: !enableBulkDownload() }, attr: { href: bulkDownloadButtonUrl }">{{ _('Download selected') }}</a>
 </div>
 <table class="table table-striped table-hover table-condensed table-hover" id="log_files">
     <thead>

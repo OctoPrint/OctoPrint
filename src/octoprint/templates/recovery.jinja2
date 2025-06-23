@@ -142,7 +142,7 @@
                     </table>
                     <p data-bind="visible: backups().length > 0">
                         <strong>{{ _("Note:") }}</strong>
-                        {% trans marker="<strong class='text-error'>!</strong>"|safe %}
+                        {# djlint: off H008 #}{% trans marker="<strong class='text-error'>!</strong>" | safe %}{# djlint: on #}
                             OctoPrint currently only allows uploading backups of a maximum size of
                             {{ plugin_backup_max_upload_size_str }} via the UI. Backups larger than this can only be restored by command line,
                             or by adjusting the size by removing large contents (like timelapses) from the

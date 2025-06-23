@@ -14,9 +14,9 @@
         <meta name="referrer" content="no-referrer">
         <meta name="theme-color" data-bind="attr: { content: theme_color }">
 
-        {% include 'javascripts-preload.jinja2' %}
-        {% include 'stylesheets-preload.jinja2' %}
-        {% include 'initscript.jinja2' %}
+        {% include "javascripts-preload.jinja2" %}
+        {% include "stylesheets-preload.jinja2" %}
+        {% include "initscript.jinja2" %}
     </head>
     <body>
         <noscript>
@@ -31,8 +31,8 @@
                     <div class="outer">
                         <div class="inner">
                             <div class="content">
-                                <h1 class="text-error">{{ _('You don\'t seem to have JavaScript enabled') }}</h1>
-                                {{ _('OctoPrint\'s UI requires JavaScript to work. Please enable JavaScript and reload.') }}
+                                <h1 class="text-error">{{ _("You don't seem to have JavaScript enabled") }}</h1>
+                                {{ _("OctoPrint's UI requires JavaScript to work. Please enable JavaScript and reload.") }}
                             </div>
                         </div>
                     </div>
@@ -46,7 +46,7 @@
                 <div class="outer">
                     <div class="inner">
                         <div class="content">
-                            <h1 id="page-container-loading-header">{{ _('Connecting to OctoPrint\'s server...') }}</h1>
+                            <h1 id="page-container-loading-header">{{ _("Connecting to OctoPrint's server...") }}</h1>
                             <p><i id="page-container-loading-spinner" class="fas fa-spinner fa-spin fa-4x"></i></p>
                             <p id="page-container-loading-error" style="display: none"></p>
                         </div>
@@ -162,30 +162,30 @@
                     </div>
                     {% endif %}
                 </div>
-                {%  include 'footer.jinja2' %}
+                {% include "footer.jinja2" %}
             </div>
 
             <!-- Dialogs -->
-            {% include 'dialogs/settings.jinja2' %}
-            {% include 'dialogs/slicing.jinja2' %}
-            {% include 'dialogs/usersettings.jinja2' %}
-            {% include 'dialogs/wizard.jinja2' %}
-            {% include 'dialogs/about.jinja2' %}
-            {% include 'dialogs/files.jinja2' %}
-            {% include 'dialogs/temperature.jinja2' %}
-            {% include 'dialogs/timelapse.jinja2' %}
-            {% include 'dialogs/firmwareerror.jinja2' %}
-            {% include 'dialogs/reauthenticate.jinja2' %}
+            {% include "dialogs/settings.jinja2" %}
+            {% include "dialogs/slicing.jinja2" %}
+            {% include "dialogs/usersettings.jinja2" %}
+            {% include "dialogs/wizard.jinja2" %}
+            {% include "dialogs/about.jinja2" %}
+            {% include "dialogs/files.jinja2" %}
+            {% include "dialogs/temperature.jinja2" %}
+            {% include "dialogs/timelapse.jinja2" %}
+            {% include "dialogs/firmwareerror.jinja2" %}
+            {% include "dialogs/reauthenticate.jinja2" %}
             <!-- End of dialogs -->
 
             <!-- Overlays -->
-            {% include 'overlays/dragndrop.jinja2' %}
-            {% include 'overlays/offline.jinja2' %}
-            {% include 'overlays/reloadui.jinja2' %}
+            {% include "overlays/dragndrop.jinja2" %}
+            {% include "overlays/offline.jinja2" %}
+            {% include "overlays/reloadui.jinja2" %}
             <!-- End of overlays -->
 
-            {% include 'stylesheets.jinja2' %}
-            {% include 'javascripts.jinja2' %}
+            {% include "stylesheets.jinja2" %}
+            {% include "javascripts.jinja2" %}
 
             <!-- Generic plugin template files -->
             {% for key in templates.generic.order %}

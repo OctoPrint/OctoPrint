@@ -6,7 +6,7 @@
 </form>
 <div class="gcode_files" data-test-id="files-list" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_LIST)">
     <div class="entry back clickable" data-bind="visible: currentPath() != '', click: function() { $root.navigateUp(); }" style="display: none">
-        <div class="back-arrow"><i class="fas fa-arrow-left"></i> {{  _('Back') }}</div>
+        <div class="back-arrow"><i class="fas fa-arrow-left"></i> {{ _('Back') }}</div>
         <div class="back-path"><small class="muted">{{ _('Currently in') }} <span data-bind="text: currentPath"></span></small></div>
     </div>
 

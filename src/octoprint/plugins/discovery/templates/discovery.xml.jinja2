@@ -1,4 +1,4 @@
-{%- autoescape true -%}
+{# djlint:off #}{%- autoescape true -%}
 <?xml version="1.0"?>
 <root xmlns="urn:schemas-upnp-org:device-1-0">
     <specVersion>
@@ -16,8 +16,7 @@
         <modelURL>{{ modelUrl }}</modelURL>{% endif %}{% if serialNumber %}
         <serialNumber>{{ serialNumber }}</serialNumber>{% endif %}
         <UDN>uuid:{{ uuid }}</UDN>
-        <serviceList>
-        </serviceList>
+        <serviceList></serviceList>
         <presentationURL>{{ presentationUrl }}</presentationURL>
     </device>
 </root>

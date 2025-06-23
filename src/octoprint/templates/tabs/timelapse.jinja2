@@ -95,7 +95,7 @@
 
             <div class="control-group">
                 <div class="controls">
-                    <strong class="text-center text-block" data-bind="visible: saveButtonEnabled">{{ _('You have unsaved changes. Don\'t forget to save them.') }}</strong>
+                    <strong class="text-center text-block" data-bind="visible: saveButtonEnabled">{{ _("You have unsaved changes. Don't forget to save them.") }}</strong>
                     <button class="btn btn-primary btn-block" data-bind="click: save, enable: saveButtonEnabled">{{ _('Save changes') }}</button>
                     <button class="btn btn-block" data-bind="click: reset, enable: resetButtonEnabled">{{ _('Reset to active configuration') }}</button>
                 </div>
@@ -153,7 +153,7 @@
         </ul>
     </div>
     <button class="btn btn-small" data-bind="click: removeMarkedFiles, enable: markedForFileDeletion().length > 0">{{ _('Delete selected') }}</button>
-    <a class="btn btn-small" data-bind="css: { disabled: !enableBulkDownload() }, attr: { href: bulkDownloadButtonUrl }">{{_('Download selected')}}</a>
+    <a class="btn btn-small" data-bind="css: { disabled: !enableBulkDownload() }, attr: { href: bulkDownloadButtonUrl }">{{ _('Download selected') }}</a>
 </div>
 <table class="table table-hover table-condensed table-hover" id="timelapse_files">
     <thead>
@@ -170,7 +170,7 @@
         <td class="timelapse_files_thumb">
             <div class="thumb" data-bind="css: { letterbox: $data.thumbnail }">
                 <!-- ko if: $data.thumbnail -->
-                <img data-bind="attr:{src: thumbnail}" loading="lazy" />
+                {# djlint:off H006,H013 #}<img data-bind="attr:{src: thumbnail}" loading="lazy" />{# djlint: on #}
                 <!-- /ko -->
                 <a href="javascript:void(0)" data-bind="css: {disabled: !$root.isTimelapseViewable($data)}, click: $root.showTimelapsePreview"></a>
             </div>
@@ -201,7 +201,6 @@
     </ul>
 </div>
 <small data-bind="visible: bulkDownloadUrlTooLong"><i class="fa fa-warning"></i> {{ _('Too many files selected to download at once. Reduce number of files to enable download button.') }}</small>
-
 
 <div data-bind="visible: unrenderedListHelper.allSize">
     <div><small><a href="javascript:void(0)" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fas fa-caret-right"></i> {{ _('Unrendered Timelapses') }}</a></small></div>

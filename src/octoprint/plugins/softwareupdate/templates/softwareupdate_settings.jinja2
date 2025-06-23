@@ -125,7 +125,7 @@
                 </tbody>
             </table>
             <small class="muted">
-                {% trans enabled_icon="<i class=\"far fa-bell\"></i>"|safe, muted_icon="<i class=\"far fa-bell-slash\"></i>"|safe %}
+                {# djlint: off H025 #}{% trans enabled_icon="<i class=\"far fa-bell\"></i>"|safe, muted_icon="<i class=\"far fa-bell-slash\"></i>"|safe %}{# djlint: on #}
                     {{ enabled_icon }} = Update notifications enabled, {{ muted_icon }} =
                     Update notifications muted, click to toggle. "Update all" will update
                     all items for which updates are available & update notifications are
@@ -154,10 +154,9 @@
             </table>
         </div>
 
-        <small>{{ _('Please note that the update log will only contain entries for updates performed through OctoPrint\'s Software Update plugin.') }}</small>
+        <small>{{ _("Please note that the update log will only contain entries for updates performed through OctoPrint's Software Update plugin.") }}</small>
     </div>
 </div>
-
 
 <div id="settings_plugin_softwareupdate_configurationdialog" class="modal hide fade-in">
     <div class="modal-header">

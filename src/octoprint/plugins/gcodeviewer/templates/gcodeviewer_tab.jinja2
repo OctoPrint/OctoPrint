@@ -6,11 +6,11 @@
     </div>
 
     <div class="layer-buttons btn-group-toolbar row-fluid">
-        <button type="button" class="btn btn-primary btn-medium span6" data-bind = "click: decrementLayer, enable: layerSelectionEnabled() && layerDownEnabled()">
+        <button type="button" class="btn btn-primary btn-medium span6" data-bind="click: decrementLayer, enable: layerSelectionEnabled() && layerDownEnabled()">
             <i class="fas fa-arrow-left"></i>
             <span>{{ _('Previous layer') }}</span>
         </button>
-        <button type="button" class="btn btn-primary btn-medium span6" data-bind = "click: incrementLayer, enable: layerSelectionEnabled() && layerUpEnabled()">
+        <button type="button" class="btn btn-primary btn-medium span6" data-bind="click: incrementLayer, enable: layerSelectionEnabled() && layerUpEnabled()">
             <span>{{ _('Next layer') }}</span>
             <i class="fas fa-arrow-right"></i>
         </button>

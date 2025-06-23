@@ -250,6 +250,9 @@ docstring-code-format = false
 # enabled.
 docstring-code-line-length = "dynamic"
 
+[tool.djlint]
+ignore="H005,H007,H019,H021,H023,H030,H031,T002"
+
 [tool.codespell]
 skip = '*.po,*.min.js,.git,*/vendor/*,*/lib/*,*/bootstrap/*,*/node_modules/*,*/translations/*,*/venv*,*/.*,*/build/*,*/_build/*,setup.cfg,AUTHORS.md'
 ignore-words = '.codespell_ignore_words'

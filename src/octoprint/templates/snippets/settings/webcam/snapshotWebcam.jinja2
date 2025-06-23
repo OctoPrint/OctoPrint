@@ -10,18 +10,18 @@
         <!-- ko foreach: webcam_webcams -->
             <!-- ko if: name == $parent.webcam_snapshotWebcam() -->
               <div class="help-block">
-                    <span><strong>{{ _('Snapshot stream')}}&nbsp;</strong></span>
+                    <span><strong>{{ _('Snapshot stream') }}&nbsp;</strong></span>
                     <!-- ko if: canSnapshot -->
                         <!-- ko if: snapshotDisplay -->
                             <span data-bind="text: snapshotDisplay"></span>&nbsp;
                             <a data-bind="attr: { href: snapshotDisplay }, visible: $parent.validURL(snapshotDisplay)" target="_blank"><i class="fa-solid fa-up-right-from-square"></i></a>
                         <!-- /ko -->
                         <!-- ko ifnot: snapshotDisplay -->
-                            <span>{{ _('Supported')}}</span>
+                            <span>{{ _('Supported') }}</span>
                         <!-- /ko -->
                     <!-- /ko -->
                     <!-- ko ifnot: canSnapshot -->
-                        <span>{{ _('Not supported')}}</span>
+                        <span>{{ _('Not supported') }}</span>
                     <!-- /ko -->
                 </div>
             <!-- /ko -->
