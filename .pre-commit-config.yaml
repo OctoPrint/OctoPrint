@@ -27,12 +27,19 @@ repos:
   - repo: https://github.com/djlint/djlint
     rev: v1.36.4
     hooks:
+      - id: djlint
+        files: "\\.html$"
+        types: [html]
+      - id: djlint-reformat
+        files: "\\.html$"
+        types: [html]
       - id: djlint-jinja
       - id: djlint-reformat-jinja
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: v3.6.0
     hooks:
       - id: prettier
+        files: "\\.(js|json|css|less|md|yml|yaml)$"
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v9.29.0
     hooks:
