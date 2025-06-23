@@ -3,6 +3,7 @@
 # pre-commit version updates
 b4f265d9f67508677e1697e74e248b895da7f43c
 2231e81efd32d649798f7a58cdb1755e34902d8a
+56e800b698e1cf5cc1ea67f36c7152d28f741c85
 
 # Switch to black formatting
 1f93b2355a2816918e11a55e61b42010d15a6720
@@ -10,6 +11,10 @@ b4f265d9f67508677e1697e74e248b895da7f43c
 
 # Switch to prettier formatting
 6b44909f21ee39237b7504cd31ffa6cf28275c33
+
+# Switch to djlint formatting
+222bf25f6cedec34ea52b25eeb5af0fec22d082f
+822571b6a8177722709597949b96bc2ca477ccd3
 
 # EOF/trailing whitespace check
 #cae6730ea87da18bd6ebfeaf3e1e9cd354390939
