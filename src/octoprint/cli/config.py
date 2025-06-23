@@ -27,11 +27,11 @@ def _set_helper(settings, path, value, data_type=None):
     method = settings.set
     if data_type is not None:
         name = None
-        if data_type == bool:
+        if data_type is bool:
             name = "setBoolean"
-        elif data_type == float:
+        elif data_type is float:
             name = "setFloat"
-        elif data_type == int:
+        elif data_type is int:
             name = "setInt"
 
         if name is not None:

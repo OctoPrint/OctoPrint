@@ -353,11 +353,11 @@ $(function () {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
                 access.loginState.reauthenticateIfNecessary(() => {
-                    self.generateApikey(self.currentUser().name).done(function (
-                        response
-                    ) {
-                        self._updateApikey(response.apikey);
-                    });
+                    self.generateApikey(self.currentUser().name).done(
+                        function (response) {
+                            self._updateApikey(response.apikey);
+                        }
+                    );
                 });
             };
 

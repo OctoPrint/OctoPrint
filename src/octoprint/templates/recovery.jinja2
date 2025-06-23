@@ -1,148 +1,198 @@
 <html>
-<head>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>OctoPrint Recovery</title>
+    <head>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>OctoPrint Recovery</title>
 
-    <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
-    <link rel="mask-icon" href="{{ url_for('static', filename='img/mask.svg') }}" color="#56BE37">
-    <link rel="mask-icon-theme" href="{{ url_for('static', filename='img/mask-theme.svg') }}" color="#56BE37">
-    <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
-    <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
+        <link rel="shortcut icon"
+              href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
+        <link rel="mask-icon"
+              href="{{ url_for('static', filename='img/mask.svg') }}"
+              color="#56BE37">
+        <link rel="mask-icon-theme"
+              href="{{ url_for('static', filename='img/mask-theme.svg') }}"
+              color="#56BE37">
+        <link rel="apple-touch-icon"
+              sizes="114x114"
+              href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
+        <link rel="apple-touch-icon"
+              sizes="144x144"
+              href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
-    <!-- le CSS -->
+        <!-- le CSS -->
 
-    <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="css/bootstrap-responsive.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-6.5.1/css/all.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="vendor/font-awesome-6.5.1/css/v4-shims.min.css") }}">
-    <link rel="stylesheet" href="{{ url_for("static", filename="css/recovery.css") }}">
+        <link rel="stylesheet"
+              href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+        <link rel="stylesheet"
+              href="{{ url_for('static', filename='css/bootstrap-responsive.min.css') }}">
+        <link rel="stylesheet"
+              href="{{ url_for('static', filename='vendor/font-awesome-6.5.1/css/all.min.css') }}">
+        <link rel="stylesheet"
+              href="{{ url_for('static', filename='vendor/font-awesome-6.5.1/css/v4-shims.min.css') }}">
+        <link rel="stylesheet"
+              href="{{ url_for('static', filename='css/recovery.css') }}">
 
-    {% for url in theming %}
-        <link rel="stylesheet" href="{{ url|e }}">
-    {% endfor %}
+        {% for url in theming %}<link rel="stylesheet" href="{{ url|e }}">{% endfor %}
 
-    <!-- le javascript -->
+        <!-- le javascript -->
 
-    <script>
+        <script>
         var BASE_URL = "{{ url_for('index') }}";
         var LOGIN_URL = "{{ url_for('login', redirect=url_for('recovery'), permissions="ADMIN") }}";
         var LOCALE = "";
         var CONFIG_REAUTHENTICATION_TIMEOUT = {{ reauthenticationTimeout }};
-    </script>
-    <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/lib/knockout.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/lib/sockjs.min.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/lib/bootstrap/bootstrap.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/lib/sprintf.min.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/lib/babel.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/lib/moment-with-locales.min.js") }}"></script>
+        </script>
+        <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
+        <script src="{{ url_for("static", filename="js/lib/knockout.js") }}"></script>
+        <script src="{{ url_for("static", filename="js/lib/sockjs.min.js") }}"></script>
+        <script src="{{ url_for("static", filename="js/lib/bootstrap/bootstrap.js") }}"></script>
+        <script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>
+        <script src="{{ url_for("static", filename="js/lib/sprintf.min.js") }}"></script>
+        <script src="{{ url_for("static", filename="js/lib/babel.js") }}"></script>
+        <script src="{{ url_for("static", filename="js/lib/moment-with-locales.min.js") }}"></script>
 
-    {% assets "js_client" %}
-        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
-    {% endassets %}
+        {% assets "js_client" %}
+            <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+        {% endassets %}
 
-    {% if g.locale %}<script type="text/javascript" src="{{ url_for('localeJs', locale=g.locale, domain='messages') }}"></script>{% endif %}
+        {% if g.locale %}
+            <script type="text/javascript"
+                    src="{{ url_for('localeJs', locale=g.locale, domain='messages') }}"></script>
+        {% endif %}
 
-    <script src="{{ url_for("static", filename="js/app/helpers.js") }}"></script>
-    <script src="{{ url_for("static", filename="js/recovery/recovery.js") }}"></script>
-</head>
-<body>
-    <div id="navbar" class="navbar navbar-inverse navbar-static-top">
-        <div class="navbar-inner">
-            <span class="brand">OctoPrint Recovery</span>
-            <ul class="nav pull-right">
-                <li><p class="navbar-text">Logged in as <strong data-bind="text: username"></strong> (<a href="javascript:void(0)" data-bind="click: logout">Logout</a>)</p></li>
-            </ul>
-        </div>
-    </div>
-    <div id="recovery" class="container">
-        <div class="row-fluid">
-            <div class="span3">
-                <ul class="nav nav-list">
-                    <li class="nav-header">{{ _('Navigation') }}</li>
-                    <li><a href="#system-commands">{{ _('System commands') }}</a></li>
-                    <li><a href="#system-info">{{ _('System info bundle') }}</a></li>
-                    <li data-bind="visible: printerConnected"><a href="#printer-control">{{ _('Printer control') }}</a></li>
-                    <li data-bind="visible: backupSupported"><a href="#backups">{{ _('Backups') }}</a></li>
+        <script src="{{ url_for("static", filename="js/app/helpers.js") }}"></script>
+        <script src="{{ url_for("static", filename="js/recovery/recovery.js") }}"></script>
+    </head>
+    <body>
+        <div id="navbar" class="navbar navbar-inverse navbar-static-top">
+            <div class="navbar-inner">
+                <span class="brand">OctoPrint Recovery</span>
+                <ul class="nav pull-right">
+                    <li>
+                        <p class="navbar-text">
+                            Logged in as <strong data-bind="text: username"></strong> (<a href="javascript:void(0)" data-bind="click: logout">Logout</a>)
+                        </p>
+                    </li>
                 </ul>
             </div>
-            <div class="span9">
-                <div data-bind="visible: !connected()" class="alert alert-error">{{ _('Server is currently offline.') }} <a href="javascript:void(0)" data-bind="click: reconnect">{{ _('Reconnect...') }}</a></div>
-                <div data-bind="visible: known() && !permitted()" class="alert alert-error">{{ _('You lack admin permissions.') }}</div>
-
-                <div style="margin-bottom: 2em">
-                    <h1 id="system-commands">{{ _('System commands') }}</h1>
-                    <!-- ko foreach: systemCommands -->
-                    <button class="btn btn-block" data-bind="text: name, click: function() { $root.executeSystemCommand($data) }"></button>
-                    <!-- /ko -->
+        </div>
+        <div id="recovery" class="container">
+            <div class="row-fluid">
+                <div class="span3">
+                    <ul class="nav nav-list">
+                        <li class="nav-header">{{ _("Navigation") }}</li>
+                        <li>
+                            <a href="#system-commands">{{ _("System commands") }}</a>
+                        </li>
+                        <li>
+                            <a href="#system-info">{{ _("System info bundle") }}</a>
+                        </li>
+                        <li data-bind="visible: printerConnected">
+                            <a href="#printer-control">{{ _("Printer control") }}</a>
+                        </li>
+                        <li data-bind="visible: backupSupported">
+                            <a href="#backups">{{ _("Backups") }}</a>
+                        </li>
+                    </ul>
                 </div>
+                <div class="span9">
+                    <div data-bind="visible: !connected()" class="alert alert-error">
+                        {{ _("Server is currently offline.") }} <a href="javascript:void(0)" data-bind="click: reconnect">{{ _("Reconnect...") }}</a>
+                    </div>
+                    <div data-bind="visible: known() && !permitted()"
+                         class="alert alert-error">{{ _("You lack admin permissions.") }}</div>
 
-                <div style="margin-bottom: 2em">
-                    <h1 id="system-info">{{ _('System info bundle') }}</h1>
-                    <a href="{{ url_for('index', _external=True) }}downloads/systeminfo.zip" target="_blank" class="btn btn-primary"><i class="fas fa-download"></i> {{ _('Download Systeminfo Bundle') }}</a>
-                </div>
+                    <div style="margin-bottom: 2em">
+                        <h1 id="system-commands">{{ _("System commands") }}</h1>
+                        <!-- ko foreach: systemCommands -->
+                        <button class="btn btn-block"
+                                data-bind="text: name, click: function() { $root.executeSystemCommand($data) }">
+                        </button>
+                        <!-- /ko -->
+                    </div>
 
-                <div data-bind="visible: printerConnected" style="margin-bottom: 2em">
-                    <h1 id="printer-control">{{ _('Printer control') }}</h1>
-                    <button class="btn btn-block" data-bind="visible: jobInProgress, click: cancelPrint">{{ _('Cancel print') }}</button>
-                    <button class="btn btn-block" data-bind="click: disconnectPrinter">{{ _('Disconnect printer') }}</button>
-                </div>
+                    <div style="margin-bottom: 2em">
+                        <h1 id="system-info">{{ _("System info bundle") }}</h1>
+                        <a href="{{ url_for('index', _external=True) }}downloads/systeminfo.zip"
+                           target="_blank"
+                           class="btn btn-primary"><i class="fas fa-download"></i> {{ _("Download Systeminfo Bundle") }}</a>
+                    </div>
 
-                <div data-bind="visible: backupSupported" style="margin-bottom: 2em">
-                    <h1 id="backups">{{ _('Backup & Restore') }}</h1>
-                    <small data-bind="visible: !restoreSupported()">{{ _('Online restore is not supported on your system.') }}</small>
+                    <div data-bind="visible: printerConnected" style="margin-bottom: 2em">
+                        <h1 id="printer-control">{{ _("Printer control") }}</h1>
+                        <button class="btn btn-block"
+                                data-bind="visible: jobInProgress, click: cancelPrint">{{ _("Cancel print") }}</button>
+                        <button class="btn btn-block" data-bind="click: disconnectPrinter">{{ _("Disconnect printer") }}</button>
+                    </div>
 
-                    <h2>{{ _('Create backup') }}</h2>
-                    <form class="form-horizontal" onsubmit="return false;">
-                        <div class="control-group" title="{{ _('All files in the uploads folder and subfolders. These are the files in the Files List, plus any metadata that has been generated for those files.')|edq }}">
-                            <div class="controls">
-                                <label class="checkbox">
-                                    <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files (& associated metadata) from backup') }}
-                                </label>
+                    <div data-bind="visible: backupSupported" style="margin-bottom: 2em">
+                        <h1 id="backups">{{ _("Backup & Restore") }}</h1>
+                        <small data-bind="visible: !restoreSupported()">{{ _("Online restore is not supported on your system.") }}</small>
+
+                        <h2>{{ _("Create backup") }}</h2>
+                        <form class="form-horizontal" onsubmit="return false;">
+                            <div class="control-group"
+                                 title="{{ _('All files in the uploads folder and subfolders. These are the files in the Files List, plus any metadata that has been generated for those files.') |edq }}">
+                                <div class="controls">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                               data-bind="value: 'uploads', checked: excludeFromBackup">
+                                        {{ _("Exclude uploaded files (& associated metadata) from backup") }}
+                                    </label>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="control-group">
-                            <div class="controls">
-                                <label class="checkbox">
-                                    <input type="checkbox" data-bind="value: 'timelapse', checked: excludeFromBackup"> {{ _('Exclude timelapses from backup') }}
-                                </label>
+                            <div class="control-group">
+                                <div class="controls">
+                                    <label class="checkbox">
+                                        <input type="checkbox"
+                                               data-bind="value: 'timelapse', checked: excludeFromBackup">
+                                        {{ _("Exclude timelapses from backup") }}
+                                    </label>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="control-group">
-                            <div class="controls">
-                                <button class="btn btn-primary" data-bind="enable: !workInProgress(), click: createBackup"><i class="fas fa-spinner fa-spin" data-bind="visible: workInProgress"></i> {{ _('Create backup now') }}</button>
+                            <div class="control-group">
+                                <div class="controls">
+                                    <button class="btn btn-primary"
+                                            data-bind="enable: !workInProgress(), click: createBackup">
+                                        <i class="fas fa-spinner fa-spin" data-bind="visible: workInProgress"></i> {{ _("Create backup now") }}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    </form>
+                        </form>
 
-                    <h2>{{ _('Existing backups') }}</h2>
-                    <table data-bind="visible: backups().length > 0" class="table table-hover">
-                        <thead>
-                            <th>{{ _('Name') }}</th>
-                            <th style="text-align: right">{{ _('Size') }}</th>
-                            <th style="text-align: center">{{ _('Date') }}</th>
-                            <th style="text-align: center">{{ _('Actions') }}</th>
-                        </thead>
-                        <tbody data-bind="foreach: backups">
-                            <tr>
-                                <td><a href="javascript:void(0)" data-bind="text: name, attr: {href: url}"></a></td>
-                                <td style="text-align: right">
-                                    <strong data-bind="visible:  $root.backupIsAboveUploadSize($data)" class="text-error">!</strong> <span data-bind="text: formatSize(size)"></span>
-                                </td>
-                                <td style="text-align: center" data-bind="text: formatDate(date)"></td>
-                                <td style="text-align: center">
-                                    <button class="btn btn-small" data-bind="visible: $root.restoreSupported, click: function() { $root.restoreBackup($data.name) }">{{ _('Restore') }}</button>
-                                    <a class="btn btn-small" data-bind="click: function() { $root.reauthenticateDownload($data.url) }">{{ _('Download') }}</a>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <p data-bind="visible: backups().length > 0">
-                        <strong>{{ _("Note:") }}</strong>
-                        {% trans marker="<strong class='text-error'>!</strong>"|safe %}
+                        <h2>{{ _("Existing backups") }}</h2>
+                        <table data-bind="visible: backups().length > 0" class="table table-hover">
+                            <thead>
+                                <th>{{ _("Name") }}</th>
+                                <th style="text-align: right">{{ _("Size") }}</th>
+                                <th style="text-align: center">{{ _("Date") }}</th>
+                                <th style="text-align: center">{{ _("Actions") }}</th>
+                            </thead>
+                            <tbody data-bind="foreach: backups">
+                                <tr>
+                                    <td>
+                                        <a href="javascript:void(0)" data-bind="text: name, attr: {href: url}"></a>
+                                    </td>
+                                    <td style="text-align: right">
+                                        <strong data-bind="visible:  $root.backupIsAboveUploadSize($data)"
+                                                class="text-error">!</strong> <span data-bind="text: formatSize(size)"></span>
+                                    </td>
+                                    <td style="text-align: center" data-bind="text: formatDate(date)"></td>
+                                    <td style="text-align: center">
+                                        <button class="btn btn-small"
+                                                data-bind="visible: $root.restoreSupported, click: function() { $root.restoreBackup($data.name) }">
+                                            {{ _("Restore") }}
+                                        </button>
+                                        <a class="btn btn-small"
+                                           data-bind="click: function() { $root.reauthenticateDownload($data.url) }">{{ _("Download") }}</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p data-bind="visible: backups().length > 0">
+                            <strong>{{ _("Note:") }}</strong>
+                            {# djlint: off H008 #}{% trans marker="<strong class='text-error'>!</strong>" | safe %}{# djlint: on #}
                             OctoPrint currently only allows uploading backups of a maximum size of
                             {{ plugin_backup_max_upload_size_str }} via the UI. Backups larger than this can only be restored by command line,
                             or by adjusting the size by removing large contents (like timelapses) from the
@@ -150,9 +200,7 @@
                             {{ marker }} up there.
                         {% endtrans %}
                     </p>
-                    <p data-bind="visible: backups().length <= 0">
-                        {{ _('There are no backups yet.') }}
-                    </p>
+                    <p data-bind="visible: backups().length <= 0">{{ _("There are no backups yet.") }}</p>
                 </div>
             </div>
         </div>
@@ -163,38 +211,54 @@
             <h3 data-bind="text: workTitle"></h3>
         </div>
         <div class="modal-body">
-            <pre class="pre-scrollable pre-output" style="height: 170px" data-bind="foreach: workLoglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message', error: stream == 'error'}"></span></pre>
+            <pre class="pre-scrollable pre-output"
+                 style="height: 170px"
+                 data-bind="foreach: workLoglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message', error: stream == 'error'}"></span></pre>
         </div>
         <div class="modal-footer">
-            <button class="btn" data-dismiss="modal" data-bind="enable: !workInProgress()">{{ _('Close') }}</button>
+            <button class="btn"
+                    data-dismiss="modal"
+                    data-bind="enable: !workInProgress()">{{ _("Close") }}</button>
         </div>
     </div>
 
     <div id="reauthenticate_dialog" class="modal hide fade-in">
         <div class="modal-header">
-            <a href="javascript:void()" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-            <h3>{{ _('Please reauthenticate') }}</h3>
+            <a href="javascript:void()"
+               class="close"
+               data-dismiss="modal"
+               aria-hidden="true">&times;</a>
+            <h3>{{ _("Please reauthenticate") }}</h3>
         </div>
         <div class="modal-body">
-            <p>{% trans %}
+            <p>
+                {% trans %}
                 You need to reauthenticate to perform this action.
                 Please enter your password below.
-            {% endtrans %}</p>
-            <form class="form-horizontal" data-bind="event: {'submit': reauthenticate }" onsubmit="return false; // this gets overwritten on view model bind">
-                <div class="control-group">
-                    <label class="control-label">{{ _('Password') }}</label>
-                    <div class="controls">
-                        <input type="password" class="input-block-level" data-bind="value: reauthenticatePass" placeholder="{{ _("Password")|edq }}">
-                        <span class="help-block text-error" data-bind="visible: reauthenticateFailed">{{ _('Reauthentication failed. Wrong password?') }}</span>
-                    </div>
+            {% endtrans %}
+        </p>
+        <form class="form-horizontal"
+              data-bind="event: {'submit': reauthenticate }"
+              onsubmit="return false; // this gets overwritten on view model bind">
+            <div class="control-group">
+                <label class="control-label">{{ _("Password") }}</label>
+                <div class="controls">
+                    <input type="password"
+                           class="input-block-level"
+                           data-bind="value: reauthenticatePass"
+                           placeholder="{{ _('Password') |edq }}">
+                    <span class="help-block text-error"
+                          data-bind="visible: reauthenticateFailed">{{ _("Reauthentication failed. Wrong password?") }}</span>
                 </div>
-            </form>
-        </div>
-        <div class="modal-footer">
-            <button class="btn" data-dismiss="modal">{{ _('Abort') }}</button>
-            <button class="btn btn-primary" data-bind="click: function() { reauthenticate(); }">{{ _('Confirm') }}</button>
-        </div>
+            </div>
+        </form>
     </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal">{{ _("Abort") }}</button>
+        <button class="btn btn-primary"
+                data-bind="click: function() { reauthenticate(); }">{{ _("Confirm") }}</button>
+    </div>
+</div>
 
 </body>
 </html>

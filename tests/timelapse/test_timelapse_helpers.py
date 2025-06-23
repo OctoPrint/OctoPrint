@@ -103,7 +103,7 @@ class TimelapseTest(unittest.TestCase):
             "tmp_00000.jpg",
             "tmp_00001.jpg",
         ]
-        files = {f: None for f in files}
+        files = dict.fromkeys(files)
         files["old-0.jpg"] = _stat(st_size=10, st_ctime=0, st_mtime=0)
 
         now = self.now

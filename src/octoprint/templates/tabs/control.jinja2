@@ -1,29 +1,33 @@
 {% if enableWebcam %}
-    <div id="webcam_plugins_container" tabindex="0" data-bind="visible: loginState.hasPermissionKo(access.permissions.WEBCAM), event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
+    <div id="webcam_plugins_container"
+         tabindex="0"
+         data-bind="visible: loginState.hasPermissionKo(access.permissions.WEBCAM), event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
         <div class="tabbable row-fluid">
             <div class="tab-content" id="webcam-group">
-            {% for key in templates.webcam.order %}
-                {% set entry, data = templates.webcam.entries[key] %}
-                {% if data is not none %}
-                    {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
-                    <div id="{{ data._div }}"
-                            {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                            class="tab-pane {% if classes_content in data %}{{ data.classes_content|join(' ') }}{% elif classes in data %}{{ data.classes|join(' ') }}{% endif %}"
-                            {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif styles in data %} style="{{ data.styles|join(', ') }}" {% endif %}
-                            >
-                        {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template ignore missing %}{% endtry %}
+                {% for key in templates.webcam.order %}
+                    {% set entry, data = templates.webcam.entries[key] %}
+                    {% if data is not none %}
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+                        <div id="{{ data._div }}"
+                             {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
+                             class="tab-pane {% if classes_content in data %}{{ data.classes_content|join(" ") }}{% elif classes in data %}{{ data.classes|join(" ") }}{% endif %}"
+                             {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif styles in data %} style="{{ data.styles|join(', ') }}" {% endif %}>
+                            {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}
+                            {% include data.template ignore missing %}
+                        {% endtry %}
                     </div>
                     {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
                 {% endif %}
             {% endfor %}
-            </div>
         </div>
+    </div>
 
-        <div class="refresh_overlay">
-            <a data-bind="click: refreshWebcam" aria-label="{{ _('Refresh webcam view')|edq }}"><i class="fas fa-refresh"></i></a>
-        </div>
+    <div class="refresh_overlay">
+        <a data-bind="click: refreshWebcam"
+           aria-label="{{ _('Refresh webcam view') |edq }}"><i class="fas fa-refresh"></i></a>
+    </div>
 
-        {% if templates.webcam.order|length > 1 %}
+    {% if templates.webcam.order|length > 1 %}
         <ul class="nav justify-content-end">
             {% for key in templates.webcam.order %}
                 {% set entry, data = templates.webcam.entries[key] %}
@@ -34,58 +38,107 @@
                 </li>
             {% endfor %}
         </ul>
-        {% endif %}
+    {% endif %}
 
-        <div class="keycontrol_overlay" data-bind="visible: showKeycontrols">
-            <div class="keycontrol_overlay_heading">{{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i class="fas" data-bind="css: { 'fa-chevron-down': !keycontrolHelpActive(), 'fa-chevron-up': keycontrolHelpActive() }"></i></a></div>
-            <div data-bind="visible: keycontrolHelpActive">
-                <div class="keycontrol_overlay_column">
-                    <kbd>&rarr;</kbd> / <kbd>&larr;</kbd>: {{ _("X Axis") }} +/-<br>
-                    <kbd>&uarr;</kbd> / <kbd>&darr;</kbd>: {{ _("Y Axis") }} +/-<br>
-                    <kbd>W</kbd>, <kbd>{{ _("Page&uarr;") }}</kbd> / <kbd>S</kbd>, <kbd>{{ _("Page&darr;") }}</kbd>: {{ _("Z Axis") }} +/-
-                </div>
-                <div class="keycontrol_overlay_column">
-                    <kbd>Home</kbd>: {{ _("Home X/Y") }}<br>
-                    <kbd>End</kbd>: {{ _("Home Z") }}<br>
-                    <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>: {{ _("Stepsize") }} 0.1, 1, 10, 100mm
-                </div>
+    <div class="keycontrol_overlay" data-bind="visible: showKeycontrols">
+        <div class="keycontrol_overlay_heading">
+            {{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i class="fas"
+   data-bind="css: { 'fa-chevron-down': !keycontrolHelpActive(), 'fa-chevron-up': keycontrolHelpActive() }"></i></a>
+        </div>
+        <div data-bind="visible: keycontrolHelpActive">
+            <div class="keycontrol_overlay_column">
+                <kbd>&rarr;</kbd> / <kbd>&larr;</kbd>: {{ _("X Axis") }} +/-
+                <br>
+                <kbd>&uarr;</kbd> / <kbd>&darr;</kbd>: {{ _("Y Axis") }} +/-
+                <br>
+                <kbd>W</kbd>, <kbd>{{ _("Page&uarr;") }}</kbd> / <kbd>S</kbd>, <kbd>{{ _("Page&darr;") }}</kbd>: {{ _("Z Axis") }} +/-
+            </div>
+            <div class="keycontrol_overlay_column">
+                <kbd>Home</kbd>: {{ _("Home X/Y") }}
+                <br>
+                <kbd>End</kbd>: {{ _("Home Z") }}
+                <br>
+                <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>: {{ _("Stepsize") }} 0.1, 1, 10, 100mm
             </div>
         </div>
-
     </div>
 
-    <div data-bind="visible: keycontrolPossible() && loginState.hasPermissionKo(access.permissions.WEBCAM)() && loginState.hasPermissionKo(access.permissions.CONTROL)()">
-        <small class="muted">{{ _("Hint: If you move your mouse over the picture, you enter keyboard control mode.") }}</small>
-    </div>
+</div>
+
+<div data-bind="visible: keycontrolPossible() && loginState.hasPermissionKo(access.permissions.WEBCAM)() && loginState.hasPermissionKo(access.permissions.CONTROL)()">
+    <small class="muted">{{ _("Hint: If you move your mouse over the picture, you enter keyboard control mode.") }}</small>
+</div>
 {% endif %}
 
-<div class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
+<div class="jog-panel"
+     style="display: none"
+     data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
     <!-- XY jogging control panel -->
     <div id="control-jog-xy" class="jog-panel">
         <h1>X/Y</h1>
         <div>
-            <button id="control-yinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',1) }" aria-label="{{ _('Move front')|edq }}"><i class="fas fa-arrow-up"></i></button>
+            <button id="control-yinc"
+                    class="btn box"
+                    data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',1) }"
+                    aria-label="{{ _('Move front') |edq }}">
+                <i class="fas fa-arrow-up"></i>
+            </button>
         </div>
         <div>
-            <button id="control-xdec" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',-1) }" aria-label="{{ _('Move left')|edq }}"><i class="fas fa-arrow-left"></i></button>
-            <button id="control-xyhome" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() , click: function() { $root.sendHomeCommand(['x', 'y']) }" aria-label="{{ _('Home')|edq }}"><i class="fas fa-home"></i></button>
-            <button id="control-xinc" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',1) }" aria-label="{{ _('Move right')|edq }}"><i class="fas fa-arrow-right"></i></button>
+            <button id="control-xdec"
+                    class="btn box pull-left"
+                    data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',-1) }"
+                    aria-label="{{ _('Move left') |edq }}">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button id="control-xyhome"
+                    class="btn box pull-left"
+                    data-bind="enable: isOperational() && !isPrinting() , click: function() { $root.sendHomeCommand(['x', 'y']) }"
+                    aria-label="{{ _('Home') |edq }}">
+                <i class="fas fa-home"></i>
+            </button>
+            <button id="control-xinc"
+                    class="btn box pull-left"
+                    data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('x',1) }"
+                    aria-label="{{ _('Move right') |edq }}">
+                <i class="fas fa-arrow-right"></i>
+            </button>
         </div>
         <div>
-            <button id="control-ydec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',-1) }" aria-label="{{ _('Move back')|edq }}"><i class="fas fa-arrow-down"></i></button>
+            <button id="control-ydec"
+                    class="btn box"
+                    data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('y',-1) }"
+                    aria-label="{{ _('Move back') |edq }}">
+                <i class="fas fa-arrow-down"></i>
+            </button>
         </div>
     </div>
     <!-- Z jogging control panel -->
     <div id="control-jog-z" class="jog-panel">
         <h1>Z</h1>
         <div>
-            <button id="control-zinc" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',1) }" aria-label="{{ _('Move up')|edq }}"><i class="fas fa-arrow-up"></i></button>
+            <button id="control-zinc"
+                    class="btn box"
+                    data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',1) }"
+                    aria-label="{{ _('Move up') |edq }}">
+                <i class="fas fa-arrow-up"></i>
+            </button>
         </div>
         <div>
-            <button id="control-zhome" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand(['z']) }" aria-label="{{ _('Home')|edq }}"><i class="fas fa-home"></i></button>
+            <button id="control-zhome"
+                    class="btn box"
+                    data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendHomeCommand(['z']) }"
+                    aria-label="{{ _('Home') |edq }}">
+                <i class="fas fa-home"></i>
+            </button>
         </div>
         <div>
-            <button id="control-zdec" class="btn box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',-1) }" aria-label="{{ _('Move down')|edq }}"><i class="fas fa-arrow-down"></i></button>
+            <button id="control-zdec"
+                    class="btn box"
+                    data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendJogCommand('z',-1) }"
+                    aria-label="{{ _('Move down') |edq }}">
+                <i class="fas fa-arrow-down"></i>
+            </button>
         </div>
     </div>
 
@@ -93,67 +146,129 @@
     <div class="distance">
         <div class="btn-group" data-toggle="buttons-radio" id="jog_distance">
             <!-- ko foreach: distances -->
-            <button type="button" class="btn distance" data-bind="enable: $root.isOperational() && !$root.isPrinting(), text: $data, click: function() { $root.distance($data) }, css: { active: $root.distance() === $data }, attr: { id: 'control-distance' + $root.stripDistanceDecimal($data) }"></button>
+            <button type="button"
+                    class="btn distance"
+                    data-bind="enable: $root.isOperational() && !$root.isPrinting(), text: $data, click: function() { $root.distance($data) }, css: { active: $root.distance() === $data }, attr: { id: 'control-distance' + $root.stripDistanceDecimal($data) }">
+            </button>
             <!-- /ko -->
         </div>
     </div>
 
     <!-- Feed rate -->
     <div id="control-jog-feedrate" class="jog-panel">
-        <label>{{ _('Feed rate modifier:') }} <a class="text-info" href="javascript:void(0)" data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _('Please note!')|esq }}', content: '{{ _('The feed rate can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.')|esq }}'}"><i class="fas fa-info-circle"></i></a></label>
+        <label>
+            {{ _("Feed rate modifier:") }} <a class="text-info"
+    href="javascript:void(0)"
+    data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _("Please note!") |esq }}', content: '{{ _("The feed rate can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.") |esq }}'}"><i class="fas fa-info-circle"></i></a>
+        </label>
         <div class="input-append control-box">
-            <input type="number" class="input-mini" min="1" step="1" data-bind="textInput: feedRate, event: { blur: resetFeedRateDisplay, focus: cancelFeedRateDisplayReset }, css: { pulsate_text_opacity: feedRateResetter() !== undefined }">
+            <input type="number"
+                   class="input-mini"
+                   min="1"
+                   step="1"
+                   data-bind="textInput: feedRate, event: { blur: resetFeedRateDisplay, focus: cancelFeedRateDisplayReset }, css: { pulsate_text_opacity: feedRateResetter() !== undefined }">
             <span class="add-on">%</span>
-            <button class="btn" data-bind="enable: isOperational() && feedRate(), click: function() { $root.sendFeedRateCommand() }">Set</button>
+            <button class="btn"
+                    data-bind="enable: isOperational() && feedRate(), click: function() { $root.sendFeedRateCommand() }">
+                Set
+            </button>
         </div>
     </div>
 </div>
 <!-- Extrusion control panel -->
-<div id="control-jog-extrusion" class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)() && tools().length > 0">
+<div id="control-jog-extrusion"
+     class="jog-panel"
+     style="display: none"
+     data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)() && tools().length > 0">
     <h1>Tool (E)</h1>
     <div>
         <div class="input-append control-box">
-            <input type="number" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting()">
+            <input type="number"
+                   class="input-mini text-right"
+                   data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting()">
             <span class="add-on">mm</span>
         </div>
-        <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendExtrudeCommand() }">{{ _('Extrude') }}</button>
-        <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendRetractCommand() }">{{ _('Retract') }}</button>
+        <button class="btn btn-block control-box"
+                data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendExtrudeCommand() }">
+            {{ _("Extrude") }}
+        </button>
+        <button class="btn btn-block control-box"
+                data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendRetractCommand() }">
+            {{ _("Retract") }}
+        </button>
         <div data-bind="style: { visibility: tools().length > 1 ? 'visible' : 'hidden' }">
             <div class="btn-group control-box" style="display: inline-block">
-                <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational()">
-                    {{ _('Switch Tool...') }}
+                <button class="btn dropdown-toggle"
+                        data-toggle="dropdown"
+                        data-bind="enable: isOperational()">
+                    {{ _("Switch Tool...") }}
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu" data-bind="foreach: tools">
-                    <li><a href="javascript:void(0)" data-bind="click: $root.sendSelectToolCommand, text: name(), enable: $root.isOperational()"></a></li>
+                    <li>
+                        <a href="javascript:void(0)"
+                           data-bind="click: $root.sendSelectToolCommand, text: name(), enable: $root.isOperational()"></a>
+                    </li>
                 </ul>
             </div>
-            <a class="text-info" style="display: inline-block; height: 30px; vertical-align: middle" href="javascript:void(0)" data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _('Please note!')|esq }}', content: '{{ _('The selected tool can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.')|esq }}'}"><i class="fas fa-info-circle"></i></a>
+            <a class="text-info"
+               style="display: inline-block;
+                      height: 30px;
+                      vertical-align: middle"
+               href="javascript:void(0)"
+               data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _("Please note!") |esq }}', content: '{{ _("The selected tool can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.") |esq }}'}"><i class="fas fa-info-circle"></i></a>
         </div>
 
         <!-- Flow rate -->
         <div id="control-jog-flowrate">
-            <label>{{ _('Flow rate modifier:') }} <a class="text-info" href="javascript:void(0)" data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _('Please note!')|esq }}', content: '{{ _('The flow rate can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.')|esq }}'}"><i class="fas fa-info-circle"></i></a></label>
+            <label>
+                {{ _("Flow rate modifier:") }} <a class="text-info"
+    href="javascript:void(0)"
+    data-bind="popover: {placement: 'top', trigger: 'hover', title: '{{ _("Please note!") |esq }}', content: '{{ _("The flow rate can only be set, it cannot be read back from the firmware due to a limitation of the communication protocol. There is no way to show the current setting.") |esq }}'}"><i class="fas fa-info-circle"></i></a>
+            </label>
             <div class="input-append control-box">
-                <input type="number" class="input-mini" min="1" step="1" data-bind="textInput: flowRate, event: { blur: resetFlowRateDisplay, focus: cancelFlowRateDisplayReset }, css: { pulsate_text_opacity: flowRateResetter() !== undefined }">
+                <input type="number"
+                       class="input-mini"
+                       min="1"
+                       step="1"
+                       data-bind="textInput: flowRate, event: { blur: resetFlowRateDisplay, focus: cancelFlowRateDisplayReset }, css: { pulsate_text_opacity: flowRateResetter() !== undefined }">
                 <span class="add-on">%</span>
-                <button class="btn" data-bind="enable: isOperational() && flowRate(), click: function() { $root.sendFlowRateCommand() }">Set</button>
+                <button class="btn"
+                        data-bind="enable: isOperational() && flowRate(), click: function() { $root.sendFlowRateCommand() }">
+                    Set
+                </button>
             </div>
         </div>
     </div>
 </div>
 <!-- General control panel -->
-<div id="control-jog-general" class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
-    <h1>{{ _('General') }}</h1>
+<div id="control-jog-general"
+     class="jog-panel"
+     style="display: none"
+     data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
+    <h1>{{ _("General") }}</h1>
     <div>
-        <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }">{{ _('Motors off') }}</button>
-        <button class="btn btn-block control-box" data-bind="enable: isOperational(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S255'}) }">{{ _('Fan on') }}</button>
-        <button class="btn btn-block control-box" data-bind="enable: isOperational(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">{{ _('Fan off') }}</button>
+        <button class="btn btn-block control-box"
+                data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }">
+            {{ _("Motors off") }}
+        </button>
+        <button class="btn btn-block control-box"
+                data-bind="enable: isOperational(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S255'}) }">
+            {{ _("Fan on") }}
+        </button>
+        <button class="btn btn-block control-box"
+                data-bind="enable: isOperational(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">
+            {{ _("Fan off") }}
+        </button>
     </div>
 </div>
 
 <!-- Container for custom controls -->
-<div id="control-jog-custom" style="clear: both; display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL), template: { name: $root.displayMode, foreach: controls }"></div>
+<div id="control-jog-custom"
+     style="clear: both;
+            display: none"
+     data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL), template: { name: $root.displayMode, foreach: controls }">
+</div>
 
 <!-- Templates for custom controls -->
 <script type="text/html" id="customControls_containerTemplate_nameless">

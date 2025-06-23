@@ -1,65 +1,95 @@
-<h3>{{ _('Configure the connectivity check') }}</h3>
+<h3>{{ _("Configure the connectivity check") }}</h3>
 
 {% include "snippets/settings/server/serverOnlineCheckDescription.jinja2" %}
 
-<p>{% trans %}
+<p>
+    {% trans %}
     If it is disabled OctoPrint will always assume to have a working connection to the internet.
     If that should not actually be the case, server startups, update checks and the like might take longer.
-{% endtrans %}</p>
+{% endtrans %}
+</p>
 
-<p>{% trans %}
+<p>
+    {% trans %}
     OctoPrint comes preconfigured to perform the connectivity check every 15 minutes. You may change the value here.
-{% endtrans %}</p>
+{% endtrans %}
+</p>
 
-<form class="form-horizontal" data-bind="with: settingsViewModel" onsubmit="return false;">
+<form class="form-horizontal"
+      data-bind="with: settingsViewModel"
+      onsubmit="return false;">
     {% include "snippets/settings/server/serverOnlineCheckInterval.jinja2" %}
 </form>
 
-<p>{% trans %}
+<p>
+    {% trans %}
     OctoPrint comes preconfigured to utilize Google's DNS server <code>8.8.8.8</code>, port 53 for the connectivity check (if
     it's enabled). If you have concerns about using that, define the IP and port of a different online server that you
     trust and that has a high availability.
-{% endtrans %}</p>
+{% endtrans %}
+</p>
 
-<form class="form-horizontal" data-bind="with: settingsViewModel" onsubmit="return false;">
+<form class="form-horizontal"
+      data-bind="with: settingsViewModel"
+      onsubmit="return false;">
     {% include "snippets/settings/server/serverOnlineCheckHost.jinja2" %}
     {% include "snippets/settings/server/serverOnlineCheckPort.jinja2" %}
     {% include "snippets/settings/server/serverOnlineCheckTestConnectivity.jinja2" %}
 </form>
 
-<p>{% trans %}
+<p>
+    {% trans %}
     If you also want to check if name resolution works (strongly recommended), define a host name
     to check name resolution against. If you don't know what to set here, the default value
     (OctoPrint's domain) should work. If you don't want to perform regular resolution checks along
     side with the general connectivity check, leave the field empty.
-{% endtrans %}</p>
+{% endtrans %}
+</p>
 
-<form class="form-horizontal" data-bind="with: settingsViewModel" onsubmit="return false;">
+<form class="form-horizontal"
+      data-bind="with: settingsViewModel"
+      onsubmit="return false;">
     <div class="control-group">
         {% include "snippets/settings/server/serverOnlineCheckName.jinja2" %}
         {% include "snippets/settings/server/serverOnlineCheckTestResolution.jinja2" %}
     </div>
 </form>
 
-<p>{% trans %}
+<p>
+    {% trans %}
     Finally, please decide on whether to enable or disable the connectivity check. You may change the configuration at
     any time through Settings > Server right from within OctoPrint.
-{% endtrans %}</p>
+{% endtrans %}
+</p>
 
 <div class="row-fluid">
-    <a href="#" class="btn span6" data-bind="click: function() { if(!setup() || decision()){disableOnlineCheck()}}, enable: !setup() || decision(), css: {disabled: setup() && !decision()}">
-        {{ _('Disable Connectivity Check') }}
+    <a href="#"
+       class="btn span6"
+       data-bind="click: function() { if(!setup() || decision()){disableOnlineCheck()}}, enable: !setup() || decision(), css: {disabled: setup() && !decision()}">
+        {{ _("Disable Connectivity Check") }}
     </a>
-    <a href="#" class="btn btn-primary span6" data-bind="click: function() { if(!setup() || !decision()){enableOnlineCheck()}}, enable: !setup() || !decision(), css: {disabled: setup() && decision()}">
-        {{ _('Enable Connectivity Check') }}
+    <a href="#"
+       class="btn btn-primary span6"
+       data-bind="click: function() { if(!setup() || !decision()){enableOnlineCheck()}}, enable: !setup() || !decision(), css: {disabled: setup() && decision()}">
+        {{ _("Enable Connectivity Check") }}
     </a>
 </div>
 
-<div class="onlinecheck_decision" style="display: none" data-bind="visible: setup()">
-    <div class="text-center" style="display: none" data-bind="visible: decision()">{% trans %}
+<div class="onlinecheck_decision"
+     style="display: none"
+     data-bind="visible: setup()">
+    <div class="text-center"
+         style="display: none"
+         data-bind="visible: decision()">
+        {% trans %}
         Connectivity check is <strong class="text-success">enabled</strong>.
-    {% endtrans %}</div>
-    <div class="text-center" style="display: none" data-bind="visible: !decision()">{% trans %}
-        Connectivity check is <strong class="text-danger">disabled</strong>.
-    {% endtrans %}</div>
+    {% endtrans %}
+</div>
+<div class="text-center"
+     style="display: none"
+     data-bind="visible: !decision()">
+    {% trans %}
+    Connectivity check is <strong class="text-danger">disabled</strong>.
+{% endtrans %}
+</div>
 </div>

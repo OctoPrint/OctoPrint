@@ -1,6 +1,11 @@
-<div id="wizard_dialog" class="modal hide fade-in large" data-backdrop="static" data-keyboard="false">
+<div id="wizard_dialog"
+     class="modal hide fade-in large"
+     data-backdrop="static"
+     data-keyboard="false">
     <div class="modal-header">
-        <h3><i class="fas fa-magic"></i> {{ _('Setup Wizard') }}</h3>
+        <h3>
+            <i class="fas fa-magic"></i> {{ _("Setup Wizard") }}
+        </h3>
     </div>
     <div class="modal-body">
         <div class="full-sized-box">
@@ -16,10 +21,15 @@
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                                 <li id="{{ data._div }}_link"
                                     {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                                    class="{% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
-                                        {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
-                                        >
-                                    <a href="#{{ data._div }}" data-toggle="tab">{% if "mandatory" in data and data.mandatory %}<strong>{{ entry }}</strong>{% else %}{{ entry }}{% endif %}</a>
+                                    class="{% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(" ") }}{% elif "classes" in data %}{{ data.classes|join(" ") }}{% endif %}"
+                                    {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}>
+                                    <a href="#{{ data._div }}" data-toggle="tab">
+                                        {% if "mandatory" in data and data.mandatory %}
+                                            <strong>{{ entry }}</strong>
+                                        {% else %}
+                                            {{ entry }}
+                                        {% endif %}
+                                    </a>
                                 </li>
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
                             {% endif %}
@@ -34,33 +44,36 @@
                             {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                             <div id="{{ data._div }}"
                                  {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                                 class="tab-pane {% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %} {% if classes_content in data %}{{ data.classes_content|join(' ') }}{% elif classes in data %}{{ data.classes|join(' ') }}{% endif %}"
-                                    {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif styles in data %} style="{{ data.styles|join(', ') }}" {% endif %}
-                                    >
-                                    {% if "mandatory" in data and data.mandatory %}
-                                        <div class="alert">{% trans %}
-                                            <strong>Mandatory Step!</strong> You need to fill this out now.
-                                        {% endtrans %}</div>
-                                    {% endif %}
-                                    {% include data.template ignore missing %}
-                            </div>
-                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
-                        {% endif %}
-                    {% endfor %}
-                </div>
+                                 class="tab-pane {% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %} {% if classes_content in data %}{{ data.classes_content|join(" ") }}{% elif classes in data %}{{ data.classes|join(" ") }}{% endif %}"
+                                 {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif styles in data %} style="{{ data.styles|join(', ') }}" {% endif %}>
+                                {% if "mandatory" in data and data.mandatory %}
+                                    <div class="alert">
+                                        {% trans %}
+                                        <strong>Mandatory Step!</strong> You need to fill this out now.
+                                    {% endtrans %}
+                                </div>
+                            {% endif %}
+                            {% include data.template ignore missing %}
+                        </div>
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                    {% endif %}
+                {% endfor %}
             </div>
         </div>
     </div>
-    <div class="modal-footer">
-        <div class="pull-right">
-            <button class="btn btn-primary button-next" name="next">{{ _('Next') }}</button>
-            <button class="btn btn-primary button-finish" style="display: none" name="finish">{{ _('Finish') }}</button>
-        </div>
-        <div class="pull-left">
-            <button class="btn button-previous" name="previous">{{ _('Previous') }}</button>
-        </div>
-        <div class="text-center" style="line-height: 20px; padding: 4px 12px;">
-            {{ _('Unless otherwise noted, you may just skip any wizard page by clicking "Next" or "Finish".') }}
-        </div>
+</div>
+<div class="modal-footer">
+    <div class="pull-right">
+        <button class="btn btn-primary button-next" name="next">{{ _("Next") }}</button>
+        <button class="btn btn-primary button-finish"
+                style="display: none"
+                name="finish">{{ _("Finish") }}</button>
     </div>
+    <div class="pull-left">
+        <button class="btn button-previous" name="previous">{{ _("Previous") }}</button>
+    </div>
+    <div class="text-center" style="line-height: 20px; padding: 4px 12px;">
+        {{ _("Unless otherwise noted, you may just skip any wizard page by clicking \"Next\" or \"Finish\".") }}
+    </div>
+</div>
 </div>

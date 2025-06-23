@@ -2,87 +2,133 @@
     {% trans %}
     Some plugins during the last restore could not be identified and hence not automatically installed.
     Please install them manually, they are listed below including their stated homepages:
-    {% endtrans %}
-    <ul data-bind="foreach: unknownPlugins">
-        <li><span data-bind="text: name"></span>: <a data-bind="text: url, attr: {href: url}" target="_blank" rel="noreferrer noopener"></a></li>
-    </ul>
-    <small><a href="javascript:void(0)" data-bind="click: deleteUnknownPluginRecord">{{ _('Delete record of unknown plugins') }}</a></small>
+{% endtrans %}
+<ul data-bind="foreach: unknownPlugins">
+    <li>
+        <span data-bind="text: name"></span>: <a data-bind="text: url, attr: {href: url}"
+    target="_blank"
+    rel="noreferrer noopener"></a>
+    </li>
+</ul>
+<small><a href="javascript:void(0)"
+   data-bind="click: deleteUnknownPluginRecord">{{ _("Delete record of unknown plugins") }}</a></small>
 </div>
 
-
-<h3>{{ _('Existing backups') }}</h3>
+<h3>{{ _("Existing backups") }}</h3>
 
 <div data-bind="visible: backups.allSize() <= 0">
-    <p>{{ _('There are no backups. Maybe create one below?') }}</p>
+    <p>{{ _("There are no backups. Maybe create one below?") }}</p>
 </div>
 <div data-bind="visible: backups.allSize() > 0">
-    <p>{{ _('These are the backups of your settings and files that already exist on this OctoPrint instance. You may delete, download or restore them.') }}</p>
+    <p>
+        {{ _("These are the backups of your settings and files that already exist on this OctoPrint instance. You may delete, download or restore them.") }}
+    </p>
 
     <div class="pull-left">
         <div class="btn-group">
-            <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="far fa-square"></i> <span class="caret"></span></button>
+            <button class="btn btn-small dropdown-toggle" data-toggle="dropdown">
+                <i class="far fa-square"></i> <span class="caret"></span>
+            </button>
             <ul class="dropdown-menu">
-                <li><a href="javascript:void(0)" data-bind="click: markFilesOnPage">{{ _('Select all on this page') }}</a></li>
-                <li><a href="javascript:void(0)" data-bind="click: markAllFiles">{{ _('Select all') }}</a></li>
+                <li>
+                    <a href="javascript:void(0)" data-bind="click: markFilesOnPage">{{ _("Select all on this page") }}</a>
+                </li>
+                <li>
+                    <a href="javascript:void(0)" data-bind="click: markAllFiles">{{ _("Select all") }}</a>
+                </li>
                 <li class="divider"></li>
-                <li><a href="javascript:void(0)" data-bind="click: clearMarkedFiles">{{ _('Clear selection') }}</a></li>
+                <li>
+                    <a href="javascript:void(0)" data-bind="click: clearMarkedFiles">{{ _("Clear selection") }}</a>
+                </li>
             </ul>
         </div>
-        <button class="btn btn-small" data-bind="click: removeMarkedFiles, enable: markedForBackupDeletion().length > 0">{{ _('Delete selected') }}</button>
+        <button class="btn btn-small"
+                data-bind="click: removeMarkedFiles, enable: markedForBackupDeletion().length > 0">
+            {{ _("Delete selected") }}
+        </button>
     </div>
-    <table class="table table-condensed table-hover" id="settings_plugin_backup_backup_table">
+    <table class="table table-condensed table-hover"
+           id="settings_plugin_backup_backup_table">
         <thead>
-        <tr>
-            <th class="settings_plugin_backup_checkbox"></th>
-            <th class="settings_plugin_backup_name">{{ _('Name') }}</th>
-            <th class="settings_plugin_backup_date">{{ _('Date') }}</th>
-            <th class="settings_plugin_backup_size">{{ _('Size') }}</th>
-            <th class="settings_plugin_backup_actions">{{ _('Action') }}</th>
-        </tr>
+            <tr>
+                <th class="settings_plugin_backup_checkbox"></th>
+                <th class="settings_plugin_backup_name">{{ _("Name") }}</th>
+                <th class="settings_plugin_backup_date">{{ _("Date") }}</th>
+                <th class="settings_plugin_backup_size">{{ _("Size") }}</th>
+                <th class="settings_plugin_backup_actions">{{ _("Action") }}</th>
+            </tr>
         </thead>
         <tbody data-bind="foreach: backups.paginatedItems">
-        <tr>
-            <td class="settings_plugin_backup_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForBackupDeletion"></td>
-            <td class="settings_plugin_backup_name" data-bind="text: name"></td>
-            <td class="settings_plugin_backup_date" data-bind="text: formatDate(date)"></td>
-            <td class="settings_plugin_backup_size"><i class="fa fa-warning text-error" data-bind="visible: $root.isAboveUploadSize($data)" title="{{ _("This backup exceeds the maximum allowed upload size")|edq }}"></i> <span data-bind="text: formatSize(size)"></span></td>
-            <td class="settings_plugin_backup_actions"><a href="javascript:void(0)" title="{{ _('Delete')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.removeBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Download')|edq }}" class="fas fa-download" data-bind="click: function() { $parent.reauthenticateDownload($data.url) }, attr: { href: url }"></a><span data-bind="visible: $parent.restoreSupported()">&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Restore')|edq }}" data-bind="click: function() { $parent.restoreBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()}"><i class="fas fa-sync"></i></a></span></td>
-        </tr>
+            <tr>
+                <td class="settings_plugin_backup_checkbox">
+                    <input type="checkbox"
+                           data-bind="value: name, checked: $root.markedForBackupDeletion">
+                </td>
+                <td class="settings_plugin_backup_name" data-bind="text: name"></td>
+                <td class="settings_plugin_backup_date"
+                    data-bind="text: formatDate(date)"></td>
+                <td class="settings_plugin_backup_size">
+                    <i class="fa fa-warning text-error"
+                       data-bind="visible: $root.isAboveUploadSize($data)"
+                       title="{{ _('This backup exceeds the maximum allowed upload size') |edq }}"></i> <span data-bind="text: formatSize(size)"></span>
+                </td>
+                <td class="settings_plugin_backup_actions">
+                    <a href="javascript:void(0)"
+                       title="{{ _('Delete') |edq }}"
+                       class="far fa-trash-alt"
+                       data-bind="click: function() { $parent.removeBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)"
+   title="{{ _('Download') |edq }}"
+   class="fas fa-download"
+   data-bind="click: function() { $parent.reauthenticateDownload($data.url) }, attr: { href: url }"></a><span data-bind="visible: $parent.restoreSupported()">&nbsp;|&nbsp;<a href="javascript:void(0)"
+   title="{{ _('Restore') |edq }}"
+   data-bind="click: function() { $parent.restoreBackup($data.name) }, css: {disabled: $root.backupInProgress() || $root.restoreInProgress()}"><i class="fas fa-sync"></i></a></span>
+                </td>
+            </tr>
         </tbody>
     </table>
     <div class="pagination pagination-mini pagination-centered">
         <ul>
-            <li data-bind="css: {disabled: backups.currentPage() === 0}"><a href="javascript:void(0)" data-bind="click: backups.prevPage">«</a></li>
+            <li data-bind="css: {disabled: backups.currentPage() === 0}">
+                <a href="javascript:void(0)" data-bind="click: backups.prevPage">«</a>
+            </li>
         </ul>
         <ul data-bind="foreach: backups.pages">
-            <li data-bind="css: { active: $data.number === $root.backups.currentPage(), disabled: $data.number === -1 }"><a href="javascript:void(0)" data-bind="text: $data.text, click: function() { $root.backups.changePage($data.number); }"></a></li>
+            <li data-bind="css: { active: $data.number === $root.backups.currentPage(), disabled: $data.number === -1 }">
+                <a href="javascript:void(0)"
+                   data-bind="text: $data.text, click: function() { $root.backups.changePage($data.number); }"></a>
+            </li>
         </ul>
         <ul>
-            <li data-bind="css: {disabled: backups.currentPage() === backups.lastPage()}"><a href="javascript:void(0)" data-bind="click: backups.nextPage">»</a></li>
+            <li data-bind="css: {disabled: backups.currentPage() === backups.lastPage()}">
+                <a href="javascript:void(0)" data-bind="click: backups.nextPage">»</a>
+            </li>
         </ul>
     </div>
 
     <p>
         <strong>{{ _("Note:") }}</strong>
-        {% trans marker="<i class='fa fa-warning text-error'></i>"|safe %}
-            OctoPrint currently only allows uploading backups of a maximum size of
-            {{ plugin_backup_max_upload_size_str }} via the UI. Backups larger than this can only be restored by command line,
-            or by adjusting the size by removing large contents (like timelapses) from the
-            zip prior to uploading. Backups exceeding this size limit are marked with a
-            {{ marker }} up there.
-        {% endtrans %}
-    </p>
+        {# djlint: off H008 #}{% trans marker="<i class='fa fa-warning text-error'></i>" | safe %}{# djlint: on #}
+        OctoPrint currently only allows uploading backups of a maximum size of
+        {{ plugin_backup_max_upload_size_str }} via the UI. Backups larger than this can only be restored by command line,
+        or by adjusting the size by removing large contents (like timelapses) from the
+        zip prior to uploading. Backups exceeding this size limit are marked with a
+        {{ marker }} up there.
+    {% endtrans %}
+</p>
 </div>
 
-<h3>{{ _('Create backup') }}</h3>
+<h3>{{ _("Create backup") }}</h3>
 
-<p>{{ _('Create a new backup of the current state.') }}</p>
+<p>{{ _("Create a new backup of the current state.") }}</p>
 
 <form class="form-horizontal" onsubmit="return false;">
-    <div class="control-group" title="{{ _('All files in the uploads folder and subfolders. These are the files in the Files List, plus any metadata that has been generated for those files.')|edq }}">
+    <div class="control-group"
+         title="{{ _('All files in the uploads folder and subfolders. These are the files in the Files List, plus any metadata that has been generated for those files.') |edq }}">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="value: 'uploads', checked: excludeFromBackup"> {{ _('Exclude uploaded files (& associated metadata) from backup') }}
+                <input type="checkbox"
+                       data-bind="value: 'uploads', checked: excludeFromBackup">
+                {{ _("Exclude uploaded files (& associated metadata) from backup") }}
             </label>
         </div>
     </div>
@@ -90,29 +136,37 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="value: 'timelapse', checked: excludeFromBackup"> {{ _('Exclude timelapses from backup') }}
+                <input type="checkbox"
+                       data-bind="value: 'timelapse', checked: excludeFromBackup">
+                {{ _("Exclude timelapses from backup") }}
             </label>
         </div>
     </div>
 
     <div class="control-group">
         <div class="controls">
-            <button class="btn btn-primary" data-bind="enable: !backupInProgress() && !restoreInProgress(), click: createBackup"><i class="fas fa-spinner fa-spin" data-bind="visible: backupInProgress"></i> {{ _('Create backup now') }}</button>
+            <button class="btn btn-primary"
+                    data-bind="enable: !backupInProgress() && !restoreInProgress(), click: createBackup">
+                <i class="fas fa-spinner fa-spin" data-bind="visible: backupInProgress"></i> {{ _("Create backup now") }}
+            </button>
 
-            <div class="progress progress-text-centered" style="margin-top: 1em" data-bind="visible: backupInProgress, css: { 'progress-striped' : backupProgressUnknown, active : backupProgressUnknown }">
+            <div class="progress progress-text-centered"
+                 style="margin-top: 1em"
+                 data-bind="visible: backupInProgress, css: { 'progress-striped' : backupProgressUnknown, active : backupProgressUnknown }">
                 <div class="bar" data-bind="style: {width: backupProgressString() + '%'}"></div>
-                <span class="progress-text-back" data-bind="css: { 'progress-text-front': (backupProgressString() >= 50), 'progress-text-back': (backupProgressString() < 50) }, text: backupProgressBarString()"></span>
+                <span class="progress-text-back"
+                      data-bind="css: { 'progress-text-front': (backupProgressString() >= 50), 'progress-text-back': (backupProgressString() < 50) }, text: backupProgressBarString()"></span>
             </div>
         </div>
     </div>
 </form>
 
 <div data-bind="visible: restoreSupported()">
-    <h3>{{ _('Restore from uploaded backup') }}</h3>
+    <h3>{{ _("Restore from uploaded backup") }}</h3>
 
-    <p>{{ _('Restore settings & files from an uploaded backup archive.') }}</p>
+    <p>{{ _("Restore settings & files from an uploaded backup archive.") }}</p>
 
-    {% set plugin_backup_upload_form_id='settings-backup-upload' %}
+    {% set plugin_backup_upload_form_id = "settings-backup-upload" %}
     {% include "snippets/backup_plugin_upload_form.jinja2" %}
 </div>
 
@@ -122,12 +176,18 @@
 
 <div id="settings_plugin_backup_restoredialog" class="modal hide fade">
     <div class="modal-header">
-        <h3>{{ _('Restoring from backup...') }}</h3>
+        <h3>{{ _("Restoring from backup...") }}</h3>
     </div>
     <div class="modal-body">
-        <pre id="settings_plugin_backup_restoredialog_output" class="pre-scrollable pre-output" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message', error: stream == 'error'}"></span></pre>
+        <pre id="settings_plugin_backup_restoredialog_output"
+             class="pre-scrollable pre-output"
+             style="height: 170px"
+             data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message', error: stream == 'error'}"></span></pre>
     </div>
     <div class="modal-footer">
-        <button class="btn" data-dismiss="modal" data-bind="enable: !$root.restoreInProgress()" aria-hidden="true">{{ _('Close') }}</button>
+        <button class="btn"
+                data-dismiss="modal"
+                data-bind="enable: !$root.restoreInProgress()"
+                aria-hidden="true">{{ _("Close") }}</button>
     </div>
 </div>

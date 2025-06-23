@@ -1,49 +1,66 @@
 <form class="form-horizontal" onsubmit="return false;">
 
     <div class="control-group">
-        <label class="control-label">{{ _('Nozzle Diameter') }}</label>
+        <label class="control-label">{{ _("Nozzle Diameter") }}</label>
         <div class="controls">
             <div class="input-append">
-                <input type="number" step="0.01" class="input-mini text-right" data-bind="value: nozzleDiameter" placeholder="0.4">
+                <input type="number"
+                       step="0.01"
+                       class="input-mini text-right"
+                       data-bind="value: nozzleDiameter"
+                       placeholder="0.4">
                 <span class="add-on">mm</span>
             </div>
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label">{{ _('Number of Extruders') }}</label>
+        <label class="control-label">{{ _("Number of Extruders") }}</label>
         <div class="controls">
-            <input type="number" class="input-mini text-right" min="1" data-bind="value: extruders">
-            <span class="help-block">{{ _('Make sure to specify number of extruders available on your printer or you might run into issues') }}</span>
+            <input type="number"
+                   class="input-mini text-right"
+                   min="1"
+                   data-bind="value: extruders">
+            <span class="help-block">{{ _("Make sure to specify number of extruders available on your printer or you might run into issues") }}</span>
         </div>
     </div>
     <div data-bind="visible: extruders() > 1" style="display: none">
         <div class="control-group">
-            <label class="control-label">{{ _('Shared nozzle') }}</label>
+            <label class="control-label">{{ _("Shared nozzle") }}</label>
             <div class="controls">
                 <input type="checkbox" data-bind="checked: sharedNozzle">
-                <span class="help-block">{{ _('Check this if your printer has a single nozzle and heater shared among its extruders instead of one nozzle and heater per extruder') }}</span>
+                <span class="help-block">{{ _("Check this if your printer has a single nozzle and heater shared among its extruders instead of one nozzle and heater per extruder") }}</span>
             </div>
         </div>
 
         <div data-bind="visible: !sharedNozzle()" style="display: none">
             <div class="control-group">
                 <div class="controls">
-                    {{ _('Please specify the nozzle offsets of the extruders relative to the first nozzle T0 <strong>if you haven\'t already done so in your firmware</strong>. Otherwise leave them at (0,0).') }}
+                    {{ _("Please specify the nozzle offsets of the extruders relative to the first nozzle T0 <strong>if you haven't already done so in your firmware</strong>. Otherwise leave them at (0,0).") }}
                 </div>
             </div>
 
             <!-- ko foreach: koExtruderOffsets -->
             <div class="control-group">
-                <label class="control-label">{{ _('Offset') }} T<span data-bind="text: idx"></span></label>
+                <label class="control-label">
+                    {{ _("Offset") }} T<span data-bind="text: idx"></span>
+                </label>
                 <div class="controls form-inline">
                     <label>X</label>
                     <div class="input-append">
-                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: x" placeholder="0">
+                        <input type="number"
+                               step="0.01"
+                               class="input-mini text-right"
+                               data-bind="value: x"
+                               placeholder="0">
                         <span class="add-on">mm</span>
                     </div>
                     <label>Y</label>
                     <div class="input-append">
-                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: y" placeholder="0">
+                        <input type="number"
+                               step="0.01"
+                               class="input-mini text-right"
+                               data-bind="value: y"
+                               placeholder="0">
                         <span class="add-on">mm</span>
                     </div>
                 </div>
@@ -52,15 +69,19 @@
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label" for="settings-defaultExtrusionLength">{{ _('Default extrusion length') }}</label>
+        <label class="control-label" for="settings-defaultExtrusionLength">{{ _("Default extrusion length") }}</label>
         <div class="controls">
             <div class="input-append">
-                <input type="number" class="input-mini text-right" min="1" data-bind="value: defaultExtrusionLength" id="settings-defaultExtrusionLength">
+                <input type="number"
+                       class="input-mini text-right"
+                       min="1"
+                       data-bind="value: defaultExtrusionLength"
+                       id="settings-defaultExtrusionLength">
                 <span class="add-on">mm</span>
             </div>
         </div>
     </div>
     <p>
-        <small>{{ _('This information is used for the graph and controls available in the "Temperature" tab, the GCODE viewer, when slicing from within OctoPrint and for deciding which toolchange commands are safe to send to the printer.') }}</small>
+        <small>{{ _("This information is used for the graph and controls available in the \"Temperature\" tab, the GCODE viewer, when slicing from within OctoPrint and for deciding which toolchange commands are safe to send to the printer.") }}</small>
     </p>
 </form>

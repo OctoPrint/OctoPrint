@@ -1,4 +1,9 @@
-<a href="javascript:void(0)" title="{{ _('System')|edq }}" aria-label="{{ _('System')|edq }}" class="dropdown-toggle" data-toggle="dropdown" data-bind="visible: system.systemActions().length > 0">
+<a href="javascript:void(0)"
+   title="{{ _('System') |edq }}"
+   aria-label="{{ _('System') |edq }}"
+   class="dropdown-toggle"
+   data-toggle="dropdown"
+   data-bind="visible: system.systemActions().length > 0">
     <i class="fas fa-power-off"></i>
     <b class="caret"></b>
 </a>
@@ -7,6 +12,9 @@
     <li class="divider"></li>
     <!-- /ko -->
     <!-- ko if: action != "divider" -->
-    <li><a href="javascript:void(0)" data-bind="click: $root.system.triggerCommand, text: name"></a></li>
+    <li>
+        <a href="javascript:void(0)"
+           data-bind="click: $root.system.triggerCommand, text: name"></a>
+    </li>
     <!-- /ko -->
 </ul>

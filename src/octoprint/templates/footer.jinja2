@@ -1,13 +1,36 @@
 <div class="footer">
     <ul id="footer_version" class="pull-left muted">
-        <li><small>{{ _('OctoPrint') }} <span class="version">{{ display_version }}</span></small></li>
-        <li><small>{{ _('Python') }} <span class="python_version">{{ python_version }}</span></small></li>
+        <li>
+            <small>{{ _("OctoPrint") }} <span class="version">{{ display_version }}</span></small>
+        </li>
+        <li>
+            <small>{{ _("Python") }} <span class="python_version">{{ python_version }}</span></small>
+        </li>
     </ul>
     <ul id="footer_links" class="pull-right">
-        <li><a href="https://octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fas fa-home"></i> {{ _('Web') }}</a></li>
-        <li><a href="https://octoprint.org/support-octoprint/?utm_source=octoprint&utm_medium=footer&utm_campaign=funding" target="_blank" rel="noreferrer noopener"><i class="fas fa-donate"></i> {{ _('Donate') }}</a></li>
-        <li id="footer_about"><a href="javascript:void(0)" data-bind="click: function() { show('about_about') }"><i class="fas fa-info-circle"></i> {{ _('About') }}</a></li>
-        <li id="footer_achievements" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.PLUGIN_ACHIEVEMENTS_VIEW)"><a href="javascript:void(0)" data-bind="click: function() { show('about_plugin_achievements') }"><i class="fas fa-trophy"></i> {{ _('Achievements') }}</a></li>
-        <li id="footer_systeminfo" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.SYSTEM)"><a href="javascript:void(0)" data-bind="click: function() { show('about_systeminfo') }"><i class="fas fa-flag-checkered"></i> {{ _('System') }}</a></li>
+        <li>
+            <a href="https://octoprint.org"
+               target="_blank"
+               rel="noreferrer noopener"><i class="fas fa-home"></i> {{ _("Web") }}</a>
+        </li>
+        <li>
+            <a href="https://octoprint.org/support-octoprint/?utm_source=octoprint&utm_medium=footer&utm_campaign=funding"
+               target="_blank"
+               rel="noreferrer noopener"><i class="fas fa-donate"></i> {{ _("Donate") }}</a>
+        </li>
+        <li id="footer_about">
+            <a href="javascript:void(0)"
+               data-bind="click: function() { show('about_about') }"><i class="fas fa-info-circle"></i> {{ _("About") }}</a>
+        </li>
+        <li id="footer_achievements"
+            data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.PLUGIN_ACHIEVEMENTS_VIEW)">
+            <a href="javascript:void(0)"
+               data-bind="click: function() { show('about_plugin_achievements') }"><i class="fas fa-trophy"></i> {{ _("Achievements") }}</a>
+        </li>
+        <li id="footer_systeminfo"
+            data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.SYSTEM)">
+            <a href="javascript:void(0)"
+               data-bind="click: function() { show('about_systeminfo') }"><i class="fas fa-flag-checkered"></i> {{ _("System") }}</a>
+        </li>
     </ul>
 </div>

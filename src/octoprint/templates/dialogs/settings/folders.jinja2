@@ -1,71 +1,106 @@
 <form class="form-horizontal" onsubmit="return false;">
-    <h3>{{ _('Folders') }}</h3>
+    <h3>{{ _("Folders") }}</h3>
 
-    <div class="control-group" data-bind="css: {error: testFolderConfigError.uploads, success: testFolderConfigSuccess.uploads}">        <label class="control-label" for="settings-folderUploads">{{ _('Upload Folder') }}</label>
+    <div class="control-group"
+         data-bind="css: {error: testFolderConfigError.uploads, success: testFolderConfigSuccess.uploads}">
+        <label class="control-label" for="settings-folderUploads">{{ _("Upload Folder") }}</label>
         <div class="controls">
             <div class="input-append input-block-level">
-                <input type="text" data-bind="value: folder_uploads, valueUpdate: 'input'" id="settings-folderUploads">
-                <a class="btn add-on" data-bind="click: function() { testFolderConfig('uploads'); }, enable: folder_uploads() && !testFolderConfigBusy(), css: {disabled: !folder_uploads() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+                <input type="text"
+                       data-bind="value: folder_uploads, valueUpdate: 'input'"
+                       id="settings-folderUploads">
+                <a class="btn add-on"
+                   data-bind="click: function() { testFolderConfig('uploads'); }, enable: folder_uploads() && !testFolderConfigBusy(), css: {disabled: !folder_uploads() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin"
+   data-bind="visible: testFolderConfigBusy"></i> {{ _("Test") }}</a>
             </div>
-            <span class="help-block" data-bind="visible: testFolderConfigBroken.uploads() || testFolderConfigOk.uploads(), text: testFolderConfigText.uploads"></span>
+            <span class="help-block"
+                  data-bind="visible: testFolderConfigBroken.uploads() || testFolderConfigOk.uploads(), text: testFolderConfigText.uploads"></span>
         </div>
     </div>
-    <div class="control-group" data-bind="css: {error: testFolderConfigError.timelapse, success: testFolderConfigSuccess.timelapse}">
-        <label class="control-label" for="settings-folderTimelapse">{{ _('Timelapse Folder') }}</label>
+    <div class="control-group"
+         data-bind="css: {error: testFolderConfigError.timelapse, success: testFolderConfigSuccess.timelapse}">
+        <label class="control-label" for="settings-folderTimelapse">{{ _("Timelapse Folder") }}</label>
         <div class="controls">
             <div class="input-append input-block-level">
-                <input type="text" class="input-block-level" data-bind="value: folder_timelapse, valueUpdate: 'input'" id="settings-folderTimelapse">
-                <a class="btn add-on" data-bind="click: function() { testFolderConfig('timelapse'); }, enable: folder_timelapse() && !testFolderConfigBusy(), css: {disabled: !folder_timelapse() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+                <input type="text"
+                       class="input-block-level"
+                       data-bind="value: folder_timelapse, valueUpdate: 'input'"
+                       id="settings-folderTimelapse">
+                <a class="btn add-on"
+                   data-bind="click: function() { testFolderConfig('timelapse'); }, enable: folder_timelapse() && !testFolderConfigBusy(), css: {disabled: !folder_timelapse() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin"
+   data-bind="visible: testFolderConfigBusy"></i> {{ _("Test") }}</a>
             </div>
-            <span class="help-block" data-bind="visible: testFolderConfigBroken.timelapse() || testFolderConfigOk.timelapse(), text: testFolderConfigText.timelapse"></span>
+            <span class="help-block"
+                  data-bind="visible: testFolderConfigBroken.timelapse() || testFolderConfigOk.timelapse(), text: testFolderConfigText.timelapse"></span>
         </div>
     </div>
-    <div class="control-group" data-bind="css: {error: testFolderConfigError.watched, success: testFolderConfigSuccess.watched}">
-        <label class="control-label" for="settings-folderWatched">{{ _('Watched Folder') }}</label>
+    <div class="control-group"
+         data-bind="css: {error: testFolderConfigError.watched, success: testFolderConfigSuccess.watched}">
+        <label class="control-label" for="settings-folderWatched">{{ _("Watched Folder") }}</label>
         <div class="controls">
             <div class="input-append input-block-level">
-                <input type="text" data-bind="value: folder_watched, valueUpdate: 'input'" id="settings-folderWatched">
-                <a class="btn add-on" data-bind="click: function() { testFolderConfig('watched'); }, enable: folder_watched() && !testFolderConfigBusy(), css: {disabled: !folder_watched() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testFolderConfigBusy"></i> {{ _('Test') }}</a>
+                <input type="text"
+                       data-bind="value: folder_watched, valueUpdate: 'input'"
+                       id="settings-folderWatched">
+                <a class="btn add-on"
+                   data-bind="click: function() { testFolderConfig('watched'); }, enable: folder_watched() && !testFolderConfigBusy(), css: {disabled: !folder_watched() || testFolderConfigBusy()}"><i class="fas fa-spinner fa-spin"
+   data-bind="visible: testFolderConfigBusy"></i> {{ _("Test") }}</a>
             </div>
-            <span class="help-block" data-bind="visible: testFolderConfigBroken.watched() || testFolderConfigOk.watched(), text: testFolderConfigText.watched"></span>
+            <span class="help-block"
+                  data-bind="visible: testFolderConfigBroken.watched() || testFolderConfigOk.watched(), text: testFolderConfigText.watched"></span>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_pollWatched" id="settings-featurePollWatched"> {{ _('Actively poll the watched folder. Check this if files in your watched folder aren\'t automatically added otherwise.') }}
+                <input type="checkbox"
+                       data-bind="checked: feature_pollWatched"
+                       id="settings-featurePollWatched">
+                {{ _("Actively poll the watched folder. Check this if files in your watched folder aren't automatically added otherwise.") }}
             </label>
         </div>
     </div>
     <div class="alert alert-error" data-bind="visible: testFoldersDuplicate">
         {% trans %}
-            Two or more of the folders configured share a location. This is not
-            supported. You need to fix this, until then no changes to your folder
-            configuration will be persisted when saving the settings.
-        {% endtrans %}
+        Two or more of the folders configured share a location. This is not
+        supported. You need to fix this, until then no changes to your folder
+        configuration will be persisted when saving the settings.
+    {% endtrans %}
+</div>
+
+<p>
+    {% trans %}
+    Please note: Not all of the folders used by OctoPrint can be configured through the UI, only those most commonly moved to other places. If you need to configure other folders,
+    please do so by manually editing the configuration. See the docs for details.
+{% endtrans %}
+</p>
+
+<h3>{{ _("Disk space thresholds") }}</h3>
+
+<p>{{ _("If the free disk space falls below these thresholds, OctoPrint will warn the user.") }}</p>
+
+<div class="control-group"
+     title="{{ ('Threshold after which to warn about the remaining free space on disk.') }}">
+    <label class="control-label" for="settings-serverDiskusageWarning">{{ _("Warning") }}</label>
+    <div class="controls">
+        <input type="text"
+               class="input-mini text-right"
+               data-bind="value: server_diskspace_warning_str"
+               id="settings-serverDiskusageWarning">
     </div>
-
-    <p>{% trans %}
-        Please note: Not all of the folders used by OctoPrint can be configured through the UI, only those most commonly moved to other places. If you need to configure other folders,
-        please do so by manually editing the configuration. See the docs for details.
-    {% endtrans %}</p>
-
-    <h3>{{ _('Disk space thresholds') }}</h3>
-
-    <p>{{ _('If the free disk space falls below these thresholds, OctoPrint will warn the user.') }}</p>
-
-    <div class="control-group" title="{{ ('Threshold after which to warn about the remaining free space on disk.') }}">
-        <label class="control-label" for="settings-serverDiskusageWarning">{{ _('Warning') }}</label>
-        <div class="controls">
-            <input type="text" class="input-mini text-right" data-bind="value: server_diskspace_warning_str" id="settings-serverDiskusageWarning">
-        </div>
+</div>
+<div class="control-group"
+     title="{{ ('Threshold after which to consider remaining free space on disk as critical.') }}">
+    <label class="control-label" for="settings-serverDiskusageCritical">{{ _("Critical") }}</label>
+    <div class="controls">
+        <input type="text"
+               class="input-mini text-right"
+               data-bind="value: server_diskspace_critical_str"
+               id="settings-serverDiskusageCritical">
     </div>
-    <div class="control-group" title="{{ ('Threshold after which to consider remaining free space on disk as critical.') }}">
-        <label class="control-label" for="settings-serverDiskusageCritical">{{ _('Critical') }}</label>
-        <div class="controls">
-            <input type="text" class="input-mini text-right" data-bind="value: server_diskspace_critical_str" id="settings-serverDiskusageCritical">
-        </div>
-    </div>
+</div>
 
-    <p>{% trans %}Provide values including size unit. Allowed units are: b, byte, bytes, kb, mb, gb, tb (case insensitive). Example: <code>5MB</code>, <code>500KB</code>{% endtrans %}</p>
+<p>
+    {% trans %}Provide values including size unit. Allowed units are: b, byte, bytes, kb, mb, gb, tb (case insensitive). Example: <code>5MB</code>, <code>500KB</code>{% endtrans %}
+</p>
 </form>

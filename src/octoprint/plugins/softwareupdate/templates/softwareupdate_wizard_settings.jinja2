@@ -1,10 +1,12 @@
-<h3>{{ _('Software Update') }}</h3>
+<h3>{{ _("Software Update") }}</h3>
 
-{% trans %}<p>
+{% trans %}
+<p>
     By default, OctoPrint will update itself via <code>pip</code> to published releases or commits pushed
     to Github. OctoPrint can also update itself via <code>git</code> to arbitrary development branches you need to check out manually.
     If you want to do that though it needs to know its checkout folder. You can configure that here.
-</p>{% endtrans %}
+</p>
+{% endtrans %}
 
 <form class="form-horizontal" onsubmit="return false;">
     {% include "snippets/versionTracking.jinja2" %}
@@ -12,8 +14,10 @@
     {% include "snippets/trackedBranch.jinja2" %}
 </form>
 
-{% trans %}<p>
+{% trans %}
+<p>
     If you are running a release version of OctoPrint, leave at "Release" tracking. If you are running a different
     branch however on a manual checkout, you should setup "Local Checkout" tracking. For more special cases you might
     want to select "Github Commit" tracking - you normally shouldn't need to however.
-</p>{% endtrans %}
+</p>
+{% endtrans %}

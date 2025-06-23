@@ -1,23 +1,45 @@
 <div class="terminal">
-    <pre id="terminal-output" class="pre-scrollable pre-output" data-bind="foreach: displayedLines, visible: fancyFunctionality(), click: function(){ gotoTerminalCommand(); }, event: { scroll: terminalScrollEvent }"><span data-bind="text: line + '\n', css: {muted: display == 'filtered' || display == 'cut', 'text-error': type == 'warn'}"></span></pre>
-    <pre id="terminal-output-lowfi" style="display: none" class="pre-scrollable" data-bind="text: plainLogOutput, visible: !fancyFunctionality()"></pre>
-    <div id="terminal-sendpanel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
+    <pre id="terminal-output"
+         class="pre-scrollable pre-output"
+         data-bind="foreach: displayedLines, visible: fancyFunctionality(), click: function(){ gotoTerminalCommand(); }, event: { scroll: terminalScrollEvent }"><span data-bind="text: line + '\n', css: {muted: display == 'filtered' || display == 'cut', 'text-error': type == 'warn'}"></span></pre>
+    <pre id="terminal-output-lowfi"
+         style="display: none"
+         class="pre-scrollable"
+         data-bind="text: plainLogOutput, visible: !fancyFunctionality()"></pre>
+    <div id="terminal-sendpanel"
+         style="display: none"
+         data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
         <div class="input-block-level input-append">
-            <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()" autocomplete="off">
-            <a class="btn add-on" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">{{ _('Send') }}</a>
+            <input type="text"
+                   id="terminal-command"
+                   data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()"
+                   autocomplete="off">
+            <a class="btn add-on"
+               id="terminal-send"
+               data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">{{ _("Send") }}</a>
         </div>
     </div>
-    <small id="terminal-autoscroll-panel" class="pull-left" data-bind="visible: fancyFunctionality()">
-        <button class="btn btn-mini terminal-autoscroll" data-bind="click: toggleAutoscroll, css: {active: autoscrollEnabled}">{{ _('Autoscroll') }}</button>
+    <small id="terminal-autoscroll-panel"
+           class="pull-left"
+           data-bind="visible: fancyFunctionality()">
+        <button class="btn btn-mini terminal-autoscroll"
+                data-bind="click: toggleAutoscroll, css: {active: autoscrollEnabled}">{{ _("Autoscroll") }}</button>
         <span data-bind="text: lineCount, visible: enableFancyFunctionality"></span>
-        <span data-bind="visible: !autoscrollEnabled() && enableFancyFunctionality()" style="display: none">(<a href="javascript:void(0)" data-bind="click: scrollToEnd">{{ _("Scroll to end") }}</a>)</span>
+        <span data-bind="visible: !autoscrollEnabled() && enableFancyFunctionality()"
+              style="display: none">(<a href="javascript:void(0)" data-bind="click: scrollToEnd">{{ _("Scroll to end") }}</a>)</span>
     </small>
     <small id="terminal-actions-panel" class="pull-right">
-        <a href="javascript:void(0)" data-bind="click: copyAll"><i class="fas fa-copy terminal-copy-all" title="{{ _('Copy all')|edq }}"></i> {{ _('Copy all') }}</a><br>
-        <a href="javascript:void(0)" data-bind="click: clearAllLogs"><i class="far fa-trash-alt terminal-clear-logs" title="{{ _('Clear log window')|edq }}"></i> {{ _('Clear all') }}</a>
+        <a href="javascript:void(0)" data-bind="click: copyAll"><i class="fas fa-copy terminal-copy-all"
+   title="{{ _('Copy all') |edq }}"></i> {{ _("Copy all") }}</a>
+        <br>
+        <a href="javascript:void(0)" data-bind="click: clearAllLogs"><i class="far fa-trash-alt terminal-clear-logs"
+   title="{{ _('Clear log window') |edq }}"></i> {{ _("Clear all") }}</a>
     </small>
-    <small id="terminal-limited-functionality-panel" class="pull-left text-warning" data-bind="visible: !fancyFunctionality()" style="display: none">
-        {{ _('For performance reasons only a limited amount of terminal functionality is enabled right now.') }}
+    <small id="terminal-limited-functionality-panel"
+           class="pull-left text-warning"
+           data-bind="visible: !fancyFunctionality()"
+           style="display: none">
+        {{ _("For performance reasons only a limited amount of terminal functionality is enabled right now.") }}
     </small>
 </div>
 
@@ -25,22 +47,36 @@
     <div class="span6" id="terminal-filterpanel">
         <div data-bind="foreach: filters, visible: fancyFunctionality()">
             <label class="checkbox">
-                <input type="checkbox" data-bind="attr: { value: regex }, checked: $parent.activeFilters"> <span data-bind="text: name"></span>
+                <input type="checkbox"
+                       data-bind="attr: { value: regex }, checked: $parent.activeFilters">
+                <span data-bind="text: name"></span>
             </label>
         </div>
     </div>
 </div>
 
 <div>
-    <div><small><a href="#" class="muted" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL), toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#term .hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+    <div>
+        <small><a href="#"
+   class="muted"
+   data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL), toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#term .hide' }"><i class="fas fa-caret-right"></i> {{ _("Advanced options") }}</a></small>
+    </div>
     <div class="hide">
         <p class="row-fluid">
-            <button class="btn btn-primary btn-block" type="button" data-bind="click: fakeAck, enable: isOperational()">{{ _("Fake Acknowledgement") }}</button>
+            <button class="btn btn-primary btn-block"
+                    type="button"
+                    data-bind="click: fakeAck, enable: isOperational()">{{ _("Fake Acknowledgement") }}</button>
             <small class="muted">{{ _("If acknowledgements (\"ok\"s) sent by the firmware get lost due to issues with the serial communication to your printer, OctoPrint's communication with it can become stuck. If that happens, this can help. Please be advised that such occurrences hint at general communication issues with your printer which will probably negatively influence your printing results and which you should therefore try to resolve!") }}</small>
         </p>
         <p class="row-fluid">
-            <button class="btn btn-danger span6" type="button" data-bind="toggle: forceFancyFunctionality">{{ _('Force fancy functionality') }}</button>
-            <button class="btn btn-danger span6" type="button" data-bind="toggle: forceTerminalLogDuringPrinting">{{ _('Force terminal output during printing') }}</button>
+            <button class="btn btn-danger span6"
+                    type="button"
+                    data-bind="toggle: forceFancyFunctionality">{{ _("Force fancy functionality") }}</button>
+            <button class="btn btn-danger span6"
+                    type="button"
+                    data-bind="toggle: forceTerminalLogDuringPrinting">
+                {{ _("Force terminal output during printing") }}
+            </button>
             <small class="muted">{{ _("Some functionality of the terminal will be disabled if OctoPrint detects that your browser is too slow for that. You may force it back on here, but be aware that this might make your browser unresponsive.") }}</small>
         </p>
     </div>

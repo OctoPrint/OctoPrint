@@ -1360,8 +1360,8 @@ $(function () {
                                     progress_percent < 25
                                         ? "progress-danger"
                                         : progress_percent > 75
-                                        ? "progress-success"
-                                        : "progress-warning";
+                                          ? "progress-success"
+                                          : "progress-warning";
                                 var countdownText = _.sprintf(
                                     gettext("Updating in %(sec)i secs..."),
                                     {

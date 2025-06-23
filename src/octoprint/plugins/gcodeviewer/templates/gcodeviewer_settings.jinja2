@@ -1,23 +1,34 @@
 <h3>{{ _("GCode Viewer") }}</h3>
 <form class="form-horizontal" onsubmit="return false;">
-    <div class="control-group" title="{{ _('Skip/hide gcode until this string')|edq }}">
-        <label class="control-label" for="settings-gcodeviewer-skipUntilThis">{{ _('Skip to this') }}</label>
+    <div class="control-group"
+         title="{{ _('Skip/hide gcode until this string') |edq }}">
+        <label class="control-label" for="settings-gcodeviewer-skipUntilThis">{{ _("Skip to this") }}</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: settings.settings.plugins.gcodeviewer.skipUntilThis" id="settings-gcodeviewer-skipUntilThis" placeholder="; some comment at the start of your GCODE">
+            <input type="text"
+                   class="input-block-level"
+                   data-bind="value: settings.settings.plugins.gcodeviewer.skipUntilThis"
+                   id="settings-gcodeviewer-skipUntilThis"
+                   placeholder="; some comment at the start of your GCODE">
             <span class="help-block">
                 {% trans %}If provided, the GCode Viewer will search for a line beginning with this string. If found, all GCode up to that point will be skipped. This can be used to skip "purge/nozzle wipe" GCode in the viewer. Note the search is case sensitive.{% endtrans %}
             </span>
         </div>
     </div>
-    <div class="control-group" title="{{ _('Maximum size for which the GCode Viewer autoloads the file for preview')|edq }}">
-        <label class="control-label" for="settings-gcodeviewer-featureSizeThreshold">{{ _('File size threshold') }}</label>
+    <div class="control-group"
+         title="{{ _('Maximum size for which the GCode Viewer autoloads the file for preview') |edq }}">
+        <label class="control-label" for="settings-gcodeviewer-featureSizeThreshold">{{ _("File size threshold") }}</label>
         <div class="controls">
-            <input type="text" class="input-mini text-right" data-bind="value: sizeThresholdStr" id="settings-gcodeviewer-featureSizeThreshold">
-            <span class="help-inline">{{ _('on desktop')}}</span>
+            <input type="text"
+                   class="input-mini text-right"
+                   data-bind="value: sizeThresholdStr"
+                   id="settings-gcodeviewer-featureSizeThreshold">
+            <span class="help-inline">{{ _("on desktop") }}</span>
         </div>
         <div class="controls">
-            <input type="text" class="input-mini text-right" data-bind="value: mobileSizeThresholdStr">
-            <span class="help-inline">{{ _('on mobile')}}</span>
+            <input type="text"
+                   class="input-mini text-right"
+                   data-bind="value: mobileSizeThresholdStr">
+            <span class="help-inline">{{ _("on mobile") }}</span>
         </div>
         <div class="controls">
             <span class="help-inline">
@@ -26,28 +37,37 @@
         </div>
     </div>
     <fieldset>
-        <legend>{{ _('In-memory model compression') }}</legend>
-        <p>{% trans %}
+        <legend>{{ _("In-memory model compression") }}</legend>
+        <p>
+            {% trans %}
             In-memory model compression can help in reducing the memory consumption of the GCode Viewer and thus enable processing of files that would be too large to view otherwise.
-        {% endtrans %}</p>
+        {% endtrans %}
+    </p>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox"
+                       data-bind="checked: settings.settings.plugins.gcodeviewer.alwaysCompress"
+                       id="settings-gcodeviewer-compressionEnabled" />
+                {{ _("Always enable compression") }}
+            </label>
+            <span class="help-block">{% trans %}If turned on, the GCode Viewer will always use in-memory compression of the layer data. {% endtrans %}</span>
+        </div>
+    </div>
+    <div data-bind="ifnot: (settings.settings.plugins.gcodeviewer.alwaysCompress())">
         <div class="control-group">
+            <label class="control-label"
+                   for="settings-gcodeviewer-compressionSizeThreshold">{{ _("Compression threshold") }}</label>
             <div class="controls">
-                <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: settings.settings.plugins.gcodeviewer.alwaysCompress" id="settings-gcodeviewer-compressionEnabled" /> {{ _('Always enable compression') }}
-                </label>
-                <span class="help-block">{% trans %}If turned on, the GCode Viewer will always use in-memory compression of the layer data. {% endtrans %}</span>
+                <input type="text"
+                       class="input-mini text-right"
+                       data-bind="value: compressionSizeThresholdStr, disable: settings.settings.plugins.gcodeviewer.alwaysCompress"
+                       id="settings-gcodeviewer-compressionSizeThreshold">
+                <span class="help-block">
+                    {% trans %}If this is non-zero, the GCode Viewer will always use in-memory compression for GCode files if they exceed this size. Provide values including size unit. Allowed units are: b, byte, bytes, kb, mb, gb, tb (case insensitive). Example: <code>5MB</code>, <code>500KB</code>{% endtrans %}
+                </span>
             </div>
         </div>
-        <div data-bind="ifnot: (settings.settings.plugins.gcodeviewer.alwaysCompress())">
-            <div class="control-group">
-                <label class="control-label" for="settings-gcodeviewer-compressionSizeThreshold">{{ _('Compression threshold') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-mini text-right" data-bind="value: compressionSizeThresholdStr, disable: settings.settings.plugins.gcodeviewer.alwaysCompress" id="settings-gcodeviewer-compressionSizeThreshold">
-                    <span class="help-block">
-                        {% trans %}If this is non-zero, the GCode Viewer will always use in-memory compression for GCode files if they exceed this size. Provide values including size unit. Allowed units are: b, byte, bytes, kb, mb, gb, tb (case insensitive). Example: <code>5MB</code>, <code>500KB</code>{% endtrans %}
-                    </span>
-                </div>
-            </div>
-        </div>
-    </fieldset>
+    </div>
+</fieldset>
 </form>

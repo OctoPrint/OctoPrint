@@ -5,38 +5,45 @@
     </div>
     <div class="modal-body">
         <div data-bind="visible: !enableSlicingDialog()">
-            <p>{{ _('Slicing is currently disabled since no slicer has been configured yet. Please configure a slicer under "Settings".') }}</p>
+            <p>
+                {{ _("Slicing is currently disabled since no slicer has been configured yet. Please configure a slicer under \"Settings\".") }}
+            </p>
         </div>
         <div data-bind="visible: enableSlicingDialog()">
-            <p>{{ _('Please configure which slicer and which slicing profile to use and name the GCode file to slice to below, or click "Cancel" if you do not wish to slice the file now.') }}</p>
+            <p>
+                {{ _("Please configure which slicer and which slicing profile to use and name the GCode file to slice to below, or click \"Cancel\" if you do not wish to slice the file now.") }}
+            </p>
             <form class="form-horizontal" onsubmit="return false;">
                 <div class="control-group">
-                    <label class="control-label">{{ _('Slicer') }}</label>
+                    <label class="control-label">{{ _("Slicer") }}</label>
                     <div class="controls">
-                        <select data-bind="options: matchingSlicers, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicer...')|esq }}', value: slicer, valueAllowUnset: true"></select>
+                        <select data-bind="options: matchingSlicers, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _("Select a slicer...") |esq }}', value: slicer, valueAllowUnset: true">
+                        </select>
                     </div>
                 </div>
                 <div class="control-group">
-                    <label class="control-label">{{ _('Runs locally') }}</label>
+                    <label class="control-label">{{ _("Runs locally") }}</label>
                     <div class="controls">
                         <strong data-bind="text: slicerSameDevice() ? gettext('Yes') : gettext('No')"></strong>
-                        <span class="help-block"><small>{{ _('For performance reasons locally run slicers are disabled while printing') }}</small></span>
+                        <span class="help-block"><small>{{ _("For performance reasons locally run slicers are disabled while printing") }}</small></span>
                     </div>
                 </div>
                 <div class="control-group">
-                    <label class="control-label">{{ _('Slicing Profile') }}</label>
+                    <label class="control-label">{{ _("Slicing Profile") }}</label>
                     <div class="controls">
-                        <select data-bind="options: profiles, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicing profile...')|esq }}', value: profile, valueAllowUnset: true"></select>
+                        <select data-bind="options: profiles, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _("Select a slicing profile...") |esq }}', value: profile, valueAllowUnset: true">
+                        </select>
                     </div>
                 </div>
                 <div class="control-group">
-                    <label class="control-label">{{ _('Printer Profile') }}</label>
+                    <label class="control-label">{{ _("Printer Profile") }}</label>
                     <div class="controls">
-                        <select data-bind="options: printerProfiles.profiles.items, optionsText: 'name', optionsValue: 'id', value: printerProfile, optionsCaption: '{{ _('Select a printer profile...')|esq }}'"></select>
+                        <select data-bind="options: printerProfiles.profiles.items, optionsText: 'name', optionsValue: 'id', value: printerProfile, optionsCaption: '{{ _("Select a printer profile...") |esq }}'">
+                        </select>
                     </div>
                 </div>
                 <div class="control-group">
-                    <label class="control-label">{{ _('Output Filename') }}</label>
+                    <label class="control-label">{{ _("Output Filename") }}</label>
                     <div class="controls">
                         <div class="input-append">
                             <input type="text" data-bind="value: destinationFilename">
@@ -45,16 +52,19 @@
                     </div>
                 </div>
                 <div class="control-group">
-                    <label class="control-label">{{ _('After slicing...') }}</label>
+                    <label class="control-label">{{ _("After slicing...") }}</label>
                     <div class="controls">
-                        <select data-bind="options: afterSlicingOptions, optionsText: 'text', optionsValue: 'value', value: afterSlicing"></select>
+                        <select data-bind="options: afterSlicingOptions, optionsText: 'text', optionsValue: 'value', value: afterSlicing">
+                        </select>
                     </div>
                 </div>
             </form>
         </div>
     </div>
     <div class="modal-footer">
-        <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
-        <a href="#" class="btn btn-primary" data-bind="click: function() { if ($root.enableSliceButton()) { $root.slice() } }, enabled: enableSliceButton, css: {disabled: !$root.enableSliceButton()}, attr: {title: $root.sliceButtonTooltip}">{{ _('Slice') }}</a>
+        <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _("Cancel") }}</a>
+        <a href="#"
+           class="btn btn-primary"
+           data-bind="click: function() { if ($root.enableSliceButton()) { $root.slice() } }, enabled: enableSliceButton, css: {disabled: !$root.enableSliceButton()}, attr: {title: $root.sliceButtonTooltip}">{{ _("Slice") }}</a>
     </div>
 </div>

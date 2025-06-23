@@ -1,111 +1,141 @@
 <div data-bind="visible: !waitForApproval()">
-    <div id="canvas_container" class="canvas_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut }">
+    <div id="canvas_container"
+         class="canvas_container"
+         tabindex="0"
+         data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut }">
         <input id="gcode_slider_layers" type="text">
         <canvas id="gcode_canvas" width="568" height="568"></canvas>
         <input id="gcode_slider_commands" type="text" style="width: 554px">
     </div>
 
     <div class="layer-buttons btn-group-toolbar row-fluid">
-        <button type="button" class="btn btn-primary btn-medium span6" data-bind = "click: decrementLayer, enable: layerSelectionEnabled() && layerDownEnabled()">
+        <button type="button"
+                class="btn btn-primary btn-medium span6"
+                data-bind="click: decrementLayer, enable: layerSelectionEnabled() && layerDownEnabled()">
             <i class="fas fa-arrow-left"></i>
-            <span>{{ _('Previous layer') }}</span>
+            <span>{{ _("Previous layer") }}</span>
         </button>
-        <button type="button" class="btn btn-primary btn-medium span6" data-bind = "click: incrementLayer, enable: layerSelectionEnabled() && layerUpEnabled()">
-            <span>{{ _('Next layer') }}</span>
+        <button type="button"
+                class="btn btn-primary btn-medium span6"
+                data-bind="click: incrementLayer, enable: layerSelectionEnabled() && layerUpEnabled()">
+            <span>{{ _("Next layer") }}</span>
             <i class="fas fa-arrow-right"></i>
         </button>
     </div>
 
-    <div class="progress progress-text-centered" data-bind="css: { 'active': ui_progress_busy, 'progress-striped': ui_progress_busy }">
-        <div class="bar" data-bind="style: { width: ui_progress_percentage() + '%' }"></div>
-	<span class="progress-text-back" data-bind="css: { 'progress-text-front': (ui_progress_percentage() >= 50), 'progress-text-back': (ui_progress_percentage() < 50) }, text: ui_progress_text()"></span>
+    <div class="progress progress-text-centered"
+         data-bind="css: { 'active': ui_progress_busy, 'progress-striped': ui_progress_busy }">
+        <div class="bar"
+             data-bind="style: { width: ui_progress_percentage() + '%' }"></div>
+        <span class="progress-text-back"
+              data-bind="css: { 'progress-text-front': (ui_progress_percentage() >= 50), 'progress-text-back': (ui_progress_percentage() < 50) }, text: ui_progress_text()"></span>
     </div>
 
     <div class="row-fluid">
         <div class="span7">
-            <h1>{{ _('Model info') }}</h1>
+            <h1>{{ _("Model info") }}</h1>
             <p data-bind="html: ui_modelInfo"></p>
 
-            <h1>{{ _('Layer info') }}</h1>
+            <h1>{{ _("Layer info") }}</h1>
             <p data-bind="html: ui_layerInfo"></p>
         </div>
         <div class="span5">
-            <h1>{{ _('Renderer options') }}</h1>
+            <h1>{{ _("Renderer options") }}</h1>
 
             <p>
                 <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: renderer_syncProgress">{{ _('Sync with job progress') }}
+                    <input type="checkbox" data-bind="checked: renderer_syncProgress">
+                    {{ _("Sync with job progress") }}
                 </label>
             </p>
             <p>
                 <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: renderer_centerViewport">{{ _('Center viewport on model') }}
+                    <input type="checkbox" data-bind="checked: renderer_centerViewport">
+                    {{ _("Center viewport on model") }}
                 </label>
                 <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: renderer_zoomOnModel">{{ _('Zoom in on model') }}
-                </label>
-            </p>
-
-            <p>
-                <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: renderer_showMoves">{{ _('Show moves') }}
-                </label>
-                <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: renderer_showRetracts">{{ _('Show retracts') }}
-                </label>
-                <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: renderer_showPrinthead">{{ _('Show approx. print head position') }}
+                    <input type="checkbox" data-bind="checked: renderer_zoomOnModel">
+                    {{ _("Zoom in on model") }}
                 </label>
             </p>
 
             <p>
                 <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: renderer_showPrevious">{{ _('Also show previous layer') }}
+                    <input type="checkbox" data-bind="checked: renderer_showMoves">
+                    {{ _("Show moves") }}
                 </label>
                 <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: renderer_showCurrent">{{ _('Also show current layer') }}
+                    <input type="checkbox" data-bind="checked: renderer_showRetracts">
+                    {{ _("Show retracts") }}
                 </label>
                 <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: renderer_showNext">{{ _('Also show next layer') }}
+                    <input type="checkbox" data-bind="checked: renderer_showPrinthead">
+                    {{ _("Show approx. print head position") }}
                 </label>
             </p>
 
             <p>
-                <button class="btn btn-block" data-bind="click: reload, enable: enableReload">{{ _('Reload') }}</button>
-                <button class="btn btn-block" data-bind="click: resetViewport">{{ _('Reset viewport') }}</button>
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: renderer_showPrevious">
+                    {{ _("Also show previous layer") }}
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: renderer_showCurrent">
+                    {{ _("Also show current layer") }}
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: renderer_showNext">
+                    {{ _("Also show next layer") }}
+                </label>
+            </p>
+
+            <p>
+                <button class="btn btn-block" data-bind="click: reload, enable: enableReload">{{ _("Reload") }}</button>
+                <button class="btn btn-block" data-bind="click: resetViewport">{{ _("Reset viewport") }}</button>
             </p>
 
             <div class="advanced_options">
-                <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                <div>
+                    <small><a href="#"
+   class="muted"
+   data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fas fa-caret-right"></i> {{ _("Advanced options") }}</a></small>
+                </div>
                 <div class="hide">
                     <p>
                         <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: renderer_showFullSize">{{ _('Show visited bounding box') }}
+                            <input type="checkbox" data-bind="checked: renderer_showFullSize">
+                            {{ _("Show visited bounding box") }}
                         </label>
                         <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: renderer_showBoundingBox">{{ _('Show printed bounding box') }}
+                            <input type="checkbox" data-bind="checked: renderer_showBoundingBox">
+                            {{ _("Show printed bounding box") }}
                         </label>
                         <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: renderer_showLayerBoundingBox">{{ _('Show layer bounding box') }}
+                            <input type="checkbox" data-bind="checked: renderer_showLayerBoundingBox">
+                            {{ _("Show layer bounding box") }}
                         </label>
                         <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: renderer_showSegmentStarts">{{ _('Show segment starts') }}
+                            <input type="checkbox" data-bind="checked: renderer_showSegmentStarts">
+                            {{ _("Show segment starts") }}
                         </label>
                         <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: renderer_showDebugArcs">{{ _('Show debug arcs') }}
+                            <input type="checkbox" data-bind="checked: renderer_showDebugArcs">
+                            {{ _("Show debug arcs") }}
                         </label>
                         <label class="checkbox" data-bind="visible: OctoPrint.coreui.browser.chrome">
-                            <input type="checkbox" data-bind="checked: renderer_chromeArcFix">{{ _('Apply arc fix') }} <span class="label">{{ _('Chrome') }}</span>
+                            <input type="checkbox" data-bind="checked: renderer_chromeArcFix">
+                            {{ _("Apply arc fix") }} <span class="label">{{ _("Chrome") }}</span>
                             <span class="help-block">{{ _("See <a href='%(url)s' target='_blank'>issue #4117</a>.", url="https://github.com/OctoPrint/OctoPrint/issues/4117") }}</span>
                         </label>
                     </p>
                     <p>
                         <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: reader_hideEmptyLayers">{{ _('Hide empty layers') }} <span class="label">{{ _('Causes reload') }}</span>
+                            <input type="checkbox" data-bind="checked: reader_hideEmptyLayers">
+                            {{ _("Hide empty layers") }} <span class="label">{{ _("Causes reload") }}</span>
                         </label>
                     </p>
                     <p>
-                        <button class="btn btn-block" data-bind="click: resetOptions">{{ _('Reset options') }}</button>
+                        <button class="btn btn-block" data-bind="click: resetOptions">{{ _("Reset options") }}</button>
                     </p>
                 </div>
             </div>
@@ -123,37 +153,38 @@
     </div>
 </div>
 <div data-bind="visible: waitForApproval">
-    <h1>{{ _('Warning') }}</h1>
-    {% trans %}<p>
+    <h1>{{ _("Warning") }}</h1>
+    {% trans %}
+    <p>
         You've selected <strong data-bind="text: selectedFile.path"></strong> for printing which has a size of
         <strong data-bind="text: formatSize(selectedFile.size())"></strong>. Depending on your machine this
         might be too large for rendering and cause your browser to become unresponsive or crash.
     </p>
 
-    <p>
-        Are you sure you want to visualize this file nevertheless?
-    </p>{% endtrans %}
+    <p>Are you sure you want to visualize this file nevertheless?</p>
+{% endtrans %}
 
-    <p>
-        <button class="btn btn-warning btn-block" data-bind="click: approveLargeFile">
-            {{ _('Yes, please visualize %(name)s regardless of its size', name='<span data-bind="text: selectedFile.path"></span>'|safe) }}
-        </button>
-    <p>
+<p>
+    <button class="btn btn-warning btn-block" data-bind="click: approveLargeFile">
+        {{ _('Yes, please visualize %(name)s regardless of its size', name='<span data-bind="text: selectedFile.path"></span>'|safe) }}
+    </button>
+</p>
 
-    <div data-bind="ifnot: ((settings.settings.plugins.gcodeviewer.alwaysCompress()) ||
-	((settings.settings.plugins.gcodeviewer.compressionSizeThreshold() > 0) &&
-        (settings.settings.plugins.gcodeviewer.compressionSizeThreshold() <= selectedFile.size())))">
-        {% trans %}<p>
-            You may want to turn on in-memory compression to keep the memory usage of this page to a reasonable
-            level. You can change the main settings for compression in the plugin settings or you can force
-            compression for just this file here. It may also help if this file would normally make your browser
-            unresponsive or crash. Loading the file will become considerably slower.
-        </p>{% endtrans %}
+<div data-bind="ifnot: ((settings.settings.plugins.gcodeviewer.alwaysCompress()) || ((settings.settings.plugins.gcodeviewer.compressionSizeThreshold() > 0) && (settings.settings.plugins.gcodeviewer.compressionSizeThreshold() <= selectedFile.size())))">
+    {% trans %}
+    <p>
+        You may want to turn on in-memory compression to keep the memory usage of this page to a reasonable
+        level. You can change the main settings for compression in the plugin settings or you can force
+        compression for just this file here. It may also help if this file would normally make your browser
+        unresponsive or crash. Loading the file will become considerably slower.
+    </p>
+{% endtrans %}
 
-        <p>
-            <label class="checkbox">
-                <input type="checkbox" data-bind="checked: reader_forceCompression">{{ _('Force compression') }}
-            </label>
-        <p>
-    </div>
+<p>
+    <label class="checkbox">
+        <input type="checkbox" data-bind="checked: reader_forceCompression">
+        {{ _("Force compression") }}
+    </label>
+</p>
+</div>
 </div>

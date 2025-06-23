@@ -1068,8 +1068,8 @@ $(function () {
                                         _.isNumber(profile.chamber)
                                             ? profile.chamber
                                             : _.isNumber(parseInt(profile.chamber))
-                                            ? parseInt(profile.chamber)
-                                            : 0
+                                              ? parseInt(profile.chamber)
+                                              : 0
                                     )
                                 });
                             } catch (ex) {

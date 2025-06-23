@@ -1,6 +1,17 @@
 <!-- must be kept in sync with javascripts-preload.jinja2! -->
-{% assets "js_libs" %}<script type="text/javascript" src="{{ ASSET_URL }}"></script>{% endassets %}
-{% assets "js_client" %}<script type="text/javascript" src="{{ ASSET_URL }}"></script>{% endassets %}
-{% assets "js_plugins" %}<script type="text/javascript" src="{{ ASSET_URL }}"></script>{% endassets %}
-{% assets "js_core" %}<script type="text/javascript" src="{{ ASSET_URL }}"></script>{% endassets %}
-{% if g.locale %}<script type="text/javascript" src="{{ url_for('localeJs', locale=g.locale, domain='messages') }}"></script>{% endif %}
+{% assets "js_libs" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+{% endassets %}
+{% assets "js_client" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+{% endassets %}
+{% assets "js_plugins" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+{% endassets %}
+{% assets "js_core" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+{% endassets %}
+{% if g.locale %}
+    <script type="text/javascript"
+            src="{{ url_for('localeJs', locale=g.locale, domain='messages') }}"></script>
+{% endif %}

@@ -110,7 +110,7 @@ __plugin_name__ = gettext("GCode Viewer")
 __plugin_author__ = "Gina Häußge"
 __plugin_description__ = "Provides a GCODE viewer in OctoPrint's UI."
 __plugin_disabling_discouraged__ = gettext(
-    "Without this plugin the GCode Viewer in OctoPrint will no longer be " "available."
+    "Without this plugin the GCode Viewer in OctoPrint will no longer be available."
 )
 __plugin_license__ = "AGPLv3"
 __plugin_pythoncompat__ = ">=3.9,<4"

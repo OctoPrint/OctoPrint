@@ -1,7 +1,10 @@
-<h3>{{ _('Printer Profiles') }}</h3>
+<h3>{{ _("Printer Profiles") }}</h3>
 
 {% include "snippets/settings/printerprofiles/profiles.jinja2" %}
 
-<button class="btn pull-right" data-bind="click: function() { $root.printerProfiles.showEditProfileDialog(); }"><i class="fas fa-plus"></i> {{ _('Add Profile...') }}</button>
+<button class="btn pull-right"
+        data-bind="click: function() { $root.printerProfiles.showEditProfileDialog(); }">
+    <i class="fas fa-plus"></i> {{ _("Add Profile...") }}
+</button>
 
 {% include "snippets/settings/printerprofiles/profileEditor.jinja2" %}

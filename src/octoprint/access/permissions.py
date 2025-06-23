@@ -434,8 +434,7 @@ class Permissions(metaclass=PermissionsMetaClass):
     SETTINGS_READ = OctoPrintPermission(
         "Settings Access",
         gettext(
-            "Allows to read non sensitive settings. Mandatory for the "
-            "default UI to work."
+            "Allows to read non sensitive settings. Mandatory for the default UI to work."
         ),
         RoleNeed("settings_read"),
         default_groups=[USER_GROUP, READONLY_GROUP],

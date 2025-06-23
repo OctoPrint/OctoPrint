@@ -1,7 +1,18 @@
-<div id="settings_dialog" data-test-id="settings-dialog" class="modal hide fade-in large" tabindex="-1" role="dialog" aria-labelledby="settings_dialog_label" aria-hidden="true">
+<div id="settings_dialog"
+     data-test-id="settings-dialog"
+     class="modal hide fade-in large"
+     tabindex="-1"
+     role="dialog"
+     aria-labelledby="settings_dialog_label"
+     aria-hidden="true">
     <div class="modal-header">
-        <button type="button" data-test-id="settings-close-x" class="close" data-dismiss="modal">&times;</button>
-        <h3 id="settings_dialog_label">{{ _('OctoPrint Settings') }} <i class="fas fa-spinner fa-spin" data-bind="visible: receiving"></i></h3>
+        <button type="button"
+                data-test-id="settings-close-x"
+                class="close"
+                data-dismiss="modal">&times;</button>
+        <h3 id="settings_dialog_label">
+            {{ _("OctoPrint Settings") }} <i class="fas fa-spinner fa-spin" data-bind="visible: receiving"></i>
+        </h3>
     </div>
     <div class="modal-body">
         <div class="full-sized-box">
@@ -17,9 +28,8 @@
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                                 <li id="{{ data._div }}_link"
                                     {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                                    class="{% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
-                                    {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
-                                        >
+                                    class="{% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(" ") }}{% elif "classes" in data %}{{ data.classes|join(" ") }}{% endif %}"
+                                    {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}>
                                     <a href="#{{ data._div }}" data-toggle="tab">{{ entry }}</a>
                                 </li>
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
@@ -35,45 +45,68 @@
                             {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                             <div id="{{ data._div }}"
                                  {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
-                                 class="tab-pane {% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %} {% if classes_content in data %}{{ data.classes_content|join(' ') }}{% elif classes in data %}{{ data.classes|join(' ') }}{% endif %}"
-                                 {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif styles in data %} style="{{ data.styles|join(', ') }}" {% endif %}
-                                    >
-                                {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template ignore missing %}{% endtry %}
-                            </div>
-                            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
-                        {% endif %}
-                    {% endfor %}
-                </div>
+                                 class="tab-pane {% if ns.mark_active %}active{% set ns.mark_active = False %}{% endif %} {% if classes_content in data %}{{ data.classes_content|join(" ") }}{% elif classes in data %}{{ data.classes|join(" ") }}{% endif %}"
+                                 {% if "styles_content" in data %} style="{{ data.styles_content|join(', ') }}" {% elif styles in data %} style="{{ data.styles|join(', ') }}" {% endif %}>
+                                {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}
+                                {% include data.template ignore missing %}
+                            {% endtry %}
+                        </div>
+                        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+                    {% endif %}
+                {% endfor %}
             </div>
         </div>
     </div>
-    <div class="modal-footer">
-        <button class="btn aboutlink" data-bind="click: function() { about.show('about_about') }"><i class="fas fa-info-circle"></i> {{ _('About OctoPrint') }}</button>
-        <button class="btn systeminfolink" data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.SYSTEM), click: function() { about.show('about_systeminfo') }"><i class="fas fa-flag-checkered"></i> {{ _('System info') }}</button>
-        <a href="{{ url_for('reverse_proxy_test', authenticated='') }}" class="btn reverseproxylink" target="_blank" rel="noopener noreferer"><i class="fas fa-check-double"></i> {{ _('Reverse Proxy Test') }}</a>
-        <button class="btn" data-test-id="settings-close-button" data-bind="click: function() { cancelData() }" aria-hidden="true">{{ _('Close') }}</button>
-        <button class="btn btn-primary" data-test-id="settings-save" data-bind="click: function() { saveData(undefined, $root.hide) }, enable: !exchanging(), css: {disabled: exchanging()}"><i class="fas fa-spinner fa-spin" data-bind="visible: sending"></i> {{ _('Save') }}</button>
-    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn aboutlink"
+            data-bind="click: function() { about.show('about_about') }">
+        <i class="fas fa-info-circle"></i> {{ _("About OctoPrint") }}
+    </button>
+    <button class="btn systeminfolink"
+            data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.SYSTEM), click: function() { about.show('about_systeminfo') }">
+        <i class="fas fa-flag-checkered"></i> {{ _("System info") }}
+    </button>
+    <a href="{{ url_for('reverse_proxy_test', authenticated='') }}"
+       class="btn reverseproxylink"
+       target="_blank"
+       rel="noopener noreferer"><i class="fas fa-check-double"></i> {{ _("Reverse Proxy Test") }}</a>
+    <button class="btn"
+            data-test-id="settings-close-button"
+            data-bind="click: function() { cancelData() }"
+            aria-hidden="true">{{ _("Close") }}</button>
+    <button class="btn btn-primary"
+            data-test-id="settings-save"
+            data-bind="click: function() { saveData(undefined, $root.hide) }, enable: !exchanging(), css: {disabled: exchanging()}">
+        <i class="fas fa-spinner fa-spin" data-bind="visible: sending"></i> {{ _("Save") }}
+    </button>
+</div>
 </div>
 
-<div id="settings_dialog_update_detected" class="modal hide fade-in" data-keyboard="false">
+<div id="settings_dialog_update_detected"
+     class="modal hide fade-in"
+     data-keyboard="false">
     <div class="modal-header">
-        <h3>{{ _('Settings update detected') }}</h3>
+        <h3>{{ _("Settings update detected") }}</h3>
     </div>
     <div class="modal-body">
-        <p>{% trans %}
+        <p>
+            {% trans %}
             The settings have been updated on the server. You may reload all settings,
             overwriting any changes you might have done locally, or alternatively
             only reload those settings you haven't changed locally.
-        {% endtrans %}</p>
-        <p>{% trans %}
-            How do you want to proceed?
-        {% endtrans %}</p>
+        {% endtrans %}
+    </p>
+    <p>
+        {% trans %}
+        How do you want to proceed?
+    {% endtrans %}
+</p>
+</div>
+<div class="modal-footer">
+    <div class="row-fluid">
+        <a href="#" class="btn btn-danger span6 reload_all">{{ _("Reload all") }}</a>
+        <a href="#" class="btn btn-primary span6 reload_nonconflicts">{{ _("Reload only non-conflicting changes") }}</a>
     </div>
-    <div class="modal-footer">
-        <div class="row-fluid">
-            <a href="#" class="btn btn-danger span6 reload_all">{{ _('Reload all') }}</a>
-            <a href="#" class="btn btn-primary span6 reload_nonconflicts">{{ _('Reload only non-conflicting changes') }}</a>
-        </div>
-    </div>
+</div>
 </div>

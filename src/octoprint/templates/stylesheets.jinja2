@@ -1,6 +1,22 @@
 <!-- must be kept in sync with stylesheets-preload.jinja2! -->
-{% assets "css_libs" %}<link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">{% endassets %}
-{% assets "css_core" %}<link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">{% endassets %}
-{% assets "css_plugins" %}<link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">{% endassets %}
-{% assets "less_core" %}<link href="{{ ASSET_URL }}" rel="stylesheet/less" type="text/css" media="screen">{% endassets %}
-{% assets "less_plugins" %}<link href="{{ ASSET_URL }}" rel="stylesheet/less" type="text/css" media="screen">{% endassets %}
+{% assets "css_libs" %}
+    <link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">
+{% endassets %}
+{% assets "css_core" %}
+    <link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">
+{% endassets %}
+{% assets "css_plugins" %}
+    <link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">
+{% endassets %}
+{% assets "less_core" %}
+    <link href="{{ ASSET_URL }}"
+          rel="stylesheet/less"
+          type="text/css"
+          media="screen">
+{% endassets %}
+{% assets "less_plugins" %}
+    <link href="{{ ASSET_URL }}"
+          rel="stylesheet/less"
+          type="text/css"
+          media="screen">
+{% endassets %}

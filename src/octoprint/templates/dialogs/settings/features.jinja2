@@ -3,101 +3,154 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_temperatureGraph" id="settings-featureTemperatureGraph"> {{ _('Enable Temperature Graph') }}
+                <input type="checkbox"
+                       data-bind="checked: feature_temperatureGraph"
+                       id="settings-featureTemperatureGraph">
+                {{ _("Enable Temperature Graph") }}
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_modelSizeDetection" id="settings-modelSizeDetection"> {{ _('Enable model size detection and warn if model exceeds print bed') }} <span class="label label-info">{{ _('Beta') }}</span>
+                <input type="checkbox"
+                       data-bind="checked: feature_modelSizeDetection"
+                       id="settings-modelSizeDetection">
+                {{ _("Enable model size detection and warn if model exceeds print bed") }} <span class="label label-info">{{ _("Beta") }}</span>
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_rememberFileFolder" id="settings-rememberFileFolder"> {{ _('Remember selected folder in file list') }}
+                <input type="checkbox"
+                       data-bind="checked: feature_rememberFileFolder"
+                       id="settings-rememberFileFolder">
+                {{ _("Remember selected folder in file list") }}
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_printStartConfirmation" id="settings-printStartConfirmation"> {{ _('Confirm before starting a print') }}
+                <input type="checkbox"
+                       data-bind="checked: feature_printStartConfirmation"
+                       id="settings-printStartConfirmation">
+                {{ _("Confirm before starting a print") }}
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_printCancelConfirmation" id="settings-printCancelConfirmation"> {{ _('Confirm before cancelling a print') }}
+                <input type="checkbox"
+                       data-bind="checked: feature_printCancelConfirmation"
+                       id="settings-printCancelConfirmation">
+                {{ _("Confirm before cancelling a print") }}
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_uploadOverwriteConfirmation" id="settings-uploadOverwriteConfirmation"> {{ _('Confirm before overwriting a file by upload') }}
+                <input type="checkbox"
+                       data-bind="checked: feature_uploadOverwriteConfirmation"
+                       id="settings-uploadOverwriteConfirmation">
+                {{ _("Confirm before overwriting a file by upload") }}
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_fileDeleteConfirmation" id="settings-fileDeleteConfirmation"> {{ _('Confirm before deleting a file') }}
+                <input type="checkbox"
+                       data-bind="checked: feature_fileDeleteConfirmation"
+                       id="settings-fileDeleteConfirmation">
+                {{ _("Confirm before deleting a file") }}
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_enableDragDropUpload" id="settings-enableDragDropUpload"> {{ _('Enable drag and drop upload overlay') }}
+                <input type="checkbox"
+                       data-bind="checked: feature_enableDragDropUpload"
+                       id="settings-enableDragDropUpload">
+                {{ _("Enable drag and drop upload overlay") }}
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_sdSupport" id="settings-featureSdSupport"> {{ _('Enable SD support') }}
+                <input type="checkbox"
+                       data-bind="checked: feature_sdSupport"
+                       id="settings-featureSdSupport">
+                {{ _("Enable SD support") }}
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_keyboardControl" id="settings-featureKeyboardControl"> {{ _("Enable Keyboard Control") }}
+                <input type="checkbox"
+                       data-bind="checked: feature_keyboardControl"
+                       id="settings-featureKeyboardControl">
+                {{ _("Enable Keyboard Control") }}
             </label>
         </div>
     </div>
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_g90InfluencesExtruder" id="settings-g90InfluencesExtruder">
-                {{ _('<code>G90</code>/<code>G91</code> overrides relative extruder mode') }} <span class="label">{{ _('Smoothieware') }}</span> <span class="label">{{ _('Marlin 2+') }} </span>
-                <span class="help-block">{{ _('This is used by the GCODE analysis in the backend and the viewer in the frontend to interpret your sliced files correctly.') }}</span>
+                <input type="checkbox"
+                       data-bind="checked: feature_g90InfluencesExtruder"
+                       id="settings-g90InfluencesExtruder">
+                {{ _("<code>G90</code>/<code>G91</code> overrides relative extruder mode") }} <span class="label">{{ _("Smoothieware") }}</span> <span class="label">{{ _("Marlin 2+") }}</span>
+                <span class="help-block">{{ _("This is used by the GCODE analysis in the backend and the viewer in the frontend to interpret your sliced files correctly.") }}</span>
             </label>
         </div>
     </div>
-    <div class="control-group" title="{{ _('Commands to not completely auto uppercase in the terminal tab')|edq }}">
-        <label class="control-label" for="settings-featureAutoUppercaseBlacklist">{{ _('Terminal Auto Uppercase Blacklist') }}</label>
+    <div class="control-group"
+         title="{{ _('Commands to not completely auto uppercase in the terminal tab') |edq }}">
+        <label class="control-label" for="settings-featureAutoUppercaseBlacklist">
+            {{ _("Terminal Auto Uppercase Blacklist") }}
+        </label>
         <div class="controls">
-            <input type="text" class="input-block-level" id="settings-featureAutoUppercaseBlacklist" data-bind="value: feature_autoUppercaseBlacklist">
-            <span class="help-block">{{ _('Use this to specify the commands that should not have their parameters automatically uppercased in the terminal tab. Just the G or M code, comma separated.') }}</span>
+            <input type="text"
+                   class="input-block-level"
+                   id="settings-featureAutoUppercaseBlacklist"
+                   data-bind="value: feature_autoUppercaseBlacklist">
+            <span class="help-block">{{ _("Use this to specify the commands that should not have their parameters automatically uppercased in the terminal tab. Just the G or M code, comma separated.") }}</span>
         </div>
     </div>
 
     <div class="control-group">
-        <label class="control-label">{{ _('Analyze gcode for time and model size estimates')}}</label>
+        <label class="control-label">{{ _("Analyze gcode for time and model size estimates") }}</label>
         <div class="controls">
             <label class="radio">
-                <input type="radio" name="analysisRunAtGroup" value="always" data-bind="checked: gcodeAnalysis_runAt" id="settings-gcodeAnalysis_runAtAlways"> {{ _('Always ') }}
+                <input type="radio"
+                       name="analysisRunAtGroup"
+                       value="always"
+                       data-bind="checked: gcodeAnalysis_runAt"
+                       id="settings-gcodeAnalysis_runAtAlways">
+                {{ _("Always ") }}
             </label>
             <label class="radio">
-                <input type="radio" name="analysisRunAtGroup" value="idle" data-bind="checked: gcodeAnalysis_runAt" id="settings-gcodeAnalysis_runAtIdle"> {{ _('Only when idle (not printing)') }}
+                <input type="radio"
+                       name="analysisRunAtGroup"
+                       value="idle"
+                       data-bind="checked: gcodeAnalysis_runAt"
+                       id="settings-gcodeAnalysis_runAtIdle">
+                {{ _("Only when idle (not printing)") }}
             </label>
             <label class="radio">
-                <input type="radio" name="analysisRunAtGroup" value="never" data-bind="checked: gcodeAnalysis_runAt" id="settings-gcodeAnalysis_runAtNever"> {{ _('Never') }}
+                <input type="radio"
+                       name="analysisRunAtGroup"
+                       value="never"
+                       data-bind="checked: gcodeAnalysis_runAt"
+                       id="settings-gcodeAnalysis_runAtNever">
+                {{ _("Never") }}
             </label>
         </div>
     </div>

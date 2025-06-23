@@ -1,43 +1,59 @@
-<legend>{{ _('Registered application keys') }}</legend>
+<legend>{{ _("Registered application keys") }}</legend>
 
 <div data-bind="visible: keys.allSize() <= 0">
-    <p>{{ _('There are no application keys registered yet.') }}</p>
+    <p>{{ _("There are no application keys registered yet.") }}</p>
 </div>
 <div data-bind="visible: keys.allSize() > 0">
-    <table class="table table-condensed table-hover" id="settings_plugin_appkeys_userkeys_table">
+    <table class="table table-condensed table-hover"
+           id="settings_plugin_appkeys_userkeys_table">
         <thead>
-        <tr>
-            <th class="settings_plugin_appkeys_app">{{ _('Application identifier') }}</th>
-            <th class="settings_plugin_appkeys_actions">{{ _('Action') }}</th>
-        </tr>
+            <tr>
+                <th class="settings_plugin_appkeys_app">{{ _("Application identifier") }}</th>
+                <th class="settings_plugin_appkeys_actions">{{ _("Action") }}</th>
+            </tr>
         </thead>
         <tbody data-bind="foreach: keys.paginatedItems">
-        <tr>
-            <td class="settings_plugin_appkeys_app">
-                <span data-bind="text: app_id"></span>
-            </td>
-            <td class="settings_plugin_appkeys_actions"><a href="javascript:void(0)" title="{{ _('Revoke')|edq }}" class="far fa-trash-alt" data-bind="click: function() { $parent.revokeKey($data) }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Details')|edq }}" class="fas fa-search" data-bind="click: function() { $parent.showKeyDetails($data) }"></a></td>
-        </tr>
+            <tr>
+                <td class="settings_plugin_appkeys_app">
+                    <span data-bind="text: app_id"></span>
+                </td>
+                <td class="settings_plugin_appkeys_actions">
+                    <a href="javascript:void(0)"
+                       title="{{ _('Revoke') |edq }}"
+                       class="far fa-trash-alt"
+                       data-bind="click: function() { $parent.revokeKey($data) }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)"
+   title="{{ _('Details') |edq }}"
+   class="fas fa-search"
+   data-bind="click: function() { $parent.showKeyDetails($data) }"></a>
+                </td>
+            </tr>
         </tbody>
     </table>
     <div class="pagination pagination-mini pagination-centered">
         <ul>
-            <li data-bind="css: {disabled: keys.currentPage() === 0}"><a href="javascript:void(0)" data-bind="click: keys.prevPage">«</a></li>
+            <li data-bind="css: {disabled: keys.currentPage() === 0}">
+                <a href="javascript:void(0)" data-bind="click: keys.prevPage">«</a>
+            </li>
         </ul>
         <ul data-bind="foreach: keys.pages">
-            <li data-bind="css: { active: $data.number === $root.keys.currentPage(), disabled: $data.number === -1 }"><a href="javascript:void(0)" data-bind="text: $data.text, click: function() { $root.keys.changePage($data.number); }"></a></li>
+            <li data-bind="css: { active: $data.number === $root.keys.currentPage(), disabled: $data.number === -1 }">
+                <a href="javascript:void(0)"
+                   data-bind="text: $data.text, click: function() { $root.keys.changePage($data.number); }"></a>
+            </li>
         </ul>
         <ul>
-            <li data-bind="css: {disabled: keys.currentPage() === keys.lastPage()}"><a href="javascript:void(0)" data-bind="click: keys.nextPage">»</a></li>
+            <li data-bind="css: {disabled: keys.currentPage() === keys.lastPage()}">
+                <a href="javascript:void(0)" data-bind="click: keys.nextPage">»</a>
+            </li>
         </ul>
     </div>
 </div>
 
-<legend>{{ _('Manually generate an application key') }}</legend>
+<legend>{{ _("Manually generate an application key") }}</legend>
 
 <form class="form-horizontal" onsubmit="return false;">
     <div class="control-group">
-        <label class="control-label">{{ _('Application identifier') }}</label>
+        <label class="control-label">{{ _("Application identifier") }}</label>
         <div class="controls">
             <input type="text" data-bind="value: editorApp, valueUpdate: 'input'">
         </div>
@@ -45,7 +61,10 @@
 
     <div class="control-group">
         <div class="controls">
-            <button class="btn btn-primary" data-bind="click: generateKey, enabled: editorApp, css: {disabled: !editorApp()}">{{ _('Generate') }}</button>
+            <button class="btn btn-primary"
+                    data-bind="click: generateKey, enabled: editorApp, css: {disabled: !editorApp()}">
+                {{ _("Generate") }}
+            </button>
         </div>
     </div>
 </form>

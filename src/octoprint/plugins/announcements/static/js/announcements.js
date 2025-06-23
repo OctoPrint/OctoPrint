@@ -66,8 +66,8 @@ $(function () {
             return data.forced
                 ? gettext("Cannot be toggled")
                 : data.enabled
-                ? gettext("Disable Channel")
-                : gettext("Enable Channel");
+                  ? gettext("Disable Channel")
+                  : gettext("Enable Channel");
         };
 
         self.enableToggle = function (data) {

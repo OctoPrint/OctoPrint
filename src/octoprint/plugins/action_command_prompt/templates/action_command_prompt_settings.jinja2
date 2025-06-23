@@ -1,41 +1,65 @@
-<h3>{{ _('Action Command Prompt Settings') }}</h3>
+<h3>{{ _("Action Command Prompt Settings") }}</h3>
 
 <form class="form-horizontal" onsubmit="return false;">
     <div class="control-group">
-        <label class="control-label">{{ _('Enable support')}}</label>
+        <label class="control-label">{{ _("Enable support") }}</label>
         <div class="controls">
             <label class="radio">
-                <input type="radio" name="pluginActionCommandPromptEnableGroup" value="detected" data-bind="checked: settings.plugins.action_command_prompt.enable"> {{ _('If detected as supported by the firmware (<code>PROMPT_SUPPORT</code> capability)') }}
+                <input type="radio"
+                       name="pluginActionCommandPromptEnableGroup"
+                       value="detected"
+                       data-bind="checked: settings.plugins.action_command_prompt.enable">
+                {{ _("If detected as supported by the firmware (<code>PROMPT_SUPPORT</code> capability)") }}
             </label>
             <label class="radio">
-                <input type="radio" name="pluginActionCommandPromptEnableGroup" value="always" data-bind="checked: settings.plugins.action_command_prompt.enable"> {{ _('Always') }}
+                <input type="radio"
+                       name="pluginActionCommandPromptEnableGroup"
+                       value="always"
+                       data-bind="checked: settings.plugins.action_command_prompt.enable">
+                {{ _("Always") }}
             </label>
             <label class="radio">
-                <input type="radio" name="pluginActionCommandPromptEnableGroup" value="never" data-bind="checked: settings.plugins.action_command_prompt.enable"> {{ _('Never') }}
+                <input type="radio"
+                       name="pluginActionCommandPromptEnableGroup"
+                       value="never"
+                       data-bind="checked: settings.plugins.action_command_prompt.enable">
+                {{ _("Never") }}
             </label>
         </div>
     </div>
     <div class="advanced_options">
-        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fas fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div>
+            <small><a href="#"
+   class="muted"
+   data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fas fa-caret-right"></i> {{ _("Advanced options") }}</a></small>
+        </div>
         <div class="hide">
             <div class="control-group">
-                <label class="control-label">{{ _('Dialog command') }}</label>
+                <label class="control-label">{{ _("Dialog command") }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: settings.plugins.action_command_prompt.command">
-                    <div class="help-block">{{ _('Use this to define the dialog command. Default is <code>M876</code>. You normally should not have to change this.') }}</div>
+                    <input type="text"
+                           class="input-block-level"
+                           data-bind="value: settings.plugins.action_command_prompt.command">
+                    <div class="help-block">
+                        {{ _("Use this to define the dialog command. Default is <code>M876</code>. You normally should not have to change this.") }}
+                    </div>
                 </div>
             </div>
             <div class="control-group">
                 <div class="controls">
                     <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: settings.plugins.action_command_prompt.enable_emergency_sending"> {{ _('Enable force sending of the configured command to bypass blocking firmware routines if detected as supported. You normally should not have to change this.') }}
+                        <input type="checkbox"
+                               data-bind="checked: settings.plugins.action_command_prompt.enable_emergency_sending">
+                        {{ _("Enable force sending of the configured command to bypass blocking firmware routines if detected as supported. You normally should not have to change this.") }}
                     </label>
                 </div>
             </div>
             <div class="control-group">
                 <div class="controls">
                     <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: settings.plugins.action_command_prompt.enable_signal_support"> {{ _('Enable signaling to the firmware that we support <code>prompt_*</code> actions if detected as supported. You normally should not have to change this.') }}
+                        <input type="checkbox"
+                               data-bind="checked: settings.plugins.action_command_prompt.enable_signal_support">
+                        {{ _("Enable signaling to the firmware that we support <code>prompt_*</code> actions if detected as supported. You normally should not have to change this.") }}
                     </label>
                 </div>
             </div>

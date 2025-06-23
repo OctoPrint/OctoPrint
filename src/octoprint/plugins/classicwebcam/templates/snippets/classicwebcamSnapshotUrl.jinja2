@@ -1,18 +1,31 @@
-<div class="control-group" title="{{ _('URL to use for retrieving webcam snapshot images for timelapse creation')|edq }}">
-    <label class="control-label" for="settings-webcamSnapshotUrl">{{ _('Snapshot URL') }}</label>
+<div class="control-group"
+     title="{{ _('URL to use for retrieving webcam snapshot images for timelapse creation') |edq }}">
+    <label class="control-label" for="settings-webcamSnapshotUrl">{{ _("Snapshot URL") }}</label>
     <div class="controls">
         <div class="input-append">
-            <input type="text" class="input-block-level" data-bind="value: snapshotUrl, valueUpdate: 'afterkeydown'" id="settings-webcamSnapshotUrl">
-            <button class="btn" type="button" data-bind="click: testWebcamSnapshotUrl, enable: snapshotUrl() && !testWebcamSnapshotUrlBusy(), css: {disabled: !snapshotUrl() || testWebcamSnapshotUrlBusy()}"><i class="fas fa-spinner fa-spin" data-bind="visible: testWebcamSnapshotUrlBusy"></i> {{ _('Test') }}</button>
+            <input type="text"
+                   class="input-block-level"
+                   data-bind="value: snapshotUrl, valueUpdate: 'afterkeydown'"
+                   id="settings-webcamSnapshotUrl">
+            <button class="btn"
+                    type="button"
+                    data-bind="click: testWebcamSnapshotUrl, enable: snapshotUrl() && !testWebcamSnapshotUrlBusy(), css: {disabled: !snapshotUrl() || testWebcamSnapshotUrlBusy()}">
+                <i class="fas fa-spinner fa-spin"
+                   data-bind="visible: testWebcamSnapshotUrlBusy"></i> {{ _("Test") }}
+            </button>
         </div>
         <div class="help-block">
-            <p>{% trans %}
+            <p>
+                {% trans %}
                 Fully qualified URL, needs to be reachable by OctoPrint's server.
-            {% endtrans %}</p>
-            <p class="text-error" data-bind="visible: snapshotUrlContainsAuth">{% trans %}
-                <strong>Heads-up!</strong> The URL you entered contains credentials. Providing credentials through the URL is deprecated according to RFC3986
-                and unsupported by OctoPrint. Please use the authentication settings under the advanced snapshot options instead.
-            {% endtrans %}</p>
-        </div>
-    </div>
+            {% endtrans %}
+        </p>
+        <p class="text-error" data-bind="visible: snapshotUrlContainsAuth">
+            {% trans %}
+            <strong>Heads-up!</strong> The URL you entered contains credentials. Providing credentials through the URL is deprecated according to RFC3986
+            and unsupported by OctoPrint. Please use the authentication settings under the advanced snapshot options instead.
+        {% endtrans %}
+    </p>
+</div>
+</div>
 </div>

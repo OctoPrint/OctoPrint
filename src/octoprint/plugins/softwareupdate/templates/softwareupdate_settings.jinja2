@@ -1,21 +1,30 @@
-<div class="alert" data-bind="visible: octoprintUnconfigured()">{% trans %}
+<div class="alert" data-bind="visible: octoprintUnconfigured()">
+    {% trans %}
     Please configure the <strong>checkout folder</strong> of OctoPrint, otherwise
     this plugin won't be able to update it. Click on the <i class="fas fa-wrench"></i> button
-    to do this. Also refer to the <a href="https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html" target="_blank">Documentation</a>.
-{% endtrans %}</div>
-<div class="alert" data-bind="visible: !octoprintUnconfigured() && octoprintUnreleased()">{% trans %}
+    to do this. Also refer to the <a href="https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html"
+    target="_blank">Documentation</a>.
+{% endtrans %}
+</div>
+<div class="alert"
+     data-bind="visible: !octoprintUnconfigured() && octoprintUnreleased()">
+    {% trans %}
     <p>
         <strong>You are running a non-release version of OctoPrint but are tracking OctoPrint
         releases.</strong>
-    </p><p>
+    </p>
+    <p>
         You probably want OctoPrint to track the matching development version instead.
         If you have a local OctoPrint checkout folder switched to another branch,
         <strong>simply switching over to "Commit" tracking</strong> will already
         take care of that. Otherwise please take a look at the
-        <a href="https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html" target="_blank">Documentation</a>.
+        <a href="https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html"
+           target="_blank">Documentation</a>.
     </p>
-{% endtrans %}</div>
-<div class="alert" data-bind="visible: !environmentSupported()">{% trans %}
+{% endtrans %}
+</div>
+<div class="alert" data-bind="visible: !environmentSupported()">
+    {% trans %}
     <p>
         <strong>This version of the Python environment is not supported for direct updates.</strong>
     </p>
@@ -24,15 +33,20 @@
         versions are required to use this updater to update OctoPrint or any installed plugins:
     </p>
 {% endtrans %}
-    <ul data-bind="foreach: environmentVersions">
-        <li><span data-bind="text: name"></span>: <span data-bind="text: minimum"></span> ({{ _('you have') }}: <span data-bind="text: current"></span>)</li>
-    </ul>
+<ul data-bind="foreach: environmentVersions">
+    <li>
+        <span data-bind="text: name"></span>: <span data-bind="text: minimum"></span> ({{ _("you have") }}: <span data-bind="text: current"></span>)
+    </li>
+</ul>
 {% trans %}
-    <p>
-        Please take a look at <a href="https://faq.octoprint.org/unsupported-python-environment" target="_blank">this FAQ entry on how to proceed</a>.
-    </p>
-{% endtrans %}</div>
-<div class="alert" data-bind="visible: !storageSufficient()">{% trans min_free_storage='<strong data-bind="text: formatSize(settings.settings.plugins.softwareupdate.minimum_free_storage() * 1024 * 1024)"></strong>'|safe %}
+<p>
+    Please take a look at <a href="https://faq.octoprint.org/unsupported-python-environment"
+    target="_blank">this FAQ entry on how to proceed</a>.
+</p>
+{% endtrans %}
+</div>
+<div class="alert" data-bind="visible: !storageSufficient()">
+    {% trans min_free_storage='<strong data-bind="text: formatSize(settings.settings.plugins.softwareupdate.minimum_free_storage() * 1024 * 1024)"></strong>'|safe %}
     <p>
         <strong>There is not enough free disk space available to run an update.</strong>
     </p>
@@ -41,15 +55,20 @@
         a minimum of {{ min_free_storage }} free disk space in various locations:
     </p>
 {% endtrans %}
-    <ul data-bind="foreach: storageFree">
-        <li><span data-bind="text: name"></span> (<span data-bind="text: path"></span>): <span data-bind="text: formatSize($data.free)"></span> free</li>
-    </ul>
+<ul data-bind="foreach: storageFree">
+    <li>
+        <span data-bind="text: name"></span> (<span data-bind="text: path"></span>): <span data-bind="text: formatSize($data.free)"></span> free
+    </li>
+</ul>
 {% trans %}
-    <p>
-        Please take a look at <a href="https://faq.octoprint.org/insufficient-disk-space" target="_blank">this FAQ entry on how to proceed</a>.
-    </p>
-{% endtrans %}</div>
-<div class="alert" data-bind="visible: throttled()">{% trans %}
+<p>
+    Please take a look at <a href="https://faq.octoprint.org/insufficient-disk-space"
+    target="_blank">this FAQ entry on how to proceed</a>.
+</p>
+{% endtrans %}
+</div>
+<div class="alert" data-bind="visible: throttled()">
+    {% trans %}
     <p>
         <strong>OctoPrint is running on a throttled system, updates are disabled.</strong>
     </p>
@@ -60,16 +79,19 @@
         wrong and to get hints on how to solve the problem.
     </p>
     <p>
-        Read more on this in <a href="https://faq.octoprint.org/pi-issues" target="_blank" rel="noopener noreferrer">the FAQ</a>.
+        Read more on this in <a href="https://faq.octoprint.org/pi-issues"
+    target="_blank"
+    rel="noopener noreferrer">the FAQ</a>.
     </p>
-{% endtrans %}</div>
+{% endtrans %}
+</div>
 
 <ul class="nav nav-pills">
     <li class="active">
-        <a href="#settings_plugin_softwareupdate_updates" data-toggle="tab">{{ _('Current versions') }}</a>
+        <a href="#settings_plugin_softwareupdate_updates" data-toggle="tab">{{ _("Current versions") }}</a>
     </li>
     <li>
-        <a href="#settings_plugin_softwareupdate_updatelog" data-toggle="tab">{{ _('Update log') }}</a>
+        <a href="#settings_plugin_softwareupdate_updatelog" data-toggle="tab">{{ _("Update log") }}</a>
     </li>
 </ul>
 
@@ -77,92 +99,144 @@
     <div class="tab-pane active" id="settings_plugin_softwareupdate_updates">
         <div class="pull-right">
             <div class="btn-group">
-                <button class="btn btn-primary" data-bind="click: function() { $root.cancelQueued(); }, enable: enableCancelQueued, css: {disabled: !enableCancelQueued}, visible: enableCancelQueued" title="{{ _('Cancel all queued updates')|edq }}" aria-label="{{ _('Cancel all queued updates')|edq }}" style="display: none;"><i class="fas fa-spinner fa-spin" data-bind="visible: cancelInProgress"></i> {{ _('Cancel Queued') }}</button>
+                <button class="btn btn-primary"
+                        data-bind="click: function() { $root.cancelQueued(); }, enable: enableCancelQueued, css: {disabled: !enableCancelQueued}, visible: enableCancelQueued"
+                        title="{{ _('Cancel all queued updates') |edq }}"
+                        aria-label="{{ _('Cancel all queued updates') |edq }}"
+                        style="display: none">
+                    <i class="fas fa-spinner fa-spin" data-bind="visible: cancelInProgress"></i> {{ _("Cancel Queued") }}
+                </button>
             </div>
             <div class="btn-group">
-                <button class="btn btn-primary" data-bind="click: function() { $root.updateEnabled(); }, enable: enableUpdateEnabled, css: {disabled: !enableUpdateEnabled}" title="{{ _('Update all enabled')|edq }}" aria-label="{{ _('Update all enabled')|edq }}"><i class="fas fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _('Update all') }}</button>
-                <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+                <button class="btn btn-primary"
+                        data-bind="click: function() { $root.updateEnabled(); }, enable: enableUpdateEnabled, css: {disabled: !enableUpdateEnabled}"
+                        title="{{ _('Update all enabled') |edq }}"
+                        aria-label="{{ _('Update all enabled') |edq }}">
+                    <i class="fas fa-spinner fa-spin" data-bind="visible: updateInProgress"></i> {{ _("Update all") }}
+                </button>
+                <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                    <span class="caret"></span>
+                </button>
                 <ul class="dropdown-menu">
-                    <li><a href="javascript:void(0)" data-bind="click: function() { $root.updateAll(); }, enable: enableUpdateAll, css: {disabled: !enableUpdateAll}" title="{{ _('Update all muted & enabled')|edq }}" aria-label="{{ _('Update all muted & enabled')|edq }}">{{ _('Update all available') }}</a></li>
+                    <li>
+                        <a href="javascript:void(0)"
+                           data-bind="click: function() { $root.updateAll(); }, enable: enableUpdateAll, css: {disabled: !enableUpdateAll}"
+                           title="{{ _('Update all muted & enabled') |edq }}"
+                           aria-label="{{ _('Update all muted & enabled') |edq }}">{{ _("Update all available") }}</a>
+                    </li>
                 </ul>
             </div>
             <div class="btn-group">
-                <button class="btn" data-bind="click: function() { $root.performCheck(true, false, true); }, enable: !checking(), css: {disabled: checking()}"><i class="fas fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Check for updates') }}</button>
-                <button class="btn dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+                <button class="btn"
+                        data-bind="click: function() { $root.performCheck(true, false, true); }, enable: !checking(), css: {disabled: checking()}">
+                    <i class="fas fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _("Check for updates") }}
+                </button>
+                <button class="btn dropdown-toggle" data-toggle="dropdown">
+                    <span class="caret"></span>
+                </button>
                 <ul class="dropdown-menu">
-                    <li><a href="javascript:void(0)" data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}">{{ _('Force check for updates') }}</a></li>
+                    <li>
+                        <a href="javascript:void(0)"
+                           data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}">{{ _("Force check for updates") }}</a>
+                    </li>
                 </ul>
             </div>
-            <button class="btn" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration')|edq }}" aria-label="{{ _('Plugin Configuration')|edq }}"><i class="fas fa-wrench"></i></button>
+            <button class="btn"
+                    data-bind="click: function() { $root.showPluginSettings(); }"
+                    title="{{ _('Plugin Configuration') |edq }}"
+                    aria-label="{{ _('Plugin Configuration') |edq }}">
+                <i class="fas fa-wrench"></i>
+            </button>
         </div>
 
-        <h3>{{ _('Current versions') }}</h3>
+        <h3>{{ _("Current versions") }}</h3>
 
         <div id="settings_plugin_softwareupdate_updatelist">
             <table class="table table-striped table-hover table-condensed table-hover">
                 <tbody data-bind="foreach: versions.paginatedItems">
-                <tr>
-                    <td class="settings_plugin_softwareupdate_column_update">
-                        <a href="javascript:void(0)" data-bind="visible: compatible, click: toggleDisabled"><i class="far" data-bind="css: { muted: !updateAvailable, 'fa-bell': !disabled, 'fa-bell-slash': disabled }, attr: { title: notificationIconTitle() }"></i></a>
-                        <span data-bind="visible: !compatible" class="muted"><i class="fas fa-power-off" title="{{ _('Not compatible')|edq }}"></i></span>
-                    </td>
-                    <td class="settings_plugin_softwareupdate_column_information">
-                        <a href="javascript:void(0)" data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible && !$root.updateQueued($data)" class="btn btn-primary pull-right">{{ _('Update') }}</a>
-                        <a href="javascript:void(0)" data-bind="click: function() { $root.cancelQueued([$data]) }, visible: $root.updateQueued($data)" class="btn btn-primary pull-right">{{ _('Cancel Queued') }}</a>
-                        <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fas fa-exclamation-triangle" data-bind="css: {'fa-unlink': !online && information && information.needs_online, 'fa-exclamation-triangle': !(!online && information && information.needs_online)}, attr: {title: $root.iconTitleForEntry($data)}"></i></span><br>
-                        <small data-bind="visible: compatible" class="muted">
-                            <span data-bind="visible: releaseChannels && releaseChannels.available" class="line">{{ _('Release Channel:') }} <select class="settings_plugin_softwareupdate_release_channel" data-bind="visible: releaseChannels && releaseChannels.available, value: releaseChannels.current, options: releaseChannels.available, optionsText: 'name', optionsValue: 'channel'"></select> <a href="https://faq.octoprint.org/using-release-channels" target="_blank"><i class="fas fa-question-circle"></i></a></span>
-                            <span class="line">{{ _('Installed:') }} <span data-bind="text: information.local.name"></span></span>
-                            <span class="line">{{ _('Available:') }} <span data-bind="text: information.remote.name"></span></span>
-                            <span class="line" data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank" rel="noreferrer noopener"></a></span>
-                            <span class="line text-error" data-bind="visible: error, html: $root.errorTextForEntry($data)"></span>
-                        </small>
-                        <small data-bind="visible: !compatible">
-                            <span class="line text-error">{{ _('Newer versions of this plugin are not compatible to this setup.') }}</span>
-                        </small>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-            <small class="muted">
-                {% trans enabled_icon="<i class=\"far fa-bell\"></i>"|safe, muted_icon="<i class=\"far fa-bell-slash\"></i>"|safe %}
-                    {{ enabled_icon }} = Update notifications enabled, {{ muted_icon }} =
-                    Update notifications muted, click to toggle. "Update all" will update
-                    all items for which updates are available & update notifications are
-                    enabled as well, "Update all available" will update all items for
-                    which updates are available regardless of update notifications being
-                    enabled or muted.
-                {% endtrans %}
-            </small>
-        </div>
-    </div>
-    <div class="tab-pane" id="settings_plugin_softwareupdate_updatelog">
-        <h3>{{ _('Update log') }}</h3>
-
-        <div id="settings_plugin_softwareupdate_updatelog_list">
-            <table class="table table-striped table-hover table-condensed table-hover">
-                <tbody data-bind="foreach: updatelog">
                     <tr>
-                        <td class="settings_plugin_softwareupdate_column_datetime" data-bind="text: datetime"></td>
-                        <td>
-                            <span class="line" data-bind="css: { 'text-error': !success, 'text-success': success }"><strong data-bind="text: display_name"></strong> <span data-bind="text: current_version"></span> ➡ <span data-bind="text: target_version"></span></span>
-                            <span class="line" data-bind="text: text"></span>
-                            <span class="line" data-bind="visible: release_notes"><a data-bind="attr: {href: release_notes}" target="_blank" rel="noreferrer noopener">{{ _('Release Notes') }}</a></span>
+                        <td class="settings_plugin_softwareupdate_column_update">
+                            <a href="javascript:void(0)"
+                               data-bind="visible: compatible, click: toggleDisabled"><i class="far"
+   data-bind="css: { muted: !updateAvailable, 'fa-bell': !disabled, 'fa-bell-slash': disabled }, attr: { title: notificationIconTitle() }"></i></a>
+                            <span data-bind="visible: !compatible" class="muted"><i class="fas fa-power-off" title="{{ _('Not compatible') |edq }}"></i></span>
+                        </td>
+                        <td class="settings_plugin_softwareupdate_column_information">
+                            <a href="javascript:void(0)"
+                               data-bind="click: function() { $root.update(false, [$data]) }, visible: $root.enableUpdate() && updateAvailable && updatePossible && !$root.updateQueued($data)"
+                               class="btn btn-primary pull-right">{{ _("Update") }}</a>
+                            <a href="javascript:void(0)"
+                               data-bind="click: function() { $root.cancelQueued([$data]) }, visible: $root.updateQueued($data)"
+                               class="btn btn-primary pull-right">{{ _("Cancel Queued") }}</a>
+                            <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fas fa-exclamation-triangle"
+   data-bind="css: {'fa-unlink': !online && information && information.needs_online, 'fa-exclamation-triangle': !(!online && information && information.needs_online)}, attr: {title: $root.iconTitleForEntry($data)}"></i></span>
+                            <br>
+                            <small data-bind="visible: compatible" class="muted">
+                                <span data-bind="visible: releaseChannels && releaseChannels.available"
+                                      class="line">{{ _("Release Channel:") }}
+                                    <select class="settings_plugin_softwareupdate_release_channel"
+                                            data-bind="visible: releaseChannels && releaseChannels.available, value: releaseChannels.current, options: releaseChannels.available, optionsText: 'name', optionsValue: 'channel'">
+                                    </select>
+                                    <a href="https://faq.octoprint.org/using-release-channels"
+                                       target="_blank"><i class="fas fa-question-circle"></i></a></span>
+                                <span class="line">{{ _("Installed:") }} <span data-bind="text: information.local.name"></span></span>
+                                <span class="line">{{ _("Available:") }} <span data-bind="text: information.remote.name"></span></span>
+                                <span class="line" data-bind="visible: releaseNotes">{{ _("Release Notes:") }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes"
+    target="_blank"
+    rel="noreferrer noopener"></a></span>
+                                <span class="line text-error"
+                                      data-bind="visible: error, html: $root.errorTextForEntry($data)"></span>
+                            </small>
+                            <small data-bind="visible: !compatible">
+                                <span class="line text-error">{{ _("Newer versions of this plugin are not compatible to this setup.") }}</span>
+                            </small>
                         </td>
                     </tr>
                 </tbody>
             </table>
-        </div>
-
-        <small>{{ _('Please note that the update log will only contain entries for updates performed through OctoPrint\'s Software Update plugin.') }}</small>
+            <small class="muted">
+                {# djlint: off H025 #}{% trans enabled_icon="<i class=\"far fa-bell\"></i>"|safe, muted_icon="<i class=\"far fa-bell-slash\"></i>"|safe %}{# djlint: on #}
+                {{ enabled_icon }} = Update notifications enabled, {{ muted_icon }} =
+                Update notifications muted, click to toggle. "Update all" will update
+                all items for which updates are available & update notifications are
+                enabled as well, "Update all available" will update all items for
+                which updates are available regardless of update notifications being
+                enabled or muted.
+            {% endtrans %}
+        </small>
     </div>
 </div>
+<div class="tab-pane" id="settings_plugin_softwareupdate_updatelog">
+    <h3>{{ _("Update log") }}</h3>
 
+    <div id="settings_plugin_softwareupdate_updatelog_list">
+        <table class="table table-striped table-hover table-condensed table-hover">
+            <tbody data-bind="foreach: updatelog">
+                <tr>
+                    <td class="settings_plugin_softwareupdate_column_datetime"
+                        data-bind="text: datetime"></td>
+                    <td>
+                        <span class="line"
+                              data-bind="css: { 'text-error': !success, 'text-success': success }"><strong data-bind="text: display_name"></strong> <span data-bind="text: current_version"></span> ➡ <span data-bind="text: target_version"></span></span>
+                        <span class="line" data-bind="text: text"></span>
+                        <span class="line" data-bind="visible: release_notes"><a data-bind="attr: {href: release_notes}"
+   target="_blank"
+   rel="noreferrer noopener">{{ _("Release Notes") }}</a></span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-<div id="settings_plugin_softwareupdate_configurationdialog" class="modal hide fade-in">
+    <small>{{ _("Please note that the update log will only contain entries for updates performed through OctoPrint's Software Update plugin.") }}</small>
+</div>
+</div>
+
+<div id="settings_plugin_softwareupdate_configurationdialog"
+     class="modal hide fade-in">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Plugin Configuration') }}</h3>
+        <h3>{{ _("Plugin Configuration") }}</h3>
     </div>
     <div class="modal-body">
         <form class="form-horizontal" onsubmit="return false;">
@@ -173,7 +247,7 @@
             {% include "snippets/pipEnableCheck.jinja2" %}
             {% include "snippets/githubToken.jinja2" %}
             <div class="control-group">
-                <label class="control-label">{{ _('Version cache TTL') }}</label>
+                <label class="control-label">{{ _("Version cache TTL") }}</label>
                 <div class="controls">
                     <div class="input-append">
                         <input type="number" class="input-small" data-bind="value: config_cacheTtl">
@@ -184,39 +258,58 @@
             <div class="control-group">
                 <div class="controls">
                     <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: config_notifyUsers"> {{ _('Show update notifications to users') }}
-                        <span class="help-block">{{ _('If you uncheck this, only logged in admins will see update notifications. Update notifications shown to users do not include the "Update now" button.') }}</span>
+                        <input type="checkbox" data-bind="checked: config_notifyUsers">
+                        {{ _("Show update notifications to users") }}
+                        <span class="help-block">{{ _("If you uncheck this, only logged in admins will see update notifications. Update notifications shown to users do not include the \"Update now\" button.") }}</span>
                     </label>
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label">{{ _('Minimum free disk space') }}</label>
+                <label class="control-label">{{ _("Minimum free disk space") }}</label>
                 <div class="controls">
                     <div class="input-append">
-                        <input type="number" class="input-small" data-bind="value: config_minimumFreeStorage">
+                        <input type="number"
+                               class="input-small"
+                               data-bind="value: config_minimumFreeStorage">
                         <span class="add-on">MB</span>
-                        <span class="help-block">{{ _('The minimum amount of free disk space that has to be available on various locations for OctoPrint to allow updates. Should not be set to 0.') }}</span>
+                        <span class="help-block">{{ _("The minimum amount of free disk space that has to be available on various locations for OctoPrint to allow updates. Should not be set to 0.") }}</span>
                     </div>
                 </div>
             </div>
         </form>
     </div>
     <div class="modal-footer">
-        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
-        <button class="btn btn-primary" data-bind="enable: enable_configSave, css: {disabled: !enable_configSave()}, click: savePluginSettings" aria-hidden="true">{{ _('Save') }}</button>
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _("Cancel") }}</button>
+        <button class="btn btn-primary"
+                data-bind="enable: enable_configSave, css: {disabled: !enable_configSave()}, click: savePluginSettings"
+                aria-hidden="true">{{ _("Save") }}</button>
     </div>
 </div>
 
-<div id="settings_plugin_softwareupdate_workingdialog" class="modal hide fade-in">
+<div id="settings_plugin_softwareupdate_workingdialog"
+     class="modal hide fade-in">
     <div class="modal-header">
         <h3 data-bind="text: workingTitle"></h3>
     </div>
     <div class="modal-body">
-        <pre id="settings_plugin_softwareupdate_workingdialog_output" class="pre-scrollable pre-output" style="height: 170px; display: none" data-bind="visible: $root.updateAccess(), foreach: loglines"><span data-bind="text: line + '\n', css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message'}"></span></pre>
-        <p style="display: none" data-bind="visible: !$root.updateAccess() && $root.working()"><i class="fas fa-spinner fa-spin"></i> {{ _('Update in progress, please wait.') }}</p>
-        <p style="display: none" data-bind="visible: !$root.updateAccess() && !$root.working()">{{ _('Update done, please close this window.') }}</p>
+        <pre id="settings_plugin_softwareupdate_workingdialog_output"
+             class="pre-scrollable pre-output"
+             style="height: 170px;
+                    display: none"
+             data-bind="visible: $root.updateAccess(), foreach: loglines"><span data-bind="text: line + '\n', css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message'}"></span></pre>
+        <p style="display: none"
+           data-bind="visible: !$root.updateAccess() && $root.working()">
+            <i class="fas fa-spinner fa-spin"></i> {{ _("Update in progress, please wait.") }}
+        </p>
+        <p style="display: none"
+           data-bind="visible: !$root.updateAccess() && !$root.working()">
+            {{ _("Update done, please close this window.") }}
+        </p>
     </div>
     <div class="modal-footer">
-        <button class="btn" data-dismiss="modal" data-bind="enable: !$root.working()" aria-hidden="true">{{ _('Close') }}</button>
+        <button class="btn"
+                data-dismiss="modal"
+                data-bind="enable: !$root.working()"
+                aria-hidden="true">{{ _("Close") }}</button>
     </div>
 </div>

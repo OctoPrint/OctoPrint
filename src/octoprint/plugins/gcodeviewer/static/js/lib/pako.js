@@ -3,9 +3,9 @@
     typeof exports === "object" && typeof module !== "undefined"
         ? factory(exports)
         : typeof define === "function" && define.amd
-        ? define(["exports"], factory)
-        : ((global = typeof globalThis !== "undefined" ? globalThis : global || self),
-          factory((global.pako = {})));
+          ? define(["exports"], factory)
+          : ((global = typeof globalThis !== "undefined" ? globalThis : global || self),
+            factory((global.pako = {})));
 })(this, function (exports) {
     "use strict";
 
@@ -3418,8 +3418,8 @@
                         s.level === 9
                             ? 2
                             : s.strategy >= Z_HUFFMAN_ONLY || s.level < 2
-                            ? 4
-                            : 0
+                              ? 4
+                              : 0
                     );
                     put_byte(s, OS_CODE);
                     s.status = BUSY_STATE;
@@ -3441,8 +3441,8 @@
                         s.level === 9
                             ? 2
                             : s.strategy >= Z_HUFFMAN_ONLY || s.level < 2
-                            ? 4
-                            : 0
+                              ? 4
+                              : 0
                     );
                     put_byte(s, s.gzhead.os & 0xff);
 
@@ -3699,8 +3699,8 @@
                 s.strategy === Z_HUFFMAN_ONLY
                     ? deflate_huff(s, flush)
                     : s.strategy === Z_RLE
-                    ? deflate_rle(s, flush)
-                    : configuration_table[s.level].func(s, flush);
+                      ? deflate_rle(s, flush)
+                      : configuration_table[s.level].func(s, flush);
 
             if (bstate === BS_FINISH_STARTED || bstate === BS_FINISH_DONE) {
                 s.status = FINISH_STATE;
