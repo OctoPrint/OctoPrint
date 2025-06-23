@@ -226,8 +226,8 @@ $(function () {
                         (index < extensions.length - 2
                             ? ", "
                             : index == extensions.length - 2
-                            ? " " + gettext("and") + " "
-                            : "")
+                              ? " " + gettext("and") + " "
+                              : "")
                     );
                 },
                 ""
@@ -2445,8 +2445,8 @@ $(function () {
                             progress_percent < 25
                                 ? "progress-danger"
                                 : progress_percent > 75
-                                ? "progress-success"
-                                : "progress-warning";
+                                  ? "progress-success"
+                                  : "progress-warning";
                         var countdownText = _.sprintf(
                             gettext("Installing in %(sec)i secs..."),
                             {

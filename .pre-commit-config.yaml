@@ -3,7 +3,7 @@ default_language_version:
 exclude: ^(src/octoprint/vendor/|src/octoprint/static/js/lib|src/octoprint/static/vendor|src/octoprint_setuptools|tests/static/js/lib|tests/util/_files|scripts/|translations/|.*\.css|.*\.svg|docs/)
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v5.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -16,13 +16,13 @@ repos:
         args: ["--remove"]
         exclude: "setup.py|src/octoprint_setuptools/__init__.py"
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
+    rev: v3.20.0
     hooks:
       - id: pyupgrade
         args: ["--py39-plus"]
         exclude: "setup.py|src/octoprint_setuptools/__init__.py"
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.2
+    rev: v0.12.0
     hooks:
       - id: ruff
         args: ["--fix"]
@@ -31,23 +31,24 @@ repos:
     rev: v1.36.4
     hooks:
       - id: djlint-jinja
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.7.1
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.6.0
     hooks:
       - id: prettier
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v8.35.0
+    rev: v9.29.0
     hooks:
       - id: eslint
         files: \.js$
         exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|docs/|scripts/|translations/)
+        additional_dependencies: ["eslint@9.29.0", "globals@16.2.0"]
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.1
     hooks:
       - id: codespell
         exclude: ^(src/octoprint/vendor/|tests/static/js/lib|tests/util/_files|tests/playwright|scripts/)
   - repo: https://github.com/OctoPrint/pre-commit-lessc
-    rev: 4.2.0
+    rev: 4.3.0
     hooks:
       - id: lessc
         args: ["--wrapper-quiet", "--clean-css=--s1 --advanced --compatibility=ie8"]
