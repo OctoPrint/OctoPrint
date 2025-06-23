@@ -126,7 +126,7 @@ def _create_etag(path, filter, recursive, lm=None):
     else:
         storage = path
 
-    if path == "" or storage == FileDestinations.SDCARD:  # TODO
+    if path == "" or storage == FileDestinations.PRINTER:  # TODO
         # include sd data in etag
         hash_update(repr(sorted(printer.get_sd_files(), key=lambda x: sv(x["name"]))))
 
@@ -186,12 +186,22 @@ def runFilesTest():
         return sanitized_path, sanitized_name, joined
 
     if command == "sanitize":
+        try:
+            storage = _validate_storage(data["storage"])
+        except ValueError:
+            abort(400)
+
         _, _, sanitized = sanitize(data["storage"], data["path"], data["filename"])
         return jsonify(sanitized=sanitized)
     elif command == "exists":
         storage = data["storage"]
         path = data["path"]
         filename = data["filename"]
+
+        try:
+            storage = _validate_storage(data["storage"])
+        except ValueError:
+            abort(400)
 
         sanitized_path, _, sanitized = sanitize(storage, path, filename)
 
@@ -236,7 +246,9 @@ def runFilesTest():
     or request.values.get("_refresh", False),
 )
 def readGcodeFilesForOrigin(origin):
-    if origin not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+    try:
+        origin = _validate_storage(origin)
+    except ValueError:
         abort(404)
 
     filter = request.values.get("filter", False)
@@ -272,10 +284,12 @@ def readGcodeFilesForOrigin(origin):
     or request.values.get("_refresh", False),
 )
 def readGcodeFile(target, filename):
-    if target not in fileManager.registered_storages:
+    try:
+        target = _validate_storage(target)
+    except ValueError:
         abort(404)
 
-    if not _validate(target, filename):
+    if not _validate_filename(target, filename):
         abort(404)
 
     recursive = False
@@ -498,7 +512,9 @@ def uploadGcodeFile(target):
         upload_name = request.values[input_upload_name]
         upload_path = request.values[input_upload_path]
 
-        if target not in fileManager.registered_storages:
+        try:
+            target = _validate_storage(target)
+        except ValueError:
             abort(404)
 
         if not fileManager.capabilities(target).write_file:
@@ -513,10 +529,6 @@ def uploadGcodeFile(target):
                 userdata = json.loads(request.values["userdata"])
             except Exception:
                 abort(400, description="userdata contains invalid JSON")
-
-        # check preconditions for SD upload
-        if target == FileDestinations.SDCARD:
-            _verify_sd_upload_preconditions()
 
         # evaluate select and print parameter and if set check permissions & preconditions
         # and adjust as necessary
@@ -737,10 +749,12 @@ def uploadGcodeFile(target):
 @api.route("/files/<string:target>/<path:filename>", methods=["POST"])
 @no_firstrun_access
 def gcodeFileCommand(filename, target):
-    if target not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+    try:
+        target = _validate_storage(target)
+    except ValueError:
         abort(404)
 
-    if not _validate(target, filename):
+    if not _validate_filename(target, filename):
         abort(404)
 
     # valid file commands, dict mapping command name to mandatory parameters
@@ -813,6 +827,9 @@ def gcodeFileCommand(filename, target):
 
     elif command == "slice":
         with Permissions.SLICE.require(403):
+            if not fileManager.capabilities(target).path_on_disk:
+                abort(400, description=f"Slicing is not supported on storage {target}")
+
             if not _verifyFileExists(target, filename):
                 abort(404)
 
@@ -948,8 +965,7 @@ def gcodeFileCommand(filename, target):
 
             def slicing_done(target, path, select_after_slicing, print_after_slicing):
                 if select_after_slicing or print_after_slicing:
-                    if target != FileDestinations.SDCARD:
-                        filenameToSelect = fileManager.path_on_disk(target, path)
+                    filenameToSelect = fileManager.path_on_disk(target, path)
                     job = PrintJob(storage=target, path=filenameToSelect, owner=user)
                     printer.set_job(job, print_after_select=print_after_slicing)
 
@@ -986,7 +1002,7 @@ def gcodeFileCommand(filename, target):
                 "name": destination,
                 "path": full_path,
                 "display": canon_name,
-                "origin": FileDestinations.LOCAL,
+                "origin": target,
                 "refs": {
                     "resource": location,
                     "download": url_for("index", _external=True)
@@ -1153,13 +1169,19 @@ def gcodeFileCommand(filename, target):
             return r
 
     elif command == "uploadSd":  # TODO: add copy/move between storages
-        if target not in [FileDestinations.LOCAL]:
-            abort(400, description=f"Unsupported target for {command}")
+        try:
+            target = _validate_storage(target)
+        except ValueError:
+            abort(404)
+
+        if not fileManager.capabilities(target).path_on_disk:
+            abort(400, description=f"Unsupported storage for {command}")
 
         if not settings().getBoolean(["feature", "sdSupport"]):
             abort(400, "Invalid command,SD support is disabled")
 
-        _verify_sd_upload_preconditions()
+        if not fileManager.capabilities(FileDestinations.PRINTER).write_file:
+            abort(400, "Printer doesn't support uploads")
 
         with Permissions.FILES_UPLOAD.require(403):
             if not _verifyFileExists(target, filename) and not _verifyFolderExists(
@@ -1215,7 +1237,7 @@ def gcodeFileCommand(filename, target):
 @no_firstrun_access
 @Permissions.FILES_DELETE.require(403)
 def deleteGcodeFile(filename, target):
-    if not _validate(target, filename):
+    if not _validate_filename(target, filename):
         abort(404)
 
     if not _verifyFileExists(target, filename) and not _verifyFolderExists(
@@ -1319,14 +1341,19 @@ def _getCurrentFile():
         return None, None
 
 
-def _validate(target, filename):
-    if target == FileDestinations.SDCARD:
-        # we make no assumptions about the shape of valid SDCard file names
-        return True
-    else:
-        return filename == "/".join(
-            fileManager.sanitize_name(target, x) for x in filename.split("/")
-        )
+def _validate_storage(storage):
+    if storage == "sdcard":
+        # translate old "sdcard" to new "printer"
+        storage = FileDestinations.PRINTER
+
+    if storage not in fileManager.registered_storages:
+        raise ValueError(f"Storage not available: {storage}")
+
+    return storage
+
+
+def _validate_filename(target, filename):
+    return fileManager.join_path(target, *fileManager.sanitize(target, filename))
 
 
 def _verify_sd_upload_preconditions():

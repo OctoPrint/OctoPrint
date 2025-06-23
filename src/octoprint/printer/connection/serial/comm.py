@@ -5891,7 +5891,7 @@ class PrintingSdFileInformation(PrintingFileInformation):
         self._size = size
 
     def getFileLocation(self):
-        return FileDestinations.SDCARD
+        return FileDestinations.PRINTER
 
     @property
     def size(self):

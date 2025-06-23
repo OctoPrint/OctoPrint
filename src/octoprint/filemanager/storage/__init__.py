@@ -23,7 +23,6 @@ class StorageCapabilities(BaseModel):
     move_folder: bool = False
 
     metadata: bool = False
-    links: bool = False
     history: bool = False
 
     path_on_disk: bool = False

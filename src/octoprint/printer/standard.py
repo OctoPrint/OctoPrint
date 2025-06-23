@@ -456,7 +456,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         """
         Closes the connection to the printer.
         """
-        self._file_manager.remove_storage(FileDestinations.SDCARD)
+        self._file_manager.remove_storage(FileDestinations.PRINTER)
 
         eventManager().fire(Events.DISCONNECTING)
         if self._connection is not None:
@@ -981,7 +981,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             return
 
         connection = cast(PrinterFilesMixin, self._connection)
-        if not connection.storage_capabilities.write_file:
+        if not connection.current_storage_capabilities.write_file:
             return
 
         self._streamingFinishedCallback = on_success
@@ -1002,7 +1002,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             eventManager().fire(Events.TRANSFER_DONE, payload)
             if callable(self._streamingFinishedCallback):
                 self._streamingFinishedCallback(
-                    remote_filename, remote_filename, FileDestinations.SDCARD
+                    remote_filename, remote_filename, FileDestinations.PRINTER
                 )
 
         def sd_upload_failed(local_filename, remote_filename, elapsed):
@@ -1014,7 +1014,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             eventManager().fire(Events.TRANSFER_FAILED, payload)
             if callable(self._streamingFailedCallback):
                 self._streamingFailedCallback(
-                    remote_filename, remote_filename, FileDestinations.SDCARD
+                    remote_filename, remote_filename, FileDestinations.PRINTER
                 )
 
         for name, hook in self.sd_card_upload_hooks.items():
@@ -1213,7 +1213,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._setJobData(
             job.path if job else None,
             job.size if job else None,
-            job.storage == FileDestinations.SDCARD if job else False,
+            job.storage == FileDestinations.PRINTER if job else False,
             user=user,
             data=data,
         )
@@ -1482,9 +1482,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     def on_printer_files_available(self, available):
         if available:
             storage = PrinterFileStorage(self._connection)
-            self._file_manager.add_storage(FileDestinations.SDCARD, storage)
+            self._file_manager.add_storage(FileDestinations.PRINTER, storage)
         else:
-            self._file_manager.remove_storage(FileDestinations.SDCARD)
+            self._file_manager.remove_storage(FileDestinations.PRINTER)
 
         self._stateMonitor.set_state(
             self._dict(
@@ -1526,13 +1526,13 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             eventManager().fire(Events.TRANSFER_FAILED, payload)
             if callable(self._streamingFailedCallback):
                 self._streamingFailedCallback(
-                    job.path, job.remote_path, FileDestinations.SDCARD
+                    job.path, job.remote_path, FileDestinations.PRINTER
                 )
         else:
             eventManager().fire(Events.TRANSFER_DONE, payload)
             if callable(self._streamingFinishedCallback):
                 self._streamingFinishedCallback(
-                    job.path, job.remote_path, FileDestinations.SDCARD
+                    job.path, job.remote_path, FileDestinations.PRINTER
                 )
 
         self._setJobData(None, None, None)
@@ -1771,7 +1771,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
                 try:
                     fileData = self._file_manager.get_metadata(
-                        FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
+                        FileDestinations.PRINTER if sd else FileDestinations.LOCAL,
                         path_on_disk,
                     )
                 except Exception:
@@ -1824,7 +1824,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                         name=name_in_storage,
                         path=path_in_storage,
                         display=display_name,
-                        origin=FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
+                        origin=FileDestinations.PRINTER if sd else FileDestinations.LOCAL,
                         size=filesize,
                         date=date,
                     ),
@@ -1915,7 +1915,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 print_job_size = selected_file.get("filesize", None)
                 print_job_user = selected_file.get("user", None)
                 location = (
-                    FileDestinations.SDCARD
+                    FileDestinations.PRINTER
                     if selected_file.get("sd", False)
                     else FileDestinations.LOCAL
                 )
@@ -1923,12 +1923,12 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         if not print_job_file or not location:
             return {}
 
-        if location == FileDestinations.SDCARD:
+        if location == FileDestinations.PRINTER:
             full_path = print_job_file
             if full_path.startswith("/"):
                 full_path = full_path[1:]
             name = path = full_path
-            origin = FileDestinations.SDCARD
+            origin = FileDestinations.PRINTER
 
         else:
             full_path = self._file_manager.path_on_disk(

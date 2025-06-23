@@ -12,7 +12,10 @@ from . import MetadataEntry, StorageCapabilities, StorageError, StorageInterface
 
 class PrinterFileStorage(StorageInterface):
     def __init__(self, connection: PrinterFilesMixin):
-        assert isinstance(connection, PrinterFilesMixin)
+        if not isinstance(connection, PrinterFilesMixin):
+            raise ValueError(
+                "Connection must implement octoprint.printer.PrinterFilesMixin"
+            )
 
         self._logger = logging.getLogger(__name__)
         self._connection = connection
@@ -35,7 +38,7 @@ class PrinterFileStorage(StorageInterface):
 
     @property
     def capabilities(self) -> StorageCapabilities:
-        return self._connection.storage_capabilities
+        return self._connection.current_storage_capabilities
 
     def get_size(self, path=None, recursive=False) -> Optional[int]:
         files = self._get_printer_files(path=path)
@@ -295,7 +298,7 @@ class PrinterFileStorage(StorageInterface):
             pass
 
     def _strip_leading_slash(self, path: str):
-        if path[0] == "/":
+        while path[0] == "/":
             path = path[1:]
         return path
 
@@ -308,9 +311,7 @@ class PrinterFileStorage(StorageInterface):
         return path
 
     def sanitize_name(self, name: str):
-        return name.replace(
-            "/", ""
-        )  # TODO: upload to sd doesn't work because name is a tuple here
+        return name.replace("/", "")
 
     def split_path(self, path: str):
         path = self._strip_leading_slash(path)

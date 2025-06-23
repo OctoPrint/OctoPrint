@@ -1662,10 +1662,10 @@ $(function () {
             self.requestData();
         };
 
-        self._setDropzone = function (dropzone, enable) {
-            var button = dropzone === "local" ? self.uploadButton : self.uploadSdButton;
-            var drop = dropzone === "local" ? self.localTarget : self.sdTarget;
-            var url = API_BASEURL + "files/" + dropzone;
+        self._setDropzone = (dropzone, enable) => {
+            const button = dropzone === "local" ? self.uploadButton : self.uploadSdButton;
+            const drop = dropzone === "local" ? self.localTarget : self.sdTarget;
+            const url = API_BASEURL + "files/" + dropzone;
 
             if (button === undefined) return;
 
@@ -1675,7 +1675,9 @@ $(function () {
                 dropZone: enable ? drop : null,
                 sequentialUploads: true,
                 drop: function (e, data) {},
-                add: self._handleUploadAdd,
+                add: (e, data) => {
+                    self._handleUploadAdd(dropzone, data);
+                },
                 submit: self._handleUploadStart,
                 done: self._handleUploadDone,
                 fail: self._handleUploadFail,
@@ -1808,7 +1810,7 @@ $(function () {
             self.uploadExistsDialog.modal("show");
         };
 
-        self._handleUploadAdd = function (e, data) {
+        self._handleUploadAdd = (storage, data) => {
             var file = data.files[0];
             var path = self.currentPath();
             var fileSizeTooBig = file.size > self.freeSpace();
@@ -1820,7 +1822,7 @@ $(function () {
 
             if (self.settingsViewModel.feature_uploadOverwriteConfirmation()) {
                 OctoPrint.files
-                    .exists("local", path, file.name)
+                    .exists(storage, path, file.name)
                     .done(function (response) {
                         if (response.exists) {
                             const queueEntry = {

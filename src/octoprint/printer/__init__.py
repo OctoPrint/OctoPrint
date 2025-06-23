@@ -559,6 +559,10 @@ class PrinterFilesMixin:
     def printer_files_mounted(self) -> bool:
         return False
 
+    @property
+    def current_storage_capabilities(self) -> StorageCapabilities:
+        return self.storage_capabilities
+
     def mount_printer_files(self, *args, **kwargs) -> None:
         pass
 
@@ -719,7 +723,7 @@ class PrinterMixin(CommonPrinterMixin):
                 doesn't exist
         """
         job = PrintJob(
-            storage=FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
+            storage=FileDestinations.PRINTER if sd else FileDestinations.LOCAL,
             path=path,
             owner=user,
         )

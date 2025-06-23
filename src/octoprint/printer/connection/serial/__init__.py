@@ -66,6 +66,12 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._last_position = None
 
     @property
+    def current_storage_capabilities(self):
+        return self.storage_capabilities.model_copy(
+            update={"write_file": self.is_ready()}
+        )
+
+    @property
     def connection_parameters(self):
         parameters = super().connection_parameters
         parameters.update(
@@ -305,10 +311,10 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         if not valid_file_type(job.path, type="machinecode"):
             return False
 
-        if job.storage not in (FileDestinations.LOCAL, FileDestinations.SDCARD):
+        if job.storage not in (FileDestinations.LOCAL, FileDestinations.PRINTER):
             return False
 
-        if job.storage != FileDestinations.SDCARD and not os.path.isfile(
+        if job.storage != FileDestinations.PRINTER and not os.path.isfile(
             job.path_on_disk
         ):
             return False
@@ -497,7 +503,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             if (
                 pf.size is None
                 and self._job
-                and self._job.storage == FileDestinations.SDCARD
+                and self._job.storage == FileDestinations.PRINTER
                 and self._job.path == pf.path
             ):
                 pf.size = self._job.size
@@ -640,7 +646,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     def on_comm_file_selected(self, full_path, size, sd, user=None, data=None):
         job = PrintJob(
-            storage=FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
+            storage=FileDestinations.PRINTER if sd else FileDestinations.LOCAL,
             path=full_path,
             size=size,
             owner=user,
