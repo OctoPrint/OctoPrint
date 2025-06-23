@@ -44,11 +44,11 @@ details the better!
 
 #### How was it tested? How can it be tested by the reviewer?
 
+#### Was any kind of genAI (ChatGPT, Copilot etc) involved in creating this PR?
+
 #### Any background context you want to provide?
 
 #### What are the relevant tickets if any?
-
-#### Was any kind of genAI (ChatGPT, Copilot etc) involved in creating this PR?
 
 #### Screenshots (if appropriate)
 
