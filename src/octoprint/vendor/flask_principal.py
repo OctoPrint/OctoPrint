@@ -257,7 +257,7 @@ class Permission(object):
     def require(self, http_exception=None):
         """Create a principal for this permission.
 
-        The principal may be used as a context manager, or a decroator.
+        The principal may be used as a context manager, or a decorator.
 
         If ``http_exception`` is passed then ``abort()`` will be called
         with the HTTP exception code. Otherwise a ``PermissionDenied``

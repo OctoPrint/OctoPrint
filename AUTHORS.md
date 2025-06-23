@@ -190,6 +190,7 @@ date of first contribution):
   * [Hilton Shumway](https://github.com/Hillshum)
   * [Tom Davie](https://github.com/beelsebob)
   * [Emmanuel Ferdman](https://github.com/emmanuel-ferdman)
+  * [Will Schlitzer](https://github.com/willschlitzer)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
