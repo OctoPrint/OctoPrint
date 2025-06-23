@@ -297,38 +297,46 @@ class PrinterFileStorage(StorageInterface):
         except KeyError:
             pass
 
-    def _strip_leading_slash(self, path: str):
+    def _strip_leading_slash(self, path: str) -> str:
+        if not path:
+            return path
+
         while path[0] == "/":
             path = path[1:]
+
         return path
 
-    def sanitize(self, path: str):
+    def sanitize(self, path: str) -> tuple[str, str]:
+        if path == "/":
+            return "/", ""
         path = self._strip_leading_slash(path)
         path, name = self.split_path(path)
         return self.sanitize_path(path), self.sanitize_name(name)
 
-    def sanitize_path(self, path: str):
-        return path
+    def sanitize_path(self, path: str) -> str:
+        if path == "/":
+            return path
+        return self._strip_leading_slash(path)
 
-    def sanitize_name(self, name: str):
-        return name.replace("/", "")
+    def sanitize_name(self, name: str) -> str:
+        return self._connection.sanitize_file_name(name.replace("/", ""))
 
-    def split_path(self, path: str):
+    def split_path(self, path: str) -> tuple[str, str]:
         path = self._strip_leading_slash(path)
         if "/" not in path:
             return "", path
 
         return path.rsplit("/", 1)
 
-    def join_path(self, *path):
-        return "/".join(path)
+    def join_path(self, *path: str) -> str:
+        return self._strip_leading_slash("/".join(path))
 
-    def path_on_disk(self, path):
+    def path_on_disk(self, path) -> str:
         raise StorageError(
             "Printer does not support path_on_disk", code=StorageError.UNSUPPORTED
         )
 
-    def path_in_storage(self, path):
+    def path_in_storage(self, path) -> str:
         pp, pf = self.canonicalize(path)
         if not pp:
             return pf

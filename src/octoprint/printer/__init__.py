@@ -619,6 +619,9 @@ class PrinterFilesMixin:
     def move_printer_file(self, source: str, target: str, *args, **kwargs) -> None:
         pass
 
+    def sanitize_file_name(self, name: str, *args, **kwargs) -> str:
+        return name
+
     def get_printer_file_metadata(
         self, path: str, *args, **kwargs
     ) -> Optional[MetadataEntry]:
@@ -861,7 +864,7 @@ class PrinterCallback:
                 file:
                     name: <name of the file>,
                     size: <size of the file in bytes>,
-                    origin: <origin of the file, "local" or "sdcard">,
+                    origin: <origin of the file, "local" or "printer">,
                     date: <last modification date of the file>
                 estimatedPrintTime: <estimated print time of the file in seconds>
                 lastPrintTime: <last print time of the file in seconds>

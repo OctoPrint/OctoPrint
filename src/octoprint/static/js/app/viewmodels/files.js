@@ -209,8 +209,8 @@ $(function () {
                             child.prints.success > 0
                         )
                 ),
-            sd: (data) => data["origin"] && data["origin"] === "sdcard",
-            local: (data) => !(data["origin"] && data["origin"] === "sdcard")
+            sd: (data) => data["origin"] && data["origin"] === "printer",
+            local: (data) => !(data["origin"] && data["origin"] === "printer")
         };
         var listHelperExclusiveFilters = [["sd", "local"]];
 
@@ -644,8 +644,8 @@ $(function () {
 
             var name = self.addFolderName();
 
-            // "local" only for now since we only support local and sdcard,
-            // and sdcard doesn't support creating folders...
+            // "local" only for now since we only support local and printer,
+            // and printer doesn't support creating folders...
             var location = "local";
 
             self.ignoreUpdatedFilesEvent = true;
@@ -1512,7 +1512,7 @@ $(function () {
                     !self.isPrinting();
 
                 self._setDropzone("local", enableLocal);
-                self._setDropzone("sdcard", enableSd);
+                self._setDropzone("printer", enableSd);
             }
             self.loginState.currentUser.subscribe(evaluateDropzones);
             self.printerState.isSdReady.subscribe(evaluateDropzones);
@@ -1641,7 +1641,7 @@ $(function () {
                 type: "success"
             });
 
-            self.requestData({focus: {location: "sdcard", path: payload.remote}});
+            self.requestData({focus: {location: "printer", path: payload.remote}});
         };
 
         self.onEventTransferFailed = function (payload) {
@@ -1879,8 +1879,8 @@ $(function () {
 
         self._handleUploadDone = function (e, data) {
             var focus = undefined;
-            if (data.result.files.hasOwnProperty("sdcard")) {
-                focus = {location: "sdcard", path: data.result.files.sdcard.path};
+            if (data.result.files.hasOwnProperty("printer")) {
+                focus = {location: "printer", path: data.result.files.printer.path};
             } else if (data.result.files.hasOwnProperty("local")) {
                 focus = {location: "local", path: data.result.files.local.path};
             }

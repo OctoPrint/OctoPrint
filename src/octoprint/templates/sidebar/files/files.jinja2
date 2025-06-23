@@ -61,7 +61,7 @@
     </script>
 
     <script type="text/html" id="files_template_folder">
-        <div class="btn btn-mini toggleAdditionalData pull-right" data-bind="visible: origin != 'sdcard',click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }" title="{{ _('Additional data')|edq }}"><i class="fas fa-chevron-down"></i></div>
+        <div class="btn btn-mini toggleAdditionalData pull-right" data-bind="visible: origin != 'printer',click: function() { if ($root.enableAdditionalData($data)) { $root.toggleAdditionalData($data); } else { return; } }, css: { disabled: !$root.enableAdditionalData($data) }" title="{{ _('Additional data')|edq }}"><i class="fas fa-chevron-down"></i></div>
         <div class="title clickable" data-bind="click: $root.changeFolder, style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }"><i class="fas fa-folder-open"></i> <span data-bind="text: display"></span></div>
         <div class="internal" data-bind="visible: name != display">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
         <div class="uploaded">{{ _('Updated') }}: <span data-bind="text: formatTimeAgo(date, '?'), attr: {title: formatDate(date, {placeholder:'{{ _('unknown')|esq }}'})}"></span></div>

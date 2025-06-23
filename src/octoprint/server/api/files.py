@@ -203,23 +203,23 @@ def runFilesTest():
         except ValueError:
             abort(400)
 
-        sanitized_path, _, sanitized = sanitize(storage, path, filename)
+        sanitized_path, sanitized_name, sanitized = sanitize(storage, path, filename)
 
         exists = _getFileDetails(storage, sanitized)
         if exists:
-            suggestion = filename
-            name, ext = os.path.splitext(filename)
+            suggestion = sanitized_name
+            name, ext = os.path.splitext(sanitized_name)
             counter = 0
             while fileManager.file_exists(
                 storage,
                 fileManager.join_path(
                     storage,
                     sanitized_path,
-                    fileManager.sanitize_name(storage, suggestion),
+                    suggestion,
                 ),
             ):
                 counter += 1
-                suggestion = f"{name}_{counter}{ext}"
+                suggestion = fileManager.sanitize_name(storage, f"{name}_{counter}{ext}")
             return jsonify(
                 exists=True,
                 suggestion=suggestion,
@@ -1195,7 +1195,7 @@ def gcodeFileCommand(filename, target):
             def selectAndOrPrint(filename, *args):
                 if select or print:
                     job = PrintJob(
-                        storage=FileDestinations.SDCARD, path=filename, owner=user
+                        storage=FileDestinations.PRINTER, path=filename, owner=user
                     )
                     printer.set_job(job, print_after_select=print)
 
@@ -1209,7 +1209,7 @@ def gcodeFileCommand(filename, target):
 
             location = url_for(
                 ".readGcodeFile",
-                target=FileDestinations.SDCARD,
+                target=FileDestinations.PRINTER,
                 filename=remote,
                 _external=True,
             )
@@ -1219,7 +1219,7 @@ def gcodeFileCommand(filename, target):
                     file={
                         "name": remote,
                         "path": remote,
-                        "origin": FileDestinations.SDCARD,
+                        "origin": FileDestinations.PRINTER,
                         "refs": {"resource": location},
                     },
                     effectiveSelect=select,

@@ -22,7 +22,6 @@ from octoprint.filemanager import (
     FileDestinations,
     FileManager,
     NoSuchStorage,
-    valid_file_type,
 )
 from octoprint.filemanager.analysis import AnalysisQueue
 from octoprint.filemanager.storage.printer import PrinterFileStorage
@@ -188,7 +187,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     return
 
                 if self._selectedFile["sd"]:
-                    job_type = "sdcard"
+                    job_type = "printer"
                 else:
                     job_type = "local"
 
@@ -1086,28 +1085,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         cast(PrinterFilesMixin, self._connection).refresh_printer_files(
             blocking=blocking, timeout=timeout, tags=tags
         )
-
-    @util.deprecated(
-        message="_get_free_remote_name should no longer be used and will get removed in a future version",
-        since="1.12.0",
-    )
-    def _get_free_remote_name(self, filename):
-        files = self.get_sd_files()
-        existing_sd_files = [x["name"] for x in files.values()]
-
-        if valid_file_type(filename, "gcode"):
-            # figure out remote filename
-            remote_name = util.get_dos_filename(
-                filename,
-                existing_filenames=existing_sd_files,
-                extension="gco",
-                whitelisted_extensions=["gco", "g"],
-            )
-        else:
-            # probably something else added through a plugin, use it's basename as-is
-            remote_name = os.path.basename(filename)
-
-        return remote_name
 
     # ~~ ConnectedPrinterListenerMixin
 

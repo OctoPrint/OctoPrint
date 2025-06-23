@@ -94,7 +94,7 @@ $(function () {
             return self.filedata() ? self.filedata()["date"] : undefined;
         });
         self.sd = ko.pureComputed(() => {
-            return self.filedata() ? self.filedata()["origin"] === "sdcard" : undefined;
+            return self.filedata() ? self.filedata()["origin"] === "printer" : undefined;
         });
 
         self.calcFileKey = (data) => {

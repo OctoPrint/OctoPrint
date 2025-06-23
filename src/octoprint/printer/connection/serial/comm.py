@@ -1537,24 +1537,24 @@ class MachineCom:
             self._logger.exception("Error while trying to start printing")
             self._trigger_error(get_exception_string(), "start_print")
 
-    def _get_free_remote_name(self, filename: str) -> str:
+    def get_remote_name(self, filename: str, free: bool = False) -> str:
         if not self._capability_supported(self.CAPABILITY_LFN_WRITE) and valid_file_type(
             filename, "gcode"
         ):
-            # figure out remote filename
-            self.refreshSdFiles(blocking=True)
-            existingSdFiles = [x[0] for x in self.getSdFiles()]
-            remote_name = get_dos_filename(
+            existing = []
+            if free:
+                self.refreshSdFiles(blocking=True)
+                existing = [x[0] for x in self.getSdFiles()]
+
+            return get_dos_filename(
                 filename,
-                existing_filenames=existingSdFiles,
+                existing_filenames=existing,
                 extension="gco",
                 whitelisted_extensions=["gco", "g"],
             )
         else:
             # either LFN_WRITE is supported, or this is not a gcode file
-            remote_name = os.path.basename(filename)
-
-        return remote_name
+            return os.path.basename(filename)
 
     def startFileTransfer(
         self, path_or_file, filename, remote=None, special=False, tags=None
@@ -1567,7 +1567,7 @@ class MachineCom:
             tags = set()
 
         if remote is None:
-            remote = self._get_free_remote_name(filename)
+            remote = self.get_remote_name(filename, free=True)
 
         if self._sdFilesPrefix:
             remote = self._sdFilesPrefix + remote

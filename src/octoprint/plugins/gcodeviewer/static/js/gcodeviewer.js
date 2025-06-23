@@ -622,7 +622,7 @@ $(function () {
                 if (self.status === "idle") self.clear();
                 if (
                     data.job.file.path &&
-                    data.job.file.origin !== "sdcard" &&
+                    data.job.file.origin !== "printer" &&
                     self.status !== "request" &&
                     (!self.waitForApproval() ||
                         self.selectedFile.path() !== data.job.file.path ||

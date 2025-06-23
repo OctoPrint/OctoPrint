@@ -564,6 +564,12 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             tags=kwargs.get("tags", set()),
         )
 
+    def sanitize_file_name(self, name, *args, **kwargs):
+        if not self._comm:
+            raise RuntimeError("Printer is not connected")
+
+        return self._comm.get_remote_name(name)
+
     # ~~ comm.MachineComPrintCallback implementation
 
     def on_comm_log(self, message):
