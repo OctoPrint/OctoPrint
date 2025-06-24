@@ -1086,7 +1086,7 @@ class MachineCom:
 
     def getPrintTime(self):
         if self._currentFile is None or self._currentFile.getStartTime() is None:
-            return None
+            return 0.0
         else:
             return (
                 time.monotonic()
@@ -1095,11 +1095,7 @@ class MachineCom:
             )
 
     def getCleanedPrintTime(self):
-        printTime = self.getPrintTime()
-        if printTime is None:
-            return None
-
-        cleanedPrintTime = printTime - self._heatupWaitTimeLost
+        cleanedPrintTime = self.getPrintTime() - self._heatupWaitTimeLost
         if cleanedPrintTime < 0:
             cleanedPrintTime = 0.0
         return cleanedPrintTime

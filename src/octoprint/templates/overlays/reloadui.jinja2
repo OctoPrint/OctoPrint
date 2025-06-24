@@ -14,8 +14,8 @@
             </p>
             <p>
                 <button class="btn btn-primary btn-large"
-                        title="{{ _('Reload now') |edq }}"
-                        onclick="var event = arguments[0] || window.event; var source = event.target || event.srcElement; if (source.disabled) return; source.disabled = true; source.className += ' disabled'; source.firstChild.style.display = ''; OctoPrint.coreui.reload(true); return false;">
+                        title="{{ _('Reload now') | edq }}"
+                        onclick="var event = arguments[0] || window.event; var source = event.target || event.srcElement; if (source.disabled) return; source.disabled = true; source.className += ' disabled'; console.log(source); source.getElementsByClassName('fa-spinner')[0].style.display = ''; OctoPrint.coreui.reload(true); return false;">
                     <i class="fa fa-spinner fa-spin" style="display: none"></i> {{ _("Reload now") }}
                 </button>
             </p>

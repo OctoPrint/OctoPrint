@@ -117,12 +117,7 @@ class PrintTimeEstimator:
             (2-tuple) estimated print time left or None if not proper estimate could be made at all, origin of estimation
         """
 
-        if (
-            progress is None
-            or progress == 0
-            or printTime is None
-            or cleanedPrintTime is None
-        ):
+        if not progress or not printTime or not cleanedPrintTime:
             return None, None
 
         dumbTotalPrintTime = printTime / progress
