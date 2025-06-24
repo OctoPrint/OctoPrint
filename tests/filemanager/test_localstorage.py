@@ -108,61 +108,6 @@ class LocalStorageTest(unittest.TestCase):
         self.assertIn("display", stl_metadata)
         self.assertEqual("bp_cäse.stl", stl_metadata["display"])
 
-    def test_add_file_with_web(self):
-        import time
-
-        href = "http://www.example.com"
-        retrieved = time.time()
-
-        stl_name = self._add_and_verify_file(
-            "bp_case.stl",
-            "bp_case.stl",
-            FILE_BP_CASE_STL,
-            links=[("web", {"href": href, "retrieved": retrieved})],
-        )
-        stl_metadata = self.storage.get_metadata(stl_name)
-
-        self.assertIsNotNone(stl_metadata)
-        self.assertEqual(1, len(stl_metadata["links"]))
-        link = stl_metadata["links"][0]
-        self.assertTrue("web", link["rel"])
-        self.assertTrue("href" in link)
-        self.assertEqual(href, link["href"])
-        self.assertTrue("retrieved" in link)
-        self.assertEqual(retrieved, link["retrieved"])
-
-    def test_add_file_with_association(self):
-        stl_name = self._add_and_verify_file(
-            "bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL
-        )
-        gcode_name = self._add_and_verify_file(
-            "bp_case.gcode",
-            "bp_case.gcode",
-            FILE_BP_CASE_GCODE,
-            links=[("model", {"name": stl_name})],
-        )
-
-        stl_metadata = self.storage.get_metadata(stl_name)
-        gcode_metadata = self.storage.get_metadata(gcode_name)
-
-        # forward link
-        self.assertEqual(1, len(gcode_metadata["links"]))
-        link = gcode_metadata["links"][0]
-        self.assertEqual("model", link["rel"])
-        self.assertTrue("name" in link)
-        self.assertEqual(stl_name, link["name"])
-        self.assertTrue("hash" in link)
-        self.assertEqual(FILE_BP_CASE_STL.hash, link["hash"])
-
-        # reverse link
-        self.assertEqual(1, len(stl_metadata["links"]))
-        link = stl_metadata["links"][0]
-        self.assertEqual("machinecode", link["rel"])
-        self.assertTrue("name" in link)
-        self.assertEqual(gcode_name, link["name"])
-        self.assertTrue("hash" in link)
-        self.assertEqual(FILE_BP_CASE_GCODE.hash, link["hash"])
-
     def test_remove_file(self):
         stl_name = self._add_and_verify_file(
             "bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL
@@ -171,7 +116,6 @@ class LocalStorageTest(unittest.TestCase):
             "bp_case.gcode",
             "bp_case.gcode",
             FILE_BP_CASE_GCODE,
-            links=[("model", {"name": stl_name})],
         )
 
         stl_metadata = self.storage.get_metadata(stl_name)
@@ -188,8 +132,6 @@ class LocalStorageTest(unittest.TestCase):
 
         self.assertIsNone(stl_metadata)
         self.assertIsNotNone(gcode_metadata)
-
-        self.assertEqual(0, len(gcode_metadata["links"]))
 
     def test_copy_file(self):
         self._add_file("bp_case.stl", FILE_BP_CASE_STL)
@@ -485,14 +427,11 @@ class LocalStorageTest(unittest.TestCase):
             self.assertEqual(e.code, StorageError.ALREADY_EXISTS)
 
     def test_list(self):
-        bp_case_stl = self._add_and_verify_file(
-            "bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL
-        )
+        self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
         self._add_and_verify_file(
             "bp_case.gcode",
             "bp_case.gcode",
             FILE_BP_CASE_GCODE,
-            links=[("model", {"name": bp_case_stl})],
         )
 
         content_folder = self._add_and_verify_folder("content", "content")
@@ -532,14 +471,11 @@ class LocalStorageTest(unittest.TestCase):
         self.assertEqual(0, len(file_list["empty"]["children"]))
 
     def test_list_with_filter(self):
-        bp_case_stl = self._add_and_verify_file(
-            "bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL
-        )
+        self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
         self._add_and_verify_file(
             "bp_case.gcode",
             "bp_case.gcode",
             FILE_BP_CASE_GCODE,
-            links=[("model", {"name": bp_case_stl})],
         )
 
         content_folder = self._add_and_verify_folder("content", "content")
@@ -573,14 +509,11 @@ class LocalStorageTest(unittest.TestCase):
         self.assertEqual(0, len(file_list["empty"]["children"]))
 
     def test_list_without_recursive(self):
-        bp_case_stl = self._add_and_verify_file(
-            "bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL
-        )
+        self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
         self._add_and_verify_file(
             "bp_case.gcode",
             "bp_case.gcode",
             FILE_BP_CASE_GCODE,
-            links=[("model", {"name": bp_case_stl})],
         )
 
         content_folder = self._add_and_verify_folder("content", "content")
@@ -842,11 +775,11 @@ class LocalStorageTest(unittest.TestCase):
         self.assertEqual(expected_name, actual_name)
 
     def _add_and_verify_file(
-        self, path, expected_path, file_object, links=None, overwrite=False, display=None
+        self, path, expected_path, file_object, overwrite=False, display=None
     ):
         """Adds a file to the storage and verifies the sanitized path."""
         sanitized_path = self._add_file(
-            path, file_object, links=links, overwrite=overwrite, display=display
+            path, file_object, overwrite=overwrite, display=display
         )
         self.assertEqual(expected_path, sanitized_path)
         return sanitized_path
@@ -875,7 +808,9 @@ class LocalStorageTest(unittest.TestCase):
             json_metadata = json.load(f)
         self.assertDictEqual(metadata, json_metadata)
 
-    def _add_file(self, path, file_object, links=None, overwrite=False, display=None):
+    def _add_file(
+        self, path, file_object, overwrite=False, display=None, progress_callback=None
+    ):
         """
         Adds a file to the storage.
 
@@ -885,7 +820,11 @@ class LocalStorageTest(unittest.TestCase):
         Returns sanitized path.
         """
         sanitized_path = self.storage.add_file(
-            path, file_object, links=links, allow_overwrite=overwrite, display=display
+            path,
+            file_object,
+            allow_overwrite=overwrite,
+            display=display,
+            progress_callback=progress_callback,
         )
 
         split_path = sanitized_path.split("/")
@@ -905,10 +844,6 @@ class LocalStorageTest(unittest.TestCase):
         # assert hash
         self.assertTrue("hash" in metadata)
         self.assertEqual(file_object.hash, metadata["hash"])
-
-        # assert presence of links if supplied
-        if links:
-            self.assertTrue("links" in metadata)
 
         return sanitized_path
 

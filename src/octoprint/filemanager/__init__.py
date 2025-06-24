@@ -701,6 +701,8 @@ class FileManager:
         display: str = None,
         user: str = None,
         progress_callback: callable = None,
+        *args,
+        **kwargs,
     ):
         if not self._storage(location).capabilities.write_file:
             raise StorageError(
