@@ -132,6 +132,18 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
+    def get_hash(self, path: str = None, recursive: bool = False) -> str:
+        """
+        Get a hash corresponding to the current state of the specified ``path`` or ``path``'s subtree.
+
+        Args:
+            path (str or None): Path for which to determine the hash. If left out or set to None, defaults to
+                the storage root.
+            recursive (bool): Whether to determine only the date of the specified ``path`` (False, default) or
+                the whole ``path``'s subtree (True).
+        """
+        raise NotImplementedError()
+
     @deprecated(
         "last_modified has been deprecated in favor of get_lastmodified", since="1.12.0"
     )

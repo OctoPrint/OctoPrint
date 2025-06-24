@@ -7,6 +7,7 @@ import copy
 import logging
 import os
 import shutil
+import time
 from contextlib import contextmanager
 from os import scandir, walk
 
@@ -83,6 +84,8 @@ class LocalFileStorage(StorageInterface):
         self._filelist_cache = {}
         self._filelist_cache_mutex = threading.RLock()
 
+        self._last_activity = 0
+
         self._old_metadata = None
         self._initialize_metadata()
 
@@ -118,6 +121,10 @@ class LocalFileStorage(StorageInterface):
         self._logger.info(
             f"... file metadata for {self.basefolder} initialized successfully."
         )
+
+    def _update_last_activity(self):
+        self._last_activity = time.monotonic()
+        self._logger.debug(f"Last Activity: {self._last_activity}")
 
     @property
     def analysis_backlog(self):
@@ -222,6 +229,18 @@ class LocalFileStorage(StorageInterface):
 
         return int(last_modified)
 
+    def get_hash(self, path: str = None, recursive: bool = False) -> str:
+        import hashlib
+
+        hash = hashlib.sha1()
+
+        def hash_update(value: str):
+            hash.update(value.encode("utf-8"))
+
+        hash_update(str(self.get_lastmodified(path, recursive=recursive)))
+        hash_update(str(self._last_activity))
+        return hash.hexdigest()
+
     def file_in_path(self, path, filepath):
         filepath = self.sanitize_path(filepath)
         path = self.sanitize_path(path)
@@ -307,6 +326,7 @@ class LocalFileStorage(StorageInterface):
                 )
         else:
             os.mkdir(folder_path)
+            self._update_last_activity()
 
         metadata = self._get_metadata_entry(path, name, default={})
         metadata_dirty = False
@@ -347,6 +367,7 @@ class LocalFileStorage(StorageInterface):
         import shutil
 
         shutil.rmtree(folder_path)
+        self._update_last_activity()
 
         self._remove_metadata_entry(path, name)
 
@@ -446,6 +467,7 @@ class LocalFileStorage(StorageInterface):
 
         try:
             shutil.copytree(source_data["fullpath"], destination_data["fullpath"])
+            self._update_last_activity()
         except Exception as e:
             raise StorageError(
                 "Could not copy %s in %s to %s in %s"
@@ -474,6 +496,7 @@ class LocalFileStorage(StorageInterface):
 
         try:
             shutil.move(source_data["fullpath"], destination_data["fullpath"])
+            self._update_last_activity()
         except Exception as e:
             raise StorageError(
                 "Could not move %s in %s to %s in %s"
@@ -557,6 +580,7 @@ class LocalFileStorage(StorageInterface):
 
         # touch the file to set last access and modification time to now
         os.utime(file_path, None)
+        self._update_last_activity()
 
         if progress_callback:
             progress_callback(done=True)
@@ -593,6 +617,7 @@ class LocalFileStorage(StorageInterface):
 
         try:
             os.remove(file_path)
+            self._update_last_activity()
         except Exception as e:
             raise StorageError(f"Could not delete {name} in {path}", cause=e) from e
 
@@ -611,6 +636,7 @@ class LocalFileStorage(StorageInterface):
 
         try:
             shutil.copy2(source_data["fullpath"], destination_data["fullpath"])
+            self._update_last_activity()
         except Exception as e:
             raise StorageError(
                 "Could not copy %s in %s to %s in %s"
@@ -651,6 +677,7 @@ class LocalFileStorage(StorageInterface):
 
         try:
             shutil.move(source_data["fullpath"], destination_data["fullpath"])
+            self._update_last_activity()
         except Exception as e:
             raise StorageError(
                 "Could not move %s in %s to %s in %s"
@@ -1512,6 +1539,7 @@ class LocalFileStorage(StorageInterface):
                     f.write(
                         to_bytes(json.dumps(metadata, indent=2, separators=(",", ": ")))
                     )
+                self._update_last_activity()
             except Exception:
                 self._logger.exception(f"Error while writing .metadata.json to {path}")
 
@@ -1527,6 +1555,7 @@ class LocalFileStorage(StorageInterface):
                 if os.path.exists(metadata_path):
                     try:
                         os.remove(metadata_path)
+                        self._update_last_activity()
                     except Exception:
                         self._logger.exception(
                             f"Error while deleting {metadata_file} from {path}"

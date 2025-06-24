@@ -1078,6 +1078,9 @@ class FileManager:
     def last_modified(self, location, path=None, recursive=False):
         return self._storage(location).get_lastmodified(path=path, recursive=recursive)
 
+    def hash(self, location, path=None, recursive=False):
+        return self._storage(location).get_hash(path=path, recursive=recursive)
+
     def current_capabilities(self, location) -> StorageCapabilities:
         return self._storage(location).current_capabilities
 

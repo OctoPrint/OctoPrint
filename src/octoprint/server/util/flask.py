@@ -1431,9 +1431,7 @@ def check_lastmodified(lastmodified: Union[int, float, datetime]) -> bool:
 
     if not isinstance(lastmodified, datetime):
         raise ValueError(
-            "lastmodified must be a datetime or float or int instance but, got {} instead".format(
-                lastmodified.__class__
-            )
+            f"lastmodified must be a datetime, float or int instance, got {lastmodified.__class__} instead"
         )
 
     if not is_timezone_aware(lastmodified):

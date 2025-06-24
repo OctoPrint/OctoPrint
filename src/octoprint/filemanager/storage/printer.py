@@ -1,6 +1,7 @@
 import logging
 import os
 import tempfile
+import time
 from typing import IO, Optional
 
 from octoprint.filemanager import get_file_type
@@ -19,6 +20,11 @@ class PrinterFileStorage(StorageInterface):
 
         self._logger = logging.getLogger(__name__)
         self._connection = connection
+
+        self._last_activity = 0
+
+    def _update_last_activity(self):
+        self._last_activity = time.monotonic()
 
     def _get_printer_files(
         self, path=None, filter=None, refresh=False
@@ -57,6 +63,22 @@ class PrinterFileStorage(StorageInterface):
             return max(*dates)
 
         return None
+
+    def get_hash(self, path: str = None, recursive: bool = False) -> str:
+        import hashlib
+
+        files = sorted(
+            f.path for f in self._get_printer_files(path=path) if f.path is not None
+        )
+
+        hash = hashlib.sha1()
+
+        def hash_update(value: str):
+            hash.update(value.encode("utf-8"))
+
+        hash_update(",".join(files))
+        hash_update(str(self.get_lastmodified(path, recursive=recursive)))
+        return hash.hexdigest()
 
     def file_in_path(self, path, filepath):
         return filepath.startswith(path + "/")
@@ -134,6 +156,7 @@ class PrinterFileStorage(StorageInterface):
                 return
 
         self._connection.create_printer_folder(path)
+        self._update_last_activity()
 
     def remove_folder(self, path, recursive=True):
         if not self.capabilities.remove_folder:
@@ -148,6 +171,7 @@ class PrinterFileStorage(StorageInterface):
                 raise StorageError("{path} is not empty", code=StorageError.NOT_EMPTY)
 
         self._connection.delete_printer_folder(path, recursive=recursive)
+        self._update_last_activity()
 
     def copy_folder(self, source, destination):
         if not self.capabilities.copy_folder:
@@ -156,6 +180,7 @@ class PrinterFileStorage(StorageInterface):
             )
 
         self._connection.copy_printer_folder(source, destination)  # TODO
+        self._update_last_activity()
 
     def move_folder(self, source, destination):
         if not self.capabilities.move_folder:
@@ -164,6 +189,7 @@ class PrinterFileStorage(StorageInterface):
             )
 
         self._connection.move_printer_folder(source, destination)  # TODO
+        self._update_last_activity()
 
     def add_file(
         self,
@@ -192,6 +218,7 @@ class PrinterFileStorage(StorageInterface):
         def callback(*args, **kwargs):
             if kwargs.get("failed", False) or kwargs.get("done", False):
                 os.remove(temp.name)
+                self._update_last_activity()
             if progress_callback:
                 progress_callback(*args, **kwargs)
 
@@ -217,6 +244,7 @@ class PrinterFileStorage(StorageInterface):
             )
 
         self._connection.delete_printer_file(path)
+        self._update_last_activity()
 
     def copy_file(self, source, destination):
         if not self.capabilities.copy_file:
@@ -225,6 +253,7 @@ class PrinterFileStorage(StorageInterface):
             )
 
         self._connection.copy_printer_file(source, destination)  # TODO
+        self._update_last_activity()
 
     def move_file(self, source, destination):
         if not self.capabilities.move_file:
@@ -233,6 +262,7 @@ class PrinterFileStorage(StorageInterface):
             )
 
         self._connection.move_printer_file(source, destination)  # TODO
+        self._update_last_activity()
 
     def has_analysis(self, path):
         metadata = self.get_metadata(path)
@@ -280,6 +310,7 @@ class PrinterFileStorage(StorageInterface):
 
         metadata.model_extra[key] = data
         self._connection.set_printer_file_metadata(path, metadata)
+        self._update_last_activity()
 
     def remove_additional_metadata(self, path, key):
         if not self.capabilities.metadata:
@@ -294,6 +325,7 @@ class PrinterFileStorage(StorageInterface):
 
         try:
             del metadata.model_extra[key]
+            self._update_last_activity()
         except KeyError:
             pass
 

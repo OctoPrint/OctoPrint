@@ -36,19 +36,16 @@ from octoprint.server.util.flask import (
     with_revalidation_checking,
 )
 from octoprint.settings import settings, valid_boolean_trues
-from octoprint.util import sv, time_this
+from octoprint.util import time_this
 
 # ~~ GCODE file handling
 
 _file_cache = {}
 _file_cache_mutex = threading.RLock()
 
-_DATA_FORMAT_VERSION = "v2"
+_DATA_FORMAT_VERSION = "v3"
 
-
-def _clear_file_cache():
-    with _file_cache_mutex:
-        _file_cache.clear()
+_logger = logging.getLogger(__name__)
 
 
 def _create_lastmodified(path, recursive):
@@ -63,7 +60,7 @@ def _create_lastmodified(path, recursive):
             try:
                 lms.append(fileManager.last_modified(storage, recursive=recursive))
             except Exception:
-                logging.getLogger(__name__).exception(
+                _logger.exception(
                     "There was an error retrieving the last modified data from storage {}".format(
                         storage
                     )
@@ -92,7 +89,7 @@ def _create_lastmodified(path, recursive):
         except octoprint.filemanager.NoSuchStorage:
             pass
         except Exception:
-            logging.getLogger(__name__).exception(
+            _logger.exception(
                 "There was an error retrieving the last modified data from storage {} and path {}".format(
                     storage, path_in_storage
                 )
@@ -107,6 +104,39 @@ def _create_etag(path, filter, recursive, lm=None):
     if lm is None:
         return None
 
+    path = path[len("/api/files") :]
+    if path.startswith("/"):
+        path = path[1:]
+
+    storage_hashes = []
+    if path == "":
+        # all storages involved
+        for storage in sorted(fileManager.registered_storages):
+            try:
+                storage_hashes.append(fileManager.hash(storage, recursive=recursive))
+            except Exception:
+                _logger.exception(
+                    f"There was an error retrieving the hash from storage {storage}"
+                )
+
+    else:
+        if "/" in path:
+            storage, path_in_storage = path.split("/", 1)
+        else:
+            storage = path
+            path_in_storage = None
+
+        try:
+            storage_hashes.append(
+                fileManager.hash(storage, path=path_in_storage, recursive=recursive)
+            )
+        except octoprint.filemanager.NoSuchStorage:
+            pass
+        except Exception:
+            _logger.exception(
+                f"There was an error retrieving the hash from storage {storage} and path {path}"
+            )
+
     hash = hashlib.sha1()
 
     def hash_update(value):
@@ -114,21 +144,9 @@ def _create_etag(path, filter, recursive, lm=None):
         hash.update(value)
 
     hash_update(str(lm))
+    hash_update(",".join(storage_hashes))
     hash_update(str(filter))
     hash_update(str(recursive))
-
-    path = path[len("/api/files") :]
-    if path.startswith("/"):
-        path = path[1:]
-
-    if "/" in path:
-        storage, _ = path.split("/", 1)
-    else:
-        storage = path
-
-    if path == "" or storage == FileDestinations.PRINTER:  # TODO
-        # include sd data in etag
-        hash_update(repr(sorted(printer.get_sd_files(), key=lambda x: sv(x["name"]))))
 
     hash_update(_DATA_FORMAT_VERSION)  # increment version if we change the API format
 
@@ -335,10 +353,12 @@ def _getFileList(
 
     with _file_cache_mutex:
         cache_key = f"{origin}:{path}:{recursive}:{filter}"
-        files, lastmodified = _file_cache.get(cache_key, ([], None))
-        # recursive needs to be True for lastmodified queries so we get lastmodified of whole subtree - #3422
+        files, lastmodified, storage_hash = _file_cache.get(cache_key, ([], None, None))
+        # recursive needs to be True for so we get lastmodified & hash of whole subtree - #3422
         if (
             not allow_from_cache
+            or storage_hash is None
+            or storage_hash != fileManager.hash(origin, path=path, recursive=True)
             or lastmodified is None
             or lastmodified < fileManager.last_modified(origin, path=path, recursive=True)
         ):
@@ -353,7 +373,7 @@ def _getFileList(
                 )[origin].values()
             )
             lastmodified = fileManager.last_modified(origin, path=path, recursive=True)
-            _file_cache[cache_key] = (files, lastmodified)
+            _file_cache[cache_key] = (files, lastmodified, storage_hash)
 
     def analyse_recursively(files, path=None):
         if path is None:
@@ -572,9 +592,7 @@ def uploadGcodeFile(target):
                 FileDestinations.LOCAL, canonFilename
             )
         except Exception:
-            logging.getLogger(__name__).exception(
-                f"Error canonicalizing {upload_name} against {target}"
-            )
+            _logger.exception(f"Error canonicalizing {upload_name} against {target}")
             canonFilename = None
             futurePath = None
             futureFilename = None
@@ -614,9 +632,8 @@ def uploadGcodeFile(target):
         upload_done = False
 
         def progress_callback(progress=None, done=False, failed=False):
-            global upload_done
-            if done or failed:
-                upload_done = True
+            nonlocal upload_done
+            upload_done = done or failed
 
         try:
             upload = octoprint.filemanager.util.DiskFileWrapper(upload_name, upload_path)
@@ -1300,7 +1317,7 @@ def deleteGcodeFile(filename, target):
 
 def _abortWithException(error):
     if type(error) is StorageError:
-        logging.getLogger(__name__).error(f"{error}: {error.code}", exc_info=error.cause)
+        _logger.error(f"{error}: {error.code}", exc_info=error.cause)
         if error.code == StorageError.INVALID_DIRECTORY:
             abort(400, description="Could not create folder, invalid directory")
         elif error.code == StorageError.INVALID_FILE:
@@ -1324,7 +1341,7 @@ def _abortWithException(error):
         else:
             abort(500, description=error)
     else:
-        logging.getLogger(__name__).exception(error)
+        _logger.exception(error)
         abort(500, description=str(error).split(":")[0])
 
 
