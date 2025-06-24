@@ -41,15 +41,13 @@ test.describe("File selection", {tag: "@isolated"}, () => {
     });
 
     test("select printer file", async ({page, filesApi}) => {
-        const fileId = filesApi.getEntryId("sdcard", "select~1.gco");
+        const fileId = filesApi.getEntryId("printer", "select~1.gco");
         const fileEntry = await page.locator(`#gcode_file_${fileId}`);
 
         await fileEntry.locator(".btn-files-select").click();
 
         await expect(fileEntry.locator(".title")).toHaveCSS("font-weight", "700");
-        await expect(page.getByTestId("selected-file-string")).toHaveText(
-            "/select~1.gco"
-        );
+        await expect(page.getByTestId("selected-file-string")).toHaveText("select~1.gco");
         await expect(page.getByTestId("selected-file-sd")).toBeVisible();
     });
 });

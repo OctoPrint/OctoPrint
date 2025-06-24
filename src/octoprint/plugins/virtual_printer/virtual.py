@@ -1574,6 +1574,8 @@ class VirtualPrinter:
             # index by lower case, we simulate a case insensitive filesystem like FAT,
             # which should be closest to what we encounter in reality
             result[entry.name.lower()] = data
+            if dosname.lower() != entry.name.lower():
+                result[dosname.lower()] = entry.name.lower()
         return result
 
     def _getSdFileData(self, filename: str) -> Optional[dict[str, Any]]:
