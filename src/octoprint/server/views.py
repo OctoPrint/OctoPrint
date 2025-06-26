@@ -1365,17 +1365,7 @@ def fetch_template_data(refresh=False):
 
     # connection sidebar panel
 
-    templates["connection_options"]["entries"] = {
-        "serial": (
-            gettext("Serial Connection"),
-            {
-                "name": "Serial Connection",
-                "connector": "serial",
-                "template": "sidebar/connection/serial_connection_option.jinja2",
-                "custom_bindings": False,
-            },
-        )
-    }
+    templates["connection_options"]["entries"] = {}
 
     # extract data from template plugins
 

@@ -9,25 +9,6 @@ $(function () {
 
         self.allViewModels = undefined;
 
-        self.serialConnector = {
-            portOptions: ko.observableArray([]),
-            baudrateOptions: ko.observableArray([]),
-            currentPort: ko.observable(),
-            currentBaudrate: ko.observable()
-        };
-        self.serialConnector.validPort = ko.pureComputed(
-            () =>
-                !self.connectionOptionsLastUpdated() ||
-                self.serialConnector.portOptions().length > 0 ||
-                self.settings.settings.serial.ignoreEmptyPorts()
-        );
-        self.serialConnector.portCaption = ko.pureComputed(() =>
-            self.serialConnector.validPort() ? "AUTO" : gettext("No serial port found")
-        );
-        self.serialConnector.enablePort = ko.pureComputed(
-            () => self.serialConnector.validPort() && self.isErrorOrClosed()
-        );
-
         self.printerProfiles.profiles.items.subscribe(function () {
             var allProfiles = self.printerProfiles.profiles.items();
 
@@ -125,53 +106,12 @@ $(function () {
                 self.selectedConnector(connectors[0].connector);
             }
 
-            // serial connector
-
-            const ports = connectorParameters.serial.port;
-            const baudrates = connectorParameters.serial.baudrate;
-
-            const currentPort =
-                currentConnector === "serial" ? response.current.parameters.port : null;
-            const currentBaudrate =
-                currentConnector === "serial" ? response.current.baudrate : null;
-
-            const preferredPort =
-                preferredConnector == "serial"
-                    ? response.options.preferredConnector.parameters.port
-                    : null;
-            const preferredBaudrate =
-                preferredConnector == "serial"
-                    ? response.options.preferredConnector.parameters.baudrate
-                    : null;
-
-            self.serialConnector.portOptions(ports);
-            self.serialConnector.baudrateOptions(baudrates);
-
-            if (!self.serialConnector.currentPort() && ports) {
-                if (currentPort && ports.indexOf(currentPort) >= 0) {
-                    self.serialConnector.currentPort(currentPort);
-                } else if (preferredPort && ports.indexOf(preferredPort) >= 0) {
-                    self.serialConnector.currentPort(preferredPort);
-                }
-            }
-
-            if (!self.serialConnector.currentBaudrate() && baudrates) {
-                if (currentBaudrate && baudrates.indexOf(currentBaudrate) >= 0) {
-                    self.serialConnector.currentBaudrate(currentBaudrate);
-                } else if (
-                    preferredBaudrate &&
-                    baudrates.indexOf(preferredBaudrate) >= 0
-                ) {
-                    self.serialConnector.currentBaudrate(preferredBaudrate);
-                }
-            }
-
-            // other connectors
+            // connectors
 
             callViewModels(self.allViewModels, "onConnectionDataReceived", [
-                response.current,
                 connectorParameters,
-                response.preferredConnector
+                response.current,
+                response.options.preferredConnector
             ]);
 
             // printer profile

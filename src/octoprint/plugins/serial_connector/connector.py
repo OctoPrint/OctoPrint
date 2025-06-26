@@ -16,8 +16,9 @@ from octoprint.printer import (
     UnknownScript,
 )
 from octoprint.printer.connection import ConnectedPrinter, ConnectedPrinterState
-from octoprint.printer.connection.serial.comm import MachineCom, baudrateList, serialList
 from octoprint.printer.job import JobProgress, PrintJob, UploadJob
+
+from .serial_comm import MachineCom, baudrateList, serialList
 
 
 class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):

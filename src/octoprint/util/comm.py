@@ -1,9 +1,9 @@
 import warnings
 
 warnings.warn(
-    "octoprint.util.comm has been renamed to octoprint.printer.connection.serial.comm",
+    "octoprint.util.comm has been moved into the bundled plugin 'serial_connector' and direct access should be considered deprecated",
     DeprecationWarning,
     stacklevel=0,
 )
 
-from octoprint.printer.connection.serial.comm import *  # noqa: F403
+from octoprint.plugins.serial_connector.serial_comm import *  # noqa: F403

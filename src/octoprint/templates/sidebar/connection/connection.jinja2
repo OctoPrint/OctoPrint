@@ -8,12 +8,14 @@
 
     {% for key in templates.connection_options.order %}
         {% set entry, data = templates.connection_options.entries[key] %}
-        <div id="connection_options_{{ data.connector }}"
+        <div id="connection_options_{{ data.connector }}_wrapper"
              data-bind="visible: selectedConnector() == '{{ data.connector }}'">
             {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
-            {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}
-            {% include data.template ignore missing %}
-        {% endtry %}
+            <div id="connection_options_{{ data.connector }}">
+                {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}
+                {% include data.template ignore missing %}
+            {% endtry %}
+        </div>
         {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
     </div>
 {% endfor %}
