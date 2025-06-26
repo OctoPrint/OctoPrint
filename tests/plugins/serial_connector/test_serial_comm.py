@@ -4,12 +4,12 @@ from unittest import mock
 import ddt
 import pytest
 
-import octoprint.printer.connection.serial.comm as comm
+import octoprint.plugins.serial_connector.serial_comm as comm
 from octoprint.util.files import m20_timestamp_to_unix_timestamp
 
 
 @ddt.ddt
-class TestCommErrorHandling(unittest.TestCase):
+class TestSerialCommErrorHandling(unittest.TestCase):
     def setUp(self):
         self._comm = mock.create_autospec(comm.MachineCom)
 
