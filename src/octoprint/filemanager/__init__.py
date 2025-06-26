@@ -6,6 +6,7 @@ import logging
 import os
 import time
 from collections import namedtuple
+from typing import Callable
 
 import octoprint.plugin
 import octoprint.util
@@ -790,18 +791,23 @@ class FileManager:
         )
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
-    def copy_file(self, location, source, destination):
-        path_in_storage = self._storage(location).copy_file(source, destination)
-        if not self.has_analysis(location, path_in_storage):
-            queue_entry = self._analysis_queue_entry(location, path_in_storage)
+    def copy_file(self, storage, source, destination):
+        if not self._storage(storage).capabilities.copy_file:
+            raise StorageError(
+                f"File copy on {storage} is not supported", code=StorageError.UNSUPPORTED
+            )
+
+        path_in_storage = self._storage(storage).copy_file(source, destination)
+        if not self.has_analysis(storage, path_in_storage):
+            queue_entry = self._analysis_queue_entry(storage, path_in_storage)
             if queue_entry:
                 self._analysis_queue.enqueue(queue_entry)
 
-        _, name = self._storage(location).split_path(path_in_storage)
+        _, name = self._storage(storage).split_path(path_in_storage)
         eventManager().fire(
             Events.FILE_ADDED,
             {
-                "storage": location,
+                "storage": storage,
                 "path": path_in_storage,
                 "name": name,
                 "type": get_file_type(name),
@@ -810,27 +816,25 @@ class FileManager:
         )
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
-    def move_file(self, location, source, destination):
-        source_in_storage = self._storage(location).path_in_storage(source)
-        destination_in_storage = self._storage(location).path_in_storage(destination)
+    def move_file(self, storage, source, destination):
+        source_in_storage = self._storage(storage).path_in_storage(source)
+        destination_in_storage = self._storage(storage).path_in_storage(destination)
 
-        queue_entry = self._analysis_queue_entry(location, source_in_storage)
+        queue_entry = self._analysis_queue_entry(storage, source_in_storage)
         self._analysis_queue.dequeue(queue_entry)
-        path = self._storage(location).move_file(
-            source_in_storage, destination_in_storage
-        )
-        if not self.has_analysis(location, path):
-            queue_entry = self._analysis_queue_entry(location, path)
+        path = self._storage(storage).move_file(source_in_storage, destination_in_storage)
+        if not self.has_analysis(storage, path):
+            queue_entry = self._analysis_queue_entry(storage, path)
             if queue_entry:
                 self._analysis_queue.enqueue(queue_entry)
 
-        _, source_name = self._storage(location).split_path(source_in_storage)
-        _, destination_name = self._storage(location).split_path(destination_in_storage)
+        _, source_name = self._storage(storage).split_path(source_in_storage)
+        _, destination_name = self._storage(storage).split_path(destination_in_storage)
 
         eventManager().fire(
             Events.FILE_REMOVED,
             {
-                "storage": location,
+                "storage": storage,
                 "path": source_in_storage,
                 "name": source_name,
                 "type": get_file_type(source_name),
@@ -840,7 +844,7 @@ class FileManager:
         eventManager().fire(
             Events.FILE_ADDED,
             {
-                "storage": location,
+                "storage": storage,
                 "path": destination_in_storage,
                 "name": destination_name,
                 "type": get_file_type(destination_name),
@@ -850,84 +854,87 @@ class FileManager:
         eventManager().fire(
             Events.FILE_MOVED,
             {
-                "storage": location,
+                "source_storage": storage,
                 "source_path": source_in_storage,
                 "source_name": source_name,
                 "source_type": get_file_type(source_name),
+                "destination_storage": storage,
                 "destination_path": destination_in_storage,
                 "destination_name": destination_name,
                 "destination_type": get_file_type(destination_name),
+                # backwards compatibility
+                "storage": storage,
             },
         )
 
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
-    def add_folder(self, location, path, ignore_existing=True, display=None, user=None):
-        path_in_storage = self._storage(location).add_folder(
+    def add_folder(self, storage, path, ignore_existing=True, display=None, user=None):
+        path_in_storage = self._storage(storage).add_folder(
             path, ignore_existing=ignore_existing, display=display, user=user
         )
 
-        _, name = self._storage(location).split_path(path_in_storage)
+        _, name = self._storage(storage).split_path(path_in_storage)
         eventManager().fire(
             Events.FOLDER_ADDED,
-            {"storage": location, "path": path_in_storage, "name": name},
+            {"storage": storage, "path": path_in_storage, "name": name},
         )
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
         return path_in_storage
 
-    def remove_folder(self, location, path, recursive=True):
-        path_in_storage = self._storage(location).path_in_storage(path)
+    def remove_folder(self, storage, path, recursive=True):
+        path_in_storage = self._storage(storage).path_in_storage(path)
 
-        self._analysis_queue.dequeue_folder(location, path_in_storage)
+        self._analysis_queue.dequeue_folder(storage, path_in_storage)
         self._analysis_queue.pause()
-        self._storage(location).remove_folder(path_in_storage, recursive=recursive)
+        self._storage(storage).remove_folder(path_in_storage, recursive=recursive)
         self._analysis_queue.resume()
 
-        _, name = self._storage(location).split_path(path_in_storage)
+        _, name = self._storage(storage).split_path(path_in_storage)
         eventManager().fire(
             Events.FOLDER_REMOVED,
-            {"storage": location, "path": path_in_storage, "name": name},
+            {"storage": storage, "path": path_in_storage, "name": name},
         )
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
-    def copy_folder(self, location, source, destination):
-        path_in_storage = self._storage(location).copy_folder(source, destination)
+    def copy_folder(self, storage, source, destination):
+        path_in_storage = self._storage(storage).copy_folder(source, destination)
         self._determine_analysis_backlog(
-            location, self._storage(location), root=path_in_storage
+            storage, self._storage(storage), root=path_in_storage
         )
 
-        _, name = self._storage(location).split_path(path_in_storage)
+        _, name = self._storage(storage).split_path(path_in_storage)
         eventManager().fire(
             Events.FOLDER_ADDED,
-            {"storage": location, "path": path_in_storage, "name": name},
+            {"storage": storage, "path": path_in_storage, "name": name},
         )
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
-    def move_folder(self, location, source, destination):
-        source_in_storage = self._storage(location).path_in_storage(source)
-        destination_in_storage = self._storage(location).path_in_storage(destination)
+    def move_folder(self, storage, source, destination):
+        source_in_storage = self._storage(storage).path_in_storage(source)
+        destination_in_storage = self._storage(storage).path_in_storage(destination)
 
-        self._analysis_queue.dequeue_folder(location, source_in_storage)
+        self._analysis_queue.dequeue_folder(storage, source_in_storage)
         self._analysis_queue.pause()
-        destination_in_storage = self._storage(location).move_folder(
+        destination_in_storage = self._storage(storage).move_folder(
             source_in_storage, destination_in_storage
         )
         self._determine_analysis_backlog(
-            location, self._storage(location), root=destination_in_storage
+            storage, self._storage(storage), root=destination_in_storage
         )
         self._analysis_queue.resume()
 
-        _, source_name = self._storage(location).split_path(source_in_storage)
-        _, destination_name = self._storage(location).split_path(destination_in_storage)
+        _, source_name = self._storage(storage).split_path(source_in_storage)
+        _, destination_name = self._storage(storage).split_path(destination_in_storage)
 
         eventManager().fire(
             Events.FOLDER_REMOVED,
-            {"storage": location, "path": source_in_storage, "name": source_name},
+            {"storage": storage, "path": source_in_storage, "name": source_name},
         )
         eventManager().fire(
             Events.FOLDER_ADDED,
             {
-                "storage": location,
+                "storage": storage,
                 "path": destination_in_storage,
                 "name": destination_name,
             },
@@ -935,7 +942,7 @@ class FileManager:
         eventManager().fire(
             Events.FOLDER_MOVED,
             {
-                "storage": location,
+                "storage": storage,
                 "source_path": source_in_storage,
                 "source_name": source_name,
                 "destination_path": destination_in_storage,
@@ -944,6 +951,149 @@ class FileManager:
         )
 
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
+
+    def copy_file_across_storage(
+        self,
+        source_storage: str,
+        source_path: str,
+        destination_storage: str,
+        destination_path: str,
+        progress_callback: Callable = None,
+    ) -> None:
+        self._action_across_storage(
+            "copy_file",
+            source_storage,
+            source_path,
+            destination_storage,
+            destination_path,
+            progress_callback=progress_callback,
+        )
+
+    def move_file_across_storage(
+        self,
+        source_storage: str,
+        source_path: str,
+        destination_storage: str,
+        destination_path: str,
+        progress_callback: Callable = None,
+    ) -> None:
+        self._action_across_storage(
+            "move_file",
+            source_storage,
+            source_path,
+            destination_storage,
+            destination_path,
+            progress_callback=progress_callback,
+        )
+
+    def _action_across_storage(
+        self,
+        action: str,
+        source_storage: str,
+        source_path: str,
+        destination_storage: str,
+        destination_path: str,
+        progress_callback: Callable = None,
+    ) -> None:
+        storage_src = self._storage(source_storage)
+        storage_dst = self._storage(destination_storage)
+
+        if (
+            not storage_src.capabilities.read_file
+            or not storage_dst.capabilities.write_file
+            or (action == "move_file" and not storage_src.capabilities.remove_file)
+        ):
+            raise StorageError(
+                f"File copy from storage {source_storage} to {destination_storage} is not supported",
+                code=StorageError.UNSUPPORTED,
+            )
+
+        source_in_storage = storage_src.path_in_storage(source_path)
+        destination_in_storage = storage_dst.path_in_storage(destination_path)
+        _, source_name = storage_src.split_path(source_in_storage)
+
+        # get metadata for source
+        metadata = {}
+        if storage_src.capabilities.metadata:
+            metadata = storage_src.get_metadata(source_path)
+
+        # get file object for source
+        source_file = storage_src.read_file(source_path)
+        source_wrapper = StreamWrapper(source_name, source_file)
+
+        # write it to the destination storage
+        def callback(*args, **kwargs):
+            if kwargs.get("done", False) or kwargs.get("failed", False):
+                _, destination_name = storage_dst.split_path(destination_in_storage)
+
+                if action == "copy_file":
+                    # trigger FILE_ADDED
+                    eventManager.fire(
+                        Events.FILE_ADDED,
+                        {
+                            "storage": destination_storage,
+                            "path": destination_in_storage,
+                            "name": destination_name,
+                            "type": get_file_type(destination_name),
+                            "operation": "copy",
+                        },
+                    )
+
+                elif action == "move_file":
+                    # delete source file
+                    storage_src.remove_file(source_in_storage)
+
+                    # trigger FILE_REMOVED, FILE_ADDED, FILE_MOVED
+                    eventManager.fire(
+                        Events.FILE_REMOVED,
+                        {
+                            "storage": source_storage,
+                            "path": source_in_storage,
+                            "name": source_name,
+                            "type": get_file_type(source_name),
+                            "operation": "move",
+                        },
+                    )
+
+                    eventManager.fire(
+                        Events.FILE_ADDED,
+                        {
+                            "storage": destination_storage,
+                            "path": destination_in_storage,
+                            "name": destination_name,
+                            "type": get_file_type(destination_name),
+                            "operation": "move",
+                        },
+                    )
+
+                    eventManager.fire(
+                        Events.FILE_MOVED,
+                        {
+                            "source_storage": source_storage,
+                            "source_path": source_in_storage,
+                            "source_name": source_name,
+                            "source_type": get_file_type(source_name),
+                            "destination_storage": destination_storage,
+                            "destination_path": destination_in_storage,
+                            "destination_name": destination_name,
+                            "destination_type": get_file_type(destination_name),
+                            # backwards compatibility
+                            "storage": source_storage,
+                        },
+                    )
+
+                eventManager.fire(Events.UPDATED_FILES, {"type": "printables"})
+
+            if callable(progress_callback):
+                progress_callback(*args, **kwargs)
+
+        storage_dst.add_file(
+            destination_in_storage,
+            source_wrapper,
+            display=metadata.get("display"),
+            user=metadata.get("user"),
+            progress_callback=callback,
+        )
 
     def get_size(self, location, path):
         try:

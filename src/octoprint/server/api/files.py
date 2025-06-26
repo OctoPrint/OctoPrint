@@ -782,12 +782,22 @@ def gcodeFileCommand(filename, target):
         "analyse": [],
         "copy": ["destination"],
         "move": ["destination"],
+        "copy_storage": ["storage", "destination"],
+        "move_storage": ["storage", "destination"],
         "uploadSd": [],
     }
 
     command, data, response = get_json_command_from_request(request, valid_commands)
     if response is not None:
         return response
+
+    if command == "uploadSd":
+        command = "copy_storage"
+        data["storage"] = "printer"
+        data["destination"] = filename
+        _logger.warning(
+            "File command 'uploadSD' is outdated, use 'copy_storage' with storage 'printer' instead"
+        )
 
     user = current_user.get_name()
 
@@ -1050,10 +1060,6 @@ def gcodeFileCommand(filename, target):
 
     elif command == "copy" or command == "move":
         with Permissions.FILES_UPLOAD.require(403):
-            # Copy and move are only possible on local storage
-            if target not in fileManager.registered_storages:
-                abort(400, description=f"Unsupported target for {command}")
-
             if not _verifyFileExists(target, filename) and not _verifyFolderExists(
                 target, filename
             ):
@@ -1140,7 +1146,12 @@ def gcodeFileCommand(filename, target):
 
                         # deselect the file if it's currently selected
                         currentOrigin, currentFilename = _getCurrentFile()
-                        if currentFilename is not None and filename == currentFilename:
+                        if (
+                            currentOrigin is not None
+                            and currentOrigin == target
+                            and currentFilename is not None
+                            and filename == currentFilename
+                        ):
                             printer.set_job(None)
 
                         if is_file:
@@ -1157,7 +1168,7 @@ def gcodeFileCommand(filename, target):
                 else:
                     abort(
                         500,
-                        description=f"Could not {command} {filename} to {destination}",
+                        description=f"Could not {command} {filename} to {destination}, unknown error",
                     )
 
             location = url_for(
@@ -1185,65 +1196,156 @@ def gcodeFileCommand(filename, target):
             r.headers["Location"] = location
             return r
 
-    elif command == "uploadSd":  # TODO: add copy/move between storages
-        try:
-            target = _validate_storage(target)
-        except ValueError:
-            abort(404)
-
-        if not fileManager.capabilities(target).path_on_disk:
-            abort(400, description=f"Unsupported storage for {command}")
-
-        if not settings().getBoolean(["feature", "sdSupport"]):
-            abort(400, "Invalid command,SD support is disabled")
-
-        if not fileManager.capabilities(FileDestinations.PRINTER).write_file:
-            abort(400, "Printer doesn't support uploads")
-
+    elif command == "copy_storage" or command == "move_storage":
         with Permissions.FILES_UPLOAD.require(403):
+            if not fileManager.file_exists(target, filename):
+                abort(400, description=f"{command} is only supported for files")
+
             if not _verifyFileExists(target, filename) and not _verifyFolderExists(
                 target, filename
             ):
                 abort(404)
 
-            select = data.get("select") in valid_boolean_trues
-            print = data.get("print") in valid_boolean_trues
+            if not fileManager.capabilities(target).read_file or (
+                command == "move_storage"
+                and not fileManager.capabilities(target).remove_file
+            ):
+                abort(
+                    400, description=f"Storage {target} does not support this operation"
+                )
 
-            def selectAndOrPrint(filename, *args):
-                if select or print:
-                    job = PrintJob(
-                        storage=FileDestinations.PRINTER, path=filename, owner=user
-                    )
-                    printer.set_job(job, print_after_select=print)
+            dst_storage = data["storage"]
+            if dst_storage not in fileManager.registered_storages:
+                abort(400, f"Target storage {dst_storage} is not available")
 
-            path = fileManager.path_on_disk(FileDestinations.LOCAL, filename)
-            remote = printer.add_sd_file(
-                filename,
-                path,
-                on_success=selectAndOrPrint,
-                tags={"source:api", "api:files.sd"},
+            if not fileManager.capabilities(dst_storage).write_file:
+                abort(
+                    400,
+                    description=f"Target storage {dst_storage} does not support this operation",
+                )
+
+            path, name = fileManager.split_path(target, filename)
+
+            destination = data["destination"]
+            dst_path, dst_name = fileManager.split_path(dst_storage, destination)
+            sanitized_destination = fileManager.join_path(
+                dst_storage, dst_path, fileManager.sanitize_name(dst_storage, dst_name)
             )
+
+            # Check for exception thrown by _verifyFolderExists, if outside the root directory
+            try:
+                if (
+                    _verifyFolderExists(dst_storage, destination)
+                    and sanitized_destination != filename
+                ):
+                    # destination is an existing folder and not ourselves (= display rename), we'll assume we are supposed
+                    # to move filename to this folder under the same name
+                    destination = fileManager.join_path(dst_storage, destination, name)
+
+                if _verifyFileExists(dst_storage, destination) or _verifyFolderExists(
+                    dst_storage, destination
+                ):
+                    abort(409, description="File or folder does already exist")
+
+            except HTTPException:
+                raise
+            except Exception:
+                abort(
+                    409,
+                    description="Exception thrown by storage, bad folder/file name?",
+                )
+
+            upload_done = False
+
+            def progress_callback(progress=None, done=False, failed=False):
+                nonlocal upload_done
+                upload_done = done or failed
+
+            try:
+                if command == "copy_storage":
+                    if not fileManager.capabilities(dst_storage).write_file:
+                        abort(400, description="Storage does not support this operation")
+
+                    # destination already there? error...
+                    if _verifyFileExists(dst_storage, destination) or _verifyFolderExists(
+                        dst_storage, destination
+                    ):
+                        abort(409, description="File or folder does already exist")
+
+                    fileManager.copy_file_across_storage(
+                        target,
+                        filename,
+                        dst_storage,
+                        destination,
+                        progress_callback=progress_callback,
+                    )
+
+                elif command == "move_storage":
+                    with Permissions.FILES_DELETE.require(403):
+                        if _isBusy(target, filename):
+                            abort(
+                                409,
+                                description="Trying to move a file or folder that is currently in use",
+                            )
+
+                        # destination already there? error...
+                        if _verifyFileExists(
+                            dst_storage, destination
+                        ) or _verifyFolderExists(dst_storage, destination):
+                            abort(409, description="File or folder does already exist")
+
+                        # deselect the file if it's currently selected
+                        currentOrigin, currentFilename = _getCurrentFile()
+                        if (
+                            currentOrigin is not None
+                            and currentOrigin == target
+                            and currentFilename is not None
+                            and filename == currentFilename
+                        ):
+                            printer.set_job(None)
+
+                        fileManager.move_file_across_storage(
+                            target,
+                            filename,
+                            dst_storage,
+                            destination,
+                            progress_callback=progress_callback,
+                        )
+
+            except octoprint.filemanager.storage.StorageError as e:
+                if e.code == octoprint.filemanager.storage.StorageError.UNSUPPORTED:
+                    abort(
+                        415,
+                        description=f"Could not {command} {target}:{filename} to {dst_storage}:{destination}, unsupported",
+                    )
+                elif e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
+                    abort(
+                        415,
+                        description=f"Could not {command} {target}:{filename} to {dst_storage}:{destination}, invalid type",
+                    )
+                else:
+                    abort(
+                        500,
+                        description=f"Could not {command} {target}:{filename} to {dst_storage}:{destination}, unknown error",
+                    )
 
             location = url_for(
-                ".readGcodeFile",
-                target=FileDestinations.PRINTER,
-                filename=remote,
-                _external=True,
+                ".readGcodeFile", target=dst_storage, filename=destination, _external=True
             )
+            result = {
+                "name": dst_name,
+                "path": dst_path,
+                "origin": dst_storage,
+                "done": upload_done,
+                "refs": {"resource": location},
+            }
+            if fileManager.capabilities(dst_storage).read_file:
+                result["refs"]["download"] = (
+                    url_for("index", _external=True)
+                    + f"downloads/files/{dst_storage}/{urlquote(destination)}"
+                )
 
-            r = make_response(
-                jsonify(
-                    file={
-                        "name": remote,
-                        "path": remote,
-                        "origin": FileDestinations.PRINTER,
-                        "refs": {"resource": location},
-                    },
-                    effectiveSelect=select,
-                    effectivePrint=print,
-                ),
-                201,
-            )
+            r = make_response(jsonify(result), 201)
             r.headers["Location"] = location
             return r
 

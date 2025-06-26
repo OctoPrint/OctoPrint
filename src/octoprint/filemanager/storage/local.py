@@ -49,6 +49,8 @@ class LocalFileStorage(StorageInterface):
         copy_folder=True,
         move_folder=True,
         metadata=True,
+        history=True,
+        path_on_disk=True,
     )
 
     def __init__(self, basefolder, create=False, really_universal=False):

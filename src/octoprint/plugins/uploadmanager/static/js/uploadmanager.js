@@ -541,7 +541,10 @@ $(function () {
             const file = self.selectedFiles()[0];
             if (file.origin !== "local") return;
 
-            OctoPrint.files.issueEntryCommand(file.origin, file.path, "uploadSd", {});
+            OctoPrint.files.issueEntryCommand(file.origin, file.path, "copy_storage", {
+                storage: "printer",
+                destination: file.path
+            });
         };
 
         self.slice = () => {
