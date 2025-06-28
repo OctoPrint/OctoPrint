@@ -732,7 +732,7 @@ setuptools.setup(license="{plugin_license}")
                     click.echo(
                         f"\tWARNING: Not removing {setup_cfg}, there might still be important tool settings in there. MANUAL MERGE REQUIRED!"
                     )
-                else:
+                elif os.path.isfile(setup_cfg):
                     click.echo(f"\tRemoving no longer needed {setup_cfg}...")
                     os.remove(setup_cfg)
 
