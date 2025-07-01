@@ -1,5 +1,7 @@
 import enum
 import logging
+from gettext import gettext
+from typing import Union
 
 from octoprint.printer import (
     ConnectedPrinterMixin,
@@ -11,20 +13,20 @@ from octoprint.printer.job import PrintJob, UploadJob
 
 
 class ConnectedPrinterState(enum.Enum):
-    DETECTING = "detecting"
-    CONNECTING = "connecting"
-    OPERATIONAL = "operational"
-    STARTING = "starting"
-    PRINTING = "printing"
-    PAUSING = "pausing"
-    PAUSED = "paused"
-    RESUMING = "resuming"
-    CANCELLING = "cancelling"
-    FINISHING = "finishing"
-    CLOSED = "closed"
-    ERROR = "error"
-    CLOSED_WITH_ERROR = "closed_with_error"
-    TRANSFERING_FILE = "transfering_file"
+    DETECTING = gettext("Detecting")
+    CONNECTING = gettext("Connecting")
+    OPERATIONAL = gettext("Operational")
+    STARTING = gettext("Starting")
+    PRINTING = gettext("Printing")
+    PAUSING = gettext("Pausing")
+    PAUSED = gettext("Paused")
+    RESUMING = gettext("Resuming")
+    CANCELLING = gettext("Cancelling")
+    FINISHING = gettext("Finishing")
+    CLOSED = gettext("Offline")
+    ERROR = gettext("Error")
+    CLOSED_WITH_ERROR = gettext("Offline after error")
+    TRANSFERRING_FILE = gettext("Transferring file to printer")
 
 
 class ConnectedPrinterListenerMixin:
@@ -43,7 +45,7 @@ class ConnectedPrinterListenerMixin:
         pass
 
     def on_printer_state_changed(
-        self, state: ConnectedPrinterState, state_str: str = None, error_str: str = None
+        self, state: ConnectedPrinterState, error_str: str = None
     ):
         pass
 
@@ -131,6 +133,7 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClas
         else:
             self._listener = listener
 
+        self._state = ConnectedPrinterState.CLOSED
         self._profile = profile
         self._job = None
         self._firmware_info = None
@@ -150,3 +153,74 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClas
     @property
     def connection_parameters(self) -> dict:
         return {"connector": self.connector, "profile": self._profile}
+
+    @property
+    def firmware_info(self) -> Union[FirmwareInformation, None]:
+        return self._firmware_info
+
+    @firmware_info.setter
+    def firmware_info(self, value: Union[FirmwareInformation, None]) -> None:
+        self._firmware_info = value
+        if self._firmware_info:
+            self._listener.on_printer_firmware_info(self._firmware_info)
+
+    @property
+    def error_info(self) -> Union[ErrorInformation, None]:
+        return self._error_info
+
+    @error_info.setter
+    def error_info(self, value: Union[ErrorInformation, None]) -> None:
+        self._error_info = value
+        if self._error_info:
+            self._listener.on_printer_error(self._error_info)
+
+    @property
+    def state(self) -> ConnectedPrinterState:
+        return self._state
+
+    @state.setter
+    def state(self, value: ConnectedPrinterState) -> None:
+        self.set_state(value)
+
+    def set_state(self, state: ConnectedPrinterState, error: str = None):
+        self._state = state
+        self._listener.on_printer_state_changed(state, error_str=error)
+
+    def get_state_string(self, state: ConnectedPrinterState = None):
+        if state is None:
+            state = self.state
+        return state.value
+
+    def is_closed_or_error(self, *args, **kwargs):
+        return self.state in (
+            ConnectedPrinterState.CLOSED,
+            ConnectedPrinterState.CLOSED_WITH_ERROR,
+            ConnectedPrinterState.ERROR,
+        )
+
+    def is_operational(self, *args, **kwargs):
+        return self.state == ConnectedPrinterState.OPERATIONAL
+
+    def is_printing(self, *args, **kwargs):
+        return self.state == ConnectedPrinterState.PRINTING
+
+    def is_cancelling(self, *args, **kwargs):
+        return self.state == ConnectedPrinterState.CANCELLING
+
+    def is_pausing(self, *args, **kwargs):
+        return self.state == ConnectedPrinterState.PAUSING
+
+    def is_paused(self, *args, **kwargs):
+        return self.state == ConnectedPrinterState.PAUSED
+
+    def is_resuming(self, *args, **kwargs):
+        return self.state == ConnectedPrinterState.RESUMING
+
+    def is_finishing(self, *args, **kwargs):
+        return self.state == ConnectedPrinterState.FINISHING
+
+    def is_error(self, *args, **kwargs):
+        return self.state == ConnectedPrinterState.ERROR
+
+    def is_ready(self, *args, **kwargs):
+        return self.is_operational()

@@ -410,27 +410,18 @@ class CommonPrinterMixin:
         """
         Identifier of the current communication state.
 
-        Possible values are:
-
-          * OPEN_SERIAL
-          * DETECT_SERIAL
-          * DETECT_BAUDRATE
-          * CONNECTING
-          * OPERATIONAL
-          * PRINTING
-          * PAUSED
-          * CLOSED
-          * ERROR
-          * CLOSED_WITH_ERROR
-          * TRANSFERING_FILE
-          * OFFLINE
-          * UNKNOWN
-          * NONE
+        For possible values see :class:`~octoprint.printer.connection.ConnectedPrinterState`.
 
         Returns:
              (str) A unique identifier corresponding to the current communication state.
         """
         raise NotImplementedError()
+
+    def get_error(self, *args, **kwargs):
+        """
+        Returns:
+            (str) The current error
+        """
 
     def get_current_data(self, *args, **kwargs):
         """
@@ -487,6 +478,12 @@ class CommonPrinterMixin:
             (boolean) Whether the printer is currently cancelling a print.
         """
 
+    def is_finishing(self, *args, **kwargs):
+        """
+        Returns:
+            (boolean) Whether the printer is currently finishing a print.
+        """
+
     def is_pausing(self, *args, **kwargs):
         """
         Returns:
@@ -497,6 +494,12 @@ class CommonPrinterMixin:
         """
         Returns:
             (boolean) Whether the printer is currently paused.
+        """
+
+    def is_resuming(self, *args, **kwargs):
+        """
+        Returns:
+            (boolean) Whether the printer is currently resuming a print.
         """
 
     def is_error(self, *args, **kwargs):

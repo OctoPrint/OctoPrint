@@ -81,7 +81,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._messages = deque([], 300)
         self._log = deque([], 300)
 
-        self._state = None
+        self._state: ConnectedPrinterState = None
 
         self._printAfterSelect = False
         self._posAfterSelect = None
@@ -502,7 +502,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             tags = set()
         tags |= {"trigger:printer.commands"}
 
-        self._connection.commands(commands, tags=tags, force=force)
+        self._connection.commands(*commands, tags=tags, force=force)
 
     def script(
         self,
@@ -627,27 +627,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         tags |= {"trigger:printer.set_temperature"}
 
         self._connection.set_temperature(heater, value, tags=tags)
-
-        if heater == "tool":
-            # set current tool, whatever that might be
-            self.commands(f"M104 S{value}", tags=tags)
-
-        elif heater.startswith("tool"):
-            # set specific tool
-            printer_profile = self._printer_profile_manager.get_current_or_default()
-            extruder_count = printer_profile["extruder"]["count"]
-            shared_nozzle = printer_profile["extruder"]["sharedNozzle"]
-            if extruder_count > 1 and not shared_nozzle:
-                toolNum = int(heater[len("tool") :])
-                self.commands(f"M104 T{toolNum} S{value}", tags=tags)
-            else:
-                self.commands(f"M104 S{value}", tags=tags)
-
-        elif heater == "bed":
-            self.commands(f"M140 S{value}", tags=tags)
-
-        elif heater == "chamber":
-            self.commands(f"M141 S{value}", tags=tags)
 
     def set_temperature_offset(self, offsets=None, tags=None, *args, **kwargs):
         if self._connection is None:
@@ -864,10 +843,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             return self._connection.get_state_string(state=state)
 
     def get_state_id(self, state=None, *args, **kwargs):
-        if self._connection is None:
-            return "OFFLINE"
-        else:
-            return self._connection.get_state_id(state=state)
+        if state is None:
+            state = self._state
+        return state.name
 
     def get_error(self):
         if self._connection is None:
@@ -946,6 +924,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def is_ready(self, *args, **kwargs):
         return self._connection is not None and self._connection.is_ready()
+
+    def log_lines(self, *lines, **kwargs):
+        for line in lines:
+            self._addLog(line)
 
     # ~~ sd file handling
 
@@ -1442,8 +1424,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._addTemperatureData(temperatures)
 
     def on_printer_logs(self, *lines):
-        for line in lines:
-            self._addLog(line)
+        self.log_lines(*lines)
 
     def on_printer_disconnect(self):
         self.disconnect()
@@ -1666,10 +1647,15 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         )
 
     def _updateResendDataCallback(self):
+        NO_RESULT = self._dict(count=0, transmitted=0, ratio=0)
+
         if self._connection is None:
-            return self._dict(count=0, transmitted=0, ratio=0)
+            return NO_RESULT
 
         communication_health = self._connection.communication_health
+        if communication_health is None:
+            return NO_RESULT
+
         return self._dict(
             count=communication_health.errors,
             transmitted=communication_health.total,

@@ -85,18 +85,18 @@ def get_systeminfo_bundle(systeminfo, logbase, printer=None, plugin_manager=None
             z.add(to_bytes("\n".join(printer._log)), arcname="terminal.txt")
 
         # Add reconstructed M115 response, if available
-        if printer._comm and printer._comm._firmware_info:
-            comm = printer._comm
+        if printer._connection and printer._connection.firmware_info:
+            connection = printer._connection
             m115 = "Reconstructed M115 response:\n\n>>> M115\n<<< "
-            m115 += " ".join([f"{k}:{v}" for k, v in comm._firmware_info.items()])
+            m115 += " ".join([f"{k}:{v}" for k, v in connection.firmware_info.items()])
 
-            if comm._firmware_capabilities:
+            if connection.firmware_capabilities:
                 m115 += (
                     "\n<<< "
                     + "\n<<< ".join(
                         [
                             f"Cap:{k}:{'1' if v else '0'}"
-                            for k, v in comm._firmware_capabilities.items()
+                            for k, v in connection.firmware_capabilities.items()
                         ]
                     )
                     + "\n\n"
