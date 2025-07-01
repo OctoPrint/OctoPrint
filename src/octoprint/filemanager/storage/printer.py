@@ -106,8 +106,11 @@ class PrinterFileStorage(StorageInterface):
 
             file_type = type_path[0]
 
+            parts = f.path.split("/")
+            name = parts[-1]
+
             entry = {
-                "name": f.path,
+                "name": name,
                 "path": f.path,
                 "display": f.display,
                 "type": file_type,
@@ -118,24 +121,24 @@ class PrinterFileStorage(StorageInterface):
             if f.date is not None:
                 entry["date"] = f.date
 
-            parts = f.path.split("/")
             node = result
             if len(parts) > 1:
                 # we have folders
                 fp = ""
                 for p in parts[:-1]:
-                    fp += "/" + p
+                    fp += f"/{p}" if fp else p
                     if p not in node:
                         node[p] = {
-                            "name": f"{fp}",
-                            "path": f"{fp}",
+                            "name": p,
+                            "path": fp,
+                            "display": p,
                             "type": "folder",
                             "typePath": ["folder"],
                             "children": {},
                         }
                     node = node[p]["children"]
 
-            node[parts[-1]] = entry
+            node[name] = entry
 
         return result
 
