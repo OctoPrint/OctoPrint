@@ -1,6 +1,7 @@
 import copy
 import logging
 import os
+from gettext import gettext
 
 import octoprint.util as util
 from octoprint.events import Events, eventManager
@@ -48,7 +49,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         MachineCom.STATE_PRINTING: ConnectedPrinterState.PRINTING,
         MachineCom.STATE_RESUMING: ConnectedPrinterState.RESUMING,
         MachineCom.STATE_STARTING: ConnectedPrinterState.STARTING,
-        MachineCom.STATE_TRANSFERING_FILE: ConnectedPrinterState.TRANSFERING_FILE,
+        MachineCom.STATE_TRANSFERING_FILE: ConnectedPrinterState.TRANSFERRING_FILE,
     }
 
     def __init__(
@@ -401,17 +402,29 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         for line in lines:
             serial_logger.debug(line)
 
-    def get_state_string(self, state=None, *args, **kwargs):
-        if self._comm is None:
-            return "Offline"
-        else:
-            return self._comm.getStateString(state=state)
+    def get_state_string(self, state: ConnectedPrinterState = None):
+        if state is None:
+            state = self.state
 
-    def get_state_id(self, state=None, *args, **kwargs):
-        if self._comm is None:
-            return "OFFLINE"
-        else:
-            return self._comm.getStateId(state=state)
+        state_str = super().get_state_string(state=state)
+
+        if self._comm:
+            if state == ConnectedPrinterState.DETECTING:
+                return gettext("Detecting serial connection")
+            elif state == ConnectedPrinterState.STARTING:
+                if self._comm.isSdFileSelected():
+                    return gettext("Starting print from SD")
+                elif self._comm.isStreaming():
+                    return gettext("Starting to send file to SD")
+            elif state == ConnectedPrinterState.PRINTING:
+                if self._comm.isSdFileSelected():
+                    return gettext("Printing from SD")
+                elif self._comm.isStreaming():
+                    return gettext("Sending file to SD")
+            elif state == ConnectedPrinterState.TRANSFERRING_FILE:
+                return gettext("Transferring file to SD")
+
+        return state_str
 
     def get_error(self):
         if self._comm is None:
@@ -602,35 +615,30 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._listener.on_printer_position_changed(position, reason=reason)
 
     def on_comm_state_change(self, state):
-        translated_state = self.STATE_LOOKUP.get(state)
+        state = self.STATE_LOOKUP.get(state)
 
-        state_str = None
         error_str = None
         if self._comm is not None:
-            state_str = self._comm.getStateString()
             error_str = self._comm.getErrorString()
 
-        if translated_state in (
+        if state in (
             ConnectedPrinterState.CLOSED,
             ConnectedPrinterState.CLOSED_WITH_ERROR,
         ):
             if self._comm is not None:
                 self._comm = None
 
-            self._firmware_info = None
-            self._error_info = None
+            self.firmware_info = None
+            self.error_info = None
 
             super().set_job(None)
 
-        self._listener.on_printer_state_changed(
-            translated_state, state_str=state_str, error_str=error_str
-        )
+        self.set_state(state, error=error_str)  # this will call the listener
 
     def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
-        self._error_info = ErrorInformation(
+        self.error_info = ErrorInformation(
             error=error, reason=reason, consequence=consequence, faq=faq, logs=logs
-        )
-        self._listener.on_printer_error(self._error_info)
+        )  # this will call the listener
 
     def on_comm_message(self, message):
         # intentionally disabled - we only use logs now
@@ -729,5 +737,6 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._listener.on_printer_record_recovery_position(self.current_job, pos)
 
     def on_comm_firmware_info(self, firmware_name, firmware_data):
-        self._firmware_info = FirmwareInformation(name=firmware_name, data=firmware_data)
-        self._listener.on_printer_firmware_info(self._firmware_info)
+        self.firmware_info = FirmwareInformation(
+            name=firmware_name, data=firmware_data
+        )  # this will call the listener
