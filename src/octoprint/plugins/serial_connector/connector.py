@@ -442,39 +442,11 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         port, baudrate = self._comm.getConnection()
         return self._comm.getStateString(), port, baudrate, self._profile
 
-    def is_closed_or_error(self, *args, **kwargs):
-        return self._comm is None or self._comm.isClosedOrError()
-
-    def is_operational(self, *args, **kwargs):
-        return self._comm is not None and self._comm.isOperational()
-
-    def is_printing(self, *args, **kwargs):
-        return self._comm is not None and self._comm.isPrinting()
-
-    def is_cancelling(self, *args, **kwargs):
-        return self._comm is not None and self._comm.isCancelling()
-
-    def is_pausing(self, *args, **kwargs):
-        return self._comm is not None and self._comm.isPausing()
-
-    def is_paused(self, *args, **kwargs):
-        return self._comm is not None and self._comm.isPaused()
-
-    def is_resuming(self, *args, **kwargs):
-        return self._comm is not None and self._comm.isResuming()
-
-    def is_finishing(self, *args, **kwargs):
-        return self._comm is not None and self._comm.isFinishing()
-
-    def is_error(self, *args, **kwargs):
-        return self._comm is not None and self._comm.isError()
-
     def is_ready(self, *args, **kwargs):
         return (
             self.is_operational()
-            and not self._comm.isBusy()
-            # isBusy is true when paused
-            and not self._comm.isStreaming()
+            and not self.is_printing()
+            and not self.state == ConnectedPrinterState.TRANSFERRING_FILE
         )
 
     @property

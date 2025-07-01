@@ -15,7 +15,7 @@ from octoprint.printer.job import PrintJob, UploadJob
 class ConnectedPrinterState(enum.Enum):
     DETECTING = gettext("Detecting")
     CONNECTING = gettext("Connecting")
-    OPERATIONAL = gettext("Operational")
+    OPERATIONAL = gettext("Connected")
     STARTING = gettext("Starting")
     PRINTING = gettext("Printing")
     PAUSING = gettext("Pausing")
@@ -27,6 +27,33 @@ class ConnectedPrinterState(enum.Enum):
     ERROR = gettext("Error")
     CLOSED_WITH_ERROR = gettext("Offline after error")
     TRANSFERRING_FILE = gettext("Transferring file to printer")
+
+
+ERROR_STATES = (ConnectedPrinterState.ERROR, ConnectedPrinterState.CLOSED_WITH_ERROR)
+
+CLOSED_STATES = (ConnectedPrinterState.CLOSED, ConnectedPrinterState.CLOSED_WITH_ERROR)
+
+OPERATIONAL_STATES = (
+    ConnectedPrinterState.OPERATIONAL,
+    ConnectedPrinterState.STARTING,
+    ConnectedPrinterState.PRINTING,
+    ConnectedPrinterState.PAUSING,
+    ConnectedPrinterState.PAUSED,
+    ConnectedPrinterState.RESUMING,
+    ConnectedPrinterState.CANCELLING,
+    ConnectedPrinterState.FINISHING,
+    ConnectedPrinterState.TRANSFERRING_FILE,
+)
+
+PRINTING_STATES = (
+    ConnectedPrinterState.STARTING,
+    ConnectedPrinterState.PRINTING,
+    ConnectedPrinterState.PAUSING,
+    ConnectedPrinterState.PAUSED,
+    ConnectedPrinterState.RESUMING,
+    ConnectedPrinterState.CANCELLING,
+    ConnectedPrinterState.FINISHING,
+)
 
 
 class ConnectedPrinterListenerMixin:
@@ -192,17 +219,13 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClas
         return state.value
 
     def is_closed_or_error(self, *args, **kwargs):
-        return self.state in (
-            ConnectedPrinterState.CLOSED,
-            ConnectedPrinterState.CLOSED_WITH_ERROR,
-            ConnectedPrinterState.ERROR,
-        )
+        return self.state in CLOSED_STATES or self.state in ERROR_STATES
 
     def is_operational(self, *args, **kwargs):
-        return self.state == ConnectedPrinterState.OPERATIONAL
+        return self.state in OPERATIONAL_STATES
 
     def is_printing(self, *args, **kwargs):
-        return self.state == ConnectedPrinterState.PRINTING
+        return self.state in PRINTING_STATES
 
     def is_cancelling(self, *args, **kwargs):
         return self.state == ConnectedPrinterState.CANCELLING
