@@ -223,6 +223,7 @@ GCODE.gCodeReader = (function () {
                 cmd: "downloadAndParseGCode",
                 msg: {
                     url: reader.url,
+                    storage: reader.storage,
                     path: reader.path,
                     skipUntil: reader.skipUntil,
                     options: {

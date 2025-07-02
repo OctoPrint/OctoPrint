@@ -6,7 +6,7 @@ import logging
 import os
 import time
 from collections import namedtuple
-from typing import Callable
+from typing import IO, Callable
 
 import octoprint.plugin
 import octoprint.util
@@ -691,6 +691,11 @@ class FileManager:
             )
         return result
 
+    def get_file(self, storage: str, path: str):
+        path = self.path_in_storage(storage, path)
+
+        return self._storage(storage).get_file(path)
+
     def add_file(
         self,
         location: str,
@@ -771,6 +776,21 @@ class FileManager:
         )
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
         return path_in_storage
+
+    def read_file(self, storage: str, path: str) -> IO:
+        if not self._storage(storage).capabilities.read_file:
+            raise StorageError(
+                f"Reading files from {storage} is not supported",
+                code=StorageError.UNSUPPORTED,
+            )
+
+        if not self.file_exists(storage, path):
+            raise StorageError(
+                f"File {path} cannot be found on {storage}",
+                code=StorageError.DOES_NOT_EXIST,
+            )
+
+        return self._storage(storage).read_file(path)
 
     def remove_file(self, location, path):
         path_in_storage = self._storage(location).path_in_storage(path)

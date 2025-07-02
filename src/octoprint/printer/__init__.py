@@ -607,7 +607,6 @@ class PrinterFilesMixin:
     def download_printer_file(
         self,
         path: str,
-        download_callback: callable,
         *args,
         **kwargs,
     ) -> IO:

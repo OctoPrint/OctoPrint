@@ -175,6 +175,23 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
+    def get_file(self, path=None):
+        if "/" in path:
+            folder, _ = path.rsplit("/", 1)
+        else:
+            folder = None
+
+        files = self.list_files(path=folder, recursive=False, level=1)
+        for f in files.values():
+            if f.get("path") == path:
+                return f
+            elif f.get("type") == folder:
+                for child in f.get("children", {}).values():
+                    if child.get("path") == path:
+                        return child
+
+        return None
+
     def list_files(
         self, path=None, filter=None, recursive=True, level=0, force_refresh=False
     ):
@@ -318,7 +335,7 @@ class StorageInterface:
 
     def read_file(self, path: str) -> IO:
         """
-        Returns a future to read the contents of the file.
+        Returns an IO object to read the contents of the file.
         """
         raise NotImplementedError()
 

@@ -1917,8 +1917,6 @@ class Server:
 
         download_handler_kwargs = {"as_attachment": True, "allow_client_caching": False}
 
-        additional_mime_types = {"mime_type_guesser": mime_type_guesser}
-
         ##~~ Permission validators
 
         access_validators_from_plugins = []
@@ -1983,21 +1981,6 @@ class Server:
         }
         systeminfo_permission_validator = {
             "access_validation": util.tornado.validation_chain(*systeminfo_validators)
-        }
-
-        no_hidden_files_validator = {
-            "path_validation": util.tornado.path_validation_factory(
-                lambda path: not octoprint.util.is_hidden_path(path), status_code=404
-            )
-        }
-
-        only_known_types_validator = {
-            "path_validation": util.tornado.path_validation_factory(
-                lambda path: octoprint.filemanager.valid_file_type(
-                    os.path.basename(path)
-                ),
-                status_code=404,
-            )
         }
 
         bulkdownloads_path_validator = {
@@ -2105,19 +2088,10 @@ class Server:
             ),
             # uploaded printables
             (
-                r"/downloads/files/local/(.*)",
-                util.tornado.LargeResponseHandler,
+                r"/downloads/files/([^/]+)/(.*)",
+                util.tornado.StorageFileDownloadHandler,
                 joined_dict(
-                    {
-                        "path": self._settings.getBaseFolder("uploads"),
-                        "as_attachment": True,
-                        "name_generator": download_name_generator,
-                    },
                     download_permission_validator,
-                    download_handler_kwargs,
-                    no_hidden_files_validator,
-                    only_known_types_validator,
-                    additional_mime_types,
                 ),
             ),
             # bulk download of uploaded printables

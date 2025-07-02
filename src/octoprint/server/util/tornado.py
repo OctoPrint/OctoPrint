@@ -1350,6 +1350,79 @@ class LargeResponseHandler(
         return os.stat(abspath)[stat.ST_MTIME]
 
 
+class StorageFileDownloadHandler(
+    RequestlessExceptionLoggingMixin, CorsSupportMixin, tornado.web.RequestHandler
+):
+    def initialize(self, access_validation=None):
+        super().initialize()
+
+        from octoprint.server import fileManager
+
+        self._access_validation = access_validation
+        self._file_manager = fileManager
+
+    @tornado.gen.coroutine
+    def get(self, storage: str, path: str, include_body=True):
+        from octoprint.filemanager import get_mime_type, valid_file_type
+
+        if self._access_validation is not None:
+            self._access_validation(self.request)
+
+        if (
+            storage not in self._file_manager.registered_storages
+            or not self._file_manager.file_exists(storage, path)
+            or not self._file_manager.capabilities(storage).read_file
+            or not valid_file_type(path)
+        ):
+            raise tornado.web.HTTPError(404)
+
+        file_data = self._file_manager.get_file(storage, path)
+        if file_data is None:
+            raise tornado.web.HTTPError(
+                404
+            )  # shouldn't happen, but better safe than sorry
+
+        filename = file_data.get("name", os.path.basename(path))
+
+        size = file_data.get("size")
+        if size is not None:
+            self.set_header("Content-Length", size)
+
+        content_type = get_mime_type(filename)
+        if content_type:
+            self.set_header("Content-Type", content_type)
+
+        self.set_header(
+            "Content-Disposition",
+            f"attachment; filename=\"{filename}\"; filename*=UTF-8''{filename}",
+        )
+
+        # TODO implement cache control via ETag and/or last modified, if possible for storage
+        self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
+        self.set_header("Expires", "-1")
+
+        if include_body:
+            try:
+                handle = self._file_manager.read_file(storage, path)
+                while True:
+                    chunk = handle.read()
+                    if len(chunk) == 0:
+                        break  # EOF
+
+                    try:
+                        self.write(chunk)
+                        yield self.flush()
+                    except tornado.iostream.StreamClosedError:
+                        return
+
+            finally:
+                if handle:
+                    handle.close()
+
+        else:
+            assert self.request.method == "HEAD"
+
+
 ##~~ URL Forward Handler for forwarding requests to a preconfigured static URL
 
 

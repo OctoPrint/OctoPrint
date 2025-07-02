@@ -85,12 +85,13 @@ class GcodeviewerPlugin(
     @Permissions.GCODE_VIEWER.require(403)
     @Permissions.FILES_DOWNLOAD.require(403)
     def check_skip_until_presence(self, origin, filename):
-        try:
-            path = self._file_manager.path_on_disk(origin, filename)
-        except NotImplementedError:
-            # storage doesn't support path on disk
+        if origin not in self._file_manager.registered_storages:
             flask.abort(404)
 
+        if not self._file_manager.capabilities(origin).path_on_disk:
+            flask.abort(404)
+
+        path = self._file_manager.path_on_disk(origin, filename)
         if not os.path.exists(path):
             # path doesn't exist
             flask.abort(404)
