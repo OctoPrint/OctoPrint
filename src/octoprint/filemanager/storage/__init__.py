@@ -185,7 +185,7 @@ class StorageInterface:
         for f in files.values():
             if f.get("path") == path:
                 return f
-            elif f.get("type") == folder:
+            elif f.get("type") == "folder":
                 for child in f.get("children", {}).values():
                     if child.get("path") == path:
                         return child

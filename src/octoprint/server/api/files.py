@@ -335,7 +335,7 @@ def _getFileDetails(origin, path, recursive=True):
         else:
             for child in node.get("children", []):
                 if child["path"] == path:
-                    return path
+                    return child
 
     return None
 
@@ -771,15 +771,15 @@ def uploadGcodeFile(target):
         abort(400, description="No file to upload and no folder to create")
 
 
-@api.route("/files/<string:target>/<path:filename>", methods=["POST"])
+@api.route("/files/<string:storage>/<path:path>", methods=["POST"])
 @no_firstrun_access
-def gcodeFileCommand(filename, target):
+def gcodeFileCommand(storage, path):
     try:
-        target = _validate_storage(target)
+        storage = _validate_storage(storage)
     except ValueError:
         abort(404)
 
-    if not _validate_filename(target, filename):
+    if not _validate_filename(storage, path):
         abort(404)
 
     # valid file commands, dict mapping command name to mandatory parameters
@@ -802,7 +802,7 @@ def gcodeFileCommand(filename, target):
     if command == "uploadSd":
         command = "copy_storage"
         data["storage"] = "printer"
-        data["destination"] = filename
+        data["destination"] = path
         _logger.warning(
             "File command 'uploadSD' is outdated, use 'copy_storage' with storage 'printer' instead"
         )
@@ -811,11 +811,11 @@ def gcodeFileCommand(filename, target):
 
     if command == "select":
         with Permissions.FILES_SELECT.require(403):
-            if not _verifyFileExists(target, filename):
+            if not _verifyFileExists(storage, path):
                 abort(404)
 
             # selects/loads a file
-            if not octoprint.filemanager.valid_file_type(filename, type="machinecode"):
+            if not octoprint.filemanager.valid_file_type(path, type="machinecode"):
                 abort(
                     415,
                     description="Cannot select file for printing, not a machinecode file",
@@ -837,7 +837,20 @@ def gcodeFileCommand(filename, target):
                         )
                     start_print = True
 
-            job = PrintJob(storage=target, path=filename, owner=user)
+            file_info = _getFileDetails(storage, path)
+            size = file_info.get("size")
+
+            path_on_disk = None
+            if fileManager.capabilities(storage).path_on_disk:
+                path_on_disk = fileManager.path_on_disk(storage, path)
+
+            job = PrintJob(
+                storage=storage,
+                path=path,
+                size=size,
+                owner=user,
+                path_on_disk=path_on_disk,
+            )
             printer.set_job(job, print_after_select=start_print)
 
     elif command == "unselect":
@@ -853,7 +866,7 @@ def gcodeFileCommand(filename, target):
                     "Cannot unselect current file when there is no file selected", 409
                 )
 
-            if filename != currentFilename and filename != "current":
+            if path != currentFilename and path != "current":
                 return make_response(
                     "Only the currently selected file can be unselected", 400
                 )
@@ -862,10 +875,10 @@ def gcodeFileCommand(filename, target):
 
     elif command == "slice":
         with Permissions.SLICE.require(403):
-            if not fileManager.capabilities(target).path_on_disk:
-                abort(400, description=f"Slicing is not supported on storage {target}")
+            if not fileManager.capabilities(storage).path_on_disk:
+                abort(400, description=f"Slicing is not supported on storage {storage}")
 
-            if not _verifyFileExists(target, filename):
+            if not _verifyFileExists(storage, path):
                 abort(404)
 
             try:
@@ -884,7 +897,7 @@ def gcodeFileCommand(filename, target):
                 abort(404)
 
             if not any(
-                octoprint.filemanager.valid_file_type(filename, type=source_file_type)
+                octoprint.filemanager.valid_file_type(path, type=source_file_type)
                 for source_file_type in slicer_instance.get_slicer_properties().get(
                     "source_file_types", ["model"]
                 )
@@ -912,7 +925,7 @@ def gcodeFileCommand(filename, target):
             else:
                 import os
 
-                name, _ = os.path.splitext(filename)
+                name, _ = os.path.splitext(path)
                 destination = (
                     name
                     + "."
@@ -923,17 +936,17 @@ def gcodeFileCommand(filename, target):
 
             full_path = destination
             if "path" in data and data["path"]:
-                full_path = fileManager.join_path(target, data["path"], destination)
+                full_path = fileManager.join_path(storage, data["path"], destination)
             else:
-                path, _ = fileManager.split_path(target, filename)
+                path, _ = fileManager.split_path(storage, path)
                 if path:
-                    full_path = fileManager.join_path(target, path, destination)
+                    full_path = fileManager.join_path(storage, path, destination)
 
-            canon_path, canon_name = fileManager.canonicalize(target, full_path)
-            sanitized_name = fileManager.sanitize_name(target, canon_name)
+            canon_path, canon_name = fileManager.canonicalize(storage, full_path)
+            sanitized_name = fileManager.sanitize_name(storage, canon_name)
 
             if canon_path:
-                full_path = fileManager.join_path(target, canon_path, sanitized_name)
+                full_path = fileManager.join_path(storage, canon_path, sanitized_name)
             else:
                 full_path = sanitized_name
 
@@ -941,7 +954,7 @@ def gcodeFileCommand(filename, target):
             currentOrigin, currentFilename = _getCurrentFile()
             if (
                 currentFilename == full_path
-                and currentOrigin == target
+                and currentOrigin == storage
                 and (printer.is_printing() or printer.is_paused())
             ):
                 abort(
@@ -1007,9 +1020,9 @@ def gcodeFileCommand(filename, target):
             try:
                 fileManager.slice(
                     slicer,
-                    target,
-                    filename,
-                    target,
+                    storage,
+                    path,
+                    storage,
                     full_path,
                     profile=profile,
                     printer_profile_id=printerProfile,
@@ -1018,7 +1031,7 @@ def gcodeFileCommand(filename, target):
                     display=canon_name,
                     callback=slicing_done,
                     callback_args=(
-                        target,
+                        storage,
                         full_path,
                         select_after_slicing,
                         print_after_slicing,
@@ -1029,7 +1042,7 @@ def gcodeFileCommand(filename, target):
 
             location = url_for(
                 ".readGcodeFile",
-                target=target,
+                target=storage,
                 filename=full_path,
                 _external=True,
             )
@@ -1037,12 +1050,12 @@ def gcodeFileCommand(filename, target):
                 "name": destination,
                 "path": full_path,
                 "display": canon_name,
-                "origin": target,
+                "origin": storage,
                 "refs": {
                     "resource": location,
                     "download": url_for("index", _external=True)
                     + "downloads/files/"
-                    + target
+                    + storage
                     + "/"
                     + urlquote(full_path),
                 },
@@ -1054,45 +1067,43 @@ def gcodeFileCommand(filename, target):
 
     elif command == "analyse":
         with Permissions.FILES_UPLOAD.require(403):
-            if not _verifyFileExists(target, filename):
+            if not _verifyFileExists(storage, path):
                 abort(404)
 
             printer_profile = None
             if "printerProfile" in data and data["printerProfile"]:
                 printer_profile = data["printerProfile"]
 
-            if not fileManager.analyse(
-                target, filename, printer_profile_id=printer_profile
-            ):
+            if not fileManager.analyse(storage, path, printer_profile_id=printer_profile):
                 abort(400, description="No analysis possible")
 
     elif command == "copy" or command == "move":
         with Permissions.FILES_UPLOAD.require(403):
-            if not _verifyFileExists(target, filename) and not _verifyFolderExists(
-                target, filename
+            if not _verifyFileExists(storage, path) and not _verifyFolderExists(
+                storage, path
             ):
                 abort(404)
 
-            path, name = fileManager.split_path(target, filename)
+            path, name = fileManager.split_path(storage, path)
 
             destination = data["destination"]
-            dst_path, dst_name = fileManager.split_path(target, destination)
+            dst_path, dst_name = fileManager.split_path(storage, destination)
             sanitized_destination = fileManager.join_path(
-                target, dst_path, fileManager.sanitize_name(target, dst_name)
+                storage, dst_path, fileManager.sanitize_name(storage, dst_name)
             )
 
             # Check for exception thrown by _verifyFolderExists, if outside the root directory
             try:
                 if (
-                    _verifyFolderExists(target, destination)
-                    and sanitized_destination != filename
+                    _verifyFolderExists(storage, destination)
+                    and sanitized_destination != path
                 ):
                     # destination is an existing folder and not ourselves (= display rename), we'll assume we are supposed
                     # to move filename to this folder under the same name
-                    destination = fileManager.join_path(target, destination, name)
+                    destination = fileManager.join_path(storage, destination, name)
 
-                if _verifyFileExists(target, destination) or _verifyFolderExists(
-                    target, destination
+                if _verifyFileExists(storage, destination) or _verifyFolderExists(
+                    storage, destination
                 ):
                     abort(409, description="File or folder does already exist")
 
@@ -1104,33 +1115,33 @@ def gcodeFileCommand(filename, target):
                     description="Exception thrown by storage, bad folder/file name?",
                 )
 
-            is_file = fileManager.file_exists(target, filename)
-            is_folder = fileManager.folder_exists(target, filename)
+            is_file = fileManager.file_exists(storage, path)
+            is_folder = fileManager.folder_exists(storage, path)
 
             if not (is_file or is_folder):
                 abort(400, description=f"Neither file nor folder, can't {command}")
 
             try:
                 if command == "copy":
-                    if (is_file and not fileManager.capabilities(target).copy_file) or (
-                        is_folder and not fileManager.capabilities(target).copy_folder
+                    if (is_file and not fileManager.capabilities(storage).copy_file) or (
+                        is_folder and not fileManager.capabilities(storage).copy_folder
                     ):
                         abort(400, description="Storage does not support this operation")
 
                     # destination already there? error...
-                    if _verifyFileExists(target, destination) or _verifyFolderExists(
-                        target, destination
+                    if _verifyFileExists(storage, destination) or _verifyFolderExists(
+                        storage, destination
                     ):
                         abort(409, description="File or folder does already exist")
 
                     if is_file:
-                        fileManager.copy_file(target, filename, destination)
+                        fileManager.copy_file(storage, path, destination)
                     else:
-                        fileManager.copy_folder(target, filename, destination)
+                        fileManager.copy_folder(storage, path, destination)
 
                 elif command == "move":
                     with Permissions.FILES_DELETE.require(403):
-                        if _isBusy(target, filename):
+                        if _isBusy(storage, path):
                             abort(
                                 409,
                                 description="Trying to move a file or folder that is currently in use",
@@ -1138,15 +1149,16 @@ def gcodeFileCommand(filename, target):
 
                         # destination already there AND not ourselves (= display rename)? error...
                         if (
-                            _verifyFileExists(target, destination)
-                            or _verifyFolderExists(target, destination)
-                        ) and sanitized_destination != filename:
+                            _verifyFileExists(storage, destination)
+                            or _verifyFolderExists(storage, destination)
+                        ) and sanitized_destination != path:
                             abort(409, description="File or folder does already exist")
 
                         if (
-                            is_file and not fileManager.capabilities(target).move_file
+                            is_file and not fileManager.capabilities(storage).move_file
                         ) or (
-                            is_folder and not fileManager.capabilities(target).move_folder
+                            is_folder
+                            and not fileManager.capabilities(storage).move_folder
                         ):
                             abort(
                                 400, description="Storage does not support this operation"
@@ -1156,46 +1168,46 @@ def gcodeFileCommand(filename, target):
                         currentOrigin, currentFilename = _getCurrentFile()
                         if (
                             currentOrigin is not None
-                            and currentOrigin == target
+                            and currentOrigin == storage
                             and currentFilename is not None
-                            and filename == currentFilename
+                            and path == currentFilename
                         ):
                             printer.set_job(None)
 
                         if is_file:
-                            fileManager.move_file(target, filename, destination)
+                            fileManager.move_file(storage, path, destination)
                         else:
-                            fileManager.move_folder(target, filename, destination)
+                            fileManager.move_folder(storage, path, destination)
 
             except octoprint.filemanager.storage.StorageError as e:
                 if e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
                     abort(
                         415,
-                        description=f"Could not {command} {filename} to {destination}, invalid type",
+                        description=f"Could not {command} {path} to {destination}, invalid type",
                     )
                 else:
                     abort(
                         500,
-                        description=f"Could not {command} {filename} to {destination}, unknown error",
+                        description=f"Could not {command} {path} to {destination}, unknown error",
                     )
 
             location = url_for(
                 ".readGcodeFile",
-                target=target,
+                target=storage,
                 filename=destination,
                 _external=True,
             )
             result = {
                 "name": name,
                 "path": destination,
-                "origin": target,
+                "origin": storage,
                 "refs": {"resource": location},
             }
-            if is_file and fileManager.capabilities(target).read_file:
+            if is_file and fileManager.capabilities(storage).read_file:
                 result["refs"]["download"] = (
                     url_for("index", _external=True)
                     + "downloads/files/"
-                    + target
+                    + storage
                     + "/"
                     + urlquote(destination)
                 )
@@ -1206,20 +1218,20 @@ def gcodeFileCommand(filename, target):
 
     elif command == "copy_storage" or command == "move_storage":
         with Permissions.FILES_UPLOAD.require(403):
-            if not fileManager.file_exists(target, filename):
+            if not fileManager.file_exists(storage, path):
                 abort(400, description=f"{command} is only supported for files")
 
-            if not _verifyFileExists(target, filename) and not _verifyFolderExists(
-                target, filename
+            if not _verifyFileExists(storage, path) and not _verifyFolderExists(
+                storage, path
             ):
                 abort(404)
 
-            if not fileManager.capabilities(target).read_file or (
+            if not fileManager.capabilities(storage).read_file or (
                 command == "move_storage"
-                and not fileManager.capabilities(target).remove_file
+                and not fileManager.capabilities(storage).remove_file
             ):
                 abort(
-                    400, description=f"Storage {target} does not support this operation"
+                    400, description=f"Storage {storage} does not support this operation"
                 )
 
             dst_storage = data["storage"]
@@ -1232,7 +1244,7 @@ def gcodeFileCommand(filename, target):
                     description=f"Target storage {dst_storage} does not support this operation",
                 )
 
-            path, name = fileManager.split_path(target, filename)
+            path, name = fileManager.split_path(storage, path)
 
             destination = data["destination"]
             dst_path, dst_name = fileManager.split_path(dst_storage, destination)
@@ -1244,7 +1256,7 @@ def gcodeFileCommand(filename, target):
             try:
                 if (
                     _verifyFolderExists(dst_storage, destination)
-                    and sanitized_destination != filename
+                    and sanitized_destination != path
                 ):
                     # destination is an existing folder and not ourselves (= display rename), we'll assume we are supposed
                     # to move filename to this folder under the same name
@@ -1281,8 +1293,8 @@ def gcodeFileCommand(filename, target):
                         abort(409, description="File or folder does already exist")
 
                     fileManager.copy_file_across_storage(
-                        target,
-                        filename,
+                        storage,
+                        path,
                         dst_storage,
                         destination,
                         progress_callback=progress_callback,
@@ -1290,7 +1302,7 @@ def gcodeFileCommand(filename, target):
 
                 elif command == "move_storage":
                     with Permissions.FILES_DELETE.require(403):
-                        if _isBusy(target, filename):
+                        if _isBusy(storage, path):
                             abort(
                                 409,
                                 description="Trying to move a file or folder that is currently in use",
@@ -1306,15 +1318,15 @@ def gcodeFileCommand(filename, target):
                         currentOrigin, currentFilename = _getCurrentFile()
                         if (
                             currentOrigin is not None
-                            and currentOrigin == target
+                            and currentOrigin == storage
                             and currentFilename is not None
-                            and filename == currentFilename
+                            and path == currentFilename
                         ):
                             printer.set_job(None)
 
                         fileManager.move_file_across_storage(
-                            target,
-                            filename,
+                            storage,
+                            path,
                             dst_storage,
                             destination,
                             progress_callback=progress_callback,
@@ -1324,17 +1336,17 @@ def gcodeFileCommand(filename, target):
                 if e.code == octoprint.filemanager.storage.StorageError.UNSUPPORTED:
                     abort(
                         415,
-                        description=f"Could not {command} {target}:{filename} to {dst_storage}:{destination}, unsupported",
+                        description=f"Could not {command} {storage}:{path} to {dst_storage}:{destination}, unsupported",
                     )
                 elif e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
                     abort(
                         415,
-                        description=f"Could not {command} {target}:{filename} to {dst_storage}:{destination}, invalid type",
+                        description=f"Could not {command} {storage}:{path} to {dst_storage}:{destination}, invalid type",
                     )
                 else:
                     abort(
                         500,
-                        description=f"Could not {command} {target}:{filename} to {dst_storage}:{destination}, unknown error",
+                        description=f"Could not {command} {storage}:{path} to {dst_storage}:{destination}, unknown error",
                     )
 
             location = url_for(
