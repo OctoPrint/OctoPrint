@@ -171,11 +171,12 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClas
         self._logger = logging.getLogger(__name__)
 
     @property
-    def current_job(self):
+    def current_job(self) -> PrintJob:
         return self._job
 
-    def set_job(self, job, *args, **kwargs):
+    def set_job(self, job: PrintJob, *args, **kwargs) -> None:
         self._job = job
+        self._listener.on_printer_job_changed(job, user=kwargs.get("user"))
 
     @property
     def connection_parameters(self) -> dict:

@@ -32,10 +32,13 @@ class PrinterFileStorage(StorageInterface):
         files = self._connection.get_printer_files(refresh=refresh)
 
         if path:
-            path = path + "/"
-            files = [f for f in files if f.path.startswith(path + "/")]
-        else:
-            path = "/"
+            match = [f for f in files if f.path == path]
+            if match:
+                # path is a single file
+                files = match
+            else:
+                # path might be a directory
+                files = [f for f in files if f.path.startswith(path + "/")]
 
         if filter is not None:
             files = [f for f in files if filter(f)]
@@ -51,7 +54,7 @@ class PrinterFileStorage(StorageInterface):
 
         sizes = [f.size for f in files if f.date is not None]
         if len(sizes):
-            return sum(*sizes)
+            return sum(sizes)
 
         return None
 
@@ -60,7 +63,7 @@ class PrinterFileStorage(StorageInterface):
 
         dates = [f.date for f in files if f.date is not None]
         if len(dates):
-            return max(*dates)
+            return max(dates)
 
         return None
 
@@ -97,6 +100,22 @@ class PrinterFileStorage(StorageInterface):
         self, path=None, filter=None, recursive=True, level=0, force_refresh=False
     ):
         files = self._get_printer_files(path=path, filter=filter, refresh=force_refresh)
+
+        if not recursive:
+            prefix = f"{path}/" if path else ""
+            if level > 0:
+                files = [
+                    f
+                    for f in files
+                    if f.path.startswith(prefix)
+                    and len(f.path[len(prefix) :].split("/")) <= 2
+                ]
+            else:
+                files = [
+                    f
+                    for f in files
+                    if f.path.startswith(prefix) and "/" not in f.path[len(prefix) :]
+                ]
 
         result = {}
         for f in files:

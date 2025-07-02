@@ -1588,6 +1588,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             cleanedPrintTime = None
         else:
             job_progress = self._connection.job_progress
+            if not job_progress:
+                return
             progress = job_progress.progress
             filepos = job_progress.pos
             printTime = job_progress.elapsed

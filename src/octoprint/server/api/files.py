@@ -322,14 +322,22 @@ def readGcodeFile(target, filename):
 
 
 def _getFileDetails(origin, path, recursive=True):
-    parent, path = os.path.split(path)
+    if "/" in path:
+        parent, _ = path.rsplit("/", 1)
+    else:
+        parent = None
+
     files = _getFileList(origin, path=parent, recursive=recursive, level=1)
 
-    for f in files:
-        if f["name"] == path:
-            return f
-    else:
-        return None
+    for node in files:
+        if node["path"] == path:
+            return node
+        else:
+            for child in node.get("children", []):
+                if child["path"] == path:
+                    return path
+
+    return None
 
 
 @time_this(
