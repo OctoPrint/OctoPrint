@@ -15,7 +15,7 @@ from octoprint.printer.job import PrintJob, UploadJob
 class ConnectedPrinterState(enum.Enum):
     DETECTING = gettext("Detecting")
     CONNECTING = gettext("Connecting")
-    OPERATIONAL = gettext("Connected")
+    OPERATIONAL = gettext("Operational")
     STARTING = gettext("Starting")
     PRINTING = gettext("Printing")
     PAUSING = gettext("Pausing")
