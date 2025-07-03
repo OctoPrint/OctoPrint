@@ -3,6 +3,7 @@ import logging
 from gettext import gettext
 from typing import Union
 
+from octoprint.events import Events, eventManager
 from octoprint.printer import (
     ConnectedPrinterMixin,
     ErrorInformation,
@@ -190,6 +191,10 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClas
     def firmware_info(self, value: Union[FirmwareInformation, None]) -> None:
         self._firmware_info = value
         if self._firmware_info:
+            eventManager().fire(
+                Events.FIRMWARE_DATA,
+                self._firmware_info.model_dump(exclude_none=True),
+            )
             self._listener.on_printer_firmware_info(self._firmware_info)
 
     @property
@@ -200,6 +205,9 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClas
     def error_info(self, value: Union[ErrorInformation, None]) -> None:
         self._error_info = value
         if self._error_info:
+            eventManager().fire(
+                Events.ERROR, self._error_info.model_dump(exclude_none=True)
+            )
             self._listener.on_printer_error(self._error_info)
 
     @property

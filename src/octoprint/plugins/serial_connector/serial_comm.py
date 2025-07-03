@@ -2914,10 +2914,6 @@ class MachineCom:
                         if name and "malyan" in name.lower() and ver:
                             firmware_name = name.strip() + " " + ver.strip()
 
-                    eventManager().fire(
-                        Events.FIRMWARE_DATA, {"name": firmware_name, "data": data}
-                    )
-
                     if not self._firmware_info_received and firmware_name:
                         firmware_name = firmware_name.strip()
                         self._logger.info(
@@ -4172,20 +4168,9 @@ class MachineCom:
                 self._trigger_emergency_stop(close=False)
             self.close(is_error=True)
 
-    _error_faqs = {
-        "mintemp": ("mintemp",),
-        "maxtemp": ("maxtemp",),
-        "thermal-runaway": ("runaway",),
-        "heating-failed": ("heating failed",),
-        "probing-failed": (
-            "probing failed",
-            "bed leveling",
-            "reference point",
-            "bltouch",
-        ),
-    }
-
     def _payload_for_error(self, reason, consequence=None, error=None):
+        from octoprint.printer import ERROR_FAQS
+
         if error is None:
             error = self.getErrorString()
 
@@ -4198,7 +4183,7 @@ class MachineCom:
             payload["logs"] = list(self._terminal_log)
 
             error_lower = error.lower()
-            for faq, triggers in self._error_faqs.items():
+            for faq, triggers in ERROR_FAQS.items():
                 if any(trigger in error_lower for trigger in triggers):
                     payload["faq"] = "firmware-" + faq
                     break

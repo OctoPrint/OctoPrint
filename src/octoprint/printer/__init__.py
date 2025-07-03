@@ -52,6 +52,20 @@ class CommunicationHealth(BaseModel):
         return float(self.errors) / float(self.total)
 
 
+ERROR_FAQS = {
+    "mintemp": ("mintemp",),
+    "maxtemp": ("maxtemp",),
+    "thermal-runaway": ("runaway",),
+    "heating-failed": ("heating failed",),
+    "probing-failed": (
+        "probing failed",
+        "bed leveling",
+        "reference point",
+        "bltouch",
+    ),
+}
+
+
 class ErrorInformation(BaseModel):
     error: str
     reason: str
