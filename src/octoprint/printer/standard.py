@@ -81,7 +81,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._messages = deque([], 300)
         self._log = deque([], 300)
 
-        self._state: ConnectedPrinterState = None
+        self._state: ConnectedPrinterState = ConnectedPrinterState.CLOSED
 
         self._printAfterSelect = False
         self._posAfterSelect = None
