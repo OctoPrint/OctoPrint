@@ -2,6 +2,7 @@ import copy
 import logging
 import os
 from gettext import gettext
+from typing import Any
 
 import octoprint.util as util
 from octoprint.events import Events, eventManager
@@ -33,6 +34,12 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     @classmethod
     def connection_options(cls) -> dict:
         return {"port": serialList(), "baudrate": baudrateList()}
+
+    @classmethod
+    def connection_preconditions_met(cls, params: dict[str, Any]) -> bool:
+        serials = serialList()
+        port = params.get("port")
+        return len(serials) > 0 and (port is None or port == "AUTO" or port in serials)
 
     STATE_LOOKUP = {
         MachineCom.STATE_CANCELLING: ConnectedPrinterState.CANCELLING,

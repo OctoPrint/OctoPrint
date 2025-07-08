@@ -1,7 +1,8 @@
 import enum
 import logging
+from collections.abc import Iterable
 from gettext import gettext
-from typing import Union
+from typing import Any, Optional, Union, cast
 
 from octoprint.events import Events, eventManager
 from octoprint.printer import (
@@ -121,21 +122,21 @@ class ConnectedPrinterListenerMixin:
 
 
 class ConnectedPrinterMetaClass(type):
-    connectors = {}
+    connectors: dict[str, "ConnectedPrinter"] = {}
 
-    def __new__(mcs, name, bases, args):
+    def __new__(mcs, name: str, bases: tuple[type, ...], args: dict[str, Any]):
         cls = type.__new__(mcs, name, bases, args)
 
-        connector = args.get("connector")
+        connector = cast(str, args.get("connector"))
         if connector:
             mcs.connectors[connector] = cls
 
         return cls
 
-    def find(cls, connector):
+    def find(cls, connector: str) -> Optional["ConnectedPrinter"]:
         return cls.connectors.get(connector)
 
-    def all(cls):
+    def all(cls) -> Iterable["ConnectedPrinter"]:
         return cls.connectors.values()
 
 
@@ -146,6 +147,17 @@ class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClas
     @classmethod
     def connection_options(cls) -> dict:
         return {}
+
+    @classmethod
+    def connection_preconditions_met(cls, params: dict[str, Any]) -> bool:
+        """
+        Returns True if a connection with the provided parameters *might* be possible.
+
+        Note that an actual connection attempt might still fail even if this returns True,
+        connectors will only check if the parameters meet any basic preconditions that can easily
+        be checked.
+        """
+        return True
 
     def __init__(
         self,

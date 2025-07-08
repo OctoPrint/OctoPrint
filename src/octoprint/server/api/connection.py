@@ -140,7 +140,7 @@ def connectionCommand():
         return response
 
     if command == "connect":
-        connector = "serial"
+        connector_name = "serial"
         parameters = {}
         printerProfile = None
 
@@ -148,9 +148,9 @@ def connectionCommand():
             from octoprint.printer.connection import ConnectedPrinter
 
             if "connector" in data:
-                connector = data["connector"]
-                if not ConnectedPrinter.find(connector):
-                    abort(400, description=f'unknown connector: "{connector}"')
+                connector_name = data["connector"]
+                if not ConnectedPrinter.find(connector_name):
+                    abort(400, description=f'unknown connector: "{connector_name}"')
 
             if "parameters" in data:
                 parameters = data["parameters"]
@@ -177,17 +177,29 @@ def connectionCommand():
             if not printerProfileManager.exists(printerProfile):
                 abort(400, description="printerProfile is invalid")
 
+        # check if our connection preconditions are met
+        connector = ConnectedPrinter.find(connector_name)
+        if not connector.connection_preconditions_met(parameters):
+            abort(
+                412,
+                description=f"Preconditions for connecting to {connector_name} weren't met by provided parameters",
+            )
+
         # check if we also need to update the settings
         settings_dirty = False
 
         if "save" in data and data["save"] in valid_boolean_trues:
-            settings().set(["serial", "port"], port)
-            settings().setInt(["serial", "baudrate"], baudrate)
+            settings().set(
+                ["printerConnection", "preferred", "connector"], connector_name
+            )
+            settings().set(["printerConnection", "preferred", "parameters"], parameters)
             printerProfileManager.set_default(printerProfile)
             settings_dirty = True
 
         if "autoconnect" in data:
-            settings().setBoolean(["serial", "autoconnect"], data["autoconnect"])
+            settings().setBoolean(
+                ["printerConnection", "autoconnect"], data["autoconnect"]
+            )
             settings_dirty = True
 
         if settings_dirty:
@@ -195,7 +207,7 @@ def connectionCommand():
 
         # connect
         printer.connect(
-            connector=connector, parameters=parameters, profile=printerProfile
+            connector=connector_name, parameters=parameters, profile=printerProfile
         )
 
     elif command == "disconnect":
@@ -213,6 +225,13 @@ def _get_options() -> ConnectionOptions:
     connector_options = ConnectedPrinter.all()
     profile_options = printerProfileManager.get_all()
     default_profile = printerProfileManager.get_default()
+
+    preferred_connection_connector = settings().get(
+        ["printerConnection", "preferred", "connector"]
+    )
+    preferred_connection_params = settings().get(
+        ["printerConnection", "preferred", "parameters"]
+    )
 
     return ConnectionOptions(
         connectors=[
@@ -232,20 +251,39 @@ def _get_options() -> ConnectionOptions:
             if "id" in printer_profile
         ],
         preferredConnector=PreferredConnectorSettings(
-            connector="serial", parameters={"port": None, "baudrate": 0}
+            connector=preferred_connection_connector,
+            parameters=preferred_connection_params,
         ),
         preferredProfile=default_profile["id"] if "id" in default_profile else None,
     )
 
 
 def _get_options_pre_1_12_0() -> ConnectionOptions_pre_1_12_0:
-    connection_options = printer.__class__.get_connection_options()
+    from octoprint.printer.connection import ConnectedPrinter
+
     profile_options = printerProfileManager.get_all()
     default_profile = printerProfileManager.get_default()
 
+    # we only support the serial connector here
+    serial_connector = ConnectedPrinter.find("serial")
+    if serial_connector:
+        connection_options = serial_connector.connection_options()
+    else:
+        connection_options = {}
+
+    # preferred
+    preferred_connection_connector = settings().get(
+        ["printerConnection", "preferred", "connector"]
+    )
+    preferred_connection_params = {}
+    if preferred_connection_connector == "serial":
+        preferred_connection_params = settings().get(
+            ["printerConnection", "preferred", "parameters"]
+        )
+
     return ConnectionOptions_pre_1_12_0(
-        ports=connection_options["ports"],
-        baudrates=connection_options["baudrates"],
+        ports=connection_options.get("ports", []),
+        baudrates=connection_options.get("baudrates", []),
         printerProfiles=[
             AvailablePrinterProfile(
                 id=printer_profile["id"],
@@ -254,8 +292,8 @@ def _get_options_pre_1_12_0() -> ConnectionOptions_pre_1_12_0:
             for printer_profile in profile_options.values()
             if "id" in printer_profile
         ],
-        portPreference=connection_options["portPreference"],
-        baudratePreference=connection_options["baudratePreference"],
+        portPreference=preferred_connection_params.get("port"),
+        baudratePreference=preferred_connection_params.get("baudrate"),
         printerProfilePreference=default_profile["id"]
         if "id" in default_profile
         else None,

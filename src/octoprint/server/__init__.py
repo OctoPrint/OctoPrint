@@ -470,7 +470,7 @@ class Server:
         eventManager.fire(events.Events.STARTUP)
 
         self._start_analysis_backlog()
-        self._start_serial_autoconnect()
+        self._start_printer_autoconnect()
         self._start_serial_autorefresh()
         self._start_watched_observer()
         self._call_startup_plugins()
@@ -2356,33 +2356,34 @@ class Server:
         # analysis backlog
         fileManager.process_backlog()
 
-    def _start_serial_autoconnect(self):
-        if not self._settings.getBoolean(["serial", "autoconnect"]):
+    def _start_printer_autoconnect(self):
+        if not self._settings.getBoolean(["printerConnection", "autoconnect"]):
             return
 
-        self._logger.info(
-            "Autoconnect on startup is configured, trying to connect to the printer..."
-        )
+        from octoprint.printer.connection import ConnectedPrinter
+
         try:
-            (port, baudrate) = (
-                self._settings.get(["serial", "port"]),
-                self._settings.getInt(["serial", "baudrate"]),
+            connector_name = self._settings.get(
+                ["printerConnection", "preferred", "connector"]
             )
+            connector = ConnectedPrinter.find(connector_name)
+            if connector_name is None or not connector:
+                return
+
+            self._logger.info(
+                f"Auto-connect on startup is configured, trying to connect to the printer via connector {connector_name}..."
+            )
+
+            params = self._settings.get(["printerConnection", "preferred", "parameters"])
+
+            if not connector.connection_preconditions_met(params):
+                self._logger.warning(
+                    f"Preconditions for auto-connecting to {connector_name} not met by the default parameters"
+                )
+                return
+
             printer_profile = printerProfileManager.get_default()
-            connectionOptions = printer.__class__.get_connection_options()
-            if port in connectionOptions["ports"] or port == "AUTO" or port is None:
-                self._logger.info(f"Trying to connect to configured serial port {port}")
-                printer.connect(
-                    port=port,
-                    baudrate=baudrate,
-                    profile=(
-                        printer_profile["id"] if "id" in printer_profile else "_default"
-                    ),
-                )
-            else:
-                self._logger.info(
-                    "Could not find configured serial port {} in the system, cannot automatically connect to a non existing printer. Is it plugged in and booted up yet?"
-                )
+            printer.connect(connector_name, parameters=params, profile=printer_profile)
         except Exception:
             self._logger.exception(
                 "Something went wrong while attempting to automatically connect to the printer"

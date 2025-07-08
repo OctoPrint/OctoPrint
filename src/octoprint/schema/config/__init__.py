@@ -17,6 +17,7 @@ from .feature import FeatureConfig
 from .folder import FolderConfig
 from .gcode_analysis import GcodeAnalysisConfig
 from .plugins import PluginsConfig
+from .printer_connection import PrinterConnectionConfig
 from .printer_parameters import PrinterParametersConfig
 from .printer_profiles import PrinterProfilesConfig
 from .scripts import ScriptsConfig
@@ -42,6 +43,7 @@ class Config(BaseModel):
     folder: FolderConfig = FolderConfig()
     gcodeAnalysis: GcodeAnalysisConfig = GcodeAnalysisConfig()
     plugins: PluginsConfig = PluginsConfig()
+    printerConnection: PrinterConnectionConfig = PrinterConnectionConfig()
     printerParameters: PrinterParametersConfig = PrinterParametersConfig()
     printerProfiles: PrinterProfilesConfig = PrinterProfilesConfig()
     scripts: ScriptsConfig = ScriptsConfig()
