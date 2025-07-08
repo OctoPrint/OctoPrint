@@ -39,7 +39,7 @@
 <label class="checkbox" data-bind="css: {muted: !enableAutoConnect()}">
     <input type="checkbox"
            id="connection_autoconnect"
-           data-bind="checked: settings.serial_autoconnect, enable: enableAutoConnect()">
+           data-bind="checked: autoconnect, enable: enableAutoConnect()">
     {{ _("Auto-connect on server startup") }}
 </label>
 

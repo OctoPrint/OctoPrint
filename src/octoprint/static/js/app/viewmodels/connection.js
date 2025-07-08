@@ -192,7 +192,7 @@ $(function () {
                     connector: connector,
                     parameters: parameters,
                     printerProfile: profile,
-                    autoconnect: self.settings.serial_autoconnect()
+                    autoconnect: self.autoconnect()
                 };
 
                 if (self.saveSettings()) data["save"] = true;

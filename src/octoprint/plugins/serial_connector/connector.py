@@ -2,7 +2,7 @@ import copy
 import logging
 import os
 from gettext import gettext
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import octoprint.util as util
 from octoprint.events import Events, eventManager
@@ -22,6 +22,10 @@ from octoprint.printer.job import JobProgress, PrintJob, UploadJob
 
 from .serial_comm import MachineCom, baudrateList, serialList
 
+if TYPE_CHECKING:
+    from octoprint.events import EventManager
+    from octoprint.plugin import PluginManager, PluginSettings
+
 
 class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     connector = "serial"
@@ -31,6 +35,12 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         write_file=True, remove_file=True, metadata=True
     )
 
+    # injected by plugin
+    _event_bus: "EventManager" = None
+    _plugin_settings: "PluginSettings" = None
+    _plugin_manager: "PluginManager" = None
+    # /injected
+
     @classmethod
     def connection_options(cls) -> dict:
         return {"port": serialList(), "baudrate": baudrateList()}
@@ -39,7 +49,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     def connection_preconditions_met(cls, params: dict[str, Any]) -> bool:
         serials = serialList()
         port = params.get("port")
-        return len(serials) > 0 and (port is None or port == "AUTO" or port in serials)
+        return len(serials) > 0 and (not port or port == "AUTO" or port in serials)
 
     STATE_LOOKUP = {
         MachineCom.STATE_CANCELLING: ConnectedPrinterState.CANCELLING,
@@ -109,6 +119,8 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             port=self._port,
             baudrate=self._baudrate,
             callback=self,
+            settings=self._plugin_settings,
+            plugin_manager=self._plugin_manager,
         )
         self._comm.start()
 

@@ -18,10 +18,11 @@ $(function () {
         self.resendTotalTransmitted = ko.observable(0);
         self.resendRatio = ko.observable(0);
         self.resendRatioCritical = ko.pureComputed(function () {
-            return (
+            return false;
+            /*return (
                 self.resendRatio() >= self.settings.serial_resendRatioThreshold() &&
                 self.resendTotalTransmitted() >= self.settings.serial_resendRatioStart()
-            );
+            );*/ // TODO: Replace with error level or something, independent from serial
         });
         self.resendRatioNotification = undefined;
 

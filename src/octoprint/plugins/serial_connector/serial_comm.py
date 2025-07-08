@@ -51,14 +51,6 @@ from octoprint.util import (
 from octoprint.util.files import m20_timestamp_to_unix_timestamp
 from octoprint.util.platform import get_os, set_close_exec
 
-try:
-    import winreg
-except ImportError:
-    try:
-        import _winreg as winreg  # type: ignore
-    except ImportError:
-        pass
-
 _logger = logging.getLogger(__name__)
 
 # a bunch of regexes we'll need for the communication parsing...
@@ -198,16 +190,22 @@ SDFileData = namedtuple("SDFileData", ["name", "size", "timestamp", "longname"])
 def serialList():
     if os.name == "nt":
         candidates = []
+
         try:
-            key = winreg.OpenKey(
+            import winreg
+
+            with winreg.OpenKey(
                 winreg.HKEY_LOCAL_MACHINE, "HARDWARE\\DEVICEMAP\\SERIALCOMM"
-            )
-            i = 0
-            while True:
-                candidates += [winreg.EnumValue(key, i)[1]]
-                i += 1
+            ) as key:
+                i = 0
+                try:
+                    while True:
+                        candidates += [winreg.EnumValue(key, i)[1]]
+                        i += 1
+                except OSError:
+                    pass
         except Exception:
-            pass
+            _logger.exception("Error while enumerating the available serial ports")
 
     else:
         candidates = []
@@ -217,12 +215,10 @@ def serialList():
                     if regex_serial_devices.match(entry.name):
                         candidates.append(entry.path)
         except Exception:
-            logging.getLogger(__name__).exception(
-                "Could not scan /dev for serial ports on the system"
-            )
+            _logger.exception("Could not scan /dev for serial ports on the system")
 
     # additional ports
-    additionalPorts = settings().get(["serial", "additionalPorts"])
+    additionalPorts = settings().get(["plugins", "serial_connector", "additionalPorts"])
     if additionalPorts:
         for additional in additionalPorts:
             candidates += glob.glob(additional)
@@ -234,22 +230,22 @@ def serialList():
         try:
             candidates += hook(candidates)
         except Exception:
-            logging.getLogger(__name__).exception(
+            _logger.exception(
                 "Error while retrieving additional serial port names from hook {}".format(
                     name
                 )
             )
 
     # blacklisted ports
-    blacklistedPorts = settings().get(["serial", "blacklistedPorts"])
+    blacklistedPorts = settings().get(["plugins", "serial_connector", "blacklistedPorts"])
     if blacklistedPorts:
-        for pattern in settings().get(["serial", "blacklistedPorts"]):
+        for pattern in blacklistedPorts:
             candidates = list(
                 filter(lambda x: not fnmatch.fnmatch(x, pattern), candidates)
             )
 
     # last used port = first to try, move to start
-    prev = settings().get(["serial", "port"])
+    prev = settings().get(["plugins", "serial_connector", "port"])
     if prev in candidates:
         candidates.remove(prev)
         candidates.insert(0, prev)
@@ -263,7 +259,9 @@ def baudrateList(candidates=None):
         candidates = [115200, 250000, 230400, 57600, 38400, 19200, 9600]
 
     # additional baudrates prepended, sorted descending
-    additionalBaudrates = settings().get(["serial", "additionalBaudrates"])
+    additionalBaudrates = settings().get(
+        ["plugins", "serial_connector", "additionalBaudrates"]
+    )
     for additional in sorted(additionalBaudrates, reverse=True):
         try:
             candidates.insert(0, int(additional))
@@ -273,13 +271,15 @@ def baudrateList(candidates=None):
             )
 
     # blacklisted baudrates
-    blacklistedBaudrates = settings().get(["serial", "blacklistedBaudrates"])
+    blacklistedBaudrates = settings().get(
+        ["plugins", "serial_connector", "blacklistedBaudrates"]
+    )
     if blacklistedBaudrates:
         for baudrate in blacklistedBaudrates:
             candidates.remove(baudrate)
 
     # last used baudrate = first to try, move to start
-    prev = settings().getInt(["serial", "baudrate"])
+    prev = settings().getInt(["plugins", "serial_connector", "baudrate"])
     if prev in candidates:
         candidates.remove(prev)
         candidates.insert(0, prev)
@@ -499,15 +499,26 @@ class MachineCom:
 
     DETECTION_RETRIES = 3
 
-    def __init__(self, printer_profile, port=None, baudrate=None, callback=None):
+    def __init__(
+        self,
+        printer_profile,
+        port=None,
+        baudrate=None,
+        callback=None,
+        settings=None,
+        plugin_manager=None,
+    ):
         self._logger = logging.getLogger(__name__)
         self._serialLogger = logging.getLogger("SERIAL")
         self._phaseLogger = logging.getLogger(__name__ + ".command_phases")
 
+        self._settings = settings
+        self._plugin_manager = plugin_manager
+
         if port is None:
-            port = settings().get(["serial", "port"])
+            port = self._settings.get(["port"])  # TODO use preferred?
         if baudrate is None:
-            settingsBaudrate = settings().getInt(["serial", "baudrate"])
+            settingsBaudrate = self._settings.get_int(["baudrate"])  # TODO use preferred?
             if settingsBaudrate is None:
                 baudrate = 0
             else:
@@ -550,9 +561,9 @@ class MachineCom:
         self._timeout = None
         self._ok_timeout = None
         self._timeout_intervals = {}
-        for key, value in (
-            settings().get(["serial", "timeout"], merged=True, asdict=True).items()
-        ):
+        for key, value in self._settings.get(
+            ["timeout"], merged=True, asdict=True
+        ).items():
             try:
                 self._timeout_intervals[key] = float(value)
             except ValueError:
@@ -560,71 +571,69 @@ class MachineCom:
 
         self._consecutive_timeouts = 0
         self._consecutive_timeout_maximums = {}
-        for key, value in (
-            settings()
-            .get(["serial", "maxCommunicationTimeouts"], merged=True, asdict=True)
-            .items()
-        ):
+        for key, value in self._settings.get(
+            ["maxCommunicationTimeouts"], merged=True, asdict=True
+        ).items():
             try:
                 self._consecutive_timeout_maximums[key] = int(value)
             except ValueError:
                 pass
 
-        self._max_write_passes = settings().getInt(["serial", "maxWritePasses"])
+        self._max_write_passes = self._settings.get_int(["maxWritePasses"])
 
-        self._hello_command = settings().get(["serial", "helloCommand"])
+        self._hello_command = self._settings.get(["helloCommand"])
         self._hello_sent = 0
-        self._trigger_ok_for_m29 = settings().getBoolean(["serial", "triggerOkForM29"])
+        self._trigger_ok_for_m29 = self._settings.get_boolean(["triggerOkForM29"])
 
-        self._alwaysSendChecksum = settings().getBoolean(["serial", "alwaysSendChecksum"])
-        self._neverSendChecksum = settings().getBoolean(["serial", "neverSendChecksum"])
-        self._sendChecksumWithUnknownCommands = settings().getBoolean(
-            ["serial", "sendChecksumWithUnknownCommands"]
+        self._alwaysSendChecksum = self._settings.get_boolean(["alwaysSendChecksum"])
+        self._neverSendChecksum = self._settings.get_boolean(["neverSendChecksum"])
+        self._sendChecksumWithUnknownCommands = self._settings.get_boolean(
+            ["sendChecksumWithUnknownCommands"]
         )
-        self._unknownCommandsNeedAck = settings().getBoolean(
-            ["serial", "unknownCommandsNeedAck"]
+        self._unknownCommandsNeedAck = self._settings.get_boolean(
+            ["unknownCommandsNeedAck"]
         )
-        self._sdAlwaysAvailable = settings().getBoolean(["serial", "sdAlwaysAvailable"])
-        self._sdRelativePath = settings().getBoolean(["serial", "sdRelativePath"])
-        self._sdLowerCase = settings().getBoolean(["serial", "sdLowerCase"])
-        self._sdCancelCommand = settings().get(["serial", "sdCancelCommand"])
-        self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
-        self._send_m112_on_error = settings().getBoolean(["serial", "sendM112OnError"])
-        self._disable_sd_printing_detection = settings().getBoolean(
-            ["serial", "disableSdPrintingDetection"]
+        self._sdAlwaysAvailable = self._settings.get_boolean(["sdAlwaysAvailable"])
+        self._sdRelativePath = self._settings.get_boolean(["sdRelativePath"])
+        self._sdLowerCase = self._settings.get_boolean(["sdLowerCase"])
+        self._sdCancelCommand = self._settings.get(["sdCancelCommand"])
+        self._blockWhileDwelling = self._settings.get_boolean(["blockWhileDwelling"])
+        self._send_m112_on_error = self._settings.get_boolean(["sendM112OnError"])
+        self._disable_sd_printing_detection = self._settings.get_boolean(
+            ["disableSdPrintingDetection"]
         )
         self._current_line = 1
         self._line_mutex = threading.RLock()
         self._resendDelta = None
 
         self._capability_support = {
-            self.CAPABILITY_AUTOREPORT_TEMP: settings().getBoolean(
-                ["serial", "capabilities", "autoreport_temp"]
+            self.CAPABILITY_AUTOREPORT_TEMP: self._settings.get_boolean(
+                ["capabilities", "autoreport_temp"]
             ),
-            self.CAPABILITY_AUTOREPORT_SD_STATUS: settings().getBoolean(
-                ["serial", "capabilities", "autoreport_sdstatus"]
+            self.CAPABILITY_AUTOREPORT_SD_STATUS: self._settings.get_boolean(
+                ["capabilities", "autoreport_sdstatus"]
             ),
-            self.CAPABILITY_AUTOREPORT_POS: settings().getBoolean(
-                ["serial", "capabilities", "autoreport_pos"]
+            self.CAPABILITY_AUTOREPORT_POS: self._settings.get_boolean(
+                ["capabilities", "autoreport_pos"]
             ),
-            self.CAPABILITY_BUSY_PROTOCOL: settings().getBoolean(
-                ["serial", "capabilities", "busy_protocol"]
+            self.CAPABILITY_BUSY_PROTOCOL: self._settings.get_boolean(
+                ["capabilities", "busy_protocol"]
             ),
-            self.CAPABILITY_EMERGENCY_PARSER: settings().getBoolean(
-                ["serial", "capabilities", "emergency_parser"]
+            self.CAPABILITY_EMERGENCY_PARSER: self._settings.get_boolean(
+                ["capabilities", "emergency_parser"]
             ),
-            self.CAPABILITY_CHAMBER_TEMP: settings().getBoolean(
-                ["serial", "capabilities", "chamber_temp"]
+            self.CAPABILITY_CHAMBER_TEMP: self._settings.get_boolean(
+                ["capabilities", "chamber_temp"]
             ),
-            self.CAPABILITY_EXTENDED_M20: settings().getBoolean(
-                ["serial", "capabilities", "extended_m20"]
+            self.CAPABILITY_EXTENDED_M20: self._settings.get_boolean(
+                ["capabilities", "extended_m20"]
             ),
-            self.CAPABILITY_LFN_WRITE: settings().getBoolean(
-                ["serial", "capabilities", "lfn_write"]
+            self.CAPABILITY_LFN_WRITE: self._settings.get_boolean(
+                ["capabilities", "lfn_write"]
             ),
         }
 
-        last_line_count = settings().getInt(["serial", "lastLineBufferSize"])
+        last_line_count = self._settings.get_int(["lastLineBufferSize"])
         self._lastLines = deque([], last_line_count)
         self._lastCommError = None
         self._lastResendNumber = None
@@ -632,19 +641,17 @@ class MachineCom:
 
         self._currentConsecutiveResendNumber = None
         self._currentConsecutiveResendCount = 0
-        self._maxConsecutiveResends = settings().getInt(
-            ["serial", "maxConsecutiveResends"]
-        )
+        self._maxConsecutiveResends = self._settings.get_int(["maxConsecutiveResends"])
 
         self._errorValue = ""
 
-        self._firmware_detection = settings().getBoolean(["serial", "firmwareDetection"])
+        self._firmware_detection = self._settings.get_boolean(["firmwareDetection"])
         self._firmware_info_received = False
         self._firmware_capabilities_received = False
         self._firmware_info = {}
         self._firmware_capabilities = {}
 
-        self._defer_sd_refresh = settings().getBoolean(["serial", "waitToLoadSdFileList"])
+        self._defer_sd_refresh = self._settings.get_boolean(["waitToLoadSdFileList"])
 
         self._temperature_autoreporting = False
         self._sdstatus_autoreporting = False
@@ -652,24 +659,20 @@ class MachineCom:
         self._busy_protocol_detected = False
         self._busy_protocol_support = False
 
-        self._trigger_ok_after_resend = settings().get(
-            ["serial", "supportResendsWithoutOk"]
+        self._trigger_ok_after_resend = self._settings.get_boolean(
+            ["supportResendsWithoutOk"]
         )
         self._resend_ok_timer = None
 
         self._resendActive = False
 
-        terminal_log_size = settings().getInt(["serial", "terminalLogSize"])
+        terminal_log_size = self._settings.get_int(["terminalLogSize"])
         self._terminal_log = deque([], min(20, terminal_log_size))
 
-        self._disconnect_on_errors = settings().getBoolean(
-            ["serial", "disconnectOnErrors"]
-        )
-        self._ignore_errors = settings().getBoolean(
-            ["serial", "ignoreErrorsFromFirmware"]
-        )
+        self._disconnect_on_errors = self._settings.get_boolean(["disconnectOnErrors"])
+        self._ignore_errors = self._settings.get_boolean(["ignoreErrorsFromFirmware"])
 
-        self._log_resends = settings().getBoolean(["serial", "logResends"])
+        self._log_resends = self._settings.get_boolean(["logResends"])
 
         # don't log more resends than 5 / 60s
         self._log_resends_rate_start = None
@@ -677,17 +680,17 @@ class MachineCom:
         self._log_resends_max = 5
         self._log_resends_rate_frame = 60
 
-        self._long_running_commands = settings().get(["serial", "longRunningCommands"])
-        self._checksum_requiring_commands = settings().get(
-            ["serial", "checksumRequiringCommands"]
+        self._long_running_commands = self._settings.get(["longRunningCommands"])
+        self._checksum_requiring_commands = self._settings.get(
+            ["checksumRequiringCommands"]
         )
-        self._blocked_commands = settings().get(["serial", "blockedCommands"])
-        self._ignored_commands = settings().get(["serial", "ignoredCommands"])
-        self._pausing_commands = settings().get(["serial", "pausingCommands"])
-        self._emergency_commands = settings().get(["serial", "emergencyCommands"])
-        self._sanity_check_tools = settings().getBoolean(["serial", "sanityCheckTools"])
+        self._blocked_commands = self._settings.get(["blockedCommands"])
+        self._ignored_commands = self._settings.get(["ignoredCommands"])
+        self._pausing_commands = self._settings.get(["pausingCommands"])
+        self._emergency_commands = self._settings.get(["emergencyCommands"])
+        self._sanity_check_tools = self._settings.get_boolean(["sanityCheckTools"])
 
-        self._ack_max = settings().getInt(["serial", "ackMax"])
+        self._ack_max = self._settings.get_int(["ackMax"])
         self._clear_to_send = CountedEvent(
             name="comm.clear_to_send", minimum=None, maximum=self._ack_max
         )
@@ -696,17 +699,17 @@ class MachineCom:
         self._sd_status_timer = None
 
         self._consecutive_not_sd_printing = 0
-        self._consecutive_not_sd_printing_maximum = settings().getInt(
-            ["serial", "maxNotSdPrinting"]
+        self._consecutive_not_sd_printing_maximum = self._settings.get_int(
+            ["maxNotSdPrinting"]
         )
 
         self._job_queue = JobQueue()
 
         self._transmitted_lines = 0
         self._received_resend_requests = 0
-        self._resend_ratio_start = settings().getInt(["serial", "resendRatioStart"])
+        self._resend_ratio_start = self._settings.get_int(["resendRatioStart"])
         self._resend_ratio_threshold = (
-            settings().getInt(["serial", "resendRatioThreshold"]) / 100
+            self._settings.get_int(["resendRatioThreshold"]) / 100
         )
         self._resend_ratio_reported = False
 
@@ -766,7 +769,7 @@ class MachineCom:
         )
 
         # SD status data
-        self._sdEnabled = settings().getBoolean(["feature", "sdSupport"])
+        self._sdEnabled = self._settings.global_get_boolean(["feature", "sdSupport"])
         self._sdAvailable = False
         self._sdFileList = False
         self._sdFileLongName = False
@@ -805,22 +808,16 @@ class MachineCom:
         self._cancel_position_timer = None
         self._cancel_mutex = threading.RLock()
 
-        self._log_position_on_pause = settings().getBoolean(
-            ["serial", "logPositionOnPause"]
-        )
-        self._log_position_on_cancel = settings().getBoolean(
-            ["serial", "logPositionOnCancel"]
-        )
-        self._abort_heatup_on_cancel = settings().getBoolean(
-            ["serial", "abortHeatupOnCancel"]
-        )
+        self._log_position_on_pause = self._settings.get_boolean(["logPositionOnPause"])
+        self._log_position_on_cancel = self._settings.get_boolean(["logPositionOnCancel"])
+        self._abort_heatup_on_cancel = self._settings.get_boolean(["abortHeatupOnCancel"])
 
         # serial encoding
-        self._serial_encoding = settings().get(["serial", "encoding"])
+        self._serial_encoding = self._settings.get(["encoding"])
 
         # action commands
-        self._enable_shutdown_action_command = settings().getBoolean(
-            ["serial", "enableShutdownActionCommand"]
+        self._enable_shutdown_action_command = self._settings.get_boolean(
+            ["enableShutdownActionCommand"]
         )
 
         # print job
@@ -904,7 +901,7 @@ class MachineCom:
             return
 
         if newState == self.STATE_CLOSED or newState == self.STATE_CLOSED_WITH_ERROR:
-            if settings().getBoolean(["feature", "sdSupport"]):
+            if self._settings.global_get_boolean(["feature", "sdSupport"]):
                 self._sdFileList = False
                 self._sdFiles = {}
                 self._callback.on_comm_sd_files([])
@@ -1263,7 +1260,7 @@ class MachineCom:
         else:
             self._changeState(self.STATE_CLOSED)
 
-        if settings().getBoolean(["feature", "sdSupport"]):
+        if self._settings.global_get_boolean(["feature", "sdSupport"]):
             self._sdFiles = {}
 
     def setTemperatureOffset(self, offsets):
@@ -1386,7 +1383,7 @@ class MachineCom:
                     variables = retval[2]
                     context = dict_merge(context, {"plugins": {name: variables}})
 
-        template = settings().loadScript("gcode", scriptName, context=context)
+        template = self._settings.loadScript("gcode", scriptName, context=context)
         if template is None:
             scriptLines = []
         else:
@@ -2268,20 +2265,20 @@ class MachineCom:
 
     def _monitor(self):
         feedback_controls, feedback_matcher = convert_feedback_controls(
-            settings().get(["controls"])
+            self._settings.global_get(["controls"])
         )
         feedback_errors = []
         pause_triggers = convert_pause_triggers(
-            settings().get(["printerParameters", "pauseTriggers"])
+            self._settings.global_get(["printerParameters", "pauseTriggers"])
         )
 
-        disable_external_heatup_detection = not settings().getBoolean(
-            ["serial", "externalHeatupDetection"]
+        disable_external_heatup_detection = not self._settings.get_boolean(
+            ["externalHeatupDetection"]
         )
 
-        wait_for_start = settings().getBoolean(["serial", "waitForStartOnConnect"])
+        wait_for_start = self._settings.get_boolean(["waitForStartOnConnect"])
 
-        suppress_2nd_hello = settings().getBoolean(["serial", "suppressSecondHello"])
+        suppress_2nd_hello = self._settings.get_boolean(["suppressSecondHello"])
 
         self._consecutive_timeouts = 0
 
@@ -2308,10 +2305,8 @@ class MachineCom:
         self._log("Connected to: %s, starting monitor" % self._serial)
 
         startSeen = False
-        supportRepetierTargetTemp = settings().getBoolean(
-            ["serial", "repetierTargetTemp"]
-        )
-        supportWait = settings().getBoolean(["serial", "supportWait"])
+        supportRepetierTargetTemp = self._settings.get_boolean(["repetierTargetTemp"])
+        supportWait = self._settings.get_boolean(["supportWait"])
 
         # enqueue the "hello command" first thing
         if try_hello:
@@ -3921,14 +3916,14 @@ class MachineCom:
                 "write_timeout": 0,
             }
 
-            if settings().getBoolean(["serial", "exclusive"]):
+            if self._settings.get_boolean(["exclusive"]):
                 serial_port_args["exclusive"] = True
 
             try:
                 serial_obj = serial.Serial(**serial_port_args)
                 serial_obj.port = str(p)
 
-                use_parity_workaround = settings().get(["serial", "useParityWorkaround"])
+                use_parity_workaround = self._settings.get(["useParityWorkaround"])
                 needs_parity_workaround = get_os() == "linux" and os.path.exists(
                     "/etc/debian_version"
                 )  # See #673
@@ -3958,7 +3953,7 @@ class MachineCom:
                 # noinspection PyProtectedMember
                 set_close_exec(serial_obj._port_handle)
 
-            if settings().getBoolean(["serial", "lowLatency"]):
+            if self._settings.get_boolean(["lowLatency"]):
                 if hasattr(serial_obj, "set_low_latency_mode"):
                     try:
                         serial_obj.set_low_latency_mode(True)
@@ -3982,7 +3977,7 @@ class MachineCom:
                     self,
                     port,
                     baudrate,
-                    settings().getFloat(["serial", "timeout", "connection"]),
+                    self._settings.get_float(["timeout", "connection"]),
                 )
             except Exception:
                 exception_string = get_exception_string()
@@ -6761,7 +6756,7 @@ def gcode_and_subcode_for_cmd(cmd):
     elif "codeT" in values and values["codeT"]:
         gcode = values["codeT"]
     elif (
-        settings().getBoolean(["serial", "supportFAsCommand"])
+        settings().getBoolean(["plugins", "serial_connector", "supportFAsCommand"])
         and "codeF" in values
         and values["codeF"]
     ):

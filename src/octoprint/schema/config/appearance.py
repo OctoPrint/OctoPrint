@@ -51,7 +51,7 @@ class ComponentOrderConfig(BaseModel):
 
     settings: list[str] = [
         "section_printer",
-        "serial",
+        "plugin_serial_connector",
         "printerprofiles",
         "temperatures",
         "terminalfilters",
