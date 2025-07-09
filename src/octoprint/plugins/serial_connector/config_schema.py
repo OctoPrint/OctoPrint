@@ -1,6 +1,3 @@
-__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
-__copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
-
 from enum import Enum
 from typing import Optional
 
@@ -14,16 +11,31 @@ class AlwaysDetectNeverEnum(str, Enum):
     never = "never"
 
 
+class AlwaysPrintNeverEnum(str, Enum):
+    always = "always"
+    print = "print"
+    never = "never"
+
+
 class InfoWarnNeverEnum(str, Enum):
     info = "info"
     warn = "warn"
     never = "never"
 
 
+class DisconnectCancelIgnoreEnum(str, Enum):
+    disconnect = "disconnect"
+    cancel = "cancel"
+    ignore = "ignore"
+
+
 @with_attrs_docs
 class SerialTimeoutConfig(BaseModel):
     detectionFirst: float = 10.0
+    """Timeout for first handshake attempt during autodetection """
+
     detectionConsecutive: float = 2.0
+    """Timeout for consecutive handshake attempts during autodetection"""
 
     connection: float = 10.0
     """Timeout for waiting to establish a connection with the selected port, in seconds"""
@@ -41,15 +53,25 @@ class SerialTimeoutConfig(BaseModel):
     """Timeout after which to query temperature when a target is set"""
 
     temperatureAutoreport: float = 2.0
+    """Temperature autoreport interval to request from firmware"""
 
     sdStatus: float = 1.0
     """Timeout after which to query the SD status while SD printing"""
 
     sdStatusAutoreport: float = 1.0
+    """SD status autoreport interval to request from firmware"""
+
     posAutoreport: float = 5.0
+    """Position autoreport interval to request from firmware"""
+
     resendOk: float = 0.5
+    """How long to wait to trigger an ok after a resend if none is detected"""
+
     baudrateDetectionPause: float = 1.0
+    """Initial pause during baudrate detection to give printer controller time to react"""
+
     positionLogWait: float = 10.0
+    """How long to wait for a position update during pausing or cancelling before proceeding"""
 
 
 @with_attrs_docs
@@ -118,6 +140,7 @@ class SerialConfig(BaseModel):
     """Timeouts used for the serial connection to the printer, you might want to adjust these if you are experiencing connection problems"""
 
     maxCommunicationTimeouts: SerialMaxTimeouts = SerialMaxTimeouts()
+    """Maximum number of timeouts to support before going into an error state"""
 
     maxWritePasses: int = 5
     """Maximum number of write attempts to serial during which nothing can be written before the communication with the printer is considered dead and OctoPrint will disconnect with an error"""
@@ -129,7 +152,10 @@ class SerialConfig(BaseModel):
     """Use this to define additional baud rates to offer for connecting to serial ports. Must be a valid integer"""
 
     blacklistedPorts: list[str] = []
+    """Use this to define patterns of ports to ignore"""
+
     blacklistedBaudrates: list[int] = []
+    """Use this to define baudrates to ignore"""
 
     longRunningCommands: list[str] = [
         "G4",
@@ -163,11 +189,8 @@ class SerialConfig(BaseModel):
     suppressSecondHello: bool = False
     """Whether to suppress the second hello command. Might be required for some printer configurations with custom hello commands."""
 
-    disconnectOnErrors: bool = True
-    """Whether to disconnect from the printer on errors or not."""
-
-    ignoreErrorsFromFirmware: bool = False
-    """Whether to completely ignore errors from the firmware or not."""
+    errorHandling: DisconnectCancelIgnoreEnum = "disconnect"
+    """What to do when receiving unhandled errors from the printer."""
 
     terminalLogSize: int = 20
     lastLineBufferSize: int = 50
@@ -179,8 +202,13 @@ class SerialConfig(BaseModel):
     """Whether to support resends without follow-up ok or not."""
 
     logPositionOnPause: bool = True
+    """Whether to log the position on pause"""
+
     logPositionOnCancel: bool = False
+    """Whether to log the position on cancel"""
+
     abortHeatupOnCancel: bool = True
+    """Whether to send a heatup abort command on cancel"""
 
     waitForStartOnConnect: bool = False
     """Whether OctoPrint should wait for the `start` response from the printer before trying to send commands during connect."""
@@ -188,10 +216,8 @@ class SerialConfig(BaseModel):
     waitToLoadSdFileList: bool = True
     """Specifies whether OctoPrint should wait to load the SD card file list until the first firmware capability report is processed."""
 
-    alwaysSendChecksum: bool = False
-    """Specifies whether OctoPrint should send linenumber + checksum with every printer command. Needed for successful communication with Repetier firmware."""
-
-    neverSendChecksum: bool = False
+    sendChecksum: AlwaysPrintNeverEnum = "print"
+    """Specifies when OctoPrint should send linenumber + checksum with every GCODE command."""
 
     sendChecksumWithUnknownCommands: bool = False
     r"""Specifies whether OctoPrint should also send linenumber + checksum with commands that are *not* detected as valid GCODE (as in, they do not match the regular expression `^\s*([GM]\d+|T)`)."""
@@ -206,9 +232,13 @@ class SerialConfig(BaseModel):
     """Whether to always assume that an SD card is present in the printer. Needed by some firmwares which don't report the SD card status properly."""
 
     sdLowerCase: bool = False
+    """Whether to treat all sd card file names as lower case"""
+
     sdCancelCommand: str = "M25"
+    """Command to cancel SD prints"""
+
     maxNotSdPrinting: int = 2
-    swallowOkAfterResend: bool = True
+    """Maximum number of 'Not SD Printing' messages to support before assuming the print was cancelled externally"""
 
     repetierTargetTemp: bool = False
     """Whether the printer sends repetier style target temperatures in the format `TargetExtr0:<temperature>` instead of attaching that information to the regular `M105` responses."""
@@ -246,7 +276,10 @@ class SerialConfig(BaseModel):
     """Percentage of resend requests among all sent lines that should be considered critical."""
 
     resendRatioStart: int = 100
+    """Initial resend ratio percentage"""
+
     ignoreEmptyPorts: bool = False
+    """Whether to ignore that there are no serial ports detected or show a message"""
 
     encoding: str = "ascii"
     """Encoding to use when talking to a machine. `ascii` limits access to characters 0-127, `latin_1` enables access to the "extended" ascii characters 0-255. Other values can be used, see [Python's standard encodings](https://docs.python.org/3/library/codecs.html#standard-encodings)."""

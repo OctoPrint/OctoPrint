@@ -2,6 +2,10 @@ $(function () {
     function SerialConnectorViewModel(parameters) {
         var self = this;
 
+        self.settings = parameters[0];
+
+        //~~ connection related
+
         self.lastUpdated = ko.observable(false);
 
         self.portOptions = ko.observableArray([]);
@@ -59,11 +63,134 @@ $(function () {
 
             self.lastUpdated(new Date().getTime());
         };
+
+        //~~ Settings related
+
+        const get_config_item = (item, defaultValue) => {
+            const parts = `plugins.serial_connector.${item}`.split(".");
+            let node = self.settings.settings;
+            for (let part of parts) {
+                node = node[part];
+                if (node === undefined) {
+                    return defaultValue;
+                }
+            }
+            return node();
+        };
+
+        const set_config_item = (item, value) => {
+            const parts = `plugins.serial_connector.${item}`.split(".");
+            let node = self.settings.settings;
+            for (let part of parts) {
+                node = node[part];
+                if (node === undefined) {
+                    return;
+                }
+            }
+            node(value);
+        };
+
+        self.mapped = {
+            additionalPorts: ko.pureComputed({
+                read: () => get_config_item("additionalPorts", []).join(", "),
+                write: (value) => {
+                    set_config_item("additionalPorts", commentableLinesToArray(value));
+                }
+            }),
+            additionalBaudrates: ko.pureComputed({
+                read: () => get_config_item("additionalBaudrates").join(", "),
+                write: (value) => {
+                    set_config_item(
+                        "additionalBaudrates",
+                        _.map(splitTextToArray(value, ",", true), (item) =>
+                            parseInt(item)
+                        )
+                    );
+                }
+            }),
+            blacklistedPorts: ko.pureComputed({
+                read: () => get_config_item("blacklistedPorts", []).join("\n"),
+                write: (value) => {
+                    set_config_item("blacklistedPorts", commentableLinesToArray(value));
+                }
+            }),
+            blacklistedBaudrates: ko.pureComputed({
+                read: () => get_config_item("blacklistedBaudrates", []).join(", "),
+                write: (value) => {
+                    set_config_item(
+                        "blacklistedBaudrates",
+                        _.map(splitTextToArray(value, ",", true), (item) =>
+                            parseInt(item)
+                        )
+                    );
+                }
+            }),
+            longRunningCommands: ko.pureComputed({
+                read: () => get_config_item("longRunningCommands", []).join(", "),
+                write: (value) => {
+                    set_config_item(
+                        "longRunningCommands",
+                        splitTextToArray(value, ",", true)
+                    );
+                }
+            }),
+            checksumRequiringCommands: ko.pureComputed({
+                read: () => get_config_item("checksumRequiringCommands", []).join(", "),
+                write: (value) => {
+                    set_config_item(
+                        "checksumRequiringCommands",
+                        splitTextToArray(value, ",", true)
+                    );
+                }
+            }),
+            blockedCommands: ko.pureComputed({
+                read: () => get_config_item("blockedCommands", []).join(", "),
+                write: (value) => {
+                    set_config_item(
+                        "blockedCommands",
+                        splitTextToArray(value, ",", true)
+                    );
+                }
+            }),
+            ignoredCommands: ko.pureComputed({
+                read: () => get_config_item("ignoredCommands", []).join(", "),
+                write: (value) => {
+                    set_config_item(
+                        "ignoredCommands",
+                        splitTextToArray(value, ",", true)
+                    );
+                }
+            }),
+            pausingCommands: ko.pureComputed({
+                read: () => get_config_item("pausingCommands", []).join(", "),
+                write: (value) => {
+                    set_config_item(
+                        "pausingCommands",
+                        splitTextToArray(value, ",", true)
+                    );
+                }
+            }),
+            emergencyCommands: ko.pureComputed({
+                read: () => get_config_item("emergencyCommands", []).join(", "),
+                write: (value) => {
+                    set_config_item(
+                        "emergencyCommands",
+                        splitTextToArray(value, ",", true)
+                    );
+                }
+            }),
+            disableExternalHeatupDetection: ko.pureComputed({
+                read: () => !get_config_item("externalHeatupDetection", true),
+                write: (value) => {
+                    set_config_item("externalHeatupDetection", !value);
+                }
+            })
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push({
         construct: SerialConnectorViewModel,
-        dependencies: [],
-        elements: ["#connection_options_serial"]
+        dependencies: ["settingsViewModel"],
+        elements: ["#connection_options_serial", "#settings_plugin_serial_connector"]
     });
 });

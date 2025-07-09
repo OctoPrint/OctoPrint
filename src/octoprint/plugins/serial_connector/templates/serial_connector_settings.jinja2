@@ -28,7 +28,7 @@
                         <textarea rows="4"
                                   class="block"
                                   id="settings-serialAdditionalPorts"
-                                  data-bind="value: settings.plugins.serial_connector.additionalPorts"></textarea>
+                                  data-bind="value: mapped.additionalPorts"></textarea>
                         <span class="help-inline">{% trans glob_url="http://docs.python.org/3/library/glob.html" %}
                             Use this to define additional <a href="{{ glob_url }}">glob patterns</a> matching serial ports to list for connecting against, e.g. <code>/dev/ttyAMA*</code>.
                             One entry per line. Please note that ports will only be offered to connect to if they get also detected by the <em>operating system</em>. Adding a port here
@@ -42,7 +42,7 @@
                         <input type="text"
                                class="input-block-level"
                                id="settings-serialAdditionalBaudrates"
-                               data-bind="value: settings.plugins.serial_connector.additionalBaudrates">
+                               data-bind="value: mapped.additionalBaudrates">
                         <span class="help-inline">{{ _("Use this to define additional serial port baud rates to list for connecting with, e.g. <code>123456</code>. Comma separated.") }}</span>
                     </div>
                 </div>
@@ -52,7 +52,7 @@
                         <textarea rows="4"
                                   class="block"
                                   id="settings-serialBlacklistedPorts"
-                                  data-bind="value: settings.plugins.serial_connector.blacklistedPorts"></textarea>
+                                  data-bind="value: mapped.blacklistedPorts"></textarea>
                         <span class="help-inline">{% trans glob_url="http://docs.python.org/3/library/glob.html" %}
                             Use this to define <a href="{{ glob_url }}" target="_blank" rel="noopener noreferer">glob patterns</a> matching serial ports to blacklist for
                             connecting against, e.g. <code>/dev/ttyS*</code>. One entry per line.
@@ -65,7 +65,7 @@
                         <input type="text"
                                class="input-block-level"
                                id="settings-serialBlacklistedBaudrates"
-                               data-bind="value: settings.plugins.serial_connector.blacklistedBaudrates">
+                               data-bind="value: mapped.blacklistedBaudrates">
                         <span class="help-inline">{{ _("Use this to define serial port baud rates to blacklist for connecting with, e.g. <code>123456</code>. Comma separated.") }}</span>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
                     <div class="controls">
                         <label class="checkbox">
                             <input type="checkbox"
-                                   data-bind="checked: settings.plugins.serial_connector.exclusive"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.exclusive"
                                    id="settings-serialExclusive">
                             {{ _("Request exclusive access to the serial port") }}
                             <span class="help-block">{{ _("Uncheck this if you are having problems connecting to your printer.") }}</span>
@@ -84,7 +84,7 @@
                     <div class="controls">
                         <label class="checkbox">
                             <input type="checkbox"
-                                   data-bind="checked: settings.plugins.serial_connector.lowLatency"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.lowLatency"
                                    id="settings-serialLowLatency">
                             {{ _("Request low latency mode on the serial port") }}
                         </label>
@@ -97,7 +97,7 @@
                             <input type="radio"
                                    name="useParityWorkaroundGroup"
                                    value="always"
-                                   data-bind="checked: settings.plugins.serial_connector.useParityWorkaround"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.useParityWorkaround"
                                    id="settings-serialUseParityWorkaroundAlways">
                             {{ _("Always") }}
                             <span class="help-block">{% trans url="https://forum.arduino.cc/index.php?topic=91291.0" %}
@@ -108,7 +108,7 @@
                             <input type="radio"
                                    name="useParityWorkaroundGroup"
                                    value="detect"
-                                   data-bind="checked: settings.plugins.serial_connector.useParityWorkaround"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.useParityWorkaround"
                                    id="settings-serialUseParityWorkaroundPrint">
                             {{ _("If detected as potentially needed") }}
                         </label>
@@ -116,7 +116,7 @@
                             <input type="radio"
                                    name="useParityWorkaroundGroup"
                                    value="never"
-                                   data-bind="checked: settings.plugins.serial_connector.useParityWorkaround"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.useParityWorkaround"
                                    id="settings-serialUseParityWorkaroundNever">
                             {{ _("Never") }}
                             <span class="help-block">{{ _("Use this if connecting to your printer fails with <code>(22, 'Invalid argument')</code>.") }}</span>
@@ -134,7 +134,7 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox"
-                                           data-bind="checked: settings.plugins.serial_connector.ignoreEmptyPorts"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.ignoreEmptyPorts"
                                            id="settings-serialIgnoreEmptyPorts">
                                     {{ _("Ignore empty ports") }}
                                     <span class="help-block">{{ _("By checking this you'll disable OctoPrint warning you if no serial ports to connect to were found.") }}</span>
@@ -150,7 +150,7 @@
                     <div class="controls">
                         <label class="checkbox">
                             <input type="checkbox"
-                                   data-bind="checked: settings.plugins.serial_connector.log"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.log"
                                    id="settings-serialLog">
                             {{ _("Log communication to <code>serial.log</code>") }} <span class="label label-important">{{ _("Warning") }}</span>
                             <span class="help-block">{{ _("While this can negatively impact performance, a <code>serial.log</code> can be incredibly useful for debugging any issues observed in the communication between OctoPrint and your printer.") }}</span>
@@ -171,7 +171,7 @@
                                    step="any"
                                    min="1"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.temperature"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.temperature"
                                    id="settings-serialTimeoutTemperature">
                             <span class="add-on">s</span>
                         </div>
@@ -183,7 +183,7 @@
                                    step="any"
                                    min="1"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.temperatureTargetSet"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.temperatureTargetSet"
                                    id="settings-serialTimeoutTemperatureTargetSet">
                             <span class="add-on">s</span>
                         </div>
@@ -202,7 +202,7 @@
                                    step="any"
                                    min="0"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.temperatureAutoreport"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.temperatureAutoreport"
                                    id="settings-serialTimeoutTemperatureAutoreport">
                             <span class="add-on">s</span>
                         </div>
@@ -218,7 +218,7 @@
                                    step="any"
                                    min="1"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.sdStatus"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.sdStatus"
                                    id="settings-serialTimeoutSdStatus">
                             <span class="add-on">s</span>
                         </div>
@@ -236,7 +236,7 @@
                                    step="any"
                                    min="0"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.sdStatusAutoreport"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.sdStatusAutoreport"
                                    id="settings-serialTimeoutSdStatusAutoreport">
                             <span class="add-on">s</span>
                         </div>
@@ -252,7 +252,7 @@
                                    step="any"
                                    min="0"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.posAutoreport"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.posAutoreport"
                                    id="settings-serialTimeoutPosAutoreport">
                             <span class="add-on">s</span>
                         </div>
@@ -271,7 +271,7 @@
                                    step="any"
                                    min="1"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.communication"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.communication"
                                    id="settings-serialTimeoutCommunication">
                             <span class="add-on">s</span>
                         </div>
@@ -283,7 +283,7 @@
                                    step="any"
                                    min="1"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.communicationBusy"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.communicationBusy"
                                    id="settings-serialTimeoutCommunicationBusy">
                             <span class="add-on">s</span>
                         </div>
@@ -299,7 +299,7 @@
                                    step="any"
                                    min="1"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.connection"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.connection"
                                    id="settings-serialTimeoutConnection">
                             <span class="add-on">s</span>
                         </div>
@@ -314,7 +314,7 @@
                                    step="any"
                                    min="1"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.detectionFirst"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.detectionFirst"
                                    id="settings-serialTimeoutDetectionFirst">
                             <span class="add-on">s</span>
                         </div>
@@ -326,7 +326,7 @@
                                    step="any"
                                    min="1"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.detectionConsecutive"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.detectionConsecutive"
                                    id="settings-serialTimeoutDetectionConsecutive">
                             <span class="add-on">s</span>
                         </div>
@@ -342,7 +342,7 @@
                                    step="any"
                                    min="1"
                                    class="input-mini text-right"
-                                   data-bind="value: settings.plugins.serial_connector.timeout.positionLogWait"
+                                   data-bind="value: settings.settings.plugins.serial_connector.timeout.positionLogWait"
                                    id="settings-serialTimeoutPositionLogWait">
                             <span class="add-on">s</span>
                         </div>
@@ -367,7 +367,7 @@
                                            step="any"
                                            min="0"
                                            class="input-mini text-right"
-                                           data-bind="value: settings.plugins.serial_connector.timeout.baudrateDetectionPause"
+                                           data-bind="value: settings.settings.plugins.serial_connector.timeout.baudrateDetectionPause"
                                            id="settings-serialTimeoutBaudrateDetectionPause">
                                     <span class="add-on">s</span>
                                 </div>
@@ -384,7 +384,7 @@
                                        min="0"
                                        class="input-mini text-right"
                                        id="settings-serialMaxTimeoutsIdle"
-                                       data-bind="value: settings.plugins.serial_connector.maxCommunicationTimeouts.idle">
+                                       data-bind="value: settings.settings.plugins.serial_connector.maxCommunicationTimeouts.idle">
                                 <span class="help-block">{{ _("Set to 0 to disable consecutive timeout detection and handling.") }}</span>
                             </div>
                         </div>
@@ -398,7 +398,7 @@
                                        min="0"
                                        class="input-mini text-right"
                                        id="settings-serialMaxTimeoutsPrinting"
-                                       data-bind="value: settings.plugins.serial_connector.maxCommunicationTimeouts.printing">
+                                       data-bind="value: settings.settings.plugins.serial_connector.maxCommunicationTimeouts.printing">
                                 <span class="help-block">{{ _("Set to 0 to disable consecutive timeout detection and handling.") }}</span>
                             </div>
                         </div>
@@ -412,7 +412,7 @@
                                        min="0"
                                        class="input-mini text-right"
                                        id="settings-serialMaxTimeoutsLong"
-                                       data-bind="value: settings.plugins.serial_connector.maxCommunicationTimeouts.long">
+                                       data-bind="value: settings.settings.plugins.serial_connector.maxCommunicationTimeouts.long">
                                 <span class="help-block">{{ _("Set to 0 to disable consecutive timeout detection and handling.") }}</span>
                             </div>
                         </div>
@@ -427,7 +427,7 @@
                     <div class="controls">
                         <label class="checkbox">
                             <input type="checkbox"
-                                   data-bind="checked: settings.plugins.serial_connector.firmwareDetection"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.firmwareDetection"
                                    id="settings-serialFirmwareDetection">
                             {{ _("Enable automatic firmware detection") }}
                             <span class="help-block">{% trans %}
@@ -437,12 +437,12 @@
                         </label>
                     </div>
                 </div>
-                <div data-bind="visible: !settings.plugins.serial_connector.firmwareDetection()">
+                <div data-bind="visible: !settings.settings.plugins.serial_connector.firmwareDetection()">
                     <div class="control-group">
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.plugins.serial_connector.sdLowerCase"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.sdLowerCase"
                                        id="settings-serialSdLowerCase">
                                 {{ _("Select SD files by lower case path") }} <span class="label">{{ _("Prusa Firmware") }}</span>
                             </label>
@@ -452,7 +452,7 @@
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.plugins.serial_connector.sdRelativePath"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.sdRelativePath"
                                        id="settings-serialSdRelativePath">
                                 {{ _("Select SD files by relative path") }} <span class="label">{{ _("RepRap Firmware") }}</span>
                             </label>
@@ -462,7 +462,7 @@
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.plugins.serial_connector.disableSdPrintingDetection"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.disableSdPrintingDetection"
                                        id="settings-disableSdPrintingDetection">
                                 {{ _("Disable SD printing detection") }} <span class="label">{{ _("Ultimaker 2/2+") }}</span>
                             </label>
@@ -472,7 +472,7 @@
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.plugins.serial_connector.ignoreIdenticalResends"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.ignoreIdenticalResends"
                                        id="settings-serialIgnoreIdenticalResends">
                                 {{ _("Ignore consecutive resend requests for the same line") }} <span class="label">{{ _("Repetier") }}</span>
                             </label>
@@ -482,7 +482,7 @@
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.plugins.serial_connector.repetierTargetTemp"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.repetierTargetTemp"
                                        id="settings-serialRepetierTargetTemp">
                                 {{ _("Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature format") }} <span class="label">{{ _("Repetier") }}</span>
                             </label>
@@ -492,7 +492,7 @@
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.plugins.serial_connector.disableExternalHeatupDetection"
+                                       data-bind="checked: mapped.disableExternalHeatupDetection"
                                        id="settings-serialExternalHeatupDetection">
                                 {{ _("Disable detection of external heatups") }} <span class="label">{{ _("Repetier") }}</span>
                             </label>
@@ -502,7 +502,7 @@
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.plugins.serial_connector.blockWhileDwelling"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.blockWhileDwelling"
                                        id="settings-serialBlockWhileDwelling">
                                 {{ _("Actively pause communication during <code>G4</code> dwell command") }} <span class="label">{{ _("Repetier") }}</span>
                             </label>
@@ -515,7 +515,7 @@
                                 <input type="radio"
                                        name="sendChecksumGroup"
                                        value="print"
-                                       data-bind="checked: settings.plugins.serial_connector.sendChecksum"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.sendChecksum"
                                        id="settings-serialSendChecksumPrint">
                                 {{ _("When printing") }}
                             </label>
@@ -523,7 +523,7 @@
                                 <input type="radio"
                                        name="sendChecksumGroup"
                                        value="always"
-                                       data-bind="checked: settings.plugins.serial_connector.sendChecksum"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.sendChecksum"
                                        id="settings-serialSendChecksumAlways">
                                 {{ _("Always") }}  <span class="label">{{ _("Repetier") }}</span>
                             </label>
@@ -531,7 +531,7 @@
                                 <input type="radio"
                                        name="sendChecksumGroup"
                                        value="never"
-                                       data-bind="checked: settings.plugins.serial_connector.sendChecksum"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.sendChecksum"
                                        id="settings-serialSendChecksumNever">
                                 {{ _("Never") }}
                             </label>
@@ -542,7 +542,7 @@
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.plugins.serial_connector.sendChecksumWithUnknownCommands"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.sendChecksumWithUnknownCommands"
                                        id="settings-sendChecksumWithUnknownCommands">
                                 {{ _("Send line numbers & checksums for non-GCODE commands") }} <span class="label">{{ _("Prusa Firmware") }}</span>
                                 <span class="help-block">{{ _("Check this if your printer supports commands outside of the GCODE format (e.g. <code>Tx</code> or similar) but requires them to be treated identical to GCODE.") }}</span>
@@ -554,7 +554,7 @@
                         <div class="controls">
                             <label class="checkbox">
                                 <input type="checkbox"
-                                       data-bind="checked: settings.plugins.serial_connector.unknownCommandsNeedAck"
+                                       data-bind="checked: settings.settings.plugins.serial_connector.unknownCommandsNeedAck"
                                        id="settings-unknownCommandsNeedAck">
                                 {{ _("Wait for acknowledging <code>ok</code> for non-GCODE commands") }} <span class="label">{{ _("Prusa Firmware") }}</span>
                                 <span class="help-block">{{ _("Check this if your printer supports commands outside of the GCODE format (e.g. <code>Tx</code> or similar) but requires them to be treated identical to GCODE.") }}</span>
@@ -573,7 +573,7 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox"
-                                           data-bind="checked: settings.plugins.serial_connector.capAutoreportTemp"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.capabilities.autoreport_temp"
                                            id="settings-serialCapAutoreportTemp">
                                     {{ _("Support temperature autoreporting by firmware, if detected") }}
                                 </label>
@@ -583,7 +583,7 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox"
-                                           data-bind="checked: settings.plugins.serial_connector.capAutoreportSdStatus"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.capabilities.autoreport_sdstatus"
                                            id="settings-serialCapAutoreportSdStatus">
                                     {{ _("Support sd status autoreporting by firmware, if detected") }}
                                 </label>
@@ -593,7 +593,7 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox"
-                                           data-bind="checked: settings.plugins.serial_connector.capAutoreportPos"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.capabilities.autoreport_pos"
                                            id="settings-serialCapAutoreportPos">
                                     {{ _("Support position autoreporting by firmware, if detected") }}
                                 </label>
@@ -603,7 +603,7 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox"
-                                           data-bind="checked: settings.plugins.serial_connector.capEmergencyParser"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.capabilities.emergency_parser"
                                            id="settings-serialCapEmergencyParser">
                                     {{ _("Send emergency GCODES <code>M108</code> and <code>M410</code> without waiting for acknowledgement, if detected as supported by the firmware") }}
                                 </label>
@@ -613,7 +613,7 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox"
-                                           data-bind="checked: settings.plugins.serial_connector.capBusyProtocol"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.capabilities.busy_protocol"
                                            id="settings-serialCapBusyProtocol">
                                     {{ _("Support <code>busy</code> protocol, if detected") }}
                                 </label>
@@ -623,7 +623,7 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox"
-                                           data-bind="checked: settings.plugins.serial_connector.capExtendedM20"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.capabilities.extended_m20"
                                            id="settings-serialCapExtendedM20">
                                     {{ _("Send <code>M20 L</code> instead of <code>M20</code> to use extended SD file lists, if detected as supported by the firmware") }}
                                 </label>
@@ -633,7 +633,7 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox"
-                                           data-bind="checked: settings.plugins.serial_connector.capLfnWrite"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.capabilities.lfn_write"
                                            id="settings-serialCapLfnWrite">
                                     {{ _("Send long names for writing files to the printer's SD card via <code>M28</code>, if detected as supported by the firmware") }}
                                 </label>
@@ -643,7 +643,7 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox"
-                                           data-bind="checked: settings.plugins.serial_connector.triggerOkForM29"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.triggerOkForM29"
                                            id="settings-serialTriggerOkForM29">
                                     {{ _("Simulate <code>ok</code> for <code>M29</code>") }}
                                     <span class="help-block">{{ _("Most Marlin forks that were derived from Marlin versions &lt; v1.1.0 do not send an acknowledging <code>ok</code> for a <code>M29</code>. Check this if you run into communication stalls following streaming of a file to your printer's SD.") }}</span>
@@ -654,7 +654,7 @@
                             <div class="controls">
                                 <label class="checkbox">
                                     <input type="checkbox"
-                                           data-bind="checked: settings.plugins.serial_connector.sdAlwaysAvailable"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.sdAlwaysAvailable"
                                            id="settings-serialSdAlwaysAvailable">
                                     {{ _("Always assume SD card is present") }}
                                 </label>
@@ -669,7 +669,7 @@
                                     <input type="radio"
                                            name="resendWithoutOkGroup"
                                            value="detect"
-                                           data-bind="checked: settings.plugins.serial_connector.supportResendsWithoutOk"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.supportResendsWithoutOk"
                                            id="settings-serialSupportResendsWithoutOkDetect">
                                     {{ _("If detected as necessary") }}
                                 </label>
@@ -677,7 +677,7 @@
                                     <input type="radio"
                                            name="resendWithoutOkGroup"
                                            value="always"
-                                           data-bind="checked: settings.plugins.serial_connector.supportResendsWithoutOk"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.supportResendsWithoutOk"
                                            id="settings-serialSupportResendsWithoutOkAlways">
                                     {{ _("Always") }}
                                 </label>
@@ -685,7 +685,7 @@
                                     <input type="radio"
                                            name="resendWithoutOkGroup"
                                            value="never"
-                                           data-bind="checked: settings.plugins.serial_connector.supportResendsWithoutOk"
+                                           data-bind="checked: settings.settings.plugins.serial_connector.supportResendsWithoutOk"
                                            id="settings-serialSupportResendsWithoutOkNever">
                                     {{ _("Never") }}
                                 </label>
@@ -701,7 +701,7 @@
                     <div class="controls">
                         <label class="checkbox">
                             <input type="checkbox"
-                                   data-bind="checked: settings.plugins.serial_connector.waitForStart"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.waitForStart"
                                    id="settings-serialWaitForStart">
                             {{ _("Wait for <code>start</code> on connect") }}
                             <span class="help-block">{{ _("Try checking this if you run into connection timeouts due to your printer taking too long to respond to OctoPrint's handshake attempts on connect.") }}</span>
@@ -710,7 +710,7 @@
                     <div class="controls">
                         <label class="checkbox">
                             <input type="checkbox"
-                                   data-bind="checked: settings.plugins.serial_connector.waitToLoadSdFileList"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.waitToLoadSdFileList"
                                    id="settings-serialWaitToLoadSdFileList">
                             {{ _("Wait to load the SD card file list until the firmware capability report is processed.") }}
                             <span class="help-block">{{ _("Try unchecking this if the SD card file list never gets loaded after connecting to the printer, due to your firmware not providing a capability report.") }}</span>
@@ -723,7 +723,7 @@
                         <input type="text"
                                class="input-block-level"
                                id="settings-serialBlockedCommands"
-                               data-bind="value: settings.plugins.serial_connector.blockedCommands">
+                               data-bind="value: mapped.blockedCommands">
                         <span class="help-inline">{{ _("Use this to specify commands that should never be sent to the printer. Just the G or M code, comma separated. Defaults to <code>M0</code> and <code>M1</code> since most firmware will block until a button on the controller has been pressed if it receives either of those two commands.") }}</span>
                     </div>
                 </div>
@@ -733,7 +733,7 @@
                         <input type="text"
                                class="input-block-level"
                                id="settings-serialIgnoredCommands"
-                               data-bind="value: settings.plugins.serial_connector.ignoredCommands">
+                               data-bind="value: mapped.ignoredCommands">
                         <span class="help-inline">{{ _("Use this to specify commands that should be silently ignored and never be sent to the printer. Just the G or M code, comma separated. Unlike blocked commands above, there will be no warning popup when these commands are encountered.") }}</span>
                     </div>
                 </div>
@@ -743,7 +743,7 @@
                         <input type="text"
                                class="input-block-level"
                                id="settings-serialPausingCommands"
-                               data-bind="value: settings.plugins.serial_connector.pausingCommands">
+                               data-bind="value: mapped.pausingCommands">
                         <span class="help-inline">{{ _("Use this to specify commands on which OctoPrint should pause the print job. Just the G or M code, comma separated. Defaults to <code>M0</code>, <code>M1</code> and <code>M25</code>.") }}</span>
                     </div>
                 </div>
@@ -753,7 +753,7 @@
                         <input type="text"
                                class="input-block-level"
                                id="settings-serialSdCancelCommand"
-                               data-bind="value: settings.plugins.serial_connector.sdCancelCommand">
+                               data-bind="value: settings.settings.plugins.serial_connector.sdCancelCommand">
                         <span class="help-inline">{{ _("The command to send to printer when cancelling a SD card print. Defaults to <code>M25</code>.") }}</span>
                     </div>
                 </div>
@@ -763,7 +763,7 @@
                         <input type="text"
                                class="input-block-level"
                                id="settings-serialEmergencyCommands"
-                               data-bind="value: settings.plugins.serial_connector.emergencyCommands">
+                               data-bind="value: mapped.emergencyCommands">
                         <span class="help-inline">{{ _("Use this to specify emergency commands which should jump any queues and - if supported by the firmware - be force sent. Just the G or M code, comma separated. Defaults to <code>M112</code>, <code>M108</code> and <code>M410</code>.") }}</span>
                     </div>
                 </div>
@@ -781,7 +781,7 @@
                                 <input type="text"
                                        class="input-block-level"
                                        id="settings-serialHelloCommand"
-                                       data-bind="value: settings.plugins.serial_connector.helloCommand">
+                                       data-bind="value: settings.settings.plugins.serial_connector.helloCommand">
                                 <span class="help-inline">{{ _("Use this to specify a different command than the default <code>M110</code> to send to the printer on initial connection to trigger a communication handshake.") }}</span>
                             </div>
                         </div>
@@ -792,7 +792,7 @@
                                 <input type="text"
                                        class="input-block-level"
                                        id="settings-serialLongRunningCommands"
-                                       data-bind="value: settings.plugins.serial_connector.longRunningCommands">
+                                       data-bind="value: mapped.longRunningCommands">
                                 <span class="help-inline">{{ _("Use this to specify the commands known to take a long time to complete without output from your printer and hence might cause timeout issues. Just the G or M code, comma separated.") }}</span>
                             </div>
                         </div>
@@ -805,7 +805,7 @@
                                 <input type="text"
                                        class="input-block-level"
                                        id="settings-checksumRequiringCommands"
-                                       data-bind="value: settings.plugins.serial_connector.checksumRequiringCommands">
+                                       data-bind="value: mapped.checksumRequiringCommands">
                                 <span class="help-inline">{{ _("Use this to specify which commands <strong>always</strong> need to be sent with a checksum. Comma separated list.") }}</span>
                             </div>
                         </div>
@@ -818,7 +818,7 @@
                                        min="0"
                                        class="input-mini text-right"
                                        id="settings-serialAckMax"
-                                       data-bind="value: settings.plugins.serial_connector.ackMax">
+                                       data-bind="value: settings.settings.plugins.serial_connector.ackMax">
                                 <span class="help-block">{{ _("Only modify if told to do so") }}</span>
                             </div>
                         </div>
@@ -830,7 +830,7 @@
                 <div class="controls">
                     <label class="checkbox">
                         <input type="checkbox"
-                               data-bind="checked: settings.plugins.serial_connector.enableShutdownActionCommand"
+                               data-bind="checked: settings.settings.plugins.serial_connector.enableShutdownActionCommand"
                                id="settings-serialEnableShutdownActionCommand">
                         {{ _("Enable the <code>shutdown</code> action command") }}
                         <span class="help-block">{{ _("If enabled and the system shutdown command is configured, your printer's firmware will be able to shutdown your OctoPrint server via an action command on the serial connection. This could get abused, so only enable this if you trust your firmware and your GCODE files!") }}</span>
@@ -850,7 +850,7 @@
                             <input type="radio"
                                    name="errorHandlingGroup"
                                    value="disconnect"
-                                   data-bind="checked: settings.plugins.serial_connector.serialErrorBehaviour"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.errorHandling"
                                    id="settings-serialErrorBehaviourDisconnect">
                             {{ _("Disconnect from the printer") }}
                         </label>
@@ -858,7 +858,7 @@
                             <input type="radio"
                                    name="errorHandlingGroup"
                                    value="cancel"
-                                   data-bind="checked: settings.plugins.serial_connector.serialErrorBehaviour"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.errorHandling"
                                    id="settings-serialErrorBehaviourCancel">
                             {{ _("Cancel any ongoing prints but stay connected to the printer") }}
                             <span class="help-block">{{ _("Please note that if you choose this, OctoPrint will still disconnect from the printer in case of <em>fatal</em> errors reported by your firmware (e.g. <code>kill() called</code>, <code>fatal:</code>).") }}</span>
@@ -867,7 +867,7 @@
                             <input type="radio"
                                    name="errorHandlingGroup"
                                    value="ignore"
-                                   data-bind="checked: settings.plugins.serial_connector.serialErrorBehaviour"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.errorHandling"
                                    id="settings-serialErrorBehaviourIgnore">
                             {{ _("Ignore") }} <span class="label label-important">{{ _("Warning") }}</span>
                             <span class="help-block">{{ _("Only choose this if your firmware sends error messages that are not actual errors. Might mask printer issues (even fatal errors!), be careful!") }}</span>
@@ -877,7 +877,7 @@
                 <div class="controls">
                     <label class="checkbox">
                         <input type="checkbox"
-                               data-bind="checked: settings.plugins.serial_connector.sendM112OnError"
+                               data-bind="checked: settings.settings.plugins.serial_connector.sendM112OnError"
                                id="settings-serialSendM112OnError">
                         {{ _("Send <code>M112</code> on disconnect due to error") }}
                         <span class="help-block">{{ _("If this is checked, OctoPrint will try to send an <code>M112</code> prior to a disconnect due to a (fatal) error in order to disable heaters and motors.") }}</span>
@@ -889,7 +889,7 @@
                 <div class="controls">
                     <label class="checkbox">
                         <input type="checkbox"
-                               data-bind="checked: settings.plugins.serial_connector.logPositionOnPause"
+                               data-bind="checked: settings.settings.plugins.serial_connector.logPositionOnPause"
                                id="settings-serialLogPositionOnPause">
                         {{ _("Log position on pause") }} <span class="label label-important">{{ _("Warning") }}</span>
                         <span class="help-block">{{ _("If you disable this, the <code>pause_position</code> placeholders in your pause/resume GCODE scripts will stay unpopulated! However, pausing speed might improve slightly.") }}</span>
@@ -901,7 +901,7 @@
                 <div class="controls">
                     <label class="checkbox">
                         <input type="checkbox"
-                               data-bind="checked: settings.plugins.serial_connector.logPositionOnCancel"
+                               data-bind="checked: settings.settings.plugins.serial_connector.logPositionOnCancel"
                                id="settings-serialLogPositionOnCancel">
                         {{ _("Log position on cancel") }} <span class="label label-important">{{ _("Warning") }}</span>
                         <span class="help-block">{{ _("If you disable this, the <code>cancel_position</code> placeholders in your cancel GCODE script and the corresponding data in the print recovery data will stay unpopulated! However, cancelling speed might improve slightly.") }}</span>
@@ -910,7 +910,7 @@
                 <div class="controls">
                     <label class="checkbox">
                         <input type="checkbox"
-                               data-bind="checked: settings.plugins.serial_connector.abortHeatupOnCancel"
+                               data-bind="checked: settings.settings.plugins.serial_connector.abortHeatupOnCancel"
                                id="settings-serialAbortHeatupOnCancel">
                         {{ _("Attempt to abort any blocking heatups on cancel via <code>M108</code>.") }}
                         <span class="help-block">{{ _("Uncheck this if your firmware doesn't support <code>M108</code> for aborting blocking heatups!") }}</span>
@@ -922,7 +922,7 @@
                 <div class="controls">
                     <label class="checkbox">
                         <input type="checkbox"
-                               data-bind="checked: settings.plugins.serial_connector.sanityCheckTools"
+                               data-bind="checked: settings.settings.plugins.serial_connector.sanityCheckTools"
                                id="settings-sanityCheckTools">
                         {{ _("Sanity check tool commands") }}  <span class="label label-important">{{ _("Warning") }}</span>
                         <span class="help-block">{{ _("If enabled, OctoPrint will not send tool commands to your printer that exceed the number of extruders configured in the active printer profile, or for which the firmware has reported an \"invalid extruder\" error. Only uncheck this if OctoPrint or your firmware mistakenly mark valid tools as invalid and be sure to investigate the reason for that, it might be a misconfiguration you need to correct for proper operation.") }}</span>
@@ -935,7 +935,7 @@
                             <input type="radio"
                                    name="notifySuppressedCommandsGroup"
                                    value="info"
-                                   data-bind="checked: settings.serial.notifySuppressedCommands"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.notifySuppressedCommands"
                                    id="settings-serialNotifySuppressedCommands-info">
                             {{ _("Show notifications of severity \"info\" and \"warning\"") }}
                         </label>
@@ -943,7 +943,7 @@
                             <input type="radio"
                                    name="notifySuppressedCommandsGroup"
                                    value="warn"
-                                   data-bind="checked: settings.serial.notifySuppressedCommands"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.notifySuppressedCommands"
                                    id="settings-serialNotifySuppressedCommands-warn">
                             {{ _("Show notifications of severity \"warning\"") }}
                         </label>
@@ -951,7 +951,7 @@
                             <input type="radio"
                                    name="notifySuppressedCommandsGroup"
                                    value="never"
-                                   data-bind="checked: settings.serial.notifySuppressedCommands"
+                                   data-bind="checked: settings.settings.plugins.serial_connector.notifySuppressedCommands"
                                    id="settings-serialNotifySuppressedCommands-never">
                             {{ _("Never show notifications") }}
                         </label>
@@ -971,7 +971,7 @@
                                    step="1"
                                    class="input-mini text-right"
                                    id="settings-serialResendRatioThreshold"
-                                   data-bind="value: settings.plugins.serial_connector.resendRatioThreshold">
+                                   data-bind="value: settings.settings.plugins.serial_connector.resendRatioThreshold">
                             <span class="add-on">%</span>
                         </div>
                     </div>
@@ -985,7 +985,7 @@
                                    step="1"
                                    class="input-mini text-right"
                                    id="settings-serialResendRatioStart"
-                                   data-bind="value: settings.plugins.serial_connector.resendRatioStart">
+                                   data-bind="value: settings.settings.plugins.serial_connector.resendRatioStart">
                             <span class="add-on">lines</span>
                         </div>
                     </div>

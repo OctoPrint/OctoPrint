@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 import re
+from typing import Any
 
 from flask import abort, jsonify, request
 from flask_login import current_user
@@ -909,7 +910,7 @@ def _saveSettings(data):
     s.save(trigger_event=True)
 
 
-# pre 1.12.0 settings API still contains serial settings
+# pre 1.12.0 settings API still contains serial settings, backwards compatibility layer starts here
 
 
 def _get_serial_settings():
@@ -1000,12 +1001,12 @@ def _get_serial_settings():
         "sdCancelCommand": s.get(["plugins", "serial_connector", "sdCancelCommand"]),
         "emergencyCommands": s.get(["plugins", "serial_connector", "emergencyCommands"]),
         "helloCommand": s.get(["plugins", "serial_connector", "helloCommand"]),
-        "ignoreErrorsFromFirmware": s.getBoolean(
-            ["plugins", "serial_connector", "ignoreErrorsFromFirmware"]
-        ),
-        "disconnectOnErrors": s.getBoolean(
-            ["plugins", "serial_connector", "disconnectOnErrors"]
-        ),
+        "ignoreErrorsFromFirmware": s.get(
+            ["plugins", "serial_connector", "errorHandling"]
+        )
+        == "ignore",
+        "disconnectOnErrors": s.get(["plugins", "serial_connector", "errorHandling"])
+        == "disconnect",
         "triggerOkForM29": s.getBoolean(
             ["plugins", "serial_connector", "triggerOkForM29"]
         ),
@@ -1027,12 +1028,10 @@ def _get_serial_settings():
         "waitToLoadSdFileList": s.getBoolean(
             ["plugins", "serial_connector", "waitToLoadSdFileList"]
         ),
-        "alwaysSendChecksum": s.getBoolean(
-            ["plugins", "serial_connector", "alwaysSendChecksum"]
-        ),
-        "neverSendChecksum": s.getBoolean(
-            ["plugins", "serial_connector", "neverSendChecksum"]
-        ),
+        "alwaysSendChecksum": s.get(["plugins", "serial_connector", "sendChecksum"])
+        == "always",
+        "neverSendChecksum": s.getBoolean(["plugins", "serial_connector", "sendChecksum"])
+        == "never",
         "sendChecksumWithUnknownCommands": s.getBoolean(
             ["plugins", "serial_connector", "sendChecksumWithUnknownCommands"]
         ),
@@ -1122,7 +1121,7 @@ def _get_serial_settings():
     }
 
 
-def _set_serial_settings(data):
+def _set_serial_settings(data: dict[str, Any]):
     s = settings()
 
     # if we see autoconnect, port or baudrate coming in, set the related settings on
@@ -1270,16 +1269,14 @@ def _set_serial_settings(data):
         )
     if "helloCommand" in data:
         s.set(["plugins", "serial_connector", "helloCommand"], data["helloCommand"])
-    if "ignoreErrorsFromFirmware" in data:
-        s.setBoolean(
-            ["plugins", "serial_connector", "ignoreErrorsFromFirmware"],
-            data["ignoreErrorsFromFirmware"],
-        )
-    if "disconnectOnErrors" in data:
-        s.setBoolean(
-            ["plugins", "serial_connector", "disconnectOnErrors"],
-            data["disconnectOnErrors"],
-        )
+    if "disconnectOnErrors" in data or "ignoreErrorsFromFirmware" in data:
+        if data.get("disconnectOnErrors", False):
+            value = "disconnect"
+        elif data.get("ignoreErrorsFromFirmware", False):
+            value = "ignore"
+        else:
+            value = "cancel"
+        s.set(["plugins", "serial_connecetor", "errorHandling"], value)
     if "triggerOkForM29" in data:
         s.setBoolean(
             ["plugins", "serial_connector", "triggerOkForM29"], data["triggerOkForM29"]
@@ -1297,16 +1294,14 @@ def _set_serial_settings(data):
             ["plugins", "serial_connector", "waitToLoadSdFileList"],
             data["waitToLoadSdFileList"],
         )
-    if "alwaysSendChecksum" in data:
-        s.setBoolean(
-            ["plugins", "serial_connector", "alwaysSendChecksum"],
-            data["alwaysSendChecksum"],
-        )
-    if "neverSendChecksum" in data:
-        s.setBoolean(
-            ["plugins", "serial_connector", "neverSendChecksum"],
-            data["neverSendChecksum"],
-        )
+    if "alwaysSendChecksum" in data or "neverSendChecksum" in data:
+        if data.get("alwaysSendChecksum", False):
+            value = "always"
+        elif data.get("neverSendChecksum", False):
+            value = "never"
+        else:
+            value = "print"
+        s.set(["plugins", "serial_connector", "sendChecksum"], value)
     if "sendChecksumWithUnknownCommands" in data:
         s.setBoolean(
             ["plugins", "serial_connector", "sendChecksumWithUnknownCommands"],

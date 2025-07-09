@@ -183,6 +183,9 @@ regex_serial_devices = re.compile(r"^(?:ttyUSB|ttyACM|tty\.usb|cu\.|cuaU|ttyS|rf
 MINIMAL_SD_TIMESTAMP = 1212012000
 # May 29th 2008 = RepRap 1.0 "Darwin" achieves self-replication
 
+PORT_AUTO = "AUTO"
+BAUDRATE_AUTO = 0
+
 
 SDFileData = namedtuple("SDFileData", ["name", "size", "timestamp", "longname"])
 
@@ -515,14 +518,24 @@ class MachineCom:
         self._settings = settings
         self._plugin_manager = plugin_manager
 
+        preferred_params = {}
+        if (
+            self._settings.global_get(["printerConnection", "preferred", "connector"])
+            == "serial"
+        ):
+            preferred_params = self._settings.global_get(
+                ["printerConnection", "preferred", "parameters"]
+            )
+
         if port is None:
-            port = self._settings.get(["port"])  # TODO use preferred?
+            port = preferred_params.get("port", PORT_AUTO)
         if baudrate is None:
-            settingsBaudrate = self._settings.get_int(["baudrate"])  # TODO use preferred?
-            if settingsBaudrate is None:
-                baudrate = 0
-            else:
-                baudrate = settingsBaudrate
+            baudrate = preferred_params.get("baudrate", BAUDRATE_AUTO)
+            if baudrate and not isinstance(baudrate, int):
+                try:
+                    baudrate = int(baudrate)
+                except ValueError:
+                    baudrate = BAUDRATE_AUTO
         if callback is None:
             callback = MachineComPrintCallback()
 
@@ -585,12 +598,11 @@ class MachineCom:
         self._hello_sent = 0
         self._trigger_ok_for_m29 = self._settings.get_boolean(["triggerOkForM29"])
 
-        self._alwaysSendChecksum = self._settings.get_boolean(["alwaysSendChecksum"])
-        self._neverSendChecksum = self._settings.get_boolean(["neverSendChecksum"])
-        self._sendChecksumWithUnknownCommands = self._settings.get_boolean(
+        self._send_checksum = self._settings.get(["sendChecksum"])
+        self._send_checksum_with_unknown_commands = self._settings.get_boolean(
             ["sendChecksumWithUnknownCommands"]
         )
-        self._unknownCommandsNeedAck = self._settings.get_boolean(
+        self._unknown_commands_need_ack = self._settings.get_boolean(
             ["unknownCommandsNeedAck"]
         )
         self._sdAlwaysAvailable = self._settings.get_boolean(["sdAlwaysAvailable"])
@@ -669,8 +681,7 @@ class MachineCom:
         terminal_log_size = self._settings.get_int(["terminalLogSize"])
         self._terminal_log = deque([], min(20, terminal_log_size))
 
-        self._disconnect_on_errors = self._settings.get_boolean(["disconnectOnErrors"])
-        self._ignore_errors = self._settings.get_boolean(["ignoreErrorsFromFirmware"])
+        self._error_handling = self._settings.get(["errorHandling"])
 
         self._log_resends = self._settings.get_boolean(["logResends"])
 
@@ -2283,7 +2294,7 @@ class MachineCom:
         self._consecutive_timeouts = 0
 
         # Open the serial port
-        needs_detection = not (self._port and self._port != "AUTO" and self._baudrate)
+        needs_detection = not (self._port and self._port != PORT_AUTO and self._baudrate)
         try_hello = False
 
         if not needs_detection:
@@ -2925,7 +2936,7 @@ class MachineCom:
                                     "Detected Repetier firmware, enabling relevant features for issue free communication"
                                 )
 
-                                self._alwaysSendChecksum = True
+                                self._send_checksum = "always"
                                 self._blockWhileDwelling = True
                                 supportRepetierTargetTemp = True
                                 disable_external_heatup_detection = True
@@ -2941,7 +2952,7 @@ class MachineCom:
                                     "Detected Malyan firmware, enabling relevant features for issue free communication"
                                 )
 
-                                self._alwaysSendChecksum = True
+                                self._send_checksum = "always"
                                 self._blockWhileDwelling = True
 
                                 sd_always_available = self._sdAlwaysAvailable
@@ -2961,7 +2972,7 @@ class MachineCom:
                                     "Detected Klipper firmware, enabling relevant features for issue free communication"
                                 )
 
-                                self._unknownCommandsNeedAck = True
+                                self._unknown_commands_need_ack = True
 
                             elif "ultimaker2" in firmware_name.lower():
                                 self._logger.info(
@@ -2976,8 +2987,8 @@ class MachineCom:
                                 )
 
                                 self._sdLowerCase = True
-                                self._sendChecksumWithUnknownCommands = True
-                                self._unknownCommandsNeedAck = True
+                                self._send_checksum_with_unknown_commands = True
+                                self._unknown_commands_need_ack = True
 
                         self._firmware_info_received = True
                         self._firmware_info = data
@@ -3440,7 +3451,7 @@ class MachineCom:
             port = self._port
             baudrate = self._baudrate
 
-            if port and port != "AUTO":
+            if port and port != PORT_AUTO:
                 port_candidates = [port]
             else:
                 port_candidates = serialList()
@@ -4097,8 +4108,8 @@ class MachineCom:
                     level=logging.WARN,
                 )
 
-                if not self._ignore_errors:
-                    if self._disconnect_on_errors or any(
+                if self._error_handling != "ignore":
+                    if self._error_handling == "disconnect" or any(
                         x in lower_line for x in self._fatal_errors
                     ):
                         self._trigger_error(stripped_error, "firmware")
@@ -4656,7 +4667,7 @@ class MachineCom:
     def _use_up_clear(self, gcode):
         # we only need to use up a clear if the command we just sent was either a gcode command or if we also
         # require ack's for unknown commands
-        eats_clear = self._unknownCommandsNeedAck
+        eats_clear = self._unknown_commands_need_ack
         if gcode is not None:
             eats_clear = True
 
@@ -5008,7 +5019,7 @@ class MachineCom:
             gcode is not None and gcode in self._checksum_requiring_commands
         )
         command_allowing_checksum = (
-            gcode is not None or self._sendChecksumWithUnknownCommands
+            gcode is not None or self._send_checksum_with_unknown_commands
         )
         return command_requiring_checksum or (
             command_allowing_checksum and self._checksum_enabled
@@ -5016,10 +5027,10 @@ class MachineCom:
 
     @property
     def _checksum_enabled(self):
-        return not self._neverSendChecksum and (
+        return self._send_checksum != "never" and (
             (self.isPrinting() and self._currentFile and self._currentFile.checksum)
             or self._manualStreaming
-            or self._alwaysSendChecksum
+            or self._send_checksum == "always"
             or not self._firmware_info_received
         )
 

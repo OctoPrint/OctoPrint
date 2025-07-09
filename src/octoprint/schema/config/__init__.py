@@ -21,7 +21,6 @@ from .printer_connection import PrinterConnectionConfig
 from .printer_parameters import PrinterParametersConfig
 from .printer_profiles import PrinterProfilesConfig
 from .scripts import ScriptsConfig
-from .serial import SerialConfig
 from .server import ServerConfig
 from .slicing import SlicingConfig
 from .system import SystemConfig
@@ -47,7 +46,6 @@ class Config(BaseModel):
     printerParameters: PrinterParametersConfig = PrinterParametersConfig()
     printerProfiles: PrinterProfilesConfig = PrinterProfilesConfig()
     scripts: ScriptsConfig = ScriptsConfig()
-    serial: SerialConfig = SerialConfig()
     server: ServerConfig = ServerConfig()
     slicing: SlicingConfig = SlicingConfig()
     system: SystemConfig = SystemConfig()
