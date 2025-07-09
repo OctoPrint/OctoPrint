@@ -37,7 +37,7 @@ from octoprint.printer.connection import (
     ConnectedPrinterState,
 )
 from octoprint.printer.estimation import PrintTimeEstimator
-from octoprint.printer.job import PrintJob, UploadJob
+from octoprint.printer.job import DurationEstimate, PrintJob, UploadJob
 from octoprint.settings import settings
 from octoprint.util import InvariantContainer
 from octoprint.util import comm as comm
@@ -83,8 +83,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         self._state: ConnectedPrinterState = ConnectedPrinterState.CLOSED
 
-        self._printAfterSelect = False
-        self._posAfterSelect = None
+        self._print_after_select = False
+        self._pos_after_select = None
 
         # sd handling
         self._sdPrinting = False
@@ -93,8 +93,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._streamingFailedCallback = None
 
         # job handling & estimation
-        self._selectedFileMutex = threading.RLock()
-        self._selectedFile = None
+        self._selected_job_mutex = threading.RLock()
+        self._selected_job: PrintJob = None
 
         self._estimator_factory = PrintTimeEstimator
         self._estimator = None
@@ -135,17 +135,17 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         self._stateMonitor = StateMonitor(
             interval=0.5,
-            on_update=self._sendCurrentDataCallbacks,
-            on_add_temperature=self._sendAddTemperatureCallbacks,
-            on_add_log=self._sendAddLogCallbacks,
-            on_add_message=self._sendAddMessageCallbacks,
-            on_get_progress=self._updateProgressDataCallback,
-            on_get_resends=self._updateResendDataCallback,
+            on_update=self._send_current_data_callbacks,
+            on_add_temperature=self._send_add_temperature_callbacks,
+            on_add_log=self._send_add_log_callbacks,
+            on_add_message=self._send_add_message_callbacks,
+            on_get_progress=self._update_progress_data_callback,
+            on_get_resends=self._update_resend_data_callback,
         )
         self._stateMonitor.reset(
             state=self._dict(
                 text=self.get_state_string(),
-                flags=self._getStateFlags(),
+                flags=self._get_state_flags(),
                 error=self.get_error(),
             ),
             job_data=self._dict(
@@ -182,14 +182,11 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def _create_estimator(self, job_type=None):
         if job_type is None:
-            with self._selectedFileMutex:
-                if self._selectedFile is None:
+            with self._selected_job_mutex:
+                if self._selected_job is None:
                     return
 
-                if self._selectedFile["sd"]:
-                    job_type = "printer"
-                else:
-                    job_type = "local"
+                job_type = self._selected_job.storage
 
         self._estimator = self._estimator_factory(job_type)
 
@@ -220,6 +217,28 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         parameters["state"] = self._connection.get_state_string()
         return parameters
 
+    @property
+    def _selectedFile(self) -> dict:
+        # only here for reasons of backwards compatibility
+        result = {
+            "filename": None,
+            "filesize": None,
+            "sd": None,
+            "user": None,
+            "estimatedPrintTime": None,
+        }
+        if self._selected_job is not None:
+            result.update(
+                {
+                    "filename": self._selected_job.path,
+                    "filesize": self._selected_job.size,
+                    "sd": self._selected_job.storage == FileDestinations.PRINTER,
+                    "user": self._selected_job.owner,
+                }
+            )
+
+        return result
+
     # ~~ handling of PrinterCallbacks
 
     def register_callback(self, callback, *args, **kwargs):
@@ -238,9 +257,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def send_initial_callback(self, callback):
         if callback in self._callbacks:
-            self._sendInitialStateUpdate(callback)
+            self._send_initial_state_update(callback)
 
-    def _sendAddTemperatureCallbacks(self, data):
+    def _send_add_temperature_callbacks(self, data):
         for callback in self._callbacks:
             try:
                 callback.on_printer_add_temperature(data)
@@ -252,7 +271,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     extra={"callback": fqcn(callback)},
                 )
 
-    def _sendAddLogCallbacks(self, data):
+    def _send_add_log_callbacks(self, data):
         for callback in self._callbacks:
             try:
                 callback.on_printer_add_log(data)
@@ -264,7 +283,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     extra={"callback": fqcn(callback)},
                 )
 
-    def _sendAddMessageCallbacks(self, data):
+    def _send_add_message_callbacks(self, data):
         for callback in self._callbacks:
             try:
                 callback.on_printer_add_message(data)
@@ -276,7 +295,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     extra={"callback": fqcn(callback)},
                 )
 
-    def _sendCurrentDataCallbacks(self, data):
+    def _send_current_data_callbacks(self, data):
         plugin_data = self._get_additional_plugin_data(initial=False)
         for callback in self._callbacks:
             try:
@@ -322,24 +341,12 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     # ~~ callback from metadata analysis event
 
     def _on_event_MetadataAnalysisFinished(self, event, data):
-        with self._selectedFileMutex:
-            if self._selectedFile:
-                self._setJobData(
-                    self._selectedFile["filename"],
-                    self._selectedFile["filesize"],
-                    self._selectedFile["sd"],
-                    self._selectedFile["user"],
-                )
+        with self._selected_job_mutex:
+            self._refresh_job_data()
 
     def _on_event_MetadataStatisticsUpdated(self, event, data):
-        with self._selectedFileMutex:
-            if self._selectedFile:
-                self._setJobData(
-                    self._selectedFile["filename"],
-                    self._selectedFile["filesize"],
-                    self._selectedFile["sd"],
-                    self._selectedFile["user"],
-                )
+        with self._selected_job_mutex:
+            self._refresh_job_data()
 
     # ~~ connection events
 
@@ -366,18 +373,13 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     # ~~ progress plugin reporting
 
-    def _reportPrintProgressToPlugins(self, progress):
-        with self._selectedFileMutex:
-            if (
-                progress is None
-                or not self._selectedFile
-                or "sd" not in self._selectedFile
-                or "filename" not in self._selectedFile
-            ):
+    def _report_print_progress_to_plugins(self, progress):
+        with self._selected_job_mutex:
+            if progress is None or not self._selected_job:
                 return
 
-            storage = "sdcard" if self._selectedFile["sd"] else "local"
-            filename = self._selectedFile["filename"]
+            storage = self._selected_job.storage
+            path = self._selected_job.path
 
         def call_plugins(storage, filename, progress):
             for plugin in self._progressPlugins:
@@ -390,7 +392,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                         extra={"plugin": plugin._identifier},
                     )
 
-        thread = threading.Thread(target=call_plugins, args=(storage, filename, progress))
+        thread = threading.Thread(target=call_plugins, args=(storage, path, progress))
         thread.daemon = False
         thread.start()
 
@@ -446,7 +448,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             self._connection.connect()
         except Exception as exc:
             self._connection = None
-            self._setState(
+            self._set_state(
                 ConnectedPrinterState.ERROR, state_string="Error", error_string=str(exc)
             )
             raise exc
@@ -714,11 +716,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         if job is None:
             return
 
-        if job.storage == FileDestinations.LOCAL:
+        # canonicalize
+        job.path = self._file_manager.path_in_storage(job.storage, job.path)
+        if self._file_manager.capabilities(job.storage).path_on_disk:
             job.path_on_disk = self._file_manager.path_on_disk(job.storage, job.path)
-            job.path = self._file_manager.path_in_storage(
-                job.storage, job.path_on_disk
-            )  # canonicalize
 
         if not self._connection.supports_job(job):
             self._logger.info("Cannot load job: printer doesn't support it")
@@ -748,8 +749,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 "Something was wrong with processing the recovery data"
             )
 
-        self._printAfterSelect = print_after_select
-        self._posAfterSelect = pos
+        self._print_after_select = print_after_select
+        self._pos_after_select = pos
 
         super().set_job(
             job, print_after_select=print_after_select, pos=pos, tags=tags, user=user
@@ -758,17 +759,20 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             job, print_after_select=print_after_select, pos=pos, tags=tags, user=user
         )
 
-        self._updateProgressData()
+        self._update_progress_data()
 
     def get_file_position(self):
         if self._connection is None:
             return None
 
-        with self._selectedFileMutex:
-            if self._selectedFile is None:
+        with self._selected_job_mutex:
+            if self._selected_job is None:
                 return None
 
         job_progress = self._connection.job_progress
+        if job_progress is None:
+            return None
+
         return job_progress.pos
 
     def get_markings(self):
@@ -782,14 +786,14 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         if self._connection is None or not self._connection.is_ready():
             return
 
-        with self._selectedFileMutex:
-            if self._selectedFile is None:
+        with self._selected_job_mutex:
+            if self._selected_job is None:
                 return
 
         self._file_manager.delete_recovery_data()
 
         self._lastProgressReport = None
-        self._updateProgressData()
+        self._update_progress_data()
 
         if tags is None:
             tags = set()
@@ -927,7 +931,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def log_lines(self, *lines, **kwargs):
         for line in lines:
-            self._addLog(line)
+            self._add_log(line)
 
     # ~~ sd file handling
 
@@ -1082,8 +1086,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 ConnectedPrinterState.ERROR,
                 ConnectedPrinterState.CLOSED_WITH_ERROR,
             ):
-                with self._selectedFileMutex:
-                    if self._selectedFile is not None:
+                with self._selected_job_mutex:
+                    if self._selected_job is not None:
                         payload = self._payload_for_print_job_event()
                         if payload:
                             job_progress = self._connection.job_progress
@@ -1132,26 +1136,24 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             if self._connection is not None:
                 self._connection = None
 
-            with self._selectedFileMutex:
-                if self._selectedFile is not None:
+            with self._selected_job_mutex:
+                if self._selected_job is not None:
                     eventManager().fire(Events.FILE_DESELECTED)
-                self._setJobData(None, None, None)
+                self._set_job_data(None)
 
-            self._updateProgressData()
-            self._setOffsets(None)
-            self._addTemperatureData()
+            self._update_progress_data()
+            self._set_offsets(None)
+            self._add_temperature_data()
             self._printer_profile_manager.deselect()
 
             eventManager().fire(Events.DISCONNECTED)
 
-        self._setState(state, state_string=state_str, error_string=error_str)
+        self._set_state(state, state_string=state_str, error_string=error_str)
 
     def on_printer_job_changed(self, job, user=None, data=None):
         if job is not None:
             payload = self._payload_for_print_job_event(
-                location=job.storage,
-                print_job_file=job.path,
-                print_job_user=user,
+                job=job,
                 action_user=user,
             )
             eventManager().fire(Events.FILE_SELECTED, payload)
@@ -1169,33 +1171,31 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 "Print job deselected - user: {}".format(user if user else "n/a")
             )
 
-        self._setJobData(
-            job.path if job else None,
-            job.size if job else None,
-            job.storage == FileDestinations.PRINTER if job else False,
+        self._set_job_data(
+            job,
             user=user,
             data=data,
         )
         self._stateMonitor.set_state(
             self._dict(
                 text=self.get_state_string(),
-                flags=self._getStateFlags(),
+                flags=self._get_state_flags(),
                 error=self.get_error(),
             )
         )
 
         self._create_estimator()
 
-        if self._printAfterSelect:
-            self._printAfterSelect = False
-            self.start_print(pos=self._posAfterSelect, user=user)
+        if self._print_after_select:
+            self._print_after_select = False
+            self.start_print(pos=self._pos_after_select, user=user)
 
     def on_printer_job_started(self, suppress_script=False, user=None):
-        self._updateJobUser(
+        self._update_job_user(
             user
         )  # the final job owner should always be whoever _started_ the job
         self._stateMonitor.trigger_progress_update()
-        payload = self._payload_for_print_job_event(print_job_user=user, action_user=user)
+        payload = self._payload_for_print_job_event(action_user=user)
         if payload:
             eventManager().fire(Events.PRINT_STARTED, payload)
             eventManager().fire(
@@ -1298,7 +1298,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 Events.CHART_MARKED,
                 {"type": "done", "label": "Done"},
             )
-            self._updateProgressData(
+            self._update_progress_data(
                 completion=1.0,
                 filepos=payload["size"],
                 printTime=payload["time"],
@@ -1307,7 +1307,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             self._stateMonitor.set_state(
                 self._dict(
                     text=self.get_state_string(),
-                    flags=self._getStateFlags(),
+                    flags=self._get_state_flags(),
                     error=self.get_error(),
                 )
             )
@@ -1344,17 +1344,17 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             thread.start()
 
         else:
-            self._updateProgressData()
+            self._update_progress_data()
             self._stateMonitor.set_state(
                 self._dict(
                     text=self.get_state_string(),
-                    flags=self._getStateFlags(),
+                    flags=self._get_state_flags(),
                     error=self.get_error(),
                 )
             )
 
     def on_printer_job_cancelled(self, suppress_script=False, user=None):  # TODO
-        self._updateProgressData()
+        self._update_progress_data()
 
         job_progress = self._connection.job_progress if self._connection else None
 
@@ -1421,7 +1421,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         eventManager().fire(Events.POSITION_UPDATE, payload)
 
     def on_printer_temperature_update(self, temperatures):
-        self._addTemperatureData(temperatures)
+        self._add_temperature_data(temperatures)
 
     def on_printer_logs(self, *lines):
         self.log_lines(*lines)
@@ -1447,7 +1447,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._stateMonitor.set_state(
             self._dict(
                 text=self.get_state_string(),
-                flags=self._getStateFlags(),
+                flags=self._get_state_flags(),
                 error=self.get_error(),
             )
         )
@@ -1463,12 +1463,12 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         self._sdStreaming = True
 
-        self._setJobData(job.path, job.size, True, user=job.owner)
-        self._updateProgressData(completion=0.0, filepos=0, printTime=0)
+        self._set_job_data(job)
+        self._update_progress_data(completion=0.0, filepos=0, printTime=0)
         self._stateMonitor.set_state(
             self._dict(
                 text=self.get_state_string(),
-                flags=self._getStateFlags(),
+                flags=self._get_state_flags(),
                 error=self.get_error(),
             )
         )
@@ -1493,12 +1493,12 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     job.path, job.remote_path, FileDestinations.PRINTER
                 )
 
-        self._setJobData(None, None, None)
-        self._updateProgressData()
+        self._set_job_data(None)
+        self._update_progress_data()
         self._stateMonitor.set_state(
             self._dict(
                 text=self.get_state_string(),
-                flags=self._getStateFlags(),
+                flags=self._get_state_flags(),
                 error=self.get_error(),
             )
         )
@@ -1519,25 +1519,21 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             "progress": progress,
             "action_user": user,
         }
-        if job is not None:
-            kwargs["location"] = job.storage
-            kwargs["print_job_file"] = job.path
-            kwargs["print_job_size"] = job.size
-            kwargs["print_job_user"] = job.owner
-        if payload is not None:
-            kwargs.update(**payload)
 
-        event_payload = self._payload_for_print_job_event(**kwargs)
+        event_payload = self._payload_for_print_job_event(job=job, **kwargs)
         if event_payload:
+            if payload is not None:
+                event_payload.update(**payload)
             eventManager().fire(event, event_payload)
+
         return event_payload
 
     # ~~ state monitoring
 
-    def _setOffsets(self, offsets):
+    def _set_offsets(self, offsets):
         self._stateMonitor.set_temp_offsets(offsets)
 
-    def _setState(self, state, state_string=None, error_string=None):
+    def _set_state(self, state, state_string=None, error_string=None):
         if state_string is None:
             state_string = self.get_state_string()
         if error_string is None:
@@ -1545,7 +1541,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         self._state = state
         self._stateMonitor.set_state(
-            self._dict(text=state_string, flags=self._getStateFlags(), error=error_string)
+            self._dict(
+                text=state_string, flags=self._get_state_flags(), error=error_string
+            )
         )
 
         payload = {
@@ -1554,15 +1552,15 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         }
         eventManager().fire(Events.PRINTER_STATE_CHANGED, payload)
 
-    def _addLog(self, log):
+    def _add_log(self, log):
         self._log.append(log)
         self._stateMonitor.add_log(log)
 
-    def _addMessage(self, message):
+    def _add_message(self, message):
         self._messages.append(message)
         self._stateMonitor.add_message(message)
 
-    def _updateProgressData(
+    def _update_progress_data(
         self,
         completion=None,
         filepos=None,
@@ -1580,7 +1578,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             )
         )
 
-    def _updateProgressDataCallback(self):
+    def _update_progress_data_callback(self):
         if self._connection is None:
             progress = None
             filepos = None
@@ -1601,7 +1599,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             progress_int = int(progress * 100)
             if self._lastProgressReport != progress_int:
                 self._lastProgressReport = progress_int
-                self._reportPrintProgressToPlugins(progress_int)
+                self._report_print_progress_to_plugins(progress_int)
 
             if progress == 0:
                 printTimeLeft = None
@@ -1612,17 +1610,13 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             elif estimator is not None:
                 statisticalTotalPrintTime = None
                 statisticalTotalPrintTimeType = None
-                with self._selectedFileMutex:
-                    if (
-                        self._selectedFile
-                        and "estimatedPrintTime" in self._selectedFile
-                        and self._selectedFile["estimatedPrintTime"]
-                    ):
-                        statisticalTotalPrintTime = self._selectedFile[
-                            "estimatedPrintTime"
-                        ]
-                        statisticalTotalPrintTimeType = self._selectedFile.get(
-                            "estimatedPrintTimeType", None
+                with self._selected_job_mutex:
+                    if self._selected_job and self._selected_job.duration_estimate:
+                        statisticalTotalPrintTime = (
+                            self._selected_job.duration_estimate.estimate
+                        )
+                        statisticalTotalPrintTimeType = (
+                            self._selected_job.duration_estimate.source
                         )
 
                 try:
@@ -1648,7 +1642,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             printTimeLeftOrigin=printTimeLeftOrigin,
         )
 
-    def _updateResendDataCallback(self):
+    def _update_resend_data_callback(self):
         NO_RESULT = self._dict(count=0, transmitted=0, ratio=0)
 
         if self._connection is None:
@@ -1664,7 +1658,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             ratio=round(communication_health.ratio * 100),
         )
 
-    def _addTemperatureData(self, temperatures=None):
+    def _add_temperature_data(self, temperatures=None):
         data = {"time": int(time.time())}
         if temperatures:
             for key, value in temperatures.items():
@@ -1675,34 +1669,13 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._temps.append(data)
         self._stateMonitor.add_temperature(self._dict(**data))
 
-    def _setJobData(self, filename, filesize, sd, user=None, data=None):
-        with self._selectedFileMutex:
-            if filename is not None:
-                if sd:
-                    name_in_storage = filename
-                    if name_in_storage.startswith("/"):
-                        name_in_storage = name_in_storage[1:]
-                    path_in_storage = name_in_storage
-                    path_on_disk = None
-                else:
-                    path_in_storage = self._file_manager.path_in_storage(
-                        FileDestinations.LOCAL, filename
-                    )
-                    path_on_disk = self._file_manager.path_on_disk(
-                        FileDestinations.LOCAL, filename
-                    )
-                    _, name_in_storage = self._file_manager.split_path(
-                        FileDestinations.LOCAL, path_in_storage
-                    )
-                self._selectedFile = {
-                    "filename": path_in_storage,
-                    "filesize": filesize,
-                    "sd": sd,
-                    "estimatedPrintTime": None,
-                    "user": user,
-                }
-            else:
-                self._selectedFile = None
+    def _refresh_job_data(self):
+        self._set_job_data(self._selected_job)
+
+    def _set_job_data(self, job: PrintJob, user: str = None, data: dict = None):
+        with self._selected_job_mutex:
+            if job is None:
+                self._selected_job = None
                 self._stateMonitor.set_job_data(
                     self._dict(
                         file=self._dict(
@@ -1722,12 +1695,22 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 )
                 return
 
+            _, name = self._file_manager.split_path(job.storage, job.path)
+
+            if self._file_manager.capabilities(job.storage).path_on_disk:
+                path_on_disk = self._file_manager.path_on_disk(job.storage, job.path)
+            else:
+                path_on_disk = None
+
             estimatedPrintTime = None
             lastPrintTime = None
             averagePrintTime = None
             date = None
             filament = None
-            display_name = name_in_storage
+            display_name = name
+
+            if user is None:
+                user = job.owner
 
             if path_on_disk:
                 # Use an int for mtime because it could be float and the
@@ -1735,62 +1718,66 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 date = int(os.stat(path_on_disk).st_mtime)
 
                 try:
-                    fileData = self._file_manager.get_metadata(
-                        FileDestinations.PRINTER if sd else FileDestinations.LOCAL,
+                    metadata = self._file_manager.get_metadata(
+                        job.storage,
                         path_on_disk,
                     )
                 except Exception:
                     self._logger.exception("Error generating fileData")
-                    fileData = None
-                if fileData is not None:
-                    if fileData.get("display"):
-                        display_name = fileData["display"]
-                    if isinstance(fileData.get("analysis"), dict):
-                        if estimatedPrintTime is None and fileData["analysis"].get(
+                    metadata = None
+
+                if metadata is not None:
+                    if metadata.get("display"):
+                        display_name = metadata["display"]
+
+                    if isinstance(metadata.get("analysis"), dict):
+                        if estimatedPrintTime is None and metadata["analysis"].get(
                             "estimatedPrintTime"
                         ):
-                            estimatedPrintTime = fileData["analysis"][
+                            estimatedPrintTime = metadata["analysis"][
                                 "estimatedPrintTime"
                             ]
-                        if fileData["analysis"].get("filament"):
-                            filament = fileData["analysis"]["filament"]
-                    if isinstance(fileData.get("statistics"), dict):
+                        if metadata["analysis"].get("filament"):
+                            filament = metadata["analysis"]["filament"]
+
+                    if isinstance(metadata.get("statistics"), dict):
                         printer_profile = (
                             self._printer_profile_manager.get_current_or_default()["id"]
                         )
-                        if printer_profile in fileData["statistics"].get(
+                        if printer_profile in metadata["statistics"].get(
                             "averagePrintTime", {}
                         ):
-                            averagePrintTime = fileData["statistics"]["averagePrintTime"][
+                            averagePrintTime = metadata["statistics"]["averagePrintTime"][
                                 printer_profile
                             ]
-                        if printer_profile in fileData["statistics"].get(
+                        if printer_profile in metadata["statistics"].get(
                             "lastPrintTime", {}
                         ):
-                            lastPrintTime = fileData["statistics"]["lastPrintTime"][
+                            lastPrintTime = metadata["statistics"]["lastPrintTime"][
                                 printer_profile
                             ]
 
                     if averagePrintTime is not None:
-                        self._selectedFile["estimatedPrintTime"] = averagePrintTime
-                        self._selectedFile["estimatedPrintTimeType"] = "average"
+                        job.duration_estimate = DurationEstimate(
+                            estimate=averagePrintTime, source="average"
+                        )
                     elif estimatedPrintTime is not None:
-                        # TODO apply factor which first needs to be tracked!
-                        self._selectedFile["estimatedPrintTime"] = estimatedPrintTime
-                        self._selectedFile["estimatedPrintTimeType"] = "analysis"
+                        job.duration_estimate = DurationEstimate(
+                            estimate=estimatedPrintTime, source="analysis"
+                        )
 
-            elif data:
+            elif data:  # TODO data coming from SD files, needs clean up
                 display_name = data.longname
                 date = data.timestamp
 
             self._stateMonitor.set_job_data(
                 self._dict(
                     file=self._dict(
-                        name=name_in_storage,
-                        path=path_in_storage,
+                        name=name,
+                        path=job.path,
                         display=display_name,
-                        origin=FileDestinations.PRINTER if sd else FileDestinations.LOCAL,
-                        size=filesize,
+                        origin=job.storage,
+                        size=job.size,
                         date=date,
                     ),
                     estimatedPrintTime=estimatedPrintTime,
@@ -1800,14 +1787,12 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     user=user,
                 )
             )
+            self._selected_job = job
 
-    def _updateJobUser(self, user):
-        with self._selectedFileMutex:
-            if (
-                self._selectedFile is not None
-                and self._selectedFile.get("user", None) != user
-            ):
-                self._selectedFile["user"] = user
+    def _update_job_user(self, user):
+        with self._selected_job_mutex:
+            if self._selected_job and self._selected_job.owner != user:
+                self._selected_job.owner = user
 
                 job_data = self.get_current_job()
                 self._stateMonitor.set_job_data(
@@ -1821,7 +1806,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     )
                 )
 
-    def _sendInitialStateUpdate(self, callback):
+    def _send_initial_state_update(self, callback):
         try:
             data = self._stateMonitor.get_current_data()
             data.update(
@@ -1844,7 +1829,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 extra={"callback": fqcn(callback)},
             )
 
-    def _getStateFlags(self):
+    def _get_state_flags(self):
         return self._dict(
             operational=self.is_operational(),
             printing=self.is_printing(),
@@ -1861,51 +1846,24 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def _payload_for_print_job_event(
         self,
-        location=None,
-        print_job_file=None,
-        print_job_size=None,
-        print_job_user=None,
+        job=None,
         position=None,
         fileposition=None,
         progress=None,
         action_user=None,
     ):
-        if print_job_file is None:
-            with self._selectedFileMutex:
-                selected_file = self._selectedFile
-                if not selected_file:
+        if job is None:
+            with self._selected_job_mutex:
+                if not self._selected_job:
                     return {}
+                job = self._selected_job
 
-                print_job_file = selected_file.get("filename", None)
-                print_job_size = selected_file.get("filesize", None)
-                print_job_user = selected_file.get("user", None)
-                location = (
-                    FileDestinations.PRINTER
-                    if selected_file.get("sd", False)
-                    else FileDestinations.LOCAL
-                )
+        path = job.path
+        storage = job.storage
+        size = job.size
+        _, name = self._file_manager.split_path(storage, path)
 
-        if not print_job_file or not location:
-            return {}
-
-        if location == FileDestinations.PRINTER:
-            full_path = print_job_file
-            if full_path.startswith("/"):
-                full_path = full_path[1:]
-            name = path = full_path
-            origin = FileDestinations.PRINTER
-
-        else:
-            full_path = self._file_manager.path_on_disk(
-                FileDestinations.LOCAL, print_job_file
-            )
-            path = self._file_manager.path_in_storage(
-                FileDestinations.LOCAL, print_job_file
-            )
-            _, name = self._file_manager.split_path(FileDestinations.LOCAL, path)
-            origin = FileDestinations.LOCAL
-
-        result = {"name": name, "path": path, "origin": origin, "size": print_job_size}
+        result = {"name": name, "path": path, "origin": storage, "size": size}
 
         if position is not None:
             result["position"] = position
@@ -1916,8 +1874,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         if progress is not None:
             result["progress"] = int(progress * 100)
 
-        if print_job_user is not None:
-            result["owner"] = print_job_user
+        if job.owner is not None:
+            result["owner"] = job.owner
 
         if action_user is not None:
             result["user"] = action_user

@@ -12,6 +12,7 @@ class SerialConnectorPlugin(
         from .connector import ConnectedSerialPrinter  # noqa: F401
 
         ConnectedSerialPrinter._event_bus = self._event_bus
+        ConnectedSerialPrinter._file_manager = self._file_manager
         ConnectedSerialPrinter._plugin_manager = self._plugin_manager
         ConnectedSerialPrinter._plugin_settings = self._settings
 

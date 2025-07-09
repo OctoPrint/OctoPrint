@@ -7,6 +7,7 @@ from typing import Optional
 from flask import abort, jsonify, request
 
 from octoprint.access.permissions import Permissions
+from octoprint.printer.connection import ConnectedPrinter
 from octoprint.schema import BaseModel
 from octoprint.server import NO_CONTENT, printer, printerProfileManager
 from octoprint.server.api import api
@@ -145,8 +146,6 @@ def connectionCommand():
         printerProfile = None
 
         if api_version_matches(">=1.12.0"):
-            from octoprint.printer.connection import ConnectedPrinter
-
             if "connector" in data:
                 connector_name = data["connector"]
                 if not ConnectedPrinter.find(connector_name):
@@ -220,8 +219,6 @@ def connectionCommand():
 
 
 def _get_options() -> ConnectionOptions:
-    from octoprint.printer.connection import ConnectedPrinter
-
     connector_options = ConnectedPrinter.all()
     profile_options = printerProfileManager.get_all()
     default_profile = printerProfileManager.get_default()
@@ -259,8 +256,6 @@ def _get_options() -> ConnectionOptions:
 
 
 def _get_options_pre_1_12_0() -> ConnectionOptions_pre_1_12_0:
-    from octoprint.printer.connection import ConnectedPrinter
-
     profile_options = printerProfileManager.get_all()
     default_profile = printerProfileManager.get_default()
 

@@ -3,11 +3,17 @@ from typing import Optional
 from octoprint.schema import BaseModel
 
 
+class DurationEstimate(BaseModel):
+    estimate: float
+    source: Optional[str] = None
+
+
 class PrintJob(BaseModel):
     storage: str
     path: str
     size: int = 0
     owner: Optional[str] = None
+    duration_estimate: Optional[DurationEstimate] = None
     path_on_disk: Optional[str] = None
 
     def __str__(self):

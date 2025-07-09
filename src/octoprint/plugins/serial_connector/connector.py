@@ -24,6 +24,7 @@ from .serial_comm import MachineCom, baudrateList, serialList
 
 if TYPE_CHECKING:
     from octoprint.events import EventManager
+    from octoprint.filemanager import FileManager
     from octoprint.plugin import PluginManager, PluginSettings
 
 
@@ -37,6 +38,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     # injected by plugin
     _event_bus: "EventManager" = None
+    _file_manager: "FileManager" = None
     _plugin_settings: "PluginSettings" = None
     _plugin_manager: "PluginManager" = None
     # /injected
@@ -320,6 +322,9 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             self._setCurrentZ(None)
             super().set_job(job)
             return
+
+        if user is None:
+            user = job.owner
 
         self._comm.selectFile(
             job.path if job.storage != FileDestinations.LOCAL else job.path_on_disk,
@@ -651,9 +656,12 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._listener.on_printer_files_refreshed(files)
 
     def on_comm_file_selected(self, full_path, size, sd, user=None, data=None):
+        storage = FileDestinations.PRINTER if sd else FileDestinations.LOCAL
+        path = self._file_manager.path_in_storage(storage, full_path)
+
         job = PrintJob(
-            storage=FileDestinations.PRINTER if sd else FileDestinations.LOCAL,
-            path=full_path,
+            storage=storage,
+            path=path,
             size=size,
             owner=user,
         )

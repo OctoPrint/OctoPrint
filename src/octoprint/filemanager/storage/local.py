@@ -184,10 +184,8 @@ class LocalFileStorage(StorageInterface):
                 return os.stat(p).st_mtime
 
         if recursive:
-            return max(
-                0,
-                *(last_modified_for_path(root) for root, _, _ in walk(path)),
-            )
+            values = [0] + [last_modified_for_path(root) for root, _, _ in walk(path)]
+            return max(values)
         else:
             return last_modified_for_path(path)
 
