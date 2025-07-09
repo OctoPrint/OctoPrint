@@ -51,7 +51,7 @@ def test_get_files(path, filter, recursive, level, expected):
         PrinterFile(path=f, display=f, size=None, date=None) for f in FILES
     ]
 
-    with mock.patch("octoprint.filemanager.get_file_type") as gft:
+    with mock.patch("octoprint.filemanager.storage.printer.get_file_type") as gft:
         from octoprint.filemanager.storage.printer import PrinterFileStorage
 
         gft.return_value = ["machinecode", "gcode"]

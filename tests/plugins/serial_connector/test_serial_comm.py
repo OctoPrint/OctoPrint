@@ -39,8 +39,7 @@ class TestSerialCommErrorHandling(unittest.TestCase):
         self._comm._callback = mock.Mock()
 
         # settings
-        self._comm._ignore_errors = False
-        self._comm._disconnect_on_errors = True
+        self._comm._error_handling = "disconnect"
         self._comm._send_m112_on_error = True
         self._comm.isPrinting.return_value = True
         self._comm.isSdPrinting.return_value = False
@@ -174,7 +173,7 @@ class TestSerialCommErrorHandling(unittest.TestCase):
     @ddt.data("Error: Printer on fire")
     def test_other_error_cancel(self, line):
         """Should trigger print cancel"""
-        self._comm._disconnect_on_errors = False
+        self._comm._error_handling = "cancel"
 
         result = self._comm._handle_errors(line)
         self.assertEqual(line, result)
@@ -192,7 +191,7 @@ class TestSerialCommErrorHandling(unittest.TestCase):
     @ddt.data("Error: Printer on fire")
     def test_other_error_ignored(self, line):
         """Should only log"""
-        self._comm._ignore_errors = True
+        self._comm._error_handling = "ignore"
 
         result = self._comm._handle_errors(line)
         self.assertEqual(line, result)
