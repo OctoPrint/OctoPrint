@@ -1387,6 +1387,7 @@ class StorageFileDownloadHandler(
         size = file_data.get("size")
         if size is not None:
             self.set_header("Content-Length", size)
+            self.set_header("X-Original-Content-Length", str(size))
 
         content_type = get_mime_type(filename)
         if content_type:
