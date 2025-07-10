@@ -1,14 +1,22 @@
 """
 This module defines the interface for communicating with a connected printer.
 
-The communication is in fact divided in two components, the :class:`PrinterInterface` and a deeper lying
-communication layer. However, plugins should only ever need to use the :class:`PrinterInterface` as the
+The communication is in fact divided into two components, the :class:`PrinterInterface`, the
+printer communication specific :class:`~octoprint.printer.connection.ConnectedPrinter`, and possibly deeper lying
+communication components. However, plugins should only ever need to use the :class:`PrinterMixin` as the
 abstracted version of the actual printer communication.
 
-.. autofunction:: get_connection_options
-
-.. autoclass:: PrinterInterface
+.. autoclass:: CommonPrinterMixin
    :members:
+
+.. autoclass:: ConnectedPrinterMixin
+   :members:
+
+.. autoclass:: PrinterFilesMixin
+   :members:
+
+.. autoclass:: PrinterMixin
+   : members:
 
 .. autoclass:: PrinterCallback
    :members:
@@ -29,15 +37,6 @@ from octoprint.printer.job import JobProgress, PrintJob
 from octoprint.schema import BaseModel
 from octoprint.settings import settings
 from octoprint.util import deprecated, natural_key
-
-
-@deprecated(
-    message="get_connection_options has been replaced by PrinterInterface.get_connection_options",
-    includedoc="Replaced by :func:`PrinterInterface.get_connection_options`",
-    since="1.3.0",
-)
-def get_connection_options():
-    return PrinterMixin.get_connection_options()
 
 
 class CommunicationHealth(BaseModel):
@@ -96,32 +95,6 @@ class CommonPrinterMixin:
 
     valid_heater_regex_no_current = re.compile(r"^(tool\d+|bed|chamber)$")
     """Regex for valid heater identifiers without the current heater."""
-
-    @classmethod
-    def get_connection_options(cls, *args, **kwargs):
-        """
-        Retrieves the available ports, baudrates, preferred port and baudrate for connecting to the printer.
-
-        Returned ``dict`` has the following structure::
-
-            ports: <list of available serial ports>
-            baudrates: <list of available baudrates>
-            portPreference: <configured default serial port>
-            baudratePreference: <configured default baudrate>
-            autoconnect: <whether autoconnect upon server startup is enabled or not>
-
-        Returns:
-            (dict): A dictionary holding the connection options in the structure specified above
-        """
-        import octoprint.util.comm as comm
-
-        return {
-            "ports": sorted(comm.serialList(), key=natural_key),
-            "baudrates": sorted(comm.baudrateList(), reverse=True),
-            "portPreference": settings().get(["serial", "port"]),
-            "baudratePreference": settings().getInt(["serial", "baudrate"]),
-            "autoconnect": settings().getBoolean(["serial", "autoconnect"]),
-        }
 
     def connect(self, *args, **kwargs):
         """
@@ -531,6 +504,7 @@ class CommonPrinterMixin:
 
 class ConnectedPrinterMixin(CommonPrinterMixin):
     can_set_job_on_hold = True
+    supports_temperature_offsets = True
 
     def supports_job(self, job: PrintJob) -> bool:
         return False
@@ -707,6 +681,40 @@ class PrinterMixin(CommonPrinterMixin):
     @property
     def connection_state(self) -> dict:
         return None
+
+    @classmethod
+    @deprecated(
+        message="get_connection_option has been deprecated and will be removed in a future version. Please use ConnectedPrinter.all() in combination with get_connection_option on the returned ConnectPrinter instances instead.",
+        since="1.12.0",
+    )
+    def get_connection_options(cls):
+        from .connection import ConnectedPrinter
+
+        serial_connector = ConnectedPrinter.find("serial")
+        if serial_connector is None:
+            return {
+                "ports": [],
+                "baudrates": [],
+                "portPreference": None,
+                "baudratePreference": None,
+                "autoconnect": False,
+            }
+
+        preferred = {}
+        if settings().get(["printerConnection", "preferred", "connector"]) == "serial":
+            preferred = settings().get(["printerConnection", "preferred", "parameters"])
+
+        connection_options = serial_connector.get_connection_options()
+        ports = connection_options.get("ports", [])
+        baudrates = connection_options.get("baudrates", [])
+
+        return {
+            "ports": sorted(ports, key=natural_key),
+            "baudrates": sorted(baudrates, reverse=True),
+            "portPreference": preferred.get("port"),
+            "baudratePreference": preferred.get("baudrate"),
+            "autoconnect": settings().getBoolean(["printerConnection", "autoconnect"]),
+        }
 
     @deprecated(
         message="select_file has been deprecated and will be removed in a future version. Please use set_job instead.",

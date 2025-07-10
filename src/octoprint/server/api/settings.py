@@ -13,7 +13,7 @@ import octoprint.plugin
 import octoprint.util
 from octoprint.access.permissions import Permissions
 from octoprint.schema.config.controls import ContainerConfig, ControlConfig
-from octoprint.server import pluginManager, printer, userManager
+from octoprint.server import pluginManager, userManager
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import (
     api_version_matches,
@@ -68,7 +68,6 @@ def _etag(lm=None):
     if lm is None:
         lm = _lastmodified()
 
-    connection_options = printer.__class__.get_connection_options()
     plugins = sorted(octoprint.plugin.plugin_manager().enabled_plugins)
     plugin_settings = _get_plugin_settings()
 
@@ -100,9 +99,6 @@ def _etag(lm=None):
     # might duplicate settings().effective, but plugins might also inject additional keys into the settings
     # output that are not stored in config.yaml
     hash_update(repr(sorted_plugin_settings))
-
-    # connection options are also part of the settings
-    hash_update(repr(connection_options))
 
     # if the list of plugins changes, the settings structure changes too
     hash_update(repr(plugins))

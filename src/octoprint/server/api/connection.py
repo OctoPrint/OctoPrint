@@ -141,23 +141,30 @@ def connectionCommand():
         return response
 
     if command == "connect":
-        connector_name = "serial"
         parameters = {}
         printerProfile = None
 
         if api_version_matches(">=1.12.0"):
-            if "connector" in data:
-                connector_name = data["connector"]
-                if not ConnectedPrinter.find(connector_name):
-                    abort(400, description=f'unknown connector: "{connector_name}"')
+            if "connector" not in data:
+                abort(400, description='required parameter "connector" is missing')
+
+            connector_name = data["connector"]
+            connector = ConnectedPrinter.find(connector_name)
+            if not connector:
+                abort(400, description=f'unknown connector: "{connector_name}"')
 
             if "parameters" in data:
                 parameters = data["parameters"]
                 if not isinstance(parameters, dict):
-                    abort(400, description="parameters must be a dictionary")
+                    abort(400, description='"parameters" must be a dictionary')
 
         else:  # pre 1.12.0
-            connection_options = printer.__class__.get_connection_options()
+            connector_name = "serial"
+            connector = ConnectedPrinter.find(connector_name)
+            if connector is None:
+                abort(400, description=f'unknown connector: "{connector_name}"')
+
+            connection_options = connector.get_connection_options()
 
             if "port" in data:
                 port = data["port"]
@@ -177,7 +184,6 @@ def connectionCommand():
                 abort(400, description="printerProfile is invalid")
 
         # check if our connection preconditions are met
-        connector = ConnectedPrinter.find(connector_name)
         if not connector.connection_preconditions_met(parameters):
             abort(
                 412,
