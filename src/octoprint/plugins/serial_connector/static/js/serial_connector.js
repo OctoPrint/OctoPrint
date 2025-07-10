@@ -16,7 +16,7 @@ $(function () {
             () =>
                 !self.lastUpdated() ||
                 self.portOptions().length > 0 ||
-                self.settings.settings.serial.ignoreEmptyPorts()
+                self.settings.settings.plugins.serial_connector.ignoreEmptyPorts()
         );
         self.portCaption = ko.pureComputed(() =>
             self.validPort() ? "AUTO" : gettext("No serial port found")

@@ -14,7 +14,11 @@ class PreferredConnection(BaseModel):
 
 @with_attrs_docs
 class PrinterConnectionConfig(BaseModel):
+    autorefresh: bool = True
+    autorefreshInterval: int = 1
+
     autoconnect: bool = False
+
     preferred: PreferredConnection = PreferredConnection(
         connector="serial", parameters={"port": None, "baudrate": None}
     )

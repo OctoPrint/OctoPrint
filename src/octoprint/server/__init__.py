@@ -471,7 +471,7 @@ class Server:
 
         self._start_analysis_backlog()
         self._start_printer_autoconnect()
-        self._start_serial_autorefresh()
+        self._start_connector_autorefresh()
         self._start_watched_observer()
         self._call_startup_plugins()
         self._trigger_after_startup()
@@ -2389,28 +2389,30 @@ class Server:
                 "Something went wrong while attempting to automatically connect to the printer"
             )
 
-    def _start_serial_autorefresh(self):
-        from octoprint.util.comm import serialList
+    def _start_connector_autorefresh(self):
+        from octoprint.printer.connection import ConnectedPrinter
 
-        if not self._settings.getBoolean(["serial", "autorefresh"]):
+        if not self._settings.getBoolean(["printerConnection", "autorefresh"]):
             return
 
-        last_ports = None
+        last_options = None
         autorefresh = None
 
-        def refresh_serial_list():
-            nonlocal last_ports
+        def refresh_options():
+            nonlocal last_options
 
-            new_ports = sorted(serialList())
-            if new_ports != last_ports:
+            new_options = {
+                cp.connector: cp.connection_options() for cp in ConnectedPrinter.all()
+            }
+            if new_options != last_options:
                 self._logger.info(
-                    "Serial port list was updated, refreshing the port list in the frontend"
+                    "Connection options were updated, refreshing the connection options in the frontend"
                 )
                 eventManager.fire(
                     events.Events.CONNECTIONS_AUTOREFRESHED,
-                    payload={"ports": new_ports},
+                    payload={"options": new_options},
                 )
-            last_ports = new_ports
+            last_options = new_options
 
         def autorefresh_active():
             return printer.is_closed_or_error()
@@ -2418,7 +2420,7 @@ class Server:
         def autorefresh_stopped():
             nonlocal autorefresh
 
-            self._logger.info("Autorefresh of serial port list stopped")
+            self._logger.info("Autorefresh of connection options stopped")
             autorefresh = None
 
         def run_autorefresh():
@@ -2429,15 +2431,15 @@ class Server:
                 autorefresh = None
 
             autorefresh = octoprint.util.RepeatedTimer(
-                self._settings.getInt(["serial", "autorefreshInterval"]),
-                refresh_serial_list,
+                self._settings.getInt(["printerConnection", "autorefreshInterval"]),
+                refresh_options,
                 run_first=True,
                 condition=autorefresh_active,
                 on_finish=autorefresh_stopped,
             )
-            autorefresh.name = "Serial autorefresh worker"
+            autorefresh.name = "Connection options autorefresh worker"
 
-            self._logger.info("Starting autorefresh of serial port list")
+            self._logger.info("Starting autorefresh of connection options")
             autorefresh.start()
 
         run_autorefresh()

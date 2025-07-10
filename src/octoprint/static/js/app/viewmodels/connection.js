@@ -230,21 +230,13 @@ $(function () {
             }
         };
 
-        self.onEventSettingsUpdated = function () {
-            self.requestData();
-        };
-
-        self.onEventConnected = function () {
-            self.requestData();
-        };
-
-        self.onEventDisconnected = function () {
-            self.requestData();
-        };
-
-        self.onEventConnectionsAutorefreshed = function () {
-            self.requestData();
-        };
+        self.onEventSettingsUpdated =
+            self.onEventConnected =
+            self.onEventDisconnected =
+            self.onEventConnectionsAutorefreshed =
+                function () {
+                    self.requestData();
+                };
 
         self.onAllBound = function (allViewModels) {
             self.allViewModels = allViewModels;
