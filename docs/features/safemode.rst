@@ -21,7 +21,7 @@ from cases where a third party addition causes the server to not start up or the
 render or function correctly anymore.
 
 Whenever reporting an issue with OctoPrint, please always attempt to reproduce it in safe mode as well to
-ensure it really is an issue in OctoPrint itself and now caused by one of your installed third party additions.
+ensure it really is an issue in OctoPrint itself and not caused by one of your installed third party additions.
 
 .. _sec-features-safemode-how:
 
