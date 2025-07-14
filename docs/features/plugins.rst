@@ -41,7 +41,7 @@ Installing Plugins
 Plugins can be installed through the bundled Plugin Manager, which allows installing plugins available in the
 `OctoPrint Plugin Repository <http://plugins.octoprint.org>`_, from a web address or from an uploaded file archive.
 
-Please refer to the documentation of the plugin for additional installations instructions.
+Please refer to the documentation of the plugin for additional installation instructions.
 
 Manual Installation
 -------------------
