@@ -260,3 +260,6 @@ skip = '*.po,*.min.js,.git,*/vendor/*,*/lib/*,*/bootstrap/*,*/node_modules/*,*/t
 ignore-words = '.codespell_ignore_words'
 quiet-level = 3
 count = true
+
+[tool.check-wheel-contents]
+ignore = 'W002,W004,W009'
