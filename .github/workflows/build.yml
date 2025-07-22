@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: dist
+          path: ${{ steps.baipp.outputs.dist}}
 
   pre-commit:
     name: 🧹 Pre-commit
