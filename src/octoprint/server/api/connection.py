@@ -164,17 +164,17 @@ def connectionCommand():
             if connector is None:
                 abort(400, description=f'unknown connector: "{connector_name}"')
 
-            connection_options = connector.get_connection_options()
+            connection_options = connector.connection_options()
 
             if "port" in data:
                 port = data["port"]
-                if port not in connection_options["ports"] and port != "AUTO":
+                if port not in connection_options["port"] and port != "AUTO":
                     abort(400, description="port is invalid")
                 parameters["port"] = port
 
             if "baudrate" in data:
                 baudrate = data["baudrate"]
-                if baudrate not in connection_options["baudrates"] and baudrate != 0:
+                if baudrate not in connection_options["baudrate"] and baudrate != 0:
                     abort(400, description="baudrate is invalid")
                 parameters["baudrate"] = baudrate
 
@@ -283,8 +283,8 @@ def _get_options_pre_1_12_0() -> ConnectionOptions_pre_1_12_0:
         )
 
     return ConnectionOptions_pre_1_12_0(
-        ports=connection_options.get("ports", []),
-        baudrates=connection_options.get("baudrates", []),
+        ports=connection_options.get("port", []),
+        baudrates=connection_options.get("baudrate", []),
         printerProfiles=[
             AvailablePrinterProfile(
                 id=printer_profile["id"],
