@@ -933,22 +933,24 @@ def guess_mime_type(data):
     return filetype.guess_mime(data)
 
 
-def parse_mime_type(mime):
-    import cgi
-
-    if not mime or not isinstance(mime, (str, bytes)):
+def parse_mime_type(line: str):
+    if not line or not isinstance(line, (str, bytes)):
         raise ValueError("mime must be a non empty str")
 
-    mime, params = cgi.parse_header(mime)
+    if ";" in line:
+        part1, part2 = line.split(";", maxsplit=1)
+    else:
+        part1 = line
+        part2 = ""
 
-    if mime == "*":
-        mime = "*/*"
+    if part1 == "*":
+        part1 = "*/*"
 
-    parts = mime.split("/") if "/" in mime else None
-    if not parts or len(parts) != 2:
+    if "/" not in part1:
         raise ValueError("mime must be a mime type of format type/subtype")
 
-    mime_type, mime_subtype = parts
+    mime, params = parse_content_type_line(f"{part1};{part2}")
+    mime_type, mime_subtype = mime.split("/", maxsplit=1)
     return mime_type.strip(), mime_subtype.strip(), params
 
 
@@ -967,6 +969,13 @@ def mime_type_matches(mime, other):
     )
 
     return type_matches and subtype_matches
+
+
+def parse_content_type_line(line: str) -> (str, dict):
+    from email.policy import EmailPolicy
+
+    header = EmailPolicy.header_factory("content-type", line)
+    return (header.content_type, dict(header.params))
 
 
 @contextlib.contextmanager
