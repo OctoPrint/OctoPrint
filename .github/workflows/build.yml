@@ -25,36 +25,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
-      - name: 🏗 Install build dependencies
-        run: |
-          python -m pip install build --user
-      - name: 🔨 Build a binary wheel & an sdist tarball
-        run: |
-          python -m build .
-      - name: 🔨 Build a source tarball
-        run: |
-          # find the wheel
-          wheel=$(ls dist/*-py3-none-any.whl)
-
-          # strip the suffix to get the prefix
-          prefix=$(basename ${wheel%-py3-none-any.whl})
-
-          # create the source tarball
-          git archive --prefix $prefix/ HEAD --output dist/$prefix.source.tar.gz
-
-          # list the files
-          ls dist
-      - name: 🔨 Create sha512sums of dist files
-        run: |
-          cd dist
-          sha512sum *.whl *.tar.gz > sha512sums.txt
-
-          cat sha512sums.txt
-      - name: ⬆ Upload build result
-        uses: actions/upload-artifact@v4
+      - name: 🔨 Build distribution
+        uses: OctoPrint/actions/build-dist@main
         with:
-          name: dist
-          path: dist
+          artifact: dist
 
   pre-commit:
     name: 🧹 Pre-commit
