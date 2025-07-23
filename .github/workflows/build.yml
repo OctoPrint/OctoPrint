@@ -105,7 +105,7 @@ jobs:
           now=$(date +'%H:%M')
           report=$(cat report.txt)
 
-          cat << EOF > summary.md
+          cat << EOF >> $GITHUB_STEP_SUMMARY
           # Test Report (Python $python)
 
           *generated on $today at $now under Python $python*
