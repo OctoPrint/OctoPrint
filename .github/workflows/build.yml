@@ -21,33 +21,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: 🔨 Build and inspect Python package
-        id: baipp
-        uses: hynek/build-and-inspect-python-package@v2
-      - name: 🔨 Build a source tarball
-        run: |
-          # find the wheel
-          wheel=$(ls ${{ steps.baipp.outputs.dist}}/*-py3-none-any.whl)
-
-          # strip the suffix to get the prefix
-          prefix=$(basename ${wheel%-py3-none-any.whl})
-
-          # create the source tarball
-          git archive --prefix $prefix/ HEAD --output ${{ steps.baipp.outputs.dist}}/$prefix.source.tar.gz
-
-          # list the files
-          tree ${{ steps.baipp.outputs.dist}}
-      - name: 🔨 Create sha512sums of dist files
-        run: |
-          cd ${{ steps.baipp.outputs.dist}}
-          sha512sum *.whl *.tar.gz > sha512sums.txt
-
-          cat sha512sums.txt
-      - name: ⬆ Upload build result
-        uses: actions/upload-artifact@v4
+      - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
+        uses: actions/setup-python@v5
         with:
-          name: dist
-          path: ${{ steps.baipp.outputs.dist}}
+          python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: 🔨 Build distribution
+        uses: OctoPrint/actions/build-dist@main
+        with:
+          artifact: dist
 
   pre-commit:
     name: 🧹 Pre-commit
@@ -91,7 +72,28 @@ jobs:
           pip install -e .[develop]
       - name: 🚀 Run test suite
         run: |
-          pytest
+          pytest | tee report.txt
+
+          # generate summary
+          python=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
+          today=$(date +'%Y-%m-%d')
+          now=$(date +'%H:%M')
+          summary=$(tail -n1 report.txt | sed 's/^=*\s//g' | sed 's/\s=*$//g')
+
+          cat << EOF >> $GITHUB_STEP_SUMMARY
+          ### Test Report
+
+          *generated on $today at $now under Python $python*
+
+          <details>
+          <summary>$summary</summary>
+
+          \`\`\`
+          $(cat report.txt)
+          \`\`\`
+
+          </details>
+          EOF
 
   test-js-unit:
     name: 🧪 JavaScript unit tests
