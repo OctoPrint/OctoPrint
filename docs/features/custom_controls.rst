@@ -142,7 +142,7 @@ Controls
    * - ``command``
      - (Optional) A single GCODE command to send to the printer. Will be rendered as a button which sends the command to
        the printer upon click. The button text will be the value of the ``name`` attribute. Mutually exclusive with
-       ``commands`` and ``script``. The rendered button be disabled if the printer is currently offline or printing or
+       ``commands`` and ``script``. The rendered button will be disabled if the printer is currently offline or printing or
        alternatively if the requirements defined via the ``enabled`` attribute are not met.
    * - ``commands``
      - (Optional) A list of GCODE commands to send to the printer. Will be rendered as a button which sends the commands

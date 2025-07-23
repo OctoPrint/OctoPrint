@@ -12,7 +12,7 @@ Action commands are a feature defined for the GCODE based RepRap communication p
 
     Such lines will always be preceded by //.
 
-    On the latest version of Pronterface and [...] OctoPrint a special comment of the form:
+    On the latest version of Pronterface and OctoPrint a special comment of the form:
 
     **// action:command**
 

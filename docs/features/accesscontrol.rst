@@ -90,7 +90,7 @@ account and then set up autologin for it.
 .. warning::
 
    **Do not do this if you cannot trust EVERYONE on your local network.** And that really
-   means mean everyone. If you ignore this and then someone takes over your OctoPrint
+   means everyone. If you ignore this and then someone takes over your OctoPrint
    instance, installs malware on it and makes your printer print an endless stream of
    benchies, that's on you.
 

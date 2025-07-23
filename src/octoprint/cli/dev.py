@@ -614,7 +614,7 @@ setuptools.setup(license="{plugin_license}")
                 if os.path.isfile(os.path.join(path, "README.md")):
                     doc["project"]["readme"] = {
                         "file": "README.md",
-                        "content-type": "markdown",
+                        "content-type": "text/markdown",
                     }
 
                 if os.path.isfile(pyproject_toml):
