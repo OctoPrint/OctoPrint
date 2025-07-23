@@ -97,7 +97,19 @@ jobs:
           pip install -e .[develop]
       - name: 🚀 Run test suite
         run: |
-          pytest
+          pytest | tee report.txt
+
+          # generate summary
+          today=$(date +'%Y-%m-%d')
+          now=$(date +'%H:%M')
+
+          echo "# Test Report (Python ${{ matrix.python }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "*generated on $today at $now under Python ${{ matrix.python }}*"
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "```" >> $GITHUB_STEP_SUMMARY
+          cat report.txt >> $GITHUB_STEP_SUMMARY
+          echo "```"
 
   test-js-unit:
     name: 🧪 JavaScript unit tests
