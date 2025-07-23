@@ -100,16 +100,20 @@ jobs:
           pytest | tee report.txt
 
           # generate summary
+          python=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
           today=$(date +'%Y-%m-%d')
           now=$(date +'%H:%M')
+          report=$(cat report.txt)
 
-          echo "# Test Report (Python ${{ matrix.python }})" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "*generated on $today at $now under Python ${{ matrix.python }}*"
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "```" >> $GITHUB_STEP_SUMMARY
-          cat report.txt >> $GITHUB_STEP_SUMMARY
-          echo "```"
+          cat << EOF > summary.md
+          # Test Report (Python $python)
+
+          *generated on $today at $now under Python $python*
+
+          \`\`\`
+          $(cat report.txt)
+          \`\`\`
+          EOF
 
   test-js-unit:
     name: 🧪 JavaScript unit tests
