@@ -465,7 +465,7 @@ class MachineCom:
     STATE_CANCELLING = 15
 
     # be sure to add anything here that signifies an operational state
-    OPERATIONAL_STATES = (
+    OPERATIONAL_STATES = {
         STATE_PRINTING,
         STATE_STARTING,
         STATE_OPERATIONAL,
@@ -475,17 +475,17 @@ class MachineCom:
         STATE_RESUMING,
         STATE_FINISHING,
         STATE_TRANSFERING_FILE,
-    )
+    }
 
     # be sure to add anything here that signifies a printing state
-    PRINTING_STATES = (
+    PRINTING_STATES = {
         STATE_STARTING,
         STATE_PRINTING,
         STATE_CANCELLING,
         STATE_PAUSING,
         STATE_RESUMING,
         STATE_FINISHING,
-    )
+    }
 
     CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
     CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
@@ -1024,14 +1024,14 @@ class MachineCom:
         return self._errorValue
 
     def isClosedOrError(self):
-        return self._state in (
+        return self._state in {
             self.STATE_ERROR,
             self.STATE_CLOSED,
             self.STATE_CLOSED_WITH_ERROR,
-        )
+        }
 
     def isError(self):
-        return self._state in (self.STATE_ERROR, self.STATE_CLOSED_WITH_ERROR)
+        return self._state in {self.STATE_ERROR, self.STATE_CLOSED_WITH_ERROR}
 
     def isOperational(self):
         return self._state in self.OPERATIONAL_STATES
@@ -1076,7 +1076,7 @@ class MachineCom:
         return (
             self.isPrinting()
             or self.isPaused()
-            or self._state in (self.STATE_CANCELLING, self.STATE_PAUSING)
+            or self._state in {self.STATE_CANCELLING, self.STATE_PAUSING}
         )
 
     def isSdReady(self):
@@ -2308,7 +2308,7 @@ class MachineCom:
             self._changeState(self.STATE_DETECT_SERIAL)
             self._perform_detection_step(init=True)
 
-        if self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_SERIAL):
+        if self._state not in {self.STATE_CONNECTING, self.STATE_DETECT_SERIAL}:
             # we got cancelled during connection, bail
             return
 
@@ -2388,10 +2388,10 @@ class MachineCom:
                             callback=partial(busyIntervalSet, busy_interval),
                         )
 
-                    if self._state not in (
+                    if self._state not in {
                         self.STATE_CONNECTING,
                         self.STATE_DETECT_SERIAL,
-                    ):
+                    }:
                         continue
 
                 ##~~ debugging output handling
@@ -2519,10 +2519,10 @@ class MachineCom:
                                 )
                                 continue
 
-                    if self._state not in (
+                    if self._state not in {
                         self.STATE_CONNECTING,
                         self.STATE_DETECT_SERIAL,
-                    ):
+                    }:
                         continue
 
                 def convert_line(line):
@@ -2654,7 +2654,7 @@ class MachineCom:
                         or not self._dwelling_until
                         or now > self._dwelling_until
                     )
-                    and self._state not in (self.STATE_DETECT_SERIAL,)
+                    and self._state != self.STATE_DETECT_SERIAL
                 ):
                     # We have two timeout variants:
                     #
@@ -2675,10 +2675,10 @@ class MachineCom:
                     handled = self.isPrinting() and line == ""
 
                 # we don't have to process the rest if the line has already been handled fully
-                if handled and self._state not in (
+                if handled and self._state not in {
                     self.STATE_CONNECTING,
                     self.STATE_DETECT_SERIAL,
-                ):
+                }:
                     continue
 
                 # wait for the end of the firmware capability report (M115) then notify plugins and refresh sd list if deferred
@@ -3289,16 +3289,16 @@ class MachineCom:
                             self.close(wait=False)
 
                 ### Operational (idle or busy)
-                elif self._state in (
+                elif self._state in {
                     self.STATE_OPERATIONAL,
                     self.STATE_STARTING,
                     self.STATE_PRINTING,
                     self.STATE_PAUSED,
                     self.STATE_TRANSFERING_FILE,
-                ):
+                }:
                     if line == "start":  # exact match, to be on the safe side
                         with self.job_put_on_hold():
-                            idle = self._state in (self.STATE_OPERATIONAL,)
+                            idle = self._state == self.STATE_OPERATIONAL
                             if idle:
                                 message = (
                                     "Printer sent 'start' while already operational. External reset? "
@@ -3511,7 +3511,7 @@ class MachineCom:
             len(self._detection_candidates) > 0
             or self._detection_retry < self.DETECTION_RETRIES
         ):
-            if self._state not in (self.STATE_DETECT_SERIAL,):
+            if self._state != self.STATE_DETECT_SERIAL:
                 return
 
             if self._detection_retry < self.DETECTION_RETRIES:
@@ -3566,10 +3566,10 @@ class MachineCom:
     def _continue_sending(self):
         # Ensure we have at least one line in the send queue, but don't spam it
         while self._active and not self._send_queue.qsize():
-            job_active = self._state in (
+            job_active = self._state in {
                 self.STATE_STARTING,
                 self.STATE_PRINTING,
-            ) and not (
+            } and not (
                 self._currentFile is None or self._currentFile.done or self.isSdPrinting()
             )
 
@@ -3850,7 +3850,7 @@ class MachineCom:
 
     def _get_communication_timeout_interval(self):
         # special rules during serial detection
-        if self._state in (self.STATE_DETECT_SERIAL,):
+        if self._state != self.STATE_DETECT_SERIAL:
             if self._detection_retry == 0:
                 # first try
                 return self._timeout_intervals.get("detectionFirst", 10.0)
@@ -4149,7 +4149,7 @@ class MachineCom:
         trigger_m112 = (
             self._send_m112_on_error
             and not self.isSdPrinting()
-            and reason not in ("connection", "autodetect")
+            and reason not in {"connection", "autodetect"}
         )
 
         if close and trigger_m112:
@@ -4288,7 +4288,7 @@ class MachineCom:
         with self._jobLock:
             while self._active:
                 # we loop until we've actually enqueued a line for sending
-                if self._state not in (self.STATE_STARTING, self.STATE_PRINTING):
+                if self._state not in {self.STATE_STARTING, self.STATE_PRINTING}:
                     # we are no longer printing, return false
                     return False
 
@@ -4854,12 +4854,12 @@ class MachineCom:
             tags=tags,
         )
 
-        if (self.isStreaming() and self.isPrinting()) or phase not in (
+        if (self.isStreaming() and self.isPrinting()) or phase not in {
             "queuing",
             "queued",
             "sending",
             "sent",
-        ):
+        }:
             return results
 
         # send it through the phase specific handlers provided by plugins
@@ -4892,7 +4892,7 @@ class MachineCom:
                     )
 
                     # make sure we don't allow multi entry results in anything but the queuing phase
-                    if phase not in ("queuing",) and len(normalized) > 1:
+                    if phase != "queuing" and len(normalized) > 1:
                         self._logger.error(
                             "Error while processing hook {name} for phase {phase} and command {command}: "
                             "Hook returned multi-entry result for phase {phase} and command {command}. "
@@ -4972,10 +4972,10 @@ class MachineCom:
         return results
 
     def _process_atcommand_phase(self, phase, command, tags=None):
-        if (self.isStreaming() and self.isPrinting()) or phase not in (
+        if (self.isStreaming() and self.isPrinting()) or phase not in {
             "queuing",
             "sending",
-        ):
+        }:
             return
 
         split = command.split(None, 1)
@@ -6277,7 +6277,7 @@ def apply_temperature_offsets(line, offsets, current_tool=None):
         return line
 
     offset = 0
-    if current_tool is not None and groups["command"] in ("104", "109"):
+    if current_tool is not None and groups["command"] in {"104", "109"}:
         # extruder temperature, determine which one and retrieve corresponding offset
         tool_num = current_tool
         if "tool" in groups and groups["tool"] is not None:
@@ -6286,11 +6286,11 @@ def apply_temperature_offsets(line, offsets, current_tool=None):
         tool_key = "tool%d" % tool_num
         offset = offsets[tool_key] if tool_key in offsets and offsets[tool_key] else 0
 
-    elif groups["command"] in ("140", "190"):
+    elif groups["command"] in {"140", "190"}:
         # bed temperature
         offset = offsets["bed"] if "bed" in offsets else 0
 
-    elif groups["command"] in ("141", "191"):
+    elif groups["command"] in {"141", "191"}:
         # chamber temperature
         offset = offsets["chamber"] if "chamber" in offsets else 0
 
@@ -6676,7 +6676,7 @@ def parse_capability_line(line):
         return None
 
     capability, flag = parts
-    if flag not in ("0", "1"):
+    if flag not in {"0", "1"}:
         # wrong format, can't parse this
         return None
 
@@ -7056,23 +7056,20 @@ def upload_cli():
         def on_comm_state_change(self, state):
             self._state = state
 
-            if state in (MachineCom.STATE_ERROR, MachineCom.STATE_CLOSED_WITH_ERROR):
+            if state in {MachineCom.STATE_ERROR, MachineCom.STATE_CLOSED_WITH_ERROR}:
                 # report and exit on errors
                 _logger.error("Error/closed with error, exiting.")
                 self.error = True
                 self.finished.set()
 
-            elif state in (MachineCom.STATE_OPERATIONAL,) and not self.started:
+            elif state == MachineCom.STATE_OPERATIONAL and not self.started:
 
                 def run():
                     _logger.info(
                         "Looks like we are operational, waiting a bit for everything to settle"
                     )
                     time.sleep(15)
-                    if (
-                        self._state in (MachineCom.STATE_OPERATIONAL,)
-                        and not self.started
-                    ):
+                    if self._state == MachineCom.STATE_OPERATIONAL and not self.started:
                         # start transfer once we are operational
                         self.comm.startFileTransfer(
                             self._path, os.path.basename(self._path), self._target

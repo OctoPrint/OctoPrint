@@ -1079,13 +1079,15 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     ):
         old_state = self._state
 
-        if old_state in (ConnectedPrinterState.PRINTING,):
+        if old_state in {
+            ConnectedPrinterState.PRINTING,
+        }:
             # if we were still printing and went into an error state, mark the print as failed
-            if state in (
+            if state in {
                 ConnectedPrinterState.CLOSED,
                 ConnectedPrinterState.ERROR,
                 ConnectedPrinterState.CLOSED_WITH_ERROR,
-            ):
+            }:
                 with self._selected_job_mutex:
                     if self._selected_job is not None:
                         payload = self._payload_for_print_job_event()

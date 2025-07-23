@@ -31,11 +31,11 @@ class ConnectedPrinterState(enum.Enum):
     TRANSFERRING_FILE = gettext("Transferring file to printer")
 
 
-ERROR_STATES = (ConnectedPrinterState.ERROR, ConnectedPrinterState.CLOSED_WITH_ERROR)
+ERROR_STATES = {ConnectedPrinterState.ERROR, ConnectedPrinterState.CLOSED_WITH_ERROR}
 
-CLOSED_STATES = (ConnectedPrinterState.CLOSED, ConnectedPrinterState.CLOSED_WITH_ERROR)
+CLOSED_STATES = {ConnectedPrinterState.CLOSED, ConnectedPrinterState.CLOSED_WITH_ERROR}
 
-OPERATIONAL_STATES = (
+OPERATIONAL_STATES = {
     ConnectedPrinterState.OPERATIONAL,
     ConnectedPrinterState.STARTING,
     ConnectedPrinterState.PRINTING,
@@ -45,9 +45,9 @@ OPERATIONAL_STATES = (
     ConnectedPrinterState.CANCELLING,
     ConnectedPrinterState.FINISHING,
     ConnectedPrinterState.TRANSFERRING_FILE,
-)
+}
 
-PRINTING_STATES = (
+PRINTING_STATES = {
     ConnectedPrinterState.STARTING,
     ConnectedPrinterState.PRINTING,
     ConnectedPrinterState.PAUSING,
@@ -55,7 +55,7 @@ PRINTING_STATES = (
     ConnectedPrinterState.RESUMING,
     ConnectedPrinterState.CANCELLING,
     ConnectedPrinterState.FINISHING,
-)
+}
 
 
 class ConnectedPrinterListenerMixin:

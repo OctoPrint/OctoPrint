@@ -337,7 +337,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         if not valid_file_type(job.path, type="machinecode"):
             return False
 
-        if job.storage not in (FileDestinations.LOCAL, FileDestinations.PRINTER):
+        if job.storage not in {FileDestinations.LOCAL, FileDestinations.PRINTER}:
             return False
 
         if job.storage != FileDestinations.PRINTER and not os.path.isfile(
@@ -617,10 +617,10 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         if self._comm is not None:
             error_str = self._comm.getErrorString()
 
-        if state in (
+        if state in {
             ConnectedPrinterState.CLOSED,
             ConnectedPrinterState.CLOSED_WITH_ERROR,
-        ):
+        }:
             if self._comm is not None:
                 self._comm = None
 
