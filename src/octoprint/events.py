@@ -41,6 +41,7 @@ class Events:
     # State changes
     PRINTER_STATE_CHANGED = "PrinterStateChanged"
     PRINTER_RESET = "PrinterReset"
+    PRINTER_CONTROLS_CHANGED = "PrinterControlsChanged"
 
     # connect/disconnect by client
     CLIENT_OPENED = "ClientOpened"

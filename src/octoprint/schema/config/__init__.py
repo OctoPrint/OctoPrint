@@ -9,7 +9,7 @@ from octoprint.vendor.with_attrs_docs import with_attrs_docs
 from .access_control import AccessControlConfig
 from .api import ApiConfig
 from .appearance import AppearanceConfig
-from .controls import ContainerConfig, ControlConfig
+from .controls import CustomControl, CustomControlContainer
 from .devel import DevelConfig
 from .estimation import EstimationConfig
 from .events import EventsConfig
@@ -34,7 +34,7 @@ class Config(BaseModel):
     accessControl: AccessControlConfig = AccessControlConfig()
     api: ApiConfig = ApiConfig()
     appearance: AppearanceConfig = AppearanceConfig()
-    controls: list[Union[ControlConfig, ContainerConfig]] = []
+    controls: list[Union[CustomControl, CustomControlContainer]] = []
     devel: DevelConfig = DevelConfig()
     estimation: EstimationConfig = EstimationConfig()
     events: EventsConfig = EventsConfig()

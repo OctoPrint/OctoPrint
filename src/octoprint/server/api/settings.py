@@ -12,7 +12,7 @@ from flask_login import current_user
 import octoprint.plugin
 import octoprint.util
 from octoprint.access.permissions import Permissions
-from octoprint.schema.config.controls import ContainerConfig, ControlConfig
+from octoprint.schema.config.controls import CustomControl, CustomControlContainer
 from octoprint.server import pluginManager, userManager
 from octoprint.server.api import NO_CONTENT, api
 from octoprint.server.util.flask import (
@@ -763,9 +763,9 @@ def _saveSettings(data):
 
             try:
                 if "children" in control:
-                    return ContainerConfig(**control)
+                    return CustomControlContainer(**control)
                 else:
-                    return ControlConfig(**control)
+                    return CustomControl(**control)
             except Exception:
                 logger.exception("Error validating custom control")
 

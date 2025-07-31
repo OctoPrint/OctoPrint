@@ -10,7 +10,11 @@ from octoprint.access.permissions import Permissions
 from octoprint.printer import UnknownScript
 from octoprint.server import NO_CONTENT, printer, printerProfileManager
 from octoprint.server.api import api
-from octoprint.server.util.flask import get_json_command_from_request, no_firstrun_access
+from octoprint.server.util.flask import (
+    api_version_matches,
+    get_json_command_from_request,
+    no_firstrun_access,
+)
 from octoprint.settings import settings, valid_boolean_trues
 
 # ~~ Printer
@@ -424,7 +428,10 @@ def printerCommand():
         for command in commands:
             commandToSend = command
             if len(parameters) > 0:
-                commandToSend = command % parameters
+                if api_version_matches(">=1.12.0"):
+                    commandToSend = command.format(**parameters)
+                else:
+                    commandToSend = command % parameters
             commandsToSend.append(commandToSend)
 
         printer.commands(commandsToSend, tags=tags)
@@ -447,8 +454,8 @@ def printerCommand():
 @no_firstrun_access
 @Permissions.CONTROL.require(403)
 def getCustomControls():
-    customControls = settings().get(["controls"])
-    return jsonify(controls=customControls)
+    controls = printer.get_additional_controls()
+    return jsonify(controls=[control.model_dump() for control in controls])
 
 
 def _get_temperature_data(preprocessor):

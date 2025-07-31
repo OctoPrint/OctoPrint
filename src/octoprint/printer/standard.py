@@ -11,7 +11,7 @@ import logging
 import os
 import threading
 import time
-from typing import cast
+from typing import Any, Optional, Union, cast
 
 from frozendict import frozendict
 
@@ -38,6 +38,7 @@ from octoprint.printer.connection import (
 )
 from octoprint.printer.estimation import PrintTimeEstimator
 from octoprint.printer.job import DurationEstimate, PrintJob, UploadJob
+from octoprint.schema.config.controls import CustomControl, CustomControlContainer
 from octoprint.settings import settings
 from octoprint.util import InvariantContainer
 from octoprint.util import comm as comm
@@ -132,6 +133,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             "octoprint.printer.additional_state_data"
         )
         self._blacklisted_data_hooks = []
+
+        self._additional_control_hooks = plugin_manager().get_hooks(
+            "octoprint.printer.additional_custom_controls"
+        )
 
         self._stateMonitor = StateMonitor(
             interval=0.5,
@@ -466,6 +471,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         else:
             eventManager().fire(Events.DISCONNECTED)
 
+    @property
+    def current_connection(self) -> Optional[ConnectedPrinter]:
+        return self._connection
+
     def emergency_stop(self, *args, **kwargs):
         if self._connection is None:
             return
@@ -533,6 +542,36 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             part_of_job=part_of_job,
             tags=tags,
         )
+
+    def get_additional_controls(
+        self,
+    ) -> list[Union[CustomControl, CustomControlContainer]]:
+        controls = []
+
+        if self._connection is not None:
+            controls += self._connection.get_additional_controls()
+
+        controls_from_config = settings().get(["controls"])
+        if isinstance(controls_from_config, list):
+            for data in controls_from_config:
+                try:
+                    control = CustomControl(**data)
+                    controls.append(control)
+                except Exception:
+                    self._logger.exception("Skipping invalid custom control")
+
+        for name, hook in self._additional_control_hooks.items():
+            try:
+                additional = hook()
+                if isinstance(additional, list):
+                    controls += additional
+            except Exception:
+                self._logger.error(
+                    f"Error while retrieving additional custom controls from {name}, ignoring",
+                    {"plugin": name},
+                )
+
+        return controls
 
     def jog(self, axes, relative=True, speed=None, tags=None, *args, **kwargs):
         if self._connection is None:
@@ -1424,6 +1463,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def on_printer_temperature_update(self, temperatures):
         self._add_temperature_data(temperatures)
+
+    def on_printer_controls_updated(self, controls: list[dict[str, Any]]):
+        eventManager().fire(Events.PRINTER_CONTROLS_CHANGED)
 
     def on_printer_logs(self, *lines):
         self.log_lines(*lines)

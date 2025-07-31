@@ -27,7 +27,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import re
-from typing import IO, Optional, Union
+from typing import IO, TYPE_CHECKING, Optional, Union
 
 from pydantic import computed_field
 
@@ -35,8 +35,12 @@ from octoprint.filemanager.destinations import FileDestinations
 from octoprint.filemanager.storage import MetadataEntry, StorageCapabilities
 from octoprint.printer.job import JobProgress, PrintJob
 from octoprint.schema import BaseModel
+from octoprint.schema.config.controls import CustomControl, CustomControlContainer
 from octoprint.settings import settings
 from octoprint.util import deprecated, natural_key
+
+if TYPE_CHECKING:
+    from .connection import ConnectedPrinter
 
 
 class CommunicationHealth(BaseModel):
@@ -221,6 +225,11 @@ class CommonPrinterMixin:
         Raises:
             UnknownScriptException: There is no script with name ``name``
         """
+
+    def get_additional_controls(
+        self,
+    ) -> list[Union[CustomControl, CustomControlContainer]]:
+        return []
 
     def jog(self, axes, relative=True, speed=None, tags=None, *args, **kwargs):
         """
@@ -503,7 +512,7 @@ class CommonPrinterMixin:
 
 
 class ConnectedPrinterMixin(CommonPrinterMixin):
-    can_set_job_on_hold = True
+    supports_job_on_hold = True
     supports_temperature_offsets = True
 
     def supports_job(self, job: PrintJob) -> bool:
@@ -528,11 +537,11 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
         raise NotImplementedError()
 
     def job_on_hold(self, blocking=True, *args, **kwargs):
-        if self.can_set_job_on_hold:
+        if self.supports_job_on_hold:
             raise NotImplementedError()
 
     def set_job_on_hold(self, value, blocking=True, *args, **kwargs):
-        if self.can_set_job_on_hold:
+        if self.supports_job_on_hold:
             raise NotImplementedError()
 
 
@@ -624,18 +633,31 @@ class PrinterFilesMixin:
 
 
 class PrinterMixin(CommonPrinterMixin):
-    def connect(self, connector=None, parameters=None, profile=None, *args, **kwargs):
+    def connect(
+        self,
+        connector: str = None,
+        parameters: dict = None,
+        profile: str = None,
+        *args,
+        **kwargs,
+    ):
         """
         Connects to the printer, using the specified serial ``port``, ``baudrate`` and printer ``profile``. If a
         connection is already established, that connection will be closed prior to connecting anew with the provided
         parameters.
 
         Arguments:
-            port (str): Name of the serial port to connect to. If not provided, an auto detection will be attempted.
-            baudrate (int): Baudrate to connect with. If not provided, an auto detection will be attempted.
+            connector (str): Name of the connector to use
+            parameters (dict): Connection parameters to use against the connector
             profile (str): Name of the printer profile to use for this connection. If not provided, the default
                 will be retrieved from the :class:`PrinterProfileManager`.
         """
+
+    @property
+    def current_connection(
+        self,
+    ) -> Optional["ConnectedPrinter"]:
+        return None
 
     def set_job(
         self, job: PrintJob, print_after_select=False, pos=None, tags=None, user=None

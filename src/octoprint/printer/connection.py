@@ -84,6 +84,9 @@ class ConnectedPrinterListenerMixin:
     def on_printer_temperature_update(self, temperatures):
         pass
 
+    def on_printer_controls_updated(self, controls: list[dict[str, Any]]):
+        pass
+
     def on_printer_logs(self, *lines: str):
         pass
 

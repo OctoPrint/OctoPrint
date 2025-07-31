@@ -14,7 +14,7 @@ class LayoutEnum(str, Enum):
     horizontal_grid = "horizontal_grid"
 
 
-class ControlSliderInputConfig(BaseModel):
+class CustomControlSlider(BaseModel):
     min: int = 0
     """Minimum value of the slider."""
 
@@ -25,7 +25,7 @@ class ControlSliderInputConfig(BaseModel):
     """Step size per slider tick."""
 
 
-class ControlInputConfig(BaseModel):
+class CustomControlInput(BaseModel):
     name: str
     """Name to display for the input field."""
 
@@ -35,13 +35,13 @@ class ControlInputConfig(BaseModel):
     default: Union[str, int, float, bool]
     """Default value for the input field."""
 
-    slider: Optional[ControlSliderInputConfig] = None
+    slider: Optional[CustomControlSlider] = None
     """If this attribute is included, instead of an input field a slider control will be rendered."""
 
 
 @with_attrs_docs
-class ContainerConfig(BaseModel):
-    children: "list[Union[ContainerConfig, ControlConfig]]" = []
+class CustomControlContainer(BaseModel):
+    children: list[Union["CustomControlContainer", "CustomControl"]] = []
     """A list of children controls or containers contained within this container."""
 
     name: Optional[str] = None
@@ -50,11 +50,17 @@ class ContainerConfig(BaseModel):
     layout: LayoutEnum = LayoutEnum.vertical
     """The layout to use for laying out the contained children, either from top to bottom (`vertical`) or from left to right (`horizontal`)."""
 
+    collapsed: bool = False
+    """Whether the container should start out collapsed by default."""
+
 
 @with_attrs_docs
-class ControlConfig(BaseModel):
+class CustomControl(BaseModel):
     name: str
     """The name of the control, will be displayed either on the button if it's a control sending a command or as a label for controls which only display output."""
+
+    description: str = ""
+    """An optional description of the control, will be displayed as the tooltip on the button or label for controls which only display output."""
 
     command: Optional[str] = None
     """A single GCODE command to send to the printer. Will be rendered as a button which sends the command to the printer upon click. The button text will be the value of the `name` attribute. Mutually exclusive with `commands` and `script`. The rendered button be disabled if the printer is currently offline or printing or alternatively if the requirements defined via the `enabled` attribute are not met."""
@@ -74,11 +80,11 @@ class ControlConfig(BaseModel):
     enabled: Optional[str] = None
     """A JavaScript snippet returning either `true` or `false` determining whether the control should be enabled or not. This allows to override the default logic for the enable state of the control (disabled if printer is offline). The JavaScript snippet is `eval`'d and processed in a context where the control it is part of is provided as local variable `data` and the `ControlViewModel` is available as `self`."""
 
-    input: Optional[list[ControlInputConfig]] = []
+    input: Optional[list[CustomControlInput]] = []
     """A list of definitions of input parameters for a `command` or `commands`, to be rendered as additional input fields. `command`/`commands` may contain placeholders to be replaced by the values obtained from the user for the defined input fields."""
 
     regex: Optional[str] = None
-    """A [regular expression <re-syntax>](https://docs.python.org/3/library/re.html#regular-expression-syntax) to match against lines received from the printer to retrieve information from it (e.g. specific output). Together with `template` this allows rendition of received data from the printer within the UI."""
+    """A [regular expression](https://docs.python.org/3/library/re.html#regular-expression-syntax) to match against lines received from the printer to retrieve information from it (e.g. specific output). Together with `template` this allows rendition of received data from the printer within the UI."""
 
     template: Optional[str] = None
     r"""A template to use for rendering the match of `regex`. May contain placeholders in [Python Format String Syntax](https://docs.python.org/3/library/string.html#formatstrings) for either named groups within the regex (e.g. `Temperature: {temperature}` for a regex `T:\s*(?P<temperature>\d+(\.\d*)`) or positional groups within the regex (e.g. `Position: X={0}, Y={1}, Z={2}, E={3}` for a regex `X:([0-9.]+) Y:([0-9.]+) Z:([0-9.]+) E:([0-9.]+)`)."""
