@@ -124,7 +124,7 @@ jobs:
     runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist
@@ -169,7 +169,7 @@ jobs:
         python: ["3.7", "3.12", "3.13"]
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist
@@ -211,7 +211,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist
@@ -244,7 +244,7 @@ jobs:
       id-token: write
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist
@@ -270,7 +270,7 @@ jobs:
       id-token: write
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist
