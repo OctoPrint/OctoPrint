@@ -242,7 +242,7 @@ class HierarchicalChainMap:
                 # go down a level
                 current = current[subkey]
 
-            current[subkeys[-1]] = value
+            current[subkeys[-1]] = fast_deepcopy(value)
 
         return result
 
