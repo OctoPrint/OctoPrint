@@ -7,6 +7,7 @@ import datetime
 import logging
 import queue
 import re
+import shlex
 import subprocess
 import threading
 
@@ -325,11 +326,11 @@ class CommandTrigger(GenericEventListener):
     def __init__(self, printer):
         GenericEventListener.__init__(self)
         self._printer = printer
-        self._subscriptions = {}
+        self._subscriptions = collections.defaultdict(list)
 
-        self._initSubscriptions()
+        self._init_subscriptions()
 
-    def _initSubscriptions(self):
+    def _init_subscriptions(self):
         """
         Subscribes all events as defined in "events > $triggerType > subscriptions" in the settings with their
         respective commands.
@@ -351,11 +352,15 @@ class CommandTrigger(GenericEventListener):
                 )
                 continue
 
+            events = subscription.pop("event", None)
+            commands = subscription.pop("command", None)
+            command_type = subscription.pop("type", None)
+
             if (
-                "event" not in subscription
-                or "command" not in subscription
-                or "type" not in subscription
-                or subscription["type"] not in ["system", "gcode"]
+                events is None
+                or commands is None
+                or command_type is None
+                or command_type not in ("system", "gcode")
             ):
                 self._logger.info(
                     "Invalid command trigger, missing either event, type or command or type is invalid: {!r}".format(
@@ -364,25 +369,33 @@ class CommandTrigger(GenericEventListener):
                 )
                 continue
 
-            if "enabled" in subscription and not subscription["enabled"]:
+            enabled = subscription.pop("enabled", True)
+            if not enabled:
                 self._logger.info(f"Disabled command trigger: {subscription!r}")
                 continue
 
-            events = subscription["event"]
-            command = subscription["command"]
-            commandType = subscription["type"]
-            debug = subscription["debug"] if "debug" in subscription else False
+            if not isinstance(commands, (list, tuple)):
+                commands = [commands]
+
+            if command_type == "gcode":
+                clz = GcodeEventSubscription
+            elif command_type == "system":
+                clz = SystemEventSubscription
+            else:
+                # shouldn't happen
+                self._logger.warning(f"Unknown command type: {command_type}")
+                continue
+
+            sub = clz(self._printer, *commands, **subscription)
 
             # "event" in the configuration can be a string, or
             # a list of strings.  If it's the former, convert it
             # into the latter.
-            if not isinstance(events, (tuple, list, set)):
+            if not isinstance(events, (tuple, list)):
                 events = [events]
 
             for event in events:
-                if event not in self._subscriptions:
-                    self._subscriptions[event] = []
-                self._subscriptions[event].append((command, commandType, debug))
+                self._subscriptions[event].append(sub)
 
                 if event not in eventsToSubscribe:
                     eventsToSubscribe.append(event)
@@ -400,47 +413,146 @@ class CommandTrigger(GenericEventListener):
         if event not in self._subscriptions:
             return
 
-        for command, commandType, debug in self._subscriptions[event]:
+        for sub in self._subscriptions[event]:
             try:
-                if isinstance(command, (tuple, list, set)):
-                    processedCommand = []
-                    for c in command:
-                        processedCommand.append(self._processCommand(c, event, payload))
-                else:
-                    processedCommand = self._processCommand(command, event, payload)
-                self.executeCommand(processedCommand, commandType, debug=debug)
+                sub.handle(event, payload)
             except KeyError:
                 self._logger.warning(
-                    "There was an error processing one or more placeholders in the following command: %s"
-                    % command
+                    f"There was an error processing one or more placeholders in the following subscription: {sub}"
                 )
 
-    def executeCommand(self, command, commandType, debug=False):
-        if commandType == "system":
-            self._executeSystemCommand(command, debug=debug)
-        elif commandType == "gcode":
-            self._executeGcodeCommand(command, debug=debug)
 
-    def _executeSystemCommand(self, command, debug=False):
-        def commandExecutioner(cmd):
-            if debug:
-                self._logger.info(f"Executing system command: {cmd}")
-            else:
-                self._logger.info("Executing a system command")
-            # we run this with shell=True since we have to trust whatever
-            # our admin configured as command and since we want to allow
-            # shell-alike handling here...
-            subprocess.check_call(cmd, shell=True)
+class EventSubscription:
+    def __init__(self, printer, *commands, debug: bool = False, **kwargs):
+        self.printer = printer
+        self.commands = commands
+        self.debug = debug
 
+        self._logger = logging.getLogger(__name__)
+
+    def handle(self, event: str, payload: dict):
+        params = self._generated_params(event, payload)
+        prepared = self._prepare_commands(params)
+        self._execute(event, prepared)
+
+    def _prepare_commands(self, params: dict):
+        escaped = self._escape_params(params)
+        return [command.format(**escaped) for command in self.commands]
+
+    def _escape_params(self, params: dict) -> dict:
+        return params
+
+    def _execute(self, event: str, commands: str):
+        pass
+
+    def _generated_params(self, event: str, payload: dict) -> dict:
+        """
+        Generates the params for the placeholders in the set commands.
+
+        The following substitutions are currently supported:
+
+          - {__currentZ} : current Z position of the print head, or -1 if not available
+          - {__eventname} : the name of the event hook being triggered
+          - {__filename} : name of currently selected file, or "NO FILE" if no file is selected
+          - {__filepath} : path in origin location of currently selected file, or "NO FILE" if no file is selected
+          - {__fileorigin} : origin of currently selected file, or "NO FILE" if no file is selected
+          - {__progress} : current print progress in percent, 0 if no print is in progress
+          - {__data} : the string representation of the event's payload
+          - {__json} : the json representation of the event's payload, "{}" if there is no payload, "" if there was an error on serialization
+          - {__now} : ISO 8601 representation of the current date and time
+
+        Additionally, the keys of the event's payload can also be used as placeholder.
+        """
+        json_string = "{}"
+        if payload:
+            import json
+
+            try:
+                json_string = json.dumps(payload)
+            except Exception:
+                self._logger.exception(f"JSON: Cannot dump {payload!r}", payload)
+                json_string = ""
+
+        params = {
+            "__currentZ": "-1",
+            "__eventname": event,
+            "__filename": "NO FILE",
+            "__filepath": "NO PATH",
+            "__progress": "0",
+            "__data": str(payload),
+            "__json": json_string,
+            "__now": datetime.datetime.now().isoformat(),
+        }
+
+        current_data = self.printer.get_current_data()
+
+        if "currentZ" in current_data and current_data["currentZ"] is not None:
+            params["__currentZ"] = str(current_data["currentZ"])
+
+        if (
+            "job" in current_data
+            and "file" in current_data["job"]
+            and "name" in current_data["job"]["file"]
+            and current_data["job"]["file"]["name"] is not None
+        ):
+            params["__filename"] = current_data["job"]["file"]["name"]
+            params["__filepath"] = current_data["job"]["file"]["path"]
+            params["__fileorigin"] = current_data["job"]["file"]["origin"]
+            if (
+                "progress" in current_data
+                and current_data["progress"] is not None
+                and "completion" in current_data["progress"]
+                and current_data["progress"]["completion"] is not None
+            ):
+                params["__progress"] = str(round(current_data["progress"]["completion"]))
+
+        # now add the payload keys as well
+        if isinstance(payload, dict):
+            params.update(payload)
+
+        return {k: str(v) for k, v in params.items()}
+
+
+class GcodeEventSubscription(EventSubscription):
+    def _execute(self, event, commands):
+        if self.debug:
+            self._logger.info(
+                f"Received event {event}, executing GCode commands: {commands}"
+            )
+        self.printer.commands(commands)
+
+
+class SystemEventSubscription(EventSubscription):
+    def __init__(self, printer, *commands: str, **kwargs):
+        super().__init__(printer, *commands, **kwargs)
+
+        if "shell" not in kwargs:
+            self._logger.warning(
+                "Deprecation warning: You have a system command event subscription that doesn't define the 'shell' argument. For now this will continue to mean that 'shell' will be set to 'True' on the resulting command call. As that is a potential security issue, OctoPrint 1.13.0 will change this behaviour and default to 'shell=False'. If you don't want this, you have to add 'shell: true' to your event subscription."
+            )
+        self.shell = kwargs.get("shell", True)
+        self.cwd = kwargs.get("cwd", None)
+
+    def _escape_params(self, params):
+        if self.shell:
+            return {key: shlex.quote(str(value)) for key, value in params.items()}
+        return params
+
+    def _execute(self, event, commands):
         def process():
             try:
-                if isinstance(command, (list, tuple, set)):
-                    for c in command:
-                        commandExecutioner(c)
-                else:
-                    commandExecutioner(command)
+                for cmd in commands:
+                    if self.debug:
+                        self._logger.info(
+                            f"Received event {event}, executing system command: {cmd}"
+                        )
+                    else:
+                        self._logger.info(
+                            f"Received event {event}, executing a system command"
+                        )
+                    subprocess.check_call(cmd, shell=self.shell, cwd=self.cwd)
             except subprocess.CalledProcessError as e:
-                if debug:
+                if self.debug:
                     self._logger.warning(
                         "Command failed with return code {}: {}".format(
                             e.returncode, str(e)
@@ -458,79 +570,3 @@ class CommandTrigger(GenericEventListener):
         t = threading.Thread(target=process)
         t.daemon = True
         t.start()
-
-    def _executeGcodeCommand(self, command, debug=False):
-        commands = [command]
-        if isinstance(command, (list, tuple, set)):
-            commands = list(command)
-        if debug:
-            self._logger.info("Executing GCode commands: %r" % command)
-        self._printer.commands(commands)
-
-    def _processCommand(self, command, event, payload):
-        """
-        Performs string substitutions in the command string based on a few current parameters.
-
-        The following substitutions are currently supported:
-
-          - {__currentZ} : current Z position of the print head, or -1 if not available
-          - {__eventname} : the name of the event hook being triggered
-          - {__filename} : name of currently selected file, or "NO FILE" if no file is selected
-          - {__filepath} : path in origin location of currently selected file, or "NO FILE" if no file is selected
-          - {__fileorigin} : origin of currently selected file, or "NO FILE" if no file is selected
-          - {__progress} : current print progress in percent, 0 if no print is in progress
-          - {__data} : the string representation of the event's payload
-          - {__json} : the json representation of the event's payload, "{}" if there is no payload, "" if there was an error on serialization
-          - {__now} : ISO 8601 representation of the current date and time
-
-        Additionally, the keys of the event's payload can also be used as placeholder.
-        """
-
-        json_string = "{}"
-        if payload:
-            import json
-
-            try:
-                json_string = json.dumps(payload)
-            except Exception:
-                self._logger.exception("JSON: Cannot dump %r", payload)
-                json_string = ""
-
-        params = {
-            "__currentZ": "-1",
-            "__eventname": event,
-            "__filename": "NO FILE",
-            "__filepath": "NO PATH",
-            "__progress": "0",
-            "__data": str(payload),
-            "__json": json_string,
-            "__now": datetime.datetime.now().isoformat(),
-        }
-
-        currentData = self._printer.get_current_data()
-
-        if "currentZ" in currentData and currentData["currentZ"] is not None:
-            params["__currentZ"] = str(currentData["currentZ"])
-
-        if (
-            "job" in currentData
-            and "file" in currentData["job"]
-            and "name" in currentData["job"]["file"]
-            and currentData["job"]["file"]["name"] is not None
-        ):
-            params["__filename"] = currentData["job"]["file"]["name"]
-            params["__filepath"] = currentData["job"]["file"]["path"]
-            params["__fileorigin"] = currentData["job"]["file"]["origin"]
-            if (
-                "progress" in currentData
-                and currentData["progress"] is not None
-                and "completion" in currentData["progress"]
-                and currentData["progress"]["completion"] is not None
-            ):
-                params["__progress"] = str(round(currentData["progress"]["completion"]))
-
-        # now add the payload keys as well
-        if isinstance(payload, dict):
-            params.update(payload)
-
-        return command.format(**params)
