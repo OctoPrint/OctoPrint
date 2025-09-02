@@ -17,9 +17,10 @@ $(function () {
                     event: ko.observable(""),
                     command: ko.observable(""),
                     name: ko.observable(""),
-                    type: ko.observable(""),
+                    type: ko.observable("system"),
                     enabled: ko.observable(true),
-                    debug: ko.observable(false)
+                    debug: ko.observable(false),
+                    shell: ko.observable(false)
                 };
             } else {
                 if (!data.hasOwnProperty("enabled")) {
@@ -27,6 +28,9 @@ $(function () {
                 }
                 if (!data.hasOwnProperty("debug")) {
                     data["debug"] = ko.observable(false);
+                }
+                if (!data.hasOwnProperty("shell")) {
+                    data["shell"] = ko.observable(true);
                 }
                 return data;
             }
