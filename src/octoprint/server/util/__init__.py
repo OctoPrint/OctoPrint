@@ -191,7 +191,10 @@ def get_user_for_apikey(apikey: str) -> "Optional[octoprint.access.users.User]":
     user = None
 
     if apikey == settings().get(["api", "key"]):
-        # master key was used
+        # global api key was used
+        logging.getLogger(__name__).warning(
+            "The global API key was just used. The global API key is deprecated and will cease to function with OctoPrint 1.13.0."
+        )
         user = octoprint.server.userManager.api_user_factory()
 
     else:
