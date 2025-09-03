@@ -3,7 +3,7 @@ name: Test install of branches and latest release twice per day
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
   schedule:
     - cron: "0 */12 * * *"
@@ -15,7 +15,7 @@ jobs:
       matrix:
         os: ["ubuntu-22.04"] # change back to ubuntu-latest once we drop Python 3.7
         python: ["3.7", "3.8", "3.9", "3.10", "3.11"]
-        branch: ["master", "release"]
+        branch: ["main", "release"]
     runs-on: ${{ matrix.os }}
     steps:
       - name: ⬇ Checkout code

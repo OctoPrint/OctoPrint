@@ -143,7 +143,7 @@ as a simple python file following the naming convention ``<plugin identifier>.py
 that can be done in one file. Distributing multiple files and getting your users to install them in the right way
 so that OctoPrint will be able to actually find and load them is certainly not impossible, but we want to do it in the
 best way possible, meaning we want to make our plugin a fully installable Python module that your users will be able to
-install directly via `OctoPrint's built-in Plugin Manager <https://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html>`_
+install directly via `OctoPrint's built-in Plugin Manager <https://docs.octoprint.org/en/main/bundledplugins/pluginmanager.html>`_
 or alternatively manually utilizing Python's standard package manager ``pip`` directly.
 
 So let's begin. We'll use the `cookiecutter <https://github.com/audreyr/cookiecutter>`_ template for OctoPrint plugins

@@ -2,9 +2,14 @@ approve_label: "approved"
 problem_label: "needs some work"
 ignore_label: "skip validation"
 
-allowed_targets: ["maintenance", "staging/bugfix", "staging/maintenance"]
-forbidden_sources:
-  [
+allowed_targets: ["dev", "bugfix", "next"]
+forbidden_sources: [
+    # new branching strategy
+    "main",
+    "bugfix",
+    "next",
+    "dev",
+    # old branching strategy
     "master",
     "maintenance",
     "devel",
@@ -15,11 +20,11 @@ forbidden_sources:
 
 labels:
   docs:
-    additional_allowed_targets: ["master"]
+    additional_allowed_targets: ["main"]
   meta:
-    additional_allowed_targets: ["master"]
+    additional_allowed_targets: ["main"]
   ci/cd:
-    additional_allowed_targets: ["master"]
+    additional_allowed_targets: ["main"]
 
 check_can_modify: true
 create_review: true
