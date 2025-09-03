@@ -8,6 +8,9 @@ on:
 jobs:
   nightly-merge:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      workflows: write
     steps:
       - name: ⬇ Checkout
         uses: actions/checkout@v5
