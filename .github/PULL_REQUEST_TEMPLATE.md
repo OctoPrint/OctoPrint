@@ -17,10 +17,10 @@ checklist:
   made sure your changes don't interfere with current development by
   talking it through with the maintainers, e.g. through a
   Brainstorming ticket
-- [ ] Your PR targets OctoPrint's `maintenance` branch
+- [ ] Your PR targets OctoPrint's `dev` branch
 - [ ] Your PR was opened from a custom branch on your repository
-  (no PRs from your version of `master`, `maintenance`, or `devel`
-  please), e.g. `dev/my_new_feature` or `fix/my_bugfix`
+  (no PRs from your version of `main`, `bugfix`, `next` or `dev`
+  please), e.g. `wip/my_new_feature` or `wip/my_bugfix`
 - [ ] Your PR only contains relevant changes: no unrelated files,
   no dead code, ideally only one commit - rebase and squash your PR
   if necessary!

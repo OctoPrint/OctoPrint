@@ -51,29 +51,20 @@ BRANCH_VERSIONS = """
 #
 # The data is processed from top to bottom, the first matching line wins.
 
-# maintenance is currently the branch for preparation of maintenance release 1.12.0
-# so are any fix/... and improve/... branches
-maintenance 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
-fix/.* 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
-improve/.* 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
-
-# staging/bugfix is the branch for preparation of the 1.11.x bugfix releases
+# bugfix is the branch for preparation of the 1.11.x bugfix releases
 # so are any bug/... branches
-staging/bugfix 1.11.3 96e48c5662274a1941486d3e0853141661fc0455
+bugfix 1.11.3 96e48c5662274a1941486d3e0853141661fc0455
 bug/.* 1.11.3 96e48c5662274a1941486d3e0853141661fc0455
 
-# staging/maintenance is currently the branch for preparation of 1.11.0rc8
-# so is regressionfix/...
-staging/maintenance 1.11.0rc8 82247d9679259c50a6552eb4cedbe16e9c4f8476
-regressionfix/.* 1.11.0rc8 82247d9679259c50a6552eb4cedbe16e9c4f8476
+# next is currently the branch for preparation of 1.11.0rc8
+# so is regression/...
+next 1.11.0rc8 82247d9679259c50a6552eb4cedbe16e9c4f8476
+regression/.* 1.11.0rc8 82247d9679259c50a6552eb4cedbe16e9c4f8476
 
-# staging/devel is currently inactive (but has the 1.4.1rc4 namespace)
-staging/devel 1.4.1rc4 650d54d1885409fa1d411eb54b9e8c7ff428910f
-
-# devel and dev/* are development branches and thus get resolved to 2.0.0.dev for now
-devel 2.0.0 2da7aa358d950b4567aaab8f18d6b5779193e077
-dev/* 2.0.0 2da7aa358d950b4567aaab8f18d6b5779193e077
-feature/* 2.0.0 2da7aa358d950b4567aaab8f18d6b5779193e077
+# dev is ongoing work towards 1.12.0
+# so is wip/...
+dev 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
+wip/.* 1.12.0 ad3fdb9cb641b52db8e7f479d388c10317597c76
 """
 
 # ---------------------------------------------------------------------------------------

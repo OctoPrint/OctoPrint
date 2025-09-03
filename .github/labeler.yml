@@ -34,6 +34,22 @@ tests:
   - changed-files:
       - any-glob-to-any-file: tests/**
 
+# new branching strategy
+
+"targets dev":
+  - base-branch: dev
+
+"targets main":
+  - base-branch: main
+
+"targets bugfix":
+  - base-branch: bugfix
+
+"targets next":
+  - base-branch: next
+
+# old branching strategy
+
 "targets maintenance":
   - base-branch: maintenance
 

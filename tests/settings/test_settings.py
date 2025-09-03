@@ -23,7 +23,7 @@ import pytest
 import yaml
 
 import octoprint.settings
-from octoprint.util import dict_merge
+from octoprint.util import dict_merge, fast_deepcopy
 
 base_path = os.path.join(os.path.dirname(__file__), "_files")
 
@@ -983,12 +983,17 @@ class ChainmapTest(unittest.TestCase):
             {_key("a"): "", _key("a", "b"): "b"},
             {"a": {"b": "b"}},
         ),
+        ({_key("a"): {}, _key("a", "b"): "b"}, {"a": {"b": "b"}}),  # see issue #5177
     )
     @ddt.unpack
     def test_unflatten(self, value, expected):
+        original = fast_deepcopy(value)
+        actual = octoprint.settings.HierarchicalChainMap._unflatten(value)
+
+        self.assertEqual(expected, actual)
         self.assertEqual(
-            expected, octoprint.settings.HierarchicalChainMap._unflatten(value)
-        )
+            original, value
+        )  # ensure unflattening doesn't have side effects on the input, see #5177
 
     def test_prefix_caching_has_populates(self):
         # this should populate the prefix cache

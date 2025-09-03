@@ -112,7 +112,7 @@ jobs:
   test-install:
     name: 🧪 Installation tests
     needs: build
-    if: github.event_name != 'push' || github.ref != 'refs/heads/master'
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     strategy:
       fail-fast: false
       matrix:

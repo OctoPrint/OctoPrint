@@ -60,7 +60,7 @@ the general type of script for which to look for additions ("gcode") and the scr
 return a 2-tuple of prefix and postfix if has something for either of those, otherwise ``None``. OctoPrint will then take
 care to add prefix and suffix as necessary after a small round of preprocessing.
 
-Plugins can easily add their own hooks too. For example, the `Software Update Plugin <https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html>`_
+Plugins can easily add their own hooks too. For example, the `Software Update Plugin <https://docs.octoprint.org/en/main/bundledplugins/softwareupdate.html>`_
 declares a custom hook "octoprint.plugin.softwareupdate.check_config" which other plugins can add handlers for in order
 to register themselves with the Software Update Plugin by returning their own update check configuration.
 
