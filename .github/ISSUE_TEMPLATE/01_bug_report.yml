@@ -22,7 +22,7 @@ body:
 
 
         If this is the first time you are doing this, please take a few moments to read
-        through the [Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/master/CONTRIBUTING.md).
+        through the [Contribution Guidelines](https://github.com/OctoPrint/OctoPrint/blob/main/CONTRIBUTING.md).
         Also check out [the FAQ](https://faq.octoprint.org) if your
         problem is maybe already covered there.
 
@@ -37,7 +37,7 @@ body:
 
         And finally, make sure any bug you want to report is still present with the **current**
         OctoPrint version and that it does not vanish when you start OctoPrint
-        in [safe mode](https://docs.octoprint.org/en/master/features/safemode.html) either.
+        in [safe mode](https://docs.octoprint.org/en/main/features/safemode.html) either.
 
 
         Thank you for your collaboration!
@@ -62,7 +62,7 @@ body:
       label: Did the issue persist even in safe mode?
       description: >-
         Testing in safe mode is required to make sure the issue you are reporting is not
-        caused by a third party plugin. Please see [here](https://docs.octoprint.org/en/master/features/safemode.html)
+        caused by a third party plugin. Please see [here](https://docs.octoprint.org/en/main/features/safemode.html)
         on how to run OctoPrint in safe mode.
       options:
         - Yes, it did persist
@@ -75,10 +75,10 @@ body:
       label: If you could not test in safe mode, please state why ("currently printing" is NOT an excuse!)
       description: >-
         Issues caused by a third party plugin are a major cause of bugs reported here, so we really need to
-        rule out that a plugin is at fault here. [Safe mode](https://docs.octoprint.org/en/master/features/safemode.html) is an easy way to do that. Only skip safe mode
+        rule out that a plugin is at fault here. [Safe mode](https://docs.octoprint.org/en/main/features/safemode.html) is an easy way to do that. Only skip safe mode
         if your particular problem *absolutely requires* third party plugins to be enabled. "It would take
         too long" or "I have a long print running right now" are **not** a reason to skip testing in safe mode, neither is "I do not know how to
-        enable it" as you can find info on that [here](https://docs.octoprint.org/en/master/features/safemode.html).
+        enable it" as you can find info on that [here](https://docs.octoprint.org/en/main/features/safemode.html).
 
         If you really *cannot* test in safe mode at all, leave a short explanation as to why. If you can but just not right now, then please wait with reporting until you can!
   - type: markdown

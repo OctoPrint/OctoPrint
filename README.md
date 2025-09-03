@@ -143,7 +143,7 @@ which is located at `~/.octoprint` on Linux, at `%APPDATA%/OctoPrint` on Windows
 at `~/Library/Application Support/OctoPrint` on MacOS.
 
 A comprehensive overview of all available configuration settings can be found
-[in the docs](https://docs.octoprint.org/en/master/configuration/config_yaml.html).
+[in the docs](https://docs.octoprint.org/en/main/configuration/config_yaml.html).
 Please note that the most commonly used configuration settings can also easily
 be edited from OctoPrint's settings dialog.
 

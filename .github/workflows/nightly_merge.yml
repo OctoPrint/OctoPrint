@@ -14,39 +14,29 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: 🔀 Merge master into maintenance
+      - name: 🔀 Merge main into dev
         uses: robotology/gh-action-nightly-merge@v1.5.2
         with:
-          stable_branch: "master"
-          development_branch: "maintenance"
+          stable_branch: "main"
+          development_branch: "dev"
           allow_ff: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🔀 Merge staging/bugfix into maintenance
+      - name: 🔀 Merge bugfix into dev
         uses: robotology/gh-action-nightly-merge@v1.5.2
         with:
-          stable_branch: "staging/bugfix"
-          development_branch: "maintenance"
+          stable_branch: "bugfix"
+          development_branch: "dev"
           allow_ff: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 🔀 Merge staging/maintenance into maintenance
+      - name: 🔀 Merge next into dev
         uses: robotology/gh-action-nightly-merge@v1.5.2
         with:
-          stable_branch: "staging/bugfix"
-          development_branch: "maintenance"
+          stable_branch: "next"
+          development_branch: "dev"
           allow_ff: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # devel will be removed soon in favor of a branching strategy better fitting the project
-      #- name: 🔀 Merge maintenance into devel
-      #  uses: robotology/gh-action-nightly-merge@v1.5.2
-      #  with:
-      #    stable_branch: "maintenance"
-      #    development_branch: "devel"
-      #    allow_ff: false
-      #  env:
-      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
