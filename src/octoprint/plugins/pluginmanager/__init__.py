@@ -2440,7 +2440,7 @@ def _register_custom_events(*args, **kwargs):
 
 __plugin_name__ = "Plugin Manager"
 __plugin_author__ = "Gina Häußge"
-__plugin_url__ = "https://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html"
+__plugin_url__ = "https://docs.octoprint.org/en/main/bundledplugins/pluginmanager.html"
 __plugin_description__ = "Allows installing and managing OctoPrint plugins"
 __plugin_license__ = "AGPLv3"
 __plugin_pythoncompat__ = ">=3.9,<4"
