@@ -19,7 +19,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: ⬇ Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           path: src
@@ -32,7 +32,7 @@ jobs:
       # Checkout code and install
       - name: ⬇ Checkout code to test
         if: ${{ matrix.branch != 'release' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ matrix.branch }}
           fetch-depth: 0
