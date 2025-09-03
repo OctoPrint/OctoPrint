@@ -6,8 +6,7 @@ on:
       - prereleased
   push:
     branches:
-      - maintenance
-      - devel
+      - dev
 
 jobs:
   dispatch_releases:
@@ -24,7 +23,7 @@ jobs:
 
   dispatch_canary:
     runs-on: ubuntu-latest
-    if: github.repository == 'OctoPrint/OctoPrint' && github.event_name == 'push' && github.ref == 'refs/heads/maintenance'
+    if: github.repository == 'OctoPrint/OctoPrint' && github.event_name == 'push' && github.ref == 'refs/heads/dev'
     steps:
       - name: 🚀 Repository Dispatch
         uses: peter-evans/repository-dispatch@v3
@@ -33,15 +32,3 @@ jobs:
           repository: ${{ github.repository_owner }}/octoprint-docker
           event-type: "canary"
           client-payload: '{"tag_name": "maintenance"}'
-
-  dispatch_bleeding:
-    runs-on: ubuntu-latest
-    if: github.repository == 'OctoPrint/OctoPrint' && github.event_name == 'push' && github.ref == 'refs/heads/devel'
-    steps:
-      - name: 🚀 Repository Dispatch
-        uses: peter-evans/repository-dispatch@v3
-        with:
-          token: ${{ secrets.DOCKER_ACCESS_TOKEN }}
-          repository: ${{ github.repository_owner }}/octoprint-docker
-          event-type: "bleeding"
-          client-payload: '{"tag_name": "devel"}'

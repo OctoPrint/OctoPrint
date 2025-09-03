@@ -2,9 +2,8 @@ name: Trigger doc build
 on:
   push:
     branches:
-      - master
-      - maintenance
-      - devel
+      - main
+      - dev
   release:
     types:
       - released

@@ -70,9 +70,9 @@ After you published the new release, you can verify it on your installed octopri
 with force checking the updates under the advanced options (in the software updates menu in the settings).
 The new versions will appear to the plugin users in the next 24 hours (it depends on their cache refreshes).
 
-The `Software Update Plugin <https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html#>`_ has options to define multiple release channels,
+The `Software Update Plugin <https://docs.octoprint.org/en/main/bundledplugins/softwareupdate.html#>`_ has options to define multiple release channels,
 and you can let the users decide if they want to test your pre-releases or not.
 This can be achieved with defining ``stable_branch`` and ``prerelease_branches`` in the ``get_update_information`` function,
 and creating github releases to the newly configured branches too.
-For more information you can check the `Software Update Plugin documentation <https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html#version-checks>`_
+For more information you can check the `Software Update Plugin documentation <https://docs.octoprint.org/en/main/bundledplugins/softwareupdate.html#version-checks>`_
 or read a more step-by-step writeup `here <https://github.com/cp2004/OctoPrint-Knowledge/blob/main/release-channels.md>`_.

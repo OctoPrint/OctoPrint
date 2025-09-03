@@ -119,7 +119,7 @@ following section *completely* and also follow the instructions in the
    **safe mode**, either by selecting "Restart OctoPrint in safe mode" from
    the "System" menu, or by starting OctoPrint from the command line with
    `octoprint serve --safe`. Then try to reproduce your issue. Find out
-   more about safe mode in the [docs](https://docs.octoprint.org/en/master/features/safemode.html).
+   more about safe mode in the [docs](https://docs.octoprint.org/en/main/features/safemode.html).
 
    You might also want to try the current development version of OctoPrint
    (if you aren't already). Refer to the [FAQ](https://faq.octoprint.org)
@@ -180,7 +180,7 @@ See [How to open the Javascript Console in different browsers](https://webmaster
 
 ## Setting up a development environment
 
-See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/master/development/environment.html).
+See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/main/development/environment.html).
 This also includes information on how to run the test suite and how to build
 the documentation, the bundled virtual printer plugin and OctoPrint's versioning
 and branching strategy.
@@ -208,13 +208,9 @@ and branching strategy.
    just cause unnecessary work and frustration for everyone or
    possibly get the PR rejected.
 3. Create your pull request **from a custom branch** on your end (e.g.
-   `improve/myNewFeature`)[1].
-4. Create your pull request **only against the `maintenance` or `devel` branch**:
-     * if it's a bug fix for a bug in the current stable version, an improvement of existing functionality or a
-       *small* backwards compatible new feature (e.g. a new hook, a new config flag, ...): `maintenance` branch
-     * if it's a bigger backwards compatible new feature: please [get in touch](https://community.octoprint.org/c/development) first to avoid
-       wasting work that doesn't match the current direction of the project or implement as a plugin.
-     * if it's any breaking backwards incompatible change: `devel` branch. In case of big changes, [get in touch](https://community.octoprint.org/c/development) first.
+   `wip/my-new-feature`)[1].
+4. Create your pull request **only against the `dev` branch**. In case of big changes,
+   [get in touch](https://community.octoprint.org/c/development) first.
 5. Create **one pull request per feature/bug fix**.
 6. Make sure there are **only relevant changes** included in your PR. No
    changes to unrelated files, no additional files that don't belong (e.g.
@@ -232,7 +228,7 @@ and branching strategy.
        from experiments).
 8. Ensure your changes **pass the existing unit tests**. PRs that break
    those cannot be accepted. You can run the unit tests locally (after
-   [initial development environment setup with "develop" dependencies](https://docs.octoprint.org/en/master/development/environment.html))
+   [initial development environment setup with "develop" dependencies](https://docs.octoprint.org/en/main/development/environment.html))
    by running
 
    ```
@@ -243,7 +239,7 @@ and branching strategy.
    is also setup so that if the tests should fail, your PR will be marked
    accordingly.
 9. Run the **pre-commit check suite** against your changes. You can run that (after
-   [initial development environment setup with "develop" dependencies](https://docs.octoprint.org/en/master/development/environment.html))
+   [initial development environment setup with "develop" dependencies](https://docs.octoprint.org/en/main/development/environment.html))
    by running
 
    ```
@@ -284,31 +280,30 @@ As a summary, please make sure you have ticked all points on this
 checklist:
 -->
 
-  * [ ] Your changes are not possible to do through a plugin and relevant
-    to a large audience (ideally all users of OctoPrint)
-  * [ ] If your changes are large or otherwise disruptive: You have
-    made sure your changes don't interfere with current development by
-    talking it through with the maintainers, e.g. through a
-    Brainstorming ticket
-  * [ ] Your PR targets OctoPrint's `devel` branch if it's a completely
-    new feature, or `maintenance` if it's a bug fix or improvement of
-    existing functionality for the current stable version (no PRs
-    against `master` or anything else please)
-  * [ ] Your PR was opened from a custom branch on your repository
-    (no PRs from your version of `master`, `maintenance`, or `devel`
-    please), e.g. `dev/my_new_feature` or `fix/my_bugfix`
-  * [ ] Your PR only contains relevant changes: no unrelated files,
-    no dead code, ideally only one commit - rebase and squash your PR
-    if necessary!
-  * [ ] Your changes follow the existing coding style
-  * [ ] If your changes include style sheets: You have modified the
-    `.less` source files, not the `.css` files (those are generated
-    with `lessc`)
-  * [ ] You have tested your changes (please state how!) - ideally you
-    have added unit tests
-  * [ ] You have run the existing unit tests against your changes and
-    nothing broke
-  * [ ] You have added yourself to the `AUTHORS.md` file :)
+- [ ] You have read through `CONTRIBUTING.md`
+- [ ] Your changes are not possible to do through a plugin and relevant
+  to a large audience (ideally all users of OctoPrint)
+- [ ] If your changes are large or otherwise disruptive: You have
+  made sure your changes don't interfere with current development by
+  talking it through with the maintainers, e.g. through a
+  Brainstorming ticket
+- [ ] Your PR targets OctoPrint's `dev` branch
+- [ ] Your PR was opened from a custom branch on your repository
+  (no PRs from your version of `main`, `bugfix`, `next` or `dev`
+  please), e.g. `wip/my_new_feature` or `wip/my_bugfix`
+- [ ] Your PR only contains relevant changes: no unrelated files,
+  no dead code, ideally only one commit - rebase and squash your PR
+  if necessary!
+- [ ] If your changes include style sheets: You have modified the
+  `.less` source files, not the `.css` files (those are generated
+  with `lessc`)
+- [ ] You have tested your changes (please state how!) - ideally you
+  have added unit tests
+- [ ] You have run the existing unit tests against your changes and
+  nothing broke (`pytest`)
+- [ ] You have run the included `pre-commit` suite against your changes
+  and nothing broke (`pre-commit run --all-files`)
+- [ ] You have added yourself to the `AUTHORS.md` file :)
 
 <!--
 Describe your PR further using the template provided below. The more
@@ -319,6 +314,8 @@ details the better!
 
 #### How was it tested? How can it be tested by the reviewer?
 
+#### Was any kind of genAI (ChatGPT, Copilot etc) involved in creating this PR?
+
 #### Any background context you want to provide?
 
 #### What are the relevant tickets if any?
@@ -327,15 +324,20 @@ details the better!
 
 #### Further notes
 
+<!--
+Be advised that your PR will be checked automatically by CI. Should any of the CI
+checks fail, you will be expected to fix them before your PR will be reviewed, so
+keep an eye on it!
+-->
 ```
 
 ## How is OctoPrint versioned?
 
-See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/master/development/versioning.html).
+See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/main/development/versioning.html).
 
 ## What do the branches mean?
 
-See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/master/development/branches.html).
+See [the corresponding chapter in the documentation](https://docs.octoprint.org/en/main/development/branches.html).
 
 ## On AI use when contributing to OctoPrint
 
@@ -391,9 +393,10 @@ Whatever kind of contribution you submit with your PR, be it code, documentation
   * 2021-03-04: Correct issue forms link
   * 2021-04-27: Systeminfo Bundles! \o/
   * 2025-05-21: Guidelines regarding the use of AI
+  * 2025-09-03: Changes according to the new branching strategy
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add
     to your PR's branch will also become part of your PR, so if you create a
-    PR from your version of `devel` chances are high you'll add changes to the
+    PR from your version of `dev` chances are high you'll add changes to the
     PR that do not belong to the PR.
