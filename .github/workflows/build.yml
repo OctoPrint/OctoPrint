@@ -18,7 +18,7 @@ jobs:
     name: 🔨 Build distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
@@ -34,7 +34,7 @@ jobs:
     name: 🧹 Pre-commit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v5
         with:
@@ -52,7 +52,7 @@ jobs:
         python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: 🏗 Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v5
         with:
@@ -100,7 +100,7 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04 # change back to ubuntu-latest once we figure out why puppeteer is unhappy under 24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: 🏗 Set up test dependencies
         run: |
           npm -g install node-qunit-puppeteer@2.1.2
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist
@@ -167,7 +167,7 @@ jobs:
         python: ["3.9", "3.13"]
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist
@@ -209,7 +209,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist
@@ -242,7 +242,7 @@ jobs:
       id-token: write
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist
@@ -268,7 +268,7 @@ jobs:
       id-token: write
     steps:
       - name: ⬇ Download build result
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: dist
           path: dist

@@ -2556,7 +2556,7 @@ def _register_custom_events(*args, **kwargs):
 
 __plugin_name__ = "Software Update"
 __plugin_author__ = "Gina Häußge"
-__plugin_url__ = "https://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html"
+__plugin_url__ = "https://docs.octoprint.org/en/main/bundledplugins/softwareupdate.html"
 __plugin_description__ = "Allows receiving update notifications and performing updates of OctoPrint and plugins"
 __plugin_disabling_discouraged__ = gettext(
     "Without this plugin OctoPrint will no longer be able to "
