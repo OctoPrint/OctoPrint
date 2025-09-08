@@ -4,10 +4,8 @@ __copyright__ = "Copyright (C) 2021 The OctoPrint Project - Released under terms
 import datetime
 import os
 import re
-import unittest
 
 import pytest
-from ddt import data, ddt, unpack
 
 from octoprint.util.files import (
     m20_timestamp_to_unix_timestamp,
@@ -18,9 +16,9 @@ from octoprint.util.files import (
 )
 
 
-@ddt
-class FilesUtilTest(unittest.TestCase):
-    @data(
+@pytest.mark.parametrize(
+    "filename, expected, really_universal",
+    (
         ("some_file.gcode", "some_file.gcode", False),
         ("NUL.gcode", "NUL_.gcode", False),
         ("LPT1", "LPT1_", False),
@@ -28,48 +26,68 @@ class FilesUtilTest(unittest.TestCase):
         ("..test.gcode", "test.gcode", False),
         ("file with space.gcode", "file with space.gcode", False),
         ("Wölfe 🐺.gcode", "Wölfe 🐺.gcode", False),
+        # really universal
+        ("some_file.gcode", "some_file.gcode", True),
+        ("NUL.gcode", "NUL_.gcode", True),
+        ("LPT1", "LPT1_", True),
+        (".test.gcode", "test.gcode", True),
+        ("..test.gcode", "test.gcode", True),
         ("file with space.gcode", "file_with_space.gcode", True),
         ("Wölfe 🐺.gcode", "Wolfe_wolf.gcode", True),
-    )
-    @unpack
-    def test_sanitize_filename(self, filename, expected, really_universal):
-        actual = sanitize_filename(filename, really_universal=really_universal)
-        self.assertEqual(actual, expected)
+        # invalid chars
+        ("file\1file.gcode", "filefile.gcode", False),
+        ("file;|&?$*<>file.gcode", "filefile.gcode", False),
+        ("file\1file.gcode", "filefile.gcode", True),
+        ("file;|&?$*<>file.gcode", "filefile.gcode", True),
+    ),
+)
+def test_sanitize_filename(filename, expected, really_universal):
+    actual = sanitize_filename(filename, really_universal=really_universal)
+    assert actual == expected
 
-    @data("file/with/slash.gcode", "file\\with\\backslash.gcode")
-    def test_sanitize_filename_invalid(self, filename):
-        try:
-            sanitize_filename(filename)
-            self.fail("expected ValueError")
-        except ValueError as ex:
-            self.assertEqual(str(ex), "name must not contain / or \\")
 
-    @data(
+@pytest.mark.parametrize(
+    "filename", ("file/with/slash.gcode", "file\\with\\backslash.gcode")
+)
+def test_sanitize_filename_invalid(filename):
+    try:
+        sanitize_filename(filename)
+        raise RuntimeError("expected ValueError")
+    except ValueError as exc:
+        assert str(exc) == "name must not contain / or \\"
+
+
+@pytest.mark.parametrize(
+    "term, regex, expected",
+    (
         ("umlaut", False, True),
         ("BOM", False, True),
         (r"^[^#]*BOM", True, False),
+    ),
+)
+def test_search_through_file(term, regex, expected):
+    path = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "_files", "utf8_without_bom.txt"
     )
-    @unpack
-    def test_search_through_file(self, term, regex, expected):
-        path = os.path.join(
-            os.path.abspath(os.path.dirname(__file__)), "_files", "utf8_without_bom.txt"
-        )
-        actual = search_through_file(path, term, regex=regex)
-        self.assertEqual(actual, expected)
+    actual = search_through_file(path, term, regex=regex)
+    assert actual == expected
 
-    @data(
+
+@pytest.mark.parametrize(
+    "term, expected",
+    (
         ("umlaut", True),
         ("BOM", True),
         (r"^[^#]*BOM", False),
+    ),
+)
+def test_search_through_file_python(term, expected):
+    compiled = re.compile(term)
+    path = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)), "_files", "utf8_without_bom.txt"
     )
-    @unpack
-    def test_search_through_file_python(self, term, expected):
-        compiled = re.compile(term)
-        path = os.path.join(
-            os.path.abspath(os.path.dirname(__file__)), "_files", "utf8_without_bom.txt"
-        )
-        actual = search_through_file_python(path, term, compiled)
-        self.assertEqual(actual, expected)
+    actual = search_through_file_python(path, term, compiled)
+    assert actual == expected
 
 
 # based on https://github.com/nathanhi/pyfatfs/blob/master/tests/test_DosDateTime.py

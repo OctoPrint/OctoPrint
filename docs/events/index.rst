@@ -11,14 +11,34 @@ Events
 Configuration
 =============
 
+.. versionchanged:: 1.11.3
+
 Event hooks are configured via OctoPrint's configuration file ``config.yaml``. There they are contained in a
 ``subscriptions`` list located directly under the ``events`` node. The ``command`` node accepts either a single string
 or a list of strings so that multiple commands can be executed in one go. Each hook carries an additional node type that
 must be either ``gcode`` (for GCODE commands to be sent to the printer based on the event) or ``system`` (for commands to be
 executed on the system OctoPrint is running on).
 
-All event hooks can be disabled completely by setting ``event > enabled`` to ``false``. You can also disable individual
-hooks by setting the (optional) node ``enabled`` to false, see the example below.
+All event hooks configured in ``config.yaml`` can be disabled completely by setting ``events.enabled`` property to ``false``.
+You can also disable individual hooks by setting the (optional) ``enabled`` parameter to ``false``, see the example below.
+
+.. warning::
+
+   OctoPrint 1.11.3 introduces a new ``shell`` parameter on ``type: system`` commands that allows to specify whether the command
+   should be run in a shell (``true``, *currently* the default) or directly (``false``, the *future* default).
+
+   Running commands in a shell has security implications as a misconfigured command with placeholders coming from external, potential
+   untrusted sources can lead to arbitrary command execution. However, running commands in a shell also allows for more powerful
+   scripting and also access to the shell's environment, making it often unnecessary to set the full paths of commands that are
+   supposed to be run.
+
+   OctoPrint so far has been running system commands defined in event hooks within a shell. Starting with OctoPrint 1.11.3,
+   OctoPrint will log a message to ``octoprint.log`` when it encounters a system hook that hasn't yet explicitly configured
+   ``shell``, and default to enabling the shell. From 1.13.0 onward, this behaviour will change, and OctoPrint will default
+   to *disabling* the shell in such cases, to further reduce the attack surface.
+
+   You should make an explicit decision now. Try to make your commands work *without* having to enable shell mode, and thoroughly
+   vet your commands and parameter processing if you have to enable shell mode.
 
 Example
 -------
@@ -29,17 +49,20 @@ Example
      enabled: True
      subscriptions:
      - event: Disconnected
-       command: python ~/growl.py -t mygrowlserver -d "Lost connection to printer" -a OctoPrint -i http://raspi/Octoprint_logo.png
+       command: /path/to/python /path/to/growl.py -t mygrowlserver -d "Lost connection to printer" -a OctoPrint -i http://raspi/Octoprint_logo.png
        type: system
+       shell: false
        enabled: false
        name: Disconnected
      - event: PrintStarted
-       command: python ~/growl.py -t mygrowlserver -d "Starting {file}" -a OctoPrint -i http://raspi/Octoprint_logo.png
+       command: /path/to/python /path/to/growl.py -t mygrowlserver -d "Starting {file}" -a OctoPrint -i http://raspi/Octoprint_logo.png
        type: system
+       shell: false
        name: Print Started
      - event: PrintDone
-       command: python ~/growl.py -t mygrowlserver -d "Completed {file}" -a OctoPrint -i http://raspi/Octoprint_logo.png
+       command: /path/to/python /path/to/growl.py -t mygrowlserver -d "Completed {file}" -a OctoPrint -i http://raspi/Octoprint_logo.png
        type: system
+       shell: false
        name: Print Done
      - event:
        - PrintStarted
@@ -48,6 +71,7 @@ Example
        - PrintCancelled
        command: python ~/growl.py -t mygrowlserver -d "Event {__eventname} ({name})" -a OctoPrint -i http://raspi/Octoprint_logo.png
        type: system
+       shell: true
        name: Multiple Events
      - event: Connected
        command:
