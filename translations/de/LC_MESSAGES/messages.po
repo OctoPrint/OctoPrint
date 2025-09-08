@@ -3,9 +3,9 @@
 # This file is distributed under the same license as the OctoPrint project.
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.11.2\n"
+"Project-Id-Version: OctoPrint 1.11.3\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2025-06-10 10:01+0200\n"
+"POT-Creation-Date: 2025-09-08 14:53+0200\n"
 "PO-Revision-Date: 2025-06-10 10:01+0200\n"
 "Last-Translator: Gina Häußge <gina@octoprint.org>\n"
 "Language: de\n"
@@ -719,17 +719,18 @@ msgid "Application Keys"
 msgstr "Application Keys"
 
 #: src/octoprint/plugins/appkeys/__init__.py:280
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:145
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:149
 #, fuzzy, python-format
 msgid ""
 "A client identifying itself as \"<strong>%(app)s</strong>\" has requested"
 " access to control OctoPrint through the API. The request originates from"
 " <code>%(remote_address)s</code>."
 msgstr ""
-"Ein Client, der sich selbst als \"<strong>%(app)s</strong>\" identifiziert, möchte Zugriff auf OctoPrint über die API "
-"haben. Die Anfrage hierzu kommt von <code>%(remote_address)s</code>."
+"Ein Client, der sich selbst als \"<strong>%(app)s</strong>\" "
+"identifiziert, möchte Zugriff auf OctoPrint über die API haben. Die "
+"Anfrage hierzu kommt von <code>%(remote_address)s</code>."
 
-#: src/octoprint/plugins/appkeys/__init__.py:634
+#: src/octoprint/plugins/appkeys/__init__.py:695
 msgid ""
 "Without this plugin third party clients will no longer be able to obtain "
 "an API key without you manually copy-pasting it."
@@ -737,13 +738,13 @@ msgstr ""
 "Ohne dieses Plugin können Third Party Clients keine API Keys mehr "
 "erlangen, ohne dass du sie manuell übertragen musst."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:114
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:118
 #, python-format
 msgid "You are about to revoke the application key for %(app)s."
 msgstr "Du bist im Begriff, den Application Key für %(app)s zu löschen."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:131
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:319
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:135
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:323
 #: src/octoprint/plugins/appkeys/templates/appkeys_settings.jinja2:46
 #: src/octoprint/plugins/appkeys/templates/appkeys_usersettings.jinja2:19
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:342
@@ -753,71 +754,71 @@ msgstr "Du bist im Begriff, den Application Key für %(app)s zu löschen."
 msgid "Details"
 msgstr "Details"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:156
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:160
 #, fuzzy
 msgid "Do you want to give this client access with your user account?"
-msgstr "Möchtest du diesem Client Zugriff mit deinem "
-"Nutzerkonto gewähren?"
+msgstr "Möchtest du diesem Client Zugriff mit deinem Nutzerkonto gewähren?"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:160
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:164
 msgid ""
 "This will allow this client to fully act on your behalf! Make absolutely "
 "sure you trust this client and understand why it requested access!"
 msgstr ""
-"Das wird diesem Client erlauben, vollständig in deinem Namen zu handeln! Stelle absolut sicher, "
-"dass du diesem Client vertraust und auch verstehst, warum er um Zugriff gebeten hat!"
+"Das wird diesem Client erlauben, vollständig in deinem Namen zu handeln! "
+"Stelle absolut sicher, dass du diesem Client vertraust und auch "
+"verstehst, warum er um Zugriff gebeten hat!"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:165
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:169
 #: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:46
 msgid "Access Request"
 msgstr "Zugriffsanfrage"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:173
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:177
 #: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:57
 msgid "Allow"
 msgstr "Erlauben"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:182
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:186
 #: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:58
 msgid "Deny"
 msgstr "Ablehnen"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:334
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:338
 msgid "New key generated!"
 msgstr "Neuer Key erstellt!"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:345
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:349
 #, python-format
 msgid "You are about to revoke the application key for %(app)s for user %(user)s."
 msgstr ""
 "Du bist im Begriff, den Application Key für \"%(app)s\" und User %(user)s"
 " zu löschen."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:363
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:367
 #, python-format
 msgid "You are about to revoke %(count)d application keys."
 msgstr "Du bist im Begriff, %(count)d Application Keys zu löschen."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:438
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:442
 msgid "Revoking application keys"
 msgstr "Lösche Application Keys"
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:439
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:443
 #, python-format
 msgid "Revoking %(count)d application keys..."
 msgstr "Lösche %(count)d Application Keys..."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:448
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:452
 #, python-format
 msgid "Revoked %(app)s for %(user)s..."
 msgstr "%(app)s für %(user)s gelöscht..."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:457
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:461
 #, python-format
 msgid "Revocation of %(app)s for user %(user)s failed, continuing..."
 msgstr "Löschen von %(app)s für User %(user)s fehlgeschlagen, fahre fort..."
 
-#: src/octoprint/plugins/appkeys/static/js/appkeys.js:466
+#: src/octoprint/plugins/appkeys/static/js/appkeys.js:470
 #, python-format
 msgid "Deletion of %(app)s for user %(user)s failed: %(error)s"
 msgstr "Löschen von %(app)s für User %(user)s fehlgeschlagen: %(error)s"
@@ -866,17 +867,22 @@ msgid ""
 "            "
 msgstr ""
 "\n"
-"                Möchtest du diesem Client Zugriff mit deinem "
-"Nutzerkonto gewähren?\n"
+"                Möchtest du diesem Client Zugriff mit deinem Nutzerkonto "
+"gewähren?\n"
 "            "
 
 #: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:53
+#, fuzzy
 msgid ""
 "\n"
-"                Das wird diesem Client erlauben, vollständig in deinem Namen zu handeln! Stelle absolut sicher, "
-"dass du diesem Client vertraust und auch verstehst, warum er um Zugriff gebeten hat!\n"
+"                This will allow this client to fully act on your behalf! "
+"Make absolutely sure you trust this client and understand why it "
+"requested access!\n"
 "            "
 msgstr ""
+"Das wird diesem Client erlauben, vollständig in deinem Namen zu handeln! "
+"Stelle absolut sicher, dass du diesem Client vertraust und auch "
+"verstehst, warum er um Zugriff gebeten hat!"
 
 #: src/octoprint/plugins/appkeys/templates/appkeys_authdialog.jinja2:62
 msgid ""
@@ -2917,11 +2923,11 @@ msgstr ""
 msgid "Force compression"
 msgstr "Kompression erzwingen"
 
-#: src/octoprint/plugins/health_check/__init__.py:129
+#: src/octoprint/plugins/health_check/__init__.py:131
 msgid "Allows to perform health checks and view their results"
 msgstr "Erlaubt das Ausführen und die Auswertung von Healthchecks"
 
-#: src/octoprint/plugins/health_check/__init__.py:231
+#: src/octoprint/plugins/health_check/__init__.py:233
 msgid ""
 "Without this plugin you might miss problematic issues with your OctoPrint"
 " installation."
@@ -3028,6 +3034,35 @@ msgid ""
 msgstr ""
 "Bitte räume etwas Speicherplatz frei, so dass OctoPrint weiter wie "
 "erwartet funktionieren kann."
+
+#: src/octoprint/plugins/health_check/static/js/health_check.js:326
+msgid "Your OctoPrint instance has a global API key set."
+msgstr "Deine OctoPrint Instanz hat einen globalen API Key gesetzt."
+
+#: src/octoprint/plugins/health_check/static/js/health_check.js:329
+#, python-format
+msgid ""
+"It is recommended to no longer use the global API key as it's one single "
+"key that gives full admin access to your whole OctoPrint instance. It "
+"will be removed in OctoPrint 1.13.0. Instead of using the global key you "
+"should create individual <a href=\"%(url)s\" target=\"_blank\" "
+"rel=\"noopener noreferer\">Application Keys</a> for your third party "
+"clients. That way they get permissions matching the user account used for"
+" key creation and you can also revoke access to one app without having to"
+" change the keys for all other apps. It's also recommended to create a "
+"user account without admin access and use that for third party clients "
+"where possible. "
+msgstr ""
+"Der globale API Key sollte am Besten nicht mehr verwendet werden. Es ist "
+"ein einzelner Key, der vollen Adminzugriff auf die gesamte OctoPrint Instanz "
+"gibt. Er wird in OctoPrint 1.13.0 entfernt. Anstelle des globalen API Keys "
+"solltest du individuelle <a href=\"%(url)s\" target=\"_blank\" "
+"rel=\"noopener noreferer\">Application Keys</a> für Third-Party-Clients erstellen. "
+"Dadurch bekommen diese die Zugriffsrechte des jeweiligen für die Erstellung "
+"des Keys genutzten Nutzeraccounts und du kannst einem Client auch einfach "
+"wieder den Zugriff entziehen, ohne für alle anderen den Key ändern zu müssen. "
+"Es ist außerdem ratsam, einen Useraccount ohne Adminzugriff zu erstellen "
+"und wo möglich für Third-Party-Clients zu verwenden."
 
 #: src/octoprint/plugins/health_check/templates/health_check.jinja2:4
 msgid "Health Check Results"
@@ -8248,7 +8283,7 @@ msgid ""
 "                It is recommended to no longer use the global API key as "
 "it's one single key that gives full admin access\n"
 "                to your whole OctoPrint instance. <strong>It will be "
-"removed in OctoPrint 2.0</strong>.\n"
+"removed in OctoPrint 1.13.0</strong>.\n"
 "                Instead of using the global key you should create "
 "individual Application Keys for\n"
 "                your third party clients. That way they get permissions "
@@ -8263,7 +8298,7 @@ msgstr ""
 "\n"
 "Der globale API Key sollte am Besten nicht mehr verwendet werden. Es ist "
 "ein einzelner Key, der vollen Adminzugriff\n"
-"auf die gesamte OctoPrint Instanz gibt. <strong>Er wird in OctoPrint 2.0 "
+"auf die gesamte OctoPrint Instanz gibt. <strong>Er wird in OctoPrint 1.13.0 "
 "entfernt</strong>. \n"
 "Stattdessen solltest du individuelle Application Keys für Third-Party-"
 "Clients erstellen. Dadurch bekommen diese die\n"
@@ -11380,4 +11415,15 @@ msgstr "Ungerenderte Zeitrafferaufnahme löschen"
 #: src/octoprint/templates/tabs/timelapse.jinja2:239
 msgid "Render timelapse"
 msgstr "Zeitrafferaufnahme rendern"
+
+#~ msgid ""
+#~ "\n"
+#~ "                Das wird diesem Client "
+#~ "erlauben, vollständig in deinem Namen zu"
+#~ " handeln! Stelle absolut sicher, dass "
+#~ "du diesem Client vertraust und auch "
+#~ "verstehst, warum er um Zugriff gebeten"
+#~ " hat!\n"
+#~ "            "
+#~ msgstr ""
 
