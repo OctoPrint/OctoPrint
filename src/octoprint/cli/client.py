@@ -35,16 +35,13 @@ def create_client(
 ):
     assert host is not None or settings is not None
     assert port is not None or settings is not None
-    assert apikey is not None or settings is not None
+    assert apikey
 
     if not host:
         host = settings.get(["server", "host"])
         host = host if host != "0.0.0.0" else "127.0.0.1"
     if not port:
         port = settings.getInt(["server", "port"])
-
-    if not apikey:
-        apikey = settings.get(["api", "key"])
 
     baseurl = octoprint_client.build_base_url(
         https=https,
@@ -78,8 +75,11 @@ client_options = bulk_options(
 def cli(ctx, apikey, host, port, httpuser, httppass, https, prefix):
     """Basic API client."""
     try:
+        if not apikey:
+            raise FatalStartupError("No API key provided")
+
         settings = None
-        if not host or not port or not apikey:
+        if not host or not port:
             settings = init_settings(
                 get_ctx_obj_option(ctx, "basedir", None),
                 get_ctx_obj_option(ctx, "configfile", None),
