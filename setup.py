@@ -78,7 +78,7 @@ core_deps = [
     "zipstream-ng>=1.8.0,<2.0.0",
 ]
 core_deps_38 = [
-    "tornado>=6.4.2,<6.5 ; python_version>='3.8',<'3.9'",
+    "tornado>=6.4.2,<6.5 ; python_version>='3.8' and python_version<'3.9'",
 ]
 core_deps_37 = [
     "Babel>=2.14.0,<2.15 ; python_version<'3.8'",
