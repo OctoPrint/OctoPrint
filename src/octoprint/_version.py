@@ -53,8 +53,8 @@ BRANCH_VERSIONS = """
 
 # bugfix is the branch for preparation of the 1.11.x bugfix releases
 # so are any bug/... branches
-bugfix 1.11.3 96e48c5662274a1941486d3e0853141661fc0455
-bug/.* 1.11.3 96e48c5662274a1941486d3e0853141661fc0455
+bugfix 1.11.4 f7a5eee1b1f8438c5d62ce51aa0b0e1565b538c9
+bug/.* 1.11.4 f7a5eee1b1f8438c5d62ce51aa0b0e1565b538c9
 
 # next is currently the branch for preparation of 1.11.0rc8
 # so is regression/...
