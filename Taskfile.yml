@@ -127,3 +127,15 @@ tasks:
 
           echo "Copying translations for locale ${locale} from ${source} to ${target}..."
           cp -r "${source}" "${target}"
+
+  ### Docs related
+
+  docs-serve:
+    desc: Build & serve the docs with automatic updates
+    cmds:
+      - sphinx-autobuild docs docs/_build/html
+
+  docs-build:
+    desc: Build the docs
+    cmds:
+      - python -m sphinx.cmd.build -b html -v ./docs ./docs/_build

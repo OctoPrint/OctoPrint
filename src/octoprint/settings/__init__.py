@@ -722,10 +722,6 @@ class Settings:
             self._configfile = os.path.join(self._basedir, "config.yaml")
         self.load(migrate=True)
 
-        apikey = self.get(["api", "key"])
-        if not apikey or apikey == "n/a":
-            self.generateApiKey()
-
         self._script_env = self._init_script_templating()
 
         self.sanity_check_folders(

@@ -6,18 +6,24 @@ import itertools
 import logging
 import os.path
 import re
+import string
+
+_UNPRINTABLE_ASCII = "".join(chr(c) for c in range(128) if chr(c) not in string.printable)
+_STRIPPED_FILE_NAME_CHARS = ";|&?$*<>" + _UNPRINTABLE_ASCII
+_STRIPPED_FILE_NAME_RE = re.compile(
+    f"[{re.escape(_STRIPPED_FILE_NAME_CHARS):s}]", re.UNICODE
+)
+
+### taken from pathvalidate library
+
+_WINDOWS_RESERVED_FILE_NAMES = ("CON", "PRN", "AUX", "CLOCK$", "NUL") + tuple(
+    f"{name:s}{num:d}" for name, num in itertools.product(("COM", "LPT"), range(1, 10))
+)
+_MACOS_RESERVED_FILE_NAMES = (":",)
 
 
 def _sfn_really_universal(name, safe_chars="-_.()[] "):
     from octoprint.util.text import sanitize
-
-    ### taken from pathvalidate library
-
-    _WINDOWS_RESERVED_FILE_NAMES = ("CON", "PRN", "AUX", "CLOCK$", "NUL") + tuple(
-        f"{name:s}{num:d}"
-        for name, num in itertools.product(("COM", "LPT"), range(1, 10))
-    )
-    _MACOS_RESERVED_FILE_NAMES = (":",)
 
     result = sanitize(name, safe_chars=safe_chars).replace(" ", "_")
     root, ext = os.path.splitext(result)
@@ -43,7 +49,7 @@ def sanitize_filename(name, really_universal=False, safe_chars="-_.()[] "):
 
     Args:
         name:          The file name to sanitize. Only the name, no path elements.
-        really_universal: If ``True``, the old method of sanitization will always
+        really_universal: If ``True``, the old more aggressive method of sanitization will always
                           be used. Defaults to ``False``.
 
     Returns:
@@ -59,12 +65,14 @@ def sanitize_filename(name, really_universal=False, safe_chars="-_.()[] "):
     if "/" in name or "\\" in name:
         raise ValueError("name must not contain / or \\")
 
+    stripped = _STRIPPED_FILE_NAME_RE.sub("", name)
+
     from pathvalidate import sanitize_filename as sfn
 
     if really_universal:
-        result = _sfn_really_universal(name, safe_chars=safe_chars)
+        result = _sfn_really_universal(stripped, safe_chars=safe_chars)
     else:
-        result = sfn(name)
+        result = sfn(stripped)
 
     return result.lstrip(".")
 

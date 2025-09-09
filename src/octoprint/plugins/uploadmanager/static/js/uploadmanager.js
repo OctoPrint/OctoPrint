@@ -986,7 +986,7 @@ $(function () {
     OCTOPRINT_VIEWMODELS.push({
         construct: UploadmanagerViewModel,
         dependencies: [
-            "gcodeFilesViewModel",
+            "filesViewModel",
             "loginStateViewModel",
             "accessViewModel",
             "slicingViewModel",

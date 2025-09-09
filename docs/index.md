@@ -42,6 +42,7 @@ helping to change this, please get in touch [on the forum](https://community.oct
 :::{toctree}
 :maxdepth: 1
 
+gettingstarted.md
 features/index.rst
 bundledplugins/index.rst
 configuration/index.rst
