@@ -45,6 +45,37 @@ from octoprint.util import comm as comm
 from octoprint.util import get_fully_qualified_classname as fqcn
 
 
+class PrinterCustomControl(CustomControl):
+    source: str = "config"
+
+    @classmethod
+    def from_config(clz, other: CustomControl, source: str = "config"):
+        return clz(source=source, **other.model_dump())
+
+
+class PrinterCustomControlContainer(CustomControlContainer):
+    source: str = "config"
+
+    @classmethod
+    def from_config(clz, other: CustomControlContainer, source: str = "config"):
+        children = []
+        for child in other.children:
+            if isinstance(child, CustomControl):
+                children.append(PrinterCustomControl.from_config(child, source=source))
+            elif isinstance(child, CustomControlContainer):
+                children.append(
+                    PrinterCustomControlContainer.from_config(child, source=source)
+                )
+
+        return clz(
+            children=children,
+            name=other.name,
+            layout=other.layout,
+            collapsed=other.collapsed,
+            source=source,
+        )
+
+
 class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     """
     Default implementation of the :class:`PrinterInterface`. Encapsulates the :class:`~octoprint.printer.connection.ConnectedPrinter`,
@@ -545,17 +576,28 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def get_additional_controls(
         self,
-    ) -> list[Union[CustomControl, CustomControlContainer]]:
+    ) -> list[Union[PrinterCustomControl, PrinterCustomControlContainer]]:
         controls = []
 
         if self._connection is not None:
-            controls += self._connection.get_additional_controls()
+            for item in self._connection.get_additional_controls():
+                if isinstance(item, CustomControl):
+                    controls.append(
+                        PrinterCustomControl.from_config(item, source="printer")
+                    )
+                elif isinstance(item, CustomControlContainer):
+                    controls.append(
+                        PrinterCustomControlContainer.from_config(item, source="printer")
+                    )
 
         controls_from_config = settings().get(["controls"])
         if isinstance(controls_from_config, list):
             for data in controls_from_config:
                 try:
-                    control = CustomControl(**data)
+                    if "children" in data:
+                        control = PrinterCustomControlContainer(source="config", **data)
+                    else:
+                        control = PrinterCustomControl(source="config", **data)
                     controls.append(control)
                 except Exception:
                     self._logger.exception("Skipping invalid custom control")
@@ -564,7 +606,19 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             try:
                 additional = hook()
                 if isinstance(additional, list):
-                    controls += additional
+                    for add in additional:
+                        if isinstance(add, CustomControl):
+                            controls.append(
+                                PrinterCustomControl.from_config(
+                                    add, source=f"plugin_{name}"
+                                )
+                            )
+                        elif isinstance(add, CustomControlContainer):
+                            controls.append(
+                                PrinterCustomControlContainer.from_config(
+                                    add, source=f"plugin_{name}"
+                                )
+                            )
             except Exception:
                 self._logger.error(
                     f"Error while retrieving additional custom controls from {name}, ignoring",
