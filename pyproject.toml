@@ -78,7 +78,7 @@ dependencies = [
     "packaging>=24.2",
     "libpass>=1.8.1,<2",
     "pathvalidate>=3.2.3,<4",
-    "psutil>=6.1.1,<7",
+    "psutil==6.0.0",  # later versions are currently broken on piwheels under bullseye
     "pydantic>=2.10.6,<3",
     "pylru>=1.2.1,<2",
     "pyserial>=3.5,<4",

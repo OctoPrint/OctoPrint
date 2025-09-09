@@ -19,7 +19,6 @@ win32-Cura-*
 linux-Cura-*
 *.iml
 Printrun
-=======
 .idea
 .vscode
 .DS_Store

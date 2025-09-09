@@ -1,25 +1,26 @@
 <div class="alert alert-block">
     <p>
-        {{ _('For additional information on OctoPrint events please see <a href="%(url)s" target="_blank" rel="noopener noreferer">the official documentation</a>.', url='https://docs.octoprint.org/en/master/events/index.html') }}
-    </p>
-    <p>
         <strong>{{ _("Warning:") }}</strong> {{ _("For changes to take effect you must restart OctoPrint after saving.") }}
     </p>
 </div>
 <div class="row-fluid">
-    <div class="span4">{{ _("Name") }}</div>
-    <div class="span6">{{ _("Event(s)") }}</div>
-    <div class="span2 btn-group">
-        <button class="btn btn-mini" data-bind="click: addEvent">
-            <i class="fa fa-plus"></i> {{ _("Add") }}
-        </button>
+    <div class="span4">
+        <strong>{{ _("Name") }}</strong>
+    </div>
+    <div class="span6">
+        <strong>{{ _("Event(s)") }}</strong>
     </div>
 </div>
 <div data-bind="foreach: settingsViewModel.settings.plugins.eventmanager.subscriptions"
      class="row-fluid">
     <div class="row-fluid">
-        <div class="span4"
-             data-bind="attr: {title: command}, text: name() ? name() : command()"></div>
+        <div class="span4" data-bind="attr: {title: command}">
+            <span style="display: inline-block; width: 20px; text-align: center">
+                <i class="fa-solid"
+                   data-bind="css: {'fa-print': type() == 'gcode', 'fa-terminal': type() == 'system'}"></i>
+            </span>
+            <span data-bind="text: name() ? name() : command()"></span>
+        </div>
         <div class="span6" data-bind="text: event"></div>
         <div class="span2 btn-group">
             <button class="btn btn-mini" data-bind="click: $root.editEvent">
@@ -31,6 +32,16 @@
         </div>
     </div>
 </div>
+<div class="row-fluid">
+    <div class="offset10 span2">
+        <button class="btn btn-primary btn-mini" data-bind="click: addEvent">
+            <i class="fa fa-plus"></i> {{ _("Add") }}
+        </button>
+    </div>
+</div>
+<p>
+    {{ _('For additional information on OctoPrint events please see <a href="%(url)s" target="_blank" rel="noopener noreferer">the official documentation</a>.', url='https://docs.octoprint.org/en/master/events/index.html') }}
+</p>
 
 <div id="EventManagerEditor"
      data-bind="with: selectedCommand"
@@ -40,46 +51,74 @@
         <h3>{{ _("Command Editor") }}</h3>
     </div>
     <div class="modal-body">
-        <div class="control-group">
-            <label class="control-label">{{ _("Name") }}</label>
-            <div class="controls">
-                <input type="text" class="input-block-level" data-bind="value: name" />
+        <form class="form-horizontal" onsubmit="return false;">
+            <div class="control-group">
+                <label class="control-label">{{ _("Name") }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: name" />
+                </div>
             </div>
-        </div>
-        <div class="control-group">
-            <label class="control-label">{{ _("Event(s)") }}</label>
-            <div class="controls">
-                <select class="input-block-level"
-                        data-bind="selectedOptions: event, options: $root.settingsViewModel.settings.plugins.eventmanager.availableEvents().sort(), valueAllowUnset: true"
-                        multiple="multiple"
-                        size="5"></select>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: enabled" />
+                        {{ _("Enabled") }}
+                    </label>
+                </div>
             </div>
-        </div>
-        <div class="control-group">
-            <label class="control-label">{{ _("Command") }}</label>
-            <div class="controls">
-                <input type="text" class="input-block-level" data-bind="value: command" />
+            <div class="control-group">
+                <label class="control-label">{{ _("Event(s)") }}</label>
+                <div class="controls">
+                    <select class="input-block-level"
+                            data-bind="selectedOptions: event, options: $root.settingsViewModel.settings.plugins.eventmanager.availableEvents().sort(), valueAllowUnset: true"
+                            multiple="multiple"
+                            size="5"></select>
+                </div>
             </div>
-        </div>
-        <div class="control-group">
-            <label class="control-label">{{ _("Type") }}</label>
-            <div class="controls">
-                <select data-bind="value: type, options: ['gcode', 'system'], optionsCaption: 'Select Event Type', valueAllowUnset: true">
-                </select>
+            <div class="control-group">
+                <label class="control-label">{{ _("Type") }}</label>
+                <div class="controls">
+                    <label class="radio">
+                        <input type="radio"
+                               name="eventHandlerTypeGroup"
+                               value="system"
+                               data-bind="checked: type">
+                        {{ _("Execute <strong>system</strong> commands") }}
+                    </label>
+                    <label class="radio">
+                        <input type="radio"
+                               name="eventHandlerTypeGroup"
+                               value="gcode"
+                               data-bind="checked: type">
+                        {{ _("Send <strong>GCODE</strong> commands to the printer") }}
+                    </label>
+                </div>
             </div>
-        </div>
-        <div class="control-group">
-            <label class="control-label">{{ _("Enabled") }}</label>
-            <div class="controls">
-                <input type="checkbox" data-bind="checked: enabled" />
+            <div class="control-group">
+                <label class="control-label">{{ _("Command") }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: command" />
+                </div>
             </div>
-        </div>
-        <div class="control-group">
-            <label class="control-label">{{ _("Debug") }}</label>
-            <div class="controls">
-                <input type="checkbox" data-bind="checked: debug" />
+            <div class="control-group" data-bind="visible: type() == 'system'">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: shell" />
+                        {{ _("Shell") }} <span class="label label-important">{{ _("Dangerous") }}</span>
+                        <span class="help-block">{% trans %}Only check this if you absolutely need full shell access by your command, e.g. if you need access to the <code>PATH</code> or other environment variables, or if you need to chain multiple commands directly together.{% endtrans %}</span>
+                    </label>
+                </div>
             </div>
-        </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: debug" />
+                        {{ _("Debug") }} <span class="label label-important">{{ _("Dangerous") }}</span>
+                        <span class="help-block">{% trans %}If this is checked, OctoPrint will log the full command as it is executed to the log file. That might leak any included credentials if you then share the logs.{% endtrans %}</span>
+                    </label>
+                </div>
+            </div>
+        </form>
         <p>
             <small>
                 {{ _("Please note that any event handlers you define here will be processed <em>asynchronously</em> to OctoPrint's own processing of the event. You cannot stall, block or otherwise influence internal execution with event handlers.") }}

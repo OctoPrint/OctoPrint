@@ -16,7 +16,6 @@ thanks to everyone who contributed!
   * Brad Jackson
   * Bradford Benn
   * Bret Wortman
-  * Chloe Martin
   * Christian Petropolis
   * Christian Wolf
   * Christian Würthner
@@ -24,7 +23,6 @@ thanks to everyone who contributed!
   * Christopher Heiny
   * Coltarus Halo
   * CooperSpartan
-  * David L Weiner
   * David OMeara
   * David Pitman
   * DBDWJSasquatch_Printing_78
@@ -35,6 +33,7 @@ thanks to everyone who contributed!
   * Erik Ableson
   * Ernesto Martinez
   * Franziska Kunsmann
+  * homoldak000
   * James Nangano
   * Jannis Leidel
   * Jason Kitchens
@@ -46,7 +45,6 @@ thanks to everyone who contributed!
   * Kenneth Jiang
   * Kurt Wubbels
   * Lachlan Bell
-  * Lefteris Lertas
   * LulzBot
   * Makespace Madrid
   * Marco van Dijk
@@ -73,4 +71,4 @@ thanks to everyone who contributed!
   * Timothy Efinger
   * Ulrich Kempken
 
-and 2621 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 2496 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
