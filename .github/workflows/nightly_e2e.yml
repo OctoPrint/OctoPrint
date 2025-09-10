@@ -26,7 +26,7 @@ jobs:
           path: OctoPrint
 
       - name: 🏗 Set up QEMU
-        users: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v2
 
       - name: 🐳 Build Dockerfile
         working-directory: OctoPrint
