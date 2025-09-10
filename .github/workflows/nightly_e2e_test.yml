@@ -30,7 +30,7 @@ jobs:
       - name: 🐳 Build Dockerfile
         working-directory: OctoPrint
         run: |
-          docker build --target runtime --tag octoprint_test --file .github/ci/piwheels_nightly/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
+          docker build --target runtime --tag octoprint_test --file .github/ci/nightly_e2e/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
         env:
           DEBIAN_VERSION: ${{ matrix.debian_version }}
           DOCKER_ARCH: ${{ matrix.arch.docker }}
