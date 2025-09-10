@@ -1,6 +1,7 @@
 name: "Nightly E2E Test"
 
 on:
+  push:
   workflow_dispatch:
 
 jobs:
