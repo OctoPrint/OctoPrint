@@ -25,6 +25,16 @@ jobs:
       - name: 🏗 Set up QEMU
         uses: docker/setup-qemu-action@v3
 
+      - name: 🏗 Prepare E2E config
+        run: |
+          mkdir e2econfig
+
+          if [ -d OctoPrint/.github/ci/e2econfig ]; then
+            cp -r .github/ci/e2econfig/* e2econfig
+          else
+            cp -r .github/fixtures/with_acl/* e2econfig
+          fi
+
       - name: 🐳 Build Dockerfile
         working-directory: OctoPrint
         run: |
@@ -34,15 +44,6 @@ jobs:
           DOCKER_ARCH: ${{ matrix.arch.docker }}
           BUILD_TYPE: raspi
           DOCKER_BUILDKIT: 1
-
-      - name: 🏗 Prepare E2E config
-        run: |
-          mkdir e2econfig
-
-          if [ -d OctoPrint/.github/ci/e2econfig ]; then
-            cp -r .github/ci/e2econfig/* e2econfig
-          else
-            cp -r .github/fixtures/with_acl/* e2econfig
 
       - name: 🐙 Start OctoPrint server in docker
         run: |
