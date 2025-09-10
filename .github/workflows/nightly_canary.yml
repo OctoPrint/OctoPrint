@@ -1,11 +1,22 @@
-name: "Nightly E2E Test"
+name: "🐦 Nightly Canary"
+
+# Runs nightly canary tests
+#
+# Currently "simulates" an RPi in a docker container (armhf7, debian + rpi apt repo + piwheels),
+# installs OctoPrint in a basic venv, runs the container and fires the E2E test suite against
+# it, also checking the logs for errors.
+#
+# This should hopefully allow to discover issues with broken dependencies pulled in from piwheels
+# very early.
 
 on:
-  push:
+  schedule:
+    - cron: "0 1 * * *"
   workflow_dispatch:
 
 jobs:
-  nightly-e2e:
+  canary-e2e:
+    name: 🎭 Canary E2E
     runs-on: ${{ matrix.arch.runner }}
     strategy:
       fail-fast: false
