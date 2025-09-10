@@ -15,13 +15,11 @@ jobs:
           - docker: arm/v7
             variant: arm32v7
             runner: ubuntu-latest
-        ref: ["dev"]
 
     steps:
       - name: ⬇ Checkout
         uses: actions/checkout@v5
         with:
-          ref: ${{ matrix.ref }}
           path: OctoPrint
 
       - name: 🏗 Set up QEMU
@@ -53,7 +51,6 @@ jobs:
       - name: "🎭 Run E2E tests"
         uses: OctoPrint/actions/e2e@main
         with:
-          ref: ${{ matrix.ref }}
           server: "http://127.0.0.1:5000"
           suffix: "-debian${{ matrix.debian_version }}-arch${{ matrix.arch.variant }}"
 
