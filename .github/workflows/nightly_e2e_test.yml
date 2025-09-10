@@ -10,7 +10,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        debian_version: ["bullseye", "bookworm"]
+        #debian_version: ["bullseye", "bookworm", "trixie"]
+        debian_version: ["bookworm"]
         arch:
           - docker: arm/v7
             variant: arm32v7
@@ -34,6 +35,8 @@ jobs:
           else
             cp -r OctoPrint/.github/fixtures/with_acl/* e2econfig
           fi
+
+          tree e2econfig
 
       - name: 🐳 Build Dockerfile (1st try)
         id: dockerbuild_1
