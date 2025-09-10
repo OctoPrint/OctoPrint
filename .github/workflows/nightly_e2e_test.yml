@@ -74,7 +74,7 @@ jobs:
 
       - name: 🐙 Start OctoPrint server in docker
         run: |
-          docker run -d --network=host --platform=linux/${{ matrix.arch.docker }} -v e2econfig:/octoprint/config octoprint_test
+          docker run -d --network=host --platform=linux/${{ matrix.arch.docker }} -v ./e2econfig:/octoprint/config octoprint_test
 
       - name: "🎭 Run E2E tests"
         uses: OctoPrint/actions/e2e@main
