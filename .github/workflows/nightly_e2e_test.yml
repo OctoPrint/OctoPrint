@@ -13,7 +13,7 @@ jobs:
         debian_version:
           - bullseye
           - bookworm
-        #  - trixie
+          - trixie
         arch:
           - docker: arm/v7
             variant: arm32v7
