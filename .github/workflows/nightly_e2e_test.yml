@@ -30,9 +30,9 @@ jobs:
           mkdir e2econfig
 
           if [ -d OctoPrint/.github/ci/e2econfig ]; then
-            cp -r .github/ci/e2econfig/* e2econfig
+            cp -r OctoPrint/.github/ci/e2econfig/* e2econfig
           else
-            cp -r .github/fixtures/with_acl/* e2econfig
+            cp -r OctoPrint/.github/fixtures/with_acl/* e2econfig
           fi
 
       - name: 🐳 Build Dockerfile
