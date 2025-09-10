@@ -35,7 +35,34 @@ jobs:
             cp -r OctoPrint/.github/fixtures/with_acl/* e2econfig
           fi
 
-      - name: 🐳 Build Dockerfile
+      - name: 🐳 Build Dockerfile (1st try)
+        id: dockerbuild_1
+        continue-on-error: true
+        working-directory: OctoPrint
+        run: |
+          docker build --target runtime --tag octoprint_test --file .github/ci/nightly_e2e/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
+        env:
+          DEBIAN_VERSION: ${{ matrix.debian_version }}
+          DOCKER_ARCH: ${{ matrix.arch.docker }}
+          BUILD_TYPE: raspi
+          DOCKER_BUILDKIT: 1
+
+      - name: 🐳 Build Dockerfile (2nd try)
+        id: dockerbuild_2
+        continue-on-error: true
+        if: steps.dockerbuild_1.outcome != 'success'
+        working-directory: OctoPrint
+        run: |
+          docker build --target runtime --tag octoprint_test --file .github/ci/nightly_e2e/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
+        env:
+          DEBIAN_VERSION: ${{ matrix.debian_version }}
+          DOCKER_ARCH: ${{ matrix.arch.docker }}
+          BUILD_TYPE: raspi
+          DOCKER_BUILDKIT: 1
+
+      - name: 🐳 Build Dockerfile (3rd & final try)
+        id: dockerbuild_3
+        if: steps.dockerbuild_2.outcome != 'success'
         working-directory: OctoPrint
         run: |
           docker build --target runtime --tag octoprint_test --file .github/ci/nightly_e2e/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
