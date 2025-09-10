@@ -62,7 +62,7 @@ jobs:
 
       - name: 🐳 Build Dockerfile (3rd & final try)
         id: dockerbuild_3
-        if: steps.dockerbuild_2.outcome != 'success'
+        if: steps.dockerbuild_1.outcome != 'success' && steps.dockerbuild_2.outcome != 'success'
         working-directory: OctoPrint
         run: |
           docker build --target runtime --tag octoprint_test --file .github/ci/nightly_e2e/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
