@@ -2722,7 +2722,7 @@ class MfaPlugin(TemplatePlugin, OctoPrintPlugin, SortablePlugin):
     MFA setup and verification process.
 
     A reference implementation of an MFA plugin, implementing TOTP, can be found at `github.com/OctoPrint/OctoPrint-MfaTotp <https://github.com/OctoPrint/OctoPrint-MfaTotp>`_.
-    Additionally there's a dummy implementation used for testing as part of OctoPrint's source code in the folder ``.github/fixtures/mfa_dummy``.
+    Additionally there's a dummy implementation used for testing as part of OctoPrint's source code in the folder ``.github/ci/mfa_dummy``.
     Interested plugin developers are encouraged to take a look at both these implementation to get an idea of how to implement their own MFA plugin.
 
     .. versionadded:: 1.11.0

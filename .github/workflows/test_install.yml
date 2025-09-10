@@ -58,7 +58,7 @@ jobs:
       - name: 🏗 Create base config for test server
         run: |
           mkdir e2econfig
-          cp -r src/.github/fixtures/with_acl/* e2econfig
+          cp -r src/.github/ci/e2econfig/* e2econfig
 
           # ensure enabled rate limiter
           yq -i '.devel.enableRateLimiter = true' e2econfig/config.yaml
