@@ -1,4 +1,4 @@
-name: "Nightly E2E"
+name: "Nightly E2E Test"
 
 on:
   workflow_dispatch:
