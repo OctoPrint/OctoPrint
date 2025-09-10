@@ -80,7 +80,7 @@ jobs:
         uses: OctoPrint/actions/e2e@main
         with:
           server: "http://127.0.0.1:5000"
-          suffix: "-debian${{ matrix.debian_version }}-arch${{ matrix.arch.variant }}"
+          suffix: "-${{ matrix.debian_version }}-${{ matrix.arch.variant }}"
 
       - name: 🔎 Check octoprint.log for errors
         run: |
@@ -90,3 +90,10 @@ jobs:
             grep -Pazo '(?m)^\N+\- ERROR \-\N*\n(^\N*?\n)*?(?=\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} \- )' $log
             exit 1
           fi
+
+      - name: ⬆ Upload OctoPrint logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: octoprint-logs--${{ matrix.debian_version }}-${{ matrix.arch.variant }}
+          path: e2econfig/logs
