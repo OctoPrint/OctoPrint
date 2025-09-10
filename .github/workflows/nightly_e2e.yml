@@ -1,0 +1,68 @@
+name: "Nightly E2E"
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+jobs:
+  nightly-e2e:
+    runs-on: ${{ matrix.arch.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        debian_version: ["bullseye", "bookworm"]
+        arch:
+          - docker: arm/v7
+            variant: arm32v7
+            runner: ubuntu-latest
+        ref: ["dev"]
+
+    steps:
+      - name: ⬇ Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ matrix.ref }}
+          path: OctoPrint
+
+      - name: 🏗 Set up QEMU
+        users: docker/setup-qemu-action@v2
+
+      - name: 🐳 Build Dockerfile
+        working-directory: OctoPrint
+        run: |
+          docker build --target runtime --tag octoprint_test --file OctoPrint/.github/ci/piwheels_nightly/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
+        env:
+          DEBIAN_VERSION: ${{ matrix.debian_version }}
+          DOCKER_ARCH: ${{ matrix.arch.docker }}
+          BUILD_TYPE: raspi
+          DOCKER_BUILDKIT: 1
+
+      - name: 🏗 Prepare E2E config
+        run: |
+          mkdir e2econfig
+
+          if [ -d OctoPrint/.github/ci/e2econfig ]; then
+            cp -r .github/ci/e2econfig/* e2econfig
+          else
+            cp -r .github/fixtures/with_acl/* e2econfig
+
+      - name: 🐙 Start OctoPrint server in docker
+        run: |
+          docker run --network=host --platform=linux/${{ matrix.arch.docker }} -v e2econfig:/octoprint/config octoprint_test
+
+      - name: "🎭 Run E2E tests"
+        uses: OctoPrint/actions/e2e@main
+        with:
+          ref: ${{ matrix.ref }}
+          server: "http://127.0.0.1:5000"
+          suffix: "-debian${{ matrix.debian_version }}-arch${{ matrix.arch.variant }}"
+
+      - name: 🔎 Check octoprint.log for errors
+        run: |
+          log="e2econfig/logs/octoprint.log"
+          if grep "\- ERROR \-" $log; then
+            echo "::error::Errors were logged to octoprint.log"
+            grep -Pazo '(?m)^\N+\- ERROR \-\N*\n(^\N*?\n)*?(?=\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} \- )' $log
+            exit 1
+          fi
