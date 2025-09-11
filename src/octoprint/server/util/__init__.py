@@ -18,6 +18,7 @@ import octoprint.timelapse
 from octoprint.plugin import plugin_manager
 from octoprint.settings import settings
 from octoprint.util import to_unicode
+from octoprint.util.net import is_loopback_address
 
 from . import flask, sockjs, tornado, watchdog  # noqa: F401
 
@@ -166,7 +167,9 @@ def optionsAllowOrigin(request):
     return resp
 
 
-def get_user_for_apikey(apikey: str) -> "Optional[octoprint.access.users.User]":
+def get_user_for_apikey(
+    apikey: str, remote_address: str = None
+) -> "Optional[octoprint.access.users.User]":
     """
     Tries to find a user based on the given API key.
 
@@ -181,6 +184,7 @@ def get_user_for_apikey(apikey: str) -> "Optional[octoprint.access.users.User]":
 
     Args:
         apikey (str): the API key to check
+        remote_address (str): the (optional) remote address of the client
 
     Returns:
         octoprint.access.users.User: the user found, or None if none was found
@@ -218,9 +222,10 @@ def get_user_for_apikey(apikey: str) -> "Optional[octoprint.access.users.User]":
                     )
 
             else:
-                plugin = plugin_manager().resolve_plugin_apikey(apikey)
-                if plugin:
-                    user = octoprint.server.userManager.internal_user_factory()
+                if is_loopback_address(remote_address):
+                    plugin = plugin_manager().resolve_plugin_apikey(apikey)
+                    if plugin:
+                        user = octoprint.server.userManager.internal_user_factory()
 
     if user:
         _flask.session["login_mechanism"] = LoginMechanism.APIKEY

@@ -239,7 +239,7 @@ def load_user_from_request(request):
     # API key?
     apikey = util.get_api_key(request)
     if apikey:
-        user = util.get_user_for_apikey(apikey)
+        user = util.get_user_for_apikey(apikey, remote_address=request.remote_addr)
         if user:
             return user
 
