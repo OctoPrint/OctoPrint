@@ -190,7 +190,7 @@ def get_user_for_apikey(apikey: str) -> "Optional[octoprint.access.users.User]":
 
     user = None
 
-    if apikey == settings().get(["api", "key"]):
+    if apikey == settings().get(["api", "key"]):  # TODO Remove in 1.13.0
         # global api key was used
         logging.getLogger(__name__).warning(
             "The global API key was just used. The global API key is deprecated and will cease to function with OctoPrint 1.13.0."
@@ -216,6 +216,11 @@ def get_user_for_apikey(apikey: str) -> "Optional[octoprint.access.users.User]":
                         ),
                         extra={"plugin": name},
                     )
+
+            else:
+                plugin = plugin_manager().resolve_plugin_apikey(apikey)
+                if plugin:
+                    user = octoprint.server.userManager.internal_user_factory()
 
     if user:
         _flask.session["login_mechanism"] = LoginMechanism.APIKEY

@@ -31,6 +31,7 @@ import logging
 import os
 import string
 import sys
+import threading
 from collections import OrderedDict, defaultdict, namedtuple
 from os import scandir
 
@@ -910,6 +911,9 @@ class PluginManager:
         self.plugin_implementations_by_type = defaultdict(list)
 
         self._plugin_hooks = defaultdict(list)
+
+        self._plugin_apikeys_mutex = threading.RLock()
+        self._plugin_apikeys = {}
 
         self.implementation_injects = {}
         self.implementation_inject_factories = []
@@ -2293,6 +2297,25 @@ class PluginManager:
                 client(plugin, data, permissions=permissions)
             except Exception:
                 self.logger.exception("Exception while sending plugin data to client")
+
+    def generate_plugin_apikey(self, plugin, uses=1):
+        from octoprint.util import generate_api_key
+
+        apikey = generate_api_key()
+        with self._plugin_apikeys_mutex:
+            self._plugin_apikeys[apikey] = (plugin, uses)
+        return apikey
+
+    def resolve_plugin_apikey(self, apikey):
+        try:
+            with self._plugin_apikeys_mutex:
+                plugin, uses = self._plugin_apikeys.pop(apikey)
+                uses -= 1
+                if uses > 0:
+                    self._plugin_apikeys[apikey] = (plugin, uses)
+            return plugin
+        except KeyError:
+            return None
 
     def _sort_hooks(self, hook):
         self._plugin_hooks[hook] = sorted(
