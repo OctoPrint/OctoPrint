@@ -346,33 +346,42 @@ $(function () {
             }
         };
 
-        self._processJobData = function (data) {
+        self._cachedFileKey = undefined;
+        self._syncMetadata = (data) => {
             if (data.file && data.file.origin && data.file.path) {
-                const currentFileKey = self.calcFileKey();
                 const futureFileKey = self.calcFileKey(data.file);
-                if (
-                    currentFileKey !== futureFileKey &&
-                    !currentFileKey.startsWith(futureFileKey + ":") &&
-                    !futureFileKey.startsWith(currentFileKey + ":")
-                ) {
-                    self._loadFileData(data.file.origin, data.file.path);
+                if (futureFileKey !== self._cachedFileKey) {
+                    const currentFileKey = self.calcFileKey();
+                    if (
+                        currentFileKey !== futureFileKey &&
+                        !currentFileKey.startsWith(futureFileKey + ":") &&
+                        !futureFileKey.startsWith(currentFileKey + ":")
+                    ) {
+                        self._loadFileData(data.file.origin, data.file.path).then(() => {
+                            self._cachedFileKey = futureFileKey;
+                        });
+                    }
                 }
             } else {
                 self.filedata(undefined);
             }
+        };
+
+        self._processJobData = (data) => {
+            self._syncMetadata(data);
 
             self.estimatedPrintTime(data.estimatedPrintTime);
             self.lastPrintTime(data.lastPrintTime);
 
-            var result = [];
+            const result = [];
             if (
                 data.filament &&
                 typeof data.filament === "object" &&
                 _.keys(data.filament).length > 0
             ) {
-                var keys = _.keys(data.filament);
+                const keys = _.keys(data.filament);
                 keys.sort();
-                _.each(keys, function (key) {
+                _.each(keys, (key) => {
                     if (
                         !_.startsWith(key, "tool") ||
                         !data.filament[key] ||
@@ -427,7 +436,7 @@ $(function () {
         };
 
         self._loadFileData = (origin, path) => {
-            OctoPrint.files.get(origin, path).then((data) => {
+            return OctoPrint.files.get(origin, path).then((data) => {
                 self.filedata(data);
             });
         };
