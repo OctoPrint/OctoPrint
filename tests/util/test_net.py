@@ -55,6 +55,28 @@ def test_is_lan_address(input_address, input_additional, expected):
 
 
 @pytest.mark.parametrize(
+    "input_address,expected",
+    [
+        (None, False),
+        ("", False),
+        ("127.0.0.1", True),
+        ("127.100.200.1", True),
+        ("::1", True),
+        ("192.168.123.234", False),
+        ("172.24.0.1", False),
+        ("10.1.2.3", False),
+        ("fc00::1", False),
+        ("::ffff:192.168.1.1", False),
+        ("::ffff:8.8.8.8", False),
+        ("11.1.2.3", False),
+    ],
+)
+def test_is_loopback_address(input_address, expected):
+    with mock.patch.object(octoprint.util.net, "HAS_V6", True):
+        assert octoprint.util.net.is_loopback_address(input_address) == expected
+
+
+@pytest.mark.parametrize(
     "address,expected",
     [
         ("fe80::89f3:31bb:ced0:2093%wlan0", "fe80::89f3:31bb:ced0:2093"),

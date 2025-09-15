@@ -281,7 +281,10 @@ $(function () {
         self.userString = ko.pureComputed(function () {
             var user = self.user();
             if (user === "_api") {
+                // TODO Remove in 1.13.0
                 user = "API client";
+            } else if (user === "_internal") {
+                user = "Internal client";
             }
 
             var file = self.filename();

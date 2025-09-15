@@ -132,6 +132,17 @@ class OctoPrintPlugin(Plugin):
         """
         pass
 
+    @property
+    def plugin_apikey(self):
+        """
+        Returns a single-use API key that may be used by the plugin
+        to perform authenticated requests against the server's HTTP endpoints,
+        e.g. to call the endpoints of other third party plugins without
+        registered helpers.
+        """
+
+        return self._plugin_manager.generate_plugin_apikey(self._identifier, uses=1)
+
 
 class ReloadNeedingPlugin(Plugin):
     """

@@ -183,6 +183,21 @@ def is_lan_address(address, additional_private=None):
         return True
 
 
+def is_loopback_address(address):
+    if not address:
+        return False
+
+    try:
+        address = sanitize_address(address)
+        ip = netaddr.IPAddress(address)
+        return ip.is_loopback()
+    except Exception:
+        logging.get_logger(__name__).exception(
+            f"Error while trying to determine whether {address} is a loopback address"
+        )
+        return False
+
+
 def sanitize_address(address):
     address = unmap_v4_as_v6(address)
     address = strip_interface_tag(address)
