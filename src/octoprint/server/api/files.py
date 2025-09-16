@@ -97,7 +97,7 @@ def _create_lastmodified(path, recursive):
         return None
 
 
-def _create_etag(path, filter, recursive, lm=None):
+def _create_etag(path, filter=None, recursive=False, lm=None):
     if lm is None:
         lm = _create_lastmodified(path, recursive)
 
