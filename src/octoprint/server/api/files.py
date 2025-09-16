@@ -291,13 +291,9 @@ def readGcodeFilesForOrigin(origin):
 @with_revalidation_checking(
     etag_factory=lambda lm=None: _create_etag(
         request.path,
-        request.values.get("filter", False),
-        request.values.get("recursive", False),
         lm=lm,
     ),
-    lastmodified_factory=lambda: _create_lastmodified(
-        request.path, request.values.get("recursive", False)
-    ),
+    lastmodified_factory=lambda: _create_lastmodified(request.path, False),
     unless=lambda: request.values.get("force", False)
     or request.values.get("_refresh", False),
 )
@@ -310,34 +306,24 @@ def readGcodeFile(target, filename):
     if not _validate_filename(target, filename):
         abort(404)
 
-    recursive = False
-    if "recursive" in request.values:
-        recursive = request.values["recursive"] in valid_boolean_trues
-
-    file = _getFileDetails(target, filename, recursive=recursive)
+    file = _getFileDetails(target, filename)
     if not file:
         abort(404)
 
     return jsonify(file)
 
 
-def _getFileDetails(origin, path, recursive=True):
+def _getFileDetails(origin, path):
     if "/" in path:
         parent, _ = path.rsplit("/", 1)
     else:
         parent = None
 
-    files = _getFileList(origin, path=parent, recursive=recursive, level=1)
+    data = fileManager.get_file(origin, path)
+    if not data:
+        return None
 
-    for node in files:
-        if node["path"] == path:
-            return node
-        else:
-            for child in node.get("children", []):
-                if child["path"] == path:
-                    return child
-
-    return None
+    return _analyse_recursively(origin, [data], path=parent)[0]
 
 
 @time_this(
@@ -383,119 +369,126 @@ def _getFileList(
             lastmodified = fileManager.last_modified(origin, path=path, recursive=True)
             _file_cache[cache_key] = (files, lastmodified, storage_hash)
 
-    def analyse_recursively(files, path=None):
-        if path is None:
-            path = ""
+    return _analyse_recursively(origin, files, extension_tree=extension_tree)
 
-        result = []
-        for file_or_folder in files:
-            # make a shallow copy in order to not accidentally modify the cached data
-            file_or_folder = dict(file_or_folder)
 
-            file_or_folder["origin"] = origin
+def _analyse_recursively(
+    origin: str, files: list[dict], path: str = None, extension_tree=None
+) -> list[dict]:
+    if path is None:
+        path = ""
 
-            if file_or_folder["type"] == "folder":
-                if "children" in file_or_folder:
-                    children = analyse_recursively(
-                        file_or_folder["children"].values(),
-                        path + file_or_folder["name"] + "/",
-                    )
-                    latest_print = None
-                    success = 0
-                    failure = 0
-                    for child in children:
-                        if (
-                            "prints" not in child
-                            or "last" not in child["prints"]
-                            or "date" not in child["prints"]["last"]
-                        ):
-                            continue
+    if extension_tree is None:
+        extension_tree = octoprint.filemanager.full_extension_tree()
 
-                        success += child["prints"].get("success", 0)
-                        failure += child["prints"].get("failure", 0)
+    result = []
+    for file_or_folder in files:
+        # make a shallow copy in order to not accidentally modify the cached data
+        file_or_folder = dict(file_or_folder)
 
-                        if (
-                            latest_print is None
-                            or child["prints"]["last"]["date"] > latest_print["date"]
-                        ):
-                            latest_print = child["prints"]["last"]
+        file_or_folder["origin"] = origin
 
-                    file_or_folder["children"] = children
-                    file_or_folder["prints"] = {
+        if file_or_folder["type"] == "folder":
+            if "children" in file_or_folder:
+                children = _analyse_recursively(
+                    origin,
+                    file_or_folder["children"].values(),
+                    path=path + file_or_folder["name"] + "/",
+                )
+                latest_print = None
+                success = 0
+                failure = 0
+                for child in children:
+                    if (
+                        "prints" not in child
+                        or "last" not in child["prints"]
+                        or "date" not in child["prints"]["last"]
+                    ):
+                        continue
+
+                    success += child["prints"].get("success", 0)
+                    failure += child["prints"].get("failure", 0)
+
+                    if (
+                        latest_print is None
+                        or child["prints"]["last"]["date"] > latest_print["date"]
+                    ):
+                        latest_print = child["prints"]["last"]
+
+                file_or_folder["children"] = children
+                file_or_folder["prints"] = {
+                    "success": success,
+                    "failure": failure,
+                }
+                if latest_print:
+                    file_or_folder["prints"]["last"] = latest_print
+
+            file_or_folder["refs"] = {
+                "resource": url_for(
+                    ".readGcodeFile",
+                    target=origin,
+                    filename=path + file_or_folder["name"],
+                    _external=True,
+                )
+            }
+        else:
+            if "analysis" in file_or_folder and octoprint.filemanager.valid_file_type(
+                file_or_folder["name"], type="gcode", tree=extension_tree
+            ):
+                file_or_folder["gcodeAnalysis"] = file_or_folder["analysis"]
+                del file_or_folder["analysis"]
+
+            if "history" in file_or_folder and octoprint.filemanager.valid_file_type(
+                file_or_folder["name"], type="gcode", tree=extension_tree
+            ):
+                # convert print log
+                history = file_or_folder["history"]
+                del file_or_folder["history"]
+                success = 0
+                failure = 0
+                last = None
+                for entry in history:
+                    success += 1 if "success" in entry and entry["success"] else 0
+                    failure += 1 if "success" in entry and not entry["success"] else 0
+                    if not last or (
+                        "timestamp" in entry
+                        and "timestamp" in last
+                        and entry["timestamp"] > last["timestamp"]
+                    ):
+                        last = entry
+                if last:
+                    prints = {
                         "success": success,
                         "failure": failure,
+                        "last": {
+                            "success": last["success"],
+                            "date": last["timestamp"],
+                        },
                     }
-                    if latest_print:
-                        file_or_folder["prints"]["last"] = latest_print
+                    if "printTime" in last:
+                        prints["last"]["printTime"] = last["printTime"]
+                    file_or_folder["prints"] = prints
 
-                file_or_folder["refs"] = {
-                    "resource": url_for(
-                        ".readGcodeFile",
-                        target=origin,
-                        filename=path + file_or_folder["name"],
-                        _external=True,
-                    )
-                }
-            else:
-                if "analysis" in file_or_folder and octoprint.filemanager.valid_file_type(
-                    file_or_folder["name"], type="gcode", tree=extension_tree
-                ):
-                    file_or_folder["gcodeAnalysis"] = file_or_folder["analysis"]
-                    del file_or_folder["analysis"]
+            file_or_folder["refs"] = {
+                "resource": url_for(
+                    ".readGcodeFile",
+                    target=origin,
+                    filename=file_or_folder["path"],
+                    _external=True,
+                )
+            }
 
-                if "history" in file_or_folder and octoprint.filemanager.valid_file_type(
-                    file_or_folder["name"], type="gcode", tree=extension_tree
-                ):
-                    # convert print log
-                    history = file_or_folder["history"]
-                    del file_or_folder["history"]
-                    success = 0
-                    failure = 0
-                    last = None
-                    for entry in history:
-                        success += 1 if "success" in entry and entry["success"] else 0
-                        failure += 1 if "success" in entry and not entry["success"] else 0
-                        if not last or (
-                            "timestamp" in entry
-                            and "timestamp" in last
-                            and entry["timestamp"] > last["timestamp"]
-                        ):
-                            last = entry
-                    if last:
-                        prints = {
-                            "success": success,
-                            "failure": failure,
-                            "last": {
-                                "success": last["success"],
-                                "date": last["timestamp"],
-                            },
-                        }
-                        if "printTime" in last:
-                            prints["last"]["printTime"] = last["printTime"]
-                        file_or_folder["prints"] = prints
+            if fileManager.capabilities(origin).read_file:
+                quoted_path = urlquote(file_or_folder["path"])
+                url = (
+                    url_for("index", _external=True)
+                    + f"downloads/files/{origin}/{quoted_path}"
+                )
+                file_or_folder["refs"]["download"] = url
 
-                file_or_folder["refs"] = {
-                    "resource": url_for(
-                        ".readGcodeFile",
-                        target=origin,
-                        filename=file_or_folder["path"],
-                        _external=True,
-                    )
-                }
+        result.append(file_or_folder)
 
-                if fileManager.capabilities(origin).read_file:
-                    quoted_path = urlquote(file_or_folder["path"])
-                    url = (
-                        url_for("index", _external=True)
-                        + f"downloads/files/{origin}/{quoted_path}"
-                    )
-                    file_or_folder["refs"]["download"] = url
-
-            result.append(file_or_folder)
-
-        return result
-
-    return analyse_recursively(files)
+    return result
 
 
 def _verifyFileExists(origin, filename):

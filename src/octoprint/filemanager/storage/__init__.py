@@ -175,7 +175,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_file(self, path=None):
+    def get_file(self, path: str):
         if "/" in path:
             folder, _ = path.rsplit("/", 1)
         else:

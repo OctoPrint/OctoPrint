@@ -568,7 +568,6 @@ Retrieve a specific file's or folder's information
 
    :param location: The location of the file for which to retrieve the information, either ``local`` or ``sdcard``.
    :param filename: The filename of the file for which to retrieve the information
-   :param recursive: If set to ``true``, return all files and folders recursively. Otherwise only return items on same level.
    :statuscode 200: No error
    :statuscode 404: If ``target`` is neither ``local`` nor ``sdcard``, ``sdcard`` but SD card support is disabled or the
                     requested file was not found
