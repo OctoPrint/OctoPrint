@@ -43,6 +43,10 @@ $(function () {
         self.currentConnector = ko.observable(undefined);
         self.currentConnectorParameters = {};
 
+        self.lastConnector = undefined;
+        self.lastConnectorParameters = {};
+        self.lastProfile = undefined;
+
         self.profileOptions = ko.observableArray(undefined);
         self.currentProfile = ko.observable(undefined);
 
@@ -100,31 +104,35 @@ $(function () {
             });
             self.connectorParameters = connectorParameters;
 
+            let activeParameters;
             if (currentConnector && connectorParameters[currentConnector]) {
                 self.selectedConnector(currentConnector);
+                activeParameters = response.current.parameters;
+
+                // also set last connector here
+                self.lastConnector = currentConnector;
+                self.lastConnectorParameters = response.current.parameters;
+            } else if (self.lastConnector && connectorParameters[self.lastConnector]) {
+                self.selectedConnector(self.lastConnector);
+                activeParameters = self.lastConnectorParameters;
             } else if (preferredConnector && connectorParameters[preferredConnector]) {
                 self.selectedConnector(preferredConnector);
+                activeParameters = response.options.preferredConnector.parameters;
             } else {
                 self.selectedConnector(connectors[0].connector);
+                activeParameters = undefined;
             }
 
             // connectors
 
-            const currentParameterValues =
-                self.selectedConnector() == response.current.connector
-                    ? response.current.parameters
-                    : self.selectedConnector() ==
-                        response.options.preferredConnector.connector
-                      ? response.options.preferredConnector.parameters
-                      : undefined;
-            if (currentParameterValues) {
+            if (activeParameters) {
                 const container = $(`#connection_options_${self.selectedConnector()}`);
                 _.each(["input", "select", "textarea"], (tag) => {
                     $(`${tag}[data-connection-parameter]`, container).each(
                         (index, element) => {
                             const jqueryElement = $(element);
                             const parameter = jqueryElement.data("connection-parameter");
-                            const value = currentParameterValues[parameter];
+                            const value = activeParameters[parameter];
                             if (value !== undefined) {
                                 jqueryElement.val(value);
                             }
@@ -136,6 +144,7 @@ $(function () {
             callViewModels(self.allViewModels, "onConnectionDataReceived", [
                 connectorParameters,
                 response.current,
+                {connector: self.lastConnector, parameters: self.lastConnectorParameters},
                 response.options.preferredConnector
             ]);
 
@@ -148,6 +157,9 @@ $(function () {
             if (!self.currentProfile() && printerProfiles) {
                 if (printerProfiles.indexOf(currentProfile) >= 0) {
                     self.currentProfile(currentProfile);
+                    self.lastProfile = currentProfile;
+                } else if (printerProfiles.indexOf(self.lastProfile) >= 0) {
+                    self.currentProfile(self.lastProfile);
                 } else if (printerProfiles.indexOf(preferredProfile) >= 0) {
                     self.currentProfile(preferredProfile);
                 }

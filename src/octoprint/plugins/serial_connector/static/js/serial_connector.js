@@ -25,36 +25,56 @@ $(function () {
             () => self.validPort() && self.isErrorOrClosed()
         );
 
-        self.onConnectionDataReceived = (parameters, current, preferred) => {
+        self.onConnectionDataReceived = (parameters, current, last, preferred) => {
             const ports = parameters.serial.port;
             const baudrates = parameters.serial.baudrate;
 
             const currentPort =
-                current.connector === "serial" ? current.parameters.port : null;
+                current.connector === "serial" ? current.parameters.port : undefined;
             const currentBaudrate =
-                current.connector === "serial" ? current.baudrate : null;
+                current.connector === "serial" ? current.baudrate : undefined;
+
+            const lastPort =
+                last.connector === "serial" ? last.parameters.port : undefined;
+            const lastBaudrate =
+                last.connector === "serial" ? last.parameters.baudrate : undefined;
 
             const preferredPort =
-                preferred.connector == "serial" ? preferred.parameters.port : null;
+                preferred.connector == "serial" ? preferred.parameters.port : undefined;
             const preferredBaudrate =
-                preferred.connector == "serial" ? preferred.parameters.baudrate : null;
+                preferred.connector == "serial"
+                    ? preferred.parameters.baudrate
+                    : undefined;
 
             self.portOptions(ports);
             self.baudrateOptions(baudrates);
 
             if (!self.currentPort() && ports) {
-                if (currentPort && ports.indexOf(currentPort) >= 0) {
+                if (currentPort !== undefined && ports.indexOf(currentPort) >= 0) {
                     self.currentPort(currentPort);
-                } else if (preferredPort && ports.indexOf(preferredPort) >= 0) {
+                } else if (lastPort !== undefined && ports.indexOf(lastPort) >= 0) {
+                    self.currentPort(lastPort);
+                } else if (
+                    preferredPort !== undefined &&
+                    ports.indexOf(preferredPort) >= 0
+                ) {
                     self.currentPort(preferredPort);
                 }
             }
 
             if (!self.currentBaudrate() && baudrates) {
-                if (currentBaudrate && baudrates.indexOf(currentBaudrate) >= 0) {
+                if (
+                    currentBaudrate !== undefined &&
+                    baudrates.indexOf(currentBaudrate) >= 0
+                ) {
                     self.currentBaudrate(currentBaudrate);
                 } else if (
-                    preferredBaudrate &&
+                    lastBaudrate !== undefined &&
+                    baudrates.indexOf(lastBaudrate) >= 0
+                ) {
+                    self.currentBaudrate(lastBaudrate);
+                } else if (
+                    preferredBaudrate !== undefined &&
                     baudrates.indexOf(preferredBaudrate) >= 0
                 ) {
                     self.currentBaudrate(preferredBaudrate);
