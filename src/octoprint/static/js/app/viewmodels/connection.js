@@ -102,11 +102,36 @@ $(function () {
 
             if (currentConnector && connectorParameters[currentConnector]) {
                 self.selectedConnector(currentConnector);
+            } else if (preferredConnector && connectorParameters[preferredConnector]) {
+                self.selectedConnector(preferredConnector);
             } else {
                 self.selectedConnector(connectors[0].connector);
             }
 
             // connectors
+
+            const currentParameterValues =
+                self.selectedConnector() == response.current.connector
+                    ? response.current.parameters
+                    : self.selectedConnector() ==
+                        response.options.preferredConnector.connector
+                      ? response.options.preferredConnector.parameters
+                      : undefined;
+            if (currentParameterValues) {
+                const container = $(`#connection_options_${self.selectedConnector()}`);
+                _.each(["input", "select", "textarea"], (tag) => {
+                    $(`${tag}[data-connection-parameter]`, container).each(
+                        (index, element) => {
+                            const jqueryElement = $(element);
+                            const parameter = jqueryElement.data("connection-parameter");
+                            const value = currentParameterValues[parameter];
+                            if (value !== undefined) {
+                                jqueryElement.val(value);
+                            }
+                        }
+                    );
+                });
+            }
 
             callViewModels(self.allViewModels, "onConnectionDataReceived", [
                 connectorParameters,
