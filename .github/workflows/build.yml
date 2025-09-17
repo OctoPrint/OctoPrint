@@ -25,6 +25,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: 🏗 Set up PR environment
+        if: github.event_name == 'pull_request'
+        run: |
+          # use base ref of PR as branch name for versioning
+          echo "GIT_VERSION_BRANCH=${{ github.event.pull_request.base.ref }}" >> $GITHUB_ENV
       - name: 🔨 Build distribution
         uses: OctoPrint/actions/build-dist@main
         with:
