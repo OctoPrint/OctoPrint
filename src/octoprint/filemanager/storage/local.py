@@ -1361,6 +1361,8 @@ class LocalFileStorage(StorageInterface):
         )
         folder["size"] = self.get_size
 
+        return folder
+
     def _enrich_folders(
         self, nodes: dict[str, dict], force_refresh: bool = False
     ) -> dict[str, dict]:
