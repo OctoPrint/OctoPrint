@@ -174,19 +174,21 @@ def _git(*args, **kwargs):
 
 
 def _get_long():
-    return _git("rev-parse", "HEAD")
+    return os.environ.get("GIT_VERSION_LONG", _git("rev-parse", "HEAD"))
 
 
 def _get_short():
-    return _git("rev-parse", "--short", "HEAD")
+    return os.environ.get("GIT_VERSION_SHORT", _git("rev-parse", "--short", "HEAD"))
 
 
 def _get_tag():
-    return _git("describe", "--tags", "--abbrev=0", "--always")
+    return os.environ.get(
+        "GIT_VERSION_TAG", _git("describe", "--tags", "--abbrev=0", "--always")
+    )
 
 
 def _get_branch():
-    return _git("rev-parse", "--abbrev-ref", "HEAD")
+    return os.environ.get("GIT_VERSION_BRANCH", _git("rev-parse", "--abbrev-ref", "HEAD"))
 
 
 def _get_dirty():
