@@ -52,6 +52,7 @@ jobs:
   test-unit:
     name: 🧪 Unit tests
     strategy:
+      fail-fast: false
       matrix:
         python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     runs-on: ubuntu-latest
@@ -122,6 +123,7 @@ jobs:
     needs: build
     if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     strategy:
+      fail-fast: false
       matrix:
         python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         installable: ["wheel", "sdist"]
@@ -169,6 +171,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python: ["3.9", "3.13"]
     steps:
