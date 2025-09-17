@@ -1366,7 +1366,7 @@ class LocalFileStorage(StorageInterface):
             base=path + "/",
             force_refresh=force_refresh,
         )
-        folder["size"] = self.get_size
+        folder["size"] = self.get_size(path_on_disk)
 
         return folder
 
