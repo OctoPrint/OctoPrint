@@ -1634,8 +1634,13 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
         # we now iterate over all members of ourselves and look if we find an attribute
         # that has data originating from one of our decorators - we ignore anything
-        # starting with a _ to only handle public stuff
-        for member in [x for x in dir(self) if not x.startswith("_")]:
+        # starting with a _ to only handle public stuff, and anything already defined
+        # on BlueprintPlugin itself to ignore the default interface
+        for member in [
+            x
+            for x in dir(self)
+            if not x.startswith("_") and not hasattr(BlueprintPlugin, x)
+        ]:
             f = getattr(self, member)
 
             if hasattr(f, "_blueprint_limits") and member in f._blueprint_limits:
