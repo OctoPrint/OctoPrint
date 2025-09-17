@@ -200,8 +200,11 @@ def load_user(id):
     if id is None:
         return None
 
-    if id == "_api":
+    if id == "_api":  # TODO Remove in 1.13.0
         return userManager.api_user_factory()
+
+    if id == "_internal":
+        return userManager.internal_user_factory()
 
     if session and "usersession.id" in session:
         sessionid = session["usersession.id"]
@@ -236,7 +239,7 @@ def load_user_from_request(request):
     # API key?
     apikey = util.get_api_key(request)
     if apikey:
-        user = util.get_user_for_apikey(apikey)
+        user = util.get_user_for_apikey(apikey, remote_address=request.remote_addr)
         if user:
             return user
 

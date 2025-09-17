@@ -1568,7 +1568,9 @@ def get_flask_user_from_request(request):
     apikey = octoprint.server.util.get_api_key(request)
     if apikey is not None:
         # user from api key?
-        user = octoprint.server.util.get_user_for_apikey(apikey)
+        user = octoprint.server.util.get_user_for_apikey(
+            apikey, remote_address=request.remote_addr
+        )
 
     if user is None:
         # user still None -> current session user

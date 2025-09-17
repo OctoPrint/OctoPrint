@@ -18,7 +18,7 @@ meta:
 ci/cd:
   - changed-files:
       - any-glob-to-any-file:
-          - .github/fixtures/**
+          - .github/ci/**
           - .github/workflows/**
           - .github/dependabot.yml
           - .github/issue-validation.yml

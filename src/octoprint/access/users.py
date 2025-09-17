@@ -76,8 +76,13 @@ class UserManager(GroupChangeListener):
     def anonymous_user_factory(self):
         return AnonymousUser([self._group_manager.guest_group])
 
-    def api_user_factory(self):
+    def api_user_factory(self):  # TODO Remove in 1.13.0
         return ApiUser([self._group_manager.admin_group, self._group_manager.user_group])
+
+    def internal_user_factory(self):
+        return InternalUser(
+            [self._group_manager.admin_group, self._group_manager.user_group]
+        )
 
     @property
     def enabled(self):
@@ -840,7 +845,7 @@ class FilebasedUserManager(UserManager):
             self._settings.save()
 
     def signature_key_for_user(self, username, secret):
-        if username == "_api":
+        if username == "_internal" or username == "_api":  # TODO Remove _api in 1.13.0
             return super().signature_key_for_user(username, secret)
         if username not in self._users:
             raise UnknownUser(username)
@@ -1510,6 +1515,11 @@ class SessionUser(wrapt.ObjectProxy):
 ##~~ User object to use when global api key is used to access the API
 
 
-class ApiUser(User):
+class ApiUser(User):  # TODO Remove in 1.13.0
     def __init__(self, groups):
         User.__init__(self, "_api", "", True, [], groups)
+
+
+class InternalUser(User):
+    def __init__(self, groups):
+        super().__init__("_internal", "", True, [], groups)

@@ -419,13 +419,15 @@ class PluginSettings:
 
         if get_preprocessors is None:
             get_preprocessors = {}
-        self.get_preprocessors = {"plugins": {}}
-        self.get_preprocessors["plugins"][plugin_key] = get_preprocessors
+        self.get_preprocessors = {
+            "plugins": {plugin_key: get_preprocessors},
+        }
 
         if set_preprocessors is None:
             set_preprocessors = {}
-        self.set_preprocessors = {"plugins": {}}
-        self.set_preprocessors["plugins"][plugin_key] = set_preprocessors
+        self.set_preprocessors = {
+            "plugins": {plugin_key: set_preprocessors},
+        }
 
         def prefix_path_in_args(args, index=0):
             result = []
@@ -501,6 +503,10 @@ class PluginSettings:
 
         Directly forwards to :func:`octoprint.settings.Settings.get`.
         """
+        if path == ["api", "key"]:
+            self._logger.warning(
+                f'DeprecationWarning: Detected access to deprecated settings path ["api", "key"] by plugin {self.plugin_key}. The global api key is deprecated, will be removed in 1.13.0 and should no longer be used. Plugins should instead use OctoPrintPlugin.plugin_apikey.'
+            )
         return self.settings.get(path, **kwargs)
 
     def global_get_int(self, path, **kwargs):
@@ -528,6 +534,10 @@ class PluginSettings:
 
         Directly forwards to :func:`octoprint.settings.Settings.set`.
         """
+        if path == ["api", "key"]:
+            self._logger.warning(
+                f'DeprecationWarning: Detected access to deprecated settings path ["api", "key"] by plugin {self.plugin_key}. The global api key is deprecated, will be removed in 1.13.0 and should no longer be used. Plugins should instead use OctoPrintPlugin.plugin_apikey.'
+            )
         self.settings.set(path, value, **kwargs)
 
     def global_set_int(self, path, value, **kwargs):

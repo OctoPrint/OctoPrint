@@ -132,6 +132,17 @@ class OctoPrintPlugin(Plugin):
         """
         pass
 
+    @property
+    def plugin_apikey(self):
+        """
+        Returns a single-use API key that may be used by the plugin
+        to perform authenticated requests against the server's HTTP endpoints,
+        e.g. to call the endpoints of other third party plugins without
+        registered helpers.
+        """
+
+        return self._plugin_manager.generate_plugin_apikey(self._identifier, uses=1)
+
 
 class ReloadNeedingPlugin(Plugin):
     """
@@ -1623,8 +1634,13 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
         # we now iterate over all members of ourselves and look if we find an attribute
         # that has data originating from one of our decorators - we ignore anything
-        # starting with a _ to only handle public stuff
-        for member in [x for x in dir(self) if not x.startswith("_")]:
+        # starting with a _ to only handle public stuff, and anything already defined
+        # on BlueprintPlugin itself to ignore the default interface
+        for member in [
+            x
+            for x in dir(self)
+            if not x.startswith("_") and not hasattr(BlueprintPlugin, x)
+        ]:
             f = getattr(self, member)
 
             if hasattr(f, "_blueprint_limits") and member in f._blueprint_limits:
@@ -2722,7 +2738,7 @@ class MfaPlugin(TemplatePlugin, OctoPrintPlugin, SortablePlugin):
     MFA setup and verification process.
 
     A reference implementation of an MFA plugin, implementing TOTP, can be found at `github.com/OctoPrint/OctoPrint-MfaTotp <https://github.com/OctoPrint/OctoPrint-MfaTotp>`_.
-    Additionally there's a dummy implementation used for testing as part of OctoPrint's source code in the folder ``.github/fixtures/mfa_dummy``.
+    Additionally there's a dummy implementation used for testing as part of OctoPrint's source code in the folder ``.github/ci/mfa_dummy``.
     Interested plugin developers are encouraged to take a look at both these implementation to get an idea of how to implement their own MFA plugin.
 
     .. versionadded:: 1.11.0
