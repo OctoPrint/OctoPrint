@@ -215,20 +215,27 @@ class LocalFileStorage(StorageInterface):
 
         path, name = self.sanitize(path)
         path = os.path.join(path, name)
+        if not os.path.exists(path):
+            return 0
+
+        last_modified = os.stat(path).st_mtime
 
         # shortcut for individual files
         if os.path.isfile(path):
-            return int(os.stat(path).st_mtime)
+            return int(last_modified)
 
-        last_modified = 0
         for entry in os.scandir(path):
-            if entry.is_file():
-                last_modified = max(last_modified, entry.stat().st_mtime)
-            elif recursive and entry.is_dir():
-                last_modified = max(
-                    last_modified,
-                    self.get_lastmodified(entry.path, recursive=recursive),
-                )
+            try:
+                if entry.is_file():
+                    last_modified = max(last_modified, entry.stat().st_mtime)
+                elif recursive and entry.is_dir():
+                    last_modified = max(
+                        last_modified,
+                        self.get_lastmodified(entry.path, recursive=recursive),
+                    )
+            except FileNotFoundError:
+                # avoid a potential race condition, file might be removed between scandir & stat call
+                pass
 
         return int(last_modified)
 
