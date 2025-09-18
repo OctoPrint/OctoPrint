@@ -2452,8 +2452,8 @@ class SlicerPlugin(OctoPrintPlugin):
             paths within the extension tree. Plugins may add additional file types through the :ref:`sec-plugins-hook-filemanager-extensiontree` hook.
             The system will test source files contains in incoming slicing requests via :meth:`octoprint.filemanager.valid_file_type` against the
             targeted slicer's ``source_file_types``.
-        destination_extension
-            The possible extensions of slicing result files.
+        destination_extensions
+            A list of possible extensions of slicing result files.
 
         Returns:
             dict: A dict describing the slicer as outlined above.
