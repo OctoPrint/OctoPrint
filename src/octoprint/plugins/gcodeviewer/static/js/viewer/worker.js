@@ -45,8 +45,6 @@ var printTime = 0;
 var printTimeByLayer = {};
 var layerHeight = 0;
 var layerCnt = 0;
-var speeds = {extrude: [], retract: [], move: []};
-var speedsByLayer = {extrude: {}, retract: {}, move: {}};
 var emptyLayers = [];
 var percentageByLayer = [];
 
@@ -56,28 +54,66 @@ var skipUntilPresent = false;
 
 importScripts("../lib/pako.js");
 
-var compress = function (data) {
+const compress = (data) => {
     if (!mustCompress) return data;
 
     return pako.deflate(JSON.stringify(data));
 };
 
-var decompress = function (data) {
+const decompress = (data) => {
     return JSON.parse(pako.inflate(data, {to: "string"}));
 };
 
-var sendLayersToParent = function (layers, progress) {
-    var l = [];
-    for (var i = 0; i < layers.length; i++) {
-        if (model[layers[i]]) l.push(layers[i]);
-    }
+const recordX = (x, inBounds) => {
+    if (x === undefined || isNaN(x)) return;
 
-    var m = [];
-    for (var i = 0; i < l.length; i++) {
-        if (!model[l[i]]) continue;
-        if (!(model[l[i]] instanceof Uint8Array)) model[l[i]] = compress(model[l[i]]);
-        m[l[i]] = model[l[i]];
+    max.x = max.x !== undefined ? Math.max(max.x, x) : x;
+    min.x = min.x !== undefined ? Math.min(min.x, x) : x;
+
+    if (inBounds) {
+        boundingBox.minX =
+            boundingBox.minX !== undefined ? Math.min(boundingBox.minX, x) : x;
+        boundingBox.maxX =
+            boundingBox.maxX !== undefined ? Math.max(boundingBox.maxX, x) : x;
     }
+};
+
+const recordY = (y, inBounds) => {
+    if (y === undefined || isNaN(y)) return;
+
+    max.y = max.y !== undefined ? Math.max(max.y, y) : y;
+    min.y = min.y !== undefined ? Math.min(min.y, y) : y;
+
+    if (inBounds) {
+        boundingBox.minY =
+            boundingBox.minY !== undefined ? Math.min(boundingBox.minY, y) : y;
+        boundingBox.maxY =
+            boundingBox.maxY !== undefined ? Math.max(boundingBox.maxY, y) : y;
+    }
+};
+
+const recordZ = (z) => {
+    if (z === undefined || isNaN(z)) return;
+
+    max.z = max.z !== undefined ? Math.max(max.z, z) : z;
+    min.z = min.z !== undefined ? Math.min(min.z, z) : z;
+
+    boundingBox.minZ = min.z;
+    boundingBox.maxZ = max.z;
+};
+
+const sendLayersToParent = (layers, progress) => {
+    const l = [];
+    layers.forEach((layer) => {
+        if (model[layer]) l.push(layer);
+    });
+
+    const m = [];
+    l.forEach((ll) => {
+        if (!model[ll]) return;
+        if (!(model[ll] instanceof Uint8Array)) model[ll] = compress(model[ll]);
+        m[ll] = model[ll];
+    });
 
     self.postMessage({
         cmd: "returnLayers",
@@ -89,7 +125,7 @@ var sendLayersToParent = function (layers, progress) {
     });
 };
 
-var sendSizeProgress = function (progress) {
+const sendSizeProgress = (progress) => {
     self.postMessage({
         cmd: "analyzeProgress",
         msg: {
@@ -99,7 +135,7 @@ var sendSizeProgress = function (progress) {
     });
 };
 
-var sendAnalyzeDone = function () {
+const sendAnalyzeDone = () => {
     self.postMessage({
         cmd: "analyzeDone",
         msg: {
@@ -113,8 +149,6 @@ var sendAnalyzeDone = function () {
             layerHeight: layerHeight,
             layerCnt: layerCnt,
             layerTotal: model.length,
-            speeds: speeds,
-            speedsByLayer: speedsByLayer,
             printTimeByLayer: printTimeByLayer,
             percentageByLayer: percentageByLayer,
             emptyLayers: emptyLayers
@@ -122,26 +156,25 @@ var sendAnalyzeDone = function () {
     });
 };
 
-var purgeLayers = function () {
-    var purge = true;
-    for (var i = 0; i < model.length; i++) {
+const purgeLayers = () => {
+    let purge = true;
+    model.forEach((cmds) => {
         purge = true;
-        if (!model[i]) {
+        if (!cmds) {
             purge = true;
         } else {
-            var cmds = model[i];
             if (cmds instanceof Uint8Array) cmds = decompress(cmds);
-            for (var j = 0; j < cmds.length; j++) {
-                if (cmds[j].extrude) purge = false;
-            }
+            cmds.forEach((cmd) => {
+                if (cmd.extrude) purge = false;
+            });
         }
         if (!purge) {
-            layerCnt += 1;
+            layerCnt++;
         }
-    }
+    });
 };
 
-var bedBounds = function () {
+const bedBounds = () => {
     if (!bed) {
         return {xMin: 0, xMax: 0, yMin: 0, yMax: 0};
     }
@@ -162,7 +195,7 @@ var bedBounds = function () {
     return result;
 };
 
-var withinBedBounds = function (x, y, bedBounds) {
+const withinBedBounds = (x, y, bedBounds) => {
     if (!ignoreOutsideBed) return true;
 
     var result = true;
@@ -177,169 +210,106 @@ var withinBedBounds = function (x, y, bedBounds) {
     return result;
 };
 
-var analyzeModel = function () {
-    var tmp1 = 0,
+const analyzeModel = () => {
+    let tmp1 = 0,
         tmp2 = 0;
-    var speedIndex = 0;
-    var type;
-    var printTimeAdd = 0;
+    let speedIndex = 0;
+    let type;
+    let printTimeAdd = 0;
 
-    var bounds = bedBounds();
+    const bounds = bedBounds();
 
-    for (var i = 0; i < model.length; i++) {
-        var cmds = model[i];
-        if (!cmds) continue;
+    model.forEach((cmds, i) => {
+        if (!cmds) return;
         if (cmds instanceof Uint8Array) cmds = decompress(cmds);
 
         if (cmds.length > 0) {
             percentageByLayer[i] = cmds[0].percentage;
         }
 
-        var layerExtrude = false;
-        for (var j = 0; j < cmds.length; j++) {
-            var tool = cmds[j].tool;
+        let layerExtrude = false;
+        cmds.forEach((cmd, j) => {
+            const tool = cmd.tool;
 
-            var retract = cmds[j].retract && cmds[j].retract > 0;
-            var extrude = cmds[j].extrude && cmds[j].extrude > 0 && !retract;
-            var move =
-                cmds[j].x !== undefined ||
-                cmds[j].y !== undefined ||
-                cmds[j].z !== undefined;
+            const retract = cmd.retract && cmd.retract > 0;
+            const extrude = cmd.extrude && cmd.extrude > 0 && !retract;
+            const move =
+                cmd.x !== undefined || cmd.y !== undefined || cmd.z !== undefined;
 
-            var prevInBounds = withinBedBounds(cmds[j].prevX, cmds[j].prevY, bounds);
-            var inBounds = withinBedBounds(
-                cmds[j].x === undefined ? cmds[j].prevX : cmds[j].x,
-                cmds[j].y === undefined ? cmds[j].prevY : cmds[j].y,
+            const prevInBounds = withinBedBounds(cmd.prevX, cmd.prevY, bounds);
+            const inBounds = withinBedBounds(
+                cmd.x === undefined ? cmd.prevX : cmd.x,
+                cmd.y === undefined ? cmd.prevY : cmd.y,
                 bounds
             );
 
-            var recordX = function (x, inBounds) {
-                if (x === undefined || isNaN(x)) return;
-
-                max.x = max.x !== undefined ? Math.max(max.x, x) : x;
-                min.x = min.x !== undefined ? Math.min(min.x, x) : x;
-
-                if (inBounds) {
-                    boundingBox.minX =
-                        boundingBox.minX !== undefined
-                            ? Math.min(boundingBox.minX, x)
-                            : x;
-                    boundingBox.maxX =
-                        boundingBox.maxX !== undefined
-                            ? Math.max(boundingBox.maxX, x)
-                            : x;
-                }
-            };
-
-            var recordY = function (y, inBounds) {
-                if (y === undefined || isNaN(y)) return;
-
-                max.y = max.y !== undefined ? Math.max(max.y, y) : y;
-                min.y = min.y !== undefined ? Math.min(min.y, y) : y;
-
-                if (inBounds) {
-                    boundingBox.minY =
-                        boundingBox.minY !== undefined
-                            ? Math.min(boundingBox.minY, y)
-                            : y;
-                    boundingBox.maxY =
-                        boundingBox.maxY !== undefined
-                            ? Math.max(boundingBox.maxY, y)
-                            : y;
-                }
-            };
-
-            var recordZ = function (z) {
-                if (z === undefined || isNaN(z)) return;
-
-                max.z = max.z !== undefined ? Math.max(max.z, z) : z;
-                min.z = min.z !== undefined ? Math.min(min.z, z) : z;
-
-                boundingBox.minZ = min.z;
-                boundingBox.maxZ = max.z;
-            };
-
             if (move && extrude) {
-                recordX(cmds[j].prevX, prevInBounds);
-                recordX(cmds[j].x, inBounds);
-                recordY(cmds[j].prevY, prevInBounds);
-                recordY(cmds[j].y, inBounds);
-                recordZ(cmds[j].prevZ);
-                recordZ(cmds[j].z);
+                recordX(cmd.prevX, prevInBounds);
+                recordX(cmd.x, inBounds);
+                recordY(cmd.prevY, prevInBounds);
+                recordY(cmd.y, inBounds);
+                recordZ(cmd.prevZ);
+                recordZ(cmd.z);
             }
 
             if (!totalFilament[tool]) totalFilament[tool] = 0;
-            if (!filamentByLayer[cmds[j].prevZ]) filamentByLayer[cmds[j].prevZ] = [0];
-            if (!filamentByLayer[cmds[j].prevZ][tool])
-                filamentByLayer[cmds[j].prevZ][tool] = 0;
-            if (cmds[j].extrusion) {
-                totalFilament[tool] += cmds[j].extrusion;
-                filamentByLayer[cmds[j].prevZ][tool] += cmds[j].extrusion;
+            if (!filamentByLayer[cmd.prevZ]) filamentByLayer[cmd.prevZ] = [0];
+            if (!filamentByLayer[cmd.prevZ][tool]) filamentByLayer[cmd.prevZ][tool] = 0;
+            if (cmd.extrusion) {
+                totalFilament[tool] += cmd.extrusion;
+                filamentByLayer[cmd.prevZ][tool] += cmd.extrusion;
             }
 
             if (
-                cmds[j].x !== undefined &&
-                !isNaN(cmds[j].x) &&
-                cmds[j].y !== undefined &&
-                !isNaN(cmds[j].y)
+                cmd.x !== undefined &&
+                !isNaN(cmd.x) &&
+                cmd.y !== undefined &&
+                !isNaN(cmd.y)
             ) {
-                var diffX = cmds[j].x - cmds[j].prevX;
-                var diffY = cmds[j].y - cmds[j].prevY;
+                const diffX = cmd.x - cmd.prevX;
+                const diffY = cmd.y - cmd.prevY;
                 if (move) {
                     printTimeAdd =
-                        Math.sqrt(diffX * diffX + diffY * diffY) / (cmds[j].speed / 60);
+                        Math.sqrt(diffX * diffX + diffY * diffY) / (cmd.speed / 60);
                 } else if (extrude) {
-                    tmp1 =
-                        Math.sqrt(diffX * diffX + diffY * diffY) / (cmds[j].speed / 60);
-                    tmp2 = Math.abs(cmds[j].extrusion / (cmds[j].speed / 60));
+                    tmp1 = Math.sqrt(diffX * diffX + diffY * diffY) / (cmd.speed / 60);
+                    tmp2 = Math.abs(cmd.extrusion / (cmd.speed / 60));
                     printTimeAdd = Math.max(tmp1, tmp2);
                 } else if (retract) {
-                    printTimeAdd = Math.abs(cmds[j].extrusion / (cmds[j].speed / 60));
+                    printTimeAdd = Math.abs(cmd.extrusion / (cmd.speed / 60));
                 }
             } else {
                 printTimeAdd = 0;
             }
 
             printTime += printTimeAdd;
-            if (printTimeByLayer[cmds[j].prevZ] === undefined) {
-                printTimeByLayer[cmds[j].prevZ] = 0;
+            if (printTimeByLayer[cmd.prevZ] === undefined) {
+                printTimeByLayer[cmd.prevZ] = 0;
             }
-            printTimeByLayer[cmds[j].prevZ] += printTimeAdd;
+            printTimeByLayer[cmd.prevZ] += printTimeAdd;
 
-            if (cmds[j].extrude && cmds[j].retract === 0) {
+            if (cmd.extrude && cmd.retract === 0) {
                 type = "extrude";
-            } else if (cmds[j].retract !== 0) {
+            } else if (cmd.retract !== 0) {
                 type = "retract";
-            } else if (!cmds[j].extrude && cmds[j].retract === 0) {
+            } else if (!cmd.extrude && cmd.retract === 0) {
                 type = "move";
             } else {
                 self.postMessage({cmd: "unknown type of move"});
                 type = "unknown";
             }
 
-            speedIndex = speeds[type].indexOf(cmds[j].speed);
-            if (speedIndex === -1) {
-                speeds[type].push(cmds[j].speed);
-                speedIndex = speeds[type].indexOf(cmds[j].speed);
-            }
-            if (typeof speedsByLayer[type][cmds[j].prevZ] === "undefined") {
-                speedsByLayer[type][cmds[j].prevZ] = [];
-            }
-            if (speedsByLayer[type][cmds[j].prevZ].indexOf(cmds[j].speed) === -1) {
-                speedsByLayer[type][cmds[j].prevZ][speedIndex] = cmds[j].speed;
-            }
-
             if (extrude) {
                 layerExtrude = true;
             }
-        }
+        });
 
         if (!layerExtrude) {
             emptyLayers[i] = true;
         }
 
         sendSizeProgress((i / model.length) * 100);
-    }
+    });
     purgeLayers();
 
     modelSize.x = Math.abs(max.x - min.x);
@@ -350,7 +320,7 @@ var analyzeModel = function () {
     sendAnalyzeDone();
 };
 
-var gCodeLineGenerator = async function* (fileURL) {
+const gCodeLineGenerator = async function* (fileURL) {
     const utf8Decoder = new TextDecoder("utf-8");
     const response = await fetch(fileURL);
 
@@ -420,7 +390,7 @@ var gCodeLineGenerator = async function* (fileURL) {
     }
 };
 
-var doParse = async function () {
+const doParse = async function () {
     var argChar, numSlice;
     var activeLayer = undefined;
     var sendLayer = undefined;
@@ -873,7 +843,7 @@ var doParse = async function () {
     sendLayersToParent(sendMultiLayer, 100);
 };
 
-var parseGCode = async function (message) {
+const parseGCode = async function (message) {
     url = message.url;
     path = message.path;
     firstReport = message.options.firstReport;
@@ -893,7 +863,7 @@ var parseGCode = async function (message) {
     });
 };
 
-var runAnalyze = function (message) {
+const runAnalyze = function (message) {
     analyzeModel();
     model = [];
     gcode = undefined;
@@ -916,13 +886,11 @@ var runAnalyze = function (message) {
     printTimeByLayer = {};
     layerHeight = 0;
     layerCnt = 0;
-    speeds = {extrude: [], retract: [], move: []};
-    speedsByLayer = {extrude: {}, retract: {}, move: {}};
     emptyLayers = [];
     percentageByLayer = [];
 };
 
-var setOption = function (options) {
+const setOption = function (options) {
     for (var opt in options) {
         if (!options.hasOwnProperty(opt)) continue;
         gCodeOptions[opt] = options[opt];
