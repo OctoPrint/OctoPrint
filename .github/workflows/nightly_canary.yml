@@ -77,7 +77,7 @@ jobs:
             dockerfile="${{ github.workspace }}/OctoPrint/.github/ci/nightly_canary/Dockerfile"
           else
             # we've checked out a ref that doesn't yet have the canary workflow, let's fetch the needed Dockerfile
-            curl -L -O Dockerfile "https://raw.githubusercontent.com/OctoPrint/OctoPrint/refs/heads/dev/.github/ci/nightly_canary/Dockerfile"
+            curl -L -o Dockerfile "https://raw.githubusercontent.com/OctoPrint/OctoPrint/refs/heads/dev/.github/ci/nightly_canary/Dockerfile"
             dockerfile="${{ github.workspace }}/Dockerfile"
           fi
           echo "Set Dockerfile to $dockerfile"
