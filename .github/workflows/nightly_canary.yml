@@ -97,17 +97,12 @@ jobs:
           push: false
           tags: octoprint_test
           target: runtime
-          build-args:
-            - DOCKER_ARCH
-            - DEBIAN_VERSION
-            - BUILD_TYPE
+          build-args: |
+            DOCKER_ARCH=${{ matrix.arch.docker }}
+            DEBIAN_VERSION=${{ matrix.debian_version }}
+            BUILD_TYPE=${{ matrix.arch.build_type }}
           cache-from: type=gha,scope=image
           cache-to: type=gha,mode=max,scope=image
-        env:
-          DEBIAN_VERSION: ${{ matrix.debian_version }}
-          DOCKER_ARCH: ${{ matrix.arch.docker }}
-          BUILD_TYPE: ${{ matrix.arch.build_type }}
-          DOCKER_BUILDKIT: 1
 
       - name: 🐳 Build Dockerfile (2nd try)
         id: dockerbuild_2
@@ -120,17 +115,12 @@ jobs:
           push: false
           tags: octoprint_test
           target: runtime
-          build-args:
-            - DOCKER_ARCH
-            - DEBIAN_VERSION
-            - BUILD_TYPE
+          build-args: |
+            DOCKER_ARCH=${{ matrix.arch.docker }}
+            DEBIAN_VERSION=${{ matrix.debian_version }}
+            BUILD_TYPE=${{ matrix.arch.build_type }}
           cache-from: type=gha,scope=image
           cache-to: type=gha,mode=max,scope=image
-        env:
-          DEBIAN_VERSION: ${{ matrix.debian_version }}
-          DOCKER_ARCH: ${{ matrix.arch.docker }}
-          BUILD_TYPE: ${{ matrix.arch.build_type }}
-          DOCKER_BUILDKIT: 1
 
       - name: 🐳 Build Dockerfile (3rd & final try)
         id: dockerbuild_3
@@ -142,17 +132,12 @@ jobs:
           push: false
           tags: octoprint_test
           target: runtime
-          build-args:
-            - DOCKER_ARCH
-            - DEBIAN_VERSION
-            - BUILD_TYPE
+          build-args: |
+            DOCKER_ARCH=${{ matrix.arch.docker }}
+            DEBIAN_VERSION=${{ matrix.debian_version }}
+            BUILD_TYPE=${{ matrix.arch.build_type }}
           cache-from: type=gha,scope=image
           cache-to: type=gha,mode=max,scope=image
-        env:
-          DEBIAN_VERSION: ${{ matrix.debian_version }}
-          DOCKER_ARCH: ${{ matrix.arch.docker }}
-          BUILD_TYPE: ${{ matrix.arch.build_type }}
-          DOCKER_BUILDKIT: 1
 
       - name: 🐙 Start OctoPrint server in docker
         run: |
