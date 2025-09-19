@@ -101,7 +101,7 @@ jobs:
             DOCKER_ARCH=${{ matrix.arch.docker }}
             DEBIAN_VERSION=${{ matrix.debian_version }}
             BUILD_TYPE=${{ matrix.arch.build_type }}
-          cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.build_type }}
+          cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
           cache-to: type=gha,mode=max,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.build_type }}
 
       - name: 🐳 Build Dockerfile (2nd try)
@@ -119,7 +119,7 @@ jobs:
             DOCKER_ARCH=${{ matrix.arch.docker }}
             DEBIAN_VERSION=${{ matrix.debian_version }}
             BUILD_TYPE=${{ matrix.arch.build_type }}
-          cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.build_type }}
+          cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
           cache-to: type=gha,mode=max,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.build_type }}
 
       - name: 🐳 Build Dockerfile (3rd & final try)
@@ -136,7 +136,7 @@ jobs:
             DOCKER_ARCH=${{ matrix.arch.docker }}
             DEBIAN_VERSION=${{ matrix.debian_version }}
             BUILD_TYPE=${{ matrix.arch.build_type }}
-          cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.build_type }}
+          cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
           cache-to: type=gha,mode=max,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.build_type }}
 
       - name: 🐙 Start OctoPrint server in docker
@@ -147,4 +147,4 @@ jobs:
         uses: OctoPrint/actions/e2e@main
         with:
           server: "http://127.0.0.1:5000"
-          suffix: "-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.build_type }}"
+          suffix: "-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}"
