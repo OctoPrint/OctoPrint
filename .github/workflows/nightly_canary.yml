@@ -66,7 +66,7 @@ jobs:
 
           tree e2econfig
 
-          # disable the discovery plugin as it's attempt to use multicast will cause an error under docker/qemu:
+          # disable the discovery plugin as its attempt to use multicast will cause an error under docker/qemu:
           #     OSError: [Errno 92] Protocol not available
           # see https://gitlab.com/qemu-project/qemu/-/issues/1837
           yq -i '.plugins._disabled |= . + ["discovery"]' e2econfig/config.yaml
@@ -77,9 +77,10 @@ jobs:
             dockerfile="${{ github.workspace }}/OctoPrint/.github/ci/nightly_canary/Dockerfile"
           else
             # we've checked out a ref that doesn't yet have the canary workflow, let's fetch the needed Dockerfile
-            curl -sL -O Dockerfile https://raw.githubusercontent.com/OctoPrint/OctoPrint/refs/heads/dev/.github/ci/nightly_canary/Dockerfile
+            curl -L -O Dockerfile "https://raw.githubusercontent.com/OctoPrint/OctoPrint/refs/heads/dev/.github/ci/nightly_canary/Dockerfile"
             dockerfile="${{ github.workspace }}/Dockerfile"
           fi
+          echo "Set Dockerfile to $dockerfile"
 
           echo "DOCKERFILE=$dockerfile" >> $GITHUB_ENV
 
