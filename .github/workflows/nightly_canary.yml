@@ -54,6 +54,9 @@ jobs:
       - name: 🏗 Set up QEMU
         uses: docker/setup-qemu-action@v3
 
+      - name: 🏗 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: 🏗 Prepare E2E config
         run: |
           mkdir e2econfig
@@ -87,9 +90,19 @@ jobs:
       - name: 🐳 Build Dockerfile (1st try)
         id: dockerbuild_1
         continue-on-error: true
-        working-directory: OctoPrint
-        run: |
-          docker build --target runtime --tag octoprint_test --file "$DOCKERFILE" --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ github.workspace }}/OctoPrint
+          file: ${{ env.DOCKERFILE }}
+          push: false
+          tags: octoprint_test
+          target: runtime
+          build-args:
+            - DOCKER_ARCH
+            - DEBIAN_VERSION
+            - BUILD_TYPE
+          cache-from: type=gha,scope=image
+          cache-to: type=gha,mode=max,scope=image
         env:
           DEBIAN_VERSION: ${{ matrix.debian_version }}
           DOCKER_ARCH: ${{ matrix.arch.docker }}
@@ -100,9 +113,19 @@ jobs:
         id: dockerbuild_2
         continue-on-error: true
         if: steps.dockerbuild_1.outcome != 'success'
-        working-directory: OctoPrint
-        run: |
-          docker build --target runtime --tag octoprint_test --file "$DOCKERFILE" --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ github.workspace }}/OctoPrint
+          file: ${{ env.DOCKERFILE }}
+          push: false
+          tags: octoprint_test
+          target: runtime
+          build-args:
+            - DOCKER_ARCH
+            - DEBIAN_VERSION
+            - BUILD_TYPE
+          cache-from: type=gha,scope=image
+          cache-to: type=gha,mode=max,scope=image
         env:
           DEBIAN_VERSION: ${{ matrix.debian_version }}
           DOCKER_ARCH: ${{ matrix.arch.docker }}
@@ -112,9 +135,19 @@ jobs:
       - name: 🐳 Build Dockerfile (3rd & final try)
         id: dockerbuild_3
         if: steps.dockerbuild_1.outcome != 'success' && steps.dockerbuild_2.outcome != 'success'
-        working-directory: OctoPrint
-        run: |
-          docker build --target runtime --tag octoprint_test --file "$DOCKERFILE" --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ github.workspace }}/OctoPrint
+          file: ${{ env.DOCKERFILE }}
+          push: false
+          tags: octoprint_test
+          target: runtime
+          build-args:
+            - DOCKER_ARCH
+            - DEBIAN_VERSION
+            - BUILD_TYPE
+          cache-from: type=gha,scope=image
+          cache-to: type=gha,mode=max,scope=image
         env:
           DEBIAN_VERSION: ${{ matrix.debian_version }}
           DOCKER_ARCH: ${{ matrix.arch.docker }}
