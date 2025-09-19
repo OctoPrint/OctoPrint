@@ -71,12 +71,24 @@ jobs:
           # see https://gitlab.com/qemu-project/qemu/-/issues/1837
           yq -i '.plugins._disabled |= . + ["discovery"]' e2econfig/config.yaml
 
+      - name: 🏗 Prepare docker build
+        run: |
+          if [ -d OctoPrint/.github/ci/nightly_canary ]; then
+            dockerfile="${{ github.workspace }}/OctoPrint/.github/ci/nightly_canary/Dockerfile"
+          else
+            # we've checked out a ref that doesn't yet have the canary workflow, let's fetch the needed Dockerfile
+            curl -sL -O Dockerfile https://raw.githubusercontent.com/OctoPrint/OctoPrint/refs/heads/dev/.github/ci/nightly_canary/Dockerfile
+            dockerfile="${{ github.workspace }}/Dockerfile"
+          fi
+
+          echo "DOCKERFILE=$dockerfile" >> $GITHUB_ENV
+
       - name: 🐳 Build Dockerfile (1st try)
         id: dockerbuild_1
         continue-on-error: true
         working-directory: OctoPrint
         run: |
-          docker build --target runtime --tag octoprint_test --file .github/ci/nightly_canary/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
+          docker build --target runtime --tag octoprint_test --file "$DOCKERFILE" --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
         env:
           DEBIAN_VERSION: ${{ matrix.debian_version }}
           DOCKER_ARCH: ${{ matrix.arch.docker }}
@@ -89,7 +101,7 @@ jobs:
         if: steps.dockerbuild_1.outcome != 'success'
         working-directory: OctoPrint
         run: |
-          docker build --target runtime --tag octoprint_test --file .github/ci/nightly_canary/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
+          docker build --target runtime --tag octoprint_test --file "$DOCKERFILE" --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
         env:
           DEBIAN_VERSION: ${{ matrix.debian_version }}
           DOCKER_ARCH: ${{ matrix.arch.docker }}
@@ -101,7 +113,7 @@ jobs:
         if: steps.dockerbuild_1.outcome != 'success' && steps.dockerbuild_2.outcome != 'success'
         working-directory: OctoPrint
         run: |
-          docker build --target runtime --tag octoprint_test --file .github/ci/nightly_canary/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
+          docker build --target runtime --tag octoprint_test --file "$DOCKERFILE" --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
         env:
           DEBIAN_VERSION: ${{ matrix.debian_version }}
           DOCKER_ARCH: ${{ matrix.arch.docker }}
