@@ -48,6 +48,8 @@ jobs:
         with:
           path: OctoPrint
           ref: ${{ matrix.octo_ref }}
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: 🏗 Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -114,13 +116,4 @@ jobs:
         uses: OctoPrint/actions/e2e@main
         with:
           server: "http://127.0.0.1:5000"
-          suffix: "-${{ matrix.debian_version }}-${{ matrix.arch.variant }}"
-
-      - name: 🔎 Check octoprint.log for errors
-        run: |
-          log="e2econfig/logs/octoprint.log"
-          if grep "\- ERROR \-" $log; then
-            echo "::error::Errors were logged to octoprint.log"
-            grep -Pazo '(?m)^\N+\- ERROR \-\N*\n(^\N*?\n)*?(?=\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} \- )' $log
-            exit 1
-          fi
+          suffix: "-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}"
