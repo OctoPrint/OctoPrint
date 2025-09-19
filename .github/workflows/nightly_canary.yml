@@ -95,7 +95,8 @@ jobs:
           context: ${{ github.workspace }}/OctoPrint
           file: ${{ env.DOCKERFILE }}
           push: false
-          tags: octoprint_test
+          load: true
+          tags: octoprint_test:latest
           target: runtime
           build-args: |
             DOCKER_ARCH=${{ matrix.arch.docker }}
@@ -116,7 +117,8 @@ jobs:
           context: ${{ github.workspace }}/OctoPrint
           file: ${{ env.DOCKERFILE }}
           push: false
-          tags: octoprint_test
+          load: true
+          tags: octoprint_test:latest
           target: runtime
           build-args: |
             DOCKER_ARCH=${{ matrix.arch.docker }}
@@ -136,7 +138,8 @@ jobs:
           context: ${{ github.workspace }}/OctoPrint
           file: ${{ env.DOCKERFILE }}
           push: false
-          tags: octoprint_test
+          load: true
+          tags: octoprint_test:latest
           target: runtime
           build-args: |
             DOCKER_ARCH=${{ matrix.arch.docker }}
