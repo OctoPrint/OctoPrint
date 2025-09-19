@@ -103,6 +103,9 @@ jobs:
             BUILD_TYPE=${{ matrix.arch.build_type }}
           cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
           cache-to: type=gha,mode=max,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
+          no-cache-filters: |
+            build
+            runtime
 
       - name: 🐳 Build Dockerfile (2nd try)
         id: dockerbuild_2
@@ -121,6 +124,9 @@ jobs:
             BUILD_TYPE=${{ matrix.arch.build_type }}
           cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
           cache-to: type=gha,mode=max,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
+          no-cache-filters: |
+            build
+            runtime
 
       - name: 🐳 Build Dockerfile (3rd & final try)
         id: dockerbuild_3
@@ -138,6 +144,9 @@ jobs:
             BUILD_TYPE=${{ matrix.arch.build_type }}
           cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
           cache-to: type=gha,mode=max,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
+          no-cache-filters: |
+            build
+            runtime
 
       - name: 🐙 Start OctoPrint server in docker
         run: |
