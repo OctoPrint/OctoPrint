@@ -6,6 +6,7 @@ $(function () {
         self.settingsViewModel = parameters[1];
         self.access = parameters[2];
         self.printerState = parameters[3];
+        self.connection = parameters[4];
 
         self._createToolEntry = function () {
             var entry = {
@@ -77,6 +78,11 @@ $(function () {
             })
         };
         self.changeOffsetDialog = undefined;
+
+        self.enableOffsetSupport = ko.pureComputed(() => {
+            const capabilities = self.connection.currentConnectorCapabilities();
+            return capabilities && capabilities.temperature_offsets;
+        });
 
         // TODO: find some nicer way to update plot AFTER graph becomes visible
         self.loginStateSubscription = undefined;
@@ -1164,7 +1170,8 @@ $(function () {
             "loginStateViewModel",
             "settingsViewModel",
             "accessViewModel",
-            "printerStateViewModel"
+            "printerStateViewModel",
+            "connectionViewModel"
         ],
         elements: ["#temp", "#temp_link", "#change_offset_dialog"]
     });

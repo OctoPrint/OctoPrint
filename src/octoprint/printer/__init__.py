@@ -82,6 +82,11 @@ class FirmwareInformation(BaseModel):
     data: dict
 
 
+class ConnectedPrinterCapabilities(BaseModel):
+    job_on_hold: bool = False
+    temperature_offsets: bool = False
+
+
 class CommonPrinterMixin:
     """
     The :class:`PrinterInterface` represents the developer interface to the :class:`~octoprint.printer.standard.Printer`
@@ -512,11 +517,14 @@ class CommonPrinterMixin:
 
 
 class ConnectedPrinterMixin(CommonPrinterMixin):
-    supports_job_on_hold = True
-    supports_temperature_offsets = True
+    printer_capabilities = ConnectedPrinterCapabilities()
 
     def supports_job(self, job: PrintJob) -> bool:
         return False
+
+    @property
+    def current_printer_capabilities(self) -> ConnectedPrinterCapabilities:
+        return self.printer_capabilities
 
     @property
     def job_progress(self) -> JobProgress:
@@ -537,11 +545,11 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
         raise NotImplementedError()
 
     def job_on_hold(self, blocking=True, *args, **kwargs):
-        if self.supports_job_on_hold:
+        if self.current_printer_capabilities.job_on_hold:
             raise NotImplementedError()
 
     def set_job_on_hold(self, value, blocking=True, *args, **kwargs):
-        if self.supports_job_on_hold:
+        if self.current_printer_capabilities.job_on_hold:
             raise NotImplementedError()
 
 

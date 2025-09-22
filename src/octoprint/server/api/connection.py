@@ -26,6 +26,7 @@ class CurrentConnectionState(BaseModel):
     state: str
     connector: Optional[str]
     parameters: Optional[dict]
+    capabilities: Optional[dict]
     profile: Optional[str]
 
 
@@ -94,6 +95,7 @@ def connectionState():
 
     connector = connection_state.pop("connector", None)
     profile = connection_state.pop("profile", None)
+    capabilities = connection_state.pop("printer_capabilities", None)
     state = connection_state.pop("state", "Unknown")
 
     data = ConnectionStateResponse(
@@ -101,6 +103,7 @@ def connectionState():
             state=state,
             connector=connector,
             parameters=connection_state,
+            capabilities=capabilities,
             profile=profile.get("_id") if profile else None,
         ),
         options=_get_options(),

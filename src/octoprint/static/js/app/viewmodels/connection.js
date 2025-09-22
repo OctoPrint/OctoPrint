@@ -42,6 +42,7 @@ $(function () {
 
         self.currentConnector = ko.observable(undefined);
         self.currentConnectorParameters = {};
+        self.currentConnectorCapabilities = ko.observable({});
 
         self.lastConnector = undefined;
         self.lastConnectorParameters = {};
@@ -103,6 +104,8 @@ $(function () {
                 connectorParameters[item.connector] = item.parameters;
             });
             self.connectorParameters = connectorParameters;
+
+            self.currentConnectorCapabilities(response.current.capabilities);
 
             let activeParameters;
             if (currentConnector && connectorParameters[currentConnector]) {

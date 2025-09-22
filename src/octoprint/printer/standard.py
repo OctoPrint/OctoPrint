@@ -251,6 +251,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         parameters = self._connection.connection_parameters
         parameters["state"] = self._connection.get_state_string()
+        parameters["printer_capabilities"] = (
+            self._connection.current_printer_capabilities.model_dump()
+        )
         return parameters
 
     @property

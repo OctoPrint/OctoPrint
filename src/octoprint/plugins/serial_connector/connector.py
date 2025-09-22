@@ -11,13 +11,17 @@ from octoprint.filemanager.destinations import FileDestinations
 from octoprint.filemanager.storage import StorageCapabilities
 from octoprint.printer import (
     CommunicationHealth,
+    ConnectedPrinterCapabilities,
     ErrorInformation,
     FirmwareInformation,
     PrinterFile,
     PrinterFilesMixin,
     UnknownScript,
 )
-from octoprint.printer.connection import ConnectedPrinter, ConnectedPrinterState
+from octoprint.printer.connection import (
+    ConnectedPrinter,
+    ConnectedPrinterState,
+)
 from octoprint.printer.job import JobProgress, PrintJob, UploadJob
 
 from .serial_comm import MachineCom, baudrateList, serialList
@@ -31,6 +35,10 @@ if TYPE_CHECKING:
 class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     connector = "serial"
     name = "Serial Connection"
+
+    printer_capabilities = ConnectedPrinterCapabilities(
+        job_on_hold=True, temperature_offsets=True
+    )
 
     storage_capabilities = StorageCapabilities(
         write_file=True, remove_file=True, metadata=True
