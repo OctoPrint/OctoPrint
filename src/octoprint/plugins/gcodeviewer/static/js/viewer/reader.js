@@ -22,8 +22,6 @@ GCODE.gCodeReader = (function () {
     var printTimeByLayer;
     var totalFilament = 0;
     var printTime = 0;
-    var speeds = {};
-    var speedsByLayer = {};
     var gCodeOptions = {
         sortLayers: false,
         purgeEmptyLayers: true,
@@ -272,8 +270,6 @@ GCODE.gCodeReader = (function () {
             boundingBox = msg.boundingBox;
             totalFilament = msg.totalFilament;
             filamentByLayer = msg.filamentByLayer;
-            speeds = msg.speeds;
-            speedsByLayer = msg.speedsByLayer;
             printTime = msg.printTime;
             printTimeByLayer = msg.printTimeByLayer;
             emptyLayers = msg.emptyLayers;
@@ -284,10 +280,6 @@ GCODE.gCodeReader = (function () {
             return filamentByLayer[z];
         },
 
-        getLayerSpeeds: function (z) {
-            return speedsByLayer[z] ? speedsByLayer[z] : {};
-        },
-
         getModelInfo: function () {
             return {
                 min: min,
@@ -295,8 +287,6 @@ GCODE.gCodeReader = (function () {
                 modelSize: modelSize,
                 boundingBox: boundingBox,
                 totalFilament: totalFilament,
-                speeds: speeds,
-                speedsByLayer: speedsByLayer,
                 printTime: printTime,
                 printTimeByLayer: printTimeByLayer
             };

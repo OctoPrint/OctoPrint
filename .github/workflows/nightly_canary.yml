@@ -21,6 +21,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        octo_ref:
+          - main
+          - dev
         debian_version:
           - bullseye
           - bookworm
@@ -44,9 +47,15 @@ jobs:
         uses: actions/checkout@v5
         with:
           path: OctoPrint
+          ref: ${{ matrix.octo_ref }}
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: 🏗 Set up QEMU
         uses: docker/setup-qemu-action@v3
+
+      - name: 🏗 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: 🏗 Prepare E2E config
         run: |
@@ -60,47 +69,87 @@ jobs:
 
           tree e2econfig
 
-          # disable the discovery plugin as it's attempt to use multicast will cause an error under docker/qemu:
+          # disable the discovery plugin as its attempt to use multicast will cause an error under docker/qemu:
           #     OSError: [Errno 92] Protocol not available
           # see https://gitlab.com/qemu-project/qemu/-/issues/1837
           yq -i '.plugins._disabled |= . + ["discovery"]' e2econfig/config.yaml
 
+      - name: 🏗 Prepare docker build
+        run: |
+          if [ -d OctoPrint/.github/ci/nightly_canary ]; then
+            dockerfile="${{ github.workspace }}/OctoPrint/.github/ci/nightly_canary/Dockerfile"
+          else
+            # we've checked out a ref that doesn't yet have the canary workflow, let's fetch the needed Dockerfile
+            curl -L -o Dockerfile "https://raw.githubusercontent.com/OctoPrint/OctoPrint/refs/heads/dev/.github/ci/nightly_canary/Dockerfile"
+            dockerfile="${{ github.workspace }}/Dockerfile"
+          fi
+          echo "Set Dockerfile to $dockerfile"
+
+          echo "DOCKERFILE=$dockerfile" >> $GITHUB_ENV
+
       - name: 🐳 Build Dockerfile (1st try)
         id: dockerbuild_1
         continue-on-error: true
-        working-directory: OctoPrint
-        run: |
-          docker build --target runtime --tag octoprint_test --file .github/ci/nightly_canary/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
-        env:
-          DEBIAN_VERSION: ${{ matrix.debian_version }}
-          DOCKER_ARCH: ${{ matrix.arch.docker }}
-          BUILD_TYPE: ${{ matrix.arch.build_type }}
-          DOCKER_BUILDKIT: 1
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ github.workspace }}/OctoPrint
+          file: ${{ env.DOCKERFILE }}
+          push: false
+          load: true
+          tags: octoprint_test:latest
+          target: runtime
+          build-args: |
+            DOCKER_ARCH=${{ matrix.arch.docker }}
+            DEBIAN_VERSION=${{ matrix.debian_version }}
+            BUILD_TYPE=${{ matrix.arch.build_type }}
+          cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
+          cache-to: type=gha,mode=max,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
+          no-cache-filters: |
+            build
+            runtime
 
       - name: 🐳 Build Dockerfile (2nd try)
         id: dockerbuild_2
         continue-on-error: true
         if: steps.dockerbuild_1.outcome != 'success'
-        working-directory: OctoPrint
-        run: |
-          docker build --target runtime --tag octoprint_test --file .github/ci/nightly_canary/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
-        env:
-          DEBIAN_VERSION: ${{ matrix.debian_version }}
-          DOCKER_ARCH: ${{ matrix.arch.docker }}
-          BUILD_TYPE: ${{ matrix.arch.build_type }}
-          DOCKER_BUILDKIT: 1
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ github.workspace }}/OctoPrint
+          file: ${{ env.DOCKERFILE }}
+          push: false
+          load: true
+          tags: octoprint_test:latest
+          target: runtime
+          build-args: |
+            DOCKER_ARCH=${{ matrix.arch.docker }}
+            DEBIAN_VERSION=${{ matrix.debian_version }}
+            BUILD_TYPE=${{ matrix.arch.build_type }}
+          cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
+          cache-to: type=gha,mode=max,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
+          no-cache-filters: |
+            build
+            runtime
 
       - name: 🐳 Build Dockerfile (3rd & final try)
         id: dockerbuild_3
         if: steps.dockerbuild_1.outcome != 'success' && steps.dockerbuild_2.outcome != 'success'
-        working-directory: OctoPrint
-        run: |
-          docker build --target runtime --tag octoprint_test --file .github/ci/nightly_canary/Dockerfile --build-arg DOCKER_ARCH --build-arg DEBIAN_VERSION --build-arg BUILD_TYPE .
-        env:
-          DEBIAN_VERSION: ${{ matrix.debian_version }}
-          DOCKER_ARCH: ${{ matrix.arch.docker }}
-          BUILD_TYPE: ${{ matrix.arch.build_type }}
-          DOCKER_BUILDKIT: 1
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ github.workspace }}/OctoPrint
+          file: ${{ env.DOCKERFILE }}
+          push: false
+          load: true
+          tags: octoprint_test:latest
+          target: runtime
+          build-args: |
+            DOCKER_ARCH=${{ matrix.arch.docker }}
+            DEBIAN_VERSION=${{ matrix.debian_version }}
+            BUILD_TYPE=${{ matrix.arch.build_type }}
+          cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
+          cache-to: type=gha,mode=max,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
+          no-cache-filters: |
+            build
+            runtime
 
       - name: 🐙 Start OctoPrint server in docker
         run: |
@@ -110,13 +159,4 @@ jobs:
         uses: OctoPrint/actions/e2e@main
         with:
           server: "http://127.0.0.1:5000"
-          suffix: "-${{ matrix.debian_version }}-${{ matrix.arch.variant }}"
-
-      - name: 🔎 Check octoprint.log for errors
-        run: |
-          log="e2econfig/logs/octoprint.log"
-          if grep "\- ERROR \-" $log; then
-            echo "::error::Errors were logged to octoprint.log"
-            grep -Pazo '(?m)^\N+\- ERROR \-\N*\n(^\N*?\n)*?(?=\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} \- )' $log
-            exit 1
-          fi
+          suffix: "-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}"

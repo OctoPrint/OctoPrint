@@ -88,8 +88,6 @@ GCODE.renderer = (function () {
     var scaleX = 1,
         scaleY = 1;
 
-    var speeds = [];
-    var speedsByLayer = {};
     var currentInvertX = false,
         currentInvertY = false;
 
@@ -1393,8 +1391,6 @@ GCODE.renderer = (function () {
             offsetBedY = 0;
             scaleX = 1;
             scaleY = 1;
-            speeds = [];
-            speedsByLayer = {};
             modelInfo = undefined;
             layerCache = [];
 
@@ -1411,8 +1407,6 @@ GCODE.renderer = (function () {
             var toProgress = 1;
             if (model && model.length) {
                 modelInfo = GCODE.gCodeReader.getModelInfo();
-                speeds = modelInfo.speeds;
-                speedsByLayer = modelInfo.speedsByLayer;
                 if (model[layerNum]) {
                     toProgress = getLayer(layerNum).length;
                 }
