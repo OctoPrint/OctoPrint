@@ -107,13 +107,13 @@ $(function () {
                 return $.Deferred().reject().promise();
             }
 
-            var deferred = $.Deferred();
+            const deferred = $.Deferred();
 
-            var callback = function () {
+            const callback = () => {
                 OctoPrint.system
                     .executeCommand(commandSpec.actionSource, commandSpec.action)
-                    .done(function () {
-                        var text;
+                    .done(() => {
+                        let text;
                         if (commandSpec.async) {
                             text = gettext(
                                 'The command "%(command)s" was triggered asynchronously'
@@ -131,12 +131,12 @@ $(function () {
                         });
                         deferred.resolve(["success", arguments]);
                     })
-                    .fail(function (jqXHR, textStatus, errorThrown) {
+                    .fail((jqXHR, textStatus, errorThrown) => {
                         if (
                             !commandSpec.hasOwnProperty("ignore") ||
                             !commandSpec.ignore
                         ) {
-                            var error =
+                            let error =
                                 "<p>" +
                                 _.sprintf(
                                     gettext(
@@ -161,18 +161,28 @@ $(function () {
                     });
             };
 
+            const proceed = () => {
+                if (commandSpec.fresh_credentials) {
+                    self.loginState.reauthenticateIfNecessary(callback).failed(() => {
+                        deferred.reject(["denied", arguments]);
+                    });
+                } else {
+                    callback();
+                }
+            };
+
             if (commandSpec.confirm) {
                 showConfirmationDialog({
                     message: commandSpec.confirm,
-                    onproceed: function () {
-                        callback();
+                    onproceed: () => {
+                        proceed();
                     },
-                    oncancel: function () {
+                    oncancel: () => {
                         deferred.reject("cancelled", arguments);
                     }
                 });
             } else {
-                callback();
+                proceed();
             }
 
             return deferred.promise();
