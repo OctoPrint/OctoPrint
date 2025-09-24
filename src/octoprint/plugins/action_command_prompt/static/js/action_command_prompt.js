@@ -45,8 +45,10 @@ $(function () {
 
             var opts = {
                 title: gettext("Message from your printer"),
-                message: text,
-                selections: buttons,
+                message: _.escape(text),
+                selections: buttons.map(function (btn) {
+                    return _.escape(btn);
+                }),
                 maycancel: true, // see #3171
                 onselect: function (index) {
                     if (index > -1) {
