@@ -26,6 +26,9 @@ class ActionConfig(BaseModel):
     confirm: Optional[str] = None
     """An optional confirmation message to show before executing the command."""
 
+    fresh_credentials: Optional[bool] = False
+    """Whether to require a fresh credential check for executing the command."""
+
 
 @with_attrs_docs
 class SystemConfig(BaseModel):
