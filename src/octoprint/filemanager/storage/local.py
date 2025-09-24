@@ -8,6 +8,7 @@ import logging
 import os
 import shutil
 import time
+import typing
 from contextlib import contextmanager
 from os import scandir, walk
 
@@ -27,6 +28,9 @@ from octoprint.util.files import sanitize_filename
 
 from . import StorageCapabilities, StorageError, StorageInterface
 
+if typing.TYPE_CHECKING:
+    from octoprint.printer.job import PrintJob  # noqa: F401
+
 
 class LocalFileStorage(StorageInterface):
     """
@@ -37,6 +41,8 @@ class LocalFileStorage(StorageInterface):
 
     This storage type implements :func:`path_on_disk`.
     """
+
+    storage = "local"
 
     capabilities = StorageCapabilities(
         write_file=True,
@@ -809,6 +815,15 @@ class LocalFileStorage(StorageInterface):
         metadata = self._copied_metadata(metadata, name)
         del metadata[name][key]
         self._save_metadata(path, metadata)
+
+    def create_job(self, path, owner=None) -> "PrintJob":
+        job = super().create_job(path, owner=owner)
+
+        metadata = self.get_metadata(path)
+        if "analysis" in metadata and "estimedPrintTime" in metadata["analysis"]:
+            job.duration_estimate = metadata["analysis"]["estimatedPrintTime"]
+
+        return job
 
     def split_path(self, path):
         path = to_unicode(path)

@@ -639,6 +639,9 @@ class PrinterFilesMixin:
     ) -> None:
         pass
 
+    def create_job(self, path: str, owner: str = None) -> PrintJob:
+        return PrintJob("printer", path)
+
 
 class PrinterMixin(CommonPrinterMixin):
     def connect(

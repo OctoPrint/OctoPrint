@@ -12,6 +12,8 @@ from . import MetadataEntry, StorageCapabilities, StorageError, StorageInterface
 
 
 class PrinterFileStorage(StorageInterface):
+    storage = "printer"
+
     def __init__(self, connection: PrinterFilesMixin):
         if not isinstance(connection, PrinterFilesMixin):
             raise ValueError(
@@ -350,6 +352,12 @@ class PrinterFileStorage(StorageInterface):
             self._update_last_activity()
         except KeyError:
             pass
+
+    def create_job(self, path, owner=None):
+        job = self._connection.create_job(path, owner=owner)
+        if job is None:
+            job = super().create_job(path, owner)
+        return job
 
     def _strip_leading_slash(self, path: str) -> str:
         if not path:

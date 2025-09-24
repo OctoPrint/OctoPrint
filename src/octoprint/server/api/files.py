@@ -20,7 +20,6 @@ from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.filemanager.storage import StorageError
-from octoprint.printer.job import PrintJob
 from octoprint.server import (
     NO_CONTENT,
     current_user,
@@ -654,7 +653,7 @@ def uploadGcodeFile(target):
         if octoprint.filemanager.valid_file_type(added_file, "gcode") and (
             to_select or to_print or reselect
         ):
-            job = PrintJob(storage=target, path=added_file, owner=user)
+            job = fileManager.create_job(target, added_file, owner=user)
             printer.set_job(job, printer_after_select=to_print)
 
         if userdata is not None:
@@ -830,20 +829,7 @@ def gcodeFileCommand(storage, path):
                         )
                     start_print = True
 
-            file_info = _getFileDetails(storage, path)
-            size = file_info.get("size")
-
-            path_on_disk = None
-            if fileManager.capabilities(storage).path_on_disk:
-                path_on_disk = fileManager.path_on_disk(storage, path)
-
-            job = PrintJob(
-                storage=storage,
-                path=path,
-                size=size,
-                owner=user,
-                path_on_disk=path_on_disk,
-            )
+            job = fileManager.create_job(storage, path, owner=user)
             printer.set_job(job, print_after_select=start_print)
 
     elif command == "unselect":
@@ -1006,8 +992,7 @@ def gcodeFileCommand(storage, path):
 
             def slicing_done(target, path, select_after_slicing, print_after_slicing):
                 if select_after_slicing or print_after_slicing:
-                    filenameToSelect = fileManager.path_on_disk(target, path)
-                    job = PrintJob(storage=target, path=filenameToSelect, owner=user)
+                    job = fileManager.create_job(target, path, owner=user)
                     printer.set_job(job, print_after_select=print_after_slicing)
 
             try:

@@ -6,7 +6,7 @@ import logging
 import os
 import time
 from collections import namedtuple
-from typing import IO, Callable
+from typing import IO, TYPE_CHECKING, Callable
 
 import octoprint.plugin
 import octoprint.util
@@ -19,6 +19,10 @@ from .destinations import FileDestinations  # noqa: F401
 from .storage import StorageCapabilities, StorageError, StorageInterface
 from .storage.local import LocalFileStorage  # noqa: F401
 from .util import AbstractFileWrapper, DiskFileWrapper, StreamWrapper  # noqa: F401
+
+if TYPE_CHECKING:
+    from octoprint.printer.job import PrintJob  # noqa: F401
+
 
 ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")
 ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
@@ -1138,6 +1142,9 @@ class FileManager:
 
     def remove_link(self, location, path, rel, data):
         self._storage(location).remove_link(path, rel, data)
+
+    def create_job(self, location, path, owner: str = None) -> "PrintJob":
+        return self._storage(location).create_job(path, owner=owner)
 
     def log_print(self, location, path, timestamp, print_time, success, printer_profile):
         try:

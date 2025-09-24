@@ -3,11 +3,14 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-from typing import IO, Optional
+from typing import IO, TYPE_CHECKING, Optional
 
 from octoprint.filemanager.util import AbstractFileWrapper
 from octoprint.schema import BaseModel, BaseModelExtra
 from octoprint.util import deprecated
+
+if TYPE_CHECKING:
+    from octoprint.printer.job import PrintJob  # noqa: F401
 
 
 class StorageCapabilities(BaseModel):
@@ -85,6 +88,7 @@ class StorageInterface:
     Interface of storage adapters for OctoPrint.
     """
 
+    storage = "dummy"
     capabilities = StorageCapabilities()
 
     # noinspection PyUnreachableCode
@@ -470,6 +474,23 @@ class StorageInterface:
         :param key: the key to remove
         """
         raise NotImplementedError()
+
+    def create_job(self, path, owner: str = None) -> "PrintJob":
+        from octoprint.printer.job import PrintJob
+
+        size = self.get_size(path)
+
+        path_on_disk = None
+        if self.capabilities.path_on_disk:
+            path_on_disk = self.path_on_disk(path)
+
+        return PrintJob(
+            storage=self.storage,
+            path=path,
+            size=size,
+            owner=owner,
+            path_on_disk=path_on_disk,
+        )
 
     def canonicalize(self, path):
         """
