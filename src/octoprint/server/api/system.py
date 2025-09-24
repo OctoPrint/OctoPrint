@@ -15,7 +15,10 @@ from octoprint.logging import prefix_multilines
 from octoprint.plugin import plugin_manager
 from octoprint.server import NO_CONTENT
 from octoprint.server.api import api
-from octoprint.server.util.flask import no_firstrun_access
+from octoprint.server.util.flask import (
+    ensure_credentials_checked_recently,
+    no_firstrun_access,
+)
 from octoprint.settings import settings as s
 from octoprint.systemcommands import system_command_manager
 from octoprint.util.commandline import CommandlineCaller
@@ -154,6 +157,9 @@ def executeSystemCommand(source, command):
             500, description="Command does not define a command to execute, can't proceed"
         )
 
+    if command_spec.get("fresh_credentials", False):
+        ensure_credentials_checked_recently()
+
     do_async = command_spec.get("async", False)
     do_ignore = command_spec.get("ignore", False)
     debug = command_spec.get("debug", False)
@@ -220,7 +226,9 @@ def _to_client_specs(specs):
         if "action" not in spec or "source" not in spec:
             continue
         copied = {
-            k: v for k, v in spec.items() if k in ("source", "action", "name", "confirm")
+            k: v
+            for k, v in spec.items()
+            if k in ("source", "action", "name", "confirm", "fresh_credentials")
         }
         copied["resource"] = url_for(
             ".executeSystemCommand",
@@ -255,6 +263,7 @@ def _get_core_command_specs():
             "confirm": gettext(
                 "<strong>You are about to shutdown the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."
             ),
+            "fresh_credentials": True,
         },
         reboot={
             "command": system_command_manager().get_system_restart_command(),
@@ -262,6 +271,7 @@ def _get_core_command_specs():
             "confirm": gettext(
                 "<strong>You are about to reboot the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."
             ),
+            "fresh_credentials": True,
         },
         restart={
             "command": system_command_manager().get_server_restart_command(),
