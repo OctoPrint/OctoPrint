@@ -59,17 +59,17 @@ class AnalysisFilamentUse(BaseModel):
 
 class AnalysisResult(BaseModel):
     _empty: bool = False
-    printingArea: AnalysisVolume
-    dimensions: AnalysisDimensions
-    travelArea: AnalysisVolume
-    travelDimensions: AnalysisDimensions
-    estimatedPrintTime: float
-    filament: dict[str, AnalysisFilamentUse]
+    printingArea: Optional[AnalysisVolume] = None
+    dimensions: Optional[AnalysisDimensions] = None
+    travelArea: Optional[AnalysisVolume] = None
+    travelDimensions: Optional[AnalysisDimensions] = None
+    estimatedPrintTime: Optional[float] = None
+    filament: dict[str, AnalysisFilamentUse] = {}
 
 
 class Statistics(BaseModel):
-    averagePrintTime: dict[str, float]
-    lastPrintTime: dict[str, float]
+    averagePrintTime: dict[str, float] = {}
+    lastPrintTime: dict[str, float] = {}
 
 
 class MetadataEntry(BaseModelExtra):

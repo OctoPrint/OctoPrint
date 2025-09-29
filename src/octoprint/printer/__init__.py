@@ -33,7 +33,7 @@ from pydantic import computed_field
 
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.filemanager.storage import MetadataEntry, StorageCapabilities
-from octoprint.printer.job import JobProgress, PrintJob
+from octoprint.printer.job import DurationEstimate, JobProgress, PrintJob
 from octoprint.schema import BaseModel
 from octoprint.schema.config.controls import CustomControl, CustomControlContainer
 from octoprint.settings import settings
@@ -580,6 +580,9 @@ class PrinterFilesMixin:
     def refresh_printer_files(self, blocking=False, timeout=10, *args, **kwargs) -> None:
         pass
 
+    def get_printer_file(self, path: str, refresh=False, *args, **kwargs) -> PrinterFile:
+        return None
+
     def get_printer_files(
         self, refresh=False, recursive=False, *args, **kwargs
     ) -> list[PrinterFile]:
@@ -630,9 +633,13 @@ class PrinterFilesMixin:
         return name
 
     def get_printer_file_metadata(
-        self, path: str, *args, **kwargs
+        self, path: str, printer_file: PrinterFile = None, *args, **kwargs
     ) -> Optional[MetadataEntry]:
-        return None
+        if printer_file is None:
+            printer_file = self.get_printer_file(path)
+        if not printer_file:
+            return None
+        return MetadataEntry(display=printer_file.display)
 
     def set_printer_file_metadata(
         self, path: str, metadata: MetadataEntry, *args, **kwargs
@@ -640,7 +647,24 @@ class PrinterFilesMixin:
         pass
 
     def create_job(self, path: str, owner: str = None) -> PrintJob:
-        return PrintJob("printer", path)
+        printer_file = self.get_printer_file(path)
+        if not printer_file:
+            return None
+
+        duration_estimate = None
+        if self.storage_capabilities.metadata:
+            meta = self.get_printer_file_metadata(path, printer_file=printer_file)
+            if meta and meta.analysis and meta.analysis.estimatedPrintTime:
+                duration_estimate = DurationEstimate(
+                    estimate=meta.analysis.estimatedPrintTime, source="analysis"
+                )
+
+        return PrintJob(
+            storage="printer",
+            path=path,
+            size=printer_file.size,
+            duration_estimate=duration_estimate,
+        )
 
 
 class PrinterMixin(CommonPrinterMixin):

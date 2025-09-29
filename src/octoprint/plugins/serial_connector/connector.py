@@ -506,7 +506,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     def refresh_printer_files(self, blocking=False, timeout=10, *args, **kwargs):
         self._comm.refreshSdFiles(blocking=blocking, timeout=timeout)
 
-    def get_printer_files(self, refresh=False, *args, **kwargs):
+    def get_printer_files(self, refresh=False, *args, **kwargs) -> list[PrinterFile]:
         if not self.printer_files_mounted:
             return []
 
@@ -527,6 +527,16 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
                 pf.size = self._job.size
             result.append(pf)
         return result
+
+    def get_printer_file(
+        self, path: str, refresh: bool = False, *args, **kwargs
+    ) -> PrinterFile:
+        files = self.get_printer_files(refresh=refresh)
+        for f in files:
+            if f.path == path:
+                return f
+        else:
+            return None
 
     def upload_printer_file(
         self, source, target, progress_callback: callable = None, *args, **kwargs
@@ -587,6 +597,17 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             raise RuntimeError("Printer is not connected")
 
         return self._comm.get_remote_name(name)
+
+    def create_job(self, path: str, owner: str = None) -> PrintJob:
+        printer_file = self.get_printer_file(path)
+        if not printer_file:
+            return None
+
+        return PrintJob(
+            storage="printer",
+            path=path,
+            size=printer_file.size,
+        )
 
     # ~~ comm.MachineComPrintCallback implementation
 
