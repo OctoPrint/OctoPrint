@@ -20,6 +20,7 @@ RUN apt-get -y install python3 python3-venv python3-dev git \
     cmake cmake-data g++ libffi-dev libssl-dev
 
 FROM build_env AS build
+ARG DOCKER_ARCH
 ARG OCTO_REF="main"
 ADD / /octoprint/src
 WORKDIR /octoprint/src
