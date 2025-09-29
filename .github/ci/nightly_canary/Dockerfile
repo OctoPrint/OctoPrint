@@ -20,11 +20,13 @@ RUN apt-get -y install python3 python3-venv python3-dev git \
     cmake cmake-data g++ libffi-dev libssl-dev
 
 FROM build_env AS build
+ARG OCTO_REF="main"
 ADD / /octoprint/src
 WORKDIR /octoprint/src
 RUN [ "$BUILD_TYPE" != "raspi" ] || \
   echo "[global]\nextra-index-url=https://piwheels.org/simple" > /etc/pip.conf
 RUN python3 -m venv /octoprint/venv \
+  && ([ "$OCTO_REF" != "main" -o "$DOCKER_ARCH" != "arm/v7" ] || /octoprint/venv/bin/pip install markupsafe==3.0.2) \
   && /octoprint/venv/bin/pip install .
 
 FROM build AS runtime
