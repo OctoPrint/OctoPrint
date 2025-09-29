@@ -26,7 +26,7 @@ WORKDIR /octoprint/src
 RUN [ "$BUILD_TYPE" != "raspi" ] || \
   echo "[global]\nextra-index-url=https://piwheels.org/simple" > /etc/pip.conf
 RUN python3 -m venv /octoprint/venv \
-  && ([ "$OCTO_REF" != "main" -o "$DOCKER_ARCH" != "arm/v7" ] || /octoprint/venv/bin/pip install markupsafe==3.0.2) \
+  && ([ "$OCTO_REF" != "main" -o "$DOCKER_ARCH" != "arm/v7" -o "$DEBIAN_VERSION" != "bullseye" ] || /octoprint/venv/bin/pip install markupsafe==3.0.2) \
   && /octoprint/venv/bin/pip install .
 
 FROM build AS runtime
