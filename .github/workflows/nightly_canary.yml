@@ -23,6 +23,7 @@ jobs:
       matrix:
         octo_ref:
           - main
+          - bugfix
           - dev
         debian_version:
           - bullseye
