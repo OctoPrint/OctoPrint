@@ -51,6 +51,9 @@ core_deps = [
     "frozendict>=2.4.6,<3",
     "limits<5",  # dependency of Flask-Limiter, v5 was released days before 1.11.0 and contains backwards incompatibilities, pinning upper limit out of caution
     "markdown>=3.7,<3.8 ; python_version>='3.8'",
+    # The sdist of markupsafe 3.0.3+ fails to build under pip < 21.2 (e.g. Bullseye on RPi/OctoPi 1.0.0) due to the latter vendoring a buggy toml library.
+    # The following environment markers should hopefully limit the pin to affected environments, adequately old python + ARMv7 (for other platforms there are wheels available).
+    "markupsafe<=3.0.2 ; python_version<='3.9' and platform_machine=='armv7l'",
     "netaddr>=1.3.0,<1.4",  # changelog hints at breaking changes on minor version increases
     # "netifaces2>=0.0.21,<0.1",  # fork of netifaces in Rust, use rolled back due to build issues in some environments
     "netifaces>=0.11.0,<0.12",
