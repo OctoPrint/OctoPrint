@@ -11,12 +11,12 @@ from typing import IO, TYPE_CHECKING, Callable
 import octoprint.plugin
 import octoprint.util
 from octoprint.events import Events, eventManager
+from octoprint.util import deprecated, yaml
 from octoprint.util import get_fully_qualified_classname as fqcn
-from octoprint.util import yaml
 
 from .analysis import AnalysisQueue, QueueEntry  # noqa: F401
 from .destinations import FileDestinations  # noqa: F401
-from .storage import StorageCapabilities, StorageError, StorageInterface
+from .storage import StorageCapabilities, StorageEntry, StorageError, StorageInterface
 from .storage.local import LocalFileStorage  # noqa: F401
 from .util import AbstractFileWrapper, DiskFileWrapper, StreamWrapper  # noqa: F401
 
@@ -670,6 +670,9 @@ class FileManager:
     def folder_exists(self, destination, path):
         return self._storage(destination).folder_exists(path)
 
+    @deprecated(
+        "list_files has been deprecated in favor of list_storage_entries", since="1.12.0"
+    )
     def list_files(
         self,
         locations=None,
@@ -695,10 +698,41 @@ class FileManager:
             )
         return result
 
-    def get_file(self, storage: str, path: str):
+    @deprecated(
+        "get_file has been deprecated in favor of get_storage_entry", since="1.12.0"
+    )
+    def get_file(self, location: str, path: str) -> dict:
+        return self._storage(location).get_file(path)
+
+    def list_storage_entries(
+        self,
+        locations: list[str] = None,
+        path: str = None,
+        filter: callable = None,
+        recursive: bool = True,
+        level: int = 0,
+        force_refresh: bool = False,
+    ) -> dict[str, dict[str, StorageEntry]]:
+        if not locations:
+            locations = list(self._storage_managers.keys())
+        if isinstance(locations, str):
+            locations = [locations]
+
+        result = {}
+        for loc in locations:
+            result[loc] = self._storage_managers[loc].list_storage_entries(
+                path=path,
+                filter=filter,
+                recursive=recursive,
+                level=level,
+                force_refresh=force_refresh,
+            )
+        return result
+
+    def get_storage_entry(self, storage: str, path: str) -> StorageEntry:
         path = self.path_in_storage(storage, path)
 
-        return self._storage(storage).get_file(path)
+        return self._storage(storage).get_storage_entry(path)
 
     def add_file(
         self,

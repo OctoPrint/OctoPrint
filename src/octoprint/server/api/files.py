@@ -318,11 +318,17 @@ def _getFileDetails(origin, path):
     else:
         parent = None
 
-    data = fileManager.get_file(origin, path)
+    data = fileManager.get_storage_entry(origin, path)
     if not data:
         return None
 
-    return _analyse_recursively(origin, [data], path=parent)[0]
+    result = data.model_dump(by_alias=True)
+    if "metadata" in result:
+        if result["metadata"]:
+            result.update(**result["metadata"])
+        del result["metadata"]
+
+    return _analyse_recursively(origin, [result], path=parent)[0]
 
 
 @time_this(

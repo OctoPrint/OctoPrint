@@ -301,6 +301,23 @@ $(function () {
             return formatDate(date, {seconds: true});
         });
 
+        self.iconClasses = ko.pureComputed(() => {
+            const data = self.filedata();
+            if (!data) return "";
+
+            if (data.type == "folder") {
+                return "fa-regular fa-folder";
+            } else if (data.origin == "printer") {
+                return "fa-solid fa-sd-card";
+            } else if (data.type == "machinecode") {
+                return "fa-regular fa-file-lines";
+            } else if (data.type == "model") {
+                return "fa-regular fa-file-image";
+            } else {
+                return "fa-regular fa-file";
+            }
+        });
+
         self.fromCurrentData = function (data) {
             self._fromData(data);
         };

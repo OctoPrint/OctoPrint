@@ -558,6 +558,7 @@ class PrinterFile(BaseModel):
     display: str
     size: Union[int, None]
     date: Union[int, None]
+    metadata: Optional[MetadataEntry] = None
 
 
 class PrinterFilesMixin:

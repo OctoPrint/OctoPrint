@@ -14,6 +14,7 @@ from octoprint.printer import (
     ConnectedPrinterCapabilities,
     ErrorInformation,
     FirmwareInformation,
+    MetadataEntry,
     PrinterFile,
     PrinterFilesMixin,
     UnknownScript,
@@ -517,7 +518,12 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
         result = []
         for f in files:
-            pf = PrinterFile(path=f[0], display=f[2], size=f[1], date=f[3])
+            pf = PrinterFile(
+                path=f[0],
+                size=f[1],
+                date=f[3],
+                metadata=MetadataEntry(display=f[2]),
+            )
             if (
                 pf.size is None
                 and self._job

@@ -26,7 +26,19 @@ from octoprint.util import (
 )
 from octoprint.util.files import sanitize_filename
 
-from . import StorageCapabilities, StorageError, StorageInterface
+from . import (
+    AnalysisDimensions,
+    AnalysisFilamentUse,
+    AnalysisResult,
+    AnalysisVolume,
+    MetadataEntry,
+    StorageCapabilities,
+    StorageEntry,
+    StorageError,
+    StorageFile,
+    StorageFolder,
+    StorageInterface,
+)
 
 if typing.TYPE_CHECKING:
     from octoprint.printer.job import PrintJob  # noqa: F401
@@ -273,7 +285,7 @@ class LocalFileStorage(StorageInterface):
         folder_path = os.path.join(path, name)
         return os.path.exists(folder_path) and os.path.isdir(folder_path)
 
-    def get_file(self, path: str) -> dict:
+    def get_storage_entry(self, path: str) -> StorageEntry:
         path_on_disk = self.sanitize_path(path)
         if not os.path.exists(path_on_disk):
             return None
@@ -283,14 +295,19 @@ class LocalFileStorage(StorageInterface):
         if not metadata:
             metadata = {}
 
-        data, dirty = self._prep_entry_data(path, metadata)
+        entry, dirty = self._prep_storage_entry(path, metadata)
         if dirty:
             self._save_metadata(parent_on_disk, metadata)
-        return data
+        return entry
 
-    def list_files(
-        self, path=None, filter=None, recursive=True, level=0, force_refresh=False
-    ):
+    def list_storage_entries(
+        self,
+        path: str = None,
+        filter: callable = None,
+        recursive: bool = True,
+        level: int = 0,
+        force_refresh: bool = False,
+    ) -> dict[str, StorageEntry]:
         if path:
             path = self.sanitize_path(path)
             base = self.path_in_storage(path)
@@ -1213,7 +1230,9 @@ class LocalFileStorage(StorageInterface):
         incl_func_args=True,
         log_enter=True,
     )
-    def _list_folder(self, path, base="", force_refresh=False, fill_cache=True, **kwargs):
+    def _list_folder(
+        self, path, base="", force_refresh=False, fill_cache=True, **kwargs
+    ) -> dict[str, StorageEntry]:
         with self._filelist_cache_mutex:
             cache = self._filelist_cache.get(path)
             lm = self.last_modified(path, recursive=True)
@@ -1233,12 +1252,12 @@ class LocalFileStorage(StorageInterface):
                         # no hidden files and folders
                         continue
 
-                    data, dirty = self._prep_entry_data(base + entry.name, metadata)
-                    if not data:
+                    entry, dirty = self._prep_storage_entry(base + entry.name, metadata)
+                    if not entry:
                         # error while trying to fetch file metadata, that might be thanks to file already having
                         # been moved or deleted - ignore it and continue
                         continue
-                    result[data["name"]] = data
+                    result[entry.name] = entry
                     metadata_dirty = metadata_dirty or dirty
 
                 if fill_cache:
@@ -1252,12 +1271,12 @@ class LocalFileStorage(StorageInterface):
                 if metadata_dirty:
                     self._save_metadata(path, metadata)
 
-    def _prep_entry_data(
+    def _prep_storage_entry(
         self,
         path: str,
         metadata: dict,
         force_refresh: bool = False,
-    ) -> tuple[dict, bool]:
+    ) -> tuple[StorageEntry, bool]:
         path_on_disk = self.path_on_disk(path)
 
         name = display = os.path.basename(path_on_disk)
@@ -1301,19 +1320,17 @@ class LocalFileStorage(StorageInterface):
                 else:
                     entry_metadata = {}
 
-                entry_data = {
-                    "name": name,
-                    "display": entry_metadata.get("display", name),
-                    "path": path,
-                    "type": "folder",
-                    "typePath": ["folder"],
-                }
+                storage_entry = StorageFolder(
+                    name=name, display=entry_metadata.get("display", name), path=path
+                )
                 if stat:
-                    entry_data["date"] = int(stat.st_mtime)
+                    storage_entry.date = int(stat.st_mtime)
 
-                entry_data = self._enrich_folder(entry_data, force_refresh=force_refresh)
+                storage_entry = self._enrich_folder(
+                    storage_entry, force_refresh=force_refresh
+                )
 
-                return entry_data, metadata_dirty
+                return storage_entry, metadata_dirty
 
             # file handling
             else:
@@ -1339,21 +1356,71 @@ class LocalFileStorage(StorageInterface):
                     )
                     metadata_dirty = True
 
-                entry_data = {}
-                entry_data.update(entry_metadata)
-                entry_data.update(
-                    {
-                        "name": name,
-                        "display": entry_metadata.get("display", name),
-                        "path": path,
-                        "type": file_type,
-                        "typePath": type_path,
-                    }
+                storage_entry = StorageFile(
+                    name=name,
+                    display=entry_metadata.get("display", name),
+                    path=path,
+                    entry_type=file_type,
+                    type_path=type_path,
                 )
-                if stat:
-                    entry_data.update({"size": stat.st_size, "date": int(stat.st_mtime)})
 
-                return entry_data, metadata_dirty
+                if entry_metadata:
+                    storage_entry.metadata = MetadataEntry()
+                    if "analysis" in entry_metadata:
+                        analysis = AnalysisResult()
+
+                        meta_analysis = entry_metadata["analysis"]
+
+                        if "estimatedPrintTime" in meta_analysis:
+                            analysis.estimatedPrintTime = meta_analysis[
+                                "estimatedPrintTime"
+                            ]
+                        if "printingArea" in meta_analysis:
+                            x = meta_analysis["printingArea"]
+                            analysis.printingArea = AnalysisVolume(
+                                minX=x["minX"],
+                                minY=x["minY"],
+                                minZ=x["minZ"],
+                                maxX=x["maxX"],
+                                maxY=x["maxY"],
+                                maxZ=x["maxZ"],
+                            )
+                        if "travelArea" in meta_analysis:
+                            x = meta_analysis["travelArea"]
+                            analysis.travelArea = AnalysisVolume(
+                                minX=x["minX"],
+                                minY=x["minY"],
+                                minZ=x["minZ"],
+                                maxX=x["maxX"],
+                                maxY=x["maxY"],
+                                maxZ=x["maxZ"],
+                            )
+                        if "dimensions" in meta_analysis:
+                            x = meta_analysis["dimensions"]
+                            analysis.dimensions = AnalysisDimensions(
+                                width=x["width"], height=x["height"], depth=x["depth"]
+                            )
+                        if "travelDimensions" in meta_analysis:
+                            x = meta_analysis["travelDimensions"]
+                            analysis.travelDimensions = AnalysisDimensions(
+                                width=x["width"], height=x["height"], depth=x["depth"]
+                            )
+                        if "filament" in meta_analysis:
+                            x = meta_analysis["filament"]
+                            result = {}
+                            for tool, data in x.items():
+                                result[tool] = AnalysisFilamentUse(
+                                    length=data["length"], volume=data["volume"]
+                                )
+                            analysis.filament = result
+
+                        storage_entry.metadata.analysis = analysis
+
+                if stat:
+                    storage_entry.size = stat.st_size
+                    storage_entry.date = int(stat.st_mtime)
+
+                return storage_entry, metadata_dirty
 
         except Exception:
             # So something went wrong somewhere while processing this file entry - log that and continue
@@ -1369,30 +1436,39 @@ class LocalFileStorage(StorageInterface):
                 total_size += node["size"]
         return total_size
 
-    def _enrich_folder(self, folder, force_refresh: bool = False) -> dict:
-        assert folder["type"] == "folder"
+    def _enrich_folder(self, folder: StorageFolder, force_refresh: bool = False) -> dict:
+        assert isinstance(folder, StorageFolder)
 
-        path = folder["path"]
+        path = folder.path
         path_on_disk = self.path_on_disk(path)
 
-        folder = copy.copy(folder)
-        folder["children"] = self._list_folder(
-            path_on_disk,
-            base=path + "/",
-            force_refresh=force_refresh,
+        # make a copy...
+        folder = StorageFolder(
+            name=folder.name,
+            display=folder.display,
+            path=folder.path,
+            date=folder.date,
+            size=folder.size,
         )
-        folder["size"] = self.get_size(path_on_disk)
+
+        # ... then enrich that
+        folder.children = self._list_folder(
+            path_on_disk, base=path + "/", force_refresh=force_refresh
+        )
+        folder.size = self.get_size(path_on_disk)
 
         return folder
 
     def _enrich_folders(
-        self, nodes: dict[str, dict], force_refresh: bool = False
+        self, nodes: dict[str, StorageEntry], force_refresh: bool = False
     ) -> dict[str, dict]:
-        nodes = copy.copy(nodes)
+        enriched = {}
         for key, value in nodes.items():
-            if value["type"] == "folder":
-                nodes[key] = self._enrich_folder(value, force_refresh=force_refresh)
-        return nodes
+            if isinstance(value, StorageFolder):
+                enriched[key] = self._enrich_folder(value, force_refresh=force_refresh)
+            else:
+                enriched[key] = value
+        return enriched
 
     def _add_basic_metadata(
         self,

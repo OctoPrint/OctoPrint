@@ -5,8 +5,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 from typing import IO, TYPE_CHECKING, Optional
 
+from pydantic import Field
+
 from octoprint.filemanager.util import AbstractFileWrapper
-from octoprint.schema import BaseModel, BaseModelExtra
+from octoprint.schema import BaseModel
 from octoprint.util import deprecated
 
 if TYPE_CHECKING:
@@ -72,15 +74,33 @@ class Statistics(BaseModel):
     lastPrintTime: dict[str, float] = {}
 
 
-class MetadataEntry(BaseModelExtra):
-    display: Optional[str] = None
+class MetadataEntry(BaseModel):
     analysis: Optional[AnalysisResult] = None
     history: list[HistoryEntry] = []
     statistics: Optional[Statistics] = None
-    # TODO: remove the following
-    # hash: Optional[str] = None
-    # links: list = []
-    # notes: list = []
+
+
+class StorageEntry(BaseModel):
+    name: str
+    display: str
+    path: str
+
+    date: Optional[int] = None
+    size: Optional[int] = None
+
+    entry_type: str = Field(serialization_alias="type")
+    type_path: list[str] = Field(serialization_alias="typePath")
+
+
+class StorageFile(StorageEntry):
+    metadata: Optional[MetadataEntry] = None
+
+
+class StorageFolder(StorageEntry):
+    children: dict[str, StorageEntry] = {}
+
+    entry_type: str = Field("folder", serialization_alias="type")
+    type_path: list[str] = Field(["folder"], serialization_alias="typePath")
 
 
 class StorageInterface:
@@ -179,26 +199,48 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_file(self, path: str):
+    def get_storage_entry(self, path: str) -> StorageEntry:
         if "/" in path:
-            folder, _ = path.rsplit("/", 1)
+            folder, name = path.rsplit("/", 1)
         else:
             folder = None
+            name = path
 
-        files = self.list_files(path=folder, recursive=False, level=1)
-        for f in files.values():
-            if f.get("path") == path:
-                return f
-            elif f.get("type") == "folder":
-                for child in f.get("children", {}).values():
-                    if child.get("path") == path:
-                        return child
+        entries = self.list_storage_entries(path=folder, recursive=False, level=1)
+        return entries.get(name)
 
-        return None
+    def list_storage_entries(
+        self,
+        path: str = None,
+        filter: callable = None,
+        recursive: bool = True,
+        level: int = 0,
+        force_refresh: bool = False,
+    ) -> dict[str, StorageEntry]:
+        """ """
+        raise NotImplementedError()
 
+    @deprecated(
+        "get_file has been deprecated in favor of get_storage_entry", since="1.12.0"
+    )
+    def get_file(self, path: str) -> dict:
+        entry = self.get_storage_entry(path)
+        if entry is None:
+            return None
+
+        return self._convert_storage_entry_to_dict(entry)
+
+    @deprecated(
+        "list_files has been deprecated in favor of list_storage_entries", since="1.12.0"
+    )
     def list_files(
-        self, path=None, filter=None, recursive=True, level=0, force_refresh=False
-    ):
+        self,
+        path: str = None,
+        filter: callable = None,
+        recursive: bool = True,
+        level: int = 0,
+        force_refresh: bool = False,
+    ) -> dict[str, dict]:
         """
         List all files in storage starting at ``path``. If ``recursive`` is set to True (the default), also dives into
         subfolders.
@@ -262,7 +304,10 @@ class StorageInterface:
                                 do one step down into sub folders to be able to populate the ``children``.
         :return: a dictionary mapping entry names to entry data that represents the whole file list
         """
-        raise NotImplementedError()
+        tree = self.list_storage_entries(
+            path=path, filter=filter, recursive=recursive, force_refresh=force_refresh
+        )
+        return {k: self._convert_storage_entry_to_dict(v) for k, v in tree.items()}
 
     def add_folder(self, path, ignore_existing=True, display=None, user=None):
         """
@@ -575,6 +620,23 @@ class StorageInterface:
         :return: the path in storage to ``path``
         """
         raise NotImplementedError()
+
+    def _convert_storage_entry_to_dict(self, entry: StorageEntry) -> dict:
+        """Converts StorageEntry tree to legacy dict structure"""
+        if isinstance(entry, StorageFolder):
+            result = entry.model_dump(by_alias=True)
+            result["children"] = {
+                k: self._convert_storage_entry_to_dict(v)
+                for k, v in entry.children.items()
+            }
+            return result
+
+        if isinstance(entry, StorageFile):
+            result = entry.model_dump(by_alias=True)
+            if "metadata" in result and result["metadata"]:
+                result.update(**result["metadata"])
+                del result["metadata"]
+            return result
 
 
 class StorageError(Exception):

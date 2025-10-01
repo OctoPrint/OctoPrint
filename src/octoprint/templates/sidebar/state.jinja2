@@ -14,8 +14,8 @@
 <br>
 </span>
 <hr>
-<span title="{{ _('Name of file currently selected for printing') |edq }}">{{ _("File") }}</span>: <strong data-bind="text: filedisplay, attr: {title: filepath}"
-         data-test-id="selected-file-string"></strong>&nbsp;<strong data-bind="visible: sd" data-test-id="selected-file-sd">(SD)</strong>
+<span title="{{ _('Name of file currently selected for printing') |edq }}">{{ _("File") }}</span>: <strong data-bind="class: iconClasses" data-test-id="selected-file-icon"></strong>&nbsp;<strong data-bind="text: filedisplay, attr: {title: filepath}"
+        data-test-id="selected-file-string"></strong>
 <br>
 <span title="{{ _('Upload date of the file currently selected or printing') |edq }}">{{ _("Uploaded") }}</span>: <strong data-bind="text: dateString"></strong>
 <br>

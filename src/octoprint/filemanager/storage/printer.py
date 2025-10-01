@@ -8,7 +8,15 @@ from octoprint.filemanager import get_file_type
 from octoprint.filemanager.util import AbstractFileWrapper
 from octoprint.printer import PrinterFile, PrinterFilesMixin
 
-from . import MetadataEntry, StorageCapabilities, StorageError, StorageInterface
+from . import (
+    MetadataEntry,
+    StorageCapabilities,
+    StorageEntry,
+    StorageError,
+    StorageFile,
+    StorageFolder,
+    StorageInterface,
+)
 
 
 class PrinterFileStorage(StorageInterface):
@@ -54,7 +62,7 @@ class PrinterFileStorage(StorageInterface):
     def get_size(self, path=None, recursive=False) -> Optional[int]:
         files = self._get_printer_files(path=path)
 
-        sizes = [f.size for f in files if f.date is not None]
+        sizes = [f.size for f in files if f.size is not None]
         if len(sizes):
             return sum(sizes)
 
@@ -98,9 +106,14 @@ class PrinterFileStorage(StorageInterface):
         paths = [f.path for f in files]
         return any(p.startswith(path + "/") for p in paths)
 
-    def list_files(
-        self, path=None, filter=None, recursive=True, level=0, force_refresh=False
-    ):
+    def list_storage_entries(
+        self,
+        path: str = None,
+        filter: callable = None,
+        recursive: bool = True,
+        level: int = 0,
+        force_refresh: bool = False,
+    ) -> dict[str, StorageEntry]:
         files = self._get_printer_files(path=path, filter=filter, refresh=force_refresh)
 
         if not recursive:
@@ -130,17 +143,18 @@ class PrinterFileStorage(StorageInterface):
             parts = f.path.split("/")
             name = parts[-1]
 
-            entry = {
-                "name": name,
-                "path": f.path,
-                "display": f.display,
-                "type": file_type,
-                "typePath": type_path,
-            }
+            entry = StorageFile(
+                name=name,
+                path=f.path,
+                display=f.display,
+                entry_type=file_type,
+                type_path=type_path,
+                metadata=f.metadata,
+            )
             if f.size is not None:
-                entry["size"] = f.size
+                entry.size = f.size
             if f.date is not None:
-                entry["date"] = f.date
+                entry.date = f.date
 
             node = result
             if len(parts) > 1:
@@ -149,15 +163,12 @@ class PrinterFileStorage(StorageInterface):
                 for p in parts[:-1]:
                     fp += f"/{p}" if fp else p
                     if p not in node:
-                        node[p] = {
-                            "name": p,
-                            "path": fp,
-                            "display": p,
-                            "type": "folder",
-                            "typePath": ["folder"],
-                            "children": {},
-                        }
-                    node = node[p]["children"]
+                        node[p] = StorageFolder(
+                            name=p,
+                            path=fp,
+                            display=p,
+                        )
+                    node = node[p].children
 
             node[name] = entry
 
