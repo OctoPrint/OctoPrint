@@ -816,7 +816,10 @@ class LocalFileStorage(StorageInterface):
         job = super().create_job(path, owner=owner)
 
         metadata = self.get_metadata(path)
-        if "analysis" in metadata and "estimedPrintTime" in metadata["analysis"]:
+        if (
+            metadata
+            and metadata.get("analysis", {}).get("estimatedPrintTime") is not None
+        ):
             job.duration_estimate = metadata["analysis"]["estimatedPrintTime"]
 
         return job
