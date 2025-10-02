@@ -37,7 +37,7 @@ test.describe("File selection", {tag: "@isolated"}, () => {
         await expect(page.getByTestId("selected-file-string")).toHaveText(
             "selection-test.gcode"
         );
-        await expect(page.getByTestId("selected-file-sd")).toBeHidden();
+        await expect(page.getByTestId("selected-file-icon")).toHaveClass(/fa-file-lines/);
     });
 
     test("select printer file", async ({page, filesApi}) => {
@@ -48,6 +48,6 @@ test.describe("File selection", {tag: "@isolated"}, () => {
 
         await expect(fileEntry.locator(".title")).toHaveCSS("font-weight", "700");
         await expect(page.getByTestId("selected-file-string")).toHaveText("select~1.gco");
-        await expect(page.getByTestId("selected-file-sd")).toBeVisible();
+        await expect(page.getByTestId("selected-file-icon")).toHaveClass(/fa-sd-card/);
     });
 });
