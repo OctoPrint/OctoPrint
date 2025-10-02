@@ -305,7 +305,11 @@ class StorageInterface:
         :return: a dictionary mapping entry names to entry data that represents the whole file list
         """
         tree = self.list_storage_entries(
-            path=path, filter=filter, recursive=recursive, force_refresh=force_refresh
+            path=path,
+            filter=filter,
+            recursive=recursive,
+            force_refresh=force_refresh,
+            level=level,
         )
         return {k: self._convert_storage_entry_to_dict(v) for k, v in tree.items()}
 
@@ -438,42 +442,19 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
+    @deprecated(
+        "add_link has been deprecated and will be removed in a future version",
+        since="1.12.0",
+    )
     def add_link(self, path, rel, data):
-        """
-        Adds a link of relation ``rel`` to file ``path`` with the given ``data``.
+        pass
 
-        The following relation types are currently supported:
-
-          * ``model``: adds a link to a model from which the file was created/sliced, expected additional data is the ``name``
-            and optionally the ``hash`` of the file to link to. If the link can be resolved against another file on the
-            current ``path``, not only will it be added to the links of ``name`` but a reverse link of type ``machinecode``
-            referring to ``name`` and its hash will also be added to the linked ``model`` file
-          * ``machinecode``: adds a link to a file containing machine code created from the current file (model), expected
-            additional data is the ``name`` and optionally the ``hash`` of the file to link to. If the link can be resolved
-            against another file on the current ``path``, not only will it be added to the links of ``name`` but a reverse
-            link of type ``model`` referring to ``name`` and its hash will also be added to the linked ``model`` file.
-          * ``web``: adds a location on the web associated with this file (e.g. a website where to download a model),
-            expected additional data is a ``href`` attribute holding the website's URL and optionally a ``retrieved``
-            attribute describing when the content was retrieved
-
-        Note that adding ``model`` links to files identifying as models or ``machinecode`` links to files identifying
-        as machine code will be refused.
-
-        :param path: path of the file for which to add a link
-        :param rel: type of relation of the link to add (currently ``model``, ``machinecode`` and ``web`` are supported)
-        :param data: additional data of the link to add
-        """
-        raise NotImplementedError()
-
+    @deprecated(
+        "add_link has been deprecated and will be removed in a future version",
+        since="1.12.0",
+    )
     def remove_link(self, path, rel, data):
-        """
-        Removes the link consisting of ``rel`` and ``data`` from file ``name`` on ``path``.
-
-        :param path: path of the file from which to remove the link
-        :param rel: type of relation of the link to remove (currently ``model``, ``machinecode`` and ``web`` are supported)
-        :param data: additional data of the link to remove, must match existing link
-        """
-        raise NotImplementedError()
+        pass
 
     def add_history(self, path, data):
         raise NotImplementedError()

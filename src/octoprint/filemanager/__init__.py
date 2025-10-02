@@ -1171,9 +1171,17 @@ class FileManager:
     def get_metadata(self, location, path):
         return self._storage(location).get_metadata(path)
 
+    @deprecated(
+        "add_link has been deprecated and will be removed in a future version",
+        since="1.12.0",
+    )
     def add_link(self, location, path, rel, data):
         self._storage(location).add_link(path, rel, data)
 
+    @deprecated(
+        "add_link has been deprecated and will be removed in a future version",
+        since="1.12.0",
+    )
     def remove_link(self, location, path, rel, data):
         self._storage(location).remove_link(path, rel, data)
 

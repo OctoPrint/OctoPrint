@@ -173,13 +173,7 @@ class LocalFileStorage(StorageInterface):
                     or not isinstance(metadata[entry.name], dict)
                     or "analysis" not in metadata[entry.name]
                 ):
-                    printer_profile_rels = self.get_link(entry.path, "printerprofile")
-                    if printer_profile_rels:
-                        printer_profile_id = printer_profile_rels[0]["id"]
-                    else:
-                        printer_profile_id = None
-
-                    yield entry.name, entry.path, printer_profile_id
+                    yield entry.name, entry.path, None
             elif os.path.isdir(entry.path):
                 for sub_entry in self._analysis_backlog_generator(entry.path):
                     yield (
@@ -317,33 +311,35 @@ class LocalFileStorage(StorageInterface):
             path = self.basefolder
             base = ""
 
-        def strip_children(nodes):
+        def strip_children(nodes: dict[str, StorageEntry]) -> dict[str, StorageEntry]:
             result = {}
             for key, node in nodes.items():
-                if node["type"] == "folder":
+                if isinstance(node, StorageFolder):
                     node = copy.copy(node)
-                    node["children"] = {}
+                    node.children = {}
                 result[key] = node
             return result
 
-        def strip_grandchildren(nodes):
+        def strip_grandchildren(
+            nodes: dict[str, StorageEntry],
+        ) -> dict[str, StorageEntry]:
             result = {}
             for key, node in nodes.items():
-                if node["type"] == "folder":
+                if isinstance(node, StorageFolder):
                     node = copy.copy(node)
-                    node["children"] = strip_children(node["children"])
+                    node.children = strip_children(node.children)
                 result[key] = node
             return result
 
-        def apply_filter(nodes, filter_func):
+        def apply_filter(
+            nodes: dict[str, StorageEntry], filter_func: callable
+        ) -> dict[str, StorageEntry]:
             result = {}
             for key, node in nodes.items():
-                if filter_func(node) or node["type"] == "folder":
-                    if node["type"] == "folder":
+                if filter_func(node) or isinstance(node, StorageFolder):
+                    if isinstance(node, StorageFolder):
                         node = copy.copy(node)
-                        node["children"] = apply_filter(
-                            node.get("children", {}), filter_func
-                        )
+                        node.children = apply_filter(node.children, filter_func)
                     result[key] = node
             return result
 
@@ -605,16 +601,11 @@ class LocalFileStorage(StorageInterface):
         # save the file
         file_obj.save(file_path)
 
-        # save the file's hash to the metadata of the folder
-        file_hash = self._create_hash(file_path)
+        # populate metadata
         metadata = self._get_metadata_entry(path, name, default={})
         metadata_dirty = False
-        if "hash" not in metadata or metadata["hash"] != file_hash:
-            # hash changed -> throw away old metadata
-            metadata = {"hash": file_hash}
-            metadata_dirty = True
 
-        if "display" not in metadata and display_name != name:
+        if display_name != name and "display" not in metadata:
             # display name is not the same as file name -> store in metadata
             metadata["display"] = display_name
             metadata_dirty = True
@@ -756,18 +747,6 @@ class LocalFileStorage(StorageInterface):
     def get_metadata(self, path):
         path, name = self.sanitize(path)
         return self._get_metadata_entry(path, name)
-
-    def get_link(self, path, rel):
-        path, name = self.sanitize(path)
-        return self._get_links(name, path, rel)
-
-    def add_link(self, path, rel, data):
-        path, name = self.sanitize(path)
-        self._add_links(name, path, [(rel, data)])
-
-    def remove_link(self, path, rel, data):
-        path, name = self.sanitize(path)
-        self._remove_links(name, path, [(rel, data)])
 
     def add_history(self, path, data):
         path, name = self.sanitize(path)
@@ -982,9 +961,6 @@ class LocalFileStorage(StorageInterface):
     def _add_history(self, name, path, data):
         metadata = self._copied_metadata(self._get_metadata(path), name)
 
-        if "hash" not in metadata[name]:
-            metadata[name]["hash"] = self._create_hash(os.path.join(path, name))
-
         if "history" not in metadata[name]:
             metadata[name]["history"] = []
 
@@ -1092,136 +1068,6 @@ class LocalFileStorage(StorageInterface):
         metadata[name]["statistics"] = statistics
 
         if save:
-            self._save_metadata(path, metadata)
-
-    def _get_links(self, name, path, searched_rel):
-        metadata = self._get_metadata(path)
-        result = []
-
-        if name not in metadata:
-            return result
-
-        if "links" not in metadata[name]:
-            return result
-
-        for data in metadata[name]["links"]:
-            if "rel" not in data or not data["rel"] == searched_rel:
-                continue
-            result.append(data)
-        return result
-
-    def _add_links(self, name, path, links):
-        file_type = octoprint.filemanager.get_file_type(name)
-        if file_type:
-            file_type = file_type[0]
-
-        metadata = self._copied_metadata(self._get_metadata(path), name)
-        metadata_dirty = False
-
-        if "hash" not in metadata[name]:
-            metadata[name]["hash"] = self._create_hash(os.path.join(path, name))
-
-        if "links" not in metadata[name]:
-            metadata[name]["links"] = []
-
-        for rel, data in links:
-            if (rel == "model" or rel == "machinecode") and "name" in data:
-                if file_type == "model" and rel == "model":
-                    # adding a model link to a model doesn't make sense
-                    return
-                elif file_type == "machinecode" and rel == "machinecode":
-                    # adding a machinecode link to a machinecode doesn't make sense
-                    return
-
-                ref_path = os.path.join(path, data["name"])
-                if not os.path.exists(ref_path):
-                    # file doesn't exist, we won't create the link
-                    continue
-
-                # fetch hash of target file
-                if data["name"] in metadata and "hash" in metadata[data["name"]]:
-                    hash = metadata[data["name"]]["hash"]
-                else:
-                    hash = self._create_hash(ref_path)
-                    if data["name"] not in metadata:
-                        metadata[data["name"]] = {"hash": hash, "links": []}
-                    else:
-                        metadata[data["name"]]["hash"] = hash
-
-                if "hash" in data and not data["hash"] == hash:
-                    # file doesn't have the correct hash, we won't create the link
-                    continue
-
-                if "links" not in metadata[data["name"]]:
-                    metadata[data["name"]]["links"] = []
-
-                # add reverse link to link target file
-                metadata[data["name"]]["links"].append(
-                    {
-                        "rel": "machinecode" if rel == "model" else "model",
-                        "name": name,
-                        "hash": metadata[name]["hash"],
-                    }
-                )
-                metadata_dirty = True
-
-                link_dict = {"rel": rel, "name": data["name"], "hash": hash}
-
-            elif rel == "web" and "href" in data:
-                link_dict = {"rel": rel, "href": data["href"]}
-                if "retrieved" in data:
-                    link_dict["retrieved"] = data["retrieved"]
-
-            else:
-                continue
-
-            if link_dict:
-                metadata[name]["links"].append(link_dict)
-                metadata_dirty = True
-
-        if metadata_dirty:
-            self._save_metadata(path, metadata)
-
-    def _remove_links(self, name, path, links):
-        metadata = self._copied_metadata(self._get_metadata(path), name)
-        metadata_dirty = False
-
-        hash = metadata[name].get("hash", self._create_hash(os.path.join(path, name)))
-
-        for rel, data in links:
-            if (rel == "model" or rel == "machinecode") and "name" in data:
-                if data["name"] in metadata and "links" in metadata[data["name"]]:
-                    ref_rel = "model" if rel == "machinecode" else "machinecode"
-                    for link in metadata[data["name"]]["links"]:
-                        if (
-                            link["rel"] == ref_rel
-                            and "name" in link
-                            and link["name"] == name
-                            and "hash" in link
-                            and link["hash"] == hash
-                        ):
-                            metadata[data["name"]] = copy.deepcopy(metadata[data["name"]])
-                            metadata[data["name"]]["links"].remove(link)
-                            metadata_dirty = True
-
-            if "links" in metadata[name]:
-                for link in metadata[name]["links"]:
-                    if not link["rel"] == rel:
-                        continue
-
-                    matches = True
-                    for k, v in data.items():
-                        if k not in link or not link[k] == v:
-                            matches = False
-                            break
-
-                    if not matches:
-                        continue
-
-                    metadata[name]["links"].remove(link)
-                    metadata_dirty = True
-
-        if metadata_dirty:
             self._save_metadata(path, metadata)
 
     @time_this(
@@ -1489,8 +1335,6 @@ class LocalFileStorage(StorageInterface):
 
         if os.path.isfile(entry_path):
             entry_data = {
-                "hash": self._create_hash(os.path.join(path, entry)),
-                "links": [],
                 "notes": [],
             }
             if (
@@ -1521,19 +1365,6 @@ class LocalFileStorage(StorageInterface):
 
         return entry_data
 
-    def _create_hash(self, path):
-        import hashlib
-
-        blocksize = 65536
-        hash = hashlib.sha1()
-        with open(path, "rb") as f:
-            buffer = f.read(blocksize)
-            while len(buffer) > 0:
-                hash.update(buffer)
-                buffer = f.read(blocksize)
-
-        return hash.hexdigest()
-
     def _get_metadata_entry(self, path, name, default=None):
         with self._get_metadata_lock(path):
             metadata = self._get_metadata(path)
@@ -1546,20 +1377,6 @@ class LocalFileStorage(StorageInterface):
                 return
 
             metadata = copy.copy(metadata)
-
-            if "hash" in metadata[name]:
-                hash = metadata[name]["hash"]
-                for m in metadata.values():
-                    if "links" not in m:
-                        continue
-                    links_hash = (
-                        lambda link: "hash" in link
-                        and link["hash"] == hash
-                        and "rel" in link
-                        and (link["rel"] == "model" or link["rel"] == "machinecode")
-                    )
-                    m["links"] = [link for link in m["links"] if not links_hash(link)]
-
             del metadata[name]
             self._save_metadata(path, metadata)
 
