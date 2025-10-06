@@ -179,6 +179,14 @@
         <h3>{{ _("Restoring from backup...") }}</h3>
     </div>
     <div class="modal-body">
+        <div class="progress progress-text-centered"
+             data-bind="css: { 'progress-striped': restoreProgressActive, 'active': restoreProgressActive }">
+            <div class="bar"
+                 data-bind="style: { width: restoreProgressPercentage() + '%' }, css: { 'bar-danger': restoreProgressError }">
+            </div>
+            <span class="progress-text-back"
+                  data-bind="css: { 'progress-text-front': (restoreProgressPercentage() >= 50), 'progress-text-back': (restoreProgressPercentage() < 50) }, text: restoreProgressText()"></span>
+        </div>
         <pre id="settings_plugin_backup_restoredialog_output"
              class="pre-scrollable pre-output"
              style="height: 170px"

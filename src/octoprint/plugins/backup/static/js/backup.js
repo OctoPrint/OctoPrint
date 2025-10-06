@@ -80,6 +80,17 @@ $(function () {
                     self.backupUploadName(undefined);
                     self.backupUploadData = undefined;
                     self.backupUploadSource = undefined;
+                },
+                fail: (e, data) => {
+                    self.setRestoreProgress(
+                        "Upload failed!",
+                        self.restoreProgressPercentage()
+                    );
+                    self.setRestoreError(true);
+                },
+                progressall: (e, data) => {
+                    const progress = parseInt((data.loaded / data.total) * 100, 10);
+                    self.setRestoreProgress("Uploading", progress);
                 }
             };
         };
@@ -94,6 +105,22 @@ $(function () {
         self.restoreDialog = undefined;
         self.restoreOutput = undefined;
         self.unknownPlugins = ko.observableArray([]);
+
+        self.restoreProgressPercentage = ko.observable(0);
+        self.restoreProgressText = ko.observable("");
+        self.restoreProgressError = ko.observable(false);
+        self.restoreProgressActive = ko.observable(false);
+        self.setRestoreProgress = (operation, progress) => {
+            if (progress === undefined || progress < 0) {
+                self.restoreProgressPercentage(100);
+                self.restoreProgressText(operation);
+                self.restoreProgressActive(true);
+            } else {
+                self.restoreProgressPercentage(progress);
+                self.restoreProgressText(`${operation} (${progress}%)`);
+                self.restoreProgressActive(false);
+            }
+        };
 
         self.loglines = ko.observableArray([]);
 
@@ -176,6 +203,8 @@ $(function () {
 
             const proceed = () => {
                 self.restoreInProgress(true);
+                self.setRestoreProgress("Uploading...", 0);
+                self.restoreProgressError(false);
                 self.loglines.removeAll();
                 self.loglines.push({
                     line: "Uploading backup, this can take a while. Please wait...",
@@ -301,8 +330,10 @@ $(function () {
                 self.backupProgress(Math.round(data.progress * 100));
                 self.backupInProgress(true);
             } else if (data.type === "restore_started") {
+                const line = gettext("Restoring from backup...");
+                self.setRestoreProgress(line);
                 self.loglines.push({
-                    line: gettext("Restoring from backup..."),
+                    line: line,
                     stream: "message"
                 });
                 self.loglines.push({line: " ", stream: "message"});
@@ -315,6 +346,11 @@ $(function () {
                     stream: "error"
                 });
                 self.restoreInProgress(false);
+                self.setRestoreProgress(
+                    gettext("Restore failed!"),
+                    self.restoreProgressPercentage()
+                );
+                self.setRestoreError(true);
             } else if (data.type === "restore_done") {
                 self.loglines.push({line: " ", stream: "message"});
                 self.loglines.push({
@@ -324,14 +360,18 @@ $(function () {
                     stream: "message"
                 });
                 self.restoreInProgress(false);
+                self.setRestoreProgress(gettext("Restore successful!"), 100);
             } else if (data.type === "installing_plugin") {
                 self.loglines.push({line: " ", stream: "message"});
+
+                const line = _.sprintf(gettext('Installing plugin "%(plugin)s"...'), {
+                    plugin: _.escape(data.plugin)
+                });
                 self.loglines.push({
-                    line: _.sprintf(gettext('Installing plugin "%(plugin)s"...'), {
-                        plugin: _.escape(data.plugin)
-                    }),
+                    line: line,
                     stream: "message"
                 });
+                self.setRestoreProgress(line);
             } else if (data.type === "plugin_incompatible") {
                 self.loglines.push({line: " ", stream: "message"});
                 self.loglines.push({
