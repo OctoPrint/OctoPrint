@@ -13,7 +13,6 @@ import watchdog.events
 import octoprint.filemanager
 import octoprint.filemanager.util
 import octoprint.util
-from octoprint.printer.job import PrintJob
 
 
 class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
@@ -129,8 +128,8 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
                     pass
 
             if reselect:
-                job = PrintJob(
-                    storage=octoprint.filemanager.FileDestinations.LOCAL, path=added_file
+                job = self._file_manager.create_job(
+                    octoprint.filemanager.FileDestinations.LOCAL, added_file
                 )
                 self._printer.set_job(job)
         except Exception:

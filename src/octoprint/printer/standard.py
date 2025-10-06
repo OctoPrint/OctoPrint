@@ -8,7 +8,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import copy
 import logging
-import os
 import threading
 import time
 from typing import Any, Optional, Union, cast
@@ -37,7 +36,7 @@ from octoprint.printer.connection import (
     ConnectedPrinterState,
 )
 from octoprint.printer.estimation import PrintTimeEstimator
-from octoprint.printer.job import DurationEstimate, PrintJob, UploadJob
+from octoprint.printer.job import PrintJob, UploadJob
 from octoprint.schema.config.controls import CustomControl, CustomControlContainer
 from octoprint.settings import settings
 from octoprint.util import InvariantContainer
@@ -1798,78 +1797,22 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
             _, name = self._file_manager.split_path(job.storage, job.path)
 
-            if self._file_manager.capabilities(job.storage).path_on_disk:
-                path_on_disk = self._file_manager.path_on_disk(job.storage, job.path)
-            else:
-                path_on_disk = None
-
             estimatedPrintTime = None
-            lastPrintTime = None
-            averagePrintTime = None
-            date = None
             filament = None
-            display_name = name
+
+            if job.display:
+                display_name = job.display
+            else:
+                display_name = name
 
             if user is None:
                 user = job.owner
 
-            if path_on_disk:
-                # Use an int for mtime because it could be float and the
-                # javascript needs to exact match
-                date = int(os.stat(path_on_disk).st_mtime)
+            if job.duration_estimate:
+                estimatedPrintTime = job.duration_estimate.estimate
 
-                try:
-                    metadata = self._file_manager.get_metadata(
-                        job.storage,
-                        path_on_disk,
-                    )
-                except Exception:
-                    self._logger.exception("Error generating fileData")
-                    metadata = None
-
-                if metadata is not None:
-                    if metadata.get("display"):
-                        display_name = metadata["display"]
-
-                    if isinstance(metadata.get("analysis"), dict):
-                        if estimatedPrintTime is None and metadata["analysis"].get(
-                            "estimatedPrintTime"
-                        ):
-                            estimatedPrintTime = metadata["analysis"][
-                                "estimatedPrintTime"
-                            ]
-                        if metadata["analysis"].get("filament"):
-                            filament = metadata["analysis"]["filament"]
-
-                    if isinstance(metadata.get("statistics"), dict):
-                        printer_profile = (
-                            self._printer_profile_manager.get_current_or_default()["id"]
-                        )
-                        if printer_profile in metadata["statistics"].get(
-                            "averagePrintTime", {}
-                        ):
-                            averagePrintTime = metadata["statistics"]["averagePrintTime"][
-                                printer_profile
-                            ]
-                        if printer_profile in metadata["statistics"].get(
-                            "lastPrintTime", {}
-                        ):
-                            lastPrintTime = metadata["statistics"]["lastPrintTime"][
-                                printer_profile
-                            ]
-
-                    if averagePrintTime is not None:
-                        job.duration_estimate = DurationEstimate(
-                            estimate=averagePrintTime, source="average"
-                        )
-                    elif estimatedPrintTime is not None:
-                        job.duration_estimate = DurationEstimate(
-                            estimate=estimatedPrintTime, source="analysis"
-                        )
-
-            elif data:  # TODO data coming from SD files, needs clean up
-                display_name = data.longname
-                date = data.timestamp
+            if job.filament_estimate:
+                filament = {k: v.model_dump() for k, v in job.filament_estimate.items()}
 
             self._stateMonitor.set_job_data(
                 self._dict(
@@ -1879,11 +1822,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                         display=display_name,
                         origin=job.storage,
                         size=job.size,
-                        date=date,
+                        date=job.date,
                     ),
                     estimatedPrintTime=estimatedPrintTime,
-                    averagePrintTime=averagePrintTime,
-                    lastPrintTime=lastPrintTime,
                     filament=filament,
                     user=user,
                 )
@@ -1900,8 +1841,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     self._dict(
                         file=job_data["file"],
                         estimatedPrintTime=job_data["estimatedPrintTime"],
-                        averagePrintTime=job_data["averagePrintTime"],
-                        lastPrintTime=job_data["lastPrintTime"],
                         filament=job_data["filament"],
                         user=user,
                     )

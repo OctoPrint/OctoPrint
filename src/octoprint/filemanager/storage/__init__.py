@@ -55,8 +55,9 @@ class AnalysisDimensions(BaseModel):
 
 
 class AnalysisFilamentUse(BaseModel):
-    length: float
-    volume: float
+    length: Optional[float] = None
+    volume: Optional[float] = None
+    weight: Optional[float] = None
 
 
 class AnalysisResult(BaseModel):
@@ -502,19 +503,39 @@ class StorageInterface:
         raise NotImplementedError()
 
     def create_job(self, path, owner: str = None) -> "PrintJob":
-        from octoprint.printer.job import PrintJob
+        from octoprint.printer.job import DurationEstimate, FilamentEstimate, PrintJob
 
-        size = self.get_size(path)
+        entry = self.get_storage_entry(path)
+        if not isinstance(entry, StorageFile):
+            raise ValueError(f"{self.storage}:{path} is not a file, can't create job")
 
         path_on_disk = None
         if self.capabilities.path_on_disk:
             path_on_disk = self.path_on_disk(path)
 
+        duration_estimate = None
+        filament_estimate = {}
+
+        if entry.metadata and entry.metadata.analysis:
+            if entry.metadata.analysis.estimatedPrintTime:
+                duration_estimate = DurationEstimate(
+                    estimate=entry.metadata.analysis.estimatedPrintTime, source="analysis"
+                )
+            if entry.metadata.analysis.filament:
+                filament_estimate = {
+                    k: FilamentEstimate(length=v.length, volume=v.volume, weight=v.weight)
+                    for k, v in entry.metadata.analysis.filament.items()
+                }
+
         return PrintJob(
             storage=self.storage,
-            path=path,
-            size=size,
+            path=entry.path,
+            display=entry.display,
+            size=entry.size,
+            date=entry.date,
             owner=owner,
+            duration_estimate=duration_estimate,
+            filament_estimate=filament_estimate,
             path_on_disk=path_on_disk,
         )
 

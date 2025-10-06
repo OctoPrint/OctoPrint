@@ -348,8 +348,8 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         if job.storage not in {FileDestinations.LOCAL, FileDestinations.PRINTER}:
             return False
 
-        if job.storage != FileDestinations.PRINTER and not os.path.isfile(
-            job.path_on_disk
+        if job.storage != FileDestinations.PRINTER and (
+            job.path_on_disk is None or not os.path.isfile(job.path_on_disk)
         ):
             return False
 
@@ -598,17 +598,6 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
         return self._comm.get_remote_name(name)
 
-    def create_job(self, path: str, owner: str = None) -> PrintJob:
-        printer_file = self.get_printer_file(path)
-        if not printer_file:
-            return None
-
-        return PrintJob(
-            storage="printer",
-            path=path,
-            size=printer_file.size,
-        )
-
     # ~~ comm.MachineComPrintCallback implementation
 
     def on_comm_log(self, message):
@@ -686,14 +675,9 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     def on_comm_file_selected(self, full_path, size, sd, user=None, data=None):
         storage = FileDestinations.PRINTER if sd else FileDestinations.LOCAL
-        path = self._file_manager.path_in_storage(storage, full_path)
 
-        job = PrintJob(
-            storage=storage,
-            path=path,
-            size=size,
-            owner=user,
-        )
+        path = self._file_manager.path_in_storage(storage, full_path)
+        job = self._file_manager.create_job(storage, path, owner=user)
 
         super().set_job(job)
         self._listener.on_printer_job_changed(job, user=user, data=data)

@@ -33,7 +33,12 @@ from pydantic import computed_field
 
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.filemanager.storage import MetadataEntry, StorageCapabilities
-from octoprint.printer.job import DurationEstimate, JobProgress, PrintJob
+from octoprint.printer.job import (
+    DurationEstimate,
+    FilamentEstimate,
+    JobProgress,
+    PrintJob,
+)
 from octoprint.schema import BaseModel
 from octoprint.schema.config.controls import CustomControl, CustomControlContainer
 from octoprint.settings import settings
@@ -556,8 +561,8 @@ class ConnectedPrinterMixin(CommonPrinterMixin):
 class PrinterFile(BaseModel):
     path: str
     display: str
-    size: Union[int, None]
-    date: Union[int, None]
+    size: Optional[int] = None
+    date: Optional[int] = None
     metadata: Optional[MetadataEntry] = None
 
 
@@ -653,18 +658,31 @@ class PrinterFilesMixin:
             return None
 
         duration_estimate = None
+        filament_estimate = {}
         if self.storage_capabilities.metadata:
             meta = self.get_printer_file_metadata(path, printer_file=printer_file)
-            if meta and meta.analysis and meta.analysis.estimatedPrintTime:
-                duration_estimate = DurationEstimate(
-                    estimate=meta.analysis.estimatedPrintTime, source="analysis"
-                )
+            if meta and meta.analysis:
+                if meta.analysis.estimatedPrintTime:
+                    duration_estimate = DurationEstimate(
+                        estimate=meta.analysis.estimatedPrintTime, source="analysis"
+                    )
+                if meta.analysis.filament:
+                    filament_estimate = {
+                        k: FilamentEstimate(
+                            length=v.length, volume=v.volume, weight=v.weight
+                        )
+                        for k, v in meta.analysis.filament.items()
+                    }
 
         return PrintJob(
             storage="printer",
             path=path,
+            display=printer_file.display,
             size=printer_file.size,
+            date=printer_file.date,
+            owner=owner,
             duration_estimate=duration_estimate,
+            filament_estimate=filament_estimate,
         )
 
 
@@ -807,10 +825,10 @@ class PrinterMixin(CommonPrinterMixin):
             InvalidFileLocation: if an absolute path was provided and not contained within local storage or
                 doesn't exist
         """
-        job = PrintJob(
-            storage=FileDestinations.PRINTER if sd else FileDestinations.LOCAL,
-            path=path,
-            owner=user,
+        from octoprint.server import fileManager
+
+        job = fileManager.create_job(
+            FileDestinations.PRINTER if sd else FileDestinations.LOCAL, path, owner=user
         )
         self.set_job(job, print_after_select=printAfterSelect, pos=pos, tags=tags)
 

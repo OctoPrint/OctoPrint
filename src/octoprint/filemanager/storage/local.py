@@ -812,18 +812,6 @@ class LocalFileStorage(StorageInterface):
         del metadata[name][key]
         self._save_metadata(path, metadata)
 
-    def create_job(self, path, owner=None) -> "PrintJob":
-        job = super().create_job(path, owner=owner)
-
-        metadata = self.get_metadata(path)
-        if (
-            metadata
-            and metadata.get("analysis", {}).get("estimatedPrintTime") is not None
-        ):
-            job.duration_estimate = metadata["analysis"]["estimatedPrintTime"]
-
-        return job
-
     def split_path(self, path):
         path = to_unicode(path)
         split = path.split("/")

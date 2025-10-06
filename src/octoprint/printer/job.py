@@ -8,12 +8,21 @@ class DurationEstimate(BaseModel):
     source: Optional[str] = None
 
 
+class FilamentEstimate(BaseModel):
+    length: Optional[float] = None
+    volume: Optional[float] = None
+    weight: Optional[float] = None
+
+
 class PrintJob(BaseModel):
     storage: str
     path: str
+    display: str
     size: int = 0
+    date: Optional[int] = None
     owner: Optional[str] = None
     duration_estimate: Optional[DurationEstimate] = None
+    filament_estimate: dict[str, FilamentEstimate] = {}
     path_on_disk: Optional[str] = None
 
     def __str__(self):
