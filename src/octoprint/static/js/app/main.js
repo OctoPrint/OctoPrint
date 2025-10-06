@@ -1062,7 +1062,7 @@ $(function () {
             // onServerConnect/onServerReconnect on the LoginStateViewModel with this in place.
             return viewModelMap["loginStateViewModel"]
                 .requestData()
-                .done(function () {
+                .done(() => {
                     // Only mark our data updater as initialized once we've done our initial
                     // passive login request.
                     //
@@ -1070,10 +1070,21 @@ $(function () {
                     // overriding each other's session during app initialization
                     dataUpdater.initialized();
                 })
-                .fail(function () {
-                    viewModelMap["uiStateViewModel"].showLoadingError(
-                        "Passive login failed."
-                    );
+                .fail((error) => {
+                    if (
+                        error.status === 400 &&
+                        error.responseJSON &&
+                        error.responseJSON.error &&
+                        error.responseJSON.error.includes("CSRF")
+                    ) {
+                        // trigger reload overlay on CSRF error during server connect's passive login
+                        showReloadOverlay();
+                        hideOfflineOverlay();
+                    } else {
+                        viewModelMap["uiStateViewModel"].showLoadingError(
+                            "Passive login failed."
+                        );
+                    }
                 });
         };
 
