@@ -42,7 +42,7 @@ class TimelapseConfig(BaseModel):
     """The framerate at which to render the movie."""
 
     postRoll: int = 0
-    """The number of seconds in the rendered video to add after a finished print. The exact way how the additional images will be recorded depends on timelapse type. `zchange` timelapses will take one final picture and add it `fps * postRoll` times. `timed` timelapses continue to record just like at the beginning, so the recording will continue another `fps * postRoll * interval` seconds. This behaviour can be overridden by setting the `capturePostRoll` option to `false`, in which case the post roll will be created identically to `zchange` mode."""
+    """The number of seconds in the rendered video to add after a finished print. The exact way how the additional images will be recorded depends on timelapse type. ``zchange`` timelapses will take one final picture and add it ``fps * postRoll`` times. ``timed`` timelapses continue to record just like at the beginning, so the recording will continue another ``fps * postRoll * interval`` seconds. This behaviour can be overridden by setting the ``capturePostRoll`` option to ``false``, in which case the post roll will be created identically to ``zchange`` mode."""
 
     renderAfterPrint: RenderAfterPrintEnum = RenderAfterPrintEnum.always
     """Determines whether rendering the timelapse should be done automatically after the print is finished. This can be done always, only after successful prints, only after failed prints, or never."""

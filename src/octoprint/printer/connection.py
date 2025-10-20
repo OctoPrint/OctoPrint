@@ -1,3 +1,26 @@
+"""
+This module defines the interface for implementing a printer connector.
+
+.. autoclass:: ConnectedPrinter
+   :members:
+
+.. autoclass:: ConnectedPrinterRegistration
+   :members:
+
+.. autoclass:: ConnectedPrinterState
+   :members:
+   :undoc-members:
+
+.. autodata:: ERROR_STATES
+
+.. autodata:: CLOSED_STATES
+
+.. autodata:: OPERATIONAL_STATES
+
+.. autodata:: PRINTING_STATES
+
+"""
+
 import enum
 import logging
 from collections.abc import Iterable
@@ -15,6 +38,8 @@ from octoprint.printer.job import PrintJob, UploadJob
 
 
 class ConnectedPrinterState(enum.Enum):
+    """Possible states of the connected printer"""
+
     DETECTING = gettext("Detecting")
     CONNECTING = gettext("Connecting")
     OPERATIONAL = gettext("Operational")
@@ -32,8 +57,10 @@ class ConnectedPrinterState(enum.Enum):
 
 
 ERROR_STATES = {ConnectedPrinterState.ERROR, ConnectedPrinterState.CLOSED_WITH_ERROR}
+"""ConnectedPrinterStates that are considered error states"""
 
 CLOSED_STATES = {ConnectedPrinterState.CLOSED, ConnectedPrinterState.CLOSED_WITH_ERROR}
+"""ConnectedPrinterStates that are considered closed states"""
 
 OPERATIONAL_STATES = {
     ConnectedPrinterState.OPERATIONAL,
@@ -46,6 +73,7 @@ OPERATIONAL_STATES = {
     ConnectedPrinterState.FINISHING,
     ConnectedPrinterState.TRANSFERRING_FILE,
 }
+"""ConnectedPrinterStates that are considered operational states"""
 
 PRINTING_STATES = {
     ConnectedPrinterState.STARTING,
@@ -56,6 +84,7 @@ PRINTING_STATES = {
     ConnectedPrinterState.CANCELLING,
     ConnectedPrinterState.FINISHING,
 }
+"""ConnectedPrinterStats that are considered printing states"""
 
 
 class ConnectedPrinterListenerMixin:
@@ -124,8 +153,39 @@ class ConnectedPrinterListenerMixin:
         pass
 
 
-class ConnectedPrinterMetaClass(type):
+class ConnectedPrinterRegistration(type):
+    """
+    Meta class acting as registration for custom :type:`ConnectedPrinter` implementations
+
+    By subclassing type:`ConnectedPrinter` (and importing the subclass), it will register
+    itself on this meta class under it's ``connector`` id.
+
+    This also works from plugins, and thus allows adding custom connectors easily from
+    plugins just by importing them, e.g.
+
+    .. code-block:: python
+
+       # __init__.py
+
+       class CustomConnectorPlugin(
+           octoprint.plugin.OctoPrintPlugin,
+       ):
+           def initialize(self):
+               # this not only imports but also registers
+               # the connector with the system!
+               from .connector import MyCustomConnectedPrinter
+
+       # connector.py
+
+       from octoprint.printer.connection import ConnectedPrinter
+
+       class MyCustomConnectedPrinter(ConnectedPrinter):
+           # ...
+
+    """
+
     connectors: dict[str, "ConnectedPrinter"] = {}
+    """Collection of all currently registered connectors"""
 
     def __new__(mcs, name: str, bases: tuple[type, ...], args: dict[str, Any]):
         cls = type.__new__(mcs, name, bases, args)
@@ -137,15 +197,20 @@ class ConnectedPrinterMetaClass(type):
         return cls
 
     def find(cls, connector: str) -> Optional["ConnectedPrinter"]:
+        """Returns the requested connector, if registered"""
         return cls.connectors.get(connector)
 
     def all(cls) -> Iterable["ConnectedPrinter"]:
+        """Returns all registered connectors"""
         return cls.connectors.values()
 
 
-class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterMetaClass):
-    connector = None
-    name = None
+class ConnectedPrinter(ConnectedPrinterMixin, metaclass=ConnectedPrinterRegistration):
+    connector: str = None
+    """Id of the connector"""
+
+    name: str = None
+    """Human readable name of the connector"""
 
     @classmethod
     def connection_options(cls) -> dict:

@@ -72,10 +72,6 @@ octoprint.schema.config
    :members:
    :undoc-members:
 
-.. automodule:: octoprint.schema.config.serial
-   :members:
-   :undoc-members:
-
 .. automodule:: octoprint.schema.config.server
    :members:
    :undoc-members:

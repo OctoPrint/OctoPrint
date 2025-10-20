@@ -143,6 +143,7 @@ docs = [
     "sphinxcontrib-httpdomain>=1.8.1,<2",
     "sphinx-immaterial>=0.13.5,<1",
     "myst-parser>=4.0.1,<5",
+    "autodoc_pydantic",
 ]
 
 [project.scripts]
