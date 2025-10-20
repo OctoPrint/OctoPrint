@@ -20,6 +20,45 @@ from . import (
 
 
 class PrinterFileStorage(StorageInterface):
+    """
+    StorageInterface for accessing files stored on the connected printer, through
+    the existing printer connection.
+
+    .. md-mermaid::
+
+       sequenceDiagram
+         participant Connector
+         participant PrinterFileStorage
+         participant Printer
+         participant FileManager
+
+         activate Connector
+         activate FileManager
+         activate Printer
+
+         Note over Connector,FileManager: Printer files become available
+         Connector->>Printer: on_printer_files_available(True)
+         break connection != PrinterFilesMixin
+            Printer->Printer: log exception
+         end
+         Printer->>+PrinterFileStorage: new PrinterFileStorage(connection)
+         PrinterFileStorage-->>Printer: storage
+         Printer->>FileManager: register_storage("printer", storage)
+
+         Note over Connector,FileManager: Printer files are requested
+         FileManager->>PrinterFileStorage: get_printer_files(...)
+         PrinterFileStorage->>Connector: list_storage_entries(...)
+         Connector--)Printer: on_printer_files_refreshed(files)
+         Connector-->>PrinterFileStorage: files
+         PrinterFileStorage-->>FileManager: files
+
+         Note over Connector,FileManager: Printer files become unavailable
+         Connector->>Printer: on_printer_files_available(False)
+         Printer->>FileManager: unregister_storage("printer")
+         deactivate PrinterFileStorage
+
+    """
+
     storage = "printer"
 
     def __init__(self, connection: PrinterFilesMixin):

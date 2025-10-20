@@ -38,6 +38,14 @@ octoprint.filemanager.storage.local
 .. automodule:: octoprint.filemanager.storage.local
    :members: LocalFileStorage
 
+.. _sec-modules-filemanager-storage-printer:
+
+octoprint.filemanager.storage.printer
+-------------------------------------
+
+.. automodule:: octoprint.filemanager.storage.printer
+   :members: PrinterFileStorage
+
 .. _sec-modules-filemanager-util:
 
 octoprint.filemanager.util
