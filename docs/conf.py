@@ -30,6 +30,7 @@ extensions = [
     "sphinxcontrib.httpdomain",
     # custom
     "codeblockext",
+    "pydanticext",
     # theme
     "sphinx_immaterial",
     # markdown

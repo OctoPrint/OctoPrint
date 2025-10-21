@@ -14,6 +14,7 @@ class LayoutEnum(str, Enum):
     horizontal_grid = "horizontal_grid"
 
 
+@with_attrs_docs
 class ControlSliderInputConfig(BaseModel):
     min: int = 0
     """Minimum value of the slider."""
@@ -25,6 +26,7 @@ class ControlSliderInputConfig(BaseModel):
     """Step size per slider tick."""
 
 
+@with_attrs_docs
 class ControlInputConfig(BaseModel):
     name: str
     """Name to display for the input field."""

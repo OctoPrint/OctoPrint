@@ -78,15 +78,15 @@ class WebcamConfig(BaseModel):
     """
     The full commandline to use for rendering timelapse recordings through ffmpeg. Supports the following placeholders:
 
-    - ffmpeg: the ffmpeg command as defined under `webcam.ffmpeg`
-    - fps: the fps setting as defined by the timelapse configuration
-    - input: the path to the input files
-    - videocodec: the video codec to use, as defined in `webcam.ffmpegVideoCodec`
-    - threads: the number of threads to use, as defined in `webcam.ffmpegThreads`
-    - bitrate: the bitrate to use, as defined in `webcam.bitrate`
-    - containerformat: the container format to use, based on the selected codec
-    - filters: the filter chain
-    - output: the path to the output file
+    - ``ffmpeg``: the ffmpeg command as defined under ``webcam.ffmpeg``
+    - ``fps``: the fps setting as defined by the timelapse configuration
+    - ``input``: the path to the input files
+    - ``videocodec``: the video codec to use, as defined in ``webcam.ffmpegVideoCodec``
+    - ``threads``: the number of threads to use, as defined in ``webcam.ffmpegThreads``
+    - ``bitrate``: the bitrate to use, as defined in ``webcam.bitrate``
+    - ``containerformat``: the container format to use, based on the selected codec
+    - ``filters``: the filter chain
+    - ``output``: the path to the output file
     """
 
     ffmpegThumbnailCommandline: str = (
@@ -95,9 +95,9 @@ class WebcamConfig(BaseModel):
     """
     The full commandline to use for generating thumbnails through ffmpeg. Supports the following placeholders:
 
-    - ffmpeg: the ffmpeg command as defined under `webcam.ffmpeg`
-    - input: the path to the input file
-    - output: the path to the output file
+    - ``ffmpeg``: the ffmpeg command as defined under ``webcam.ffmpeg``
+    - ``input``: the path to the input file
+    - ``output``: the path to the output file
     """
 
     timelapse: TimelapseConfig = TimelapseConfig()
