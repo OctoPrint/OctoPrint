@@ -243,26 +243,26 @@ class PydanticTableExt(SphinxDirective):
         if inspect.isclass(t) and issubclass(t, Enum):
             if self._convert_enum(t) is not t:
                 choices = [
-                    f"`{getattr(t, e).value}`"
+                    f"``{getattr(t, e).value}``"
                     for e in dir(t)
                     if not e.startswith("_") and hasattr(getattr(t, e), "value")
                 ]
             else:
                 choices = [
-                    f"`{getattr(t, e)}`"
+                    f"``{getattr(t, e)}``"
                     for e in dir(t)
                     if not e.startswith("_") and hasattr(getattr(t, e), "value")
                 ]
 
             description += (
-                " " if description else ""
+                "\n\n" if description else ""
             ) + f"Valid values: {', '.join(choices)}."
         elif str(t).startswith("typing.Literal") or str(t).startswith(
             "typing_extensions.Literal"
         ):
-            choices = [f"`{c!r}`" for c in t.__args__]
+            choices = [f"``{c!r}``" for c in t.__args__]
             description += (
-                " " if description else ""
+                "\n\n" if description else ""
             ) + f"Valid values: {', '.join(choices)}."
 
         description = _prefix_lines(description, prefix="       ").strip()

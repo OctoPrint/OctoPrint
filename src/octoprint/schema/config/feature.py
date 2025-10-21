@@ -17,34 +17,38 @@ class FeatureConfig(BaseModel):
     """Whether to enable the keyboard control feature in the control tab."""
 
     pollWatched: bool = False
-    """Whether to actively poll the watched folder (true) or to rely on the OS's file system notifications instead (false)."""
+    """Whether to actively poll the watched folder (``true``) or to rely on the OS's file system notifications instead (``false``)."""
 
     modelSizeDetection: bool = True
-    """Whether to enable model size detection and warning (true) or not (false)."""
+    """Whether to enable model size detection and warning (``true``) or not (``false``)."""
 
     rememberFileFolder: bool = False
     """Whether to remember the selected folder on the file manager."""
 
     printStartConfirmation: bool = False
-    """Whether to show a confirmation on print start (true) or not (false)"""
+    """Whether to show a confirmation on print start (``true``) or not (``false``)."""
 
     printCancelConfirmation: bool = True
-    """Whether to show a confirmation on print cancelling (true) or not (false)"""
+    """Whether to show a confirmation on print cancelling (``true``) or not (``false``)."""
 
     uploadOverwriteConfirmation: bool = True
-    """Whether to show a confirmation when about to overwrite an uploaded file"""
+    """Whether to show a confirmation when about to overwrite an uploaded file."""
 
     fileDeleteConfirmation: bool = True
-    """Whether to show a confirmation when about to delete a file"""
+    """Whether to show a confirmation when about to delete a file."""
 
     autoUppercaseBlacklist: list[str] = ["M117", "M118", "M707", "M708"]
     """Commands that should never be auto-uppercased when sent to the printer through the Terminal tab."""
 
     g90InfluencesExtruder: bool = False
-    """Whether `G90`/`G91` also influence absolute/relative mode of extruders."""
+    """Whether ``G90``/``G91`` also influence absolute/relative mode of extruders."""
 
     enforceReallyUniversalFilenames: bool = False
-    """Replace all special characters and spaces with text equivalent to make them universally compatible. Most OS filesystems work fine with unicode characters, but just in case you can revert to the older behaviour by setting this to true."""
+    """
+    Replace all special characters and spaces with text equivalent to make them universally
+    compatible. Most OS filesystems work fine with unicode characters, but just in case you can revert
+    to the older behaviour by setting this to ``true``.
+    """
 
     enableDragDropUpload: bool = True
     """Enable drag and drop upload overlay"""

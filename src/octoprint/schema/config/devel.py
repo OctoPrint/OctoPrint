@@ -15,21 +15,37 @@ class StylesheetEnum(str, Enum):
 @with_attrs_docs
 class DevelWebassetsConfig(BaseModel):
     bundle: bool = True
-    """If set to true, OctoPrint will merge all JS, all CSS and all Less files into one file per type to reduce request count. Setting it to false will load all assets individually. Note: if this is set to false, no minification will take place regardless of the `minify` setting."""
+    """
+    If set to ``true``, OctoPrint will merge all JS, all CSS and all Less files into one file per type to
+    reduce request count. Setting it to ``false`` will load all assets individually.
+
+    Note: if this is set to ``false``, no minification will take place regardless of the ``minify`` setting.
+    """
 
     clean_on_startup: bool = True
     """Whether to delete generated web assets on server startup (forcing a regeneration)."""
 
     minify: bool = True
-    """If set to true, OctoPrint will the core and library javascript assets. Note: if `bundle` is set to false, no minification will take place either."""
+    """
+    If set to ``true``, OctoPrint will minify the core and library javascript assets.
+
+    Note: if ``bundle`` is set to ``false``, no minification will take place regardless
+    of this setting.
+    """
 
     minify_plugins: bool = False
-    """If set to true, OctoPrint will also minify the third party plugin javascript assets. Note: if `bundle` or `minify` are set to false, no minification of the plugin assets will take place either."""
+    """
+    If set to ``true``, OctoPrint will also minify the third party plugin javascript assets.
+
+    Note: if ``bundle`` or ``minify`` are set to ``false``, no minification of the plugin assets
+    will take place regardless of this setting.
+    """
 
 
+@with_attrs_docs
 class DevelCacheConfig(BaseModel):
     enabled: bool = True
-    """Whether to enable caching. Defaults to true. Setting it to false will cause the UI to always be fully rerendered on request to `/` on the server."""
+    """Whether to enable caching. Defaults to true. Setting it to false will cause the UI to always be fully rerendered on request to ``/`` on the server."""
 
     preemptive: bool = True
     """Whether to enable the preemptive cache."""
@@ -38,7 +54,11 @@ class DevelCacheConfig(BaseModel):
 @with_attrs_docs
 class DevelConfig(BaseModel):
     stylesheet: StylesheetEnum = StylesheetEnum.css
-    """Settings for stylesheet preference. OctoPrint will prefer to use the stylesheet type specified here. Usually (on a production install) that will be the compiled css (default). Developers may specify less here too."""
+    """
+    Settings for stylesheet preference. OctoPrint will prefer to use the stylesheet type specified here.
+    Usually (on a production install) that will be the compiled ``css`` (default). Developers may specify
+    ``less`` here too.
+    """
 
     cache: DevelCacheConfig = DevelCacheConfig()
     """Settings for OctoPrint's internal caching."""
@@ -47,15 +67,19 @@ class DevelConfig(BaseModel):
     """Settings for OctoPrint's web asset merging and minifying."""
 
     useFrozenDictForPrinterState: bool = True
+    """Whether to use the ``frozendict`` type for tracking the printer state."""
 
     showLoadingAnimation: bool = True
     """Enable or disable the loading animation."""
 
     sockJsConnectTimeout: float = 30
+    """Connection timeout for the SockJS connection."""
+
     pluginTimings: bool = False
+    """Whether to enable the creation of `plugin_timings.log`."""
 
     enableRateLimiter: bool = True
-    """Enable or disable the rate limiter. Careful, disabling this reduces security."""
+    """Enable or disable the rate limiter. Careful, disabling this reduces security (**SECURITY IMPACT!**)."""
 
     enableCsrfProtection: bool = True
-    """Enable or disable the CSRF protection. Careful, disabling this reduces security."""
+    """Enable or disable the CSRF protection. Careful, disabling this reduces security (**SECURITY IMPACT!**)."""

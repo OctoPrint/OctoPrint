@@ -425,6 +425,10 @@ Data model
 
    octoprint.schema.config.server.PythonEolEntry = PythonEolEntry
 
+Python EOL Check fallback data
+
+.. pydantic-table:: octoprint.schema.config.server.PythonEolEntry
+
 Notes
 .....
 
@@ -436,8 +440,8 @@ Notes
 
    The second and better approach is to make your proxy send a couple of custom headers with each forwarded requests:
 
-     * ``X-Script-Name``: should contain your custom baseUrl (absolute server path), e.g. ``/octoprint``
-     * ``X-Scheme``: should contain your custom URL scheme to use (if different from ``http``), e.g. ``https``
+   * ``X-Script-Name``: should contain your custom baseUrl (absolute server path), e.g. ``/octoprint``
+   * ``X-Scheme``: should contain your custom URL scheme to use (if different from ``http``), e.g. ``https``
 
    If you use these headers OctoPrint will work both via the reverse proxy as well as when called directly. Take a look
    `into OctoPrint's wiki <https://community.octoprint.org/t/reverse-proxy-configuration-examples/1107>`_ for some

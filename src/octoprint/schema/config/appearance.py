@@ -155,10 +155,13 @@ class AppearanceConfig(BaseModel):
     """Default language of OctoPrint. If left unset OctoPrint will try to match up available languages with the user's browser settings."""
 
     showFahrenheitAlso: bool = False
+    """Show temperatures in Celsius as well as in Fahrenheit."""
 
     fuzzyTimes: bool = True
+    """Display fuzzy times for print time estimations."""
 
     closeModalsWithClick: bool = True
+    """Allow closing modals with a click outside of them."""
 
     showInternalFilename: bool = True
     """Show the internal filename in the files sidebar, if necessary."""

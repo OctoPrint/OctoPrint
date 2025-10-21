@@ -11,7 +11,7 @@ class TerminalFilterEntry(BaseModel):
     """The name of the filter."""
 
     regex: str
-    """The regular expression to match. Use [JavaScript regular expressions](https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions)."""
+    """The regular expression to match. Use `JavaScript regular expressions <https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions>`_."""
 
 
 DEFAULT_TERMINAL_FILTERS = [
