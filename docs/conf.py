@@ -31,6 +31,7 @@ extensions = [
     "sphinxcontrib.autodoc_pydantic",
     # custom
     "codeblockext",
+    "pydanticext",
     # theme
     "sphinx_immaterial",
     # markdown

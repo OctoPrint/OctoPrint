@@ -17,37 +17,77 @@ CONST_100KB = 100 * 1024
 
 @with_attrs_docs
 class ReverseProxyConfig(BaseModel):
-    prefixHeader: Optional[str] = None
+    prefixHeader: Optional[str] = "X-Script-Name"
     """The request header from which to determine the URL prefix under which OctoPrint is served by the reverse proxy."""
 
-    schemeHeader: Optional[str] = None
+    schemeHeader: Optional[str] = "X-Scheme"
     """The request header from which to determine the scheme (http or https) under which a specific request to OctoPrint was made to the reverse proxy."""
 
-    hostHeader: Optional[str] = None
+    hostHeader: Optional[str] = "X-Forwarded-Host"
     """The request header from which to determine the host under which OctoPrint is served by the reverse proxy."""
 
     serverHeader: Optional[str] = None
+    """The request header from which to determine the server name under which OctoPrint is served by the reverse proxy. Can also be read from the ``hostHeader``."""
 
     portHeader: Optional[str] = None
+    """The request header from which to determine the post number under which OctoPrint is served by the reverse proxy. Can also be read from the ``hostHeader``."""
 
     prefixFallback: Optional[str] = None
-    """Use this option to define an optional URL prefix (with a leading /, so absolute to your server's root) under which to run OctoPrint. This should only be needed if you want to run OctoPrint behind a reverse proxy under a different root endpoint than `/` and can't configure said reverse proxy to send a prefix HTTP header (X-Script-Name by default, see above) with forwarded requests."""
+    """
+    Use this option to define an optional URL prefix (with a leading ``/``, so absolute to your server's root)
+    under which to run OctoPrint. This should only be needed if you want to run OctoPrint behind a reverse proxy
+    under a different root endpoint than ``/`` and can't configure said reverse proxy to send a prefix HTTP header
+    (``X-Script-Name`` by default, see above) with forwarded requests.
+    """
 
     schemeFallback: Optional[str] = None
-    """Use this option to define an optional forced scheme (http or https) under which to run OctoPrint. This should only be needed if you want to run OctoPrint behind a reverse proxy that also does HTTPS determination but can't configure said reverse proxy to send a scheme HTTP header (X-Scheme by default, see above) with forwarded requests."""
+    """
+    Use this option to define an optional forced scheme (http or https) under which to run OctoPrint. This should
+    only be needed if you want to run OctoPrint behind a reverse proxy that also does HTTPS termination but can't
+    configure said reverse proxy to send a scheme HTTP header (``X-Scheme`` by default, see above) with forwarded
+    requests.
+    """
 
     hostFallback: Optional[str] = None
-    """Use this option to define an optional forced host under which to run OctoPrint. This should only be needed if you want to run OctoPrint behind a reverse proxy with a different hostname than OctoPrint itself but can't configure said reverse proxy to send a host HTTP header (X-Forwarded-Host by default, see above) with forwarded requests."""
+    """
+    Use this option to define an optional forced host under which to run OctoPrint. This should only be needed if
+    you want to run OctoPrint behind a reverse proxy with a different hostname than OctoPrint itself but can't
+    configure said reverse proxy to send a host HTTP header (``X-Forwarded-Host`` by default, see above) with forwarded
+    requests.
+    """
 
     serverFallback: Optional[str] = None
+    """
+    Use this option to define an optional forced server name under which to run OctoPrint. This should only be
+    needed if you want to run OctoPrint behind a reverse proxy with a different hostname than OctoPrint itself
+    but can't configure said reverse proxy to send a host HTTP Header (``X-Forwarded-Host`` by default, see
+    above) or a server HTTP Header as manually defined.
+    """
 
     portFallback: Optional[str] = None
+    """
+    Use this option to define an optional forced port under which to run OctoPrint. This should only be
+    needed if you want to run OctoPrint behind a reverse proxy with a different hostname than OctoPrint itself
+    but can't configure said reverse proxy to send a host HTTP Header (``X-Forwarded-Host`` by default, see
+    above) or a port HTTP Header as manually defined.
+    """
 
     trustedProxies: list[str] = []
-    """List of trusted proxy servers for which to ignore the IP address when trying to determine the connecting client's IP address. A reverse proxy on the same machine as OctoPrint (e.g. as found on OctoPi) will be handled correctly by default through `trustLocalhostProxies`, further proxies in front of that you'll have to add yourself here."""
+    """
+    List of trusted proxy servers for which to ignore the IP address when trying to determine the connecting
+    client's IP address. A reverse proxy on the same machine as OctoPrint (e.g. as found on OctoPi) will be
+    handled correctly by default through ``trustLocalhostProxies``, further proxies in front of that you'll
+    have to add yourself here.
+    """
 
     trustLocalhostProxies: bool = True
-    """Whether to trust the local machine to act as a reverse proxy. Defaults to true, will ensure that `127.0.0.0/8` and `::1` will always be considered to be included in `trustedProxies`. If you want to explicitly disable trusting the local machine, set this to false and don't include the local machine in trustedProxies (as in, don't include "127.0.0.1", "127.0.0.0/8" or "::1")."""
+    """
+    Whether to trust the local machine to act as a reverse proxy. Defaults to true, will ensure that
+    ``127.0.0.0/8`` and ``::1`` will always be considered to be included in ``trustedProxies``.
+
+    If you want to explicitly disable trusting the local machine, set this to ``false`` and don't include
+    the local machine in trustedProxies (as in, don't include ``127.0.0.1``, ``127.0.0.0/8`` or ``::1``).
+    """
 
 
 @with_attrs_docs
@@ -74,7 +114,13 @@ class CommandsConfig(BaseModel):
     """Command to restart OctoPrint."""
 
     localPipCommand: Optional[str] = None
-    """pip command associated with OctoPrint, used for installing plugins and updates, if unset (default) the command will be autodetected based on the current python executable - unless you have a really special setup this is the right way to do it and there should be no need to ever touch this setting."""
+    """
+    ``pip`` command associated with OctoPrint, used for installing plugins and updates,
+    if unset (default) the command will be autodetected based on the current python executable.
+
+    Unless you have a really special setup this is the right way to do it and there should be
+    no need to ever touch this setting.
+    """
 
 
 @with_attrs_docs
@@ -122,7 +168,7 @@ class DiskspaceConfig(BaseModel):
 @with_attrs_docs
 class PreemptiveCacheConfig(BaseModel):
     exceptions: list[str] = []
-    """Which server paths to exclude from the preemptive cache, e.g. `/some/path`."""
+    """Which server paths to exclude from the preemptive cache, e.g. ``/some/path``."""
 
     until: int = 7
     """How many days to leave unused entries in the preemptive cache config."""
@@ -134,7 +180,7 @@ class IpCheckConfig(BaseModel):
     """Whether to enable the check."""
 
     trustedSubnets: list[str] = []
-    """Additional non-local subnets to consider trusted, in CIDR notation, e.g. `192.168.1.0/24`."""
+    """Additional non-local subnets to consider trusted, in CIDR notation, e.g. ``192.168.1.0/24``."""
 
 
 class SameSiteEnum(str, Enum):
@@ -146,16 +192,25 @@ class SameSiteEnum(str, Enum):
 @with_attrs_docs
 class CookiesConfig(BaseModel):
     secure: bool = False
-    """Whether to set the `Secure` flag to true on cookies. Only set to true if you are running OctoPrint behind a reverse proxy taking care of SSL termination."""
+    """Whether to set the ``Secure`` flag to true on cookies. Only set to true if you are running OctoPrint behind a reverse proxy taking care of SSL termination."""
 
     samesite: Optional[SameSiteEnum] = SameSiteEnum.lax
-    """`SameSite` setting to use on the cookies. Possible values are `None`, `Lax` and `Strict`. Defaults to `Lax`. Be advised that if forced unset, this has security implications as many browsers now default to `Lax` unless you configure cookies to be set with `Secure` flag set, explicitly set `SameSite` setting here and also serve OctoPrint over https. The `Lax` setting is known to cause with embedding OctoPrint in frames. See also ["Feature: Cookies default to SameSite=Lax"](https://www.chromestatus.com/feature/5088147346030592), ["Feature: Reject insecure SameSite=None cookies"](https://www.chromestatus.com/feature/5633521622188032) and [issue #3482](https://github.com/OctoPrint/OctoPrint/issues/3482)."""
+    """
+    ``SameSite`` setting to use on the cookies. Defaults to ``Lax``.
+
+    Be advised that if forced unset, this has security implications as many browsers now default to ``Lax`` unless
+    you configure cookies to be set with the ``Secure`` flag, explicitly set the ``SameSite`` setting here and
+    also serve OctoPrint over https. The ``Lax`` setting is known to cause issues with embedding OctoPrint in frames.
+    See also `Cookies default to SameSite=Lax <https://www.chromestatus.com/feature/5088147346030592>`_,
+    `Reject insecure SameSite=None cookies <https://www.chromestatus.com/feature/5633521622188032>`_ and
+    `issue #3482 <https://github.com/OctoPrint/OctoPrint/issues/3482>`_.
+    """
 
 
 @with_attrs_docs
 class PythonEolEntry(BaseModel):
     date: str
-    """The date when the Python version will reach EOL, in format YYYY-MM-DD."""
+    """The date when the Python version will reach EOL, in format `YYYY-MM-DD`."""
 
     last_octoprint: Optional[str] = None
     """The last OctoPrint version that will support this Python version, optional."""
@@ -188,26 +243,40 @@ class ServerConfig(BaseModel):
     """Use this option to define the port to which to bind the server."""
 
     firstRun: bool = True
-    """If this option is true, OctoPrint will show the First Run wizard and set the setting to false after that completes."""
+    """If this option is ``true``, OctoPrint will show the First Run wizard and set the setting to false after that completes."""
 
     startOnceInSafeMode: bool = False
-    """If this option is true, OctoPrint will enable safe mode on the next server start and reset the setting to false"""
+    """If this option is ``true``, OctoPrint will enable safe mode on the next server start and reset the setting to false"""
 
     ignoreIncompleteStartup: bool = False
-    """Set this to true to make OctoPrint ignore incomplete startups. Helpful for development."""
+    """Set this to ``true`` to make OctoPrint ignore incomplete startups. Helpful for development."""
 
     seenWizards: dict[str, str] = {}
+    """Tracking of seen wizards and versions. You should usually not have to touch this."""
 
     secretKey: Optional[str] = None
     """Secret key for encrypting cookies and such, randomly generated on first run."""
 
     heartbeat: int = CONST_15MIN
+    """Interval in which to log the server heartbeat, defaults to every 15min."""
 
     reverseProxy: ReverseProxyConfig = ReverseProxyConfig()
-    """Settings if OctoPrint is running behind a reverse proxy (haproxy, nginx, apache, ...) that doesn't correctly set the [required headers](https://community.octoprint.org/t/reverse-proxy-configuration-examples/1107). These are necessary in order to make OctoPrint generate correct external URLs so that AJAX requests and download URLs work, and so that client IPs are read correctly."""
+    """
+    Settings if OctoPrint is running behind a reverse proxy (haproxy, nginx, apache, ...) that doesn't
+    correctly set the `required headers <https://community.octoprint.org/t/1107>`_. These are necessary
+    in order to make OctoPrint generate correct external URLs so that AJAX requests and download URLs
+    work, and so that client IPs are read correctly.
+    """
 
     uploads: UploadsConfig = UploadsConfig()
-    """Settings for file uploads to OctoPrint, such as maximum allowed file size and header suffixes to use for streaming uploads. OctoPrint does some nifty things internally in order to allow streaming of large file uploads to the application rather than just storing them in memory. For that it needs to do some rewriting of the incoming upload HTTP requests, storing the uploaded file to a temporary location on disk and then sending an internal request to the application containing the original filename and the location of the temporary file."""
+    """
+    Settings for file uploads to OctoPrint, such as maximum allowed file size and header suffixes to use
+    for streaming uploads. OctoPrint does some nifty things internally in order to allow streaming of large
+    file uploads to the application rather than just storing them in memory. For that it needs to do some
+    rewriting of the incoming upload HTTP requests, storing the uploaded file to a temporary location on disk
+    and then sending an internal request to the application containing the original filename and the location
+    of the temporary file.
+    """
 
     maxSize: int = CONST_100KB
     """Maximum size of requests other than file uploads in bytes, defaults to 100KB."""
@@ -240,4 +309,4 @@ class ServerConfig(BaseModel):
     """Settings for further configuration of the cookies that OctoPrint sets (login, remember me, ...)."""
 
     allowedLoginRedirectPaths: list[str] = []
-    """List of paths that are allowed to be used as redirect targets for the login page, in addition to the default ones (`/`, `/recovery/` and `/plugin/appkeys/auth/`)"""
+    """List of paths that are allowed to be used as redirect targets for the login page, in addition to the default ones (``/``, ``/recovery/`` and ``/plugin/appkeys/auth/``)."""

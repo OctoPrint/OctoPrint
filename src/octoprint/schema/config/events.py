@@ -19,7 +19,7 @@ class EventSubscription(BaseModel):
     """The event to subscribe to."""
 
     name: Optional[str] = None
-    """The event name to show on the UI"""
+    """The event name to show on the UI."""
 
     command: str
     """The command to execute when the event is triggered, either a GCODE or a system command."""
@@ -31,7 +31,7 @@ class EventSubscription(BaseModel):
     """Whether the event subscription should be enabled."""
 
     debug: bool = False
-    """If set to `true`, OctoPrint will log the command after performing all placeholder replacements."""
+    """If set to ``true``, OctoPrint will log the command after performing all placeholder replacements."""
 
 
 @with_attrs_docs

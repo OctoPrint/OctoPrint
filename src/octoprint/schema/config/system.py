@@ -12,7 +12,7 @@ from octoprint.vendor.with_attrs_docs import with_attrs_docs
 @with_attrs_docs
 class ActionConfig(BaseModel):
     action: str
-    """The identifier used internally to identify the action. Set to `divider` to generate a divider in the menu."""
+    """The identifier used internally to identify the action. Set to ``divider`` to generate a divider in the menu."""
 
     name: Optional[str] = None
     """The name of the action that will be shown on the menu. Must be set if the action is not a divider."""
