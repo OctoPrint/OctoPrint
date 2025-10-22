@@ -224,8 +224,12 @@ class PydanticModelInspector:
                 result += self._model_doc(field.annotation, prefix=f"{prefix}{name}.")
 
             elif (
-                str(field.annotation).startswith("typing.List[")
-                or str(field.annotation).startswith("list[")
+                (
+                    str(field.annotation).startswith("typing.List[")
+                    or str(field.annotation).startswith("list[")
+                )
+                and field.annotation.__args__
+                and inspect.isclass(field.annotation.__args__[0])
                 and issubclass(field.annotation.__args__[0], BaseModel)
             ):
                 result.append(
