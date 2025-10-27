@@ -155,8 +155,8 @@ class PrinterFileStorage(StorageInterface):
     ) -> dict[str, StorageEntry]:
         files = self._get_printer_files(path=path, filter=filter, refresh=force_refresh)
 
+        prefix = f"{path}/" if path else ""
         if not recursive:
-            prefix = f"{path}/" if path else ""
             if level > 0:
                 files = [
                     f
@@ -179,7 +179,7 @@ class PrinterFileStorage(StorageInterface):
 
             file_type = type_path[0]
 
-            parts = f.path.split("/")
+            parts = f.path[len(prefix) :].split("/")
             name = parts[-1]
 
             entry = StorageFile(
