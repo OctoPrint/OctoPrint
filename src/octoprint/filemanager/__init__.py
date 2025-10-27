@@ -198,15 +198,26 @@ def valid_extension(extension, type=None, tree=None):
 
 
 def valid_file_type(filename, type=None, tree=None):
-    _, extension = os.path.splitext(filename)
-    extension = extension[1:].lower()
-    return valid_extension(extension, type=type, tree=tree)
+    parts = filename.split(".")
+
+    for x in range(len(parts) - 1):
+        extension = ".".join(parts[-(x + 1) :]).lower()
+        if valid_extension(extension, type=type, tree=tree):
+            return True
+
+    return False
 
 
 def get_file_type(filename):
-    _, extension = os.path.splitext(filename)
-    extension = extension[1:].lower()
-    return get_path_for_extension(extension)
+    parts = filename.split(".")
+
+    for x in range(len(parts) - 1):
+        extension = ".".join(parts[-(x + 1) :]).lower()
+        path = get_path_for_extension(extension)
+        if path:
+            return path
+
+    return None
 
 
 def get_mime_type(filename):
