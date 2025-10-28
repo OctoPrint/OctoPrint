@@ -564,6 +564,7 @@ class PrinterFile(BaseModel):
     size: Optional[int] = None
     date: Optional[int] = None
     metadata: Optional[MetadataEntry] = None
+    thumbnails: list[str] = []
 
 
 class PrinterFilesMixin:
@@ -651,6 +652,12 @@ class PrinterFilesMixin:
         self, path: str, metadata: MetadataEntry, *args, **kwargs
     ) -> None:
         pass
+
+    def has_thumbnail(self, path: str, *args, **kwargs) -> bool:
+        return False
+
+    def download_thumbnail(self, path: str, sizehint: str = None, *args, **kwargs) -> IO:
+        return None
 
     def create_job(self, path: str, owner: str = None) -> PrintJob:
         printer_file = self.get_printer_file(path)

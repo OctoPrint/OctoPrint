@@ -189,6 +189,7 @@ class PrinterFileStorage(StorageInterface):
                 entry_type=file_type,
                 type_path=type_path,
                 metadata=f.metadata,
+                thumbnails=f.thumbnails,
             )
             if f.size is not None:
                 entry.size = f.size
@@ -348,6 +349,12 @@ class PrinterFileStorage(StorageInterface):
 
         metadata = self._connection.get_printer_file_metadata(path)
         return metadata.model_dump()
+
+    def has_thumbnail(self, path):
+        return self._connection.has_thumbnail(path)
+
+    def read_thumbnail(self, path, sizehint=None):
+        return self._connection.download_thumbnail(path, sizehint=sizehint)
 
     def add_link(self, path, rel, data):
         pass  # not supported
