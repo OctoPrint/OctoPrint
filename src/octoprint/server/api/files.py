@@ -491,6 +491,21 @@ def _analyse_recursively(
                 )
                 file_or_folder["refs"]["download"] = url
 
+            if fileManager.capabilities(origin).thumbnails and len(
+                file_or_folder.get("thumbnails", [])
+            ):
+                quoted_path = urlquote(file_or_folder["path"])
+                url = (
+                    url_for("index", _external=True)
+                    + f"downloads/thumbs/{origin}/{quoted_path}"
+                )
+
+                for size in file_or_folder["thumbnails"]:
+                    file_or_folder["refs"][f"thumbnail_{size}"] = url + "?size=" + size
+                file_or_folder["refs"]["thumbnail"] = url
+
+                del file_or_folder["thumbnails"]
+
         result.append(file_or_folder)
 
     return result

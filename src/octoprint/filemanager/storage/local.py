@@ -12,6 +12,7 @@ import typing
 from contextlib import contextmanager
 from os import scandir, walk
 
+import gcode_thumbnail_tool as gtt
 import pylru
 
 import octoprint.filemanager
@@ -68,8 +69,11 @@ class LocalFileStorage(StorageInterface):
         move_folder=True,
         metadata=True,
         history=True,
+        thumbnails=True,
         path_on_disk=True,
     )
+
+    THUMBNAIL_DIR = ".thumbs"
 
     def __init__(self, basefolder, create=False, really_universal=False):
         """
@@ -617,6 +621,8 @@ class LocalFileStorage(StorageInterface):
         if metadata_dirty:
             self._update_metadata_entry(path, name, metadata)
 
+        self._extract_thumbnails(file_path)
+
         # touch the file to set last access and modification time to now
         os.utime(file_path, None)
         self._update_last_activity()
@@ -625,7 +631,7 @@ class LocalFileStorage(StorageInterface):
             progress_callback(done=True)
         return self.path_in_storage((path, name))
 
-    def read_file(self, path):
+    def read_file(self, path) -> typing.IO:
         path, name = self.sanitize(path)
         file_path = os.path.join(path, name)
 
@@ -661,6 +667,7 @@ class LocalFileStorage(StorageInterface):
             raise StorageError(f"Could not delete {name} in {path}", cause=e) from e
 
         self._remove_metadata_entry(path, name)
+        self._remove_thumbnails(path, name)
 
     def copy_file(self, source, destination):
         source_data, destination_data = self._get_source_destination_data(
@@ -695,6 +702,13 @@ class LocalFileStorage(StorageInterface):
             destination_data["name"],
         )
         self._set_display_metadata(destination_data, source_data=source_data)
+
+        self._copy_thumbnails(
+            source_data["path"],
+            source_data["name"],
+            destination_data["path"],
+            destination_data["name"],
+        )
 
         return self.path_in_storage(destination_data["fullpath"])
 
@@ -738,6 +752,14 @@ class LocalFileStorage(StorageInterface):
         )
         self._set_display_metadata(destination_data, source_data=source_data)
 
+        self._copy_thumbnails(
+            source_data["path"],
+            source_data["name"],
+            destination_data["path"],
+            destination_data["name"],
+            delete_source=True,
+        )
+
         return self.path_in_storage(destination_data["fullpath"])
 
     def has_analysis(self, path):
@@ -759,6 +781,26 @@ class LocalFileStorage(StorageInterface):
     def remove_history(self, path, index):
         path, name = self.sanitize(path)
         self._delete_history(name, path, index)
+
+    def has_thumbnail(self, path) -> bool:
+        path, name = self.sanitize(path)
+        thumbnails = self._get_thumbnails(path, name)
+        return thumbnails and len(thumbnails) > 0
+
+    def read_thumbnail(self, path, sizehint=None) -> typing.IO:
+        path, name = self.sanitize(path)
+        thumbnails = self._get_thumbnails(path, name)
+        if not thumbnails:
+            raise StorageError(
+                f"{name} in {path} does not have any thumbnails",
+                code=StorageError.DOES_NOT_EXIST,
+            )
+
+        thumb = next(iter(thumbnails.values()))
+        if sizehint is not None:
+            thumb = thumbnails.get(sizehint, thumb)
+
+        return open(thumb, mode="rb")
 
     def get_additional_metadata(self, path, key):
         path, name = self.sanitize(path)
@@ -1257,6 +1299,10 @@ class LocalFileStorage(StorageInterface):
                     storage_entry.size = stat.st_size
                     storage_entry.date = int(stat.st_mtime)
 
+                thumbnails = self._get_thumbnails(os.path.dirname(path_on_disk), name)
+                if thumbnails:
+                    storage_entry.thumbnails = list(thumbnails.keys())
+
                 return storage_entry, metadata_dirty
 
         except Exception:
@@ -1399,6 +1445,101 @@ class LocalFileStorage(StorageInterface):
 
         with self._get_metadata_lock(destination_path):
             self._update_metadata_entry(destination_path, destination_name, source_data)
+
+    def _get_thumbnails(self, path: str, name: str) -> dict[str, str]:
+        thumbnail_path = os.path.join(path, self.THUMBNAIL_DIR)
+
+        if not os.path.exists(thumbnail_path):
+            return {}
+
+        result = {}
+        for item in os.listdir(thumbnail_path):
+            if item.startswith(f"{name}.") and item.endswith(".png"):
+                # format is <name>.<sizehint>.png
+                sizehint = item[len(name) + 1 : -len(".png")]
+                result[sizehint] = os.path.join(thumbnail_path, item)
+
+        def to_area(hint: str) -> int:
+            x, y = map(int, hint.split("x"))
+            return x * y
+
+        sorted_result = {}
+        for sizehint in sorted(result.keys(), key=to_area, reverse=True):
+            sorted_result[sizehint] = result[sizehint]
+        return sorted_result
+
+    def _extract_thumbnails(self, path: str) -> None:
+        folder, name = self.sanitize(path)
+
+        thumbnails = gtt.extract_thumbnail_bytes_from_gcode_file(
+            os.path.join(folder, name)
+        )
+        if not thumbnails:
+            return
+
+        thumbnail_path = os.path.join(folder, self.THUMBNAIL_DIR)
+        if not os.path.exists(thumbnail_path):
+            os.makedirs(thumbnail_path)
+        for sizehint, data in thumbnails.images.items():
+            output_name = f"{name}.{sizehint}.png"
+            output_path = os.path.join(thumbnail_path, output_name)
+            with open(output_path, mode="wb") as f:
+                f.write(data)
+            self._logger.debug(f"Extracted thumbnail {output_name} from {path}")
+
+    def _remove_thumbnails(self, path: str, name: str) -> None:
+        path = self.sanitize_path(path)
+        thumbnail_path = os.path.join(path, self.THUMBNAIL_DIR)
+
+        if not os.path.exists(thumbnail_path):
+            # nothing to do
+            return
+
+        for item in os.listdir(thumbnail_path):
+            if item.startswith(f"{name}.") and item.endswith(".png"):
+                try:
+                    os.remove(os.path.join(thumbnail_path, item))
+                except Exception:
+                    self._logger.exception(
+                        f"Error deleting thumbnail {item} of {path}/{name}"
+                    )
+
+    def _copy_thumbnails(
+        self,
+        src_path: str,
+        src_name: str,
+        dst_path: str,
+        dst_name: str,
+        delete_source: bool = False,
+    ) -> None:
+        src_path = self.sanitize_path(src_path)
+        dst_path = self.sanitize_path(dst_path)
+
+        src_thumbnail_path = os.path.join(src_path, self.THUMBNAIL_DIR)
+        if not os.path.exists(src_thumbnail_path):
+            # nothing to do
+            return
+
+        dst_thumbnail_path = os.path.join(dst_path, self.THUMBNAIL_DIR)
+
+        for item in os.listdir(src_thumbnail_path):
+            if item.startswith(f"{src_name}.") and item.endswith(".png"):
+                # found one!
+                _, sizehint = item[: -len(".png")].rsplit(".", maxsplit=1)
+
+                if not os.path.exists(dst_thumbnail_path):
+                    os.makedirs(dst_thumbnail_path)
+
+                src = os.path.join(src_thumbnail_path, item)
+                dst = os.path.join(dst_thumbnail_path, f"{dst_name}.{sizehint}.png")
+
+                try:
+                    if delete_source:
+                        shutil.move(src, dst)
+                    else:
+                        shutil.copy2(src, dst)
+                except Exception:
+                    self._logger.exception("Error copying/moving {src} to {dst}")
 
     def _get_metadata(self, path, force=False):
         import json

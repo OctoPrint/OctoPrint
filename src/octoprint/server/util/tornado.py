@@ -1403,6 +1403,7 @@ class StorageFileDownloadHandler(
         self.set_header("Expires", "-1")
 
         if include_body:
+            handle = None
             try:
                 handle = self._file_manager.read_file(storage, path)
                 while True:
@@ -1416,6 +1417,69 @@ class StorageFileDownloadHandler(
                     except tornado.iostream.StreamClosedError:
                         return
 
+            finally:
+                if handle:
+                    handle.close()
+
+        else:
+            assert self.request.method == "HEAD"
+
+
+class StorageThumbnailDownloadHandler(
+    RequestlessExceptionLoggingMixin, CorsSupportMixin, tornado.web.RequestHandler
+):
+    SIZEHINT_PATTERN = re.compile(r"^\d+x\d+$")
+
+    def initialize(self, access_validation=None):
+        super().initialize()
+
+        from octoprint.server import fileManager
+
+        self._access_validation = access_validation
+        self._file_manager = fileManager
+
+    @tornado.gen.coroutine
+    def get(self, storage: str, path: str, include_body=True):
+        if self._access_validation is not None:
+            self._access_validation(self.request)
+
+        if (
+            storage not in self._file_manager.registered_storages
+            or not self._file_manager.capabilities(storage).thumbnails
+            or not self._file_manager.has_thumbnail(storage, path)
+        ):
+            raise tornado.web.HTTPError(404)
+
+        file_data = self._file_manager.get_storage_entry(storage, path)
+        if file_data is None:
+            raise tornado.web.HTTPError(404)
+
+        sizehint = self.request.arguments.get("size")
+        if sizehint:
+            sizehint = sizehint[0].decode("utf-8")
+            if not self.SIZEHINT_PATTERN.fullmatch(sizehint):
+                sizehint = None
+
+        self.set_header("Content-Type", "image/png")
+        self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
+        self.set_header("Expires", "-1")
+
+        if include_body:
+            handle = None
+            try:
+                handle = self._file_manager.read_thumbnail(
+                    storage, path, sizehint=sizehint
+                )
+                while True:
+                    chunk = handle.read()
+                    if len(chunk) == 0:
+                        break  # EOF
+
+                    try:
+                        self.write(chunk)
+                        yield self.flush()
+                    except tornado.iostream.StreamClosedError:
+                        return
             finally:
                 if handle:
                     handle.close()

@@ -1268,8 +1268,14 @@ class FileManager:
             )
             self.delete_recovery_data()
 
+    def has_thumbnail(self, location, path) -> bool:
+        return self._storage(location).has_thumbnail(path)
+
+    def read_thumbnail(self, location, path, sizehint=None) -> IO:
+        return self._storage(location).read_thumbnail(path, sizehint=sizehint)
+
     def get_additional_metadata(self, location, path, key):
-        self._storage(location).get_additional_metadata(path, key)
+        return self._storage(location).get_additional_metadata(path, key)
 
     def set_additional_metadata(
         self, location, path, key, data, overwrite=False, merge=False

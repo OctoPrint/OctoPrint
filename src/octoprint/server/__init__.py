@@ -2089,7 +2089,7 @@ class Server:
                     timelapses_path_validator,
                 ),
             ),
-            # uploaded printables
+            # printables
             (
                 r"/downloads/files/([^/]+)/(.*)",
                 util.tornado.StorageFileDownloadHandler,
@@ -2097,7 +2097,15 @@ class Server:
                     download_permission_validator,
                 ),
             ),
-            # bulk download of uploaded printables
+            # thumbnails of printables
+            (
+                r"/downloads/thumbs/([^/]+)/(.*)",
+                util.tornado.StorageThumbnailDownloadHandler,
+                joined_dict(
+                    download_permission_validator,
+                ),
+            ),
+            # bulk download of printables
             (
                 r"/downloads/files/local",
                 util.tornado.DynamicZipBundleHandler,

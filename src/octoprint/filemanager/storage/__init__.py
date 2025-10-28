@@ -29,6 +29,7 @@ class StorageCapabilities(BaseModel):
 
     metadata: bool = False
     history: bool = False
+    thumbnails: bool = False
 
     path_on_disk: bool = False
 
@@ -95,6 +96,7 @@ class StorageEntry(BaseModel):
 
 class StorageFile(StorageEntry):
     metadata: Optional[MetadataEntry] = None
+    thumbnails: list[str] = []
 
 
 class StorageFolder(StorageEntry):
@@ -464,6 +466,12 @@ class StorageInterface:
         raise NotImplementedError()
 
     def remove_history(self, path, index):
+        raise NotImplementedError()
+
+    def has_thumbnail(self, path: str) -> bool:
+        raise NotImplementedError()
+
+    def read_thumbnail(self, path: str, sizehint: str = None) -> IO:
         raise NotImplementedError()
 
     def get_additional_metadata(self, path, key):
