@@ -53,6 +53,7 @@
     th {
       white-space: normal;
       cursor: pointer;
+      line-height: 30px;
     }
 
     thead {
@@ -78,9 +79,15 @@
     }
 
     .title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      display: flex;
+      flex-wrap: nowrap;
+
+      span {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
     }
 
     .uploaded,
