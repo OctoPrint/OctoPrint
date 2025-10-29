@@ -151,6 +151,19 @@ def getSettings():
             "fuzzyTimes": s.getBoolean(["appearance", "fuzzyTimes"]),
             "closeModalsWithClick": s.getBoolean(["appearance", "closeModalsWithClick"]),
             "showInternalFilename": s.getBoolean(["appearance", "showInternalFilename"]),
+            "thumbnails": {
+                "filelistEnabled": s.getBoolean(
+                    ["appearance", "thumbnails", "filelistEnabled"]
+                ),
+                "filelistScale": s.getInt(["appearance", "thumbnails", "filelistScale"]),
+                "filelistAlignment": s.get(
+                    ["appearance", "thumbnails", "filelistAlignment"]
+                ),
+                "stateEnabled": s.getBoolean(
+                    ["appearance", "thumbnails", "stateEnabled"]
+                ),
+                "stateScale": s.getInt(["appearance", "thumbnails", "stateScale"]),
+            },
         },
         "feature": {
             "temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
@@ -551,6 +564,37 @@ def _saveSettings(data):
                 ["appearance", "showInternalFilename"],
                 data["appearance"]["showInternalFilename"],
             )
+
+        if "thumbnails" in data["appearance"]:
+            thumbnails = data["appearance"]["thumbnails"]
+            if "filelistEnabled" in thumbnails:
+                s.setBoolean(
+                    ["appearance", "thumbnails", "filelistEnabled"],
+                    thumbnails["filelistEnabled"],
+                )
+            if "filelistScale" in thumbnails:
+                s.setInt(
+                    ["appearance", "thumbnails", "filelistScale"],
+                    thumbnails["filelistScale"],
+                )
+            if "filelistAlignment" in thumbnails and thumbnails["filelistAlignment"] in (
+                "left",
+                "right",
+                "center",
+            ):
+                s.set(
+                    ["appearance", "thumbnails", "filelistAlignment"],
+                    thumbnails["filelistAlignment"],
+                )
+            if "stateEnabled" in thumbnails:
+                s.setBoolean(
+                    ["appearance", "thumbnails", "stateEnabled"],
+                    thumbnails["stateEnabled"],
+                )
+            if "stateScale" in thumbnails:
+                s.setInt(
+                    ["appearance", "thumbnails", "stateScale"], thumbnails["stateScale"]
+                )
 
     if "printer" in data:
         if "defaultExtrusionLength" in data["printer"]:

@@ -973,6 +973,84 @@ $(function () {
             }
         };
 
+        self.thumbnailLink = (data) => {
+            if (data["refs"] && data["refs"]["thumbnail"]) {
+                return data["refs"]["thumbnail"];
+            } else {
+                return false;
+            }
+        };
+        self.thumbnailsEnabled = ko.pureComputed(() => {
+            const settings = self.settingsViewModel.settings;
+            return (
+                settings &&
+                settings.appearance &&
+                settings.appearance.thumbnails &&
+                settings.appearance.thumbnails.filelistEnabled()
+            );
+        });
+        self.thumbnailsScale = ko.pureComputed(() => {
+            const settings = self.settingsViewModel.settings;
+
+            if (
+                settings &&
+                settings.appearance &&
+                settings.appearance.thumbnails &&
+                settings.appearance.thumbnails.filelistScale
+            ) {
+                return settings.appearance.thumbnails.filelistScale();
+            } else {
+                return 33;
+            }
+        });
+        self.thumbnailsAlignment = ko.pureComputed(() => {
+            const settings = self.settingsViewModel.settings;
+
+            if (
+                settings &&
+                settings.appearance &&
+                settings.appearance.thumbnails &&
+                settings.appearance.thumbnails.filelistAlignment
+            ) {
+                return settings.appearance.thumbnails.filelistAlignment();
+            } else {
+                return "left";
+            }
+        });
+        self.thumbnailsWidth = ko.pureComputed(() => {
+            const alignment = self.thumbnailsAlignment();
+            if (alignment === "center") {
+                const scale = self.thumbnailsScale();
+                return `${scale}%`;
+            } else {
+                return "100%";
+            }
+        });
+        self.thumbnailsContainerWidth = ko.pureComputed(() => {
+            const alignment = self.thumbnailsAlignment();
+            if (alignment === "center") {
+                return "100%";
+            } else {
+                const scale = self.thumbnailsScale();
+                return `${scale}%`;
+            }
+        });
+
+        self.contentFlexDirection = ko.pureComputed(() => {
+            const alignment = self.thumbnailsAlignment();
+            switch (alignment) {
+                case "center": {
+                    return "column";
+                }
+                case "left": {
+                    return "row";
+                }
+                case "right": {
+                    return "row-reverse";
+                }
+            }
+        });
+
         self.lastTimePrinted = function (data) {
             if (
                 data["prints"] &&

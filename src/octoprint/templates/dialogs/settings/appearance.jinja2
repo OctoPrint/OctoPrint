@@ -178,3 +178,43 @@
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _("Close") }}</button>
     </div>
 </div>
+
+<h4>{{ _("Thumbnails") }}</h4>
+
+<h5>{{ _("File list") }}</h5>
+
+<form class="form-horizontal" onsubmit="return false;">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox"
+                       data-bind="checked: settings.appearance.thumbnails.filelistEnabled"
+                       id="settings-appearanceThumbnailsFilelistEnabled">
+                {{ _("Display thumbnails in the file list, if available") }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group"
+         title="{{ _('Width of thumbnails in the file list.') |edq }}">
+        <label class="control-label"
+               for="settings-appearanceThumbnailsFilelistScale">{{ _("Scale (file list)") }}</label>
+        <div class="controls">
+            <input type="number"
+                   data-bind="value: settings.appearance.thumbnails.filelistScale"
+                   id="settings-appearanceThumbnailsFilelistScale">
+        </div>
+    </div>
+    <div class="control-group"
+         title="{{ _('Alignment of thumbnail when pulled to the side') |edq }}">
+        <label class="control-label"
+               for="settings-appearanceThumbnailsFilelistAlignment">{{ _("Alignment (file list)") }}</label>
+        <div class="controls">
+            <select id="settings-appearanceThumbnailsFilelistAlignment"
+                    data-bind="value: settings.appearance.thumbnails.filelistAlignment">
+                <option value="left">{{ _("left") }}</option>
+                <option value="center">{{ _("center") }}</option>
+                <option value="right">{{ _("right") }}</option>
+            </select>
+        </div>
+    </div>
+</form>
