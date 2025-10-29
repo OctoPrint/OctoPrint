@@ -149,17 +149,17 @@ class ThumbnailConfig(BaseModel):
     filelistEnabled: bool = True
     """Whether to display thumbnails for printables on the file list, if available."""
 
-    filelistScale: int = 33
-    """Percentage of file list width to use for thumbnail. If set to a value above 50%, it will be be shown above the entry, otherwise it will be aligned to the side."""
+    filelistScale: int = 25
+    """Percentage of file list width to use for thumbnail. Note that if the image is smaller, it won't be scaled up."""
 
     filelistAlignment: ThumbnailAlignmentEnum = ThumbnailAlignmentEnum.left
-    """Alignment of thumbnail in file list if width is <= 50%."""
+    """Alignment of thumbnail in file list."""
 
     stateEnabled: bool = True
     """Whether to display thumbnails for printable on the state panel, if available."""
 
-    stateScale: int = 100
-    """Percentage of state panel width to use for thumbnail."""
+    stateScale: int = 75
+    """Percentage of state panel width to use for thumbnail. Note that if the image is smaller, it won't be scaled up."""
 
 
 @with_attrs_docs

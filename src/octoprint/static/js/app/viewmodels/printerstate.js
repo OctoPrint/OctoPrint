@@ -98,6 +98,40 @@ $(function () {
             return self.filedata() ? self.filedata()["origin"] === "printer" : undefined;
         });
 
+        self.thumbnailLink = ko.pureComputed(() => {
+            const data = self.filedata();
+            if (data && data.refs && data.refs.thumbnail) {
+                return data.refs.thumbnail;
+            } else {
+                return false;
+            }
+        });
+
+        self.thumbnailsEnabled = ko.pureComputed(() => {
+            const settings = self.settings.settings;
+            return (
+                settings &&
+                settings.appearance &&
+                settings.appearance.thumbnails &&
+                settings.appearance.thumbnails.stateEnabled &&
+                settings.appearance.thumbnails.stateEnabled()
+            );
+        });
+        self.thumbnailsWidth = ko.pureComputed(() => {
+            const settings = self.settings.settings;
+
+            let scale = 80;
+            if (
+                settings &&
+                settings.appearance &&
+                settings.appearance.thumbnails &&
+                settings.appearance.thumbnails.stateScale
+            ) {
+                scale = settings.appearance.thumbnails.stateScale();
+            }
+            return `${scale}%`;
+        });
+
         self.calcFileKey = (data) => {
             if (data === undefined) {
                 data = self.filedata();

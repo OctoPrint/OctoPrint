@@ -37,7 +37,7 @@
         </div>
         <div class="file-entry-content" data-bind="style: { 'flex-direction': $root.contentFlexDirection() }">
             <div class="file-entry-thumbnail clickable" data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, false); } else { return; } }, style: { width: $root.thumbnailsContainerWidth, 'text-align': $root.thumbnailsAlignment, display: ($root.thumbnailLink($data) && $root.thumbnailsEnabled()) ? 'block' : 'none' }">
-                <img data-bind="attr: { src: $root.thumbnailLink($data) }, style: { width: $root.thumbnailsWidth }">
+                <img data-bind="attr: { src: $root.thumbnailLink($data) }, style: { 'max-width': $root.thumbnailsWidth }">
             </div>
             <div class="file-entry-meta">
                 <div class="internal" data-bind="visible: display && name != display && $root.showInternalFilename">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
@@ -64,7 +64,7 @@
         </div>
         <div class="file-entry-content" data-bind="style: { 'flex-direction': $root.contentFlexDirection() }">
             <div class="file-entry-thumbnail" data-bind="style: { width: $root.thumbnailsContainerWidth, 'text-align': $root.thumbnailsAlignment, display: ($root.thumbnailLink($data) && $root.thumbnailsEnabled()) ? 'block' : 'none' }, class: $root.thumbnailsContainerClass">
-                <img data-bind="attr: { src: $root.thumbnailLink($data) }, style: { width: $root.thumbnailsWidth }">
+                <img data-bind="attr: { src: $root.thumbnailLink($data) }, style: { 'max-width': $root.thumbnailsWidth }">
             </div>
             <div class="file-entry-meta">
                 <div class="internal" data-bind="visible: name != display">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
