@@ -106,6 +106,15 @@ class StorageFolder(StorageEntry):
     type_path: list[str] = Field(["folder"], serialization_alias="typePath")
 
 
+class StorageThumbnail(BaseModel):
+    name: str
+    printable: str
+    sizehint: str
+    mime: str = "application/octet-stream"
+    size: int = -1
+    last_modified: int = -1
+
+
 class StorageInterface:
     """
     Interface of storage adapters for OctoPrint.
@@ -471,7 +480,12 @@ class StorageInterface:
     def has_thumbnail(self, path: str) -> bool:
         raise NotImplementedError()
 
-    def read_thumbnail(self, path: str, sizehint: str = None) -> IO:
+    def get_thumbnail(
+        self, path: str, sizehint: str = None
+    ) -> Optional[StorageThumbnail]:
+        raise NotImplementedError()
+
+    def read_thumbnail(self, path: str, sizehint: str = None) -> Optional[IO]:
         raise NotImplementedError()
 
     def get_additional_metadata(self, path, key):

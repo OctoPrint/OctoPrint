@@ -6,7 +6,7 @@ import logging
 import os
 import time
 from collections import namedtuple
-from typing import IO, TYPE_CHECKING, Callable
+from typing import IO, TYPE_CHECKING, Callable, Optional
 
 import octoprint.plugin
 import octoprint.util
@@ -16,7 +16,13 @@ from octoprint.util import get_fully_qualified_classname as fqcn
 
 from .analysis import AnalysisQueue, QueueEntry  # noqa: F401
 from .destinations import FileDestinations  # noqa: F401
-from .storage import StorageCapabilities, StorageEntry, StorageError, StorageInterface
+from .storage import (
+    StorageCapabilities,
+    StorageEntry,
+    StorageError,
+    StorageInterface,
+    StorageThumbnail,
+)
 from .storage.local import LocalFileStorage  # noqa: F401
 from .util import AbstractFileWrapper, DiskFileWrapper, StreamWrapper  # noqa: F401
 
@@ -1271,7 +1277,12 @@ class FileManager:
     def has_thumbnail(self, location, path) -> bool:
         return self._storage(location).has_thumbnail(path)
 
-    def read_thumbnail(self, location, path, sizehint=None) -> IO:
+    def get_thumbnail(self, location, path, sizehint=None) -> Optional[StorageThumbnail]:
+        return self._storage(location).get_thumbnail(path, sizehint=sizehint)
+
+    def read_thumbnail(
+        self, location, path, sizehint=None
+    ) -> tuple[StorageThumbnail, IO]:
         return self._storage(location).read_thumbnail(path, sizehint=sizehint)
 
     def get_additional_metadata(self, location, path, key):

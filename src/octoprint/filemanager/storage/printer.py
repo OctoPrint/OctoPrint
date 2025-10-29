@@ -16,6 +16,7 @@ from . import (
     StorageFile,
     StorageFolder,
     StorageInterface,
+    StorageThumbnail,
 )
 
 
@@ -350,10 +351,15 @@ class PrinterFileStorage(StorageInterface):
         metadata = self._connection.get_printer_file_metadata(path)
         return metadata.model_dump()
 
-    def has_thumbnail(self, path):
+    def has_thumbnail(self, path) -> bool:
         return self._connection.has_thumbnail(path)
 
-    def read_thumbnail(self, path, sizehint=None):
+    def get_thumbnail(self, path, sizehint=None) -> Optional[StorageThumbnail]:
+        return self._connection.get_thumbnail(path, sizehint=sizehint)
+
+    def read_thumbnail(
+        self, path, sizehint=None
+    ) -> Optional[tuple[StorageThumbnail, IO]]:
         return self._connection.download_thumbnail(path, sizehint=sizehint)
 
     def add_link(self, path, rel, data):

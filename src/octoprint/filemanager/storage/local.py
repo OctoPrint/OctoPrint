@@ -39,6 +39,7 @@ from . import (
     StorageFile,
     StorageFolder,
     StorageInterface,
+    StorageThumbnail,
 )
 
 if typing.TYPE_CHECKING:
@@ -787,7 +788,46 @@ class LocalFileStorage(StorageInterface):
         thumbnails = self._get_thumbnails(path, name)
         return thumbnails and len(thumbnails) > 0
 
-    def read_thumbnail(self, path, sizehint=None) -> typing.IO:
+    def get_thumbnail(self, path, sizehint=None) -> StorageThumbnail:
+        sh, thumb = self._thumbnail_from_sizehint(path, sizehint=sizehint)
+        if not thumb:
+            return None
+
+        return self._to_thumbnail_info(thumb, sh, path)
+
+    def read_thumbnail(self, path, sizehint=None) -> tuple[StorageThumbnail, typing.IO]:
+        sh, thumb = self._thumbnail_from_sizehint(path, sizehint=sizehint)
+        if not thumb:
+            return None
+
+        info = self._to_thumbnail_info(thumb, sh, path)
+
+        return info, open(thumb, mode="rb")
+
+    def _to_thumbnail_info(
+        self, thumb: str, sizehint: str, printable: str
+    ) -> StorageThumbnail:
+        from filetype import guess_mime
+
+        name = thumb
+        if "/" in thumb:
+            name = thumb.rsplit("/", maxsplit=1)[1]
+
+        stat = os.stat(thumb)
+        mime = guess_mime(thumb)
+
+        return StorageThumbnail(
+            name=name,
+            printable=printable,
+            sizehint=sizehint,
+            mime=mime,
+            size=stat.st_size,
+            last_modified=int(stat.st_mtime),
+        )
+
+    def _thumbnail_from_sizehint(
+        self, path: str, sizehint: str = None
+    ) -> tuple[str, str]:
         path, name = self.sanitize(path)
         thumbnails = self._get_thumbnails(path, name)
         if not thumbnails:
@@ -796,11 +836,11 @@ class LocalFileStorage(StorageInterface):
                 code=StorageError.DOES_NOT_EXIST,
             )
 
-        thumb = next(iter(thumbnails.values()))
         if sizehint is not None:
-            thumb = thumbnails.get(sizehint, thumb)
-
-        return open(thumb, mode="rb")
+            thumb = thumbnails.get(sizehint)
+            if thumb:
+                return sizehint, thumb
+        return next(iter(thumbnails.items()))
 
     def get_additional_metadata(self, path, key):
         path, name = self.sanitize(path)

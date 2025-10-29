@@ -1460,16 +1460,15 @@ class StorageThumbnailDownloadHandler(
             if not self.SIZEHINT_PATTERN.fullmatch(sizehint):
                 sizehint = None
 
-        self.set_header("Content-Type", "image/png")
-        self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
-        self.set_header("Expires", "-1")
-
         if include_body:
             handle = None
             try:
-                handle = self._file_manager.read_thumbnail(
+                meta, handle = self._file_manager.read_thumbnail(
                     storage, path, sizehint=sizehint
                 )
+
+                self._set_headers_from_meta(meta)
+
                 while True:
                     chunk = handle.read()
                     if len(chunk) == 0:
@@ -1486,6 +1485,27 @@ class StorageThumbnailDownloadHandler(
 
         else:
             assert self.request.method == "HEAD"
+
+            meta = self._file_manager.get_thumbnail(storage, path, sizehint=sizehint)
+            if not meta:
+                raise tornado.web.HTTPError(404)
+
+            self._set_headers_from_meta(meta)
+
+    def _set_headers_from_meta(self, meta):
+        if not meta.mime.startswith("image/"):
+            raise tornado.web.HTTPError(404)
+        self.set_header("Content-Type", meta.mime)
+
+        if meta.size >= 0:
+            self.set_header("Content-Length", meta.size)
+
+        if meta.last_modified >= 0:
+            import datetime
+            from email.utils import format_datetime
+
+            dt = datetime.datetime.fromtimestamp(meta.last_modified)
+            self.set_header("Last-Modified", format_datetime(dt))
 
 
 ##~~ URL Forward Handler for forwarding requests to a preconfigured static URL

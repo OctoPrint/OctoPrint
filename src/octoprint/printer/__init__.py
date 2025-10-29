@@ -32,7 +32,11 @@ from typing import IO, TYPE_CHECKING, Optional, Union
 from pydantic import computed_field
 
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.filemanager.storage import MetadataEntry, StorageCapabilities
+from octoprint.filemanager.storage import (
+    MetadataEntry,
+    StorageCapabilities,
+    StorageThumbnail,
+)
 from octoprint.printer.job import (
     DurationEstimate,
     FilamentEstimate,
@@ -656,7 +660,14 @@ class PrinterFilesMixin:
     def has_thumbnail(self, path: str, *args, **kwargs) -> bool:
         return False
 
-    def download_thumbnail(self, path: str, sizehint: str = None, *args, **kwargs) -> IO:
+    def get_thumbnail(
+        self, path: str, sizehint: str = None, *args, **kwargs
+    ) -> Optional[StorageThumbnail]:
+        return None
+
+    def download_thumbnail(
+        self, path: str, sizehint: str = None, *args, **kwargs
+    ) -> Optional[tuple[StorageThumbnail, IO]]:
         return None
 
     def create_job(self, path: str, owner: str = None) -> PrintJob:
