@@ -127,6 +127,7 @@ $(function () {
         self.uploadFilename = ko.observable(undefined);
 
         self.allItems = ko.observable(undefined);
+        self.refreshing = ko.observable(false);
 
         var optionsLocalStorageKey = "gcodeFiles.options";
         self._toLocalStorage = function () {
@@ -469,6 +470,7 @@ $(function () {
                 return self._otherRequestInProgress;
             }
 
+            self.refreshing(true);
             return (self._otherRequestInProgress = OctoPrint.files
                 .list(true, force)
                 .done(function (response) {
@@ -482,6 +484,7 @@ $(function () {
                     self.listHelper.updateItems([]);
                 })
                 .always(function () {
+                    self.refreshing(false);
                     self._otherRequestInProgress = undefined;
                     self._filesToFocus = [];
                     self._switchToPath = undefined;
