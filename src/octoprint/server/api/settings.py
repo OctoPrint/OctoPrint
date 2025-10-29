@@ -159,6 +159,9 @@ def getSettings():
                 "filelistAlignment": s.get(
                     ["appearance", "thumbnails", "filelistAlignment"]
                 ),
+                "filelistPreview": s.getBoolean(
+                    ["appearance", "thumbnails", "filelistPreview"]
+                ),
                 "stateEnabled": s.getBoolean(
                     ["appearance", "thumbnails", "stateEnabled"]
                 ),
@@ -585,6 +588,11 @@ def _saveSettings(data):
                 s.set(
                     ["appearance", "thumbnails", "filelistAlignment"],
                     thumbnails["filelistAlignment"],
+                )
+            if "filelistPreview" in thumbnails:
+                s.setBoolean(
+                    ["appearance", "thumbnails", "filelistPreview"],
+                    thumbnails["filelistPreview"],
                 )
             if "stateEnabled" in thumbnails:
                 s.setBoolean(

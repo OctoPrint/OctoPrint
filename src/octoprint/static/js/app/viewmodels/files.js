@@ -986,6 +986,7 @@ $(function () {
                 settings &&
                 settings.appearance &&
                 settings.appearance.thumbnails &&
+                settings.appearance.thumbnails.filelistEnabled &&
                 settings.appearance.thumbnails.filelistEnabled()
             );
         });
@@ -1033,6 +1034,28 @@ $(function () {
             } else {
                 const scale = self.thumbnailsScale();
                 return `${scale}%`;
+            }
+        });
+        self.thumbnailPopover = (data) => {
+            const thumbnail = self.thumbnailLink(data);
+            if (!thumbnail) {
+                return "<p>" + gettext("No thumbnail!") + "</p>";
+            }
+
+            return `<img src="${thumbnail}">`;
+        };
+        self.thumbnailPopoverTrigger = ko.pureComputed(() => {
+            const settings = self.settingsViewModel.settings;
+            if (
+                settings &&
+                settings.appearance &&
+                settings.appearance.thumbnails &&
+                settings.appearance.thumbnails.filelistPreview &&
+                settings.appearance.thumbnails.filelistPreview()
+            ) {
+                return "hover";
+            } else {
+                return "manual";
             }
         });
 

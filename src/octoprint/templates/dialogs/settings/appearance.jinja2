@@ -214,8 +214,7 @@
             {% endtrans %}</span>
         </div>
     </div>
-    <div class="control-group"
-         title="{{ _('Alignment of thumbnail when pulled to the side') |edq }}">
+    <div class="control-group" title="{{ _('Alignment of thumbnail') |edq }}">
         <label class="control-label"
                for="settings-appearanceThumbnailsFilelistAlignment">{{ _("Alignment (file list)") }}</label>
         <div class="controls">
@@ -228,6 +227,16 @@
             <span class="help-block">{% trans %}
                 "Left" and "right" will put the image next to the details. "Center" will put the image between header and details.
             {% endtrans %}</span>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox"
+                       data-bind="checked: settings.appearance.thumbnails.filelistPreview"
+                       id="settings-appearanceThumbnailsFilelistPreview">
+                {{ _("Enable full thumbnail preview on thumbnail hover") }}
+            </label>
         </div>
     </div>
 </form>

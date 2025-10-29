@@ -155,6 +155,9 @@ class ThumbnailConfig(BaseModel):
     filelistAlignment: ThumbnailAlignmentEnum = ThumbnailAlignmentEnum.left
     """Alignment of thumbnail in file list."""
 
+    filelistPreview: bool = False
+    """Whether to enable a preview popover with the full thumbnail size when hovering over the thumbnail in the file list."""
+
     stateEnabled: bool = True
     """Whether to display thumbnails for printable on the state panel, if available."""
 

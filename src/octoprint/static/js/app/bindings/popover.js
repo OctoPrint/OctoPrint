@@ -1,5 +1,14 @@
 ko.bindingHandlers.popover = {
-    keys: ["title", "animation", "placement", "trigger", "delay", "content", "html"],
+    keys: [
+        "title",
+        "animation",
+        "placement",
+        "trigger",
+        "delay",
+        "content",
+        "html",
+        "container"
+    ],
 
     init: function (
         element,
