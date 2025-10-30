@@ -477,7 +477,7 @@ class LocalStorageTest(unittest.TestCase):
         self._add_and_verify_folder("empty", "empty")
 
         def filter_machinecode(node: StorageEntry) -> bool:
-            return node.entry_type == "machinecode"
+            return node["type"] == "machinecode"
 
         file_list = self.storage.list_files(filter=filter_machinecode)
         self.assertTrue(3, len(file_list))

@@ -661,14 +661,31 @@ class StorageInterface:
                 k: self._convert_storage_entry_to_dict(v)
                 for k, v in entry.children.items()
             }
+
+            result["type"] = result["entry_type"]
+            del result["entry_type"]
+
+            result["typePath"] = result["type_path"]
+            del result["type_path"]
+
             return result
 
-        if isinstance(entry, StorageFile):
+        elif isinstance(entry, StorageFile):
             result = entry.model_dump(by_alias=True)
             if "metadata" in result and result["metadata"]:
                 result.update(**result["metadata"])
                 del result["metadata"]
+
+            result["type"] = result["entry_type"]
+            del result["entry_type"]
+
+            result["typePath"] = result["type_path"]
+            del result["type_path"]
+
             return result
+
+        else:
+            return {}
 
 
 class StorageError(Exception):

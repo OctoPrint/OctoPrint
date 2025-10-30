@@ -90,9 +90,6 @@ class PrinterFileStorage(StorageInterface):
                 # path might be a directory
                 files = [f for f in files if f.path.startswith(path + "/")]
 
-        if filter is not None:
-            files = [f for f in files if filter(f)]
-
         return files
 
     @property
@@ -214,6 +211,9 @@ class PrinterFileStorage(StorageInterface):
                     node = node[p].children
 
             node[name] = entry
+
+        if filter is not None:
+            result = {k: v for k, v in result.items() if filter(v)}
 
         return result
 
