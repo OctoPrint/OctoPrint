@@ -77,6 +77,8 @@ regexes_parameters = {
     "floatY": re.compile(r"(^|[^A-Za-z])[Yy](?P<value>%s)" % regex_float_pattern),
     "floatZ": re.compile(r"(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
     "intN": re.compile(r"(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
+    "intP": re.compile(r"(^|[^A-Za-z])[Pp](?P<value>%s)" % regex_int_pattern),
+    "intR": re.compile(r"(^|[^A-Za-z])[Rr](?P<value>%s)" % regex_int_pattern),
     "intS": re.compile(r"(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_int_pattern),
     "intT": re.compile(r"(^|[^A-Za-z])[Tt](?P<value>%s)" % regex_int_pattern),
 }
@@ -714,6 +716,8 @@ class MachineCom:
             ["maxNotSdPrinting"]
         )
 
+        self._trust_M73 = self._settings.get_boolean(["trustM73"])
+
         self._job_queue = JobQueue()
 
         self._transmitted_lines = 0
@@ -1107,6 +1111,13 @@ class MachineCom:
         if cleanedPrintTime < 0:
             cleanedPrintTime = 0.0
         return cleanedPrintTime
+
+    def getPrintTimeLeft(self):
+        if self._currentFile is None:
+            return None
+        if not isinstance(self._currentFile, PrintingGcodeFileInformation):
+            return None
+        return self._currentFile.getRemainingPrintTime()
 
     def getTemp(self):
         return self.last_temperature.tools
@@ -5592,6 +5603,30 @@ class MachineCom:
     ):
         self.last_fanspeed = 0
 
+    def _gcode_M73_sent(
+        self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs
+    ):
+        if not self._trust_M73:
+            return
+
+        if not self._currentFile or not isinstance(
+            self._currentFile, PrintingGcodeFileInformation
+        ):
+            return
+
+        p_match = regexes_parameters["intP"].search(cmd)
+        r_match = regexes_parameters["intR"].search(cmd)
+
+        progress = remaining = None
+
+        if p_match:
+            progress = float(p_match.group("value")) / 100.0
+        if r_match:
+            remaining = float(r_match.group("value")) * 60.0
+
+        if progress is not None or remaining is not None:
+            self._currentFile.fromM73(progress=progress, time_left=remaining)
+
     def _emergency_force_send(self, cmd, message, gcode=None, *args, **kwargs):
         # only jump the queue with our command if the EMERGENCY_PARSER capability is available
         if not self._capability_supported(self.CAPABILITY_EMERGENCY_PARSER):
@@ -5734,7 +5769,7 @@ class MachineComPrintCallback:
     def on_comm_error(self, error, reason, consequence=None, faq=None, logs=None):
         pass
 
-    def on_comm_progress(self, progress: float):
+    def on_comm_progress(self, progress: float, remaining: float = None):
         pass
 
     def on_comm_print_job_started(self, suppress_script=False, user=None):
@@ -5944,6 +5979,30 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
                 raise OSError(f"File {self._filename} does not exist")
             self._size = os.stat(self._filename).st_size
 
+        self._progress_m73 = None
+        self._print_time_left_m73 = None
+
+    def getProgress(self) -> float:
+        """
+        The current progress of the file.
+
+        Either taken from M73 calls inside the printed file, or if none are available calculated as relation
+        between file position and absolute size. Returns -1 if file size is None or < 1.
+        """
+        if self._progress_m73 is not None:
+            return self._progress_m73
+
+        return super().getProgress()
+
+    def getRemainingPrintTime(self) -> float:
+        return self._print_time_left_m73
+
+    def fromM73(self, progress: float = None, time_left: float = None):
+        if progress is not None:
+            self._progress_m73 = progress
+        if time_left is not None:
+            self._print_time_left_m73 = time_left
+
     def seek(self, offset):
         with self._handle_mutex:
             if self._handle is None:
@@ -6050,6 +6109,9 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
         PrintingGcodeFileInformation.__init__(self, path_or_file, user=user)
         self._local_name = local_name
         self._remote_name = remote_name
+
+    def fromM73(self, progress: float = None, time_left: float = None):
+        pass  # disabled
 
     def start(self):
         PrintingGcodeFileInformation.start(self)

@@ -326,8 +326,6 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         if job is None:
             # shortcut for deselecting
             self._comm.unselectFile()
-            self._updateProgressData()
-            self._setCurrentZ(None)
             super().set_job(job)
             return
 
@@ -366,6 +364,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             pos=self._comm.getPrintFilepos(),
             elapsed=self._comm.getPrintTime(),
             cleaned_elapsed=self._comm.getCleanedPrintTime(),
+            left_estimate=self._comm.getPrintTimeLeft(),
         )
 
     def get_file_position(self):

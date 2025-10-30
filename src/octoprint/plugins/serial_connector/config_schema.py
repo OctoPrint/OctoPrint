@@ -322,3 +322,6 @@ class SerialConfig(BaseModel):
     # command specific flags
     triggerOkForM29: bool = True
     """Whether to automatically trigger an ok for ``M29`` (a lot of versions of this command are buggy and the response skips on the ok)."""
+
+    trustM73: bool = True
+    """Whether to trust M73 in printed GCODE files for progress reporting."""
