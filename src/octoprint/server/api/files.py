@@ -6,6 +6,7 @@ import hashlib
 import logging
 import os
 import threading
+from collections.abc import Iterable
 from urllib.parse import quote as urlquote
 
 import psutil
@@ -19,7 +20,16 @@ import octoprint.slicing
 from octoprint.access.permissions import Permissions
 from octoprint.events import Events
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.filemanager.storage import StorageError
+from octoprint.filemanager.storage import (
+    AnalysisDimensions,
+    AnalysisFilamentUse,
+    AnalysisVolume,
+    StorageEntry,
+    StorageError,
+    StorageFile,
+    StorageFolder,
+)
+from octoprint.schema.api import files as apischema
 from octoprint.server import (
     NO_CONTENT,
     current_user,
@@ -309,7 +319,7 @@ def readGcodeFile(target, filename):
     if not file:
         abort(404)
 
-    return jsonify(file)
+    return jsonify(file.model_dump(by_alias=True, exclude_unset=True, exclude_none=True))
 
 
 def _getFileDetails(origin, path):
@@ -322,13 +332,7 @@ def _getFileDetails(origin, path):
     if not data:
         return None
 
-    result = data.model_dump(by_alias=True)
-    if "metadata" in result:
-        if result["metadata"]:
-            result.update(**result["metadata"])
-        del result["metadata"]
-
-    return _analyse_recursively(origin, [result], path=parent)[0]
+    return _analyse_and_convert_recursively(origin, [data], path=parent)[0]
 
 
 @time_this(
@@ -346,8 +350,8 @@ def _getFileList(
 
     filter_func = None
     if filter:
-        filter_func = lambda entry, entry_data: octoprint.filemanager.valid_file_type(
-            entry, type=filter, tree=extension_tree
+        filter_func = lambda entry: octoprint.filemanager.valid_file_type(
+            entry.name, type=filter, tree=extension_tree
         )
 
     with _file_cache_mutex:
@@ -362,24 +366,31 @@ def _getFileList(
             or lastmodified < fileManager.last_modified(origin, path=path, recursive=True)
         ):
             files = list(
-                fileManager.list_files(
-                    origin,
+                fileManager.list_storage_entries(
+                    locations=[origin],
                     path=path,
                     filter=filter_func,
                     recursive=recursive,
                     level=level,
                     force_refresh=not allow_from_cache,
-                )[origin].values()
+                )
+                .get(origin, {})
+                .values()
             )
             lastmodified = fileManager.last_modified(origin, path=path, recursive=True)
             _file_cache[cache_key] = (files, lastmodified, storage_hash)
 
-    return _analyse_recursively(origin, files, extension_tree=extension_tree)
+    result = _analyse_and_convert_recursively(
+        origin, files, extension_tree=extension_tree
+    )
+    return [
+        x.model_dump(by_alias=True, exclude_unset=True, exclude_none=True) for x in result
+    ]
 
 
-def _analyse_recursively(
-    origin: str, files: list[dict], path: str = None, extension_tree=None
-) -> list[dict]:
+def _analyse_and_convert_recursively(
+    origin: str, files: Iterable[StorageEntry], path: str = None, extension_tree=None
+) -> list[apischema.ApiStorageEntry]:
     if path is None:
         path = ""
 
@@ -387,126 +398,194 @@ def _analyse_recursively(
         extension_tree = octoprint.filemanager.full_extension_tree()
 
     result = []
-    for file_or_folder in files:
-        # make a shallow copy in order to not accidentally modify the cached data
-        file_or_folder = dict(file_or_folder)
+    for entry in files:
+        if isinstance(entry, StorageFolder):
+            children = []
+            prints = None
 
-        file_or_folder["origin"] = origin
-
-        if file_or_folder["type"] == "folder":
-            if "children" in file_or_folder:
-                children = _analyse_recursively(
+            if entry.children:
+                children = _analyse_and_convert_recursively(
                     origin,
-                    file_or_folder["children"].values(),
-                    path=path + file_or_folder["name"] + "/",
+                    entry.children.values(),
+                    path=path + entry.name + "/",
                 )
-                latest_print = None
+
+                latest_print: apischema.ApiEntryLastPrint = None
                 success = 0
                 failure = 0
                 for child in children:
-                    if (
-                        "prints" not in child
-                        or "last" not in child["prints"]
-                        or "date" not in child["prints"]["last"]
-                    ):
+                    if not child.prints or not child.prints.last:
                         continue
+                    success += child.prints.success
+                    failure += child.prints.failure
 
-                    success += child["prints"].get("success", 0)
-                    failure += child["prints"].get("failure", 0)
+                    if latest_print is None or child.prints.last.date > latest_print.date:
+                        latest_print = child.prints.last
 
-                    if (
-                        latest_print is None
-                        or child["prints"]["last"]["date"] > latest_print["date"]
-                    ):
-                        latest_print = child["prints"]["last"]
-
-                file_or_folder["children"] = children
-                file_or_folder["prints"] = {
-                    "success": success,
-                    "failure": failure,
-                }
-                if latest_print:
-                    file_or_folder["prints"]["last"] = latest_print
-
-            file_or_folder["refs"] = {
-                "resource": url_for(
-                    ".readGcodeFile",
-                    target=origin,
-                    filename=path + file_or_folder["name"],
-                    _external=True,
+                prints = apischema.ApiEntryPrints(
+                    success=success, failure=failure, last=latest_print
                 )
-            }
-        else:
-            if "analysis" in file_or_folder and octoprint.filemanager.valid_file_type(
-                file_or_folder["name"], type="gcode", tree=extension_tree
-            ):
-                file_or_folder["gcodeAnalysis"] = file_or_folder["analysis"]
-                del file_or_folder["analysis"]
 
-            if "history" in file_or_folder and octoprint.filemanager.valid_file_type(
-                file_or_folder["name"], type="gcode", tree=extension_tree
-            ):
-                # convert print log
-                history = file_or_folder["history"]
-                del file_or_folder["history"]
-                success = 0
-                failure = 0
-                last = None
-                for entry in history:
-                    success += 1 if "success" in entry and entry["success"] else 0
-                    failure += 1 if "success" in entry and not entry["success"] else 0
-                    if not last or (
-                        "timestamp" in entry
-                        and "timestamp" in last
-                        and entry["timestamp"] > last["timestamp"]
-                    ):
-                        last = entry
-                if last:
-                    prints = {
-                        "success": success,
-                        "failure": failure,
-                        "last": {
-                            "success": last["success"],
-                            "date": last["timestamp"],
-                        },
-                    }
-                    if "printTime" in last:
-                        prints["last"]["printTime"] = last["printTime"]
-                    file_or_folder["prints"] = prints
+            result.append(
+                apischema.ApiStorageFolder(
+                    name=entry.name,
+                    display=entry.display,
+                    origin=entry.origin,
+                    path=entry.path,
+                    user=entry.user,
+                    date=entry.date,
+                    size=entry.size,
+                    children=children,
+                    prints=prints,
+                    refs={
+                        "resource": url_for(
+                            ".readGcodeFile",
+                            target=origin,
+                            filename=path + entry.name,
+                            _external=True,
+                        )
+                    },
+                )
+            )
 
-            file_or_folder["refs"] = {
+        elif isinstance(entry, StorageFile):
+            analysis: apischema.ApiEntryAnalysis = None
+            prints: apischema.ApiEntryPrints = None
+            metadata: apischema.ApiEntryStatistics = None
+
+            additional = {}
+
+            if entry.metadata and octoprint.filemanager.valid_file_type(
+                entry.name, type="gcode", tree=extension_tree
+            ):
+                # convert metadata
+                metadata = apischema.ApiEntryStatistics()
+
+                if entry.metadata.statistics:
+                    metadata.averagePrintTime = entry.metadata.statistics.averagePrintTime
+                    metadata.lastPrintTime = entry.metadata.statistics.lastPrintTime
+
+                # convert analysis
+                if entry.metadata.analysis:
+
+                    def _to_volume(val: AnalysisVolume) -> apischema.ApiAnalysisVolume:
+                        if val is None:
+                            return None
+                        return apischema.ApiAnalysisVolume(
+                            minX=val.minX,
+                            minY=val.minY,
+                            minZ=val.minZ,
+                            maxX=val.maxX,
+                            maxY=val.maxY,
+                            maxZ=val.maxZ,
+                        )
+
+                    def _to_dimensions(
+                        val: AnalysisDimensions,
+                    ) -> apischema.ApiAnalysisDimensions:
+                        if val is None:
+                            return None
+                        return apischema.ApiAnalysisDimensions(
+                            width=val.width, height=val.height, depth=val.depth
+                        )
+
+                    def _to_filament_use(
+                        val: dict[str, AnalysisFilamentUse],
+                    ) -> dict[str, apischema.ApiAnalysisFilamentUse]:
+                        if val is None:
+                            return None
+                        result = {}
+                        for t, d in val.items():
+                            result[t] = apischema.ApiAnalysisFilamentUse(
+                                length=d.length, volume=d.volume, weight=d.weight
+                            )
+                        return result
+
+                    analysis = apischema.ApiEntryAnalysis(
+                        printingArea=_to_volume(entry.metadata.analysis.printingArea),
+                        dimensions=_to_dimensions(entry.metadata.analysis.dimensions),
+                        travelArea=_to_volume(entry.metadata.analysis.travelArea),
+                        travelDimensions=_to_dimensions(
+                            entry.metadata.analysis.travelDimensions
+                        ),
+                        estimatedPrintTime=entry.metadata.analysis.estimatedPrintTime,
+                        filament=_to_filament_use(entry.metadata.analysis.filament),
+                        **entry.metadata.analysis.additional,
+                    )
+
+                # convert history
+                if entry.metadata.history:
+                    success = 0
+                    failure = 0
+                    last = None
+
+                    for h in entry.metadata.history:
+                        if h.success:
+                            success += 1
+                        else:
+                            failure += 1
+
+                        if not last or h.timestamp > last.date:
+                            last = apischema.ApiEntryLastPrint(
+                                success=h.success,
+                                date=h.timestamp,
+                                printerProfile=h.printerProfile,
+                                printTime=h.printTime,
+                            )
+
+                    prints = apischema.ApiEntryPrints(
+                        success=success, failure=failure, last=last
+                    )
+
+                # fetch additional data
+                additional = entry.metadata.additional
+
+            # create refs
+            refs = {
                 "resource": url_for(
                     ".readGcodeFile",
                     target=origin,
-                    filename=file_or_folder["path"],
+                    filename=entry.path,
                     _external=True,
                 )
             }
 
             if fileManager.capabilities(origin).read_file:
-                quoted_path = urlquote(file_or_folder["path"])
+                quoted_path = urlquote(entry.path)
                 url = (
                     url_for("index", _external=True)
                     + f"downloads/files/{origin}/{quoted_path}"
                 )
-                file_or_folder["refs"]["download"] = url
+                refs["download"] = url
 
-            if fileManager.capabilities(origin).thumbnails and len(
-                file_or_folder.get("thumbnails", [])
-            ):
-                quoted_path = urlquote(file_or_folder["path"])
+            if fileManager.capabilities(origin).thumbnails and len(entry.thumbnails):
+                quoted_path = urlquote(entry.path)
                 url = (
                     url_for("index", _external=True)
                     + f"downloads/thumbs/{origin}/{quoted_path}"
                 )
 
-                for size in file_or_folder["thumbnails"]:
-                    file_or_folder["refs"][f"thumbnail_{size}"] = url + "?size=" + size
-                file_or_folder["refs"]["thumbnail"] = url
+                for size in entry.thumbnails:
+                    refs[f"thumbnail_{size}"] = url + "?size=" + size
+                refs["thumbnail"] = url
 
-                del file_or_folder["thumbnails"]
-
-        result.append(file_or_folder)
+            result.append(
+                apischema.ApiStorageFile(
+                    name=entry.name,
+                    display=entry.display,
+                    origin=entry.origin,
+                    path=entry.path,
+                    user=entry.user,
+                    date=entry.date,
+                    size=entry.size,
+                    type_=entry.entry_type,
+                    typePath=entry.type_path,
+                    prints=prints,
+                    refs=refs,
+                    gcodeAnalysis=analysis,
+                    **additional,
+                )
+            )
 
     return result
 

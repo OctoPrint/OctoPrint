@@ -185,6 +185,7 @@ class PrinterFileStorage(StorageInterface):
 
             entry = StorageFile(
                 name=name,
+                origin=self.storage,
                 path=f.path,
                 display=f.display,
                 entry_type=file_type,
@@ -206,6 +207,7 @@ class PrinterFileStorage(StorageInterface):
                     if p not in node:
                         node[p] = StorageFolder(
                             name=p,
+                            origin=self.storage,
                             path=fp,
                             display=p,
                         )

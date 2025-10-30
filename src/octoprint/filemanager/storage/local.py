@@ -32,7 +32,9 @@ from . import (
     AnalysisFilamentUse,
     AnalysisResult,
     AnalysisVolume,
+    HistoryEntry,
     MetadataEntry,
+    Statistics,
     StorageCapabilities,
     StorageEntry,
     StorageError,
@@ -1240,7 +1242,10 @@ class LocalFileStorage(StorageInterface):
                     entry_metadata = {}
 
                 storage_entry = StorageFolder(
-                    name=name, display=entry_metadata.get("display", name), path=path
+                    name=name,
+                    display=entry_metadata.get("display", name),
+                    origin=self.storage,
+                    path=path,
                 )
                 if stat:
                     storage_entry.date = int(stat.st_mtime)
@@ -1278,6 +1283,7 @@ class LocalFileStorage(StorageInterface):
                 storage_entry = StorageFile(
                     name=name,
                     display=entry_metadata.get("display", name),
+                    origin=self.storage,
                     path=path,
                     entry_type=file_type,
                     type_path=type_path,
@@ -1285,15 +1291,20 @@ class LocalFileStorage(StorageInterface):
 
                 if entry_metadata:
                     storage_entry.metadata = MetadataEntry()
-                    if "analysis" in entry_metadata:
-                        analysis = AnalysisResult()
 
+                    if "user" in entry_metadata:
+                        storage_entry.user = entry_metadata["user"]
+
+                    if "analysis" in entry_metadata:
                         meta_analysis = entry_metadata["analysis"]
+
+                        analysis = AnalysisResult()
 
                         if "estimatedPrintTime" in meta_analysis:
                             analysis.estimatedPrintTime = meta_analysis[
                                 "estimatedPrintTime"
                             ]
+
                         if "printingArea" in meta_analysis:
                             x = meta_analysis["printingArea"]
                             analysis.printingArea = AnalysisVolume(
@@ -1304,6 +1315,7 @@ class LocalFileStorage(StorageInterface):
                                 maxY=x["maxY"],
                                 maxZ=x["maxZ"],
                             )
+
                         if "travelArea" in meta_analysis:
                             x = meta_analysis["travelArea"]
                             analysis.travelArea = AnalysisVolume(
@@ -1314,16 +1326,19 @@ class LocalFileStorage(StorageInterface):
                                 maxY=x["maxY"],
                                 maxZ=x["maxZ"],
                             )
+
                         if "dimensions" in meta_analysis:
                             x = meta_analysis["dimensions"]
                             analysis.dimensions = AnalysisDimensions(
                                 width=x["width"], height=x["height"], depth=x["depth"]
                             )
+
                         if "travelDimensions" in meta_analysis:
                             x = meta_analysis["travelDimensions"]
                             analysis.travelDimensions = AnalysisDimensions(
                                 width=x["width"], height=x["height"], depth=x["depth"]
                             )
+
                         if "filament" in meta_analysis:
                             x = meta_analysis["filament"]
                             result = {}
@@ -1333,7 +1348,67 @@ class LocalFileStorage(StorageInterface):
                                 )
                             analysis.filament = result
 
+                        additional_analysis_keys = [
+                            x
+                            for x in meta_analysis
+                            if x
+                            not in (
+                                "estimatedPrintTime",
+                                "printingArea",
+                                "travelArea",
+                                "dimensions",
+                                "travelDimensions",
+                                "filament",
+                            )
+                        ]
+                        if additional_analysis_keys:
+                            # there are more things stored in this analysis
+                            analysis.additional = {
+                                k: v
+                                for k, v in meta_analysis.items()
+                                if k in additional_analysis_keys
+                            }
+
                         storage_entry.metadata.analysis = analysis
+
+                    if "history" in entry_metadata:
+                        history = []
+                        for h in entry_metadata["history"]:
+                            if any(
+                                x not in h
+                                for x in ("timestamp", "success", "printerProfile")
+                            ):
+                                continue
+                            history.append(
+                                HistoryEntry(
+                                    timestamp=h["timestamp"],
+                                    success=h["success"],
+                                    printerProfile=h["printerProfile"],
+                                    printTime=h.get("printTime"),
+                                )
+                            )
+                        storage_entry.metadata.history = history
+
+                    if "statistics" in entry_metadata:
+                        stats = entry_metadata["statistics"]
+                        storage_entry.metadata.statistics = Statistics(
+                            averagePrintTime=stats.get("averagePrintTime", {}),
+                            lastPrintTime=stats.get("lastPrintTime", {}),
+                        )
+
+                    additional_metadata_keys = [
+                        x
+                        for x in entry_metadata
+                        if x
+                        not in ("user", "display", "analysis", "history", "statistics")
+                    ]
+                    if additional_metadata_keys:
+                        # there are still keys left, those are additional keys
+                        storage_entry.metadata.additional = {
+                            k: v
+                            for k, v in entry_metadata.items()
+                            if k in additional_metadata_keys
+                        }
 
                 if stat:
                     storage_entry.size = stat.st_size
@@ -1369,6 +1444,7 @@ class LocalFileStorage(StorageInterface):
         folder = StorageFolder(
             name=folder.name,
             display=folder.display,
+            origin=self.storage,
             path=folder.path,
             date=folder.date,
             size=folder.size,

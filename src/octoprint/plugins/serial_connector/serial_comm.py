@@ -3425,7 +3425,7 @@ class MachineCom:
                 "Ran into a communication timeout, but a command known to be a long runner is currently active"
             )
 
-        elif self._state in self.PRINTING_STATES + {
+        elif self._state in self.PRINTING_STATES | {
             self.STATE_PAUSED,
         }:
             # printing, try to tickle the printer

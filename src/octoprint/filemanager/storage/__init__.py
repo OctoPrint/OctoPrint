@@ -3,9 +3,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-from typing import IO, TYPE_CHECKING, Optional
-
-from pydantic import Field
+from typing import IO, TYPE_CHECKING, Any, Optional
 
 from octoprint.filemanager.util import AbstractFileWrapper
 from octoprint.schema import BaseModel
@@ -38,6 +36,7 @@ class HistoryEntry(BaseModel):
     timestamp: float
     success: bool
     printerProfile: str
+    printTime: Optional[float] = None
 
 
 class AnalysisVolume(BaseModel):
@@ -62,13 +61,13 @@ class AnalysisFilamentUse(BaseModel):
 
 
 class AnalysisResult(BaseModel):
-    _empty: bool = False
     printingArea: Optional[AnalysisVolume] = None
     dimensions: Optional[AnalysisDimensions] = None
     travelArea: Optional[AnalysisVolume] = None
     travelDimensions: Optional[AnalysisDimensions] = None
     estimatedPrintTime: Optional[float] = None
     filament: dict[str, AnalysisFilamentUse] = {}
+    additional: Optional[dict[str, Any]] = {}
 
 
 class Statistics(BaseModel):
@@ -80,18 +79,21 @@ class MetadataEntry(BaseModel):
     analysis: Optional[AnalysisResult] = None
     history: list[HistoryEntry] = []
     statistics: Optional[Statistics] = None
+    additional: dict[str, Any] = {}
 
 
 class StorageEntry(BaseModel):
     name: str
     display: str
+    origin: str
     path: str
+    user: Optional[str] = None
 
     date: Optional[int] = None
     size: Optional[int] = None
 
-    entry_type: str = Field(serialization_alias="type")
-    type_path: list[str] = Field(serialization_alias="typePath")
+    entry_type: str
+    type_path: list[str]
 
 
 class StorageFile(StorageEntry):
@@ -102,8 +104,8 @@ class StorageFile(StorageEntry):
 class StorageFolder(StorageEntry):
     children: dict[str, StorageEntry] = {}
 
-    entry_type: str = Field("folder", serialization_alias="type")
-    type_path: list[str] = Field(["folder"], serialization_alias="typePath")
+    entry_type: str = "folder"
+    type_path: list[str] = ["folder"]
 
 
 class StorageThumbnail(BaseModel):
@@ -316,6 +318,12 @@ class StorageInterface:
                                 do one step down into sub folders to be able to populate the ``children``.
         :return: a dictionary mapping entry names to entry data that represents the whole file list
         """
+        if filter is not None:
+            wrapped_filter = filter
+            filter = lambda node: wrapped_filter(
+                self._convert_storage_entry_to_dict(node)
+            )
+
         tree = self.list_storage_entries(
             path=path,
             filter=filter,
