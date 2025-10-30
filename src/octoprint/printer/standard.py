@@ -1909,7 +1909,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         path = job.path
         storage = job.storage
         size = job.size
-        _, name = self._file_manager.split_path(storage, path)
+
+        name = path
+        if "/" in name:
+            name = path.rsplit("/", maxsplit=1)[1]
 
         result = {"name": name, "path": path, "origin": storage, "size": size}
 
