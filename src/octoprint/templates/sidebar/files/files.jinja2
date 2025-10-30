@@ -37,7 +37,7 @@
         </div>
         <div class="file-entry-content" data-bind="style: { 'flex-direction': $root.contentFlexDirection() }">
             <div class="file-entry-thumbnail clickable" data-bind="style: { width: $root.thumbnailsContainerWidth, 'text-align': $root.thumbnailsAlignment, display: ($root.thumbnailLink($data) && $root.loginState.hasPermissionKo($root.access.permissions.FILES_DOWNLOAD) && $root.thumbnailsEnabled()) ? 'block' : 'none' }">
-                <img data-bind="attr: { src: $root.thumbnailLink($data) }, style: { 'max-width': $root.thumbnailsWidth }, popover: { placement: 'right', title: '{{ _("Preview") | esq }}', html: true, content: $root.thumbnailPopover($data), container: 'body', trigger: $root.thumbnailPopoverTrigger }">
+                <img loading="lazy" data-bind="attr: { src: $root.thumbnailLink($data) }, style: { 'max-width': $root.thumbnailsWidth }, popover: { placement: 'right', title: '{{ _("Preview") | esq }}', html: true, content: $root.thumbnailPopover($data), container: 'body', trigger: $root.thumbnailPopoverTrigger }">
             </div>
             <div class="file-entry-meta">
                 <div class="internal" data-bind="visible: display && name != display && $root.showInternalFilename">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
@@ -65,7 +65,7 @@
         </div>
         <div class="file-entry-content" data-bind="style: { 'flex-direction': $root.contentFlexDirection() }">
             <div class="file-entry-thumbnail" data-bind="style: { width: $root.thumbnailsContainerWidth, 'text-align': $root.thumbnailsAlignment, display: ($root.thumbnailLink($data) && $root.loginState.hasPermissionKo($root.access.permissions.FILES_DOWNLOAD) && $root.thumbnailsEnabled()) ? 'block' : 'none' }, class: $root.thumbnailsContainerClass">
-                <img data-bind="attr: { src: $root.thumbnailLink($data) }, style: { 'max-width': $root.thumbnailsWidth }, popover: { placement: 'right', title: '{{ _("Preview") | esq }}', html: true, content: $root.thumbnailPopover($data), container: 'body', trigger: $root.thumbnailPopoverTrigger }">
+                <img loading="lazy" data-bind="attr: { src: $root.thumbnailLink($data) }, style: { 'max-width': $root.thumbnailsWidth }, popover: { placement: 'right', title: '{{ _("Preview") | esq }}', html: true, content: $root.thumbnailPopover($data), container: 'body', trigger: $root.thumbnailPopoverTrigger }">
             </div>
             <div class="file-entry-meta">
                 <div class="internal" data-bind="visible: name != display">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
