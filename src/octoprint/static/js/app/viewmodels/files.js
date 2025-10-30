@@ -1036,13 +1036,20 @@ $(function () {
                 return `${scale}%`;
             }
         });
+        self.showThumbnailPreview = (data) => {
+            const content = $(self.thumbnailPopover(data));
+            showMessageDialog({
+                title: gettext("Preview"),
+                message: content
+            });
+        };
         self.thumbnailPopover = (data) => {
             const thumbnail = self.thumbnailLink(data);
             if (!thumbnail) {
                 return "<p>" + gettext("No thumbnail!") + "</p>";
             }
 
-            return `<img src="${thumbnail}">`;
+            return `<center><img src="${thumbnail}"></center>`;
         };
         self.thumbnailPopoverTrigger = ko.pureComputed(() => {
             const settings = self.settingsViewModel.settings;
