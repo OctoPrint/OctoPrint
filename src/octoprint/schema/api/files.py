@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import Field
 
@@ -72,7 +72,7 @@ class ApiStorageEntry(BaseModelExtra):
 
 
 class ApiStorageFolder(ApiStorageEntry):
-    children: list[ApiStorageEntry] = {}
+    children: list[Union["ApiStorageFile", "ApiStorageFolder"]] = []
 
     type_: str = Field("folder", serialization_alias="type")
     typePath: list[str] = ["folder"]

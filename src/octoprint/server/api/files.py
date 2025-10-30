@@ -319,7 +319,7 @@ def readGcodeFile(target, filename):
     if not file:
         abort(404)
 
-    return jsonify(file.model_dump(by_alias=True, exclude_unset=True, exclude_none=True))
+    return jsonify(file.model_dump(by_alias=True, exclude_none=True))
 
 
 def _getFileDetails(origin, path):
@@ -383,9 +383,7 @@ def _getFileList(
     result = _analyse_and_convert_recursively(
         origin, files, extension_tree=extension_tree
     )
-    return [
-        x.model_dump(by_alias=True, exclude_unset=True, exclude_none=True) for x in result
-    ]
+    return [x.model_dump(by_alias=True, exclude_none=True) for x in result]
 
 
 def _analyse_and_convert_recursively(
