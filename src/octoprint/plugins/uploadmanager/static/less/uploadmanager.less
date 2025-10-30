@@ -49,11 +49,13 @@
     table-layout: fixed;
     margin-bottom: 0px;
 
+    @line-height: 30px;
+
     td,
     th {
       white-space: normal;
       cursor: pointer;
-      line-height: 30px;
+      line-height: @line-height;
     }
 
     thead {
@@ -87,6 +89,10 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+
+      img {
+        height: @line-height;
       }
     }
 
