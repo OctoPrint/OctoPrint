@@ -253,6 +253,11 @@ $(function () {
                 case "estimate": {
                     return gettext("Based on the calculated estimate (best accuracy)");
                 }
+                case "printer": {
+                    return gettext(
+                        "Based on information received from your printer (best accuracy)"
+                    );
+                }
                 default: {
                     return "";
                 }
@@ -271,7 +276,8 @@ $(function () {
                 }
                 case "average":
                 case "mixed-average":
-                case "estimate": {
+                case "estimate":
+                case "printer": {
                     return "text-success";
                 }
             }

@@ -42,3 +42,4 @@ class JobProgress(BaseModel):
     pos: int
     elapsed: float
     cleaned_elapsed: float
+    left_estimate: Optional[float] = None

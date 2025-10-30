@@ -1679,11 +1679,14 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         )
 
     def _update_progress_data_callback(self):
+        printTimeLeftOrigin = None
+
         if self._connection is None:
             progress = None
             filepos = None
             printTime = None
             cleanedPrintTime = None
+            printTimeLeft = None
         else:
             job_progress = self._connection.job_progress
             if not job_progress:
@@ -1692,47 +1695,52 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             filepos = job_progress.pos
             printTime = job_progress.elapsed
             cleanedPrintTime = job_progress.cleaned_elapsed
+            printTimeLeft = job_progress.left_estimate
 
-        printTimeLeft = printTimeLeftOrigin = None
-        estimator = self._estimator
-        if progress is not None:
-            progress_int = int(progress * 100)
-            if self._lastProgressReport != progress_int:
-                self._lastProgressReport = progress_int
-                self._report_print_progress_to_plugins(progress_int)
+        if printTimeLeft is None:
+            # no print time estimation from printer, let's do our own
+            estimator = self._estimator
+            if progress is not None:
+                progress_int = int(progress * 100)
+                if self._lastProgressReport != progress_int:
+                    self._lastProgressReport = progress_int
+                    self._report_print_progress_to_plugins(progress_int)
 
-            if progress == 0:
-                printTimeLeft = None
-                printTimeLeftOrigin = None
-            elif progress == 1:
-                printTimeLeft = 0
-                printTimeLeftOrigin = None
-            elif estimator is not None:
-                statisticalTotalPrintTime = None
-                statisticalTotalPrintTimeType = None
-                with self._selected_job_mutex:
-                    if self._selected_job and self._selected_job.duration_estimate:
-                        statisticalTotalPrintTime = (
-                            self._selected_job.duration_estimate.estimate
+                if progress == 0:
+                    printTimeLeft = None
+                    printTimeLeftOrigin = None
+                elif progress == 1:
+                    printTimeLeft = 0
+                    printTimeLeftOrigin = None
+                elif estimator is not None:
+                    statisticalTotalPrintTime = None
+                    statisticalTotalPrintTimeType = None
+                    with self._selected_job_mutex:
+                        if self._selected_job and self._selected_job.duration_estimate:
+                            statisticalTotalPrintTime = (
+                                self._selected_job.duration_estimate.estimate
+                            )
+                            statisticalTotalPrintTimeType = (
+                                self._selected_job.duration_estimate.source
+                            )
+
+                    try:
+                        printTimeLeft, printTimeLeftOrigin = estimator.estimate(
+                            progress,
+                            printTime,
+                            cleanedPrintTime,
+                            statisticalTotalPrintTime,
+                            statisticalTotalPrintTimeType,
                         )
-                        statisticalTotalPrintTimeType = (
-                            self._selected_job.duration_estimate.source
+                        if printTimeLeft is not None:
+                            printTimeLeft = int(printTimeLeft)
+                    except Exception:
+                        self._logger.exception(
+                            f"Error while estimating print time via {estimator}"
                         )
-
-                try:
-                    printTimeLeft, printTimeLeftOrigin = estimator.estimate(
-                        progress,
-                        printTime,
-                        cleanedPrintTime,
-                        statisticalTotalPrintTime,
-                        statisticalTotalPrintTimeType,
-                    )
-                    if printTimeLeft is not None:
-                        printTimeLeft = int(printTimeLeft)
-                except Exception:
-                    self._logger.exception(
-                        f"Error while estimating print time via {estimator}"
-                    )
+        else:
+            # we have an estimate from the printer/connector, let's trust that
+            printTimeLeftOrigin = "printer"
 
         return self._dict(
             completion=progress * 100 if progress is not None else None,
