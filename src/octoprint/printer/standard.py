@@ -1552,6 +1552,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             )
         )
 
+        eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
+
     def on_printer_files_refreshed(self, files):
         eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
 
