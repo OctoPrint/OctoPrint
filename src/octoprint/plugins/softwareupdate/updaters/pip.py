@@ -5,14 +5,17 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import collections
 import logging
+import tempfile
 import threading
 
+from octoprint.util.net import download_file
 from octoprint.util.pip import (
     UnknownPip,
     create_pip_caller,
     is_already_installed,
     is_egg_problem,
 )
+from octoprint.util.plugins import PRE_PEP517_PIP_ARGS, is_pre_pep517_plugin_package
 from octoprint.util.version import get_comparable_version
 
 from .. import exceptions
@@ -97,53 +100,75 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
     install_arg = check["pip"].format(
         target_version=target_version, target=target_version
     )
+    additional_pip_args = []
 
-    logger.debug(f"Target: {target}, executing pip install {install_arg}")
-    pip_args = ["--disable-pip-version-check", "install", install_arg]
-    pip_kwargs = {
-        "env": {"PYTHONWARNINGS": "ignore:DEPRECATION::pip._internal.cli.base_command"}
-    }
-    if pip_working_directory is not None:
-        pip_kwargs.update(cwd=pip_working_directory)
+    folder = None
+    try:
+        if install_arg.startswith("https://") or install_arg.startswith("http://"):
+            # we download this first and check if we need to add --no-build-isolation
+            _log_message(f"Downloading {install_arg}...")
+            folder = tempfile.TemporaryDirectory()
+            install_arg = download_file(install_arg, folder.name)
 
-    if "dependency_links" in check and check["dependency_links"]:
-        pip_args += ["--process-dependency-links"]
+            if is_pre_pep517_plugin_package(install_arg):
+                additional_pip_args += PRE_PEP517_PIP_ARGS
 
-    returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)
-    if returncode != 0:
-        if is_egg_problem(stdout) or is_egg_problem(stderr):
-            _log_message(
-                'This looks like an error caused by a specific issue in upgrading Python "eggs"',
-                "via current versions of pip.",
-                "Performing a second install attempt as a work around.",
-            )
-            returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)
-            if returncode != 0:
-                raise exceptions.UpdateError(
-                    "Error while executing pip install", (stdout, stderr)
-                )
-        else:
-            raise exceptions.UpdateError(
-                "Error while executing pip install", (stdout, stderr)
-            )
+        if "dependency_links" in check and check["dependency_links"]:
+            additional_pip_args += ["--process-dependency-links"]
 
-    if not force and is_already_installed(stdout):
-        _log_message(
-            "Looks like we were already installed in this version. Forcing a reinstall."
-        )
-        force = True
-
-    if force:
-        logger.debug(
-            "Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps"
-            % (target, install_arg)
-        )
-        pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
+        logger.debug(f"Target: {target}, executing pip install {install_arg}")
+        pip_args = [
+            "--disable-pip-version-check",
+            "install",
+            install_arg,
+        ] + additional_pip_args
+        pip_kwargs = {
+            "env": {
+                "PYTHONWARNINGS": "ignore:DEPRECATION::pip._internal.cli.base_command"
+            }
+        }
+        if pip_working_directory is not None:
+            pip_kwargs.update(cwd=pip_working_directory)
 
         returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)
         if returncode != 0:
-            raise exceptions.UpdateError(
-                "Error while executing pip install --force-reinstall", (stdout, stderr)
-            )
+            if is_egg_problem(stdout) or is_egg_problem(stderr):
+                _log_message(
+                    'This looks like an error caused by a specific issue in upgrading Python "eggs"',
+                    "via current versions of pip.",
+                    "Performing a second install attempt as a work around.",
+                )
+                returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)
+                if returncode != 0:
+                    raise exceptions.UpdateError(
+                        "Error while executing pip install", (stdout, stderr)
+                    )
+            else:
+                raise exceptions.UpdateError(
+                    "Error while executing pip install", (stdout, stderr)
+                )
 
-    return "ok"
+        if not force and is_already_installed(stdout):
+            _log_message(
+                "Looks like we were already installed in this version. Forcing a reinstall."
+            )
+            force = True
+
+        if force:
+            logger.debug(
+                f"Target: {target}, executing pip install {install_arg} --ignore-reinstalled --force-reinstall --no-deps"
+            )
+            pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
+
+            returncode, stdout, stderr = pip_caller.execute(*pip_args, **pip_kwargs)
+            if returncode != 0:
+                raise exceptions.UpdateError(
+                    "Error while executing pip install --force-reinstall",
+                    (stdout, stderr),
+                )
+
+        return "ok"
+
+    finally:
+        if folder is not None:
+            folder.cleanup()

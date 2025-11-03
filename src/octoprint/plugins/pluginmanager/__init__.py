@@ -44,6 +44,7 @@ from octoprint.util.pip import (
     is_python_mismatch,
 )
 from octoprint.util.platform import get_os, is_os_compatible
+from octoprint.util.plugins import PRE_PEP517_PIP_ARGS, is_pre_pep517_plugin_package
 from octoprint.util.version import (
     get_octoprint_version,
     get_octoprint_version_string,
@@ -67,6 +68,8 @@ def map_repository_entry(entry):
 
     if "follow_dependency_links" not in result:
         result["follow_dependency_links"] = False
+    if "no_build_isolation" not in result:
+        result["no_build_isolation"] = False
     if "privacypolicy" not in result:
         result["privacypolicy"] = False
 
@@ -121,7 +124,14 @@ class PluginManagerPlugin(
     octoprint.plugin.BlueprintPlugin,
     octoprint.plugin.EventHandlerPlugin,
 ):
-    ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar", ".gz", ".whl")
+    ARCHIVE_EXTENSIONS = (
+        ".zip",
+        ".tar.gz",
+        ".tgz",
+        ".tar",
+        ".gz",
+        ".whl",
+    )
     PYTHON_EXTENSIONS = (".py",)
     JSON_EXTENSIONS = (".json",)
 
@@ -159,6 +169,11 @@ class PluginManagerPlugin(
     }
 
     PIP_INAPPLICABLE_ARGUMENTS = {"uninstall": ["--user"]}
+
+    PIP_DETECTED_DOUBLES = [
+        ("--no-build-isolation", re.compile(r"(^|\s)--no-build-isolation\b")),
+        ("--use-pep517", re.compile(r"(^|\s)--use-pep517\b")),
+    ]
 
     RECONNECT_HOOKS = [
         "octoprint.comm.protocol.*",
@@ -820,6 +835,8 @@ class PluginManagerPlugin(
                         "force": "force" in data and data["force"] in valid_boolean_trues,
                         "dependency_links": "dependency_links" in data
                         and data["dependency_links"] in valid_boolean_trues,
+                        "no_build_isolation": "no_build_isolation" in data
+                        and data["no_build_isolation"] in valid_boolean_trues,
                         "reinstall": plugin_name,
                         "from_repo": from_repo,
                     },
@@ -939,6 +956,7 @@ class PluginManagerPlugin(
         force=False,
         reinstall=None,
         dependency_links=False,
+        no_build_isolation=False,
         partial=False,
         from_repo=False,
     ):
@@ -965,6 +983,7 @@ class PluginManagerPlugin(
                         force=force,
                         reinstall=reinstall,
                         dependency_links=dependency_links,
+                        no_build_isolation=no_build_isolation,
                         partial=partial,
                         from_repo=from_repo,
                     )
@@ -1048,6 +1067,7 @@ class PluginManagerPlugin(
         force=False,
         reinstall=None,
         dependency_links=False,
+        no_build_isolation=False,
         partial=False,
         from_repo=False,
     ):
@@ -1097,6 +1117,9 @@ class PluginManagerPlugin(
 
         if dependency_links or self._settings.get_boolean(["dependency_links"]):
             pip_args.append("--process-dependency-links")
+
+        if no_build_isolation or is_pre_pep517_plugin_package(path):
+            pip_args += PRE_PEP517_PIP_ARGS
 
         all_plugins_before = self._plugin_manager.find_plugins(existing={})
 
@@ -1878,15 +1901,19 @@ class PluginManagerPlugin(
         additional_args = self._settings.get(["pip_args"])
 
         if additional_args is not None:
-            inapplicable_arguments = self.__class__.PIP_INAPPLICABLE_ARGUMENTS.get(
-                args[0], []
-            )
+            inapplicable_arguments = self.PIP_INAPPLICABLE_ARGUMENTS.get(args[0], [])
             for inapplicable_argument in inapplicable_arguments:
                 additional_args = re.sub(
                     r"(^|\s)" + re.escape(inapplicable_argument) + r"\\b",
                     "",
                     additional_args,
                 )
+
+            for dd_param, dd_pattern in self.PIP_DETECTED_DOUBLES:
+                if dd_param in args:
+                    additional_args = re.sub(dd_pattern, "", additional_args)
+
+            additional_args = additional_args.strip()
 
             if additional_args:
                 args.append(additional_args)
