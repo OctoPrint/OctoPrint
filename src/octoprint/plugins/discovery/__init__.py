@@ -80,7 +80,7 @@ class DiscoveryPlugin(
             "upnpUuid": None,
             "zeroConf": [],
             "model": {
-                "name": None,
+                "name": "OctoPrint",
                 "description": None,
                 "number": None,
                 "url": None,
