@@ -103,7 +103,6 @@ jobs:
             DOCKER_ARCH=${{ matrix.arch.docker }}
             DEBIAN_VERSION=${{ matrix.debian_version }}
             BUILD_TYPE=${{ matrix.arch.build_type }}
-            OCTO_REF=${{ matrix.octo_ref }}
           cache-from: type=gha,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
           cache-to: type=gha,mode=max,scope=build-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}
           no-cache-filters: |
