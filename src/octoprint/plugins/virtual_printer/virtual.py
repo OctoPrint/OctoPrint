@@ -468,9 +468,7 @@ class VirtualPrinter:
                     self._triggerResend(actual=linenumber)
                     continue
 
-                else:
-                    self.lastN = linenumber
-
+                self.lastN = linenumber
                 data = data.split(None, 1)[1].strip()
 
             data += b"\n"
@@ -1576,7 +1574,8 @@ class VirtualPrinter:
             # index by lower case, we simulate a case insensitive filesystem like FAT,
             # which should be closest to what we encounter in reality
             result[entry.name.lower()] = data
-            result[dosname.lower()] = entry.name.lower()
+            if dosname.lower() != entry.name.lower():
+                result[dosname.lower()] = entry.name.lower()
         return result
 
     def _getSdFileData(self, filename: str) -> Optional[dict[str, Any]]:

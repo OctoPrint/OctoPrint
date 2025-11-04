@@ -1,0 +1,24 @@
+<div style="margin-bottom: 10px"
+     class="alert alert-error"
+     data-bind="visible: !validPort()">
+    <small>{% trans link="<a href='https://faq.octoprint.org/no-candidates'
+   target='_blank'
+   rel='noopener noreferer'>"|safe, endlink="</a>"|safe, refresh="<a href='javascript:void(0)' data-bind='click: $root.requestData'>"|safe, endrefresh="</a>"|safe %}
+        No serial port found, are you sure your printer is physically connected and supported?
+        Try {{ refresh }}refreshing{{ endrefresh }} and if that doesn't help please see {{ link }}the FAQ{{ endlink }}.
+    {% endtrans %}</small>
+</div>
+
+<label for="connection_ports">{{ _("Serial Port") }}</label>
+<select id="connection_ports"
+        class="connection_parameter"
+        data-test-id="connection-ports"
+        data-connection-parameter="port"
+        data-bind="options: portOptions, optionsCaption: portCaption, value: currentPort"></select>
+
+<label for="connection_baudrates">{{ _("Baudrate") }}</label>
+<select id="connection_baudrates"
+        class="connection_parameter"
+        data-test-id="connection-baudrates"
+        data-connection-parameter="baudrate"
+        data-bind="options: baudrateOptions, optionsCaption: 'AUTO', value: currentBaudrate"></select>

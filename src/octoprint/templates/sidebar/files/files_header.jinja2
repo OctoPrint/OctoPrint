@@ -87,11 +87,12 @@
 
 <div class="refresh-trigger accordion-heading-button btn-group"
      data-bind="visible: $root.filesListVisible">
-    <a href="#"
-       data-bind="click: function() { $root.requestData({force: true}); }"
+    <a href="javascript:void(0)"
+       data-bind="click: function() { if (!$root.refreshing()) { $root.requestData({force: true}); } }, style: { cursor: $root.refreshing() ? 'not-allowed' : 'pointer' }"
        title="{{ _('Refresh file list') |edq }}"
        aria-label="{{ _('Refresh file list') |edq }}">
-        <i class="fas fa-sync"></i>
+        <i class="fas fa-sync"
+           data-bind="css: { 'fa-spin': $root.refreshing, 'muted': $root.refreshing }"></i>
     </a>
 </div>
 

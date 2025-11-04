@@ -28,6 +28,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     "sphinxcontrib.httpdomain",
+    "sphinxcontrib.autodoc_pydantic",
     # custom
     "codeblockext",
     "pydanticext",
@@ -171,6 +172,12 @@ myst_substitutions = {
 # Myst parser's strikethrough plugin seems to think that sphinx-immaterial doesn't use
 # HTML output (probably due to the custom translator mixin used).
 suppress_warnings = ["myst.strikethrough"]
+
+# pydantic autodoc options
+autodoc_pydantic_model_show_config_summary = True
+autodoc_pydantic_model_show_json = False
+autodoc_pydantic_model_show_field_summary = False
+autodoc_pydantic_model_hide_paramlist = True
 
 
 def setup(app):

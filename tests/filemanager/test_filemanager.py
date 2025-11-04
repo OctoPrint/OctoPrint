@@ -191,7 +191,7 @@ class FileManagerTest(unittest.TestCase):
         )
 
         self.local_storage = mock.MagicMock(
-            spec=octoprint.filemanager.storage.LocalFileStorage
+            spec=octoprint.filemanager.storage.local.LocalFileStorage
         )
         self.local_storage.analysis_backlog = iter([])
 
@@ -231,11 +231,10 @@ class FileManagerTest(unittest.TestCase):
         self.local_storage.add_file.assert_called_once_with(
             "test.gcode",
             wrapper,
-            printer_profile=test_profile,
             allow_overwrite=False,
-            links=None,
             display=None,
             user=None,
+            progress_callback=None,
         )
 
         expected_events = [
@@ -274,11 +273,10 @@ class FileManagerTest(unittest.TestCase):
         self.local_storage.add_file.assert_called_once_with(
             "test.gcode",
             wrapper,
-            printer_profile=test_profile,
             allow_overwrite=False,
-            links=None,
             display="täst.gcode",
             user=None,
+            progress_callback=None,
         )
 
     def test_add_file_user(self):
@@ -303,11 +301,10 @@ class FileManagerTest(unittest.TestCase):
         self.local_storage.add_file.assert_called_once_with(
             "test.gcode",
             wrapper,
-            printer_profile=test_profile,
             allow_overwrite=False,
-            links=None,
             display=None,
             user="user",
+            progress_callback=None,
         )
 
     def test_remove_file(self):
@@ -654,11 +651,8 @@ class FileManagerTest(unittest.TestCase):
         def add_file(
             path,
             file_obj,
-            printer_profile=None,
-            links=None,
-            allow_overwrite=False,
-            display=None,
-            user=None,
+            *args,
+            **kwargs,
         ):
             file_obj.save("prefix/" + path)
             return path
@@ -741,15 +735,13 @@ class FileManagerTest(unittest.TestCase):
         self.fire_event.call_args_list = expected_events
 
         # assert that model links were added
-        expected_links = [("model", {"name": "source.file"})]
         self.local_storage.add_file.assert_called_once_with(
             "dest.file",
             mock.ANY,
-            printer_profile=expected_printer_profile,
             allow_overwrite=True,
-            links=expected_links,
             display=None,
             user=None,
+            progress_callback=None,
         )
 
         # assert that the generated gcode was manipulated as required

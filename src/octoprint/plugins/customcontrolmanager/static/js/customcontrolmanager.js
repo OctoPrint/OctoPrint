@@ -404,7 +404,7 @@ $(function () {
         };
 
         self.fromResponse = (response) => {
-            const controls = response.controls;
+            const controls = response.controls.filter((item) => item.source === "config");
             self._processControls(controls, "control");
             self.controls(controls);
             self._dirty = false;

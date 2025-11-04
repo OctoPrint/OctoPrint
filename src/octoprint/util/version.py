@@ -6,6 +6,8 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 
 import logging
 
+from packaging.specifiers import SpecifierSet
+from packaging.version import Version
 from packaging.version import parse as parse_version
 
 from octoprint import __version__
@@ -27,15 +29,16 @@ def safe_get_package_version(package, default=None):
         return default
 
 
-def is_version_compatible(version, specifier):
-    from packaging.specifiers import SpecifierSet
-    from packaging.version import Version
+def parse_specifier(specifier: str) -> SpecifierSet:
+    return SpecifierSet(specifier)
 
+
+def is_version_compatible(version, specifier):
     if not isinstance(version, Version):
-        version = Version(version)
+        version = parse_version(version)
 
     if not isinstance(specifier, SpecifierSet):
-        specifier = SpecifierSet(specifier)
+        specifier = parse_specifier(specifier)
 
     return version in specifier
 

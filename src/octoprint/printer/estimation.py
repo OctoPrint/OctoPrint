@@ -31,17 +31,17 @@ class PrintTimeEstimator:
         rolling_window = None
         countdown = None
 
-        if job_type == "local" or job_type == "sdcard":
+        if job_type == "local" or job_type == "printer":
             # we are happy if the average of the estimates stays within 60s of the prior one
             threshold = settings().getFloat(
                 ["estimation", "printTime", "stableThreshold"]
             )
 
-            if job_type == "sdcard":
+            if job_type == "printer":
                 # we are interesting in a rolling window of roughly the last 15s, so the number of entries has to be derived
                 # by that divided by the sd status polling interval
                 interval = settings().getFloat(["serial", "timeout", "sdStatus"])
-                if interval <= 0:
+                if interval is None or interval <= 0:
                     interval = 1.0
                 rolling_window = int(15 // interval)
                 if rolling_window < 1:

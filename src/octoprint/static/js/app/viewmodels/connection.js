@@ -7,6 +7,8 @@ $(function () {
         self.printerProfiles = parameters[2];
         self.access = parameters[3];
 
+        self.allViewModels = undefined;
+
         self.printerProfiles.profiles.items.subscribe(function () {
             var allProfiles = self.printerProfiles.profiles.items();
 
@@ -14,20 +16,41 @@ $(function () {
             _.each(allProfiles, function (profile) {
                 printerOptions.push({id: profile.id, name: profile.name});
             });
-            self.printerOptions(printerOptions);
+            self.profileOptions(printerOptions);
         });
 
         self.printerProfiles.currentProfile.subscribe(function () {
-            self.selectedPrinter(self.printerProfiles.currentProfile());
+            self.currentProfile(self.printerProfiles.currentProfile());
         });
 
-        self.portOptionsFetched = ko.observable(false);
-        self.portOptions = ko.observableArray(undefined);
-        self.baudrateOptions = ko.observableArray(undefined);
-        self.printerOptions = ko.observableArray(undefined);
-        self.selectedPort = ko.observable(undefined);
-        self.selectedBaudrate = ko.observable(undefined);
-        self.selectedPrinter = ko.observable(undefined);
+        self.connectionOptionsLastUpdated = ko.observable(false);
+        self.selectedConnector = ko.observable(undefined);
+        self.connectorOptions = ko.observableArray([]);
+        self.connectorParameters = {};
+
+        self.connectorParametersFor = (connector) => {
+            if (!self.connectorParameters[connector]) return {};
+            return self.connectorParameters[connector];
+        };
+        self.connectorParamOptionsFor = (connector, parameter) => {
+            return ko.pureComputed(() => {
+                self.connectionOptionsLastUpdated();
+                const parameters = self.connectorParametersFor(connector);
+                return parameters[parameter] !== undefined ? parameters[parameter] : [];
+            });
+        };
+
+        self.currentConnector = ko.observable(undefined);
+        self.currentConnectorParameters = {};
+        self.currentConnectorCapabilities = ko.observable({});
+
+        self.lastConnector = undefined;
+        self.lastConnectorParameters = {};
+        self.lastProfile = undefined;
+
+        self.profileOptions = ko.observableArray(undefined);
+        self.currentProfile = ko.observable(undefined);
+
         self.saveSettings = ko.observable(undefined);
         self.autoconnect = ko.observable(undefined);
 
@@ -40,28 +63,13 @@ $(function () {
         self.isLoading = ko.observable(undefined);
 
         self.enableConnect = ko.pureComputed(function () {
-            return self.enablePort() || !self.isErrorOrClosed();
+            //return self.enablePort() || !self.isErrorOrClosed();  // TODO: This needs to be checked against other connectors too
+            return true;
         });
 
         self.buttonText = ko.pureComputed(function () {
             if (self.isErrorOrClosed()) return gettext("Connect");
             else return gettext("Disconnect");
-        });
-
-        self.portCaption = ko.pureComputed(function () {
-            return self.validPort() ? "AUTO" : gettext("No serial port found");
-        });
-
-        self.validPort = ko.pureComputed(function () {
-            return (
-                !self.portOptionsFetched() ||
-                self.portOptions().length > 0 ||
-                self.settings.settings.serial.ignoreEmptyPorts()
-            );
-        });
-
-        self.enablePort = ko.pureComputed(function () {
-            return self.validPort() && self.isErrorOrClosed();
         });
 
         self.enableSaveSettings = ko.pureComputed(function () {
@@ -85,43 +93,83 @@ $(function () {
         };
 
         self.fromResponse = function (response) {
-            var ports = response.options.ports;
-            var baudrates = response.options.baudrates;
-            var currentPort = response.current.port;
-            var currentBaudrate = response.current.baudrate;
-            var currentPrinterProfile = response.current.printerProfile;
-            var portPreference = response.options.portPreference;
-            var baudratePreference = response.options.baudratePreference;
-            var printerPreference = response.options.printerProfilePreference;
-            var printerProfiles = response.options.printerProfiles;
+            const connectors = response.options.connectors;
+            const currentConnector = response.current.connector;
+            const preferredConnector = response.options.preferredConnector.connector;
 
-            self.portOptions(ports);
-            self.baudrateOptions(baudrates);
+            self.connectorOptions(connectors);
 
-            if (!self.selectedPort() && ports) {
-                if (ports.indexOf(currentPort) >= 0) {
-                    self.selectedPort(currentPort);
-                } else if (ports.indexOf(portPreference) >= 0) {
-                    self.selectedPort(portPreference);
-                }
+            const connectorParameters = {};
+            connectors.forEach((item) => {
+                connectorParameters[item.connector] = item.parameters;
+            });
+            self.connectorParameters = connectorParameters;
+
+            self.currentConnectorCapabilities(response.current.capabilities);
+
+            let activeParameters;
+            if (currentConnector && connectorParameters[currentConnector]) {
+                self.selectedConnector(currentConnector);
+                activeParameters = response.current.parameters;
+
+                // also set last connector here
+                self.lastConnector = currentConnector;
+                self.lastConnectorParameters = response.current.parameters;
+            } else if (self.lastConnector && connectorParameters[self.lastConnector]) {
+                self.selectedConnector(self.lastConnector);
+                activeParameters = self.lastConnectorParameters;
+            } else if (preferredConnector && connectorParameters[preferredConnector]) {
+                self.selectedConnector(preferredConnector);
+                activeParameters = response.options.preferredConnector.parameters;
+            } else {
+                self.selectedConnector(connectors[0].connector);
+                activeParameters = undefined;
             }
-            if (!self.selectedBaudrate() && baudrates) {
-                if (baudrates.indexOf(currentBaudrate) >= 0) {
-                    self.selectedBaudrate(currentBaudrate);
-                } else if (baudrates.indexOf(baudratePreference) >= 0) {
-                    self.selectedBaudrate(baudratePreference);
-                }
+
+            // connectors
+
+            if (activeParameters) {
+                const container = $(`#connection_options_${self.selectedConnector()}`);
+                _.each(["input", "select", "textarea"], (tag) => {
+                    $(`${tag}[data-connection-parameter]`, container).each(
+                        (index, element) => {
+                            const jqueryElement = $(element);
+                            const parameter = jqueryElement.data("connection-parameter");
+                            const value = activeParameters[parameter];
+                            if (value !== undefined) {
+                                jqueryElement.val(value);
+                            }
+                        }
+                    );
+                });
             }
-            if (!self.selectedPrinter() && printerProfiles) {
-                if (printerProfiles.indexOf(currentPrinterProfile) >= 0) {
-                    self.selectedPrinter(currentPrinterProfile);
-                } else if (printerProfiles.indexOf(printerPreference) >= 0) {
-                    self.selectedPrinter(printerPreference);
+
+            callViewModels(self.allViewModels, "onConnectionDataReceived", [
+                connectorParameters,
+                response.current,
+                {connector: self.lastConnector, parameters: self.lastConnectorParameters},
+                response.options.preferredConnector
+            ]);
+
+            // printer profile
+
+            const printerProfiles = response.options.printerProfiles;
+            const preferredProfile = response.options.preferredProfile;
+            const currentProfile = response.current.printerProfile;
+
+            if (!self.currentProfile() && printerProfiles) {
+                if (printerProfiles.indexOf(currentProfile) >= 0) {
+                    self.currentProfile(currentProfile);
+                    self.lastProfile = currentProfile;
+                } else if (printerProfiles.indexOf(self.lastProfile) >= 0) {
+                    self.currentProfile(self.lastProfile);
+                } else if (printerProfiles.indexOf(preferredProfile) >= 0) {
+                    self.currentProfile(preferredProfile);
                 }
             }
 
             self.saveSettings(false);
-            self.portOptionsFetched(true);
+            self.connectionOptionsLastUpdated(new Date().getTime());
         };
 
         self.fromHistoryData = function (data) {
@@ -165,11 +213,26 @@ $(function () {
 
         self.connect = function () {
             if (self.isErrorOrClosed()) {
-                var data = {
-                    port: self.selectedPort() || "AUTO",
-                    baudrate: self.selectedBaudrate() || 0,
-                    printerProfile: self.selectedPrinter(),
-                    autoconnect: self.settings.serial_autoconnect()
+                const connector = self.selectedConnector();
+                const profile = self.currentProfile();
+
+                const parameters = {};
+                const container = $(`#connection_options_${connector}`);
+                _.each(["input", "select", "textarea"], (tag) => {
+                    $(`${tag}[data-connection-parameter]`, container).each(
+                        (index, element) => {
+                            const jqueryElement = $(element);
+                            const parameter = jqueryElement.data("connection-parameter");
+                            parameters[parameter] = jqueryElement.val();
+                        }
+                    );
+                });
+
+                const data = {
+                    connector: connector,
+                    parameters: parameters,
+                    printerProfile: profile,
+                    autoconnect: self.autoconnect()
                 };
 
                 if (self.saveSettings()) data["save"] = true;
@@ -207,20 +270,16 @@ $(function () {
             }
         };
 
-        self.onEventSettingsUpdated = function () {
-            self.requestData();
-        };
+        self.onEventSettingsUpdated =
+            self.onEventConnected =
+            self.onEventDisconnected =
+            self.onEventConnectionsAutorefreshed =
+                function () {
+                    self.requestData();
+                };
 
-        self.onEventConnected = function () {
-            self.requestData();
-        };
-
-        self.onEventDisconnected = function () {
-            self.requestData();
-        };
-
-        self.onEventConnectionsAutorefreshed = function () {
-            self.requestData();
+        self.onAllBound = function (allViewModels) {
+            self.allViewModels = allViewModels;
         };
 
         self.onStartup = function () {

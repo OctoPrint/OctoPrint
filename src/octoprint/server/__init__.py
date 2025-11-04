@@ -473,8 +473,8 @@ class Server:
         eventManager.fire(events.Events.STARTUP)
 
         self._start_analysis_backlog()
-        self._start_serial_autoconnect()
-        self._start_serial_autorefresh()
+        self._start_printer_autoconnect()
+        self._start_connector_autorefresh()
         self._start_watched_observer()
         self._call_startup_plugins()
         self._trigger_after_startup()
@@ -728,14 +728,14 @@ class Server:
         )
 
     def _setup_storage_managers(self):
+        from octoprint.filemanager.storage.local import LocalFileStorage
+
         storage_managers = {}
-        storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = (
-            octoprint.filemanager.storage.LocalFileStorage(
-                self._settings.getBaseFolder("uploads"),
-                really_universal=self._settings.getBoolean(
-                    ["feature", "enforceReallyUniversalFilenames"]
-                ),
-            )
+        storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = LocalFileStorage(
+            self._settings.getBaseFolder("uploads"),
+            really_universal=self._settings.getBoolean(
+                ["feature", "enforceReallyUniversalFilenames"]
+            ),
         )
         return storage_managers
 
@@ -1920,8 +1920,6 @@ class Server:
 
         download_handler_kwargs = {"as_attachment": True, "allow_client_caching": False}
 
-        additional_mime_types = {"mime_type_guesser": mime_type_guesser}
-
         ##~~ Permission validators
 
         access_validators_from_plugins = []
@@ -1986,21 +1984,6 @@ class Server:
         }
         systeminfo_permission_validator = {
             "access_validation": util.tornado.validation_chain(*systeminfo_validators)
-        }
-
-        no_hidden_files_validator = {
-            "path_validation": util.tornado.path_validation_factory(
-                lambda path: not octoprint.util.is_hidden_path(path), status_code=404
-            )
-        }
-
-        only_known_types_validator = {
-            "path_validation": util.tornado.path_validation_factory(
-                lambda path: octoprint.filemanager.valid_file_type(
-                    os.path.basename(path)
-                ),
-                status_code=404,
-            )
         }
 
         bulkdownloads_path_validator = {
@@ -2106,24 +2089,23 @@ class Server:
                     timelapses_path_validator,
                 ),
             ),
-            # uploaded printables
+            # printables
             (
-                r"/downloads/files/local/(.*)",
-                util.tornado.LargeResponseHandler,
+                r"/downloads/files/([^/]+)/(.*)",
+                util.tornado.StorageFileDownloadHandler,
                 joined_dict(
-                    {
-                        "path": self._settings.getBaseFolder("uploads"),
-                        "as_attachment": True,
-                        "name_generator": download_name_generator,
-                    },
                     download_permission_validator,
-                    download_handler_kwargs,
-                    no_hidden_files_validator,
-                    only_known_types_validator,
-                    additional_mime_types,
                 ),
             ),
-            # bulk download of uploaded printables
+            # thumbnails of printables
+            (
+                r"/downloads/thumbs/([^/]+)/(.*)",
+                util.tornado.StorageThumbnailDownloadHandler,
+                joined_dict(
+                    download_permission_validator,
+                ),
+            ),
+            # bulk download of printables
             (
                 r"/downloads/files/local",
                 util.tornado.DynamicZipBundleHandler,
@@ -2385,60 +2367,63 @@ class Server:
         # analysis backlog
         fileManager.process_backlog()
 
-    def _start_serial_autoconnect(self):
-        if not self._settings.getBoolean(["serial", "autoconnect"]):
+    def _start_printer_autoconnect(self):
+        if not self._settings.getBoolean(["printerConnection", "autoconnect"]):
             return
 
-        self._logger.info(
-            "Autoconnect on startup is configured, trying to connect to the printer..."
-        )
+        from octoprint.printer.connection import ConnectedPrinter
+
         try:
-            (port, baudrate) = (
-                self._settings.get(["serial", "port"]),
-                self._settings.getInt(["serial", "baudrate"]),
+            connector_name = self._settings.get(
+                ["printerConnection", "preferred", "connector"]
             )
+            connector = ConnectedPrinter.find(connector_name)
+            if connector_name is None or not connector:
+                return
+
+            self._logger.info(
+                f"Auto-connect on startup is configured, trying to connect to the printer via connector {connector_name}..."
+            )
+
+            params = self._settings.get(["printerConnection", "preferred", "parameters"])
+
+            if not connector.connection_preconditions_met(params):
+                self._logger.warning(
+                    f"Preconditions for auto-connecting to {connector_name} not met by the default parameters"
+                )
+                return
+
             printer_profile = printerProfileManager.get_default()
-            connectionOptions = printer.__class__.get_connection_options()
-            if port in connectionOptions["ports"] or port == "AUTO" or port is None:
-                self._logger.info(f"Trying to connect to configured serial port {port}")
-                printer.connect(
-                    port=port,
-                    baudrate=baudrate,
-                    profile=(
-                        printer_profile["id"] if "id" in printer_profile else "_default"
-                    ),
-                )
-            else:
-                self._logger.info(
-                    "Could not find configured serial port {} in the system, cannot automatically connect to a non existing printer. Is it plugged in and booted up yet?"
-                )
+            printer.connect(connector_name, parameters=params, profile=printer_profile)
         except Exception:
             self._logger.exception(
                 "Something went wrong while attempting to automatically connect to the printer"
             )
 
-    def _start_serial_autorefresh(self):
-        from octoprint.util.comm import serialList
+    def _start_connector_autorefresh(self):
+        from octoprint.printer.connection import ConnectedPrinter
 
-        if not self._settings.getBoolean(["serial", "autorefresh"]):
+        if not self._settings.getBoolean(["printerConnection", "autorefresh"]):
             return
 
-        last_ports = None
+        last_options = None
         autorefresh = None
 
-        def refresh_serial_list():
-            nonlocal last_ports
+        def refresh_options():
+            nonlocal last_options
 
-            new_ports = sorted(serialList())
-            if new_ports != last_ports:
+            new_options = {
+                cp.connector: cp.connection_options() for cp in ConnectedPrinter.all()
+            }
+            if new_options != last_options:
                 self._logger.info(
-                    "Serial port list was updated, refreshing the port list in the frontend"
+                    "Connection options were updated, refreshing the connection options in the frontend"
                 )
                 eventManager.fire(
                     events.Events.CONNECTIONS_AUTOREFRESHED,
-                    payload={"ports": new_ports},
+                    payload={"options": new_options},
                 )
-            last_ports = new_ports
+            last_options = new_options
 
         def autorefresh_active():
             return printer.is_closed_or_error()
@@ -2446,7 +2431,7 @@ class Server:
         def autorefresh_stopped():
             nonlocal autorefresh
 
-            self._logger.info("Autorefresh of serial port list stopped")
+            self._logger.info("Autorefresh of connection options stopped")
             autorefresh = None
 
         def run_autorefresh():
@@ -2457,15 +2442,15 @@ class Server:
                 autorefresh = None
 
             autorefresh = octoprint.util.RepeatedTimer(
-                self._settings.getInt(["serial", "autorefreshInterval"]),
-                refresh_serial_list,
+                self._settings.getInt(["printerConnection", "autorefreshInterval"]),
+                refresh_options,
                 run_first=True,
                 condition=autorefresh_active,
                 on_finish=autorefresh_stopped,
             )
-            autorefresh.name = "Serial autorefresh worker"
+            autorefresh.name = "Connection options autorefresh worker"
 
-            self._logger.info("Starting autorefresh of serial port list")
+            self._logger.info("Starting autorefresh of connection options")
             autorefresh.start()
 
         run_autorefresh()

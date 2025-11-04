@@ -1350,6 +1350,164 @@ class LargeResponseHandler(
         return os.stat(abspath)[stat.ST_MTIME]
 
 
+class StorageFileDownloadHandler(
+    RequestlessExceptionLoggingMixin, CorsSupportMixin, tornado.web.RequestHandler
+):
+    def initialize(self, access_validation=None):
+        super().initialize()
+
+        from octoprint.server import fileManager
+
+        self._access_validation = access_validation
+        self._file_manager = fileManager
+
+    @tornado.gen.coroutine
+    def get(self, storage: str, path: str, include_body=True):
+        from octoprint.filemanager import get_mime_type, valid_file_type
+
+        if self._access_validation is not None:
+            self._access_validation(self.request)
+
+        if (
+            storage not in self._file_manager.registered_storages
+            or not self._file_manager.file_exists(storage, path)
+            or not self._file_manager.capabilities(storage).read_file
+            or not valid_file_type(path)
+        ):
+            raise tornado.web.HTTPError(404)
+
+        file_data = self._file_manager.get_file(storage, path)
+        if file_data is None:
+            raise tornado.web.HTTPError(
+                404
+            )  # shouldn't happen, but better safe than sorry
+
+        filename = file_data.get("name", os.path.basename(path))
+
+        size = file_data.get("size")
+        if size is not None:
+            self.set_header("Content-Length", size)
+            self.set_header("X-Original-Content-Length", str(size))
+
+        content_type = get_mime_type(filename)
+        if content_type:
+            self.set_header("Content-Type", content_type)
+
+        self.set_header(
+            "Content-Disposition",
+            f"attachment; filename=\"{filename}\"; filename*=UTF-8''{filename}",
+        )
+
+        # TODO implement cache control via ETag and/or last modified, if possible for storage
+        self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
+        self.set_header("Expires", "-1")
+
+        if include_body:
+            handle = None
+            try:
+                handle = self._file_manager.read_file(storage, path)
+                while True:
+                    chunk = handle.read()
+                    if len(chunk) == 0:
+                        break  # EOF
+
+                    try:
+                        self.write(chunk)
+                        yield self.flush()
+                    except tornado.iostream.StreamClosedError:
+                        return
+
+            finally:
+                if handle:
+                    handle.close()
+
+        else:
+            assert self.request.method == "HEAD"
+
+
+class StorageThumbnailDownloadHandler(
+    RequestlessExceptionLoggingMixin, CorsSupportMixin, tornado.web.RequestHandler
+):
+    SIZEHINT_PATTERN = re.compile(r"^\d+x\d+$")
+
+    def initialize(self, access_validation=None):
+        super().initialize()
+
+        from octoprint.server import fileManager
+
+        self._access_validation = access_validation
+        self._file_manager = fileManager
+
+    @tornado.gen.coroutine
+    def get(self, storage: str, path: str, include_body=True):
+        if self._access_validation is not None:
+            self._access_validation(self.request)
+
+        if (
+            storage not in self._file_manager.registered_storages
+            or not self._file_manager.capabilities(storage).thumbnails
+            or not self._file_manager.has_thumbnail(storage, path)
+        ):
+            raise tornado.web.HTTPError(404)
+
+        file_data = self._file_manager.get_storage_entry(storage, path)
+        if file_data is None:
+            raise tornado.web.HTTPError(404)
+
+        sizehint = self.request.arguments.get("size")
+        if sizehint:
+            sizehint = sizehint[0].decode("utf-8")
+            if not self.SIZEHINT_PATTERN.fullmatch(sizehint):
+                sizehint = None
+
+        if include_body:
+            handle = None
+            try:
+                meta, handle = self._file_manager.read_thumbnail(
+                    storage, path, sizehint=sizehint
+                )
+
+                self._set_headers_from_meta(meta)
+
+                while True:
+                    chunk = handle.read()
+                    if len(chunk) == 0:
+                        break  # EOF
+
+                    try:
+                        self.write(chunk)
+                        yield self.flush()
+                    except tornado.iostream.StreamClosedError:
+                        return
+            finally:
+                if handle:
+                    handle.close()
+
+        else:
+            assert self.request.method == "HEAD"
+
+            meta = self._file_manager.get_thumbnail(storage, path, sizehint=sizehint)
+            if not meta:
+                raise tornado.web.HTTPError(404)
+
+            self._set_headers_from_meta(meta)
+
+    def _set_headers_from_meta(self, meta):
+        if not meta.mime.startswith("image/"):
+            raise tornado.web.HTTPError(404)
+        self.set_header("Content-Type", meta.mime)
+
+        if meta.size >= 0:
+            self.set_header("Content-Length", meta.size)
+
+        if meta.last_modified >= 0:
+            import datetime
+            from email.utils import format_datetime
+
+            dt = datetime.datetime.fromtimestamp(meta.last_modified)
+            self.set_header("Last-Modified", format_datetime(dt))
+
+
 ##~~ URL Forward Handler for forwarding requests to a preconfigured static URL
 
 

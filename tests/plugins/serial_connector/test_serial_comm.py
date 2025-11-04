@@ -4,33 +4,33 @@ from unittest import mock
 import ddt
 import pytest
 
-import octoprint.util.comm
+import octoprint.plugins.serial_connector.serial_comm as comm
 from octoprint.util.files import m20_timestamp_to_unix_timestamp
 
 
 @ddt.ddt
-class TestCommErrorHandling(unittest.TestCase):
+class TestSerialCommErrorHandling(unittest.TestCase):
     def setUp(self):
-        self._comm = mock.create_autospec(octoprint.util.comm.MachineCom)
+        self._comm = mock.create_autospec(comm.MachineCom)
 
         # mocks
         self._comm._handle_errors = (
-            lambda *args, **kwargs: octoprint.util.comm.MachineCom._handle_errors(
+            lambda *args, **kwargs: comm.MachineCom._handle_errors(
                 self._comm, *args, **kwargs
             )
         )
         self._comm._trigger_error = (
-            lambda *args, **kwargs: octoprint.util.comm.MachineCom._trigger_error(
+            lambda *args, **kwargs: comm.MachineCom._trigger_error(
                 self._comm, *args, **kwargs
             )
         )
         self._comm._recoverable_communication_errors = (
-            octoprint.util.comm.MachineCom._recoverable_communication_errors
+            comm.MachineCom._recoverable_communication_errors
         )
         self._comm._resend_request_communication_errors = (
-            octoprint.util.comm.MachineCom._resend_request_communication_errors
+            comm.MachineCom._resend_request_communication_errors
         )
-        self._comm._sd_card_errors = octoprint.util.comm.MachineCom._sd_card_errors
+        self._comm._sd_card_errors = comm.MachineCom._sd_card_errors
         self._comm._lastCommError = None
         self._comm._errorValue = None
         self._comm._clear_to_send = mock.Mock()
@@ -39,8 +39,7 @@ class TestCommErrorHandling(unittest.TestCase):
         self._comm._callback = mock.Mock()
 
         # settings
-        self._comm._ignore_errors = False
-        self._comm._disconnect_on_errors = True
+        self._comm._error_handling = "disconnect"
         self._comm._send_m112_on_error = True
         self._comm.isPrinting.return_value = True
         self._comm.isSdPrinting.return_value = False
@@ -174,7 +173,7 @@ class TestCommErrorHandling(unittest.TestCase):
     @ddt.data("Error: Printer on fire")
     def test_other_error_cancel(self, line):
         """Should trigger print cancel"""
-        self._comm._disconnect_on_errors = False
+        self._comm._error_handling = "cancel"
 
         result = self._comm._handle_errors(line)
         self.assertEqual(line, result)
@@ -192,7 +191,7 @@ class TestCommErrorHandling(unittest.TestCase):
     @ddt.data("Error: Printer on fire")
     def test_other_error_ignored(self, line):
         """Should only log"""
-        self._comm._ignore_errors = True
+        self._comm._error_handling = "ignore"
 
         result = self._comm._handle_errors(line)
         self.assertEqual(line, result)
@@ -302,7 +301,7 @@ class TestCommErrorHandling(unittest.TestCase):
     ],
 )
 def test__validate_m20_timestamp(val, expected):
-    assert octoprint.util.comm._validate_m20_timestamp(val) == expected
+    assert comm._validate_m20_timestamp(val) == expected
 
 
 @pytest.mark.parametrize(
@@ -387,4 +386,4 @@ def test__validate_m20_timestamp(val, expected):
     ],
 )
 def test_parse_file_list_line(val, expected):
-    assert octoprint.util.comm.parse_file_list_line(val) == expected
+    assert comm.parse_file_list_line(val) == expected

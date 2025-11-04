@@ -348,7 +348,7 @@ class AchievementsPlugin(
                 size = self._file_manager.get_size(
                     payload.get("storage"), payload.get("path")
                 )
-                if size > 500 * 1024 * 1024:
+                if size and size > 500 * 1024 * 1024:
                     self._trigger_achievement(Achievements.HEAVY_CHONKER)
 
                 changed = yearly_changed = True

@@ -13,7 +13,10 @@ var baseUrl = self.location.href.substring(
 // raw path suitable for fetch()
 var url;
 
-// path relative to Local
+// storage of file
+var storage;
+
+// path relative to storage
 var path;
 
 var firstReport;
@@ -438,7 +441,7 @@ const doParse = async function () {
     skipUntilPresent = false;
     if (skipUntil !== undefined && skipUntil !== "") {
         result = await fetch(
-            baseUrl + "/plugin/gcodeviewer/skipuntilcheck/local/" + path
+            `${baseUrl}/plugin/gcodeviewer/skipuntilcheck/${storage}/${path}`
         );
         if (result.ok) {
             response = await result.json();
@@ -845,6 +848,7 @@ const doParse = async function () {
 
 const parseGCode = async function (message) {
     url = message.url;
+    storage = message.storage;
     path = message.path;
     firstReport = message.options.firstReport;
     toolOffsets = message.options.toolOffsets;

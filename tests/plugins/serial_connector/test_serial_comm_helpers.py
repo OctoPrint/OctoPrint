@@ -6,9 +6,11 @@ import unittest
 
 from ddt import data, ddt, unpack
 
+import octoprint.plugins.serial_connector.serial_comm as comm
+
 
 @ddt
-class TestCommHelpers(unittest.TestCase):
+class TestSerialCommHelpers(unittest.TestCase):
     @data(
         ("M117 Test", "M117 Test"),
         ("M117 Test ; foo", "M117 Test "),
@@ -19,8 +21,6 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_strip_comment(self, input, expected):
-        from octoprint.util import comm
-
         self.assertEqual(expected, comm.strip_comment(input))
 
     @data(
@@ -31,8 +31,6 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_process_gcode_line(self, input, offsets, current_tool, expected):
-        from octoprint.util import comm
-
         self.assertEqual(
             expected,
             comm.process_gcode_line(input, offsets=offsets, current_tool=current_tool),
@@ -59,8 +57,6 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_apply_temperature_offsets(self, input, offsets, current_tool, expected):
-        from octoprint.util import comm
-
         actual = comm.apply_temperature_offsets(input, offsets, current_tool=current_tool)
 
         if expected is None:
@@ -86,8 +82,6 @@ class TestCommHelpers(unittest.TestCase):
             {"regex": "regex"},
             {"regex": "regex", "type": "unknown"},
         ]
-
-        from octoprint.util import comm
 
         trigger_matchers = comm.convert_pause_triggers(configured_triggers)
 
@@ -151,8 +145,6 @@ class TestCommHelpers(unittest.TestCase):
             },
         ]
 
-        from octoprint.util import comm
-
         controls, matcher = comm.convert_feedback_controls(configured_controls)
 
         self.assertEqual(2, len(controls))
@@ -202,9 +194,7 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_parameter_regexes(self, line, parameter, should_match, expected_value):
-        from octoprint.util.comm import regexes_parameters
-
-        regex = regexes_parameters[parameter]
+        regex = comm.regexes_parameters[parameter]
         match = regex.search(line)
 
         if should_match:
@@ -225,9 +215,7 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_gcode_command_for_cmd(self, cmd, expected):
-        from octoprint.util.comm import gcode_command_for_cmd
-
-        result = gcode_command_for_cmd(cmd)
+        result = comm.gcode_command_for_cmd(cmd)
         self.assertEqual(expected, result)
 
     @data(
@@ -243,9 +231,7 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_gcode_and_subcode_for_cmd(self, cmd, expected_gcode, expected_subcode):
-        from octoprint.util.comm import gcode_and_subcode_for_cmd
-
-        actual_gcode, actual_subcode = gcode_and_subcode_for_cmd(cmd)
+        actual_gcode, actual_subcode = comm.gcode_and_subcode_for_cmd(cmd)
         self.assertEqual(expected_gcode, actual_gcode)
         self.assertEqual(expected_subcode, actual_subcode)
 
@@ -346,9 +332,7 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_process_temperature_line(self, line, current, expected_result, expected_max):
-        from octoprint.util.comm import parse_temperature_line
-
-        maxtool, result = parse_temperature_line(line, current)
+        maxtool, result = comm.parse_temperature_line(line, current)
         self.assertDictEqual(expected_result, result)
         self.assertEqual(expected_max, maxtool)
 
@@ -393,9 +377,7 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_canonicalize_temperatures(self, parsed, current, expected):
-        from octoprint.util.comm import canonicalize_temperatures
-
-        result = canonicalize_temperatures(parsed, current)
+        result = comm.canonicalize_temperatures(parsed, current)
         self.assertDictEqual(expected, result)
 
     @data(
@@ -450,9 +432,7 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_parse_firmware_line(self, line, expected):
-        from octoprint.util.comm import parse_firmware_line
-
-        result = parse_firmware_line(line)
+        result = comm.parse_firmware_line(line)
         self.assertDictEqual(expected, result)
 
     @data(
@@ -467,9 +447,7 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_parse_capability_line(self, line, expected):
-        from octoprint.util.comm import parse_capability_line
-
-        result = parse_capability_line(line)
+        result = comm.parse_capability_line(line)
         self.assertEqual(expected, result)
 
     @data(
@@ -483,9 +461,7 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_parse_resend_line(self, line, expected):
-        from octoprint.util.comm import parse_resend_line
-
-        result = parse_resend_line(line)
+        result = comm.parse_resend_line(line)
         self.assertEqual(expected, result)
 
     @data(
@@ -521,9 +497,7 @@ class TestCommHelpers(unittest.TestCase):
     )
     @unpack
     def test_parse_position_line(self, line, expected):
-        from octoprint.util.comm import parse_position_line
-
-        result = parse_position_line(line)
+        result = comm.parse_position_line(line)
         if expected is None:
             self.assertIsNone(result)
         else:
@@ -589,9 +563,7 @@ class TestPositionRecord(unittest.TestCase):
         self.assertDictEqual(position2.as_dict(), expected_after)
 
     def _create_position(self, **kwargs):
-        from octoprint.util.comm import PositionRecord
-
-        return PositionRecord(**kwargs)
+        return comm.PositionRecord(**kwargs)
 
 
 @ddt
@@ -615,6 +587,4 @@ class TestTemperatureRecord(unittest.TestCase):
             self.assertTrue("is a reserved identifier" in str(ex))
 
     def _create_temperature(self, **kwargs):
-        from octoprint.util.comm import TemperatureRecord
-
-        return TemperatureRecord(**kwargs)
+        return comm.TemperatureRecord(**kwargs)

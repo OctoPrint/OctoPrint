@@ -178,3 +178,100 @@
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _("Close") }}</button>
     </div>
 </div>
+
+<h4>{{ _("Thumbnails") }}</h4>
+
+<h5>{{ _("File list") }}</h5>
+
+<form class="form-horizontal" onsubmit="return false;">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox"
+                       data-bind="checked: settings.appearance.thumbnails.filelistEnabled"
+                       id="settings-appearanceThumbnailsFilelistEnabled">
+                {{ _("Display thumbnails in the file list, if available") }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group"
+         title="{{ _('Width of thumbnails in the file list.') |edq }}">
+        <label class="control-label"
+               for="settings-appearanceThumbnailsFilelistScale">{{ _("Scale (file list)") }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number"
+                       class="input-mini"
+                       min="1"
+                       max="100"
+                       step="1"
+                       data-bind="value: settings.appearance.thumbnails.filelistScale"
+                       id="settings-appearanceThumbnailsFilelistScale">
+                <span class="add-on">%</span>
+            </div>
+            <span class="help-block">{% trans %}
+                Percentage of the sidebar width the image should take up. Note that if the image is smaller, it won't be scaled up.
+            {% endtrans %}</span>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Alignment of thumbnail') |edq }}">
+        <label class="control-label"
+               for="settings-appearanceThumbnailsFilelistAlignment">{{ _("Alignment (file list)") }}</label>
+        <div class="controls">
+            <select id="settings-appearanceThumbnailsFilelistAlignment"
+                    data-bind="value: settings.appearance.thumbnails.filelistAlignment">
+                <option value="left">{{ _("left") }}</option>
+                <option value="right">{{ _("right") }}</option>
+                <option value="center">{{ _("center") }}</option>
+            </select>
+            <span class="help-block">{% trans %}
+                "Left" and "right" will put the image next to the details. "Center" will put the image between header and details.
+            {% endtrans %}</span>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox"
+                       data-bind="checked: settings.appearance.thumbnails.filelistPreview"
+                       id="settings-appearanceThumbnailsFilelistPreview">
+                {{ _("Enable full thumbnail preview on thumbnail hover") }}
+            </label>
+        </div>
+    </div>
+</form>
+
+<h5>{{ _("State panel") }}</h5>
+
+<form class="form-horizontal" onsubmit="return false;">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox"
+                       class="input-mini"
+                       data-bind="checked: settings.appearance.thumbnails.stateEnabled"
+                       id="settings-appearanceThumbnailsStateEnabled">
+                {{ _("Display thumbnails in the state panel, if available") }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group"
+         title="{{ _('Width of thumbnails in the state panel.') |edq }}">
+        <label class="control-label" for="settings-appearanceThumbnailsStateScale">{{ _("Scale") }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number"
+                       class="input-mini"
+                       min="1"
+                       max="100"
+                       step="1"
+                       data-bind="value: settings.appearance.thumbnails.stateScale"
+                       id="settings-appearanceThumbnailsStateScale">
+                <span class="add-on">%</span>
+            </div>
+            <span class="help-block">{% trans %}
+                Percentage of the sidebar width the image should take up. Note that if the image is smaller, it won't be scaled up.
+            {% endtrans %}</span>
+        </div>
+    </div>
+</form>

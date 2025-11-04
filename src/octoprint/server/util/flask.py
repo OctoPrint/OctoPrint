@@ -44,6 +44,7 @@ from octoprint.util import DefaultOrderedDict, deprecated, yaml
 from octoprint.util.json import JsonEncoding
 from octoprint.util.net import is_lan_address, usable_trusted_proxies_from_settings
 from octoprint.util.tz import UTC_TZ, is_timezone_aware
+from octoprint.util.version import is_version_compatible, parse_specifier, parse_version
 
 # ~~ monkey patching
 
@@ -1430,9 +1431,7 @@ def check_lastmodified(lastmodified: Union[int, float, datetime]) -> bool:
 
     if not isinstance(lastmodified, datetime):
         raise ValueError(
-            "lastmodified must be a datetime or float or int instance but, got {} instead".format(
-                lastmodified.__class__
-            )
+            f"lastmodified must be a datetime, float or int instance, got {lastmodified.__class__} instead"
         )
 
     if not is_timezone_aware(lastmodified):
@@ -2054,3 +2053,55 @@ def get_reverse_proxy_info():
         trusted_proxies=trusted_proxies,
         headers=headers,
     )
+
+
+##~~ API versioning
+
+
+class ApiVersioned:
+    def __init__(self, f):
+        self.default_handler = f
+        self.version_handlers = {}
+        functools.update_wrapper(self, f)
+
+    def __call__(self, *args, **kwargs):
+        handler = self._get_handler_for_request()
+        return handler(*args, **kwargs)
+
+    def version(self, specifier):
+        def decorator(f):
+            self.version_handlers[parse_specifier(specifier)] = f
+            return f
+
+        return decorator
+
+    def _get_handler_for_request(self):
+        request_version = get_api_version_from_request()
+
+        if request_version:
+            request_version = parse_version(request_version)
+            for specifier, handler in self.version_handlers.items():
+                if is_version_compatible(request_version.base_version, specifier):
+                    return handler
+
+        return self.default_handler
+
+
+def api_versioned(func):
+    if callable(func):
+        return ApiVersioned(func)
+    return ApiVersioned
+
+
+def get_api_version_from_request():
+    return flask.request.headers.get(
+        "X-OctoPrint-Api-Version", flask.request.values.get("api_version")
+    )
+
+
+def api_version_matches(specifier):
+    request_version = get_api_version_from_request()
+    if request_version:
+        request_version = parse_version(request_version)
+        return is_version_compatible(request_version.base_version, specifier)
+    return False

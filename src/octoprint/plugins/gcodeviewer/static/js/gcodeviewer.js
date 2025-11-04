@@ -48,6 +48,7 @@ $(function () {
 
         self.waitForApproval = ko.observable(false);
         self.selectedFile = {
+            storage: ko.observable(undefined),
             path: ko.observable(undefined),
             date: ko.observable(undefined),
             size: ko.observable(undefined)
@@ -337,7 +338,8 @@ $(function () {
             }
         };
 
-        self.loadedFilepath = undefined;
+        self.loadedFileStorage = undefined;
+        self.loadedFilePath = undefined;
         self.loadedFileDate = undefined;
         self.loadedFileSize = undefined;
         self.status = "idle";
@@ -388,6 +390,7 @@ $(function () {
                     onModelLoaded: self._onModelLoaded,
                     onLayerSelected: self._onLayerSelected,
                     onFileLoaded: self._onFileLoaded,
+                    onFileLoadingError: self._onFileLoadingError,
                     bed: self._retrieveBedDimensions(),
                     toolOffsets: self._retrieveToolOffsets(),
                     invertAxes: self._retrieveAxesConfiguration(),
@@ -414,7 +417,8 @@ $(function () {
 
         self.reset = function () {
             self.enableReload(false);
-            self.loadedFilepath = undefined;
+            self.loadedFileStorage = undefined;
+            self.loadedFilePath = undefined;
             self.loadedFileDate = undefined;
             self.loadedFileSize = undefined;
             self.clear();
@@ -505,45 +509,67 @@ $(function () {
             });
         };
 
-        self.loadFile = function (path, date, size, force) {
+        self.loadFile = function (storage, path, date, size, force) {
             self.enableReload(false);
             self.needsLoad = false;
             if (
                 self.status === "idle" &&
                 (force ||
+                    self.cachedStorage !== storage ||
                     self.cachedPath !== path ||
                     self.cachedDate !== date ||
                     self.cachedSize !== size)
             ) {
                 self.status = "request";
 
+                self.cachedStorage = storage;
                 self.cachedPath = path;
                 self.cachedDate = date;
                 self.cachedSize = size;
-                var par = {
-                    url: OctoPrint.files.downloadPath("local", path),
-                    path: path,
-                    size: size,
-                    skipUntil: self.settings.settings.plugins.gcodeviewer.skipUntilThis()
-                };
 
-                GCODE.renderer.clear();
-                self._onProgress("parsing");
-                GCODE.gCodeReader.loadFile(par);
+                OctoPrint.files.get(storage, path).done((data) => {
+                    if (!data || !data.refs || !data.refs.download) {
+                        // handle file not being downloadable
+                    }
 
-                if (self.layerSlider !== undefined) {
-                    self.layerSlider.slider("disable");
-                }
-                if (self.layerCommandSlider !== undefined) {
-                    self.layerCommandSlider.slider("disable");
-                }
+                    const requestParams = {
+                        url: data.refs.download,
+                        storage: storage,
+                        path: path,
+                        size: size,
+                        skipUntil:
+                            self.settings.settings.plugins.gcodeviewer.skipUntilThis()
+                    };
+
+                    GCODE.renderer.clear();
+                    self._onProgress("parsing");
+                    GCODE.gCodeReader.loadFile(requestParams);
+
+                    if (self.layerSlider !== undefined) {
+                        self.layerSlider.slider("disable");
+                    }
+                    if (self.layerCommandSlider !== undefined) {
+                        self.layerCommandSlider.slider("disable");
+                    }
+                });
             }
         };
 
         self._onFileLoaded = function () {
-            self.loadedFilepath = self.cachedPath;
+            self.loadedFileStorage = self.cachedStorage;
+            self.loadedFilePath = self.cachedPath;
             self.loadedFileDate = self.cachedDate;
             self.loadedFileSize = self.cachedSize;
+            self.status = "idle";
+            self.enableReload(true);
+        };
+
+        self._onFileLoadingError = function () {
+            self.cachedStorage =
+                self.cachedPath =
+                self.cachedDate =
+                self.cachedSize =
+                    None;
             self.status = "idle";
             self.enableReload(true);
         };
@@ -551,7 +577,8 @@ $(function () {
         self.reload = function () {
             if (!self.enableReload()) return;
             self.loadFile(
-                self.loadedFilepath,
+                self.loadedFileStorage,
+                self.loadedFilePath,
                 self.loadedFileDate,
                 self.loadedFileSize,
                 true
@@ -584,13 +611,20 @@ $(function () {
         self._processData = function (data) {
             if (
                 !data.job.file ||
-                (!data.job.file.path && (self.loadedFilepath || self.loadedFileDate))
+                (!data.job.file.path &&
+                    (self.loadedFileStorage ||
+                        self.loadedFilePath ||
+                        self.loadedFileDate ||
+                        self.loadedFileSize))
             ) {
                 self.waitForApproval(false);
 
-                self.loadedFilepath = undefined;
+                self.loadedFileStorage = undefined;
+                self.loadedFilePath = undefined;
                 self.loadedFileDate = undefined;
                 self.loadedFileSize = undefined;
+
+                self.selectedFile.storage(undefined);
                 self.selectedFile.path(undefined);
                 self.selectedFile.date(undefined);
                 self.selectedFile.size(undefined);
@@ -604,8 +638,9 @@ $(function () {
                 (data.state.flags.printing || data.state.flags.paused);
 
             if (
-                self.loadedFilepath &&
-                self.loadedFilepath === data.job.file.path &&
+                self.loadedFileStorage &&
+                self.loadedFileStorage === data.job.file.origin &&
+                self.loadedFilePath === data.job.file.path &&
                 self.loadedFileDate === data.job.file.date &&
                 self.loadedFileSize === data.job.file.size
             ) {
@@ -622,13 +657,14 @@ $(function () {
                 if (self.status === "idle") self.clear();
                 if (
                     data.job.file.path &&
-                    data.job.file.origin !== "sdcard" &&
                     self.status !== "request" &&
                     (!self.waitForApproval() ||
+                        self.selectedFile.storage() !== data.job.file.origin ||
                         self.selectedFile.path() !== data.job.file.path ||
                         self.selectedFile.date() !== data.job.file.date ||
                         self.selectedFile.size() !== data.job.file.size)
                 ) {
+                    self.selectedFile.storage(data.job.file.origin);
                     self.selectedFile.path(data.job.file.path);
                     self.selectedFile.date(data.job.file.date);
                     self.selectedFile.size(data.job.file.size);
@@ -641,13 +677,15 @@ $(function () {
                                 self.settings.settings.plugins.gcodeviewer.mobileSizeThreshold())
                     ) {
                         self.waitForApproval(true);
-                        self.loadedFilepath = undefined;
+                        self.loadedFileStorage = undefined;
+                        self.loadedFilePath = undefined;
                         self.loadedFileDate = undefined;
                         self.loadedFileSize = undefined;
                     } else {
                         self.waitForApproval(false);
                         if (self.tabActive) {
                             self.loadFile(
+                                data.job.file.origin,
                                 data.job.file.path,
                                 data.job.file.date,
                                 data.job.file.size

@@ -22,17 +22,17 @@ _WINDOWS_RESERVED_FILE_NAMES = ("CON", "PRN", "AUX", "CLOCK$", "NUL") + tuple(
 _MACOS_RESERVED_FILE_NAMES = (":",)
 
 
-def _sfn_really_universal(name):
+def _sfn_really_universal(name, safe_chars="-_.()[] "):
     from octoprint.util.text import sanitize
 
-    result = sanitize(name, safe_chars="-_.()[] ").replace(" ", "_")
+    result = sanitize(name, safe_chars=safe_chars).replace(" ", "_")
     root, ext = os.path.splitext(result)
     if root.upper() in (_WINDOWS_RESERVED_FILE_NAMES + _MACOS_RESERVED_FILE_NAMES):
         root += "_"
     return root + ext
 
 
-def sanitize_filename(name, really_universal=False):
+def sanitize_filename(name, really_universal=False, safe_chars="-_.()[] "):
     """
     Sanitizes the provided filename. Implementation differs between Python versions.
 
@@ -70,7 +70,7 @@ def sanitize_filename(name, really_universal=False):
     from pathvalidate import sanitize_filename as sfn
 
     if really_universal:
-        result = _sfn_really_universal(stripped)
+        result = _sfn_really_universal(stripped, safe_chars=safe_chars)
     else:
         result = sfn(stripped)
 
@@ -125,12 +125,16 @@ def get_dos_filename(
         >>> get_dos_filename(None)
         >>> get_dos_filename("foo")
         'foo'
+        >>> get_dos_filename("foo~1.gco")
+        'foo~1.gco'
+        >>> get_dos_filename("foo 1.gco")
+        'foo_1.gco'
     """
 
     if input is None:
         return None
 
-    input = sanitize_filename(input, really_universal=True)
+    input = sanitize_filename(input, really_universal=True, safe_chars="-_.()[]~ ")
 
     if existing_filenames is None:
         existing_filenames = []

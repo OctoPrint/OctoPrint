@@ -226,6 +226,10 @@
             headers["X-Locale"] = this.options.locale;
         }
 
+        if (this.options.apiVersion !== undefined) {
+            headers["X-OctoPrint-Api-Version"] = this.options.apiVersion;
+        }
+
         return headers;
     };
 

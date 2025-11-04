@@ -308,12 +308,15 @@
 </script>
 <script type="text/html" id="customControls_controlTemplate_input">
     <!-- ko foreach: input -->
-        <label style="cursor: default" data-bind="text: name"></label>
         <!-- ko if: slider -->
+            <label style="cursor: default" data-bind="text: name"></label>
             <input type="number" style="width: 100px" data-bind="slider: {value: value, min: slider.min, max: slider.max, step: slider.step}">
         <!-- /ko -->
         <!-- ko ifnot: slider -->
-            <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
+            <div class="control-labeled">
+                <label style="cursor: default" data-bind="text: name"></label>
+                <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
+            </div>
         <!-- /ko -->
     <!-- /ko -->
 </script>
@@ -321,6 +324,6 @@
     <label style="cursor: default" data-bind="text: output"></label>
 </script>
 <script type="text/html" id="customControls_controlTemplate_command">
-    <button class="btn" data-bind="text: name, css: additionalClasses, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
+    <button class="btn" data-bind="text: name, css: additionalClasses, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }, title: description"></button>
 </script>
 <!-- End of templates for custom controls -->

@@ -52,6 +52,13 @@ tasks:
         cd tests/playwright
         npx playwright test --grep-invert "@isolated|@csrf"
 
+  test-e2e-ui:
+    desc: Run e2e tests interactively
+    cmds:
+      - |
+        cd tests/playwright
+        npx playwright test --ui
+
   ### Build related
 
   build:

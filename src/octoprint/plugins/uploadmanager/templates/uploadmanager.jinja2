@@ -34,7 +34,7 @@
                         </li>
                         <li>
                             <a href="javascript:void(0)"
-                               data-bind="click: function() { $root.selectAllOfOrigin('sdcard') }">{{ _("Select all stored on printer") }}</a>
+                               data-bind="click: function() { $root.selectAllOfOrigin('printer') }">{{ _("Select all stored on printer") }}</a>
                         </li>
                         <li class="divider"></li>
                         <li>
@@ -247,6 +247,7 @@
                 </td>
                 <td class="title" data-bind="css: $root.files.getSuccessClass($data)">
                     <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
+                    <img data-bind="attr: { src: $root.files.thumbnailLink($data) }, visible: $root.files.thumbnailLink($data)">
                 </td>
                 <td class="uploaded" data-bind="text: formatDate(date)"></td>
                 <td class="printed" data-bind="text: formatDate($root.lastPrint($data))"></td>
@@ -277,12 +278,13 @@
                 <td class="size" data-bind="text: formatSize(size)"></td>
             </script>
 
-            <script type="text/html" id="uploadmanager_template_sdcard">
+            <script type="text/html" id="uploadmanager_template_printer">
                 <td class="icon">
                     <i class="fa-solid fa-sd-card"></i>
                 </td>
                 <td class="title">
                     <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
+                    <img data-bind="attr: { src: $root.files.thumbnailLink($data) }, visible: $root.files.thumbnailsEnabled() && $root.files.thumbnailLink($data)" style="height: 30px">
                 </td>
                 <td class="uploaded" data-bind="text: formatDate(date)"></td>
                 <td class="printed" data-bind="text: formatDate($root.lastPrint($data))"></td>

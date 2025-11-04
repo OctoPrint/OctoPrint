@@ -55,7 +55,8 @@
                 </div>
             </th>
             <th class="temperature_offset"
-                title="{{ _('Offset to apply to temperature commands sent from files') |edq }}">{{ _("Offset") }}</th>
+                title="{{ _('Offset to apply to temperature commands sent from files') |edq }}"
+                data-bind="visible: $root.enableOffsetSupport">{{ _("Offset") }}</th>
         </tr>
         <!-- ko foreach: tools -->
         <tr data-bind="template: { name: 'temprow-template' }"></tr>
@@ -94,7 +95,7 @@
                 </div>
             </form>
         </td>
-        <td class="temperature_offset">
+        <td class="temperature_offset" data-bind="visible: $root.enableOffsetSupport">
             <form class="form-inline" style="margin:0" onsubmit="return false;">
                 <div class="input-append">
                     <span class="input-mini uneditable-input text-right" style="width: 30px" data-bind="text: offset"></span>

@@ -286,7 +286,7 @@ def wizardFinish():
 def apiVersion():
     return jsonify(
         server=octoprint.server.VERSION,
-        api=VERSION,
+        api=VERSION,  # TODO: Remove in 2.0, we'll go with the server version instead
         text=f"OctoPrint {octoprint.server.DISPLAY_VERSION}",
     )
 

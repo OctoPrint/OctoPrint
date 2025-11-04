@@ -1,0 +1,49 @@
+<div id="connection_options_wrapper">
+    <label for="connection_option">{{ _("Connection Type") }}</label>
+    <select id="connection_option"
+            class="connection_parameter"
+            data-test-id="connection-connector"
+            data-bind="options: connectorOptions, optionsText: 'name', optionsValue: 'connector', value: selectedConnector">
+    </select>
+
+    {% for key in templates.connection_options.order %}
+        {% set entry, data = templates.connection_options.entries[key] %}
+        <div id="connection_options_{{ data.connector }}_wrapper"
+             data-bind="visible: selectedConnector() == '{{ data.connector }}'">
+            {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
+            <div id="connection_options_{{ data.connector }}">
+                {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}
+                {% include data.template ignore missing %}
+            {% endtry %}
+        </div>
+        {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
+    </div>
+{% endfor %}
+</div>
+
+<label for="connection_printers"
+       data-bind="css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">{{ _("Printer Profile") }}</label>
+<select id="connection_printers"
+        class="connection_parameter"
+        data-test-id="connection-printer-profiles"
+        data-bind="options: profileOptions, optionsText: 'name', optionsValue: 'id', value: currentProfile, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed()">
+</select>
+
+<label class="checkbox" data-bind="css: {muted: !enableSaveSettings()}">
+    <input type="checkbox"
+           id="connection_save"
+           data-bind="checked: saveSettings, enable: enableSaveSettings()">
+    {{ _("Save connection settings") }}
+</label>
+
+<label class="checkbox" data-bind="css: {muted: !enableAutoConnect()}">
+    <input type="checkbox"
+           id="connection_autoconnect"
+           data-bind="checked: autoconnect, enable: enableAutoConnect()">
+    {{ _("Auto-connect on server startup") }}
+</label>
+
+<button class="btn btn-block"
+        id="printer_connect"
+        data-test-id="connection-connect"
+        data-bind="click: connect, text: buttonText, enable: enableConnect">{{ _("Connect") }}</button>

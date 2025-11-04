@@ -3,6 +3,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import io
+import logging
 import os
 
 from octoprint import UMASK
@@ -83,12 +84,13 @@ class StreamWrapper(AbstractFileWrapper):
         *streams: One or more :py:class:`io.IOBase` streams to process one after another to save to storage.
     """
 
-    def __init__(self, filename, *streams):
+    def __init__(self, filename, *streams, autoclose=True):
         if not len(streams) > 0:
             raise ValueError("Need at least one stream to wrap")
 
         AbstractFileWrapper.__init__(self, filename)
-        self.streams = streams
+        self.streams: tuple[io.IOBase] = streams
+        self.autoclose = autoclose
 
     def save(self, path, permissions=None):
         """
@@ -100,6 +102,14 @@ class StreamWrapper(AbstractFileWrapper):
         with atomic_write(path, mode="wb") as dest:
             for source in self.streams:
                 shutil.copyfileobj(source, dest)
+            if self.autoclose:
+                try:
+                    source.close()
+                except Exception:
+                    logging.getLogger(__name__).exception(
+                        f"Error while trying to close stream {source}"
+                    )
+
         if permissions is None:
             permissions = self.DEFAULT_PERMISSIONS & ~UMASK
         os.chmod(path, permissions)

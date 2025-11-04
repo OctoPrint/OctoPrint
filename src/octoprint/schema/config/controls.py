@@ -15,7 +15,7 @@ class LayoutEnum(str, Enum):
 
 
 @with_attrs_docs
-class ControlSliderInputConfig(BaseModel):
+class CustomControlSlider(BaseModel):
     min: int = 0
     """Minimum value of the slider."""
 
@@ -27,7 +27,7 @@ class ControlSliderInputConfig(BaseModel):
 
 
 @with_attrs_docs
-class ControlInputConfig(BaseModel):
+class CustomControlInput(BaseModel):
     name: str
     """Name to display for the input field."""
 
@@ -37,13 +37,13 @@ class ControlInputConfig(BaseModel):
     default: Union[str, int, float, bool]
     """Default value for the input field."""
 
-    slider: Optional[ControlSliderInputConfig] = None
+    slider: Optional[CustomControlSlider] = None
     """If this attribute is included, instead of an input field a slider control will be rendered."""
 
 
 @with_attrs_docs
-class ContainerConfig(BaseModel):
-    children: "list[Union[ContainerConfig, ControlConfig]]" = []
+class CustomControlContainer(BaseModel):
+    children: list[Union["CustomControlContainer", "CustomControl"]] = []
     """A list of children controls or containers contained within this container."""
 
     name: Optional[str] = None
@@ -52,11 +52,17 @@ class ContainerConfig(BaseModel):
     layout: LayoutEnum = LayoutEnum.vertical
     """The layout to use for laying out the contained children, either from top to bottom (``vertical``) or from left to right (``horizontal``)."""
 
+    collapsed: bool = False
+    """Whether the container should start out collapsed by default."""
+
 
 @with_attrs_docs
-class ControlConfig(BaseModel):
+class CustomControl(BaseModel):
     name: str
     """The name of the control, will be displayed either on the button if it's a control sending a command or as a label for controls which only display output."""
+
+    description: str = ""
+    """An optional description of the control, will be displayed as the tooltip on the button or label for controls which only display output."""
 
     command: Optional[str] = None
     """
@@ -107,7 +113,7 @@ class ControlConfig(BaseModel):
     The JavaScript snippet is ``eval``'d and processed in a context where the control it is part of is provided as local
     variable ``data`` and the ``ControlViewModel`` is available as ``self``."""
 
-    input: Optional[list[ControlInputConfig]] = []
+    input: Optional[list[CustomControlInput]] = []
     """
     A list of definitions of input parameters for a ``command`` or ``commands``, to be rendered as additional input fields.
 

@@ -641,9 +641,7 @@ ul.dropdown-menu li a {
 
 /** Connection settings */
 
-#connection_ports,
-#connection_baudrates,
-#connection_printers {
+.connection_parameter {
   width: 100%;
 }
 
@@ -835,12 +833,18 @@ ul.dropdown-menu li a {
     .scroll-wrapper {
       overflow-x: hidden;
       overflow-y: scroll;
-      height: 306px;
+      height: 360px;
       padding-right: 2px;
       position: relative; // required for correct offsetParent, see #4680
     }
 
     .entry {
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+
+      gap: @padding;
+
       padding: @padding;
       line-height: @line-height;
       border-bottom: 1px solid #ddd;
@@ -850,40 +854,53 @@ ul.dropdown-menu li a {
         background-color: #f5f5f5;
       }
 
-      .title {
-        text-overflow: ellipsis;
-        word-break: break-all;
-        margin-right: 30px;
-        white-space: pre-wrap;
+      .file-entry-header {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+
+        gap: @padding;
+
+        .title {
+          flex-grow: 1;
+          text-overflow: ellipsis;
+          word-break: break-all;
+          white-space: pre-wrap;
+          overflow: hidden;
+        }
       }
 
-      .toggleAdditionalData {
+      .file-entry-content {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        flex: 1;
+
+        gap: @padding;
+
+        .file-entry-meta {
+          flex: 1;
+          flex-direction: column;
+          justify-content: flex-start;
+          gap: 0;
+
+          font-size: 85%;
+          color: #999;
+
+          .uploaded *[title] {
+            cursor: help;
+          }
+
+          .internal {
+            word-break: break-all;
+          }
+        }
       }
 
-      .internal,
-      .uploaded,
-      .size,
-      .additionalInfo {
-        font-size: 85%;
-        color: #999;
-      }
-
-      .uploaded *[title] {
-        cursor: help;
-      }
-
-      .internal {
-        word-break: break-all;
-      }
-
-      .action-buttons {
-        position: absolute;
-        bottom: @padding;
-        right: @padding;
-      }
-
-      .additionalInfo {
-        padding-bottom: @line-height + 2px;
+      .file-entry-footer {
+        text-align: right;
+        clear: right;
       }
 
       @highlight-color: yellow;

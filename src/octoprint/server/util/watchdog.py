@@ -107,7 +107,10 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
                 octoprint.filemanager.FileDestinations.LOCAL, futureFullPath
             )
 
-            if not self._printer.can_modify_file(futureFullPathInStorage, False):
+            if (
+                self._printer.active_job
+                == f"{octoprint.filemanager.FileDestinations.LOCAL}:{futureFullPathInStorage}"
+            ):
                 return
 
             reselect = self._printer.is_current_file(futureFullPathInStorage, False)
@@ -125,12 +128,10 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
                     pass
 
             if reselect:
-                self._printer.select_file(
-                    self._file_manager.path_on_disk(
-                        octoprint.filemanager.FileDestinations.LOCAL, added_file
-                    ),
-                    False,
+                job = self._file_manager.create_job(
+                    octoprint.filemanager.FileDestinations.LOCAL, added_file
                 )
+                self._printer.set_job(job)
         except Exception:
             self._logger.exception(
                 "There was an error while processing the file {} in the watched folder".format(

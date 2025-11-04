@@ -951,6 +951,12 @@ def fetch_template_data(refresh=False):
             "template": lambda x: x + "_about.jinja2",
             "to_entry": lambda data: (data["name"], data),
         },
+        "connection_options": {
+            "div": lambda x: "connection_options_plugin_" + x,
+            "template": lambda x: x + "_connection_options.jinja2",
+            "to_entry": lambda data: (data["name"], data),
+            "mandatory": ["connector"],
+        },
         "generic": {"template": lambda x: x + ".jinja2", "to_entry": lambda data: data},
     }
 
@@ -985,6 +991,7 @@ def fetch_template_data(refresh=False):
         "wizard": {"add": "append", "key": "name", "key_extractor": wizard_key_extractor},
         "webcam": {"add": "append", "key": "name"},
         "about": {"add": "append", "key": "name"},
+        "connection_options": {"add": "append", "key": "name"},
         "generic": {"add": "append", "key": None},
     }
 
@@ -1067,12 +1074,12 @@ def fetch_template_data(refresh=False):
         "connection": (
             gettext("Connection"),
             {
-                "template": "sidebar/connection.jinja2",
+                "template": "sidebar/connection/connection.jinja2",
                 "_div": "connection",
                 "icon": "signal",
                 "styles_wrapper": ["display: none;"],
                 "data_bind": "visible: loginState.hasPermissionKo(access.permissions.CONNECTION)",
-                "template_header": "sidebar/connection_header.jinja2",
+                "template_header": "sidebar/connection/connection_header.jinja2",
             },
         ),
         "state": (
@@ -1088,11 +1095,11 @@ def fetch_template_data(refresh=False):
         "files": (
             gettext("Files"),
             {
-                "template": "sidebar/files.jinja2",
+                "template": "sidebar/files/files.jinja2",
                 "_div": "files",
                 "icon": "list",
                 "classes_content": ["overflow_visible"],
-                "template_header": "sidebar/files_header.jinja2",
+                "template_header": "sidebar/files/files_header.jinja2",
                 "styles_wrapper": ["display: none;"],
                 "data_bind": "visible: loginState.hasPermissionKo(access.permissions.FILES_LIST)",
             },
@@ -1144,14 +1151,6 @@ def fetch_template_data(refresh=False):
 
     templates["settings"]["entries"] = {
         "section_printer": (gettext("Printer"), None),
-        "serial": (
-            gettext("Serial Connection"),
-            {
-                "template": "dialogs/settings/serialconnection.jinja2",
-                "_div": "settings_serialConnection",
-                "custom_bindings": False,
-            },
-        ),
         "printerprofiles": (
             gettext("Printer Profiles"),
             {
@@ -1355,6 +1354,10 @@ def fetch_template_data(refresh=False):
             },
         ),
     }
+
+    # connection sidebar panel
+
+    templates["connection_options"]["entries"] = {}
 
     # extract data from template plugins
 
@@ -1620,6 +1623,11 @@ def _process_template_configs(name, implementation, configs, rules):
         if len(includes[template_type]) == 0:
             # if no template of that type was added by the config, we'll try to use the default template name
             rule = rules[template_type]
+
+            if rule.get("mandatory"):
+                # we can only do that though if there are no mandatory fields defined
+                continue
+
             data = _process_template_config(name, implementation, rule)
             if data is not None:
                 try:

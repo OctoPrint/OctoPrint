@@ -18,10 +18,11 @@ $(function () {
         self.resendTotalTransmitted = ko.observable(0);
         self.resendRatio = ko.observable(0);
         self.resendRatioCritical = ko.pureComputed(function () {
-            return (
+            return false;
+            /*return (
                 self.resendRatio() >= self.settings.serial_resendRatioThreshold() &&
                 self.resendTotalTransmitted() >= self.settings.serial_resendRatioStart()
-            );
+            );*/ // TODO: Replace with error level or something, independent from serial
         });
         self.resendRatioNotification = undefined;
 
@@ -94,7 +95,41 @@ $(function () {
             return self.filedata() ? self.filedata()["date"] : undefined;
         });
         self.sd = ko.pureComputed(() => {
-            return self.filedata() ? self.filedata()["origin"] === "sdcard" : undefined;
+            return self.filedata() ? self.filedata()["origin"] === "printer" : undefined;
+        });
+
+        self.thumbnailLink = ko.pureComputed(() => {
+            const data = self.filedata();
+            if (data && data.refs && data.refs.thumbnail) {
+                return data.refs.thumbnail;
+            } else {
+                return false;
+            }
+        });
+
+        self.thumbnailsEnabled = ko.pureComputed(() => {
+            const settings = self.settings.settings;
+            return (
+                settings &&
+                settings.appearance &&
+                settings.appearance.thumbnails &&
+                settings.appearance.thumbnails.stateEnabled &&
+                settings.appearance.thumbnails.stateEnabled()
+            );
+        });
+        self.thumbnailsWidth = ko.pureComputed(() => {
+            const settings = self.settings.settings;
+
+            let scale = 80;
+            if (
+                settings &&
+                settings.appearance &&
+                settings.appearance.thumbnails &&
+                settings.appearance.thumbnails.stateScale
+            ) {
+                scale = settings.appearance.thumbnails.stateScale();
+            }
+            return `${scale}%`;
         });
 
         self.calcFileKey = (data) => {
@@ -218,6 +253,11 @@ $(function () {
                 case "estimate": {
                     return gettext("Based on the calculated estimate (best accuracy)");
                 }
+                case "printer": {
+                    return gettext(
+                        "Based on information received from your printer (best accuracy)"
+                    );
+                }
                 default: {
                     return "";
                 }
@@ -236,7 +276,8 @@ $(function () {
                 }
                 case "average":
                 case "mixed-average":
-                case "estimate": {
+                case "estimate":
+                case "printer": {
                     return "text-success";
                 }
             }
@@ -298,6 +339,23 @@ $(function () {
             }
 
             return formatDate(date, {seconds: true});
+        });
+
+        self.iconClasses = ko.pureComputed(() => {
+            const data = self.filedata();
+            if (!data) return "";
+
+            if (data.type == "folder") {
+                return "fa-regular fa-folder";
+            } else if (data.origin == "printer") {
+                return "fa-solid fa-sd-card";
+            } else if (data.type == "machinecode") {
+                return "fa-regular fa-file-lines";
+            } else if (data.type == "model") {
+                return "fa-regular fa-file-image";
+            } else {
+                return "fa-regular fa-file";
+            }
         });
 
         self.fromCurrentData = function (data) {

@@ -1,6 +1,3 @@
-__license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
-__copyright__ = "Copyright (C) 2022 The OctoPrint Project - Released under terms of the AGPLv3 License"
-
 from enum import Enum
 from typing import Optional
 
@@ -14,10 +11,22 @@ class AlwaysDetectNeverEnum(str, Enum):
     never = "never"
 
 
+class AlwaysPrintNeverEnum(str, Enum):
+    always = "always"
+    print = "print"
+    never = "never"
+
+
 class InfoWarnNeverEnum(str, Enum):
     info = "info"
     warn = "warn"
     never = "never"
+
+
+class DisconnectCancelIgnoreEnum(str, Enum):
+    disconnect = "disconnect"
+    cancel = "cancel"
+    ignore = "ignore"
 
 
 @with_attrs_docs
@@ -131,7 +140,7 @@ class SerialConfig(BaseModel):
     """Timeouts used for the serial connection to the printer, you might want to adjust these if you are experiencing connection problems."""
 
     maxCommunicationTimeouts: SerialMaxTimeouts = SerialMaxTimeouts()
-    """Maximum communication timeouts."""
+    """Maximum number of timeouts to support before going into an error state"""
 
     maxWritePasses: int = 5
     """Maximum number of write attempts to serial during which nothing can be written before the communication with the printer is considered dead and OctoPrint will disconnect with an error."""
@@ -143,10 +152,10 @@ class SerialConfig(BaseModel):
     """Use this to define additional baud rates to offer for connecting to serial ports. Must be a list of valid integers."""
 
     blacklistedPorts: list[str] = []
-    """Serial ports to be ignored by OctoPrint."""
+    """Use this to define patterns of ports to ignore"""
 
     blacklistedBaudrates: list[int] = []
-    """Baudrates to be ignored by OctoPrint."""
+    """Use this to define baudrates to ignore"""
 
     longRunningCommands: list[str] = [
         "G4",
@@ -187,11 +196,8 @@ class SerialConfig(BaseModel):
     suppressSecondHello: bool = False
     """Whether to suppress the second hello command. Might be required for some printer configurations with custom hello commands."""
 
-    disconnectOnErrors: bool = True
-    """Whether to disconnect from the printer on errors"""
-
-    ignoreErrorsFromFirmware: bool = False
-    """Whether to completely ignore errors from the firmware."""
+    errorHandling: DisconnectCancelIgnoreEnum = "disconnect"
+    """What to do when receiving unhandled errors from the printer."""
 
     terminalLogSize: int = 20
     """Size of log lines to keep for logging error context."""
@@ -219,11 +225,8 @@ class SerialConfig(BaseModel):
     waitToLoadSdFileList: bool = True
     """Specifies whether OctoPrint should wait to load the SD card file list until the first firmware capability report is processed."""
 
-    alwaysSendChecksum: bool = False
-    """Specifies whether OctoPrint should send linenumber + checksum with every printer command. Needed for successful communication with Repetier firmware."""
-
-    neverSendChecksum: bool = False
-    """Specifies whether OctoPrint should *never* send linenumber + checksum."""
+    sendChecksum: AlwaysPrintNeverEnum = "print"
+    """Specifies when OctoPrint should send linenumber + checksum with every GCODE command."""
 
     sendChecksumWithUnknownCommands: bool = False
     r"""Specifies whether OctoPrint should also send linenumber + checksum with commands that are *not* detected as valid GCODE (as in, they do not match the regular expression ``^\s*([GM]\d+|T)``)."""
@@ -238,14 +241,13 @@ class SerialConfig(BaseModel):
     """Whether to always assume that an SD card is present in the printer. Needed by some firmwares which don't report the SD card status properly."""
 
     sdLowerCase: bool = False
+    """Whether to treat all sd card file names as lower case"""
+
     sdCancelCommand: str = "M25"
-    """Command to send to cancel prints from the printer's memory."""
+    """Command to cancel SD prints"""
 
     maxNotSdPrinting: int = 2
-    """Maximum number of "Not SD printing" messages to allow before considering a print to have been cancelled by the printer."""
-
-    swallowOkAfterResend: bool = True
-    """Whether to ignore any additional ``ok`` after a resend request, which already acts as a negative acknowledgement."""
+    """Maximum number of 'Not SD Printing' messages to support before assuming the print was cancelled externally"""
 
     repetierTargetTemp: bool = False
     """Whether the printer sends repetier style target temperatures in the format ``TargetExtr0:<temperature>`` instead of attaching that information to the regular ``M105`` responses."""
@@ -302,10 +304,10 @@ class SerialConfig(BaseModel):
     """Percentage of resend requests among all sent lines that should be considered critical."""
 
     resendRatioStart: int = 100
-    """Line number on which to start tracking the resend ratio."""
+    """Initial resend ratio percentage"""
 
     ignoreEmptyPorts: bool = False
-    """Whether to ignore if there are no serial ports detected."""
+    """Whether to ignore that there are no serial ports detected or show a message"""
 
     encoding: str = "ascii"
     """
@@ -320,3 +322,6 @@ class SerialConfig(BaseModel):
     # command specific flags
     triggerOkForM29: bool = True
     """Whether to automatically trigger an ok for ``M29`` (a lot of versions of this command are buggy and the response skips on the ok)."""
+
+    trustM73: bool = True
+    """Whether to trust M73 in printed GCODE files for progress reporting."""

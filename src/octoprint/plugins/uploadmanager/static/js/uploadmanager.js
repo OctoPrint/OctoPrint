@@ -120,10 +120,10 @@ $(function () {
                     );
                 },
                 sd: (data) => {
-                    return data["origin"] && data["origin"] == "sdcard";
+                    return data["origin"] && data["origin"] == "printer";
                 },
                 local: (data) => {
-                    return !(data["origin"] && data["origin"] == "sdcard");
+                    return !(data["origin"] && data["origin"] == "printer");
                 },
                 machinecode: (data) => {
                     return data["type"] && data["type"] == "machinecode";
@@ -423,7 +423,7 @@ $(function () {
         };
 
         self.templateFor = function (data) {
-            if (data.origin === "sdcard") return "uploadmanager_template_sdcard";
+            if (data.origin === "printer") return "uploadmanager_template_printer";
             return "uploadmanager_template_" + data.type;
         };
 
@@ -541,7 +541,10 @@ $(function () {
             const file = self.selectedFiles()[0];
             if (file.origin !== "local") return;
 
-            OctoPrint.files.issueEntryCommand(file.origin, file.path, "uploadSd", {});
+            OctoPrint.files.issueEntryCommand(file.origin, file.path, "copy_storage", {
+                storage: "printer",
+                destination: file.path
+            });
         };
 
         self.slice = () => {

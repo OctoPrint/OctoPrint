@@ -49,10 +49,13 @@
     table-layout: fixed;
     margin-bottom: 0px;
 
+    @line-height: 30px;
+
     td,
     th {
       white-space: normal;
       cursor: pointer;
+      line-height: @line-height;
     }
 
     thead {
@@ -78,9 +81,19 @@
     }
 
     .title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      display: flex;
+      flex-wrap: nowrap;
+
+      span {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      img {
+        height: @line-height;
+      }
     }
 
     .uploaded,

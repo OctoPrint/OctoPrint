@@ -110,26 +110,26 @@ Data Model
 
 Controls
 
-.. pydantic-table:: octoprint.schema.config.controls.ControlConfig
+.. pydantic-table:: octoprint.schema.config.controls.CustomControl
 
-   octoprint.schema.config.controls.ControlInputConfig = Input
+   octoprint.schema.config.controls.CustomControlInput = Input
 
 Containers
 
-.. pydantic-table:: octoprint.schema.config.controls.ContainerConfig
+.. pydantic-table:: octoprint.schema.config.controls.CustomControlContainer
 
-   octoprint.schema.config.controls.ControlConfig = Control
-   octoprint.schema.config.controls.ContainerConfig = Container
+   octoprint.schema.config.controls.CustomControl = Control
+   octoprint.schema.config.controls.CustomControlContainer = Container
 
 Inputs
 
-.. pydantic-table:: octoprint.schema.config.controls.ControlInputConfig
+.. pydantic-table:: octoprint.schema.config.controls.CustomControlInput
 
-   octoprint.schema.config.controls.ControlSliderInputConfig = ControlSliderInputConfig
+   octoprint.schema.config.controls.CustomControlSlider = CustomControlSlider
 
 Sliders
 
-.. pydantic-table:: octoprint.schema.config.controls.ControlSliderInputConfig
+.. pydantic-table:: octoprint.schema.config.controls.CustomControlSlider
 
 Example
 .......
@@ -392,18 +392,7 @@ Data model
 Serial
 ------
 
-Use the following settings to configure the serial connection to the printer.
-
-Defaults
-........
-
-.. pydantic-example:: octoprint.schema.config.serial.SerialConfig
-   :key: serial
-
-Data model
-..........
-
-.. pydantic-table:: octoprint.schema.config.serial.SerialConfig
+The serial settings have been moved into the bundled "Serial Connector" plugin.
 
 .. _sec-configuration-config_yaml-server:
 

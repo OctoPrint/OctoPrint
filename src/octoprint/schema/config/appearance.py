@@ -51,7 +51,7 @@ class ComponentOrderConfig(BaseModel):
 
     settings: list[str] = [
         "section_printer",
-        "serial",
+        "plugin_serial_connector",
         "printerprofiles",
         "temperatures",
         "terminalfilters",
@@ -138,6 +138,33 @@ class ComponentConfig(BaseModel):
     """Disabled components per container. If a component is included here it will not be included in OctoPrint's UI at all. Note that this might mean that critical functionality will not be available if no replacement is registered."""
 
 
+class ThumbnailAlignmentEnum(str, Enum):
+    left = "left"
+    right = "right"
+    center = "center"
+
+
+@with_attrs_docs
+class ThumbnailConfig(BaseModel):
+    filelistEnabled: bool = True
+    """Whether to display thumbnails for printables on the file list, if available."""
+
+    filelistScale: int = 25
+    """Percentage of file list width to use for thumbnail. Note that if the image is smaller, it won't be scaled up."""
+
+    filelistAlignment: ThumbnailAlignmentEnum = ThumbnailAlignmentEnum.left
+    """Alignment of thumbnail in file list."""
+
+    filelistPreview: bool = False
+    """Whether to enable a preview popover with the full thumbnail size when hovering over the thumbnail in the file list."""
+
+    stateEnabled: bool = True
+    """Whether to display thumbnails for printable on the state panel, if available."""
+
+    stateScale: int = 75
+    """Percentage of state panel width to use for thumbnail. Note that if the image is smaller, it won't be scaled up."""
+
+
 @with_attrs_docs
 class AppearanceConfig(BaseModel):
     name: str = ""
@@ -168,3 +195,6 @@ class AppearanceConfig(BaseModel):
 
     components: ComponentConfig = ComponentConfig()
     """Configures the order and availability of the UI components."""
+
+    thumbnails: ThumbnailConfig = ThumbnailConfig()
+    """Configured how thumbnails are shown in the UI"""

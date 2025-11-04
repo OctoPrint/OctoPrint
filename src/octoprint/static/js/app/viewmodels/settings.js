@@ -175,79 +175,6 @@ $(function () {
 
         self.gcodeAnalysis_runAt = ko.observable(undefined);
 
-        self.serial_port = ko.observable();
-        self.serial_baudrate = ko.observable();
-        self.serial_exclusive = ko.observable();
-        self.serial_lowLatency = ko.observable();
-        self.serial_portOptions = ko.observableArray([]);
-        self.serial_baudrateOptions = ko.observableArray([]);
-        self.serial_autoconnect = ko.observable(undefined);
-        self.serial_timeoutConnection = ko.observable(undefined);
-        self.serial_timeoutDetectionFirst = ko.observable(undefined);
-        self.serial_timeoutDetectionConsecutive = ko.observable(undefined);
-        self.serial_timeoutCommunication = ko.observable(undefined);
-        self.serial_timeoutCommunicationBusy = ko.observable(undefined);
-        self.serial_timeoutTemperature = ko.observable(undefined);
-        self.serial_timeoutTemperatureTargetSet = ko.observable(undefined);
-        self.serial_timeoutTemperatureAutoreport = ko.observable(undefined);
-        self.serial_timeoutSdStatus = ko.observable(undefined);
-        self.serial_timeoutSdStatusAutoreport = ko.observable(undefined);
-        self.serial_timeoutPosAutoreport = ko.observable(undefined);
-        self.serial_timeoutBaudrateDetectionPause = ko.observable(undefined);
-        self.serial_timeoutPositionLogWait = ko.observable(undefined);
-        self.serial_log = ko.observable(undefined);
-        self.serial_additionalPorts = ko.observable(undefined);
-        self.serial_additionalBaudrates = ko.observable(undefined);
-        self.serial_blacklistedPorts = ko.observable(undefined);
-        self.serial_blacklistedBaudrates = ko.observable(undefined);
-        self.serial_longRunningCommands = ko.observable(undefined);
-        self.serial_checksumRequiringCommands = ko.observable(undefined);
-        self.serial_blockedCommands = ko.observable(undefined);
-        self.serial_ignoredCommands = ko.observable(undefined);
-        self.serial_pausingCommands = ko.observable(undefined);
-        self.serial_sdCancelCommand = ko.observable(undefined);
-        self.serial_emergencyCommands = ko.observable(undefined);
-        self.serial_helloCommand = ko.observable(undefined);
-        self.serial_serialErrorBehaviour = ko.observable("cancel");
-        self.serial_triggerOkForM29 = ko.observable(undefined);
-        self.serial_waitForStart = ko.observable(undefined);
-        self.serial_waitToLoadSdFileList = ko.observable(undefined);
-        self.serial_sendChecksum = ko.observable("print");
-        self.serial_sendChecksumWithUnknownCommands = ko.observable(undefined);
-        self.serial_unknownCommandsNeedAck = ko.observable(undefined);
-        self.serial_sdRelativePath = ko.observable(undefined);
-        self.serial_sdLowerCase = ko.observable(undefined);
-        self.serial_sdAlwaysAvailable = ko.observable(undefined);
-        self.serial_swallowOkAfterResend = ko.observable(undefined);
-        self.serial_repetierTargetTemp = ko.observable(undefined);
-        self.serial_disableExternalHeatupDetection = ko.observable(undefined);
-        self.serial_ignoreIdenticalResends = ko.observable(undefined);
-        self.serial_firmwareDetection = ko.observable(undefined);
-        self.serial_blockWhileDwelling = ko.observable(undefined);
-        self.serial_useParityWorkaround = ko.observable(undefined);
-        self.serial_sanityCheckTools = ko.observable(undefined);
-        self.serial_supportResendsWithoutOk = ko.observable(undefined);
-        self.serial_logPositionOnPause = ko.observable(undefined);
-        self.serial_logPositionOnCancel = ko.observable(undefined);
-        self.serial_abortHeatupOnCancel = ko.observable(undefined);
-        self.serial_maxTimeoutsIdle = ko.observable(undefined);
-        self.serial_maxTimeoutsPrinting = ko.observable(undefined);
-        self.serial_maxTimeoutsLong = ko.observable(undefined);
-        self.serial_capAutoreportTemp = ko.observable(undefined);
-        self.serial_capAutoreportSdStatus = ko.observable(undefined);
-        self.serial_capAutoreportPos = ko.observable(undefined);
-        self.serial_capBusyProtocol = ko.observable(undefined);
-        self.serial_capEmergencyParser = ko.observable(undefined);
-        self.serial_capExtendedM20 = ko.observable(undefined);
-        self.serial_capLfnWrite = ko.observable(undefined);
-        self.serial_sendM112OnError = ko.observable(undefined);
-        self.serial_disableSdPrintingDetection = ko.observable(undefined);
-        self.serial_ackMax = ko.observable(undefined);
-        self.serial_resendRatioThreshold = ko.observable(100);
-        self.serial_resendRatioStart = ko.observable(100);
-        self.serial_ignoreEmptyPorts = ko.observable(undefined);
-        self.serial_enableShutdownActionCommand = ko.observable(undefined);
-
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
         self.folder_watched = ko.observable(undefined);
@@ -379,21 +306,7 @@ $(function () {
             return foundDupe;
         });
 
-        self.observableCopies = {
-            feature_waitForStart: "serial_waitForStart",
-            feature_waitToLoadSdFileList: "serial_waitToLoadSdFileList",
-            feature_sendChecksum: "serial_sendChecksum",
-            feature_sdRelativePath: "serial_sdRelativePath",
-            feature_sdAlwaysAvailable: "serial_sdAlwaysAvailable",
-            feature_swallowOkAfterResend: "serial_swallowOkAfterResend",
-            feature_repetierTargetTemp: "serial_repetierTargetTemp",
-            feature_disableExternalHeatupDetection:
-                "serial_disableExternalHeatupDetection",
-            feature_ignoreIdenticalResends: "serial_ignoreIdenticalResends",
-            feature_firmwareDetection: "serial_firmwareDetection",
-            feature_blockWhileDwelling: "serial_blockWhileDwelling",
-            serial_: "feature_"
-        };
+        self.observableCopies = {};
         _.each(self.observableCopies, function (value, key) {
             if (self.hasOwnProperty(value)) {
                 self[key] = self[value];
@@ -939,89 +852,6 @@ $(function () {
                         );
                     }
                 },
-                serial: {
-                    additionalPorts: function () {
-                        return commentableLinesToArray(self.serial_additionalPorts());
-                    },
-                    additionalBaudrates: function () {
-                        return _.map(
-                            splitTextToArray(
-                                self.serial_additionalBaudrates(),
-                                ",",
-                                true,
-                                function (item) {
-                                    return !isNaN(parseInt(item));
-                                }
-                            ),
-                            function (item) {
-                                return parseInt(item);
-                            }
-                        );
-                    },
-                    blacklistedPorts: function () {
-                        return commentableLinesToArray(self.serial_blacklistedPorts());
-                    },
-                    blacklistedBaudrates: function () {
-                        return _.map(
-                            splitTextToArray(
-                                self.serial_blacklistedBaudrates(),
-                                ",",
-                                true,
-                                function (item) {
-                                    return !isNaN(parseInt(item));
-                                }
-                            ),
-                            function (item) {
-                                return parseInt(item);
-                            }
-                        );
-                    },
-                    longRunningCommands: function () {
-                        return splitTextToArray(
-                            self.serial_longRunningCommands(),
-                            ",",
-                            true
-                        );
-                    },
-                    checksumRequiringCommands: function () {
-                        return splitTextToArray(
-                            self.serial_checksumRequiringCommands(),
-                            ",",
-                            true
-                        );
-                    },
-                    blockedCommands: function () {
-                        return splitTextToArray(self.serial_blockedCommands(), ",", true);
-                    },
-                    ignoredCommands: function () {
-                        return splitTextToArray(self.serial_ignoredCommands(), ",", true);
-                    },
-                    pausingCommands: function () {
-                        return splitTextToArray(self.serial_pausingCommands(), ",", true);
-                    },
-                    emergencyCommands: function () {
-                        return splitTextToArray(
-                            self.serial_emergencyCommands(),
-                            ",",
-                            true
-                        );
-                    },
-                    externalHeatupDetection: function () {
-                        return !self.serial_disableExternalHeatupDetection();
-                    },
-                    alwaysSendChecksum: function () {
-                        return self.serial_sendChecksum() === "always";
-                    },
-                    neverSendChecksum: function () {
-                        return self.serial_sendChecksum() === "never";
-                    },
-                    ignoreErrorsFromFirmware: function () {
-                        return self.serial_serialErrorBehaviour() === "ignore";
-                    },
-                    disconnectOnErrors: function () {
-                        return self.serial_serialErrorBehaviour() === "disconnect";
-                    }
-                },
                 scripts: {
                     gcode: function () {
                         // we have a special handler function for the gcode scripts since the
@@ -1179,61 +1009,6 @@ $(function () {
                 feature: {
                     autoUppercaseBlacklist: function (value) {
                         self.feature_autoUppercaseBlacklist(value.join(", "));
-                    }
-                },
-                serial: {
-                    additionalPorts: function (value) {
-                        self.serial_additionalPorts(value.join("\n"));
-                    },
-                    additionalBaudrates: function (value) {
-                        self.serial_additionalBaudrates(value.join(", "));
-                    },
-                    blacklistedPorts: function (value) {
-                        self.serial_blacklistedPorts(value.join("\n"));
-                    },
-                    blacklistedBaudrates: function (value) {
-                        self.serial_blacklistedBaudrates(value.join(", "));
-                    },
-                    longRunningCommands: function (value) {
-                        self.serial_longRunningCommands(value.join(", "));
-                    },
-                    checksumRequiringCommands: function (value) {
-                        self.serial_checksumRequiringCommands(value.join(", "));
-                    },
-                    blockedCommands: function (value) {
-                        self.serial_blockedCommands(value.join(", "));
-                    },
-                    ignoredCommands: function (value) {
-                        self.serial_ignoredCommands(value.join(", "));
-                    },
-                    pausingCommands: function (value) {
-                        self.serial_pausingCommands(value.join(", "));
-                    },
-                    emergencyCommands: function (value) {
-                        self.serial_emergencyCommands(value.join(", "));
-                    },
-                    externalHeatupDetection: function (value) {
-                        self.serial_disableExternalHeatupDetection(!value);
-                    },
-                    alwaysSendChecksum: function (value) {
-                        if (value) {
-                            self.serial_sendChecksum("always");
-                        }
-                    },
-                    neverSendChecksum: function (value) {
-                        if (value) {
-                            self.serial_sendChecksum("never");
-                        }
-                    },
-                    ignoreErrorsFromFirmware: function (value) {
-                        if (value) {
-                            self.serial_serialErrorBehaviour("ignore");
-                        }
-                    },
-                    disconnectOnErrors: function (value) {
-                        if (value) {
-                            self.serial_serialErrorBehaviour("disconnect");
-                        }
                     }
                 },
                 terminalFilters: function (value) {

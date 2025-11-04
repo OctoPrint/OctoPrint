@@ -14,8 +14,8 @@
 <br>
 </span>
 <hr>
-<span title="{{ _('Name of file currently selected for printing') |edq }}">{{ _("File") }}</span>: <strong data-bind="text: filedisplay, attr: {title: filepath}"
-         data-test-id="selected-file-string"></strong>&nbsp;<strong data-bind="visible: sd" data-test-id="selected-file-sd">(SD)</strong>
+<span title="{{ _('Name of file currently selected for printing') |edq }}">{{ _("File") }}</span>: <strong style="white-space: pre-wrap; word-break: break-all"><span data-bind="class: iconClasses" data-test-id="selected-file-icon"></span>&nbsp;<span data-bind="text: filedisplay, attr: {title: filepath}"
+      data-test-id="selected-file-string"></span></strong>
 <br>
 <span title="{{ _('Upload date of the file currently selected or printing') |edq }}">{{ _("Uploaded") }}</span>: <strong data-bind="text: dateString"></strong>
 <br>
@@ -33,6 +33,18 @@
 <!-- /ko -->
 <span title="{{ _('Estimated total print time based on analysis of the file or past prints') |edq }}">{{ _("Approx. Total Print Time") }}</span>: <strong data-bind="text: estimatedPrintTimeString, attr: {title: estimatedPrintTimeExactString}"></strong>
 <br>
+
+<!-- ko if: thumbnailLink -->
+<div data-bind="visible: thumbnailLink() && $root.thumbnailsEnabled()"
+     style="width: 100%;
+            text-align: center">
+    <!-- djlint:off H006 -->
+    <img data-bind="attr: { src: thumbnailLink }, style: { 'max-width': $root.thumbnailsWidth }"
+         alt="{{ _('Thumbnail of print job') | edq }}">
+    <!-- djlint:on -->
+</div>
+<!-- /ko -->
+
 <hr>
 <span title="{{ _('Total print time so far') |edq }}">{{ _("Print Time") }}</span>: <strong data-bind="text: printTimeString"></strong>
 <br>
