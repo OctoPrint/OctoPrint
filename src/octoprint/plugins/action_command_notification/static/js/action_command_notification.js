@@ -88,7 +88,7 @@ $(function () {
             ) {
                 new PNotify({
                     title: gettext("Printer Notification"),
-                    text: data.message,
+                    text: _.escape(data.message),
                     hide: false,
                     icon: "fa fa-bell-o",
                     buttons: {
