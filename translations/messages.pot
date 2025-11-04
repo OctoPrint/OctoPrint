@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.11.3.dev18+g3cade11a4\n"
+"Project-Id-Version: OctoPrint 1.11.4.dev14+g89fe06222.dirty\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2025-09-08 14:53+0200\n"
+"POT-Creation-Date: 2025-11-04 12:04+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -240,13 +240,13 @@ msgstr ""
 
 #: src/octoprint/plugins/achievements/static/js/achievements.js:351
 #: src/octoprint/static/js/app/viewmodels/files.js:759
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:502
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:511
 msgid "Yes"
 msgstr ""
 
 #: src/octoprint/plugins/achievements/static/js/achievements.js:352
 #: src/octoprint/static/js/app/viewmodels/files.js:758
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:501
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:510
 msgid "No"
 msgstr ""
 
@@ -567,7 +567,7 @@ msgstr ""
 #: src/octoprint/plugins/announcements/templates/announcements.jinja2:66
 #: src/octoprint/plugins/appkeys/templates/appkeys.jinja2:36
 #: src/octoprint/plugins/backup/templates/backup_settings.jinja2:126
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:71
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:98
 #: src/octoprint/plugins/health_check/templates/health_check.jinja2:50
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:223
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:270
@@ -595,8 +595,8 @@ msgstr ""
 #: src/octoprint/plugins/customcontrolmanager/templates/customcontrolmanager_settings.jinja2:164
 #: src/octoprint/plugins/customcontrolmanager/templates/customcontrolmanager_settings.jinja2:183
 #: src/octoprint/plugins/customcontrolmanager/templates/customcontrolmanager_settings.jinja2:184
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:6
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:30
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:5
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:38
 #: src/octoprint/plugins/logging/templates/logging_settings.jinja2:30
 #: src/octoprint/plugins/logging/templates/logging_settings.jinja2:70
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:139
@@ -1848,7 +1848,7 @@ msgid "Horizontal Grid"
 msgstr ""
 
 #: src/octoprint/plugins/customcontrolmanager/static/js/customcontrolmanager.js:166
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:42
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:70
 msgid "Command"
 msgstr ""
 
@@ -2140,6 +2140,23 @@ msgid "Plugin to configure event subscriptions available in config.yaml."
 msgstr ""
 
 #: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:2
+msgid "Warning:"
+msgstr ""
+
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:2
+msgid "For changes to take effect you must restart OctoPrint after saving."
+msgstr ""
+
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:6
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:51
+msgid "Event(s)"
+msgstr ""
+
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:25
+msgid "Add"
+msgstr ""
+
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:28
 #, python-format
 msgid ""
 "For additional information on OctoPrint events please see <a "
@@ -2147,41 +2164,57 @@ msgid ""
 "official documentation</a>."
 msgstr ""
 
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:3
-msgid "Warning:"
-msgstr ""
-
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:3
-msgid "For changes to take effect you must restart OctoPrint after saving."
-msgstr ""
-
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:7
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:36
-msgid "Event(s)"
-msgstr ""
-
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:9
-msgid "Add"
-msgstr ""
-
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:26
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:33
 msgid "Command Editor"
 msgstr ""
 
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:48
-msgid "Type"
-msgstr ""
-
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:54
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:46
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:127
 msgid "Enabled"
 msgstr ""
 
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:60
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:57
+msgid "Type"
+msgstr ""
+
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:61
+msgid "Execute <strong>system</strong> commands"
+msgstr ""
+
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:65
+msgid "Send <strong>GCODE</strong> commands to the printer"
+msgstr ""
+
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:78
+msgid "Shell"
+msgstr ""
+
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:78
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:86
+#: src/octoprint/templates/snippets/settings/accesscontrol/permission_list.jinja2:8
+#: src/octoprint/templates/snippets/settings/accesscontrol/subgroup_list.jinja2:8
+msgid "Dangerous"
+msgstr ""
+
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:79
+msgid ""
+"Only check this if you absolutely need full shell access by your command,"
+" e.g. if you need access to the <code>PATH</code> or other environment "
+"variables, or if you need to chain multiple commands directly together."
+msgstr ""
+
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:86
 msgid "Debug"
 msgstr ""
 
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:66
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:87
+msgid ""
+"If this is checked, OctoPrint will log the full command as it is executed"
+" to the log file. That might leak any included credentials if you then "
+"share the logs."
+msgstr ""
+
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:93
 msgid ""
 "Please note that any event handlers you define here will be processed "
 "<em>asynchronously</em> to OctoPrint's own processing of the event. You "
@@ -2189,7 +2222,7 @@ msgid ""
 "handlers."
 msgstr ""
 
-#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:71
+#: src/octoprint/plugins/eventmanager/templates/eventmanager_settings.jinja2:98
 msgid "Do not forget to save in main settings."
 msgstr ""
 
@@ -2261,7 +2294,7 @@ msgstr ""
 #: src/octoprint/plugins/gcodeviewer/static/js/gcodeviewer.js:771
 #: src/octoprint/static/js/app/viewmodels/control.js:220
 #: src/octoprint/static/js/app/viewmodels/files.js:1133
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:386
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:395
 #: src/octoprint/static/js/app/viewmodels/temperature.js:153
 #: src/octoprint/static/js/app/viewmodels/temperature.js:164
 #: src/octoprint/static/js/app/viewmodels/temperature.js:411
@@ -2513,11 +2546,11 @@ msgstr ""
 msgid "Force compression"
 msgstr ""
 
-#: src/octoprint/plugins/health_check/__init__.py:131
+#: src/octoprint/plugins/health_check/__init__.py:132
 msgid "Allows to perform health checks and view their results"
 msgstr ""
 
-#: src/octoprint/plugins/health_check/__init__.py:233
+#: src/octoprint/plugins/health_check/__init__.py:234
 msgid ""
 "Without this plugin you might miss problematic issues with your OctoPrint"
 " installation."
@@ -2801,19 +2834,19 @@ msgstr ""
 msgid "Select a logger..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/__init__.py:237
+#: src/octoprint/plugins/pluginmanager/__init__.py:252
 msgid "Allows to list installed plugins."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/__init__.py:244
+#: src/octoprint/plugins/pluginmanager/__init__.py:259
 msgid "Allows to enable, disable and uninstall installed plugins."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/__init__.py:253
+#: src/octoprint/plugins/pluginmanager/__init__.py:268
 msgid "Allows to install new plugins. Includes the \"Manage plugins\" permission."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/__init__.py:356
+#: src/octoprint/plugins/pluginmanager/__init__.py:371
 msgid "Plugin Manager"
 msgstr ""
 
@@ -5128,12 +5161,12 @@ msgstr ""
 msgid "Finish"
 msgstr ""
 
-#: src/octoprint/server/api/system.py:254
+#: src/octoprint/server/api/system.py:262
 #: src/octoprint/templates/snippets/settings/server/serverCommandSystemShutdown.jinja2:2
 msgid "Shutdown system"
 msgstr ""
 
-#: src/octoprint/server/api/system.py:255
+#: src/octoprint/server/api/system.py:263
 msgid ""
 "<strong>You are about to shutdown the system.</strong></p><p>This action "
 "may disrupt any ongoing print jobs (depending on your printer's "
@@ -5141,11 +5174,11 @@ msgid ""
 " from your printer's internal storage)."
 msgstr ""
 
-#: src/octoprint/server/api/system.py:261
+#: src/octoprint/server/api/system.py:270
 msgid "Reboot system"
 msgstr ""
 
-#: src/octoprint/server/api/system.py:262
+#: src/octoprint/server/api/system.py:271
 msgid ""
 "<strong>You are about to reboot the system.</strong></p><p>This action "
 "may disrupt any ongoing print jobs (depending on your printer's "
@@ -5153,12 +5186,12 @@ msgid ""
 " from your printer's internal storage)."
 msgstr ""
 
-#: src/octoprint/server/api/system.py:268
+#: src/octoprint/server/api/system.py:278
 #: src/octoprint/templates/snippets/settings/server/serverCommandServerRestart.jinja2:2
 msgid "Restart OctoPrint"
 msgstr ""
 
-#: src/octoprint/server/api/system.py:269
+#: src/octoprint/server/api/system.py:279
 msgid ""
 "<strong>You are about to restart the OctoPrint "
 "server.</strong></p><p>This action may disrupt any ongoing print jobs "
@@ -5166,11 +5199,11 @@ msgid ""
 " apply to prints run directly from your printer's internal storage)."
 msgstr ""
 
-#: src/octoprint/server/api/system.py:275
+#: src/octoprint/server/api/system.py:285
 msgid "Restart OctoPrint in safe mode"
 msgstr ""
 
-#: src/octoprint/server/api/system.py:276
+#: src/octoprint/server/api/system.py:286
 msgid ""
 "<strong>You are about to restart the OctoPrint server in safe "
 "mode.</strong></p><p>This action may disrupt any ongoing print jobs "
@@ -5556,7 +5589,7 @@ msgstr ""
 msgid "Finishing"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:1090
+#: src/octoprint/static/js/app/main.js:1101
 msgid "Loading OctoPrint's UI, please wait..."
 msgstr ""
 
@@ -5681,14 +5714,14 @@ msgid "Only show %(type)s files"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:754
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:497
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:506
 msgid ""
 "This will start a new print job. Please ensure that the print bed is "
 "clear."
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:757
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:500
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:509
 msgid "Do you want to start the print job now?"
 msgstr ""
 
@@ -6166,7 +6199,7 @@ msgstr ""
 msgid "sec"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:438
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:447
 #, python-format
 msgid ""
 "<p>%(ratio)d%% of transmitted lines have triggered resend requests. The "
@@ -6175,25 +6208,25 @@ msgid ""
 "target='_blank'>this FAQ entry</a> on tips on how to solve this.</p>"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:450
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:459
 msgid "Critical resend ratio!"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:465
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:474
 msgid ""
 "This will restart the print job from the beginning. Please ensure that "
 "the print bed is clear."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:527
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:536
 msgid "This will cancel your print."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:528
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:537
 msgid "No, continue the print"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/printerstate.js:529
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:538
 msgid "Yes, cancel the print"
 msgstr ""
 
@@ -8916,11 +8949,6 @@ msgstr ""
 
 #: src/octoprint/templates/snippets/settings/accesscontrol/permission_list.jinja2:8
 msgid "Plugin"
-msgstr ""
-
-#: src/octoprint/templates/snippets/settings/accesscontrol/permission_list.jinja2:8
-#: src/octoprint/templates/snippets/settings/accesscontrol/subgroup_list.jinja2:8
-msgid "Dangerous"
 msgstr ""
 
 #: src/octoprint/templates/snippets/settings/accesscontrol/subgroup_list.jinja2:8
