@@ -59,11 +59,11 @@ WHEEL = "pep517.whl"
 @pytest.mark.parametrize(
     "input_name, expected",
     [
-        (LEGACY_ZIP, True),
-        (LEGACY_TARBALL, True),
-        (MODERN_ZIP, False),
-        (MODERN_TARBALL, False),
-        (WHEEL, False),
+        pytest.param(LEGACY_ZIP, True, id="legacy_zip"),
+        pytest.param(LEGACY_TARBALL, True, id="legacy_tarball"),
+        pytest.param(MODERN_ZIP, False, id="modern_zip"),
+        pytest.param(MODERN_TARBALL, False, id="modern_tarball"),
+        pytest.param(WHEEL, False, id="wheel"),
     ],
 )
 def test_is_pre_pep517_plugin_package(input_name, expected):
@@ -78,7 +78,10 @@ def test_is_pre_pep517_plugin_package(input_name, expected):
 
 @pytest.mark.parametrize(
     "content, expected",
-    [(LEGACY_SETUP_PY_SNIPPET, True), (MODERN_SETUP_PY_SNIPPET, False)],
+    [
+        pytest.param(LEGACY_SETUP_PY_SNIPPET, True, id="legacy_setup_py"),
+        pytest.param(MODERN_SETUP_PY_SNIPPET, False, id="modern_setup_py"),
+    ],
 )
 def test_has_legacy_octoprint_setuptools_dependency(content, expected):
     actual = has_legacy_octoprint_setuptools_dependency(content)
