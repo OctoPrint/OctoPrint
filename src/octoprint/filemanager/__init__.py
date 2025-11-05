@@ -737,13 +737,19 @@ class FileManager:
 
         result = {}
         for loc in locations:
-            result[loc] = self._storage_managers[loc].list_storage_entries(
-                path=path,
-                filter=filter,
-                recursive=recursive,
-                level=level,
-                force_refresh=force_refresh,
-            )
+            try:
+                result[loc] = self._storage_managers[loc].list_storage_entries(
+                    path=path,
+                    filter=filter,
+                    recursive=recursive,
+                    level=level,
+                    force_refresh=force_refresh,
+                )
+            except KeyError:
+                # unknown loc, we ignore this, it probably just got unregistered
+                pass
+            except Exception:
+                self._logger.exception(f"Error while fetching storage entries for {loc}")
         return result
 
     def get_storage_entry(self, storage: str, path: str) -> StorageEntry:
