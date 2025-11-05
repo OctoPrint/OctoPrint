@@ -18,7 +18,8 @@ RUN [ "$BUILD_TYPE" != "raspi" ] || \
 
 # Default packages
 RUN apt-get -y install python3 python3-venv python3-dev git \
-    cmake cmake-data g++ libffi-dev libssl-dev
+    cmake cmake-data g++ libffi-dev libssl-dev \
+    libjpeg62-turbo-dev imagemagick
 
 FROM build_env AS build
 ADD / /octoprint/src
