@@ -81,6 +81,7 @@ dependencies = [
     "netaddr>=1.3.0,<1.4",  # changelog hints at breaking changes on minor version increases
     "packaging>=24.2",
     "libpass>=1.8.1,<2",
+    "octoprint-plugin-tool",
     "pathvalidate>=3.2.3,<4",
     "psutil>=7,<8",
     "pydantic>=2.10.6,<3",
