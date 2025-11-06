@@ -17,3 +17,4 @@ Developing Plugins
    gettingstarted.rst
    distributing.rst
    python3_migration.rst
+   pyproject_toml_migration.rst
