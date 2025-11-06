@@ -325,7 +325,7 @@ def search_through_file(path, term, regex=False):
 def search_through_file_python(path, term, compiled):
     with open(path, encoding="utf8", errors="replace") as f:
         for line in f:
-            if term in line or compiled.match(term):
+            if term in line or compiled.match(line):
                 return True
     return False
 
