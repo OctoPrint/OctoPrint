@@ -706,13 +706,19 @@ class FileManager:
 
         result = {}
         for loc in locations:
-            result[loc] = self._storage_managers[loc].list_files(
-                path=path,
-                filter=filter,
-                recursive=recursive,
-                level=level,
-                force_refresh=force_refresh,
-            )
+            try:
+                result[loc] = self._storage(loc).list_files(
+                    path=path,
+                    filter=filter,
+                    recursive=recursive,
+                    level=level,
+                    force_refresh=force_refresh,
+                )
+            except NoSuchStorage:
+                # unknown loc, we ignore this, it probably just got unregistered
+                result[loc] = {}
+            except Exception:
+                self._logger.exception(f"Error while listing files for {loc}")
         return result
 
     @deprecated(
@@ -738,14 +744,14 @@ class FileManager:
         result = {}
         for loc in locations:
             try:
-                result[loc] = self._storage_managers[loc].list_storage_entries(
+                result[loc] = self._storage(loc).list_storage_entries(
                     path=path,
                     filter=filter,
                     recursive=recursive,
                     level=level,
                     force_refresh=force_refresh,
                 )
-            except KeyError:
+            except NoSuchStorage:
                 # unknown loc, we ignore this, it probably just got unregistered
                 pass
             except Exception:
@@ -1341,9 +1347,15 @@ class FileManager:
         return self._storage(location).capabilities
 
     def _storage(self, location: str) -> StorageInterface:
-        if location not in self._storage_managers:
-            raise NoSuchStorage(f"No storage configured for destination {location}")
-        return self._storage_managers[location]
+        if location == FileDestinations.SDCARD:
+            location = FileDestinations.PRINTER
+
+        try:
+            return self._storage_managers[location]
+        except KeyError:
+            raise NoSuchStorage(
+                f"No storage configured for destination {location}"
+            ) from None
 
     def _add_analysis_result(self, location, path, result):
         if location not in self._storage_managers:
