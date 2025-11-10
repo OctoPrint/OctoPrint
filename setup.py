@@ -68,5 +68,6 @@ if __name__ == "__main__":
     version, cmdclass = get_version_and_cmdclass(os.path.join("src", "octoprint"))
     setuptools.setup(
         version=version,
+        license="AGPL-3.0-or-later",
         cmdclass=get_cmdclass(cmdclass),
     )

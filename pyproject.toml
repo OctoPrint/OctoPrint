@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "OctoPrint"
-dynamic = ["version"]
+dynamic = ["version", "license"]
 authors = [
     {name = "Gina Häußge", email = "gina@octoprint.org"}
 ]
@@ -13,8 +13,6 @@ maintainers = [
 ]
 description = "The snappy web interface for your 3D printer"
 readme = {file = "README.md", content-type = "text/markdown"}
-license = "AGPL-3.0-or-later"
-license-files = ["LICENSE.txt", "THIRDPARTYLICENSES.md"]
 keywords = [
     "3dprinting",
     "3dprinter",
