@@ -36,7 +36,7 @@ class TrackingPlugin(
         self._throttle_state = None
         self._helpers_get_throttle_state = None
         self._helpers_get_unlocked_achievements = None
-        self._printer_connection_parameters = None
+        self._printer_connector = None
         self._url = None
         self._ping_worker = None
         self._pong_worker = None
@@ -149,10 +149,7 @@ class TrackingPlugin(
             self._track_commerror_event(event, payload)
 
         elif event in (Events.CONNECTED,):
-            self._printer_connection_parameters = {
-                "port": payload["port"],
-                "baudrate": payload["baudrate"],
-            }
+            self._printer_connector = payload.get("connector")
             self._record_next_firmware_info = True
 
         elif event in (Events.FIRMWARE_DATA,) and self._record_next_firmware_info:
@@ -494,9 +491,8 @@ class TrackingPlugin(
 
         if event in (Events.FIRMWARE_DATA,):
             args = {"firmware_name": payload["name"]}
-            if self._printer_connection_parameters:
-                args["printer_port"] = self._printer_connection_parameters["port"]
-                args["printer_baudrate"] = self._printer_connection_parameters["baudrate"]
+            if self._printer_connector:
+                args["printer_connector"] = self._printer_connector
             self._track("printer_connected", **args)
 
     def _track_printer_safety_event(self, event, payload):

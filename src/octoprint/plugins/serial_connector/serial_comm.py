@@ -3796,7 +3796,7 @@ class MachineCom:
         else:
             self.initSdCard(tags={"trigger:comm.on_connected"})
 
-        payload = {"port": self._port, "baudrate": self._baudrate}
+        payload = {"connector": "serial", "port": self._port, "baudrate": self._baudrate}
         eventManager().fire(Events.CONNECTED, payload)
         self.sendGcodeScript("afterPrinterConnected", replacements={"event": payload})
 
