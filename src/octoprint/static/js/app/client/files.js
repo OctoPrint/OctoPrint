@@ -92,14 +92,15 @@
         return this.base.issueCommand(url, command, data, opts);
     };
 
-    OctoPrintFilesClient.prototype.select = function (location, path, print, opts) {
-        print = print || false;
+    OctoPrintFilesClient.prototype.select = function (location, path, parameters, opts) {
+        if (parameters && !_.isPlainObject(parameters)) {
+            const print = !!parameters;
+            parameters = {
+                print: print
+            };
+        }
 
-        var data = {
-            print: print
-        };
-
-        return this.issueEntryCommand(location, path, "select", data, opts);
+        return this.issueEntryCommand(location, path, "select", parameters, opts);
     };
 
     OctoPrintFilesClient.prototype.analyse = function (location, path, parameters, opts) {

@@ -25,6 +25,8 @@ class PrintJob(BaseModel):
     filament_estimate: dict[str, FilamentEstimate] = {}
     path_on_disk: Optional[str] = None
 
+    params: Optional[dict] = None
+
     def __str__(self):
         return f"{self.storage}:{self.path}"
 

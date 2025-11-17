@@ -24,28 +24,34 @@
         return OctoPrint.get(url, opts);
     };
 
-    OctoPrintJobClient.prototype.start = function (opts) {
-        return this.issueCommand("start", opts);
+    OctoPrintJobClient.prototype.start = function (parameters, opts) {
+        parameters = _.isPlainObject(parameters) ? parameters : {};
+        return this.issueCommand("start", parameters, opts);
     };
 
-    OctoPrintJobClient.prototype.restart = function (opts) {
-        return this.issueCommand("restart", opts);
+    OctoPrintJobClient.prototype.restart = function (parameters, opts) {
+        parameters = _.isPlainObject(parameters) ? parameters : {};
+        return this.issueCommand("restart", parameters, opts);
     };
 
-    OctoPrintJobClient.prototype.pause = function (opts) {
-        return this.issueCommand("pause", {action: "pause"}, opts);
+    OctoPrintJobClient.prototype.pause = function (parameters, opts) {
+        parameters = _.isPlainObject(parameters) ? parameters : {};
+        return this.issueCommand("pause", {...parameters, action: "pause"}, opts);
     };
 
-    OctoPrintJobClient.prototype.resume = function (opts) {
-        return this.issueCommand("pause", {action: "resume"}, opts);
+    OctoPrintJobClient.prototype.resume = function (parameters, opts) {
+        parameters = _.isPlainObject(parameters) ? parameters : {};
+        return this.issueCommand("pause", {...parameters, action: "resume"}, opts);
     };
 
-    OctoPrintJobClient.prototype.togglePause = function (opts) {
-        return this.issueCommand("pause", {action: "toggle"}, opts);
+    OctoPrintJobClient.prototype.togglePause = function (parameters, opts) {
+        parameters = _.isPlainObject(parameters) ? parameters : {};
+        return this.issueCommand("pause", {...parameters, action: "toggle"}, opts);
     };
 
-    OctoPrintJobClient.prototype.cancel = function (opts) {
-        return this.issueCommand("cancel", opts);
+    OctoPrintJobClient.prototype.cancel = function (parameters, opts) {
+        parameters = _.isPlainObject(parameters) ? parameters : {};
+        return this.issueCommand("cancel", parameters, opts);
     };
 
     OctoPrintClient.registerComponent("job", OctoPrintJobClient);

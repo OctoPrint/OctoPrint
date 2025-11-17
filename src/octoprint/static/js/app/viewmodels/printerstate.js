@@ -540,20 +540,16 @@ $(function () {
                     }
                 });
             } else {
-                var proceed = function (p) {
-                    var prevented = false;
-                    var callback = function () {
-                        OctoPrint.job.start();
+                const proceed = function (p) {
+                    const callback = function (params) {
+                        OctoPrint.job.start({params: params});
                     };
 
-                    callViewModels(
-                        self.allViewModels,
-                        "onBeforePrintStart",
-                        function (method) {
-                            prevented =
-                                prevented || method(callback, self.filedata()) === false;
-                        }
-                    );
+                    let prevented = false;
+                    callViewModels(self.allViewModels, "onBeforePrintStart", (method) => {
+                        prevented =
+                            prevented || method(callback, self.filedata()) === false;
+                    });
 
                     if (!prevented) {
                         callback();

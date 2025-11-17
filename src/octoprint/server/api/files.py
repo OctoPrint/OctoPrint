@@ -926,7 +926,8 @@ def gcodeFileCommand(storage, path):
                             )
                         start_print = True
 
-                job = fileManager.create_job(storage, path, owner=user)
+                params = data.get("params", {})
+                job = fileManager.create_job(storage, path, owner=user, params=params)
                 printer.set_job(job, print_after_select=start_print)
 
         elif command == "unselect":

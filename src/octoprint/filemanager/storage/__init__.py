@@ -532,7 +532,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def create_job(self, path, owner: str = None) -> "PrintJob":
+    def create_job(self, path, owner: str = None, params: dict = None) -> "PrintJob":
         from octoprint.printer.job import DurationEstimate, FilamentEstimate, PrintJob
 
         entry = self.get_storage_entry(path)
@@ -567,6 +567,7 @@ class StorageInterface:
             duration_estimate=duration_estimate,
             filament_estimate=filament_estimate,
             path_on_disk=path_on_disk,
+            params=params,
         )
 
     def canonicalize(self, path):

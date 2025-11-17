@@ -356,10 +356,16 @@ class CommonPrinterMixin:
             return self.current_job
         return None
 
-    def set_job(self, job: PrintJob, tags=None, *args, **kwargs):
+    def set_job(
+        self,
+        job: PrintJob,
+        tags: set[str] = None,
+        *args,
+        **kwargs,
+    ):
         pass
 
-    def start_print(self, tags=None, *args, **kwargs):
+    def start_print(self, tags: set[str] = None, params: dict = None, *args, **kwargs):
         """
         Starts printing the currently selected file. If no file is currently selected, does nothing.
 
@@ -367,7 +373,7 @@ class CommonPrinterMixin:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
 
-    def pause_print(self, tags=None, *args, **kwargs):
+    def pause_print(self, tags: set[str] = None, params: dict = None, *args, **kwargs):
         """
         Pauses the current print job if it is currently running, does nothing otherwise.
 
@@ -375,7 +381,7 @@ class CommonPrinterMixin:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
 
-    def resume_print(self, tags=None, *args, **kwargs):
+    def resume_print(self, tags: set[str] = None, params: dict = None, *args, **kwargs):
         """
         Resumes the current print job if it is currently paused, does nothing otherwise.
 
@@ -383,7 +389,9 @@ class CommonPrinterMixin:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
 
-    def toggle_pause_print(self, tags=None, *args, **kwargs):
+    def toggle_pause_print(
+        self, tags: set[str] = None, params: dict = None, *args, **kwargs
+    ):
         """
         Pauses the current print job if it is currently running or resumes it if it is currently paused.
 
@@ -395,7 +403,7 @@ class CommonPrinterMixin:
         elif self.is_paused():
             self.resume_print(*args, tags=tags, **kwargs)
 
-    def cancel_print(self, tags=None, *args, **kwargs):
+    def cancel_print(self, tags: set[str] = None, params: dict = None, *args, **kwargs):
         """
         Cancels the current print job.
 
@@ -670,7 +678,7 @@ class PrinterFilesMixin:
     ) -> Optional[tuple[StorageThumbnail, IO]]:
         return None
 
-    def create_job(self, path: str, owner: str = None) -> PrintJob:
+    def create_job(self, path: str, owner: str = None, params: dict = None) -> PrintJob:
         printer_file = self.get_printer_file(path)
         if not printer_file:
             return None
@@ -701,6 +709,7 @@ class PrinterFilesMixin:
             owner=owner,
             duration_estimate=duration_estimate,
             filament_estimate=filament_estimate,
+            params=params,
         )
 
 

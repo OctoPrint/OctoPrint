@@ -717,12 +717,23 @@ $(function () {
             }
 
             const proceed = (print) => {
-                const callback = () => {
-                    OctoPrint.files.select(data.origin, data.path, print);
+                let prevented = false;
+
+                const callback = (params) => {
+                    OctoPrint.files.select(data.origin, data.path, {
+                        print: print,
+                        params: params
+                    });
                 };
 
+                callViewModels(self.allViewModels, "onBeforeFileLoad", (method) => {
+                    prevented = prevented || method(callback, data) === false;
+                });
+                if (prevented) {
+                    return;
+                }
+
                 if (print) {
-                    let prevented = false;
                     callViewModels(
                         self.allViewModels,
                         "onBeforePrintStart",

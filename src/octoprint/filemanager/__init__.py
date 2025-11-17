@@ -1214,8 +1214,10 @@ class FileManager:
     def remove_link(self, location, path, rel, data):
         self._storage(location).remove_link(path, rel, data)
 
-    def create_job(self, location, path, owner: str = None) -> "PrintJob":
-        return self._storage(location).create_job(path, owner=owner)
+    def create_job(
+        self, location, path, owner: str = None, params: dict = None
+    ) -> "PrintJob":
+        return self._storage(location).create_job(path, owner=owner, params=params)
 
     def log_print(self, location, path, timestamp, print_time, success, printer_profile):
         try:

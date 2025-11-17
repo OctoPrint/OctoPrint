@@ -873,7 +873,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     def get_markings(self):
         return self._markings
 
-    def start_print(self, pos=None, user=None, tags=None, *args, **kwargs):
+    def start_print(
+        self, pos=None, user=None, tags=None, params: dict = None, *args, **kwargs
+    ):
         """
         Starts the currently loaded print job.
         Only starts if the printer is connected and operational, not currently printing and a printjob is loaded
@@ -894,9 +896,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             tags = set()
         tags |= {"trigger:printer.start_print"}
 
-        self._connection.start_print(pos=pos, user=user, tags=tags)
+        self._connection.start_print(pos=pos, user=user, tags=tags, params=params)
 
-    def pause_print(self, user=None, tags=None, *args, **kwargs):
+    def pause_print(self, user=None, tags=None, params: dict = None, *args, **kwargs):
         """
         Pause the current printjob.
         """
@@ -910,9 +912,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             tags = set()
         tags |= {"trigger:printer.pause_print"}
 
-        self._connection.pause_print(user=user, tags=tags)
+        self._connection.pause_print(user=user, tags=tags, params=params)
 
-    def resume_print(self, user=None, tags=None, *args, **kwargs):
+    def resume_print(self, user=None, tags=None, params: dict = None, *args, **kwargs):
         if self._connection is None:
             return
 
@@ -923,9 +925,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             tags = set()
         tags |= {"trigger:printer.resume_print"}
 
-        self._connection.resume_print(user=user, tags=tags)
+        self._connection.resume_print(user=user, tags=tags, params=params)
 
-    def cancel_print(self, user=None, tags=None, *args, **kwargs):
+    def cancel_print(self, user=None, tags=None, params: dict = None, *args, **kwargs):
         if self._connection is None:
             return
 
@@ -933,7 +935,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             tags = set()
         tags |= {"trigger:printer.cancel_print"}
 
-        self._connection.cancel_print(user=user, tags=tags)
+        self._connection.cancel_print(user=user, tags=tags, params=params)
 
     def get_state_string(self, state=None, *args, **kwargs):
         if self._connection is None:

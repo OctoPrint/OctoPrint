@@ -25,8 +25,8 @@ def controlJob():
     activePrintjob = printer.is_printing() or printer.is_paused()
 
     tags = {"source:api", "api:job"}
-
     user = current_user.get_name()
+    params = data.get("params")
 
     with Permissions.PRINT.require(403):
         if command == "start":
@@ -35,14 +35,14 @@ def controlJob():
                     409,
                     description="Printer already has an active print job, did you mean 'restart'?",
                 )
-            printer.start_print(tags=tags, user=user)
+            printer.start_print(tags=tags, user=user, params=params)
         elif command == "restart":
             if not printer.is_paused():
                 abort(
                     409,
                     description="Printer does not have an active print job or is not paused",
                 )
-            printer.start_print(tags=tags, user=user)
+            printer.start_print(tags=tags, user=user, params=params)
         elif command == "pause":
             if not activePrintjob:
                 abort(
@@ -51,11 +51,11 @@ def controlJob():
                 )
             action = data.get("action", "toggle")
             if action == "toggle":
-                printer.toggle_pause_print(tags=tags, user=user)
+                printer.toggle_pause_print(tags=tags, user=user, params=params)
             elif action == "pause":
-                printer.pause_print(tags=tags, user=user)
+                printer.pause_print(tags=tags, user=user, params=params)
             elif action == "resume":
-                printer.resume_print(tags=tags, user=user)
+                printer.resume_print(tags=tags, user=user, params=params)
             else:
                 abort(400, description="Unknown action")
         elif command == "cancel":
@@ -64,7 +64,7 @@ def controlJob():
                     409,
                     description="Printer is neither printing nor paused, 'cancel' command cannot be performed",
                 )
-            printer.cancel_print(tags=tags, user=user)
+            printer.cancel_print(tags=tags, user=user, params=params)
     return NO_CONTENT
 
 

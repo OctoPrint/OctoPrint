@@ -418,10 +418,10 @@ class PrinterFileStorage(StorageInterface):
         except KeyError:
             pass
 
-    def create_job(self, path, owner=None):
-        job = self._connection.create_job(path, owner=owner)
+    def create_job(self, path, owner: str = None, params: dict = None):
+        job = self._connection.create_job(path, owner=owner, params=params)
         if job is None:
-            job = super().create_job(path, owner)
+            job = super().create_job(path, owner=owner, params=params)
         return job
 
     def _strip_leading_slash(self, path: str) -> str:
