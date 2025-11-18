@@ -1198,233 +1198,246 @@ class LocalFileStorage(StorageInterface):
         metadata: dict,
         force_refresh: bool = False,
     ) -> tuple[StorageEntry, bool]:
-        path_on_disk = self.path_on_disk(path)
-
-        name = display = os.path.basename(path_on_disk)
-        stat = os.stat(path_on_disk)
-
         try:
-            new_name, new_path_on_disk = self._sanitize_entry(name, path, path_on_disk)
-            if name != new_name or path_on_disk != new_path_on_disk:
-                display = to_unicode(name)
-                name = new_name
-                path_on_disk = new_path_on_disk
-                stat = os.stat(path_on_disk)
-        except Exception:
-            # error while trying to rename the file, we'll return here
-            return None, False
+            path_on_disk = self.path_on_disk(path)
 
-        folder = os.path.isdir(path_on_disk)
-        parent_on_disk = os.path.dirname(path_on_disk)
+            name = display = os.path.basename(path_on_disk)
+            stat = os.stat(path_on_disk)
 
-        metadata_dirty = False
+            try:
+                new_name, new_path_on_disk = self._sanitize_entry(
+                    name, path, path_on_disk
+                )
+                if name != new_name or path_on_disk != new_path_on_disk:
+                    display = to_unicode(name)
+                    name = new_name
+                    path_on_disk = new_path_on_disk
+                    stat = os.stat(path_on_disk)
+            except Exception:
+                # error while trying to rename or stat the file, we'll return here
+                return None, False
 
-        try:
-            # folder recursion
-            if folder:
-                if name in metadata and isinstance(metadata[name], dict):
-                    entry_metadata = metadata[name]
-                    if "display" not in entry_metadata and display != name:
-                        metadata[name]["display"] = display
+            folder = os.path.isdir(path_on_disk)
+            parent_on_disk = os.path.dirname(path_on_disk)
+
+            metadata_dirty = False
+
+            try:
+                # folder recursion
+                if folder:
+                    if name in metadata and isinstance(metadata[name], dict):
+                        entry_metadata = metadata[name]
+                        if "display" not in entry_metadata and display != name:
+                            metadata[name]["display"] = display
+                            metadata_dirty = True
+
+                    elif name != display:
+                        entry_metadata = self._add_basic_metadata(
+                            parent_on_disk,
+                            name,
+                            display_name=display,
+                            save=False,
+                            metadata=metadata,
+                        )
                         metadata_dirty = True
 
-                elif name != display:
-                    entry_metadata = self._add_basic_metadata(
-                        parent_on_disk,
-                        name,
-                        display_name=display,
-                        save=False,
-                        metadata=metadata,
+                    else:
+                        entry_metadata = {}
+
+                    storage_entry = StorageFolder(
+                        name=name,
+                        display=entry_metadata.get("display", name),
+                        origin=self.storage,
+                        path=path,
                     )
-                    metadata_dirty = True
+                    if stat:
+                        storage_entry.date = int(stat.st_mtime)
 
+                    storage_entry = self._enrich_folder(
+                        storage_entry, force_refresh=force_refresh
+                    )
+
+                    return storage_entry, metadata_dirty
+
+                # file handling
                 else:
-                    entry_metadata = {}
+                    type_path = octoprint.filemanager.get_file_type(name)
+                    if not type_path:
+                        # only supported extensions
+                        return None, metadata_dirty
+                    else:
+                        file_type = type_path[0]
 
-                storage_entry = StorageFolder(
-                    name=name,
-                    display=entry_metadata.get("display", name),
-                    origin=self.storage,
-                    path=path,
-                )
-                if stat:
-                    storage_entry.date = int(stat.st_mtime)
-
-                storage_entry = self._enrich_folder(
-                    storage_entry, force_refresh=force_refresh
-                )
-
-                return storage_entry, metadata_dirty
-
-            # file handling
-            else:
-                type_path = octoprint.filemanager.get_file_type(name)
-                if not type_path:
-                    # only supported extensions
-                    return None, metadata_dirty
-                else:
-                    file_type = type_path[0]
-
-                if name in metadata and isinstance(metadata[name], dict):
-                    entry_metadata = metadata[name]
-                    if "display" not in entry_metadata and display != name:
-                        metadata[name]["display"] = display
+                    if name in metadata and isinstance(metadata[name], dict):
+                        entry_metadata = metadata[name]
+                        if "display" not in entry_metadata and display != name:
+                            metadata[name]["display"] = display
+                            metadata_dirty = True
+                    else:
+                        entry_metadata = self._add_basic_metadata(
+                            parent_on_disk,
+                            name,
+                            display_name=display,
+                            save=False,
+                            metadata=metadata,
+                        )
                         metadata_dirty = True
-                else:
-                    entry_metadata = self._add_basic_metadata(
-                        parent_on_disk,
-                        name,
-                        display_name=display,
-                        save=False,
-                        metadata=metadata,
+
+                    storage_entry = StorageFile(
+                        name=name,
+                        display=entry_metadata.get("display", name),
+                        origin=self.storage,
+                        path=path,
+                        entry_type=file_type,
+                        type_path=type_path,
                     )
-                    metadata_dirty = True
 
-                storage_entry = StorageFile(
-                    name=name,
-                    display=entry_metadata.get("display", name),
-                    origin=self.storage,
-                    path=path,
-                    entry_type=file_type,
-                    type_path=type_path,
-                )
+                    if entry_metadata:
+                        storage_entry.metadata = MetadataEntry()
 
-                if entry_metadata:
-                    storage_entry.metadata = MetadataEntry()
+                        if "user" in entry_metadata:
+                            storage_entry.user = entry_metadata["user"]
 
-                    if "user" in entry_metadata:
-                        storage_entry.user = entry_metadata["user"]
+                        if "analysis" in entry_metadata:
+                            meta_analysis = entry_metadata["analysis"]
 
-                    if "analysis" in entry_metadata:
-                        meta_analysis = entry_metadata["analysis"]
+                            analysis = AnalysisResult()
 
-                        analysis = AnalysisResult()
+                            if "estimatedPrintTime" in meta_analysis:
+                                analysis.estimatedPrintTime = meta_analysis[
+                                    "estimatedPrintTime"
+                                ]
 
-                        if "estimatedPrintTime" in meta_analysis:
-                            analysis.estimatedPrintTime = meta_analysis[
-                                "estimatedPrintTime"
-                            ]
-
-                        if "printingArea" in meta_analysis:
-                            x = meta_analysis["printingArea"]
-                            analysis.printingArea = AnalysisVolume(
-                                minX=x["minX"],
-                                minY=x["minY"],
-                                minZ=x["minZ"],
-                                maxX=x["maxX"],
-                                maxY=x["maxY"],
-                                maxZ=x["maxZ"],
-                            )
-
-                        if "travelArea" in meta_analysis:
-                            x = meta_analysis["travelArea"]
-                            analysis.travelArea = AnalysisVolume(
-                                minX=x["minX"],
-                                minY=x["minY"],
-                                minZ=x["minZ"],
-                                maxX=x["maxX"],
-                                maxY=x["maxY"],
-                                maxZ=x["maxZ"],
-                            )
-
-                        if "dimensions" in meta_analysis:
-                            x = meta_analysis["dimensions"]
-                            analysis.dimensions = AnalysisDimensions(
-                                width=x["width"], height=x["height"], depth=x["depth"]
-                            )
-
-                        if "travelDimensions" in meta_analysis:
-                            x = meta_analysis["travelDimensions"]
-                            analysis.travelDimensions = AnalysisDimensions(
-                                width=x["width"], height=x["height"], depth=x["depth"]
-                            )
-
-                        if "filament" in meta_analysis:
-                            x = meta_analysis["filament"]
-                            result = {}
-                            for tool, data in x.items():
-                                result[tool] = AnalysisFilamentUse(
-                                    length=data["length"], volume=data["volume"]
+                            if "printingArea" in meta_analysis:
+                                x = meta_analysis["printingArea"]
+                                analysis.printingArea = AnalysisVolume(
+                                    minX=x["minX"],
+                                    minY=x["minY"],
+                                    minZ=x["minZ"],
+                                    maxX=x["maxX"],
+                                    maxY=x["maxY"],
+                                    maxZ=x["maxZ"],
                                 )
-                            analysis.filament = result
 
-                        additional_analysis_keys = [
+                            if "travelArea" in meta_analysis:
+                                x = meta_analysis["travelArea"]
+                                analysis.travelArea = AnalysisVolume(
+                                    minX=x["minX"],
+                                    minY=x["minY"],
+                                    minZ=x["minZ"],
+                                    maxX=x["maxX"],
+                                    maxY=x["maxY"],
+                                    maxZ=x["maxZ"],
+                                )
+
+                            if "dimensions" in meta_analysis:
+                                x = meta_analysis["dimensions"]
+                                analysis.dimensions = AnalysisDimensions(
+                                    width=x["width"], height=x["height"], depth=x["depth"]
+                                )
+
+                            if "travelDimensions" in meta_analysis:
+                                x = meta_analysis["travelDimensions"]
+                                analysis.travelDimensions = AnalysisDimensions(
+                                    width=x["width"], height=x["height"], depth=x["depth"]
+                                )
+
+                            if "filament" in meta_analysis:
+                                x = meta_analysis["filament"]
+                                result = {}
+                                for tool, data in x.items():
+                                    result[tool] = AnalysisFilamentUse(
+                                        length=data["length"], volume=data["volume"]
+                                    )
+                                analysis.filament = result
+
+                            additional_analysis_keys = [
+                                x
+                                for x in meta_analysis
+                                if x
+                                not in (
+                                    "estimatedPrintTime",
+                                    "printingArea",
+                                    "travelArea",
+                                    "dimensions",
+                                    "travelDimensions",
+                                    "filament",
+                                )
+                            ]
+                            if additional_analysis_keys:
+                                # there are more things stored in this analysis
+                                analysis.additional = {
+                                    k: v
+                                    for k, v in meta_analysis.items()
+                                    if k in additional_analysis_keys
+                                }
+
+                            storage_entry.metadata.analysis = analysis
+
+                        if "history" in entry_metadata:
+                            history = []
+                            for h in entry_metadata["history"]:
+                                if any(
+                                    x not in h
+                                    for x in ("timestamp", "success", "printerProfile")
+                                ):
+                                    continue
+                                history.append(
+                                    HistoryEntry(
+                                        timestamp=h["timestamp"],
+                                        success=h["success"],
+                                        printerProfile=h["printerProfile"],
+                                        printTime=h.get("printTime"),
+                                    )
+                                )
+                            storage_entry.metadata.history = history
+
+                        if "statistics" in entry_metadata:
+                            stats = entry_metadata["statistics"]
+                            storage_entry.metadata.statistics = Statistics(
+                                averagePrintTime=stats.get("averagePrintTime", {}),
+                                lastPrintTime=stats.get("lastPrintTime", {}),
+                            )
+
+                        additional_metadata_keys = [
                             x
-                            for x in meta_analysis
+                            for x in entry_metadata
                             if x
                             not in (
-                                "estimatedPrintTime",
-                                "printingArea",
-                                "travelArea",
-                                "dimensions",
-                                "travelDimensions",
-                                "filament",
+                                "user",
+                                "display",
+                                "analysis",
+                                "history",
+                                "statistics",
                             )
                         ]
-                        if additional_analysis_keys:
-                            # there are more things stored in this analysis
-                            analysis.additional = {
+                        if additional_metadata_keys:
+                            # there are still keys left, those are additional keys
+                            storage_entry.metadata.additional = {
                                 k: v
-                                for k, v in meta_analysis.items()
-                                if k in additional_analysis_keys
+                                for k, v in entry_metadata.items()
+                                if k in additional_metadata_keys
                             }
 
-                        storage_entry.metadata.analysis = analysis
+                    if stat:
+                        storage_entry.size = stat.st_size
+                        storage_entry.date = int(stat.st_mtime)
 
-                    if "history" in entry_metadata:
-                        history = []
-                        for h in entry_metadata["history"]:
-                            if any(
-                                x not in h
-                                for x in ("timestamp", "success", "printerProfile")
-                            ):
-                                continue
-                            history.append(
-                                HistoryEntry(
-                                    timestamp=h["timestamp"],
-                                    success=h["success"],
-                                    printerProfile=h["printerProfile"],
-                                    printTime=h.get("printTime"),
-                                )
-                            )
-                        storage_entry.metadata.history = history
+                    thumbnails = self._get_thumbnails(os.path.dirname(path_on_disk), name)
+                    if thumbnails:
+                        storage_entry.thumbnails = list(thumbnails.keys())
 
-                    if "statistics" in entry_metadata:
-                        stats = entry_metadata["statistics"]
-                        storage_entry.metadata.statistics = Statistics(
-                            averagePrintTime=stats.get("averagePrintTime", {}),
-                            lastPrintTime=stats.get("lastPrintTime", {}),
-                        )
+                    return storage_entry, metadata_dirty
 
-                    additional_metadata_keys = [
-                        x
-                        for x in entry_metadata
-                        if x
-                        not in ("user", "display", "analysis", "history", "statistics")
-                    ]
-                    if additional_metadata_keys:
-                        # there are still keys left, those are additional keys
-                        storage_entry.metadata.additional = {
-                            k: v
-                            for k, v in entry_metadata.items()
-                            if k in additional_metadata_keys
-                        }
+            except Exception:
+                # So something went wrong somewhere while processing this file entry - log that and continue
+                self._logger.exception(f"Error while processing entry {path}")
 
-                if stat:
-                    storage_entry.size = stat.st_size
-                    storage_entry.date = int(stat.st_mtime)
+                return None, metadata_dirty
 
-                thumbnails = self._get_thumbnails(os.path.dirname(path_on_disk), name)
-                if thumbnails:
-                    storage_entry.thumbnails = list(thumbnails.keys())
-
-                return storage_entry, metadata_dirty
-
-        except Exception:
-            # So something went wrong somewhere while processing this file entry - log that and continue
-            self._logger.exception(f"Error while processing entry {path}")
-
-            return None, metadata_dirty
+        except FileNotFoundError:
+            # it might have gotten deleted while we were processing this - handle this gracefully
+            return None, False
 
     @staticmethod
     def _get_total_size(nodes: dict[str, dict]) -> int:
