@@ -21,6 +21,7 @@ from .storage import (
     StorageEntry,
     StorageError,
     StorageInterface,
+    StorageMeta,
     StorageThumbnail,
 )
 from .storage.local import LocalFileStorage  # noqa: F401
@@ -256,7 +257,7 @@ class FileManager:
         self._analysis_queue = analysis_queue
         self._analysis_queue.register_finish_callback(self._on_analysis_finished)
 
-        self._storage_managers = {}
+        self._storage_managers: dict[str, StorageInterface] = {}
         if initial_storage_managers:
             self._storage_managers.update(initial_storage_managers)
 
@@ -373,6 +374,15 @@ class FileManager:
     @property
     def registered_storages(self):
         return list(self._storage_managers.keys())
+
+    @property
+    def registered_storage_meta(self) -> dict[str:StorageMeta]:
+        return {
+            key: StorageMeta(
+                key=key, name=storage.name, capabilities=storage.capabilities
+            )
+            for key, storage in self._storage_managers.items()
+        }
 
     @property
     def slicing_enabled(self):

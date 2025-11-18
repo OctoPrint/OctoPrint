@@ -114,6 +114,8 @@ $(function () {
         self.folderList = ko.observableArray(["/"]);
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
+        self.addFolderStorage = ko.observable(undefined);
+        self.addFolderStorageOptions = ko.observableArray([]);
         self.enableAddFolder = ko.pureComputed(function () {
             return (
                 self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD) &&
@@ -597,6 +599,17 @@ $(function () {
                 self.totalSpace(response.total);
             }
 
+            if (response.storages !== undefined) {
+                const addFolderOptions = [];
+                Object.keys(response.storages).forEach((key) => {
+                    const storage = response.storages[key];
+                    if (storage.capabilities.add_folder) {
+                        addFolderOptions.push({key: key, name: storage.name});
+                    }
+                });
+                self.addFolderStorageOptions(addFolderOptions);
+            }
+
             self.highlightCurrentFile();
         };
 
@@ -637,6 +650,7 @@ $(function () {
 
             if (self.addFolderDialog) {
                 self.addFolderName("");
+                self.addFolderStorage("local");
                 self.addFolderDialog.modal("show");
             }
         };
@@ -645,16 +659,13 @@ $(function () {
             if (!self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD))
                 return;
 
-            var name = self.addFolderName();
-
-            // "local" only for now since we only support local and printer,
-            // and printer doesn't support creating folders...
-            var location = "local";
+            const name = self.addFolderName();
+            const storage = self.addFolderStorage();
 
             self.ignoreUpdatedFilesEvent = true;
             self.addingFolder(true);
             OctoPrint.files
-                .createFolder(location, name, self.currentPath())
+                .createFolder(storage, name, self.currentPath())
                 .done(function (data) {
                     self.requestData({
                         focus: {

@@ -579,6 +579,18 @@ class PrinterFile(BaseModel):
     thumbnails: list[str] = []
 
 
+class PrinterFilesError(Exception):
+    pass
+
+
+class PrinterFilesUnavailableError(PrinterFilesError):
+    pass
+
+
+class PrinterFilesConflict(PrinterFilesError):
+    pass
+
+
 class PrinterFilesMixin:
     storage_capabilities = StorageCapabilities()
 
@@ -607,7 +619,7 @@ class PrinterFilesMixin:
     ) -> list[PrinterFile]:
         return []
 
-    def create_printer_folder(self, target: str, *args, **kwargs) -> None:
+    def create_printer_folder(self, target: str, *args, **kwargs) -> str:
         pass
 
     def delete_printer_folder(
@@ -615,10 +627,10 @@ class PrinterFilesMixin:
     ) -> None:
         pass
 
-    def copy_printer_folder(self, source: str, target: str, *args, **kwargs) -> None:
+    def copy_printer_folder(self, source: str, target: str, *args, **kwargs) -> str:
         pass
 
-    def move_printer_folder(self, source: str, target: str, *args, **kwargs) -> None:
+    def move_printer_folder(self, source: str, target: str, *args, **kwargs) -> str:
         pass
 
     def upload_printer_file(
@@ -642,10 +654,10 @@ class PrinterFilesMixin:
     def delete_printer_file(self, path: str, *args, **kwargs) -> None:
         pass
 
-    def copy_printer_file(self, source: str, target: str, *args, **kwargs) -> None:
+    def copy_printer_file(self, source: str, target: str, *args, **kwargs) -> str:
         pass
 
-    def move_printer_file(self, source: str, target: str, *args, **kwargs) -> None:
+    def move_printer_file(self, source: str, target: str, *args, **kwargs) -> str:
         pass
 
     def sanitize_file_name(self, name: str, *args, **kwargs) -> str:

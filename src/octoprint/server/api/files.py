@@ -185,18 +185,28 @@ def readGcodeFiles():
     force = request.values.get("force", "false") in valid_boolean_trues
 
     files = []
-    for target in fileManager.registered_storages:
+    storages = {}
+    for storage, meta in fileManager.registered_storage_meta.items():
         try:
             files.extend(
                 _getFileList(
-                    target, filter=filter, recursive=recursive, allow_from_cache=not force
+                    storage,
+                    filter=filter,
+                    recursive=recursive,
+                    allow_from_cache=not force,
                 )
             )
+            storages[meta.key] = {
+                "key": meta.key,
+                "name": meta.name,
+                "capabilities": meta.capabilities.model_dump(by_alias=True),
+            }
         except octoprint.filemanager.NoSuchStorage:
             pass
 
     usage = psutil.disk_usage(settings().getBaseFolder("uploads", check_writable=False))
-    return jsonify(files=files, free=usage.free, total=usage.total)
+
+    return jsonify(files=files, free=usage.free, total=usage.total, storages=storages)
 
 
 @api.route("/files/test", methods=["POST"])
@@ -821,9 +831,7 @@ def uploadGcodeFile(target):
                 abort(400, description="folder name is empty")
 
             if "path" in request.values and request.values["path"]:
-                futurePath = fileManager.sanitize_path(
-                    FileDestinations.LOCAL, request.values["path"]
-                )
+                futurePath = fileManager.sanitize_path(target, request.values["path"])
 
             futureFullPath = fileManager.join_path(target, futurePath, futureName)
             if octoprint.filemanager.valid_file_type(futureName):
@@ -1564,8 +1572,10 @@ def _abortWithException(error):
         elif error.code == StorageError.UNSUPPORTED:
             abort(400, description="Operation is unsupported on this storage type")
         elif error.code == StorageError.UNKNOWN:
+            _logger.exception(error)
             abort(500, description=str(error.cause).split(":")[0])
         else:
+            _logger.exception(error)
             abort(500, description=error)
     else:
         _logger.exception(error)

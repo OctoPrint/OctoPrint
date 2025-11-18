@@ -15,7 +15,9 @@ from octoprint.printer import (
     ErrorInformation,
     FirmwareInformation,
     PrinterFile,
+    PrinterFilesError,
     PrinterFilesMixin,
+    PrinterFilesUnavailableError,
     UnknownScript,
 )
 from octoprint.printer.connection import (
@@ -539,13 +541,18 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     def upload_printer_file(
         self, source, target, progress_callback: callable = None, *args, **kwargs
-    ):
-        if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
-            self._logger.error("No connection to printer or printer is busy")
-            return
-
+    ) -> str:
         if progress_callback is not None:
             self._upload_callback = progress_callback
+
+        if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
+            message = (
+                "No connection to printer, printer storage unavailable or printer busy"
+            )
+            self._logger.error(message)
+            if self._upload_callback:
+                self._upload_callback(failed=True)
+            raise PrinterFilesUnavailableError(message)
 
         try:
             return self._comm.startFileTransfer(
@@ -554,14 +561,19 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
                 special=not valid_file_type(target, "gcode"),
                 tags=kwargs.get("tags", set()),
             )
-        except Exception:
+        except Exception as exc:
             self._logger.exception("Error while starting file transfer")
             if self._upload_callback:
                 self._upload_callback(failed=True)
+            raise PrinterFilesError(
+                "Error while starting file transfer to printer"
+            ) from exc
 
     def delete_printer_file(self, path, *args, **kwargs):
         if not self._comm or not self._comm.isSdReady():
-            return
+            raise PrinterFilesUnavailableError(
+                "No connection to printer or printer storage unavailable"
+            )
         self._comm.deleteSdFile(
             path,
             tags=kwargs.get("tags", set()) | {"trigger:printer.delete_sd_file"},
@@ -569,14 +581,18 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     def mount_printer_files(self, *args, **kwargs):
         if not self._comm or self._comm.isSdReady():
-            return
+            raise PrinterFilesUnavailableError(
+                "No connection to printer or printer storage unavailable"
+            )
         self._comm.initSdCard(
             tags=kwargs.get("tags", set()) | {"trigger:printer.init_sd_card"}
         )
 
     def unmount_printer_files(self, *args, **kwargs):
         if not self._comm or not self._comm.isSdReady():
-            return
+            raise PrinterFilesUnavailableError(
+                "No connection to printer or printer storage unavailable"
+            )
         self._comm.releaseSdCard(
             tags=kwargs.get("tags", set()) | {"trigger:printer.release_sd_card"}
         )
@@ -593,7 +609,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     def sanitize_file_name(self, name, *args, **kwargs):
         if not self._comm:
-            raise RuntimeError("Printer is not connected")
+            raise PrinterFilesUnavailableError("No connection to printer")
 
         return self._comm.get_remote_name(name)
 

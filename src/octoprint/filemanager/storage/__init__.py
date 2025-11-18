@@ -117,12 +117,19 @@ class StorageThumbnail(BaseModel):
     last_modified: int = -1
 
 
+class StorageMeta(BaseModel):
+    key: str
+    name: str
+    capabilities: StorageCapabilities
+
+
 class StorageInterface:
     """
     Interface of storage adapters for OctoPrint.
     """
 
     storage = "dummy"
+    name = "Dummy"
     capabilities = StorageCapabilities()
 
     # noinspection PyUnreachableCode
@@ -333,7 +340,7 @@ class StorageInterface:
         )
         return {k: self._convert_storage_entry_to_dict(v) for k, v in tree.items()}
 
-    def add_folder(self, path, ignore_existing=True, display=None, user=None):
+    def add_folder(self, path, ignore_existing=True, display=None, user=None) -> str:
         """
         Adds a folder as ``path``
 
@@ -357,7 +364,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def copy_folder(self, source, destination):
+    def copy_folder(self, source, destination) -> str:
         """
         Copies the folder ``source`` to ``destination``
 
@@ -368,7 +375,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def move_folder(self, source, destination):
+    def move_folder(self, source, destination) -> str:
         """
         Moves the folder ``source`` to ``destination``
 
@@ -423,7 +430,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def copy_file(self, source, destination):
+    def copy_file(self, source, destination) -> str:
         """
         Copies the file ``source`` to ``destination``
 
@@ -434,7 +441,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def move_file(self, source, destination):
+    def move_file(self, source, destination) -> str:
         """
         Moves the file ``source`` to ``destination``
 
@@ -445,7 +452,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def has_analysis(self, path):
+    def has_analysis(self, path) -> bool:
         """
         Returns whether the file at path has been analysed yet
 

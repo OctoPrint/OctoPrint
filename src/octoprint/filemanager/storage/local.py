@@ -59,6 +59,7 @@ class LocalFileStorage(StorageInterface):
     """
 
     storage = "local"
+    name = "Local"
 
     capabilities = StorageCapabilities(
         write_file=True,

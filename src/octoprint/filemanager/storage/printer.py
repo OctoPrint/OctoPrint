@@ -6,7 +6,7 @@ from typing import IO, Optional
 
 from octoprint.filemanager import get_file_type
 from octoprint.filemanager.util import AbstractFileWrapper
-from octoprint.printer import PrinterFile, PrinterFilesMixin
+from octoprint.printer import PrinterFile, PrinterFilesError, PrinterFilesMixin
 
 from . import (
     MetadataEntry,
@@ -61,6 +61,7 @@ class PrinterFileStorage(StorageInterface):
     """
 
     storage = "printer"
+    name = "Printer"
 
     def __init__(self, connection: PrinterFilesMixin):
         if not isinstance(connection, PrinterFilesMixin):
@@ -173,23 +174,34 @@ class PrinterFileStorage(StorageInterface):
         for f in files:
             type_path = get_file_type(f.path)
             if not type_path:
-                continue
+                if f.path.endswith("/"):
+                    type_path = ["folder"]
+                else:
+                    continue
 
             file_type = type_path[0]
 
             parts = f.path[len(prefix) :].split("/")
+            if parts[-1] == "":
+                parts = parts[:-1]
             name = parts[-1]
 
-            entry = StorageFile(
-                name=name,
-                origin=self.storage,
-                path=f.path,
-                display=f.display,
-                entry_type=file_type,
-                type_path=type_path,
-                metadata=f.metadata,
-                thumbnails=f.thumbnails,
-            )
+            if file_type == "folder":
+                entry = StorageFolder(
+                    name=name, origin=self.storage, path=f.path[:-1], display=f.display
+                )
+            else:
+                entry = StorageFile(
+                    name=name,
+                    origin=self.storage,
+                    path=f.path,
+                    display=f.display,
+                    entry_type=file_type,
+                    type_path=type_path,
+                    metadata=f.metadata,
+                    thumbnails=f.thumbnails,
+                )
+
             if f.size is not None:
                 entry.size = f.size
             if f.date is not None:
@@ -217,7 +229,7 @@ class PrinterFileStorage(StorageInterface):
 
         return result
 
-    def add_folder(self, path, ignore_existing=True, display=None, user=None):
+    def add_folder(self, path, ignore_existing=True, display=None, user=None) -> str:
         if not self.capabilities.add_folder:
             raise StorageError(
                 "Printer does not support folder creation", code=StorageError.UNSUPPORTED
@@ -231,10 +243,14 @@ class PrinterFileStorage(StorageInterface):
                     code=StorageError.ALREADY_EXISTS,
                 )
             else:
-                return
+                return path
 
-        self._connection.create_printer_folder(path)
-        self._update_last_activity()
+        try:
+            result = self._connection.create_printer_folder(path)
+            self._update_last_activity()
+            return result
+        except PrinterFilesError as exc:
+            raise StorageError("Folder creation failed") from exc
 
     def remove_folder(self, path, recursive=True):
         if not self.capabilities.remove_folder:
@@ -248,17 +264,24 @@ class PrinterFileStorage(StorageInterface):
             if f.path.startswith(path + "/") and not recursive:
                 raise StorageError("{path} is not empty", code=StorageError.NOT_EMPTY)
 
-        self._connection.delete_printer_folder(path, recursive=recursive)
-        self._update_last_activity()
+        try:
+            self._connection.delete_printer_folder(path, recursive=recursive)
+            self._update_last_activity()
+        except PrinterFilesError as exc:
+            raise StorageError("Folder deletion failed") from exc
 
-    def copy_folder(self, source, destination):
+    def copy_folder(self, source, destination) -> str:
         if not self.capabilities.copy_folder:
             raise StorageError(
                 "Printer does not support folder copies", code=StorageError.UNSUPPORTED
             )
 
-        self._connection.copy_printer_folder(source, destination)  # TODO
-        self._update_last_activity()
+        try:
+            result = self._connection.copy_printer_folder(source, destination)  # TODO
+            self._update_last_activity()
+            return result
+        except PrinterFilesError as exc:
+            raise StorageError("Folder copy failed") from exc
 
     def move_folder(self, source, destination):
         if not self.capabilities.move_folder:
@@ -266,8 +289,12 @@ class PrinterFileStorage(StorageInterface):
                 "Printer does not support folder moves", code=StorageError.UNSUPPORTED
             )
 
-        self._connection.move_printer_folder(source, destination)  # TODO
-        self._update_last_activity()
+        try:
+            result = self._connection.move_printer_folder(source, destination)
+            self._update_last_activity()
+            return result
+        except PrinterFilesError as exc:
+            raise StorageError("Folder move failed") from exc
 
     def add_file(
         self,
@@ -300,11 +327,14 @@ class PrinterFileStorage(StorageInterface):
             if progress_callback:
                 progress_callback(*args, **kwargs)
 
-        remote = self._connection.upload_printer_file(
-            temp.name, path, upload_callback=callback
-        )
-
-        return remote
+        try:
+            remote = self._connection.upload_printer_file(
+                temp.name, path, upload_callback=callback
+            )
+            self._update_last_activity()
+            return remote
+        except PrinterFilesError as exc:
+            raise StorageError("File creation failed") from exc
 
     def read_file(self, path: str) -> IO:
         if not self.capabilities.read_file:
@@ -313,7 +343,10 @@ class PrinterFileStorage(StorageInterface):
                 code=StorageError.UNSUPPORTED,
             )
 
-        return self._connection.download_printer_file(path)
+        try:
+            return self._connection.download_printer_file(path)
+        except PrinterFilesError as exc:
+            raise StorageError("File read failed") from exc
 
     def remove_file(self, path):
         if not self.capabilities.remove_file:
@@ -321,8 +354,11 @@ class PrinterFileStorage(StorageInterface):
                 "Printer does not support file deletion", code=StorageError.UNSUPPORTED
             )
 
-        self._connection.delete_printer_file(path)
-        self._update_last_activity()
+        try:
+            self._connection.delete_printer_file(path)
+            self._update_last_activity()
+        except PrinterFilesError as exc:
+            raise StorageError("File deletion failed") from exc
 
     def copy_file(self, source, destination):
         if not self.capabilities.copy_file:
@@ -330,8 +366,12 @@ class PrinterFileStorage(StorageInterface):
                 "Printer does not support file copies", code=StorageError.UNSUPPORTED
             )
 
-        self._connection.copy_printer_file(source, destination)  # TODO
-        self._update_last_activity()
+        try:
+            result = self._connection.copy_printer_file(source, destination)  # TODO
+            self._update_last_activity()
+            return result
+        except PrinterFilesError as exc:
+            raise StorageError("File copy failed") from exc
 
     def move_file(self, source, destination):
         if not self.capabilities.move_file:
@@ -339,8 +379,12 @@ class PrinterFileStorage(StorageInterface):
                 "Printer does not support file moves", code=StorageError.UNSUPPORTED
             )
 
-        self._connection.move_printer_file(source, destination)  # TODO
-        self._update_last_activity()
+        try:
+            result = self._connection.move_printer_file(source, destination)  # TODO
+            self._update_last_activity()
+            return result
+        except PrinterFilesError as exc:
+            raise StorageError("File move failed") from exc
 
     def has_analysis(self, path):
         metadata = self.get_metadata(path)
@@ -434,15 +478,15 @@ class PrinterFileStorage(StorageInterface):
         return path
 
     def sanitize(self, path: str) -> tuple[str, str]:
-        if path == "/":
+        if path == "" or path == "/":
             return "/", ""
         path = self._strip_leading_slash(path)
         path, name = self.split_path(path)
         return self.sanitize_path(path), self.sanitize_name(name)
 
     def sanitize_path(self, path: str) -> str:
-        if path == "/":
-            return path
+        if path == "" or path == "/":
+            return "/"
         return self._strip_leading_slash(path)
 
     def sanitize_name(self, name: str) -> str:
