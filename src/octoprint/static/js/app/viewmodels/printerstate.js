@@ -156,7 +156,6 @@ $(function () {
 
         self.filament = ko.observableArray([]);
         self.estimatedPrintTime = ko.observable(undefined);
-        self.lastPrintTime = ko.observable(undefined);
 
         self.currentHeight = ko.observable(undefined);
 
@@ -174,7 +173,6 @@ $(function () {
         self.titlePauseButton = ko.observable(self.TITLE_PAUSE_BUTTON_UNPAUSED);
 
         var estimatedPrintTimeStringHlpr = function (fmt) {
-            if (self.lastPrintTime()) return fmt(self.lastPrintTime());
             if (self.estimatedPrintTime()) return fmt(self.estimatedPrintTime());
             return "-";
         };
@@ -432,7 +430,6 @@ $(function () {
             self._syncMetadata(data);
 
             self.estimatedPrintTime(data.estimatedPrintTime);
-            self.lastPrintTime(data.lastPrintTime);
 
             const result = [];
             if (

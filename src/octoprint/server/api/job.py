@@ -5,6 +5,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from flask import abort, jsonify, request
 
 from octoprint.access.permissions import Permissions
+from octoprint.schema.api import job as apischema
 from octoprint.server import NO_CONTENT, current_user, printer
 from octoprint.server.api import api
 from octoprint.server.util.flask import get_json_command_from_request, no_firstrun_access
@@ -71,13 +72,38 @@ def controlJob():
 @api.route("/job", methods=["GET"])
 @Permissions.STATUS.require(403)
 def jobState():
-    currentData = printer.get_current_data()
-    response = {
-        "job": currentData["job"],
-        "progress": currentData["progress"],
-        "state": currentData["state"]["text"],
-    }
-    if currentData["state"]["error"]:
-        response["error"] = currentData["state"]["error"]
+    current_data = printer.get_current_data()
 
-    return jsonify(**response)
+    file_data = current_data["job"].get("job", {})
+
+    timestamp = None
+    date = file_data.get("date")
+    if date:
+        timestamp = date.astimezone(None).timestamp()
+
+    file = apischema.ApiJobFile(
+        name=file_data.get("name"),
+        path=file_data.get("path"),
+        display=file_data.get("display"),
+        origin=file_data.get("origin"),
+        size=file_data.get("size"),
+        date=timestamp,
+    )
+
+    job_data = current_data["job"]
+    job = apischema.ApiJobInfo(
+        file=file,
+        estimatedPrintTime=job_data.get("estimatedPrintTime"),
+        filament=job_data.get("filament"),
+        user=job_data.get("user"),
+    )
+
+    progress = apischema.ApiProgressInfo(**current_data["progress"])
+
+    response = apischema.ApiJobResponse(
+        job, progress, state=current_data["state"]["text"]
+    )
+    if current_data["state"]["error"]:
+        response.error = current_data["state"]["error"]
+
+    return jsonify(**response.model_dump(by_alias=True, exclude_none=True))

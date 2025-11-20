@@ -3,6 +3,7 @@ __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import datetime
 from typing import IO, TYPE_CHECKING, Any, Optional
 
 from octoprint.filemanager.util import AbstractFileWrapper
@@ -33,7 +34,7 @@ class StorageCapabilities(BaseModel):
 
 
 class HistoryEntry(BaseModel):
-    timestamp: float
+    timestamp: datetime.datetime
     success: bool
     printerProfile: str
     printTime: Optional[float] = None
@@ -89,7 +90,7 @@ class StorageEntry(BaseModel):
     path: str
     user: Optional[str] = None
 
-    date: Optional[int] = None
+    date: Optional[datetime.datetime] = None
     size: Optional[int] = None
 
     entry_type: str
@@ -113,8 +114,8 @@ class StorageThumbnail(BaseModel):
     printable: str
     sizehint: str
     mime: str = "application/octet-stream"
+    last_modified: Optional[datetime.datetime] = None
     size: int = -1
-    last_modified: int = -1
 
 
 class StorageMeta(BaseModel):

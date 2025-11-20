@@ -69,7 +69,7 @@
             </div>
             <div class="file-entry-meta">
                 <div class="internal" data-bind="visible: name != display">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
-                <div class="uploaded">{{ _('Updated') }}: <span data-bind="text: formatTimeAgo(date, '?'), attr: {title: formatDate(date, {placeholder:'{{ _('unknown')|esq }}'})}"></span></div>
+                <div class="uploaded">{{ _('Updated') }}: <span data-bind="text: formatDate(date, {placeholder:'{{ _('unknown')|esq }}'})"></span></div>
                 <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
             </div>
         </div>
@@ -92,7 +92,7 @@
         <div class="file-entry-content" data-bind="style: { 'flex-direction': $root.contentFlexDirection() }">
             <div class="file-entry-meta">
                 <div class="internal" data-bind="visible: name != display">{{ _('Internal') }}: <span data-bind="text: name"></span></div>
-                <div class="uploaded">{{ _('Updated') }}: <span data-bind="text: formatTimeAgo(date, '?'), attr: {title: formatDate(date, {placeholder:'{{ _('unknown')|esq }}'})}"></span></div>
+                <div class="uploaded">{{ _('Updated') }}: <span data-bind="text: formatDate(date, {placeholder:'{{ _('unknown')|esq }}'})"></span></div>
                 <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
                 <div class="additionalInfo hide" data-bind="html: $root.getAdditionalData($data)"></div>
             </div>

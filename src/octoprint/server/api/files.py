@@ -2,11 +2,13 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import datetime
 import hashlib
 import logging
 import os
 import threading
 from collections.abc import Iterable
+from typing import Optional
 from urllib.parse import quote as urlquote
 
 import psutil
@@ -441,7 +443,7 @@ def _analyse_and_convert_recursively(
                     origin=entry.origin,
                     path=entry.path,
                     user=entry.user,
-                    date=entry.date,
+                    date=_to_api_timestamp(entry.date),
                     size=entry.size,
                     children=children,
                     prints=prints,
@@ -533,10 +535,10 @@ def _analyse_and_convert_recursively(
                         else:
                             failure += 1
 
-                        if not last or h.timestamp > last.date:
+                        if not last or h.timestamp.timestamp() > last.date:
                             last = apischema.ApiEntryLastPrint(
                                 success=h.success,
-                                date=h.timestamp,
+                                date=_to_api_timestamp(h.timestamp),
                                 printerProfile=h.printerProfile,
                                 printTime=h.printTime,
                             )
@@ -584,7 +586,7 @@ def _analyse_and_convert_recursively(
                     origin=entry.origin,
                     path=entry.path,
                     user=entry.user,
-                    date=entry.date,
+                    date=_to_api_timestamp(entry.date),
                     size=entry.size,
                     type_=entry.entry_type,
                     typePath=entry.type_path,
@@ -596,6 +598,12 @@ def _analyse_and_convert_recursively(
             )
 
     return result
+
+
+def _to_api_timestamp(timestamp: Optional[datetime.datetime]) -> Optional[int]:
+    if timestamp is None:
+        return None
+    return int(timestamp.astimezone(None).timestamp())
 
 
 def _verifyFileExists(origin, filename):

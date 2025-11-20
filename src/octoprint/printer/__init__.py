@@ -26,6 +26,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import datetime
 import re
 from typing import IO, TYPE_CHECKING, Optional, Union
 
@@ -574,7 +575,7 @@ class PrinterFile(BaseModel):
     path: str
     display: str
     size: Optional[int] = None
-    date: Optional[int] = None
+    date: Optional[datetime.datetime] = None
     metadata: Optional[MetadataEntry] = None
     thumbnails: list[str] = []
 
@@ -1006,7 +1007,6 @@ class PrinterCallback:
                     origin: <origin of the file, "local" or "printer">,
                     date: <last modification date of the file>
                 estimatedPrintTime: <estimated print time of the file in seconds>
-                lastPrintTime: <last print time of the file in seconds>
                 filament:
                     length: <estimated length of filament needed for this file, in mm>
                     volume: <estimated volume of filament needed for this file, in ccm>

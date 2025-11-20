@@ -195,10 +195,6 @@ Job information
      - 0..1
      - Float
      - The estimated print time for the file, in seconds.
-   * - ``lastPrintTime``
-     - 0..1
-     - Float
-     - The print time of the last print of the file, in seconds.
    * - ``filament``
      - 0..1
      - Object

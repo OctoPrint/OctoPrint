@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import copy
+import datetime
 import logging
 import os
 import shutil
@@ -26,6 +27,7 @@ from octoprint.util import (
     yaml,
 )
 from octoprint.util.files import sanitize_filename
+from octoprint.util.tz import LOCAL_TZ
 
 from . import (
     AnalysisDimensions,
@@ -1385,7 +1387,9 @@ class LocalFileStorage(StorageInterface):
                                     continue
                                 history.append(
                                     HistoryEntry(
-                                        timestamp=h["timestamp"],
+                                        timestamp=datetime.datetime.fromtimestamp(
+                                            h["timestamp"], tz=LOCAL_TZ
+                                        ),
                                         success=h["success"],
                                         printerProfile=h["printerProfile"],
                                         printTime=h.get("printTime"),
@@ -1422,7 +1426,10 @@ class LocalFileStorage(StorageInterface):
 
                     if stat:
                         storage_entry.size = stat.st_size
-                        storage_entry.date = int(stat.st_mtime)
+                        storage_entry.date = datetime.datetime.fromtimestamp(
+                            stat.st_mtime,
+                            tz=LOCAL_TZ,
+                        )
 
                     thumbnails = self._get_thumbnails(os.path.dirname(path_on_disk), name)
                     if thumbnails:

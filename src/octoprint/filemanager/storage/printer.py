@@ -109,7 +109,7 @@ class PrinterFileStorage(StorageInterface):
     def get_lastmodified(self, path=None, recursive=False) -> Optional[int]:
         files = self._get_printer_files(path=path)
 
-        dates = [f.date for f in files if f.date is not None]
+        dates = [f.date.timestamp() for f in files if f.date is not None]
         if len(dates):
             return max(dates)
 
@@ -154,6 +154,8 @@ class PrinterFileStorage(StorageInterface):
     ) -> dict[str, StorageEntry]:
         files = self._get_printer_files(path=path, filter=filter, refresh=force_refresh)
 
+        files = sorted(files, key=lambda x: x.path)
+
         prefix = f"{path}/" if path else ""
         if not recursive:
             if level > 0:
@@ -172,6 +174,9 @@ class PrinterFileStorage(StorageInterface):
 
         result = {}
         for f in files:
+            if f.path == prefix:
+                continue
+
             type_path = get_file_type(f.path)
             if not type_path:
                 if f.path.endswith("/"):
@@ -202,7 +207,7 @@ class PrinterFileStorage(StorageInterface):
                     thumbnails=f.thumbnails,
                 )
 
-            if f.size is not None:
+            if f.size is not None and file_type != "folder":
                 entry.size = f.size
             if f.date is not None:
                 entry.date = f.date
@@ -226,6 +231,21 @@ class PrinterFileStorage(StorageInterface):
 
         if filter is not None:
             result = {k: v for k, v in result.items() if filter(v)}
+
+        def _add_calculated_size(node: StorageFolder) -> int:
+            size = 0
+            for child in node.children.values():
+                size += (
+                    _add_calculated_size(child)
+                    if isinstance(child, StorageFolder)
+                    else child.size
+                )
+            node.size = size
+            return size
+
+        for node in result.values():
+            if isinstance(node, StorageFolder):
+                _add_calculated_size(node)
 
         return result
 

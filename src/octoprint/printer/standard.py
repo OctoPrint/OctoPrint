@@ -1799,8 +1799,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                             date=None,
                         ),
                         estimatedPrintTime=None,
-                        averagePrintTime=None,
-                        lastPrintTime=None,
                         filament=None,
                         user=None,
                     )
@@ -1834,7 +1832,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                         display=display_name,
                         origin=job.storage,
                         size=job.size,
-                        date=job.date,
+                        date=int(job.date.astimezone(None).timestamp()),
                     ),
                     estimatedPrintTime=estimatedPrintTime,
                     filament=filament,

@@ -1,3 +1,4 @@
+import datetime
 from typing import Optional
 
 from octoprint.schema import BaseModel
@@ -19,7 +20,7 @@ class PrintJob(BaseModel):
     path: str
     display: str
     size: int = 0
-    date: Optional[int] = None
+    date: Optional[datetime.datetime] = None
     owner: Optional[str] = None
     duration_estimate: Optional[DurationEstimate] = None
     filament_estimate: dict[str, FilamentEstimate] = {}
