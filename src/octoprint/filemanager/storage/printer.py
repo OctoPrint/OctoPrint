@@ -239,6 +239,8 @@ class PrinterFileStorage(StorageInterface):
                     _add_calculated_size(child)
                     if isinstance(child, StorageFolder)
                     else child.size
+                    if child.size
+                    else 0
                 )
             node.size = size
             return size
