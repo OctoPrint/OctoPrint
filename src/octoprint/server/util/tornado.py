@@ -30,6 +30,12 @@ import octoprint.util
 import octoprint.util.net
 
 
+# Tornado 6.5.x needs _chars_are_bytes hack to work around regression, see tornadoweb/tornado#3502
+# TODO: This will possibly require changes on upgrade to Tornado 6.6!
+def header_line_to_dict(header: str) -> dict:
+    return tornado.httputil.HTTPHeaders.parse(header, _chars_are_bytes=False)
+
+
 def fix_json_encode():
     """
     This makes tornado.escape.json_encode use octoprint.util.JsonEncoding.encode as fallback in order to allow
@@ -430,10 +436,10 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
 
         # convert to dict
         try:
-            header = tornado.httputil.HTTPHeaders.parse(header.decode("utf-8"))
+            header_str = header.decode("utf-8")
         except UnicodeDecodeError:
             try:
-                header = tornado.httputil.HTTPHeaders.parse(header.decode("iso-8859-1"))
+                header_str = header.decode("iso-8859-1")
             except Exception:
                 # looks like we couldn't decode something here neither as UTF-8 nor ISO-8859-1
                 self._logger.warning(
@@ -442,6 +448,7 @@ class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin, CorsSupport
                 self.send_error(400)
                 return
 
+        header = header_line_to_dict(header_str)
         disp_header = header.get("Content-Disposition", "")
         disposition, disp_params = _parse_header(disp_header, strip_quotes=False)
 
