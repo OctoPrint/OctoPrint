@@ -818,7 +818,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
     logger = log.getLogger(__name__ + ".startup")
 
     if connectivity_checker is not None and not connectivity_checker.online:
-        logger.info("We don't appear to be online, not fetching plugin blacklist")
+        logger.info("We don't appear to be online, not fetching plugin blocklist")
         return []
 
     def format_blacklist(entries):
@@ -851,7 +851,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
             if "pluginversions" in entry:
                 logger.debug(
-                    "Blacklisted plugin: %s, versions: %s",
+                    "Blocklisted plugin: %s, versions: %s",
                     entry["plugin"],
                     ", ".join(entry["pluginversions"]),
                 )
@@ -859,14 +859,14 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
                     result.append((entry["plugin"], version))
             elif "versions" in entry:
                 logger.debug(
-                    "Blacklisted plugin: %s, versions: %s",
+                    "Blocklisted plugin: %s, versions: %s",
                     entry["plugin"],
                     ", ".join(entry["versions"]),
                 )
                 for version in entry["versions"]:
                     result.append((entry["plugin"], f"=={version}"))
             else:
-                logger.debug("Blacklisted plugin: %s", entry["plugin"])
+                logger.debug("Blocklisted plugin: %s", entry["plugin"])
                 result.append(entry["plugin"])
 
         return result
@@ -898,12 +898,12 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
                     yaml.save_to_file(result, path=cache)
                 except Exception as e:
                     logger.info(
-                        "Fetched plugin blacklist but couldn't write it to its cache file: %s",
+                        "Fetched plugin blocklist but couldn't write it to its cache file: %s",
                         e,
                     )
         except Exception as e:
             logger.info(
-                "Unable to fetch plugin blacklist from %s, proceeding without it: %s",
+                "Unable to fetch plugin blocklist from %s, proceeding without it: %s",
                 url,
                 e,
             )
@@ -927,17 +927,17 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 
         if blacklist:
             logger.info(
-                "Blacklist processing done, adding %s blacklisted plugin versions: %s",
+                "Blocklist processing done, adding %s blocklisted plugin versions: %s",
                 len(blacklist),
                 format_blacklist(blacklist),
             )
         else:
-            logger.info("Blacklist processing done")
+            logger.info("Blocklist processing done")
 
         return blacklist
     except Exception:
         logger.exception(
-            "Something went wrong while processing the plugin blacklist. Proceeding without it."
+            "Something went wrong while processing the plugin blocklist. Proceeding without it."
         )
 
 

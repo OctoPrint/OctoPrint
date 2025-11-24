@@ -219,7 +219,7 @@ server_options = bulk_options(
             "ignore_blacklist",
             is_flag=True,
             callback=set_ctx_obj_option,
-            help="Disable processing of the plugin blacklist.",
+            help="Disable processing of the plugin blocklist.",
         ),
     ]
 )

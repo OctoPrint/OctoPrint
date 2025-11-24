@@ -259,9 +259,9 @@ $(function () {
 
         self._showDecisionNeededDialog = function () {
             showMessageDialog({
-                title: gettext("Please set up the plugin blacklist processing"),
+                title: gettext("Please set up the plugin blocklist processing"),
                 message: gettext(
-                    "You haven't yet decided on whether to enable or disable the plugin blacklist processing. You need to either enable or disable it before continuing."
+                    "You haven't yet decided on whether to enable or disable the plugin blocklist processing. You need to either enable or disable it before continuing."
                 )
             });
         };

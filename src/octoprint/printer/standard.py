@@ -367,7 +367,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 )
             except Exception:
                 self._logger.exception(
-                    "Error while retrieving additional data from plugin {}, blacklisting it for further loops".format(
+                    "Error while retrieving additional data from plugin {}, blocklisting it for further loops".format(
                         name
                     ),
                     extra={"plugin": name},

@@ -119,7 +119,7 @@ class PluginBlacklistSubwizard:
         return {"required": self._is_pluginblacklist_wizard_required()}
 
     def _get_pluginblacklist_wizard_name(self):
-        return gettext("Plugin Blacklist")
+        return gettext("Plugin Blocklist")
 
     def _get_pluginblacklist_additional_wizard_template_data(self):
         return {"mandatory": self._is_pluginblacklist_wizard_required()}
