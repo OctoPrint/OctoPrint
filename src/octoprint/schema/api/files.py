@@ -81,3 +81,34 @@ class ApiStorageFolder(ApiStorageEntry):
 class ApiStorageFile(ApiStorageEntry):
     gcodeAnalysis: Optional[ApiEntryAnalysis] = None
     statistics: Optional[ApiEntryStatistics] = None
+
+
+class ApiStorageUsage(BaseModel):
+    free: int
+    total: int
+
+
+class ApiStorageData(BaseModelExtra):
+    key: str
+    name: str
+    capabilities: dict[str, bool]
+    files: list[Union[ApiStorageFile, ApiStorageFolder]]
+    usage: Optional[ApiStorageUsage] = None
+
+
+ReadGcodeFilesResponse = dict[str, ApiStorageData]
+
+
+class ReadGcodeFilesResponse_pre_1_12(BaseModel):
+    files: list[Union[ApiStorageFile, ApiStorageFolder]]
+    free: int
+    total: int
+
+
+ReadGcodeFilesForOriginResponse = ApiStorageData
+
+
+class ReadGcodeFilesForOriginResponse_pre_1_12(BaseModel):
+    files: list[Union[ApiStorageFile, ApiStorageFolder]]
+    free: Optional[int] = None
+    total: Optional[int] = None

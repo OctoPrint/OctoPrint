@@ -42,6 +42,8 @@ from octoprint.server import (
 )
 from octoprint.server.api import api
 from octoprint.server.util.flask import (
+    api_version_matches,
+    api_versioned,
     get_json_command_from_request,
     no_firstrun_access,
     with_revalidation_checking,
@@ -167,6 +169,7 @@ def _create_etag(path, filter=None, recursive=False, lm=None):
 
 
 @api.route("/files", methods=["GET"])
+@api_versioned
 @Permissions.FILES_LIST.require(403)
 @with_revalidation_checking(
     etag_factory=lambda lm=None: _create_etag(
@@ -181,14 +184,13 @@ def _create_etag(path, filter=None, recursive=False, lm=None):
     unless=lambda: request.values.get("force", False)
     or request.values.get("_refresh", False),
 )
-def readGcodeFiles():
+def readGcodeFiles():  # pre 1.12.0
     filter = request.values.get("filter", False)
     recursive = request.values.get("recursive", "false") in valid_boolean_trues
     force = request.values.get("force", "false") in valid_boolean_trues
 
     files = []
-    storages = {}
-    for storage, meta in fileManager.registered_storage_meta.items():
+    for storage in fileManager.registered_storages:
         try:
             files.extend(
                 _getFileList(
@@ -198,17 +200,69 @@ def readGcodeFiles():
                     allow_from_cache=not force,
                 )
             )
-            storages[meta.key] = {
-                "key": meta.key,
-                "name": meta.name,
-                "capabilities": meta.capabilities.model_dump(by_alias=True),
-            }
         except octoprint.filemanager.NoSuchStorage:
             pass
 
     usage = psutil.disk_usage(settings().getBaseFolder("uploads", check_writable=False))
 
-    return jsonify(files=files, free=usage.free, total=usage.total, storages=storages)
+    data = apischema.ReadGcodeFilesResponse_pre_1_12(
+        files=files,
+        free=usage.free,
+        total=usage.total,
+    )
+    return jsonify(**data.model_dump(by_alias=True, exclude_none=True))
+
+
+@readGcodeFiles.version(">=1.12.0")
+@Permissions.FILES_LIST.require(403)
+@with_revalidation_checking(
+    etag_factory=lambda lm=None: _create_etag(
+        request.path,
+        request.values.get("filter", False),
+        request.values.get("recursive", False),
+        lm=lm,
+    ),
+    lastmodified_factory=lambda: _create_lastmodified(
+        request.path, request.values.get("recursive", False)
+    ),
+    unless=lambda: request.values.get("force", False)
+    or request.values.get("_refresh", False),
+)
+def readGcodeFiles_post_1_12_0():  # 1.12.0+
+    filter = request.values.get("filter", False)
+    recursive = request.values.get("recursive", "false") in valid_boolean_trues
+    force = request.values.get("force", "false") in valid_boolean_trues
+
+    storages: dict[str, apischema.ApiStorageData] = {}
+    for storage, meta in fileManager.registered_storage_meta.items():
+        try:
+            files = _getFileList(
+                storage,
+                filter=filter,
+                recursive=recursive,
+                allow_from_cache=not force,
+            )
+
+            storage_data = apischema.ApiStorageData(
+                key=meta.key,
+                name=meta.name,
+                capabilities=meta.capabilities.model_dump(by_alias=True),
+                files=files,
+            )
+
+            if meta.key == "local":
+                usage = psutil.disk_usage(
+                    settings().getBaseFolder("uploads", check_writable=False)
+                )
+                storage_data.usage = apischema.ApiStorageUsage(
+                    free=usage.free, total=usage.total
+                )
+
+            storages[meta.key] = storage_data
+        except octoprint.filemanager.NoSuchStorage:
+            pass
+
+    return jsonify(**{k: v.model_dump(by_alias=True) for k, v in storages.items()})
 
 
 @api.route("/files/test", methods=["POST"])
@@ -292,17 +346,41 @@ def readGcodeFilesForOrigin(origin):
         recursive = request.values.get("recursive", "false") in valid_boolean_trues
         force = request.values.get("force", "false") in valid_boolean_trues
 
+        storage_meta = fileManager.registered_storage_meta.get(origin)
+        if storage_meta is None:
+            abort(404)
+
         files = _getFileList(
             origin, filter=filter, recursive=recursive, allow_from_cache=not force
         )
 
-        if origin == FileDestinations.LOCAL:
-            usage = psutil.disk_usage(
-                settings().getBaseFolder("uploads", check_writable=False)
+        if api_version_matches(">=1.12.0"):  # 1.12.0+
+            response = apischema.ApiStorageData(
+                key=storage_meta.key,
+                name=storage_meta.name,
+                capabilities=storage_meta.capabilities.model_dump(by_alias=True),
+                files=files,
             )
-            return jsonify(files=files, free=usage.free, total=usage.total)
-        else:
-            return jsonify(files=files)
+
+            if origin == FileDestinations.LOCAL:
+                usage = psutil.disk_usage(
+                    settings().getBaseFolder("uploads", check_writable=False)
+                )
+                response.usage = apischema.ApiStorageUsage(
+                    free=usage.free, total=usage.total
+                )
+
+        else:  # pre 1.12.0
+            response = apischema.ReadGcodeFilesForOriginResponse_pre_1_12(files=files)
+
+            if origin == FileDestinations.LOCAL:
+                usage = psutil.disk_usage(
+                    settings().getBaseFolder("uploads", check_writable=False)
+                )
+                response.free = usage.free
+                response.total = usage.total
+
+        return jsonify(**response.model_dump(by_alias=True))
 
     except octoprint.filemanager.NoSuchStorage:
         abort(404)
@@ -356,7 +434,7 @@ def _getFileDetails(origin, path):
 )
 def _getFileList(
     origin, path=None, filter=None, recursive=False, level=0, allow_from_cache=True
-):
+) -> list[apischema.ApiStorageEntry]:
     # PERF: Only retrieve the extension tree once
     extension_tree = octoprint.filemanager.full_extension_tree()
 
@@ -392,10 +470,7 @@ def _getFileList(
             lastmodified = fileManager.last_modified(origin, path=path, recursive=True)
             _file_cache[cache_key] = (files, lastmodified, storage_hash)
 
-    result = _analyse_and_convert_recursively(
-        origin, files, extension_tree=extension_tree
-    )
-    return [x.model_dump(by_alias=True, exclude_none=True) for x in result]
+    return _analyse_and_convert_recursively(origin, files, extension_tree=extension_tree)
 
 
 def _analyse_and_convert_recursively(
@@ -1180,7 +1255,7 @@ def gcodeFileCommand(storage, path):
                 ):
                     abort(404)
 
-                path, name = fileManager.split_path(storage, path)
+                _, name = fileManager.split_path(storage, path)
 
                 destination = data["destination"]
                 dst_path, dst_name = fileManager.split_path(storage, destination)
@@ -1350,7 +1425,7 @@ def gcodeFileCommand(storage, path):
                         description=f"Target storage {dst_storage} does not support this operation",
                     )
 
-                path, name = fileManager.split_path(storage, path)
+                _, name = fileManager.split_path(storage, path)
 
                 destination = data["destination"]
                 dst_path, dst_name = fileManager.split_path(dst_storage, destination)

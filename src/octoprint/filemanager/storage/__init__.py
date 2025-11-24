@@ -16,21 +16,37 @@ if TYPE_CHECKING:
 
 class StorageCapabilities(BaseModel):
     write_file: bool = False
+    """Storage supports writing files"""
     read_file: bool = False
+    """Storage supports reading files"""
     remove_file: bool = False
+    """Storage supports removing files"""
     copy_file: bool = False
+    """Storage supports internally copying files"""
     move_file: bool = False
+    """Storage supports internally moving files"""
 
     add_folder: bool = False
+    """Storage supports adding folders"""
     remove_folder: bool = False
+    """Storage supports removing folders"""
     copy_folder: bool = False
+    """Storage supports internally copying folders"""
     move_folder: bool = False
+    """Storage supports internally moving folders"""
 
     metadata: bool = False
+    """Storage supports metadata"""
     history: bool = False
+    """Storage supports history"""
     thumbnails: bool = False
+    """Storage supports file thumbnails"""
 
     path_on_disk: bool = False
+    """Storage can provide a path on disk to files"""
+
+    concurrent_printing: bool = True
+    """Storage supports concurrent printing"""
 
 
 class HistoryEntry(BaseModel):

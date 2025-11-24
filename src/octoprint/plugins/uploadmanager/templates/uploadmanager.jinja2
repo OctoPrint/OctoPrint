@@ -7,6 +7,14 @@
     </div>
     <div class="modal-body">
         <div class="full-sized-box flex-column">
+            <div class="btn-group storage-selector"
+                 data-bind="foreach: Object.values($root.files.storageOptions())"
+                 data-test-id="storage-selector">
+                <button class="btn btn-small"
+                        data-bind="text: name, click: function() { $root.changeStorage($data.key) }, css: {active: $root.currentStorage() === $data.key}">
+                </button>
+            </div>
+
             <form class="form-search" data-bind="submit: performSearch">
                 <div class="search-query-with-clear"
                      data-bind="css: {'active-clear': searchQuery}">
@@ -26,15 +34,6 @@
                     <ul class="dropdown-menu">
                         <li>
                             <a href="javascript:void(0)" data-bind="click: selectAll">{{ _("Select all") }}</a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="javascript:void(0)"
-                               data-bind="click: function() { $root.selectAllOfOrigin('local') }">{{ _("Select all stored locally") }}</a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)"
-                               data-bind="click: function() { $root.selectAllOfOrigin('printer') }">{{ _("Select all stored on printer") }}</a>
                         </li>
                         <li class="divider"></li>
                         <li>
@@ -70,22 +69,22 @@
                 <div class="btn-group">
                     <button class="btn btn-small"
                             title="{{ _('Rename...') |edq }}"
-                            data-bind="click: $root.rename, css: { disabled: !$root.enableRename() }">
+                            data-bind="click: function () { if ($root.enableRename()) { $root.rename() } }, css: { disabled: !$root.enableRename() }">
                         <i class="fa-solid fa-pen"></i>
                     </button>
                     <button class="btn btn-small"
                             title="{{ _('Copy to...') |edq }}"
-                            data-bind="click: function() { $root.showCopyMoveDialog('copy') }, css: { disabled: !$root.enableCopy() }">
+                            data-bind="click: function() { if ($root.enableCopy()) { $root.showCopyMoveDialog('copy') } }, css: { disabled: !$root.enableCopy() }">
                         <i class="fa-solid fa-copy"></i>
                     </button>
                     <button class="btn btn-small"
                             title="{{ _('Move to...') |edq }}"
-                            data-bind="click: function() { $root.showCopyMoveDialog('move') }, css: { disabled: !$root.enableCopy() }">
+                            data-bind="click: function() { if ($root.enableMove()) { $root.showCopyMoveDialog('move') } }, css: { disabled: !$root.enableMove() }">
                         <i class="fa-solid fa-scissors"></i>
                     </button>
                     <button class="btn btn-small"
                             title="{{ _('Remove...') |edq }}"
-                            data-bind="click: $root.remove, css: { disabled: !$root.enableRemove() }">
+                            data-bind="click: function() { if ($root.enableRemove()) { $root.remove() } }, css: { disabled: !$root.enableRemove() }">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </div>
@@ -172,19 +171,6 @@
                                data-bind="click: function() { $root.listHelper.toggleFilter('model'); }"><i class="icon-ok"
    data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'model') ? 'visible' : 'hidden'}"></i> {{ _("Only show STL files") }}</a>
                         </li>
-                        {% if enableSdSupport %}
-                            <li class="divider"></li>
-                            <li>
-                                <a href="javascript:void(0)"
-                                   data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok"
-   data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _("Only show files stored locally") }}</a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0)"
-                                   data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok"
-   data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> {{ _("Only show files stored on SD") }}</a>
-                            </li>
-                        {% endif %}
                         <li class="divider"></li>
                         <li>
                             <a href="javascript:void(0)"
@@ -216,7 +202,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- ko if: currentPath() != "" -->
+                        <!-- ko if: currentPath() !== "" -->
                         <tr>
                             <td class="icon">
                                 <i class="icon-arrow-left"></i>
@@ -272,19 +258,6 @@
                 </td>
                 <td class="title">
                     <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
-                </td>
-                <td class="uploaded" data-bind="text: formatDate(date)"></td>
-                <td class="printed" data-bind="text: formatDate($root.lastPrint($data))"></td>
-                <td class="size" data-bind="text: formatSize(size)"></td>
-            </script>
-
-            <script type="text/html" id="uploadmanager_template_printer">
-                <td class="icon">
-                    <i class="fa-solid fa-sd-card"></i>
-                </td>
-                <td class="title">
-                    <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
-                    <img data-bind="attr: { src: $root.files.thumbnailLink($data) }, visible: $root.files.thumbnailsEnabled() && $root.files.thumbnailLink($data)" style="height: 30px">
                 </td>
                 <td class="uploaded" data-bind="text: formatDate(date)"></td>
                 <td class="printed" data-bind="text: formatDate($root.lastPrint($data))"></td>

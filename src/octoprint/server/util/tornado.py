@@ -1507,12 +1507,10 @@ class StorageThumbnailDownloadHandler(
         if meta.size >= 0:
             self.set_header("Content-Length", meta.size)
 
-        if meta.last_modified >= 0:
-            import datetime
+        if meta.last_modified:
             from email.utils import format_datetime
 
-            dt = datetime.datetime.fromtimestamp(meta.last_modified)
-            self.set_header("Last-Modified", format_datetime(dt))
+            self.set_header("Last-Modified", format_datetime(meta.last_modified))
 
 
 ##~~ URL Forward Handler for forwarding requests to a preconfigured static URL

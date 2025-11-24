@@ -18,16 +18,30 @@ $(function () {
         self.copyMoveDialog = undefined;
 
         self.selectedFiles = ko.observableArray([]);
+        self.currentStorage = ko.observable("local");
+        self.currentStorage.subscribe(() => {
+            self.deselectAll();
+            self.changeFolderByPath(self.currentPath(), self.currentStorage());
+        });
+
         self.currentPath = ko.observable("");
         self.listStyle = ko.observable("folders_files");
 
-        if (self.files.hasOwnProperty("allItems")) {
-            self.files.allItems.subscribe(function (newValue) {
-                self.listHelper.updateItems(newValue);
-                self.selectedFiles([]);
-                self.changeFolderByPath(self.currentPath());
+        if (self.files.hasOwnProperty("storageFiles")) {
+            self.files.storageFiles.subscribe(() => {
+                self.deselectAll();
+                self.changeFolderByPath(self.currentPath(), self.currentStorage());
             });
         }
+
+        self.currentStorageCapabilities = ko.pureComputed(() => {
+            const storage = self.currentStorage();
+            return self.files.storageCapabilities(storage);
+        });
+        self.currentStorageCanAddFolder = ko.pureComputed(() => {
+            const storage = self.currentStorage();
+            return self.files.storageCanAddFolder(storage);
+        });
 
         self.listHelper = new ItemListHelper(
             "uploadmanagerList",
@@ -119,12 +133,6 @@ $(function () {
                         data["prints"]["success"] > 0
                     );
                 },
-                sd: (data) => {
-                    return data["origin"] && data["origin"] == "printer";
-                },
-                local: (data) => {
-                    return !(data["origin"] && data["origin"] == "printer");
-                },
                 machinecode: (data) => {
                     return data["type"] && data["type"] == "machinecode";
                 },
@@ -134,10 +142,7 @@ $(function () {
             },
             "nameAsc",
             [],
-            [
-                ["sd", "local"],
-                ["machinecode", "model"]
-            ],
+            [["machinecode", "model"]],
             0
         );
 
@@ -358,23 +363,27 @@ $(function () {
         self.changeFolder = (data) => {
             self.deselectAll();
 
-            self.currentPath(OctoPrint.files.pathForEntry(data));
+            self.currentPath(data.path);
             self.listHelper.updateItems(data.children);
         };
 
-        self.changeFolderByPath = (path) => {
+        self.changeFolderByPath = (path, storage) => {
+            storage = storage || self.currentStorage();
+
             self.deselectAll();
 
-            const element = self.files.elementByPath(path, {
-                children: self.files.allItems()
-            });
+            const element = self.files.elementByPathAndStorage(path, storage);
             if (element) {
                 self.currentPath(path);
                 self.listHelper.updateItems(element.children);
             } else {
                 self.currentPath("");
-                self.listHelper.updateItems(self.files.allItems());
+                self.listHelper.updateItems(self.files.itemsForStorage(storage));
             }
+        };
+        self.changeStorage = (key) => {
+            if (self.files.availableStorages().indexOf(key) < 0) return;
+            self.currentStorage(key);
         };
 
         self.navigateUp = () => {
@@ -423,7 +432,6 @@ $(function () {
         };
 
         self.templateFor = function (data) {
-            if (data.origin === "printer") return "uploadmanager_template_printer";
             return "uploadmanager_template_" + data.type;
         };
 
@@ -432,9 +440,7 @@ $(function () {
         };
 
         self.checkSelectedOrigin = (origin) => {
-            return _.every(self.selectedFiles(), (item) => {
-                return item.hasOwnProperty("origin") && item.origin === origin;
-            });
+            return self.currentStorage() === origin;
         };
 
         self.enableUploadSD = () => {
@@ -457,45 +463,56 @@ $(function () {
             return self.files.slicing.enableSlicingDialog();
         });
         self.enableSlicing = () => {
-            const files = self.selectedFiles();
-            if (files.length !== 1) return false;
+            const selected = self.selectedFiles();
+            if (!selected || selected.length !== 1) return false;
 
-            return files[0].type == "model" && self.files.enableSlicing(files[0]);
+            const data = selected[0];
+
+            return data.type == "model" && self.files.enableSlicing(data);
         };
         self.enableLoad = (printAfterLoad) => {
-            const files = self.selectedFiles();
-            if (files.length !== 1) return false;
+            const selected = self.selectedFiles();
+            if (!selected || selected.length !== 1) return false;
 
-            return files[0].type == "machinecode" && printAfterLoad
-                ? self.files.enableSelectAndPrint(files[0], printAfterLoad)
-                : self.files.enableSelect(files[0]);
+            const data = selected[0];
+
+            return data.type == "machinecode" && printAfterLoad
+                ? self.files.enableSelectAndPrint(data, printAfterLoad)
+                : self.files.enableSelect(data);
         };
         self.enableRename = () => {
+            const selected = self.selectedFiles();
+            if (!selected || selected.length !== 1) return false;
+
+            const data = selected[0];
+            const type = data.type;
+            const capabilities = self.files.storageCapabilities(data.origin);
+
             return (
                 self.loginState.hasAllPermissions(
                     self.access.permissions.FILES_UPLOAD,
                     self.access.permissions.FILES_DELETE
                 ) &&
-                self.selectedFiles().length == 1 &&
-                self.checkSelectedOrigin("local")
+                ((type != "folder" && capabilities.move_file) ||
+                    (type == "folder" && capabilities.move_folder))
             );
         };
         self.enableCopy = () => {
+            const selected = self.selectedFiles();
+            if (!selected || selected.length !== 1) return false;
+
+            const data = selected[0];
+            const type = data.type;
+            const capabilities = self.files.storageCapabilities(data.origin);
+
             return (
                 self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD) &&
-                self.selectedFiles().length > 0 &&
-                self.checkSelectedOrigin("local")
+                ((type != "folder" && capabilities.copy_file) ||
+                    (type == "folder" && capabilities.copy_folder))
             );
         };
         self.enableMove = () => {
-            return (
-                self.loginState.hasAllPermissions(
-                    self.access.permissions.FILES_UPLOAD,
-                    self.access.permissions.FILES_DELETE
-                ) &&
-                self.selectedFiles().length > 0 &&
-                self.checkSelectedOrigin("local")
-            );
+            return self.enableRename();
         };
 
         self.enableDownload = ko.pureComputed(() => {
@@ -507,7 +524,11 @@ $(function () {
         self.downloadUrl = ko.pureComputed(() => {
             const files = self.selectedFiles();
             if (files.length === 0) return "";
-            if (!_.all(files, (item) => item.origin === "local")) return "";
+
+            const currentStorage = self.currentStorage();
+            if (!self.files.storageCapabilities(currentStorage).read_file) return "";
+
+            if (!_.all(files, (item) => item.origin === currentStorage)) return "";
 
             // pick all files & ensure they can all be downloaded
             const allFiles = _.filter(files, (item) => item.type !== "folder");
@@ -525,7 +546,8 @@ $(function () {
             if (downloadables.length === 0) return "";
 
             if (downloadables.length > 1 || downloadables[0].type === "folder") {
-                const bulkUrl = OctoPrint.files.bulkDownloadUrlLocal(
+                const bulkUrl = OctoPrint.files.bulkDownloadUrl(
+                    currentStorage,
                     _.map(_collectFiles(downloadables), (item) => item.path)
                 );
                 if (BASEURL.length + bulkUrl.length >= 2000) return "";
@@ -561,6 +583,8 @@ $(function () {
         };
 
         self.showAddFolderDialog = () => {
+            if (!self.currentStorageCanAddFolder()) return;
+
             if (!self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD))
                 return;
 
@@ -578,8 +602,9 @@ $(function () {
                     return true;
                 },
                 onproceed: (value) => {
+                    const storage = self.currentStorage();
                     const path = self.currentPath();
-                    OctoPrint.files.createFolder("local", value, path).fail((jqXHR) => {
+                    OctoPrint.files.createFolder(storage, value, path).fail((jqXHR) => {
                         showMessageDialog({
                             title: gettext("Operation failed"),
                             message: _.sprintf(

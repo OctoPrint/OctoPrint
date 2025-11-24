@@ -1,3 +1,11 @@
+<div class="btn-group storage-selector"
+     data-bind="foreach: Object.values($root.storageOptions())"
+     data-test-id="storage-selector">
+    <button class="btn btn-small"
+            data-bind="text: name, click: function() { $root.changeStorage($data.key) }, css: {active: $root.currentStorage() === $data.key}">
+    </button>
+</div>
+
 <form class="form-search"
       data-bind="submit: performSearch, visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_LIST)">
     <div class="search-query-with-clear"
@@ -10,6 +18,7 @@
         <span class="search-clear" data-bind="click: clearSearchQuery"><i class="fas fa-times"></i></span>
     </div>
 </form>
+
 <div class="gcode_files"
      data-test-id="files-list"
      data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_LIST)">
@@ -114,39 +123,24 @@
 <div style="display: none"
      data-bind="visible: loginState.hasPermissionKo(access.permissions.FILES_UPLOAD)">
     <div class="row-fluid folder-button">
-        <span class="btn addfolder-button span12"
-              data-bind="click: $root.showAddFolderDialog">
+        <button class="btn addfolder-button span12"
+                data-bind="click: function() { if ($root.currentStorageCanAddFolder()) { $root.showAddFolderDialog() } }, css: {disabled: !$root.currentStorageCanAddFolder()}">
             <i class="fas fa-folder"></i> {{ _("Create folder...") }}
-        </span>
+        </button>
     </div>
     <div class="row-fluid upload-buttons">
-        <span class="btn btn-primary fileinput-button span{% if enableSdSupport %}6{% else %}12{% endif %}"
+        <span class="btn btn-primary fileinput-button span12"
               style="margin-bottom: 10px">
             <i class="fas fa-upload"></i>
             <span>{{ _("Upload") }}</span>
             <input id="gcode_upload"
-                   data-test-id="upload-local"
+                   data-test-id="upload"
                    accept="{{ ",".join(supportedExtensions) }}"
                    type="file"
                    name="file"
                    class="fileinput-button"
                    multiple>
         </span>
-        {% if enableSdSupport %}
-            <span class="btn btn-primary fileinput-button span6"
-                  data-bind="enable: $root.isSdReady() && !$root.isPrinting(), css: {disabled: !$root.isSdReady() || $root.isPrinting()}"
-                  style="margin-bottom: 10px">
-                <i class="fas fa-upload"></i>
-                <span>{{ _("Upload to SD") }}</span>
-                <input id="gcode_upload_sd"
-                       data-test-id="upload-sd"
-                       accept="{{ ",".join(supportedExtensions) }}"
-                       type="file"
-                       name="file"
-                       class="fileinput-button"
-                       data-bind="enable: isSdReady()">
-            </span>
-        {% endif %}
     </div>
     <div id="gcode_upload_progress" class="progress progress-text-centered">
         <div class="bar"></div>
@@ -154,6 +148,6 @@
               data-bind="css: { 'progress-text-front': (uploadProgressPercentage() >= 50), 'progress-text-back': (uploadProgressPercentage() < 50) }, text: uploadProgressText()"></span>
     </div>
     <div>
-        <small class="muted">{{ _("Hint: You can also drag and drop files on this page to upload them.") }}</small>
+        <small class="muted">{{ _("Hint: You can also drag and drop files on this page to upload them to the currently selected storage (if upload is supported).") }}</small>
     </div>
 </div>

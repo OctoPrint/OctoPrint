@@ -90,7 +90,28 @@ class ConnectionStateResponse_pre_1_12_0(BaseModel):
 @api.route("/connection", methods=["GET"])
 @api_versioned
 @Permissions.STATUS.require(403)
-def connectionState():
+def connectionState():  # pre 1.12.0
+    connection_state = printer.connection_state
+
+    state = connection_state.pop("state")
+    profile = connection_state.pop("profile", None)
+
+    data = ConnectionStateResponse_pre_1_12_0(
+        current=CurrentConnectionState_pre_1_12_0(
+            state=state,
+            printerProfile=profile.get("id", None) if profile else None,
+            port=connection_state.get("port", ""),
+            baudrate=connection_state.get("baudrate", 0),
+        ),
+        options=_get_options(),
+    )
+
+    return jsonify(data.model_dump())
+
+
+@connectionState.version(">=1.12.0")
+@Permissions.STATUS.require(403)
+def connectionState_1_12_0():  # 1.12.0+
     connection_state = printer.connection_state
 
     connector = connection_state.pop("connector", None)
@@ -106,28 +127,7 @@ def connectionState():
             capabilities=capabilities,
             profile=profile.get("_id") if profile else None,
         ),
-        options=_get_options(),
-    )
-
-    return jsonify(data.model_dump())
-
-
-@connectionState.version("<1.12.0")
-@Permissions.STATUS.require(403)
-def connectionState_pre_1_12_0():
-    connection_state = printer.connection_state
-
-    state = connection_state.pop("state")
-    profile = connection_state.pop("profile", None)
-
-    data = ConnectionStateResponse_pre_1_12_0(
-        current=CurrentConnectionState_pre_1_12_0(
-            state=state,
-            printerProfile=profile.get("id", None) if profile else None,
-            port=connection_state.get("port", ""),
-            baudrate=connection_state.get("baudrate", 0),
-        ),
-        options=_get_options_pre_1_12_0(),
+        options=_get_options_1_12_0(),
     )
 
     return jsonify(data.model_dump())
@@ -147,7 +147,7 @@ def connectionCommand():
         parameters = {}
         printerProfile = None
 
-        if api_version_matches(">=1.12.0"):
+        if api_version_matches(">=1.12.0"):  # 1.12.0+
             if "connector" not in data:
                 abort(400, description='required parameter "connector" is missing')
 
@@ -227,7 +227,7 @@ def connectionCommand():
     return NO_CONTENT
 
 
-def _get_options() -> ConnectionOptions:
+def _get_options_1_12_0() -> ConnectionOptions:  # 1.12.0+
     connector_options = ConnectedPrinter.all()
     profile_options = printerProfileManager.get_all()
     default_profile = printerProfileManager.get_default()
@@ -264,7 +264,7 @@ def _get_options() -> ConnectionOptions:
     )
 
 
-def _get_options_pre_1_12_0() -> ConnectionOptions_pre_1_12_0:
+def _get_options() -> ConnectionOptions_pre_1_12_0:  # pre 1.12.0
     profile_options = printerProfileManager.get_all()
     default_profile = printerProfileManager.get_default()
 

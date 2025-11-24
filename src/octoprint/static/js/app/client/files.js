@@ -169,6 +169,9 @@
     OctoPrintFilesClient.prototype.bulkDownloadUrlLocal = function (filenames) {
         return this.base.bulkDownloadUrl(bulkDownloadLocalUrl, filenames);
     };
+    OctoPrintFilesClient.prototype.bulkDownloadUrl = function (storage, filenames) {
+        return this.base.bulkDownloadUrl(`downloads/files/${storage}`, filenames);
+    };
 
     OctoPrintFilesClient.prototype.pathForEntry = function (entry) {
         if (!entry || !entry.hasOwnProperty("parent") || entry.parent == undefined) {

@@ -62,10 +62,7 @@ $(function () {
         });
 
         self.uploadButton = undefined;
-        self.uploadSdButton = undefined;
         self.uploadProgressBar = undefined;
-        self.localTarget = undefined;
-        self.sdTarget = undefined;
 
         self.dropOverlay = undefined;
         self.dropZone = undefined;
@@ -82,7 +79,7 @@ $(function () {
         self.activeRemovals = ko.observableArray([]);
 
         self.movingFileOrFolder = ko.observable(false);
-        self.moveEntry = ko.observable({name: "", display: "", path: ""}); // is there a better way to do this?
+        self.moveEntry = ko.observable({name: "", display: "", path: "", origin: ""}); // is there a better way to do this?
         self.moveSource = ko.observable(undefined);
         self.moveDestination = ko.observable(undefined);
         self.moveSourceFilename = ko.observable(undefined);
@@ -111,11 +108,33 @@ $(function () {
             }
         });
 
-        self.folderList = ko.observableArray(["/"]);
+        self.folderList = ko.pureComputed(() => {
+            const storageFiles = self.storageFiles();
+            const currentStorage = self.currentStorage();
+
+            if (storageFiles[currentStorage] === undefined) return ["/"];
+
+            const createFolderList = (entries) => {
+                let result = [];
+                entries.forEach((entry) => {
+                    if (entry.type !== "folder") return;
+                    result.push("/" + entry.path);
+
+                    if (entry.children) {
+                        result = result.concat(createFolderList(entry.children));
+                    }
+                });
+                return result;
+            };
+
+            const files = storageFiles[currentStorage].files;
+            const folders = createFolderList(files);
+            folders.sort();
+            return ["/"].concat(folders);
+        });
+
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
-        self.addFolderStorage = ko.observable(undefined);
-        self.addFolderStorageOptions = ko.observableArray([]);
         self.enableAddFolder = ko.pureComputed(function () {
             return (
                 self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD) &&
@@ -128,16 +147,85 @@ $(function () {
         self.uploadExistsDialog = undefined;
         self.uploadFilename = ko.observable(undefined);
 
-        self.allItems = ko.observable(undefined);
         self.refreshing = ko.observable(false);
 
-        var optionsLocalStorageKey = "gcodeFiles.options";
-        self._toLocalStorage = function () {
-            saveToLocalStorage(optionsLocalStorageKey, {currentPath: self.currentPath()});
+        self.storageFiles = ko.observable({});
+        self.storageOptions = ko.pureComputed(() => {
+            const storageFiles = self.storageFiles();
+            const options = {};
+            Object.keys(storageFiles).forEach((key) => {
+                const storage = storageFiles[key];
+                options[key] = {
+                    key: storage.key,
+                    name: storage.name,
+                    capabilities: storage.capabilities,
+                    usage: storage.usage
+                };
+            });
+            return options;
+        });
+        self.allItems = ko.pureComputed(() => {
+            const storageFiles = self.storageFiles();
+            let files = [];
+            Object.keys(storageFiles).forEach((key) => {
+                files = files.concat(storageFiles[key].files);
+            });
+            return files;
+        });
+
+        self.storageCapabilities = (storage) => {
+            const storageFiles = self.storageFiles();
+            if (storageFiles[storage] === undefined) return {};
+            return storageFiles[storage].capabilities;
+        };
+        self.storageCanUpload = (storage) => {
+            const capabilities = self.storageCapabilities(storage);
+            return (
+                !!capabilities.write_file &&
+                (!self.isPrinting() || !!capabilities.concurrent_printing)
+            );
+        };
+        self.storageCanAddFolder = (storage) => {
+            const capabilities = self.storageCapabilities(storage);
+            return (
+                !!capabilities.add_folder &&
+                (!self.isPrinting() || !!capabilities.concurrent_printing)
+            );
+        };
+
+        self.currentStorage = ko.observable("local");
+        self.currentStorage.subscribe((val) => {
+            self.currentPath("");
+            self.listHelper.updateItems(self.itemsForStorage(val));
+            self.highlightCurrentFile();
+            self.evaluateDropzone();
+        });
+        self.currentStorageCapabilities = ko.pureComputed(() => {
+            const storage = self.currentStorage();
+            return self.storageCapabilities(storage);
+        });
+        self.currentStorageCanUpload = ko.pureComputed(() => {
+            const storage = self.currentStorage();
+            return self.storageCanUpload(storage);
+        });
+        self.currentStorageCanUpload.subscribe(() => {
+            self.updateButton();
+            self.evaluateDropzone();
+        });
+        self.currentStorageCanAddFolder = ko.pureComputed(() => {
+            const storage = self.currentStorage();
+            return self.storageCanAddFolder(storage);
+        });
+
+        const optionsLocalStorageKey = "gcodeFiles.options";
+        self._toLocalStorage = () => {
+            saveToLocalStorage(optionsLocalStorageKey, {
+                currentPath: self.currentPath()
+            });
         };
 
         self._fromLocalStorage = function () {
-            var data = loadFromLocalStorage(optionsLocalStorageKey);
+            const data = loadFromLocalStorage(optionsLocalStorageKey);
             if (
                 data["currentPath"] !== undefined &&
                 self.settingsViewModel.feature_rememberFileFolder()
@@ -147,7 +235,7 @@ $(function () {
         };
 
         self.currentPath = ko.observable("");
-        self.currentPath.subscribe(function () {
+        self.currentPath.subscribe(() => {
             self._toLocalStorage();
         });
 
@@ -199,7 +287,7 @@ $(function () {
             );
         };
 
-        // initialize list helper
+        // initialize list helpers
         const listHelperFilters = {
             printed: (data) =>
                 recursiveFilter(
@@ -211,12 +299,10 @@ $(function () {
                             child.prints.success !== undefined &&
                             child.prints.success > 0
                         )
-                ),
-            sd: (data) => data["origin"] && data["origin"] === "printer",
-            local: (data) => !(data["origin"] && data["origin"] === "printer")
+                )
         };
-        var listHelperExclusiveFilters = [["sd", "local"]];
 
+        let listHelperExclusiveFilters = [];
         if (SUPPORTED_FILETYPES.length > 1) {
             _.each(SUPPORTED_FILETYPES, function (filetype) {
                 listHelperFilters[filetype] = function (data) {
@@ -229,7 +315,7 @@ $(function () {
             listHelperExclusiveFilters.push(SUPPORTED_FILETYPES);
         }
 
-        var sortByName = function (a, b) {
+        const sortByName = (a, b) => {
             // sorts ascending
             if (a["display"].toLowerCase() < b["display"].toLowerCase()) return -1;
             if (a["display"].toLowerCase() > b["display"].toLowerCase()) return 1;
@@ -240,7 +326,7 @@ $(function () {
             "gcodeFiles",
             {
                 name: sortByName,
-                upload: function (a, b) {
+                upload: (a, b) => {
                     // sorts descending
                     if (a["date"] === undefined && b["date"] === undefined) {
                         return sortByName(a, b);
@@ -249,7 +335,7 @@ $(function () {
                     if (a["date"] === undefined || a["date"] < b["date"]) return 1;
                     return 0;
                 },
-                last_printed: function (a, b) {
+                last_printed: (a, b) => {
                     // sorts descending
                     var valA =
                         a.prints && a.prints.last && a.prints.last.date
@@ -268,7 +354,7 @@ $(function () {
                         return 0;
                     }
                 },
-                size: function (a, b) {
+                size: (a, b) => {
                     // sorts descending
                     if (b["size"] === undefined || a["size"] > b["size"]) return -1;
                     if (a["size"] === undefined || a["size"] < b["size"]) return 1;
@@ -304,6 +390,14 @@ $(function () {
             });
 
             return result;
+        });
+        self.availableStorages = ko.pureComputed(() => {
+            return Object.keys(self.storageFiles());
+        });
+        self.availableStorages.subscribe((val) => {
+            if (val.indexOf(self.currentStorage()) < 0) {
+                self.currentStorage("local");
+            }
         });
 
         self.folderDestinations = ko.pureComputed(function () {
@@ -494,53 +588,36 @@ $(function () {
         };
 
         self.fromResponse = function (response, params) {
-            var focus = [];
-            var switchToPath;
+            let focus = [];
+            let switchToPath;
 
             if (_.isObject(params)) {
-                focus = params.focus || undefined;
+                focus = params.focus || focus;
                 switchToPath = params.switchToPath || undefined;
             } else if (arguments.length > 1) {
                 log.warn(
                     "FilesViewModel.fromResponse called with old argument list. That is deprecated, please use parameter object instead."
                 );
                 if (arguments.length > 2) {
-                    focus = {location: arguments[2], path: arguments[1]};
+                    focus = [{location: arguments[2], path: arguments[1]}];
                 } else {
-                    focus = {location: "local", path: arguments[1]};
+                    focus = [{location: "local", path: arguments[1]}];
                 }
                 if (arguments.length > 3) {
                     switchToPath = arguments[3] || undefined;
                 }
             }
 
-            var files = response.files;
-
-            self.allItems(files);
-
-            var createFolderList = function (entries) {
-                var result = [];
-                _.each(entries, function (entry) {
-                    if (entry.type !== "folder") return;
-
-                    result.push("/" + entry.path);
-
-                    if (entry.children) {
-                        result = result.concat(createFolderList(entry.children));
-                    }
-                });
-                return result;
-            };
-            const folders = createFolderList(files);
-            folders.sort();
-            self.folderList(["/"].concat(folders));
+            self.storageFiles(response);
 
             // Sanity check file list - see #2572
-            var nonrecursive = false;
-            _.each(files, function (file) {
-                if (file.type === "folder" && file.children === undefined) {
-                    nonrecursive = true;
-                }
+            let nonrecursive = false;
+            Object.keys(response).forEach((storage) => {
+                nonrecursive =
+                    nonrecursive ||
+                    response[storage].files.some(
+                        (entry) => entry.type === "folder" && entry.children === undefined
+                    );
             });
             if (nonrecursive) {
                 log.error(
@@ -552,16 +629,22 @@ $(function () {
             }
 
             if (!switchToPath) {
-                var currentPath = self.currentPath();
+                const currentPath = self.currentPath();
                 if (currentPath === undefined) {
-                    self.listHelper.updateItems(files);
                     self.currentPath("");
+                    self.listHelper.updateItems(
+                        self.itemsForStorage(self.currentStorage())
+                    );
                 } else {
                     // if we have a current path, make sure we stay on it
                     self.changeFolderByPath(currentPath);
                 }
             } else {
-                self.changeFolderByPath(switchToPath);
+                let storage = self.currentStorage();
+                if (switchToPath.indexOf(":") >= 0) {
+                    [storage, switchToPath] = switchToPath.split(":", 1);
+                }
+                self.changeFolderByPath(switchToPath, storage);
             }
 
             if (focus.length) {
@@ -591,26 +674,18 @@ $(function () {
                 });
             }
 
-            if (response.free !== undefined) {
-                self.freeSpace(response.free);
-            }
-
-            if (response.total !== undefined) {
-                self.totalSpace(response.total);
-            }
-
-            if (response.storages !== undefined) {
-                const addFolderOptions = [];
-                Object.keys(response.storages).forEach((key) => {
-                    const storage = response.storages[key];
-                    if (storage.capabilities.add_folder) {
-                        addFolderOptions.push({key: key, name: storage.name});
-                    }
-                });
-                self.addFolderStorageOptions(addFolderOptions);
-            }
-
             self.highlightCurrentFile();
+        };
+
+        self.changeStorage = (key) => {
+            if (self.availableStorages().indexOf(key) < 0) return;
+            self.currentStorage(key);
+        };
+
+        self.itemsForStorage = (key) => {
+            const storageFiles = self.storageFiles();
+            if (storageFiles[key] === undefined) return [];
+            return storageFiles[key].files;
         };
 
         self.changeFolder = function (data) {
@@ -621,6 +696,7 @@ $(function () {
                 return;
             }
 
+            self.currentStorage(data.origin);
             self.currentPath(data.path);
             self.listHelper.updateItems(data.children);
             self.highlightCurrentFile();
@@ -632,14 +708,15 @@ $(function () {
             self.changeFolderByPath(path.join("/"));
         };
 
-        self.changeFolderByPath = function (path) {
-            var element = self.elementByPath(path);
+        self.changeFolderByPath = function (path, storage) {
+            storage = storage || self.currentStorage();
+            var element = self.elementByPathAndStorage(path, storage);
             if (element) {
                 self.currentPath(path);
                 self.listHelper.updateItems(element.children);
             } else {
                 self.currentPath("");
-                self.listHelper.updateItems(self.allItems());
+                self.listHelper.updateItems(self.itemsForStorage(storage));
             }
             self.highlightCurrentFile();
         };
@@ -650,7 +727,6 @@ $(function () {
 
             if (self.addFolderDialog) {
                 self.addFolderName("");
-                self.addFolderStorage("local");
                 self.addFolderDialog.modal("show");
             }
         };
@@ -660,7 +736,7 @@ $(function () {
                 return;
 
             const name = self.addFolderName();
-            const storage = self.addFolderStorage();
+            const storage = self.currentStorage();
 
             self.ignoreUpdatedFilesEvent = true;
             self.addingFolder(true);
@@ -794,20 +870,11 @@ $(function () {
         };
 
         self.showMoveDialog = function (entry, event) {
-            if (
-                !self.loginState.hasAllPermissions(
-                    self.access.permissions.FILES_UPLOAD,
-                    self.access.permissions.FILES_DELETE
-                )
-            ) {
-                return;
-            }
-
             if (!entry) {
                 return;
             }
 
-            if (entry.origin !== "local") {
+            if (!self.enableMove(entry)) {
                 return;
             }
 
@@ -885,10 +952,11 @@ $(function () {
             OctoPrint.printer.refreshSd();
         };
 
-        self.moveFileOrFolder = function (source, destination) {
+        self.moveFileOrFolder = function (source, destination, storage) {
+            storage = storage || self.currentStorage();
             self.movingFileOrFolder(true);
             return OctoPrint.files
-                .move("local", source, destination)
+                .move(storage, source, destination)
                 .done(function () {
                     self.requestData()
                         .done(function () {
@@ -1163,11 +1231,16 @@ $(function () {
         };
 
         self.enableMove = function (data) {
+            const storage = data.origin;
+            const capabilities = self.storageCapabilities(storage);
+
             return (
                 self.loginState.hasAllPermissions(
                     self.access.permissions.FILES_UPLOAD,
                     self.access.permissions.FILES_DELETE
-                ) && data.origin === "local"
+                ) &&
+                ((data.type == "folder" && capabilities.move_folder) ||
+                    (data.type != "folder" && capabilities.move_file))
             ); // && some way to figure out if there are subfolders;
         };
         self.enableSelect = function (data) {
@@ -1199,8 +1272,6 @@ $(function () {
         self.iconForData = (data) => {
             if (data.type == "folder") {
                 return "fa-regular fa-folder";
-            } else if (data.origin == "printer") {
-                return "fa-solid fa-sd-card";
             } else if (data.type == "machinecode") {
                 return "fa-regular fa-file-lines";
             } else if (data.type == "model") {
@@ -1531,8 +1602,12 @@ $(function () {
             return false;
         };
 
-        self.elementByPath = function (path, root) {
-            root = root || {children: self.allItems()};
+        self.elementByPath = (path, root) => {
+            self.elementByPathAndStorage(path, "local", root);
+        };
+
+        self.elementByPathAndStorage = function (path, storage, root) {
+            root = root || {children: self.itemsForStorage(storage)};
 
             var recursiveSearch = function (location, element) {
                 if (location.length === 0) {
@@ -1556,25 +1631,29 @@ $(function () {
             return recursiveSearch(path.split("/"), root);
         };
 
-        self.updateButtons = function () {
-            if (self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD)) {
+        self.updateButton = function () {
+            if (
+                self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD) &&
+                self.currentStorageCanUpload()
+            ) {
                 self.uploadButton.fileupload("enable");
-                if (self.uploadSdButton) {
-                    self.uploadSdButton.fileupload("enable");
-                }
             } else {
                 self.uploadButton.fileupload("disable");
-                if (self.uploadSdButton) {
-                    self.uploadSdButton.fileupload("disable");
-                }
             }
+        };
+
+        self.evaluateDropzone = () => {
+            const enable =
+                self.loginState.hasPermission(self.access.permissions.FILES_UPLOAD) &&
+                self.currentStorageCanUpload();
+            self._setDropzone(enable);
         };
 
         self.onUserPermissionsChanged =
             self.onUserLoggedIn =
             self.onUserLoggedOut =
                 function () {
-                    self.updateButtons();
+                    self.updateButton();
                     self.requestData();
                     self._fromLocalStorage();
                 };
@@ -1618,49 +1697,20 @@ $(function () {
             //~~ Gcode upload
 
             self.uploadButton = $("#gcode_upload");
-            self.uploadSdButton = $("#gcode_upload_sd");
-            if (!self.uploadSdButton.length) {
-                self.uploadSdButton = undefined;
-            }
 
             self.uploadProgress = $("#gcode_upload_progress");
             self.uploadProgressBar = $(".bar", self.uploadProgress);
 
             self.dropOverlay = $("#drop_overlay");
             self.dropZone = $("#drop");
-            self.dropZoneLocal = $("#drop_locally");
-            self.dropZoneSd = $("#drop_sd");
             self.dropZoneBackground = $("#drop_background");
-            self.dropZoneLocalBackground = $("#drop_locally_background");
-            self.dropZoneSdBackground = $("#drop_sd_background");
-
-            if (CONFIG_SD_SUPPORT) {
-                self.localTarget = self.dropZoneLocal;
-            } else {
-                self.localTarget = self.dropZone;
-                self.listHelper.removeFilter("sd");
-            }
-            self.sdTarget = self.dropZoneSd;
 
             self.dropOverlay.on("drop", self._forceEndDragNDrop);
 
-            function evaluateDropzones() {
-                var enableLocal = self.loginState.hasPermission(
-                    self.access.permissions.FILES_UPLOAD
-                );
-                var enableSd =
-                    enableLocal &&
-                    CONFIG_SD_SUPPORT &&
-                    self.printerState.isSdReady() &&
-                    !self.isPrinting();
-
-                self._setDropzone("local", enableLocal);
-                self._setDropzone("printer", enableSd);
-            }
-            self.loginState.currentUser.subscribe(evaluateDropzones);
-            self.printerState.isSdReady.subscribe(evaluateDropzones);
-            self.isPrinting.subscribe(evaluateDropzones);
-            evaluateDropzones();
+            self.loginState.currentUser.subscribe(self.evaluateDropzone);
+            self.printerState.isSdReady.subscribe(self.evaluateDropzone);
+            self.isPrinting.subscribe(self.evaluateDropzone);
+            self.evaluateDropzone();
         };
 
         self.onEventUpdatedFiles = function (payload) {
@@ -1805,21 +1855,20 @@ $(function () {
             self.requestData();
         };
 
-        self._setDropzone = (dropzone, enable) => {
-            const button = dropzone === "local" ? self.uploadButton : self.uploadSdButton;
-            const drop = dropzone === "local" ? self.localTarget : self.sdTarget;
-            const url = API_BASEURL + "files/" + dropzone;
+        self._setDropzone = (enable) => {
+            const button = self.uploadButton;
+            const url = API_BASEURL + "files/" + self.currentStorage();
 
             if (button === undefined) return;
 
             button.fileupload({
                 url: url,
                 dataType: "json",
-                dropZone: enable ? drop : null,
+                dropZone: enable ? "dropzone" : null,
                 sequentialUploads: true,
-                drop: function (e, data) {},
+                drop: (e, data) => {},
                 add: (e, data) => {
-                    self._handleUploadAdd(dropzone, data);
+                    self._handleUploadAdd(self.currentStorage(), data);
                 },
                 submit: self._handleUploadStart,
                 done: self._handleUploadDone,
@@ -2123,8 +2172,6 @@ $(function () {
         self._dragNDropFFTimeoutDelay = 100;
         self._forceEndDragNDrop = function () {
             self.dropOverlay.removeClass("in");
-            if (self.dropZoneLocal) self.dropZoneLocalBackground.removeClass("hover");
-            if (self.dropZoneSd) self.dropZoneSdBackground.removeClass("hover");
             if (self.dropZone) self.dropZoneBackground.removeClass("hover");
             self._dragNDropTarget = null;
         };
@@ -2153,38 +2200,20 @@ $(function () {
 
             self.dropOverlay.addClass("in");
 
-            var foundLocal = false;
-            var foundSd = false;
             var found = false;
             var node = e.target;
             do {
-                if (self.dropZoneLocal && node === self.dropZoneLocal[0]) {
-                    foundLocal = true;
-                    break;
-                } else if (self.dropZoneSd && node === self.dropZoneSd[0]) {
-                    foundSd = true;
-                    break;
-                } else if (self.dropZone && node === self.dropZone[0]) {
+                if (self.dropZone && node === self.dropZone[0]) {
                     found = true;
                     break;
                 }
                 node = node.parentNode;
             } while (node !== null);
 
-            if (foundLocal) {
-                self.dropZoneLocalBackground.addClass("hover");
-                self.dropZoneSdBackground.removeClass("hover");
-            } else if (foundSd && self.printerState.isSdReady() && !self.isPrinting()) {
-                self.dropZoneSdBackground.addClass("hover");
-                self.dropZoneLocalBackground.removeClass("hover");
-            } else if (found) {
+            if (found) {
                 self.dropZoneBackground.addClass("hover");
             } else {
-                if (self.dropZoneLocalBackground)
-                    self.dropZoneLocalBackground.removeClass("hover");
-                if (self.dropZoneSdBackground)
-                    self.dropZoneSdBackground.removeClass("hover");
-                if (self.dropZoneBackground) self.dropZoneBackground.removeClass("hover");
+                self.dropZoneBackground.removeClass("hover");
             }
             self._dragNDropTarget = e.target;
             self._dragNDropLastOver = Date.now();

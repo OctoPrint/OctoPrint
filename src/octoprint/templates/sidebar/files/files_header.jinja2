@@ -63,19 +63,6 @@
         </li>
         <!-- /ko -->
         <!-- /ko -->
-        {% if enableSdSupport %}
-            <li class="divider"></li>
-            <li>
-                <a href="#"
-                   data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="fas fa-check"
-   data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _("Only show files stored locally") }}</a>
-            </li>
-            <li>
-                <a href="#"
-                   data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="fas fa-check"
-   data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> {{ _("Only show files stored on SD") }}</a>
-            </li>
-        {% endif %}
         <li class="divider"></li>
         <li>
             <a href="#"

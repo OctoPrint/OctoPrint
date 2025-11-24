@@ -43,7 +43,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     )
 
     storage_capabilities = StorageCapabilities(
-        write_file=True, remove_file=True, metadata=True
+        write_file=True, remove_file=True, metadata=True, concurrent_printing=False
     )
 
     # injected by plugin

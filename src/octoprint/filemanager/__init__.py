@@ -376,7 +376,7 @@ class FileManager:
         return list(self._storage_managers.keys())
 
     @property
-    def registered_storage_meta(self) -> dict[str:StorageMeta]:
+    def registered_storage_meta(self) -> dict[str, StorageMeta]:
         return {
             key: StorageMeta(
                 key=key, name=storage.name, capabilities=storage.capabilities
