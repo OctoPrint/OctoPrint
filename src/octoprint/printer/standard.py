@@ -1824,10 +1824,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             if job.filament_estimate:
                 filament = {k: v.model_dump() for k, v in job.filament_estimate.items()}
 
-            job_date = 0
-            if job.date:
-                job_date = job.date.astimezone(None).timestamp()
-
             self._stateMonitor.set_job_data(
                 self._dict(
                     file=self._dict(
@@ -1836,7 +1832,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                         display=display_name,
                         origin=job.storage,
                         size=job.size,
-                        date=int(job_date),
+                        date=int(job.date.astimezone(None).timestamp()) if job.date else None,
                     ),
                     estimatedPrintTime=estimatedPrintTime,
                     filament=filament,
