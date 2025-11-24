@@ -72,7 +72,7 @@ core_deps = [
     "semantic_version>=2.10.0,<3",
     "sentry-sdk>=2.20.0,<3",
     "setuptools",
-    "tornado>=6.5,<6.6 ; python_version>='3.9'",
+    "tornado>=6.5.1,<6.6 ; python_version>='3.9'",
     "tornado==6.4.2 ; python_version>='3.8' and python_version<'3.9'",  # later versions require Python 3.9+
     "watchdog>=4.0.2,<5 ; python_version>='3.8'",  # later versions require Python 3.9+
     "websocket-client>=1.8.0,<1.9 ; python_version>='3.8'",  # breaking changes can happen on patch version increases, changelog incomplete
