@@ -1832,7 +1832,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                         display=display_name,
                         origin=job.storage,
                         size=job.size,
-                        date=int(job.date.astimezone(None).timestamp()),
+                        date=int(job.date.astimezone(None).timestamp()) if job.date else None,
                     ),
                     estimatedPrintTime=estimatedPrintTime,
                     filament=filament,
