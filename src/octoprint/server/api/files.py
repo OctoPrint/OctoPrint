@@ -315,8 +315,8 @@ def runFilesTest():
                 return jsonify(
                     exists=True,
                     suggestion=suggestion,
-                    size=exists.get("size"),
-                    date=exists.get("date"),
+                    size=exists.size,
+                    date=exists.date,
                 )
             else:
                 return jsonify(exists=False)
