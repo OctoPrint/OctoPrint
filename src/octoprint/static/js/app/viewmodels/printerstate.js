@@ -416,9 +416,11 @@ $(function () {
                         !currentFileKey.startsWith(futureFileKey + ":") &&
                         !futureFileKey.startsWith(currentFileKey + ":")
                     ) {
-                        self._loadFileData(data.file.origin, data.file.path).then(() => {
-                            self._cachedFileKey = futureFileKey;
-                        });
+                        self._loadFileData(data.file.origin, data.file.path).always(
+                            () => {
+                                self._cachedFileKey = futureFileKey;
+                            }
+                        );
                     }
                 }
             } else {
@@ -494,9 +496,14 @@ $(function () {
         };
 
         self._loadFileData = (origin, path) => {
-            return OctoPrint.files.get(origin, path).then((data) => {
-                self.filedata(data);
-            });
+            return OctoPrint.files
+                .get(origin, path)
+                .then((data) => {
+                    self.filedata(data);
+                })
+                .fail(() => {
+                    self.filedata(undefined);
+                });
         };
 
         self._checkResendRatioCriticality = function () {
