@@ -514,7 +514,7 @@ $(function () {
 
             if (
                 self.selectedFile &&
-                self.file &&
+                data.file &&
                 self.selectedFile.origin === data.file.origin &&
                 self.selectedFile.path === data.file.path
             )
