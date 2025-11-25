@@ -1927,6 +1927,83 @@ class DynamicZipBundleHandler(StaticZipBundleHandler):
         return self.stream_zip(files)
 
 
+class StorageBulkDownloadHandler(DynamicZipBundleHandler):
+    def initialize(
+        self,
+        access_validation=None,
+        as_attachment=True,
+        attachment_name=None,
+        compress=False,
+    ):
+        if as_attachment and not attachment_name:
+            raise ValueError("attachment name must be set if is_attachment is True")
+
+        from octoprint.server import fileManager
+
+        self._access_validator = access_validation
+        self._as_attachment = as_attachment
+        self._attachment_name = attachment_name
+        self._compress = compress
+
+        self._file_manager = fileManager
+
+    def get(self, storage: str):
+        if self._access_validator is not None:
+            self._access_validator(self.request)
+
+        files = list(
+            map(octoprint.util.to_unicode, self.request.query_arguments.get("files", []))
+        )
+        return self._get_files_zip(storage, files)
+
+    def post(self, storage: str):
+        if self._access_validator is not None:
+            self._access_validator(self.request)
+
+        import json
+
+        content_type = self.request.headers.get("Content-Type", "")
+        try:
+            if "application/json" in content_type:
+                data = json.loads(self.request.body)
+            else:
+                data = self.request.body_arguments
+        except Exception as exc:
+            raise tornado.web.HTTPError(400) from exc
+
+        return self._get_files_zip(
+            storage, list(map(octoprint.util.to_unicode, data.get("files", [])))
+        )
+
+    def _get_files_zip(self, storage, files):
+        files = self.normalize_files(files)
+        if not files:
+            raise tornado.web.HTTPError(400)
+
+        if not self._file_manager.capabilities(storage).read_file:
+            raise tornado.web.HTTPError(404)
+
+        self.stream_zip(
+            [
+                {"name": f.get("path"), "iter": self._read_file(storage, f.get("path"))}
+                for f in files
+            ]
+        )
+
+    def _read_file(self, storage, path):
+        try:
+            handle = self._file_manager.read_file(storage, path)
+
+            while True:
+                chunk = handle.read()
+                if len(chunk) == 0:
+                    break  # EOF
+                yield chunk
+        finally:
+            if handle:
+                handle.close()
+
+
 class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
     # noinspection PyMethodOverriding
     def initialize(self, access_validation=None):

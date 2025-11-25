@@ -1986,16 +1986,6 @@ class Server:
             "access_validation": util.tornado.validation_chain(*systeminfo_validators)
         }
 
-        bulkdownloads_path_validator = {
-            "path_validation": util.tornado.path_validation_factory(
-                lambda path: not octoprint.util.is_hidden_path(path)
-                and octoprint.filemanager.valid_file_type(os.path.basename(path))
-                and os.path.realpath(os.path.abspath(path)).startswith(
-                    settings().getBaseFolder("uploads")
-                )
-            )
-        }
-
         valid_timelapse = lambda path: not octoprint.util.is_hidden_path(path) and (
             octoprint.timelapse.valid_timelapse(path)
             or octoprint.timelapse.valid_timelapse_thumbnail(path)
@@ -2097,31 +2087,20 @@ class Server:
                     download_permission_validator,
                 ),
             ),
+            (
+                r"/downloads/files/([^/]+)",
+                util.tornado.StorageBulkDownloadHandler,
+                joined_dict(
+                    {"as_attachment": True, "attachment_name": "octoprint-files.zip"},
+                    download_permission_validator,
+                ),
+            ),
             # thumbnails of printables
             (
                 r"/downloads/thumbs/([^/]+)/(.*)",
                 util.tornado.StorageThumbnailDownloadHandler,
                 joined_dict(
                     download_permission_validator,
-                ),
-            ),
-            # bulk download of printables
-            (
-                r"/downloads/files/local",
-                util.tornado.DynamicZipBundleHandler,
-                joined_dict(
-                    {
-                        "as_attachment": True,
-                        "attachment_name": "octoprint-files.zip",
-                        "path_processor": lambda x: (
-                            x,
-                            os.path.join(
-                                self._settings.getBaseFolder("uploads"), *x.split("/")
-                            ),
-                        ),
-                    },
-                    download_permission_validator,
-                    bulkdownloads_path_validator,
                 ),
             ),
             # log files
