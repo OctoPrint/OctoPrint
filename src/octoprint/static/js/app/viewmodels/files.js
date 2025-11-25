@@ -66,11 +66,7 @@ $(function () {
 
         self.dropOverlay = undefined;
         self.dropZone = undefined;
-        self.dropZoneLocal = undefined;
-        self.dropZoneSd = undefined;
         self.dropZoneBackground = undefined;
-        self.dropZoneLocalBackground = undefined;
-        self.dropZoneSdBackground = undefined;
         self.listElement = undefined;
 
         self.ignoreUpdatedFilesEvent = false;
@@ -1864,7 +1860,7 @@ $(function () {
             button.fileupload({
                 url: url,
                 dataType: "json",
-                dropZone: enable ? "dropzone" : null,
+                dropZone: enable ? self.dropZone : null,
                 sequentialUploads: true,
                 drop: (e, data) => {},
                 add: (e, data) => {
