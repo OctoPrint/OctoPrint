@@ -14,6 +14,10 @@ const mfaCredentials = {
     token: "secret"
 };
 
+const defaultHeaders = {
+    "X-OctoPrint-Api-Version": "1.12.0"
+};
+
 const expect = base.expect;
 
 exports.test = base.test.extend({
@@ -25,12 +29,15 @@ exports.test = base.test.extend({
                         user: username,
                         pass: password,
                         remember: !!remember
-                    }
+                    },
+                    headers: defaultHeaders
                 });
             },
 
             logout: async () => {
-                return await context.request.post(baseURL + "/api/logout");
+                return await context.request.post(baseURL + "/api/logout", {
+                    headers: defaultHeaders
+                });
             },
 
             loginDefault: async (remember) => {
@@ -48,40 +55,48 @@ exports.test = base.test.extend({
     },
 
     connectionApi: async ({context, baseURL}, use) => {
-        const connect = async (port, baudrate) => {
-            port = port || "AUTO";
-            baudrate = baudrate || 0;
+        const connect = async (connector, parameters) => {
+            connector = connector || "serial";
+            parameters = parameters || {port: "AUTO", baudrate: 0};
             return await context.request.post(baseURL + "/api/connection", {
                 data: {
                     command: "connect",
-                    port: port,
-                    baudrate: baudrate
-                }
+                    connector: connector,
+                    parameters: parameters
+                },
+                headers: defaultHeaders
             });
         };
         const disconnect = async () => {
             return await context.request.post(baseURL + "/api/connection", {
                 data: {
                     command: "disconnect"
-                }
+                },
+                headers: defaultHeaders
             });
         };
 
         const connectionApi = {
             connect: connect,
             disconnect: disconnect,
-            ensureConnected: async (port, baudrate) => {
-                const response = await context.request.get(baseURL + "/api/connection");
+            ensureConnected: async (connector, parameters) => {
+                const response = await context.request.get(baseURL + "/api/connection", {
+                    headers: defaultHeaders
+                });
                 const data = await response.json();
                 if (
                     data.current.state === "Operational" &&
-                    (!port || data.current.port === port) &&
-                    (!baudrate || data.current.baudrate === baudrate)
+                    (!connector || data.current.connector === connector) &&
+                    (!parameters ||
+                        (data.current.parameters &&
+                            Object.keys(parameters).every(
+                                (key) => parameters[key] === data.current.parameters[key]
+                            )))
                 ) {
                     return;
                 }
                 await disconnect();
-                await connect(port, baudrate);
+                await connect(connector, parameters);
             }
         };
         await use(connectionApi);
@@ -91,7 +106,8 @@ exports.test = base.test.extend({
         const filesApi = {
             ensureFileUnknown: async (location, name) => {
                 return await context.request.delete(
-                    baseURL + `/api/files/${location}/${name}`
+                    baseURL + `/api/files/${location}/${name}`,
+                    {headers: defaultHeaders}
                 );
             },
             getEntryId: (origin, path) => {

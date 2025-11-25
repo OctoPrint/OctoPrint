@@ -10,8 +10,15 @@ test.describe("Printer connection", () => {
 
     test("connect & disconnect against virtual printer", async ({page}) => {
         await expect(page.getByTestId("state-string")).toHaveText("Offline");
+        await expect(page.getByTestId("connection-connector")).toBeVisible();
+        await expect(page.getByTestId("connection-connector")).toContainText(
+            "Serial Connection"
+        );
 
         // Connect
+        await page.getByTestId("connection-connector").selectOption("Serial Connection");
+        await expect(page.getByTestId("connection-ports")).toBeVisible();
+
         await page.getByTestId("connection-ports").selectOption("VIRTUAL");
         await page.getByTestId("connection-baudrates").selectOption("AUTO");
         await page.getByTestId("connection-printer-profiles").selectOption("Default");

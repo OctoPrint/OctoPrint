@@ -2,7 +2,7 @@
      data-bind="foreach: Object.values($root.storageOptions())"
      data-test-id="storage-selector">
     <button class="btn btn-small"
-            data-bind="text: name, click: function() { $root.changeStorage($data.key) }, css: {active: $root.currentStorage() === $data.key}">
+            data-bind="text: name, click: function() { $root.changeStorage($data.key) }, css: {active: $root.currentStorage() === $data.key}, attr: {'data-test-id': `storage-selector-${$data.key}` }">
     </button>
 </div>
 

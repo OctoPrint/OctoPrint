@@ -8,7 +8,10 @@ test("Successful upload", async ({page, ui, filesApi}) => {
     await ui.gotoLoggedInCore();
     await filesApi.ensureFileUnknown("local", gcodeName);
 
-    await page.getByTestId("upload-local").setInputFiles({
+    await page.getByTestId("storage-selector-local").click();
+    await expect(page.getByTestId("storage-selector-local")).toHaveClass(/active/);
+
+    await page.getByTestId("upload").setInputFiles({
         name: gcodeName,
         mimeType: "text/plain",
         buffer: Buffer.from(gcodeContent)
