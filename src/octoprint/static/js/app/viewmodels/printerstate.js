@@ -97,6 +97,11 @@ $(function () {
         self.sd = ko.pureComputed(() => {
             return self.filedata() ? self.filedata()["origin"] === "printer" : undefined;
         });
+        self.fileid = ko.pureComputed(() => {
+            if (!self.filedata()) return undefined;
+            const data = self.filedata();
+            return `${data.origin}:${data.path}`;
+        });
 
         self.thumbnailLink = ko.pureComputed(() => {
             const data = self.filedata();
@@ -345,8 +350,6 @@ $(function () {
 
             if (data.type == "folder") {
                 return "fa-regular fa-folder";
-            } else if (data.origin == "printer") {
-                return "fa-solid fa-sd-card";
             } else if (data.type == "machinecode") {
                 return "fa-regular fa-file-lines";
             } else if (data.type == "model") {

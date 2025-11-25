@@ -403,21 +403,21 @@ $(function () {
                 });
             }
         });
-        self.foldersOnlyList = ko.dependentObservable(function () {
+        self.foldersOnlyList = ko.pureComputed(function () {
             var filter = function (data) {
                 return data["type"] && data["type"] === "folder";
             };
             return _.filter(self.listHelper.paginatedItems(), filter);
         });
 
-        self.filesOnlyList = ko.dependentObservable(function () {
+        self.filesOnlyList = ko.pureComputed(function () {
             var filter = function (data) {
                 return data["type"] && data["type"] !== "folder";
             };
             return _.filter(self.listHelper.paginatedItems(), filter);
         });
 
-        self.filesAndFolders = ko.dependentObservable(function () {
+        self.filesAndFolders = ko.pureComputed(function () {
             var style = self.listStyle();
             if (style === "folders_files" || style === "files_folders") {
                 var files = self.filesOnlyList();
@@ -1205,28 +1205,28 @@ $(function () {
         };
 
         self.enableRemove = function (data) {
-            if (_.contains(self.activeRemovals(), data.origin + ":" + data.path)) {
+            if (!data) return false;
+            if (_.contains(self.activeRemovals(), data.origin + ":" + data.path))
                 return false;
-            }
+            if (self.entryIsBusy(data)) return false;
+            if (self.printerState.fileid() === `${data.origin}:${data.path}`)
+                return false;
 
-            var busy = false;
-            if (data.type === "folder") {
-                busy = _.any(self.printerState.busyFiles(), function (name) {
-                    return _.startsWith(name, data.origin + ":" + data.path + "/");
-                });
-            } else {
-                busy = _.contains(
-                    self.printerState.busyFiles(),
-                    data.origin + ":" + data.path
-                );
-            }
+            const storage = data.origin;
+            const capabilities = self.storageCapabilities(storage);
+
             return (
                 self.loginState.hasPermission(self.access.permissions.FILES_DELETE) &&
-                !busy
+                ((data.type == "folder" && capabilities.remove_folder) ||
+                    (data.type != "folder" && capabilities.remove_file))
             );
         };
 
         self.enableMove = function (data) {
+            if (self.entryIsBusy(data)) return false;
+            if (self.printerState.fileid() === `${data.origin}:${data.path}`)
+                return false;
+
             const storage = data.origin;
             const capabilities = self.storageCapabilities(storage);
 
@@ -1263,6 +1263,19 @@ $(function () {
                 self.slicing.enableSlicingDialog() &&
                 self.slicing.enableSlicingDialogForFile(data.name)
             );
+        };
+
+        self.entryIsBusy = (data) => {
+            if (data.type === "folder") {
+                return _.any(self.printerState.busyFiles(), (name) => {
+                    return _.startsWith(name, data.origin + ":" + data.path + "/");
+                });
+            } else {
+                return _.contains(
+                    self.printerState.busyFiles(),
+                    data.origin + ":" + data.path
+                );
+            }
         };
 
         self.iconForData = (data) => {
