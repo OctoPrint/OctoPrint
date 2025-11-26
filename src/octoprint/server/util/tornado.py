@@ -1975,7 +1975,9 @@ class StorageBulkDownloadHandler(DynamicZipBundleHandler):
             storage, list(map(octoprint.util.to_unicode, data.get("files", [])))
         )
 
-    def _get_files_zip(self, storage, files):
+    def _get_files_zip(self, storage: str, files: dict):
+        from octoprint.filemanager.storage import StorageError
+
         files = self.normalize_files(files)
         if not files:
             raise tornado.web.HTTPError(400)
@@ -1983,25 +1985,36 @@ class StorageBulkDownloadHandler(DynamicZipBundleHandler):
         if not self._file_manager.capabilities(storage).read_file:
             raise tornado.web.HTTPError(404)
 
-        self.stream_zip(
-            [
-                {"name": f.get("path"), "iter": self._read_file(storage, f.get("path"))}
-                for f in files
-            ]
-        )
+        def contents(storage: str, path: str):
+            try:
+                handle = self._file_manager.read_file(storage, path)
 
-    def _read_file(self, storage, path):
-        try:
-            handle = self._file_manager.read_file(storage, path)
+                while True:
+                    chunk = handle.read()
+                    if len(chunk) == 0:
+                        break  # EOF
+                    yield chunk
+            finally:
+                if handle:
+                    handle.close()
 
-            while True:
-                chunk = handle.read()
-                if len(chunk) == 0:
-                    break  # EOF
-                yield chunk
-        finally:
-            if handle:
-                handle.close()
+        to_pack = []
+        for f in files:
+            path = f.get("path")
+            if not path:
+                continue
+
+            try:
+                to_pack.append(
+                    {
+                        "name": path,
+                        "iter": contents(storage, path),
+                    }
+                )
+            except StorageError:
+                continue
+
+        return self.stream_zip(to_pack)
 
 
 class SystemInfoBundleHandler(CorsSupportMixin, tornado.web.RequestHandler):
