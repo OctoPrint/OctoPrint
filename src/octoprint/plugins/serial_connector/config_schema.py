@@ -225,6 +225,9 @@ class SerialConfig(BaseModel):
     waitToLoadSdFileList: bool = True
     """Specifies whether OctoPrint should wait to load the SD card file list until the first firmware capability report is processed."""
 
+    enableUploadToSd: bool = True
+    """Whether to enable uploading to SD through the serial connection. Can be *really* slow and is thus not recommended."""
+
     sendChecksum: AlwaysPrintNeverEnum = "print"
     """Specifies when OctoPrint should send linenumber + checksum with every GCODE command."""
 

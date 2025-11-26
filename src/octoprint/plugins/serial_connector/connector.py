@@ -99,7 +99,10 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     @property
     def current_storage_capabilities(self):
         return self.storage_capabilities.model_copy(
-            update={"write_file": self.is_ready()}
+            update={
+                "write_file": self._plugin_settings.get_boolean(["enableUploadToSd"])
+                and self.is_ready()
+            }
         )
 
     @property

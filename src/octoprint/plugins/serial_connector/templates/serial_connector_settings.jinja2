@@ -840,6 +840,17 @@
         </div>
         <div id="settings_serial_behaviour" class="tab-pane">
             <fieldset>
+                <legend>{{ _("SD Support") }}</legend>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox"
+                               data-bind="checked: settings.settings.plugins.serial_connector.enableUploadToSd"
+                               id="settings-serialEnableUploadToSd">
+                        {{ _("Enable upload to SD through serial connection. <strong>Very slow!</strong>") }}
+                    </label>
+                </div>
+            </fieldset>
+            <fieldset>
                 <legend>{{ _("Error handling") }}</legend>
                 <div class="control-group">
                     <label class="control-label">
