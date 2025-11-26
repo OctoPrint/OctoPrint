@@ -1470,9 +1470,13 @@ class StorageThumbnailDownloadHandler(
         if include_body:
             handle = None
             try:
-                meta, handle = self._file_manager.read_thumbnail(
+                thumbnail = self._file_manager.read_thumbnail(
                     storage, path, sizehint=sizehint
                 )
+                if thumbnail is None:
+                    raise tornado.web.HTTPError(404)
+
+                meta, handle = thumbnail
 
                 self._set_headers_from_meta(meta)
 
