@@ -541,4 +541,6 @@ class PrinterFileStorage(StorageInterface):
         if not self._connection:
             return None
         usage = self._connection.get_usage_information()
+        if not usage:
+            return None
         return StorageUsage(used=usage.used, total=usage.total)
