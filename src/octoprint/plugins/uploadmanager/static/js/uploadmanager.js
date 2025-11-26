@@ -27,13 +27,6 @@ $(function () {
         self.currentPath = ko.observable("");
         self.listStyle = ko.observable("folders_files");
 
-        if (self.files.hasOwnProperty("storageFiles")) {
-            self.files.storageFiles.subscribe(() => {
-                self.deselectAll();
-                self.changeFolderByPath(self.currentPath(), self.currentStorage());
-            });
-        }
-
         self.currentStorageCapabilities = ko.pureComputed(() => {
             const storage = self.currentStorage();
             return self.files.storageCapabilities(storage);
@@ -246,6 +239,8 @@ $(function () {
         });
 
         self.showDialog = () => {
+            self.currentStorage(self.files.currentStorage());
+
             if (!self.dialog.hasClass("in")) {
                 self.dialog
                     .modal({
@@ -914,6 +909,16 @@ $(function () {
             const button = $("<div class='accordion-heading-button btn-group'></div>");
             button.append(link);
             button.insertAfter("#files_wrapper .accordion-heading .settings-trigger");
+
+            self.files.storageFiles.subscribe(() => {
+                self.deselectAll();
+                self.changeFolderByPath(self.currentPath(), self.currentStorage());
+            });
+            self.availableStorages.subscribe((val) => {
+                if (val.indexOf(self.currentStorage()) < 0) {
+                    self.currentStorage("local");
+                }
+            });
         };
 
         self.fromCurrentData = self.fromHistoryData = (data) => {

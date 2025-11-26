@@ -233,7 +233,7 @@
                 </td>
                 <td class="title" data-bind="css: $root.files.getSuccessClass($data)">
                     <span data-bind="text: display, marquee: { class: 'marquee-hover' }, attr: { title: name }"></span>
-                    <img data-bind="attr: { src: $root.files.thumbnailLink($data) }, visible: $root.files.thumbnailLink($data)">
+                    <img loading="lazy" data-bind="attr: { src: $root.files.thumbnailLink($data) }, visible: $root.files.thumbnailLink($data)">
                 </td>
                 <td class="uploaded" data-bind="text: formatDate(date)"></td>
                 <td class="printed" data-bind="text: formatDate($root.lastPrint($data))"></td>
