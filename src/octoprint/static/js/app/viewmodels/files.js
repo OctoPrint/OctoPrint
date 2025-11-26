@@ -2039,7 +2039,7 @@ $(function () {
         self._handleUploadAdd = (storage, data) => {
             var file = data.files[0];
             var path = self.currentPath();
-            var fileSizeTooBig = file.size > self.freeSpace();
+            var fileSizeTooBig = file.size > self.currentStorageUsageFree();
 
             var formData = {};
             if (path !== "") {
