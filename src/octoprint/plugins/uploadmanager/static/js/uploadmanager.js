@@ -914,7 +914,7 @@ $(function () {
                 self.deselectAll();
                 self.changeFolderByPath(self.currentPath(), self.currentStorage());
             });
-            self.availableStorages.subscribe((val) => {
+            self.files.availableStorages.subscribe((val) => {
                 if (val.indexOf(self.currentStorage()) < 0) {
                     self.currentStorage("local");
                 }
