@@ -909,7 +909,9 @@ $(function () {
             const button = $("<div class='accordion-heading-button btn-group'></div>");
             button.append(link);
             button.insertAfter("#files_wrapper .accordion-heading .settings-trigger");
+        };
 
+        self.onStartupComplete = () => {
             self.files.storageFiles.subscribe(() => {
                 self.deselectAll();
                 self.changeFolderByPath(self.currentPath(), self.currentStorage());
