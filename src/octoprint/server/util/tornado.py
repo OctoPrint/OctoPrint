@@ -1383,15 +1383,15 @@ class StorageFileDownloadHandler(
         ):
             raise tornado.web.HTTPError(404)
 
-        file_data = self._file_manager.get_file(storage, path)
-        if file_data is None:
+        storage_entry = self._file_manager.get_storage_entry(storage, path)
+        if storage_entry is None:
             raise tornado.web.HTTPError(
                 404
             )  # shouldn't happen, but better safe than sorry
 
-        filename = file_data.get("name", os.path.basename(path))
+        filename = storage_entry.name
 
-        size = file_data.get("size")
+        size = storage_entry.size
         if size is not None:
             self.set_header("Content-Length", size)
             self.set_header("X-Original-Content-Length", str(size))
