@@ -140,6 +140,11 @@ class StorageMeta(BaseModel):
     capabilities: StorageCapabilities
 
 
+class StorageUsage(BaseModel):
+    used: int
+    total: int
+
+
 class StorageInterface:
     """
     Interface of storage adapters for OctoPrint.
@@ -677,6 +682,9 @@ class StorageInterface:
         :return: the path in storage to ``path``
         """
         raise NotImplementedError()
+
+    def get_usage(self) -> Optional[StorageUsage]:
+        return None
 
     def _convert_storage_entry_to_dict(self, entry: StorageEntry) -> dict:
         """Converts StorageEntry tree to legacy dict structure"""

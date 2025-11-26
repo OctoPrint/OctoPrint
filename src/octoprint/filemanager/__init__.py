@@ -23,6 +23,7 @@ from .storage import (
     StorageInterface,
     StorageMeta,
     StorageThumbnail,
+    StorageUsage,
 )
 from .storage.local import LocalFileStorage  # noqa: F401
 from .util import AbstractFileWrapper, DiskFileWrapper, StreamWrapper  # noqa: F401
@@ -851,7 +852,9 @@ class FileManager:
                 "operation": "add",
             },
         )
-        eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
+        eventManager().fire(
+            Events.UPDATED_FILES, {"type": "printables", "storage": location}
+        )
         return path_in_storage
 
     def read_file(self, storage: str, path: str) -> IO:
@@ -886,7 +889,9 @@ class FileManager:
                 "operation": "remove",
             },
         )
-        eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
+        eventManager().fire(
+            Events.UPDATED_FILES, {"type": "printables", "storage": location}
+        )
 
     def copy_file(self, storage, source, destination):
         if not self._storage(storage).capabilities.copy_file:
@@ -911,7 +916,9 @@ class FileManager:
                 "operation": "copy",
             },
         )
-        eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
+        eventManager().fire(
+            Events.UPDATED_FILES, {"type": "printables", "storage": storage}
+        )
 
     def move_file(self, storage, source, destination):
         source_in_storage = self._storage(storage).path_in_storage(source)
@@ -964,7 +971,9 @@ class FileManager:
             },
         )
 
-        eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
+        eventManager().fire(
+            Events.UPDATED_FILES, {"type": "printables", "storage": storage}
+        )
 
     def add_folder(self, storage, path, ignore_existing=True, display=None, user=None):
         path_in_storage = self._storage(storage).add_folder(
@@ -976,7 +985,9 @@ class FileManager:
             Events.FOLDER_ADDED,
             {"storage": storage, "path": path_in_storage, "name": name},
         )
-        eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
+        eventManager().fire(
+            Events.UPDATED_FILES, {"type": "printables", "storage": storage}
+        )
         return path_in_storage
 
     def remove_folder(self, storage, path, recursive=True):
@@ -992,7 +1003,9 @@ class FileManager:
             Events.FOLDER_REMOVED,
             {"storage": storage, "path": path_in_storage, "name": name},
         )
-        eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
+        eventManager().fire(
+            Events.UPDATED_FILES, {"type": "printables", "storage": storage}
+        )
 
     def copy_folder(self, storage, source, destination):
         path_in_storage = self._storage(storage).copy_folder(source, destination)
@@ -1005,7 +1018,9 @@ class FileManager:
             Events.FOLDER_ADDED,
             {"storage": storage, "path": path_in_storage, "name": name},
         )
-        eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
+        eventManager().fire(
+            Events.UPDATED_FILES, {"type": "printables", "storage": storage}
+        )
 
     def move_folder(self, storage, source, destination):
         source_in_storage = self._storage(storage).path_in_storage(source)
@@ -1047,7 +1062,9 @@ class FileManager:
             },
         )
 
-        eventManager().fire(Events.UPDATED_FILES, {"type": "printables"})
+        eventManager().fire(
+            Events.UPDATED_FILES, {"type": "printables", "storage": storage}
+        )
 
     def copy_file_across_storage(
         self,
@@ -1179,7 +1196,13 @@ class FileManager:
                         },
                     )
 
-                eventManager.fire(Events.UPDATED_FILES, {"type": "printables"})
+                eventManager.fire(
+                    Events.UPDATED_FILES,
+                    {
+                        "type": "printables",
+                        "storages": [source_storage, destination_storage],
+                    },
+                )
 
             if callable(progress_callback):
                 progress_callback(*args, **kwargs)
@@ -1357,6 +1380,9 @@ class FileManager:
 
     def capabilities(self, location) -> StorageCapabilities:
         return self._storage(location).capabilities
+
+    def get_usage(self, location) -> Optional[StorageUsage]:
+        return self._storage(location).get_usage()
 
     def _storage(self, location: str) -> StorageInterface:
         if location == FileDestinations.SDCARD:

@@ -115,7 +115,7 @@
     </script>
 </div>
 <div class="text-right muted"
-     data-bind="attr: {title: diskusageString}, css: {'text-error': diskusageCritical}, style: {'font-weight': diskusageCritical() || diskusageWarning() ? 'bold' : 'normal'}, visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_LIST)">
+     data-bind="attr: {title: diskusageString}, css: {'text-error': diskusageCritical}, style: {'font-weight': diskusageCritical() || diskusageWarning() ? 'bold' : 'normal'}, visible: $root.loginState.hasPermissionKo($root.access.permissions.FILES_LIST) && $root.currentStorageHasUsage()">
     <small>{{ _("Free") }}: <span data-bind="text: freeSpaceString"></span> / {{ _("Total") }}: <span data-bind="text: totalSpaceString"></span> <i class="fas fa-exclamation-triangle"
     data-bind="visible: diskusageWarning"
     style="display: none"></i></small>

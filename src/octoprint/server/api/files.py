@@ -243,6 +243,8 @@ def readGcodeFiles_post_1_12_0():  # 1.12.0+
                 allow_from_cache=not force,
             )
 
+            usage = fileManager.get_usage(storage)
+
             storage_data = apischema.ApiStorageData(
                 key=meta.key,
                 name=meta.name,
@@ -250,12 +252,9 @@ def readGcodeFiles_post_1_12_0():  # 1.12.0+
                 files=files,
             )
 
-            if meta.key == "local":
-                usage = psutil.disk_usage(
-                    settings().getBaseFolder("uploads", check_writable=False)
-                )
+            if usage:
                 storage_data.usage = apischema.ApiStorageUsage(
-                    free=usage.free, total=usage.total
+                    free=usage.total - usage.used, total=usage.total
                 )
 
             storages[meta.key] = storage_data
@@ -353,6 +352,7 @@ def readGcodeFilesForOrigin(origin):
         files = _getFileList(
             origin, filter=filter, recursive=recursive, allow_from_cache=not force
         )
+        usage = fileManager.get_usage(origin)
 
         if api_version_matches(">=1.12.0"):  # 1.12.0+
             response = apischema.ApiStorageData(
@@ -362,22 +362,16 @@ def readGcodeFilesForOrigin(origin):
                 files=files,
             )
 
-            if origin == FileDestinations.LOCAL:
-                usage = psutil.disk_usage(
-                    settings().getBaseFolder("uploads", check_writable=False)
-                )
+            if usage:
                 response.usage = apischema.ApiStorageUsage(
-                    free=usage.free, total=usage.total
+                    free=usage.total - usage.used, total=usage.total
                 )
 
         else:  # pre 1.12.0
             response = apischema.ReadGcodeFilesForOriginResponse_pre_1_12(files=files)
 
-            if origin == FileDestinations.LOCAL:
-                usage = psutil.disk_usage(
-                    settings().getBaseFolder("uploads", check_writable=False)
-                )
-                response.free = usage.free
+            if usage:
+                response.free = usage.total - usage.used
                 response.total = usage.total
 
         return jsonify(**response.model_dump(by_alias=True))

@@ -17,6 +17,7 @@ from . import (
     StorageFolder,
     StorageInterface,
     StorageThumbnail,
+    StorageUsage,
 )
 
 
@@ -535,3 +536,9 @@ class PrinterFileStorage(StorageInterface):
             return pf
         else:
             return self.join_path(pp, pf)
+
+    def get_usage(self) -> Optional[StorageUsage]:
+        if not self._connection:
+            return None
+        usage = self._connection.get_usage_information()
+        return StorageUsage(used=usage.used, total=usage.total)

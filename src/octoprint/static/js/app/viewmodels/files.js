@@ -28,39 +28,6 @@ $(function () {
             self.performSearch();
         });
 
-        self.freeSpace = ko.observable(undefined);
-        self.totalSpace = ko.observable(undefined);
-        self.freeSpaceString = ko.pureComputed(function () {
-            if (!self.freeSpace()) return "-";
-            return formatSize(self.freeSpace());
-        });
-        self.totalSpaceString = ko.pureComputed(function () {
-            if (!self.totalSpace()) return "-";
-            return formatSize(self.totalSpace());
-        });
-
-        self.diskusageWarning = ko.pureComputed(function () {
-            return (
-                self.freeSpace() !== undefined &&
-                self.freeSpace() < self.settingsViewModel.server_diskspace_warning()
-            );
-        });
-        self.diskusageCritical = ko.pureComputed(function () {
-            return (
-                self.freeSpace() !== undefined &&
-                self.freeSpace() < self.settingsViewModel.server_diskspace_critical()
-            );
-        });
-        self.diskusageString = ko.pureComputed(function () {
-            if (self.diskusageCritical()) {
-                return gettext("Your available free disk space is critically low.");
-            } else if (self.diskusageWarning()) {
-                return gettext("Your available free disk space is starting to run low.");
-            } else {
-                return gettext("Your current disk usage.");
-            }
-        });
-
         self.uploadButton = undefined;
         self.uploadProgressBar = undefined;
 
@@ -174,6 +141,11 @@ $(function () {
             if (storageFiles[storage] === undefined) return {};
             return storageFiles[storage].capabilities;
         };
+        self.storageUsage = (storage) => {
+            const storageFiles = self.storageFiles();
+            if (storageFiles[storage] === undefined) return {};
+            return storageFiles[storage].usage;
+        };
         self.storageCanUpload = (storage) => {
             const capabilities = self.storageCapabilities(storage);
             return (
@@ -196,6 +168,26 @@ $(function () {
             self.highlightCurrentFile();
             self.evaluateDropzone();
         });
+        self.currentStorageUsage = ko.pureComputed(() => {
+            const storage = self.currentStorage();
+            return self.storageUsage(storage);
+        });
+        self.currentStorageUsageFree = ko.pureComputed(() => {
+            const usage = self.currentStorageUsage();
+            if (!usage || usage.free === undefined) return undefined;
+            return usage.free;
+        });
+        self.currentStorageUsageTotal = ko.pureComputed(() => {
+            const usage = self.currentStorageUsage();
+            if (!usage || usage.total === undefined) return undefined;
+            return usage.total;
+        });
+        self.currentStorageHasUsage = ko.pureComputed(() => {
+            return (
+                self.currentStorageUsageFree() !== undefined &&
+                self.currentStorageUsageTotal() !== undefined
+            );
+        });
         self.currentStorageCapabilities = ko.pureComputed(() => {
             const storage = self.currentStorage();
             return self.storageCapabilities(storage);
@@ -211,6 +203,39 @@ $(function () {
         self.currentStorageCanAddFolder = ko.pureComputed(() => {
             const storage = self.currentStorage();
             return self.storageCanAddFolder(storage);
+        });
+
+        self.freeSpaceString = ko.pureComputed(function () {
+            if (!self.currentStorageUsageFree()) return "-";
+            return formatSize(self.currentStorageUsageFree());
+        });
+        self.totalSpaceString = ko.pureComputed(function () {
+            if (!self.currentStorageUsageTotal()) return "-";
+            return formatSize(self.currentStorageUsageTotal());
+        });
+
+        self.diskusageWarning = ko.pureComputed(function () {
+            return (
+                self.currentStorageUsageFree() !== undefined &&
+                self.currentStorageUsageFree() <
+                    self.settingsViewModel.server_diskspace_warning()
+            );
+        });
+        self.diskusageCritical = ko.pureComputed(function () {
+            return (
+                self.currentStorageUsageFree() !== undefined &&
+                self.currentStorageUsageFree() <
+                    self.settingsViewModel.server_diskspace_critical()
+            );
+        });
+        self.diskusageString = ko.pureComputed(function () {
+            if (self.diskusageCritical()) {
+                return gettext("Your available free disk space is critically low.");
+            } else if (self.diskusageWarning()) {
+                return gettext("Your available free disk space is starting to run low.");
+            } else {
+                return gettext("Your current disk usage.");
+            }
         });
 
         const optionsLocalStorageKey = "gcodeFiles.options";

@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from os import scandir, walk
 
 import gcode_thumbnail_tool as gtt
+import psutil
 import pylru
 
 import octoprint.filemanager
@@ -44,6 +45,7 @@ from . import (
     StorageFolder,
     StorageInterface,
     StorageThumbnail,
+    StorageUsage,
 )
 
 if typing.TYPE_CHECKING:
@@ -1033,6 +1035,10 @@ class LocalFileStorage(StorageInterface):
     def path_on_disk(self, path):
         path, name = self.sanitize(path)
         return os.path.join(path, name)
+
+    def get_usage(self) -> typing.Optional[StorageUsage]:
+        usage = psutil.disk_usage(self.basefolder)
+        return StorageUsage(used=usage.used, total=usage.total)
 
     ##~~ internals
 

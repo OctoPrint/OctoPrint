@@ -592,6 +592,11 @@ class PrinterFilesConflict(PrinterFilesError):
     pass
 
 
+class PrinterFilesUsage(BaseModel):
+    used: int
+    total: int
+
+
 class PrinterFilesMixin:
     storage_capabilities = StorageCapabilities()
 
@@ -724,6 +729,9 @@ class PrinterFilesMixin:
             filament_estimate=filament_estimate,
             params=params,
         )
+
+    def get_usage_information(self) -> Optional[PrinterFilesUsage]:
+        return None
 
 
 class PrinterMixin(CommonPrinterMixin):
