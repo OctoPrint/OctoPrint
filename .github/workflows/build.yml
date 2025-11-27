@@ -18,7 +18,7 @@ jobs:
     name: 🔨 Build distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
@@ -39,7 +39,7 @@ jobs:
     name: 🧹 Pre-commit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v6
         with:
@@ -57,7 +57,7 @@ jobs:
         python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: 🏗 Set up Python ${{ matrix.python }}
         uses: actions/setup-python@v6
         with:
@@ -109,7 +109,7 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04 # change back to ubuntu-latest once we figure out why puppeteer is unhappy under 24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: 🏗 Set up test dependencies
         run: |
           npm -g install node-qunit-puppeteer@2.1.2
