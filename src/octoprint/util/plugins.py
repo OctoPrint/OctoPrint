@@ -1,8 +1,11 @@
+import contextlib
+import dataclasses
 import logging
 import os.path
 import tarfile
+import tempfile
 import zipfile
-from typing import Optional, Union
+from typing import Generator, Optional, Union
 
 import filetype
 
@@ -99,3 +102,39 @@ def has_legacy_octoprint_setuptools_dependency(
     if isinstance(data, str):
         data = data.encode(encoding)
     return b"octoprint_setuptools" in data
+
+
+@dataclasses.dataclass
+class InstallPreparationResult:
+    path: str
+    args: list[str] = dataclasses.field(default_factory=list)
+
+
+@contextlib.contextmanager
+def prepare_install(
+    install_arg: str, log: callable = None
+) -> Generator[InstallPreparationResult, None, None]:
+    from octoprint.util.net import download_file
+
+    if log is None:
+
+        def log(*args):
+            pass
+
+    folder = None
+    pip_args = []
+
+    try:
+        if install_arg.startswith("https://") or install_arg.startswith("http://"):
+            # we download this first and check if we need to add --no-build-isolation
+            log(f"Downloading {install_arg}...")
+            folder = tempfile.TemporaryDirectory()
+            install_arg = download_file(install_arg, folder.name)
+
+            if is_pre_pep517_plugin_package(install_arg):
+                pip_args += PRE_PEP517_PIP_ARGS
+
+        yield InstallPreparationResult(path=install_arg, args=pip_args)
+    finally:
+        if folder is not None:
+            folder.cleanup()
