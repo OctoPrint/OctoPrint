@@ -160,4 +160,5 @@ jobs:
         uses: OctoPrint/actions/e2e@main
         with:
           server: "http://127.0.0.1:5000"
+          ref: "${{ matrix.octo_ref }}"
           suffix: "-${{ matrix.octo_ref }}-${{ matrix.debian_version }}-${{ matrix.arch.variant }}-${{ matrix.arch.build_type }}"
