@@ -5,7 +5,7 @@ import os.path
 import tarfile
 import tempfile
 import zipfile
-from typing import Generator, Optional, Union
+from typing import Generator, List, Optional, Union
 
 import filetype
 
@@ -107,7 +107,7 @@ def has_legacy_octoprint_setuptools_dependency(
 @dataclasses.dataclass
 class InstallPreparationResult:
     path: str
-    args: list[str] = dataclasses.field(default_factory=list)
+    args: List[str] = dataclasses.field(default_factory=list)
 
 
 @contextlib.contextmanager
