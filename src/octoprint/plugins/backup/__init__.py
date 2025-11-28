@@ -9,8 +9,11 @@ from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import no_firstrun_access
 from octoprint.settings import default_settings
 from octoprint.util import is_hidden_path, to_bytes, yaml
-from octoprint.util.pip import create_pip_caller
+from octoprint.util.pip import (
+    create_pip_caller,
+)
 from octoprint.util.platform import is_os_compatible
+from octoprint.util.plugins import prepare_install
 from octoprint.util.version import (
     get_comparable_version,
     get_octoprint_version,
@@ -899,19 +902,28 @@ class BackupPlugin(
         cls._pip_caller.on_log_stdout = log_stdout
         cls._pip_caller.on_log_stderr = log_stderr
 
-        # install plugin
-        pip = ["install", sarge.shell_quote(plugin["archive"]), "--no-cache-dir"]
+        with prepare_install(plugin["archive"], log=log) as prep:
+            install_arg = prep.path
+            if prep.args:
+                pip_args += prep.args
 
-        if plugin.get("follow_dependency_links"):
-            pip.append("--process-dependency-links")
+            # install plugin
+            pip = [
+                "install",
+                sarge.shell_quote(install_arg),
+                "--no-cache-dir",
+            ]
 
-        if force_user:
-            pip.append("--user")
+            if plugin.get("follow_dependency_links"):
+                pip.append("--process-dependency-links")
 
-        if pip_args:
-            pip += pip_args
+            if force_user:
+                pip.append("--user")
 
-        cls._pip_caller.execute(*pip)
+            if pip_args:
+                pip += pip_args
+
+            cls._pip_caller.execute(*pip)
 
     @classmethod
     def _create_backup(
