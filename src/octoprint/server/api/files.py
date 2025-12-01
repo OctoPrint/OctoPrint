@@ -1676,19 +1676,6 @@ def _validate_filename(target, filename):
     return fileManager.join_path(target, *fileManager.sanitize(target, filename))
 
 
-def _verify_sd_upload_preconditions():
-    # validate that all preconditions for SD upload are met before attempting it
-    if not (
-        printer.is_operational() and not (printer.is_printing() or printer.is_paused())
-    ):
-        abort(
-            409,
-            description="Can not upload to SD card, printer is either not operational or already busy",
-        )
-    if not printer.is_sd_ready():
-        abort(409, description="Can not upload to SD card, not yet initialized")
-
-
 class WerkzeugFileWrapper(octoprint.filemanager.util.AbstractFileWrapper):
     """
     A wrapper around a Werkzeug ``FileStorage`` object.
