@@ -1,6 +1,6 @@
 const {test, expect} = require("../fixtures");
 
-const gcodeName = "e2e-test.gcode";
+const gcodeName = "e2e-测试.gcode"; // non ascii name to protect against regressions like #5206
 const gcodeContent =
     "M117 I'm just a test upload during E2E\nG28 X0 Y0\nM117 That is all folks!";
 

@@ -5,17 +5,15 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import collections
 import logging
-import tempfile
 import threading
 
-from octoprint.util.net import download_file
 from octoprint.util.pip import (
     UnknownPip,
     create_pip_caller,
     is_already_installed,
     is_egg_problem,
 )
-from octoprint.util.plugins import PRE_PEP517_PIP_ARGS, is_pre_pep517_plugin_package
+from octoprint.util.plugins import prepare_install
 from octoprint.util.version import get_comparable_version
 
 from .. import exceptions
@@ -102,16 +100,10 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
     )
     additional_pip_args = []
 
-    folder = None
-    try:
-        if install_arg.startswith("https://") or install_arg.startswith("http://"):
-            # we download this first and check if we need to add --no-build-isolation
-            _log_message(f"Downloading {install_arg}...")
-            folder = tempfile.TemporaryDirectory()
-            install_arg = download_file(install_arg, folder.name)
-
-            if is_pre_pep517_plugin_package(install_arg):
-                additional_pip_args += PRE_PEP517_PIP_ARGS
+    with prepare_install(install_arg, log=_log_message) as prep:
+        install_arg = prep.path
+        if prep.args:
+            additional_pip_args += prep.args
 
         if "dependency_links" in check and check["dependency_links"]:
             additional_pip_args += ["--process-dependency-links"]
@@ -168,7 +160,3 @@ def perform_update(target, check, target_version, log_cb=None, online=True, forc
                 )
 
         return "ok"
-
-    finally:
-        if folder is not None:
-            folder.cleanup()

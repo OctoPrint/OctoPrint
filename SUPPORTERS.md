@@ -40,7 +40,6 @@ thanks to everyone who contributed!
   * Justin Kaufman
   * Kaile Riser
   * Keenan Newton
-  * Kenneth Jiang
   * Kurt Wubbels
   * Lachlan Bell
   * LulzBot
@@ -64,9 +63,10 @@ thanks to everyone who contributed!
   * SimplyPrint
   * Sinie47
   * Stefan Krister
+  * Steve Dougherty
   * TheWebMachine
   * Tideline 3D
   * Timothy Efinger
   * Ulrich Kempken
 
-and 2376 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!
+and 2378 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel), on [GitHub Sponsors](https://github.com/users/foosel/sponsorship), via [Ko-fi](https://ko-fi.com/octoprint) or [Donorbox](https://donorbox.org/support-octoprint?recurring=true)!

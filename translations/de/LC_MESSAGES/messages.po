@@ -3,10 +3,10 @@
 # This file is distributed under the same license as the OctoPrint project.
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.11.3\n"
+"Project-Id-Version: OctoPrint 1.11.5\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2025-11-04 12:04+0100\n"
-"PO-Revision-Date: 2025-06-10 10:01+0200\n"
+"POT-Creation-Date: 2025-12-01 12:05+0100\n"
+"PO-Revision-Date: 2025-12-01 12:05+0100\n"
 "Last-Translator: Gina Häußge <gina@octoprint.org>\n"
 "Language: de\n"
 "Language-Team: de <LL@li.org>\n"
@@ -995,20 +995,20 @@ msgstr "Generiere einen Application Key manuell"
 msgid "Generate"
 msgstr "Erzeugen"
 
-#: src/octoprint/plugins/backup/__init__.py:76
+#: src/octoprint/plugins/backup/__init__.py:79
 msgid "Allows to trigger the creation of backups"
 msgstr "Erlaubt die Erstellung von Backups zu starten"
 
-#: src/octoprint/plugins/backup/__init__.py:114
+#: src/octoprint/plugins/backup/__init__.py:117
 #: src/octoprint/templates/recovery.jinja2:93
 msgid "Backup & Restore"
 msgstr "Sicherung & Wiederherstellung"
 
-#: src/octoprint/plugins/backup/__init__.py:115
+#: src/octoprint/plugins/backup/__init__.py:118
 msgid "Restore Backup?"
 msgstr "Sicherung wiederherstellen?"
 
-#: src/octoprint/plugins/backup/__init__.py:1602
+#: src/octoprint/plugins/backup/__init__.py:1614
 msgid ""
 "Without this plugin you will no longer be able to backup & restore your "
 "OctoPrint settings and data."

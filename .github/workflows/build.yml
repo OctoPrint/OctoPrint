@@ -73,6 +73,7 @@ jobs:
   test-unit:
     name: 🧪 Unit tests
     strategy:
+      fail-fast: false
       matrix:
         python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
     runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
@@ -118,6 +119,7 @@ jobs:
     needs: build
     if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     strategy:
+      fail-fast: false
       matrix:
         python: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
         installable: ["wheel", "sdist"]
@@ -165,6 +167,7 @@ jobs:
     needs: build
     runs-on: ubuntu-22.04 # change back to ubuntu-latest once we drop Python 3.7
     strategy:
+      fail-fast: false
       matrix:
         python: ["3.7", "3.12", "3.13"]
     steps:
