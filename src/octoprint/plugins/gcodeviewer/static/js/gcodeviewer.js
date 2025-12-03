@@ -936,6 +936,7 @@ $(function () {
             self.tabActive = current === "#gcode";
             if (self.tabActive && self.needsLoad) {
                 self.loadFile(
+                    self.selectedFile.storage(),
                     self.selectedFile.path(),
                     self.selectedFile.date(),
                     self.selectedFile.size()
