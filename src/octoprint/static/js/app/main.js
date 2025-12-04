@@ -47,7 +47,9 @@ $(function () {
                 browser_name: "unknown",
                 browser_version: "unknown",
                 os_name: "unknown",
-                os_version: "unknown"
+                os_version: "unknown",
+
+                is_mac: false // special delivery because Mac like to be difficult
             },
             viewmodels: {},
             startedUp: false
@@ -129,8 +131,14 @@ $(function () {
         exports.browser.os_name = uap.os.name;
         exports.browser.os_version = uap.os.version;
 
+        exports.browser.is_mac = ["macos", "mac os"].includes(uap.os.name.toLowerCase());
+
         if (exports.browser.safari) {
             $("html").addClass("safari");
+        }
+
+        if (exports.browser.is_mac) {
+            $("html").addClass("macos");
         }
 
         // exports
