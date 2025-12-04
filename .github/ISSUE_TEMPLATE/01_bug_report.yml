@@ -118,7 +118,7 @@ body:
         Please also be sure to upload the following files below:
 
           * Systeminfo Bundle: See [here](https://community.octoprint.org/t/what-is-a-systeminfo-bundle-and-how-can-i-obtain-one/29887) if you don't know where to find that. Just attach down below as-is. Note that you'll need at least OctoPrint 1.6.0 for this to be available - we no longer accept bug reports created for older versions than this.
-            * If you are reporting an issue that involves communicating with you printer, **be sure to enable `serial.log` before reproducing and creating the Systeminfo Bundle**!
+            * If you are reporting an issue that involves communicating with your printer, **be sure to enable `serial.log` before reproducing and creating the Systeminfo Bundle**!
           * Your browser's JavaScript console, if you are reporting a problem with the
             user interface. See [here](https://webmasters.stackexchange.com/questions/8525/how-to-open-the-javascript-console-in-different-browsers) on where to find that.
           * If possible, screenshots or videos showing the problem, especially if you
