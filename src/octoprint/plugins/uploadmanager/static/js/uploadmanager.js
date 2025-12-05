@@ -18,6 +18,46 @@ $(function () {
         self.copyMoveDialog = undefined;
 
         self.selectedFiles = ko.observableArray([]);
+
+        self.selectedIndices = () => {
+            const files = self.filesAndFolders();
+            const selected = self.selectedFiles();
+            const indices = selected.map((item) => files.indexOf(item));
+            indices.sort((a, b) => a - b);
+            return indices;
+        };
+
+        self.selectedRanges = () => {
+            const indices = self.selectedIndices();
+            log.debug("UPMGR: Selected indices", indices);
+
+            const selectedRanges = [];
+            let lastIdx = -1;
+            let startIdx = -1;
+
+            for (let i = 0; i < indices.length; i++) {
+                const idx = indices[i];
+                if (lastIdx > -1 && idx == lastIdx + 1) {
+                    // the range continues
+                } else {
+                    // we found the start of a new range
+                    if (startIdx > -1 && lastIdx > -1) {
+                        // push the current one
+                        selectedRanges.push([startIdx, lastIdx]);
+                    }
+                    startIdx = idx;
+                }
+
+                lastIdx = idx;
+            }
+
+            if (startIdx > -1 && lastIdx > -1) {
+                selectedRanges.push([startIdx, lastIdx]);
+            }
+
+            return selectedRanges;
+        };
+
         self.currentPath = ko.observable("");
         self.listStyle = ko.observable("folders_files");
 
@@ -287,26 +327,27 @@ $(function () {
             const multiSelectEnabled =
                 (!isMacOS && event.ctrlKey) || (isMacOS && event.metaKey);
 
-            if (self.isSelected(data)) {
-                self.selectedFiles.remove(data);
-            } else {
-                if (!multiSelectEnabled) {
-                    // single selection, remove all others
-                    self.selectedFiles.removeAll();
-                }
-                self.selectedFiles.push(data);
-            }
+            const isShiftSelect = event.shiftKey && last;
 
-            if (event.shiftKey && last) {
+            if (isShiftSelect) {
                 // handle shift click
                 const files = self.filesAndFolders();
                 const indexCurrent = files.indexOf(data);
                 const indexLast = files.indexOf(last);
+                log.debug(
+                    "UPMGR: Current index:",
+                    indexCurrent,
+                    ", last index:",
+                    indexLast
+                );
+
+                const selectedRanges = self.selectedRanges();
+                log.debug("UPMGR: Selected ranges", selectedRanges);
 
                 if (
                     indexCurrent >= 0 &&
                     indexLast >= 0 &&
-                    Math.abs(indexCurrent - indexLast) > 1
+                    Math.abs(indexCurrent - indexLast) > 0
                 ) {
                     let from, to;
                     if (indexCurrent > indexLast) {
@@ -317,19 +358,58 @@ $(function () {
                         to = indexLast;
                     }
 
-                    for (let i = from; i <= to; i++) {
-                        if (i === indexCurrent || i === indexLast) {
-                            // already handled
-                            continue;
+                    let range = undefined;
+                    selectedRanges.forEach(([start, end]) => {
+                        if (start <= indexLast && indexLast <= end) {
+                            range = [start, end];
                         }
+                    });
+                    log.debug("UPMGR: Current range", range);
 
+                    const currentWithinRange =
+                        range && range[0] <= indexCurrent && indexCurrent <= range[1];
+                    const currentAboveRange =
+                        !currentWithinRange && range && range[0] > indexCurrent;
+                    const currentBelowRange =
+                        !currentWithinRange && range && range[1] < indexCurrent;
+                    const rangeLength = range ? range[1] - range[0] : -1;
+
+                    log.debug(
+                        "UPMGR:",
+                        "within",
+                        currentWithinRange,
+                        ", above",
+                        currentAboveRange,
+                        ", below",
+                        currentBelowRange
+                    );
+
+                    for (let i = from; i <= to; i++) {
                         const item = files[i];
-                        if (self.isSelected(item)) {
-                            self.selectedFiles.remove(item);
-                        } else {
+                        const selected = self.isSelected(item);
+                        if (rangeLength > 0 && selected) {
+                            if (
+                                (currentWithinRange && i !== indexCurrent) ||
+                                (currentAboveRange && i > range[0]) ||
+                                (currentBelowRange && i < range[1])
+                            ) {
+                                self.selectedFiles.remove(item);
+                            }
+                        } else if (!selected) {
                             self.selectedFiles.push(item);
                         }
                     }
+                }
+            } else {
+                if (!multiSelectEnabled) {
+                    // single selection & no shift: remove all first
+                    self.selectedFiles.removeAll();
+                }
+
+                if (self.isSelected(data)) {
+                    self.selectedFiles.remove(data);
+                } else {
+                    self.selectedFiles.push(data);
                 }
             }
         };
