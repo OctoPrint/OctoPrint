@@ -282,11 +282,16 @@ $(function () {
             const last = self._lastClickedItem;
             self._lastClickedItem = data;
 
+            // Command for Mac, Control for everything else
+            const isMacOS = OctoPrint.coreui.browser.is_mac;
+            const multiSelectEnabled =
+                (!isMacOS && event.ctrlKey) || (isMacOS && event.metaKey);
+
             if (self.isSelected(data)) {
                 self.selectedFiles.remove(data);
             } else {
-                if (!event.ctrlKey) {
-                    // single selection if ctrl isn't pressed
+                if (!multiSelectEnabled) {
+                    // single selection, remove all others
                     self.selectedFiles.removeAll();
                 }
                 self.selectedFiles.push(data);
