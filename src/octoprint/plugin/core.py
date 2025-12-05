@@ -885,7 +885,7 @@ class PluginManager:
                     processed_blacklist.append((key, SpecifierSet(version)))
                 except Exception:
                     self.logger.warning(
-                        "Invalid version requirement {} for blacklist "
+                        "Invalid version requirement {} for blocklist "
                         "entry {}, ignoring".format(version, key)
                     )
             else:
@@ -1263,7 +1263,7 @@ class PluginManager:
             plugin.version is not None
             and self._is_plugin_version_blacklisted(key, plugin.version)
         ):
-            self.logger.warning(f"Plugin {plugin} is blacklisted.")
+            self.logger.warning(f"Plugin {plugin} is blocklisted.")
             plugin.blacklisted = True
 
         python_version = get_python_version_string()
@@ -1454,7 +1454,7 @@ class PluginManager:
                 ):
                     if plugin.blacklisted:
                         self.logger.warning(
-                            f"Plugin {plugin} is blacklisted. Not enabling it."
+                            f"Plugin {plugin} is blocklisted. Not enabling it."
                         )
                         continue
                     self.enable_plugin(
@@ -2073,7 +2073,7 @@ class PluginManager:
                 )
                 formatted_plugins += "\n"
 
-            legend = "Prefix legend: {1} = disabled, {2} = blacklisted, {3} = incompatible".format(
+            legend = "Prefix legend: {1} = disabled, {2} = blocklisted, {3} = incompatible".format(
                 *enabled_str
             )
 

@@ -144,16 +144,16 @@ class OnlineCheckConfig(BaseModel):
 @with_attrs_docs
 class PluginBlacklistConfig(BaseModel):
     enabled: Optional[bool] = None
-    """Whether use of the blacklist is enabled. If unset, the user will be asked to make a decision as part of the setup wizard."""
+    """Whether use of the blocklist is enabled. If unset, the user will be asked to make a decision as part of the setup wizard."""
 
     url: str = "https://plugins.octoprint.org/blacklist.json"
-    """The URL from which to fetch the blacklist."""
+    """The URL from which to fetch the blocklist."""
 
     ttl: int = CONST_15MIN
-    """Time to live of the cached blacklist, in seconds (default: 15 minutes)."""
+    """Time to live of the cached blocklist, in seconds (default: 15 minutes)."""
 
     timeout: float = 3.05
-    """Timeout for fetching the blacklist, in seconds (default: 3.05 seconds)."""
+    """Timeout for fetching the blocklist, in seconds (default: 3.05 seconds)."""
 
 
 @with_attrs_docs
@@ -288,7 +288,7 @@ class ServerConfig(BaseModel):
     """Configuration of the regular online connectivity check."""
 
     pluginBlacklist: PluginBlacklistConfig = PluginBlacklistConfig()
-    """Configuration of the plugin blacklist."""
+    """Configuration of the plugin blocklist."""
 
     pythonEolCheck: PythonEolCheckConfig = PythonEolCheckConfig()
     """Configuration of the Python EOL warning."""

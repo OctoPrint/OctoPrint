@@ -237,7 +237,7 @@
     data-bind="visible: safe_mode_victim"></i> <i class="fas fa-exclamation-triangle"
     title="{{ _('There are notices available regarding this plugin') |edq }}"
     data-bind="visible: notifications && notifications.length"></i> <i class="fas fa-ban"
-    title="{{ _('This plugin is blacklisted') |edq }}"
+    title="{{ _('This plugin is blocklisted') |edq }}"
     data-bind="visible: blacklisted"></i>
                             </div>
                             <div data-bind="css: {muted: !enabled}">
@@ -385,12 +385,12 @@
                 All plugins in OctoPrint's repository are open source, so you and anyone else from the community can look at their published source code and see what they do for yourself.
             </li>
             <li>
-                <strong>Plugin blacklist:</strong>
-                We maintain a blacklist of plugins/plugin versions that are known to cause issues. Unless you have disabled the blacklist, OctoPrint will refuse to load and run any plugins installed in your system matching an entry on it.
+                <strong>Plugin blocklist:</strong>
+                We maintain a blocklist of plugins/plugin versions that are known to cause issues. Unless you have disabled the blocklist, OctoPrint will refuse to load and run any plugins installed in your system matching an entry on it.
             </li>
             <li>
                 <strong>Report mechanism:</strong>
-                If you encounter suspicious activity of a plugin, you can report it to us. We will then investigate and potentially remove it from the repository and/or add it to the blacklist.
+                If you encounter suspicious activity of a plugin, you can report it to us. We will then investigate and potentially remove it from the repository and/or add it to the blocklist.
             </li>
             <li>
                 <strong>Safe mode & recovery page:</strong>

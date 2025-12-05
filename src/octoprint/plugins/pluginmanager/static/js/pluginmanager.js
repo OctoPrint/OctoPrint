@@ -2047,7 +2047,7 @@ $(function () {
             var command = self._getToggleCommand(data);
             if (command === "enable") {
                 if (data.blacklisted) {
-                    return gettext("Blacklisted");
+                    return gettext("Blocklisted");
                 } else if (data.safe_mode_victim) {
                     return gettext("Disabled due to active safe mode");
                 } else {

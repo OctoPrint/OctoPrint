@@ -47,26 +47,26 @@
                     </div>
                 </div>
                 <div class="control-group">
-                    <label class="control-label" for="settings-serialBlacklistedPorts">{{ _("Blacklisted serial ports") }}</label>
+                    <label class="control-label" for="settings-serialBlacklistedPorts">{{ _("Blocklisted serial ports") }}</label>
                     <div class="controls">
                         <textarea rows="4"
                                   class="block"
                                   id="settings-serialBlacklistedPorts"
                                   data-bind="value: mapped.blacklistedPorts"></textarea>
                         <span class="help-inline">{% trans glob_url="http://docs.python.org/3/library/glob.html" %}
-                            Use this to define <a href="{{ glob_url }}" target="_blank" rel="noopener noreferer">glob patterns</a> matching serial ports to blacklist for
+                            Use this to define <a href="{{ glob_url }}" target="_blank" rel="noopener noreferer">glob patterns</a> matching serial ports to blocklist for
                             connecting against, e.g. <code>/dev/ttyS*</code>. One entry per line.
                         {% endtrans %}</span>
                     </div>
                 </div>
                 <div class="control-group">
-                    <label class="control-label" for="settings-serialBlacklistedBaudrates">{{ _("Blacklisted baud rates") }}</label>
+                    <label class="control-label" for="settings-serialBlacklistedBaudrates">{{ _("Blocklisted baud rates") }}</label>
                     <div class="controls">
                         <input type="text"
                                class="input-block-level"
                                id="settings-serialBlacklistedBaudrates"
                                data-bind="value: mapped.blacklistedBaudrates">
-                        <span class="help-inline">{{ _("Use this to define serial port baud rates to blacklist for connecting with, e.g. <code>123456</code>. Comma separated.") }}</span>
+                        <span class="help-inline">{{ _("Use this to define serial port baud rates to blocklist for connecting with, e.g. <code>123456</code>. Comma separated.") }}</span>
                     </div>
                 </div>
                 <div class="control-group">

@@ -1757,8 +1757,8 @@ msgid "Online Connectivity Check"
 msgstr "Onlineprüfung"
 
 #: src/octoprint/plugins/corewizard/subwizards.py:122
-msgid "Plugin Blacklist"
-msgstr "Plugin Blackliste"
+msgid "Plugin Blocklist"
+msgstr "Plugin Blockliste"
 
 #: src/octoprint/plugins/corewizard/subwizards.py:143
 msgid "Default Printer Profile"
@@ -1792,16 +1792,16 @@ msgstr ""
 "fortfahren kannst."
 
 #: src/octoprint/plugins/corewizard/static/js/corewizard.js:262
-msgid "Please set up the plugin blacklist processing"
-msgstr "Bitte konfiguriere die Plugin Blackliste"
+msgid "Please set up the plugin blocklist processing"
+msgstr "Bitte konfiguriere die Plugin Blockliste"
 
 #: src/octoprint/plugins/corewizard/static/js/corewizard.js:263
 msgid ""
 "You haven't yet decided on whether to enable or disable the plugin "
-"blacklist processing. You need to either enable or disable it before "
+"blocklist processing. You need to either enable or disable it before "
 "continuing."
 msgstr ""
-"Du hast noch nicht entschieden, ob die Plugin Blackliste aktiviert werden"
+"Du hast noch nicht entschieden, ob die Plugin Blockliste aktiviert werden"
 " soll. Du musst sie entweder aktivieren oder deaktivieren bevor du "
 "fortfahren kannst."
 
@@ -1976,15 +1976,15 @@ msgstr ""
 "    "
 
 #: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:1
-msgid "Configure plugin blacklist processing"
-msgstr "Pluginblackliste konfigurieren"
+msgid "Configure plugin blocklist processing"
+msgstr "Pluginblockliste konfigurieren"
 
 #: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:3
 msgid ""
 "\n"
 "    To protect against known severe issues with certain versions of third"
 " party plugins, OctoPrint supports the use\n"
-"    of a centralized plugin version blacklist to automatically disable "
+"    of a centralized plugin version blocklist to automatically disable "
 "such plugin versions before they can interfere with\n"
 "    normal operation, allowing you to uninstall or update them to a newer"
 " version.\n"
@@ -1992,7 +1992,7 @@ msgstr ""
 "\n"
 "    Um vor bekannten schweren Fehler mit bestimmten Third-Party-Plugins "
 "zu schützen, unterstützt OctoPrint \n"
-"    die Verwendung einer zentralen Pluginblackliste um automatisiert "
+"    die Verwendung einer zentralen Pluginblockliste um automatisiert "
 "solche Pluginversionen zu deaktivieren \n"
 "    bevor sie mit dem normalen Betrieb von OctoPrint interferieren "
 "können. Du kannst solche Plugins dann \n"
@@ -2003,13 +2003,13 @@ msgstr ""
 #, python-format
 msgid ""
 "\n"
-"    By default, OctoPrint will use the blacklist hosted at "
+"    By default, OctoPrint will use the blocklist hosted at "
 "<code>plugins.octoprint.org/blacklist.json</code> which you\n"
 "    can also take a look at in a more human readable format <a "
 "href=\"%(url)s\" target=\"_blank\">here</a>.\n"
 msgstr ""
 "\n"
-"    Standardmäßig wird OctoPrint die Blackliste von "
+"    Standardmäßig wird OctoPrint die Blockliste von "
 "<code>plugins.octoprint.org/blacklist.json</code> verwenden, \n"
 "    auf die du <a href=\"%(url)s\" target=\"_blank\">hier</a> auch einen "
 "Blick in menschenlesbarer Form werfen kannst.\n"
@@ -2018,45 +2018,45 @@ msgstr ""
 msgid ""
 "\n"
 "    Please decide whether to allow fetch and use of this centralized "
-"blacklist starting with the next server start.\n"
+"blocklist starting with the next server start.\n"
 "    You may also change your decision at any time through Settings > "
 "Server right from within OctoPrint.\n"
 msgstr ""
 "\n"
-"    Bitte entscheide, ob die zentrale Pluginblackliste ab dem nächsten "
+"    Bitte entscheide, ob die zentrale Pluginblockliste ab dem nächsten "
 "Serverstart genutzt werden soll. \n"
 "    Du kannst diese Entscheidung auch jederzeit unter Einstellungen > "
 "Server später noch ändern.\n"
 
 #: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:21
-msgid "Disable Plugin Blacklist Processing"
-msgstr "Pluginblackliste deaktivieren"
+msgid "Disable Plugin Blocklist Processing"
+msgstr "Pluginblockliste deaktivieren"
 
 #: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:24
-msgid "Enable Plugin Blacklist Processing"
-msgstr "Pluginblackliste aktivieren"
+msgid "Enable Plugin Blocklist Processing"
+msgstr "Pluginblockliste aktivieren"
 
 #: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:29
 msgid ""
 "\n"
-"        Plugin blacklist processing is <strong class=\"text-"
+"        Plugin blocklist processing is <strong class=\"text-"
 "success\">enabled</strong>.\n"
 "    "
 msgstr ""
 "\n"
-"        Pluginblackliste <strong class=\"text-"
+"        Pluginblockliste <strong class=\"text-"
 "success\">aktiviert</strong>.\n"
 "    "
 
 #: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:32
 msgid ""
 "\n"
-"        Plugin blacklist processing is <strong class=\"text-"
+"        Plugin blocklist processing is <strong class=\"text-"
 "danger\">disabled</strong>.\n"
 "    "
 msgstr ""
 "\n"
-"        Pluginblackliste <strong class=\"text-"
+"        Pluginblockliste <strong class=\"text-"
 "danger\">deaktiviert</strong>.\n"
 "    "
 
@@ -3763,8 +3763,8 @@ msgid "Done!"
 msgstr "Fertig!"
 
 #: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:2050
-msgid "Blacklisted"
-msgstr "Geblacklistet"
+msgid "Blocklisted"
+msgstr "Geblocklistet"
 
 #: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:2052
 msgid "Disabled due to active safe mode"
@@ -4077,8 +4077,8 @@ msgid "There are notices available regarding this plugin"
 msgstr "Es gibt keine Nachrichten zu diesem Plugin"
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:149
-msgid "This plugin is blacklisted"
-msgstr "Das Plugin ist geblacklistet"
+msgid "This plugin is blocklisted"
+msgstr "Das Plugin ist geblocklistet"
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:151
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:343
@@ -4181,9 +4181,9 @@ msgid ""
 "source code and see what they do for yourself.\n"
 "            </li>\n"
 "            <li>\n"
-"                <strong>Plugin blacklist:</strong>\n"
-"                We maintain a blacklist of plugins/plugin versions that "
-"are known to cause issues. Unless you have disabled the blacklist, "
+"                <strong>Plugin blocklist:</strong>\n"
+"                We maintain a blocklist of plugins/plugin versions that "
+"are known to cause issues. Unless you have disabled the blocklist, "
 "OctoPrint will refuse to load and run any plugins installed in your "
 "system matching an entry on it.\n"
 "            </li>\n"
@@ -4191,7 +4191,7 @@ msgid ""
 "                <strong>Report mechanism:</strong>\n"
 "                If you encounter suspicious activity of a plugin, you can"
 " report it to us. We will then investigate and potentially remove it from"
-" the repository and/or add it to the blacklist.\n"
+" the repository and/or add it to the blocklist.\n"
 "            </li>\n"
 "            <li>\n"
 "                <strong>Safe mode & recovery page:</strong>\n"
@@ -4237,11 +4237,11 @@ msgstr ""
 "Quellcode lesen und für euch selbst analysieren könnt.\n"
 "            </li>\n"
 "            <li>\n"
-"                <strong>Pluginblacklist:</strong>\n"
-"                Wir unterhalten eine Blacklist von "
+"                <strong>Pluginblocklist:</strong>\n"
+"                Wir unterhalten eine Blocklist von "
 "Plugins/Pluginversionen, von denen                 bekannt ist, dass sie "
 "Probleme verursachen. Solange du die Verarbeitung dieser                 "
-"Blacklist nicht deaktiviert hast, wird OctoPrint sich weigern, ein darauf"
+"Blocklist nicht deaktiviert hast, wird OctoPrint sich weigern, ein darauf"
 " enthaltenes                 Plugin zu laden und auszuführen.\n"
 "            </li>\n"
 "            <li>\n"
@@ -4249,7 +4249,7 @@ msgstr ""
 "                Falls du verdächtige Aktivitäten bei einem Plugin "
 "beobachtest, kannst du das                 an uns melden. Wir werden das "
 "dann untersuchen und gegebenenfalls das Plugin aus dem                 "
-"Repository entfernen und/oder der Blacklist hinzufügen.\n"
+"Repository entfernen und/oder der Blocklist hinzufügen.\n"
 "            </li>\n"
 "            <li>\n"
 "                <strong>Safemode & Recoverypage:</strong>\n"
@@ -8583,8 +8583,8 @@ msgstr ""
 " werden sollen"
 
 #: src/octoprint/templates/dialogs/settings/features.jinja2:83
-msgid "Terminal Auto Uppercase Blacklist"
-msgstr "Terminal Auto Uppercase Blackliste"
+msgid "Terminal Auto Uppercase Blocklist"
+msgstr "Terminal Auto Uppercase Blockliste"
 
 #: src/octoprint/templates/dialogs/settings/features.jinja2:86
 msgid ""
@@ -8869,14 +8869,14 @@ msgstr ""
 "konfigurieren, <code>123456</code>. Komma-separiert."
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:51
-msgid "Blacklisted serial ports"
-msgstr "Geblacklistete Serialports"
+msgid "Blocklisted serial ports"
+msgstr "Geblocklistete Serialports"
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:54
 #, python-format
 msgid ""
 "Use this to define <a href=\"%%(glob_url)s\">glob patterns</a> matching "
-"serial ports to blacklist for connecting against, e.g. "
+"serial ports to blocklist for connecting against, e.g. "
 "<code>/dev/ttyS*</code>. One entry per line."
 msgstr ""
 "Nutze diese Einstellung, um <a href=\"%%(glob_url)s\">glob patterns</a> "
@@ -8884,15 +8884,15 @@ msgstr ""
 "<code>/dev/ttyS*</code>. Ein Eintrag pro Zeile."
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:58
-msgid "Blacklisted baud rates"
-msgstr "Geblacklistete Baudraten"
+msgid "Blocklisted baud rates"
+msgstr "Geblocklistete Baudraten"
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:61
 msgid ""
-"Use this to define serial port baud rates to blacklist for connecting "
+"Use this to define serial port baud rates to blocklist for connecting "
 "with, e.g. <code>123456</code>. Comma separated."
 msgstr ""
-"Nutze diese Einstellung um Baudraten zur Verbindung zu blacklisten, z.B. "
+"Nutze diese Einstellung um Baudraten zur Verbindung zu blocklisten, z.B. "
 "<code>123456</code>. Komma-separiert."
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:67
@@ -9757,8 +9757,8 @@ msgid "Connectivity check"
 msgstr "Onlineprüfung"
 
 #: src/octoprint/templates/dialogs/settings/server.jinja2:16
-msgid "Plugin blacklist processing"
-msgstr "Pluginblackliste"
+msgid "Plugin blocklist processing"
+msgstr "Pluginblockliste"
 
 #: src/octoprint/templates/dialogs/settings/server.jinja2:21
 msgid "Debug options"
@@ -10767,20 +10767,20 @@ msgid ""
 "\n"
 "    <strong>To protect against known severe issues with certain versions "
 "of third party plugins</strong>, OctoPrint supports\n"
-"    the use of a centralized plugin version blacklist to automatically "
+"    the use of a centralized plugin version blocklist to automatically "
 "disable such plugins before they can interfere\n"
 "    with normal operation.\n"
 msgstr ""
 "\n"
 "<strong>Um vor bekannten Probleme mit bestimmten Versionen von "
 "Thirdpartyplugins zu schützen</strong> unterstützt OctoPrint die "
-"Verwendung einer zentralen Pluginblackliste, über die automatisch solche "
+"Verwendung einer zentralen Pluginblockliste, über die automatisch solche "
 "Plugins deaktiviert werden können, bevor sie mit dem normalen Betrieb "
 "interferieren können.\n"
 
 #: src/octoprint/templates/snippets/settings/server/serverPluginBlacklistEnabled.jinja2:4
-msgid "Enable plugin blacklist processing on startup"
-msgstr "Pluginblackliste beim Serverstart nutzen"
+msgid "Enable plugin blocklist processing on startup"
+msgstr "Pluginblockliste beim Serverstart nutzen"
 
 #: src/octoprint/templates/snippets/settings/server/serverPluginBlacklistEnabled.jinja2:5
 msgid "Any changes take effect only on the next server start."
@@ -10788,25 +10788,25 @@ msgstr "Alle Änderungen treten erst mit dem nächsten Serverstart in Kraft."
 
 #: src/octoprint/templates/snippets/settings/server/serverPluginBlacklistTtl.jinja2:1
 msgid ""
-"How long to cache the blacklist, in minutes. You should normally not have"
+"How long to cache the blocklist, in minutes. You should normally not have"
 " to change this."
 msgstr ""
-"Wie lange die Pluginblackliste gecached werden sollen, in Minuten. Du "
+"Wie lange die Pluginblockliste gecached werden sollen, in Minuten. Du "
 "solltest hier normalerweise nichts ändern müssen."
 
 #: src/octoprint/templates/snippets/settings/server/serverPluginBlacklistTtl.jinja2:2
-msgid "Blacklist cache TTL"
-msgstr "Blacklistencache TTL"
+msgid "Blocklist cache TTL"
+msgstr "Blocklistencache TTL"
 
 #: src/octoprint/templates/snippets/settings/server/serverPluginBlacklistUrl.jinja2:1
-msgid "Plugin blacklist URL. You should normally not have to change this."
+msgid "Plugin blocklist URL. You should normally not have to change this."
 msgstr ""
-"URL der Pluginblackliste. Du solltest hier normalerweise nichts ändern "
+"URL der Pluginblockliste. Du solltest hier normalerweise nichts ändern "
 "müssen."
 
 #: src/octoprint/templates/snippets/settings/server/serverPluginBlacklistUrl.jinja2:2
-msgid "Blacklist URL"
-msgstr "Blacklist-URL"
+msgid "Blocklist URL"
+msgstr "Blocklist-URL"
 
 #: src/octoprint/templates/snippets/settings/server/serverPluginTimings.jinja2:4
 msgid "Enable <code>plugintimings.log</code>"
