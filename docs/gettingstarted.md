@@ -1,5 +1,18 @@
 # Getting Started
 
+## What is OctoPrint?
+
+OctoPrint is a **server application** that provides a web interface to control a 3D printer.
+It usually runs on a small, always-on computer near the printer (e.g. a Raspberry Pi), but it can also run on a regular PC.
+
+### Typical setup
+
+- **OctoPrint server**: runs on a device near the printer (commonly a Raspberry Pi), but can also run on a regular PC; Docker is also an option
+- **3D printer**: connected to the server (usually via USB)
+- **Your computer/phone/tablet**: opens OctoPrint in a browser over the network
+
+This makes printing independent from your main computer.
+
 ## Installation
 
 Installation instructions for installing from source for different operating
