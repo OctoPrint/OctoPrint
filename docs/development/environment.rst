@@ -255,7 +255,7 @@ Visual Studio Code (vscode)
             "python.linting.flake8Enabled": false,
             "python.linting.enabled": true,
             "python.testing.unittestEnabled": false,
-            "python.testing.pytestEnabled": true,
+            "python.testing.pytestEnabled": true
         }
 
   tasks.json

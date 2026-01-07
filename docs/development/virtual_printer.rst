@@ -12,7 +12,7 @@ that may be hard to reproduce with a real printer.
 Enabling the virtual printer
 ----------------------------
 
-The virtual printer can be enabled through its Settings pane.
+The virtual printer can be enabled through its Settings panel.
 
 .. _sec-development-virtual-printer-config:
 
