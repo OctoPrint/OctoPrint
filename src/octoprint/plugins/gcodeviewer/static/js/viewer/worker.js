@@ -697,6 +697,50 @@ const doParse = async function () {
 
             activeToolOffset = toolOffsets[tool];
             if (!activeToolOffset) activeToolOffset = {x: 0, y: 0};
+        } else if (/^(?:M218)(\.\d+)?/i.test(line)) {
+            // M218 sets tool offset relative to tool 0. We need to parse these
+            // so the viewer visualizes multi-extruder prints correctly, as the
+            // offset may change mid-print or differ from the printer profile.
+            // Format: M218 T<index> X<offset> Y<offset>
+            // If T is omitted, applies to the currently active tool.
+            args = line.split(/\s+/);
+            var targetTool = tool;
+            var newX, newY;
+
+            for (j = 0; j < args.length; j++) {
+                if (!args[j]) continue;
+                argChar = args[j].charAt(0).toLowerCase();
+                switch (argChar) {
+                    case "t":
+                        targetTool = Number(args[j].slice(1));
+                        break;
+                    case "x":
+                        newX = Number(args[j].slice(1));
+                        break;
+                    case "y":
+                        newY = Number(args[j].slice(1));
+                        break;
+                }
+            }
+
+            // Initialize offset structure if not yet present
+            if (!toolOffsets[targetTool]) {
+                toolOffsets[targetTool] = {x: 0, y: 0};
+            }
+
+            // Update only the axes that were specified
+            if (newX !== undefined) {
+                toolOffsets[targetTool].x = newX;
+            }
+            if (newY !== undefined) {
+                toolOffsets[targetTool].y = newY;
+            }
+
+            // If we changed the offset of the currently active tool, update
+            // activeToolOffset immediately so subsequent moves use the new value
+            if (targetTool === tool) {
+                activeToolOffset = toolOffsets[targetTool];
+            }
         }
 
         if (typeof z !== "undefined" && z !== prevZ) {
