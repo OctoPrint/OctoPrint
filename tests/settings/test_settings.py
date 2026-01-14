@@ -523,6 +523,21 @@ class SettingsTest(unittest.TestCase):
 
             self.assertEqual("SOME STRING", value)
 
+    def test_get_preprocessor_parent_path(self):
+        with self.settings() as settings:
+            config = {}
+            defaults = {"foo_preprocessor": {"bar": "fnord"}}
+            preprocessors = {"foo_preprocessor": {"bar": lambda x: x.upper()}}
+
+            value = settings.get(
+                ["foo_preprocessor"],
+                config=config,
+                defaults=defaults,
+                preprocessors=preprocessors,
+            )
+
+            self.assertEqual("FNORD", value["bar"])
+
     def test_set_preprocessor(self):
         with self.settings() as settings:
             config = {}
@@ -532,6 +547,22 @@ class SettingsTest(unittest.TestCase):
             settings.set(
                 ["foo_preprocessor", "bar"],
                 "value",
+                config=config,
+                defaults=defaults,
+                preprocessors=preprocessors,
+            )
+
+            self.assertEqual("VALUE", config["foo_preprocessor"]["bar"])
+
+    def test_set_preprocessor_parent_path(self):
+        with self.settings() as settings:
+            config = {}
+            defaults = {"foo_preprocessor": {"bar": "fnord"}}
+            preprocessors = {"foo_preprocessor": {"bar": lambda x: x.upper()}}
+
+            settings.set(
+                ["foo_preprocessor"],
+                {"bar": "value"},
                 config=config,
                 defaults=defaults,
                 preprocessors=preprocessors,

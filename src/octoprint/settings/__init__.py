@@ -1844,6 +1844,24 @@ class Settings:
             current = current[key]
         return current
 
+    def _process_with_preprocessor(self, value, preprocessor):
+        if preprocessor is None:
+            return value
+
+        if callable(preprocessor):
+            return preprocessor(value)
+
+        if isinstance(preprocessor, dict) and isinstance(value, dict):
+            result = {}
+            for key, val in value.items():
+                if key in preprocessor:
+                    result[key] = self._process_with_preprocessor(val, preprocessor[key])
+                else:
+                    result[key] = val
+            return result
+
+        return value
+
     def _get_value(
         self,
         path,
@@ -1908,8 +1926,7 @@ class Settings:
                     # no default value, so nothing to merge
                     pass
 
-            if callable(preprocessor):
-                value = preprocessor(value)
+            value = self._process_with_preprocessor(value, preprocessor)
 
             if do_copy:
                 if isinstance(value, KeysView):
@@ -2175,8 +2192,7 @@ class Settings:
         except NoSuchSettingsPath:
             pass
 
-        if callable(preprocessor):
-            value = preprocessor(value)
+        value = self._process_with_preprocessor(value, preprocessor)
 
         try:
             current = chain.get_by_path(path)
