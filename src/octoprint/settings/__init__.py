@@ -1844,7 +1844,7 @@ class Settings:
             current = current[key]
         return current
 
-    def _process_with_preprocessor(self, value, preprocessor):
+    def _preprocess_value(self, value, preprocessor):
         if preprocessor is None:
             return value
 
@@ -1853,11 +1853,8 @@ class Settings:
 
         if isinstance(preprocessor, dict) and isinstance(value, dict):
             result = {}
-            for key, val in value.items():
-                if key in preprocessor:
-                    result[key] = self._process_with_preprocessor(val, preprocessor[key])
-                else:
-                    result[key] = val
+            for k, v in value.items():
+                result[k] = self._preprocess_value(v, preprocessor.get(k))
             return result
 
         return value
@@ -1926,7 +1923,7 @@ class Settings:
                     # no default value, so nothing to merge
                     pass
 
-            value = self._process_with_preprocessor(value, preprocessor)
+            value = self._preprocess_value(value, preprocessor)
 
             if do_copy:
                 if isinstance(value, KeysView):
@@ -2192,7 +2189,7 @@ class Settings:
         except NoSuchSettingsPath:
             pass
 
-        value = self._process_with_preprocessor(value, preprocessor)
+        value = self._preprocess_value(value, preprocessor)
 
         try:
             current = chain.get_by_path(path)
