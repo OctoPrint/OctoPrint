@@ -363,6 +363,14 @@ class gcode:
         if len(offsets) < max_extruders:
             offsets += [(0, 0)] * (max_extruders - len(offsets))
 
+        def change_tool_offset(
+            old_offset: tuple[float, float], new_offset: tuple[float, float]
+        ):
+            pos.x -= old_offset[0]
+            pos.y -= old_offset[1]
+            pos.x += new_offset[0]
+            pos.y += new_offset[1]
+
         for line in gcodeFile:
             if self._abort:
                 raise AnalysisAborted(reenqueue=self._reenqueue)
@@ -734,6 +742,31 @@ class gcode:
                             fwrecoverTime = (fwretractDist + s) / f
                         else:
                             fwrecoverTime = 0
+            elif gcode == "M218":  # Inline tool offset definition
+                t = getCodeInt(line, "T")
+                if t is not None and t > max_extruders:
+                    self._logger.warning(
+                        f"GCODE tried to change offset for tool {t}, that's outside of our extruder range, ignoring for GCODE analysis"
+                    )
+                else:
+                    if t is None:
+                        t = currentExtruder
+
+                    current_offset = offsets[t]
+
+                    x = getCodeFloat(line, "X")
+                    if x is None:
+                        x = current_offset[0]
+
+                    y = getCodeFloat(line, "Y")
+                    if y is None:
+                        y = current_offset[1]
+
+                    offsets[t] = (x, y)
+
+                    if t == currentExtruder:
+                        change_tool_offset(current_offset, offsets[t])
+
             elif gcode == "M605":  # Duplication/Mirroring mode
                 s = getCodeInt(line, "S")
                 if s in [2, 4, 5, 6]:
@@ -747,35 +780,21 @@ class gcode:
             elif tool is not None:
                 if tool > max_extruders:
                     self._logger.warning(
-                        "GCODE tried to select tool %d, that looks wrong, ignoring for GCODE analysis"
-                        % tool
+                        f"GCODE tried to select tool {tool}, that's outside of our extruder range, ignoring for GCODE analysis"
                     )
                 elif tool == currentExtruder:
                     pass
                 else:
-                    pos.x -= (
-                        offsets[currentExtruder][0]
+                    old_offset = (
+                        offsets[currentExtruder]
                         if currentExtruder < len(offsets)
-                        else 0
+                        else (0.0, 0.0)
                     )
-                    pos.y -= (
-                        offsets[currentExtruder][1]
-                        if currentExtruder < len(offsets)
-                        else 0
-                    )
+                    new_offset = offsets[tool] if tool < len(offsets) else (0.0, 0.0)
+
+                    change_tool_offset(old_offset, new_offset)
 
                     currentExtruder = tool
-
-                    pos.x += (
-                        offsets[currentExtruder][0]
-                        if currentExtruder < len(offsets)
-                        else 0
-                    )
-                    pos.y += (
-                        offsets[currentExtruder][1]
-                        if currentExtruder < len(offsets)
-                        else 0
-                    )
 
                     if len(currentE) <= currentExtruder:
                         for _ in range(len(currentE), currentExtruder + 1):
