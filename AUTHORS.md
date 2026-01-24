@@ -192,6 +192,7 @@ date of first contribution):
   * [Emmanuel Ferdman](https://github.com/emmanuel-ferdman)
   * [Will Schlitzer](https://github.com/willschlitzer)
   * [John Brady](https://github.com/bradyjoh)
+  * [Ian Weyenberg](https://github.com/eeyon)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
