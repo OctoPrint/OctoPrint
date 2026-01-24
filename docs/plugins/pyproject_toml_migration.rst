@@ -49,7 +49,7 @@ or ``uv tool run``:
 
    uv tool run octoprint-plugin-tool
 
-Note that it requires Python 3.9 and newer.
+Note that it requires Python 3.10 and newer.
 
 OctoPrint 1.12.0 will also include it and offer its functionality on its command line:
 
