@@ -774,11 +774,11 @@ def _test_url(data):
         content_type_allowlist = list(
             map(util.parse_mime_type, data["content_type_allowlist"])
         )
-    if "content_type_blacklist" in data:
-        if not isinstance(data["content_type_whitelist"], (list, tuple)):
-            abort(400, description="content_type_blacklist must be a list of mime types")
+    if "content_type_blocklist" in data:
+        if not isinstance(data["content_type_blocklist"], (list, tuple)):
+            abort(400, description="content_type_blocklist must be a list of mime types")
         content_type_blocklist = list(
-            map(util.parse_mime_type, data["content_type_blacklist"])
+            map(util.parse_mime_type, data["content_type_blocklist"])
         )
 
     response_result = None
