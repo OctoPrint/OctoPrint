@@ -849,9 +849,7 @@ def _saveSettings(data):
 
         sanitized = [sanitize_control(item) for item in data["controls"]]
         if any(x is None for x in sanitized):
-            logging.getLogger(
-                "There were invalid custom controls provided, not saving..."
-            )
+            logger.error("There were invalid custom controls provided, not saving...")
         else:
             s.set(["controls"], data["controls"])
 
