@@ -172,7 +172,7 @@ def activate_command(ctx, username):
 
         user = ctx.obj.user_manager.find_user(username)
         if user:
-            click.echo("User created:")
+            click.echo("User status:")
             click.echo(f"\t{_user_to_line(user.asDict())}")
     except UnknownUser:
         click.echo(f"User {username} does not exist!", err=True)
@@ -182,14 +182,14 @@ def activate_command(ctx, username):
 @click.argument("username", type=click.STRING)
 @click.pass_context
 def deactivate_command(ctx, username):
-    """Activate a user account."""
+    """Deactivate a user account."""
     try:
         ctx.obj.user_manager.change_user_activation(username, False)
-        click.echo(f"User {username} activated.")
+        click.echo(f"User {username} deactivated.")
 
         user = ctx.obj.user_manager.find_user(username)
         if user:
-            click.echo("User created:")
+            click.echo("User status:")
             click.echo(f"\t{_user_to_line(user.asDict())}")
     except UnknownUser:
         click.echo(f"User {username} does not exist!", err=True)
