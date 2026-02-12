@@ -1271,7 +1271,7 @@ class FileManager:
             if callable(progress_callback):
                 progress_callback(failed=True)
             raise StorageError(
-                "Unexpected error while adding file to storage {destination_storage}",
+                f"Unexpected error while adding file to storage {destination_storage}",
                 code=StorageError.UNKNOWN,
                 cause=exc,
             ) from exc

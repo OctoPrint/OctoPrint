@@ -2040,7 +2040,7 @@ class Settings:
                 return floatValue
         except ValueError:
             self._logger.warning(
-                "Could not convert %r to a valid integer when getting option %r"
+                "Could not convert %r to a valid float when getting option %r"
                 % (value, path)
             )
             return None
@@ -2296,7 +2296,7 @@ class Settings:
                 floatValue = maximum
         except ValueError:
             self._logger.warning(
-                "Could not convert %r to a valid integer when setting option %r"
+                "Could not convert %r to a valid float when setting option %r"
                 % (value, path)
             )
             return

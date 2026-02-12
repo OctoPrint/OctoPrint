@@ -1567,7 +1567,7 @@ def _abortWithException(error):
         elif error.code == StorageError.INVALID_DESTINATION:
             abort(400, description="Destination is invalid")
         elif error.code == StorageError.DOES_NOT_EXIST:
-            abort(404, description="Does not exit")
+            abort(404, description="Does not exist")
         elif error.code == StorageError.ALREADY_EXISTS:
             abort(409, description="File or folder already exists")
         elif error.code == StorageError.SOURCE_EQUALS_DESTINATION:

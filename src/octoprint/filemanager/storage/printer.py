@@ -290,7 +290,7 @@ class PrinterFileStorage(StorageInterface):
 
         for f in files:
             if f.path.startswith(path + "/") and not recursive:
-                raise StorageError("{path} is not empty", code=StorageError.NOT_EMPTY)
+                raise StorageError(f"{path} is not empty", code=StorageError.NOT_EMPTY)
 
         try:
             self._connection.delete_printer_folder(path, recursive=recursive)
