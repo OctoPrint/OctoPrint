@@ -1356,7 +1356,7 @@ def _set_serial_settings(data: dict[str, Any]):
             value = "ignore"
         else:
             value = "cancel"
-        s.set(["plugins", "serial_connecetor", "errorHandling"], value)
+        s.set(["plugins", "serial_connector", "errorHandling"], value)
     if "triggerOkForM29" in data:
         s.setBoolean(
             ["plugins", "serial_connector", "triggerOkForM29"], data["triggerOkForM29"]
