@@ -5524,7 +5524,7 @@ class MachineCom:
         if match:
             interval = int(match.group("value"))
             self._pos_autoreporting = self._firmware_capabilities.get(
-                self.CAPABILITY_AUTOREPORT_SD_STATUS, False
+                self.CAPABILITY_AUTOREPORT_POS, False
             ) and (interval > 0)
 
     def _gcode_M33_sending(
