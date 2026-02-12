@@ -25,7 +25,7 @@ def check_v6():
             return False
 
         try:
-            socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+            socket.socket(socket.AF_INET6, socket.SOCK_STREAM).close()
         except Exception:
             # "[Errno 97] Address family not supported by protocol" or anything else really...
             return False
