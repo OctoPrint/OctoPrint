@@ -4996,7 +4996,7 @@ msgstr ""
 #: src/octoprint/plugins/uploadmanager/templates/uploadmanager.jinja2:47
 #: src/octoprint/templates/overlays/dragndrop.jinja2:7
 #: src/octoprint/templates/sidebar/files.jinja2:78
-msgid "Upload to SD"
+msgid "Upload to printer SD card"
 msgstr ""
 
 #: src/octoprint/plugins/uploadmanager/templates/uploadmanager.jinja2:49
@@ -8727,7 +8727,7 @@ msgid "Cannot upload to printer's SD while printing"
 msgstr ""
 
 #: src/octoprint/templates/overlays/dragndrop.jinja2:7
-msgid "SD not initialized"
+msgid "Printer SD not initialized"
 msgstr ""
 
 #: src/octoprint/templates/overlays/offline.jinja2:9
@@ -8835,7 +8835,7 @@ msgid "Refresh file list"
 msgstr ""
 
 #: src/octoprint/templates/sidebar/files_header.jinja2:44
-msgid "SD Card operations"
+msgid "Printer SD Card operations"
 msgstr ""
 
 #: src/octoprint/templates/sidebar/files_header.jinja2:48
