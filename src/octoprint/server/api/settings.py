@@ -1108,7 +1108,7 @@ def _get_serial_settings():
         ),
         "alwaysSendChecksum": s.get(["plugins", "serial_connector", "sendChecksum"])
         == "always",
-        "neverSendChecksum": s.getBoolean(["plugins", "serial_connector", "sendChecksum"])
+        "neverSendChecksum": s.get(["plugins", "serial_connector", "sendChecksum"])
         == "never",
         "sendChecksumWithUnknownCommands": s.getBoolean(
             ["plugins", "serial_connector", "sendChecksumWithUnknownCommands"]
