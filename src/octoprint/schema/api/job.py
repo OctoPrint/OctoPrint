@@ -15,7 +15,7 @@ class ApiJobFile(BaseModel):
 class ApiJobInfo(BaseModel):
     file: ApiJobFile
     estimatedPrintTime: Optional[float] = None
-    filament: Optional[dict[str, dict[str, float]]] = None
+    filament: Optional[dict[str, Optional[dict[str, float]]]] = None
     user: Optional[str] = None
 
 

@@ -74,12 +74,7 @@ def controlJob():
 def jobState():
     current_data = printer.get_current_data()
 
-    file_data = current_data["job"].get("job", {})
-
-    timestamp = None
-    date = file_data.get("date")
-    if date:
-        timestamp = date.astimezone(None).timestamp()
+    file_data = current_data["job"].get("file", {})
 
     file = apischema.ApiJobFile(
         name=file_data.get("name"),
@@ -87,7 +82,7 @@ def jobState():
         display=file_data.get("display"),
         origin=file_data.get("origin"),
         size=file_data.get("size"),
-        date=timestamp,
+        date=file_data.get("date"),
     )
 
     job_data = current_data["job"]
@@ -101,7 +96,7 @@ def jobState():
     progress = apischema.ApiProgressInfo(**current_data["progress"])
 
     response = apischema.ApiJobResponse(
-        job, progress, state=current_data["state"]["text"]
+        job=job, progress=progress, state=current_data["state"]["text"]
     )
     if current_data["state"]["error"]:
         response.error = current_data["state"]["error"]
