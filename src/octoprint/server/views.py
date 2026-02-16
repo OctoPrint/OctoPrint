@@ -1812,10 +1812,8 @@ def _compute_date(files):
 
     if max_timestamp:
         # we set the micros to 0 since microseconds are not speced for HTTP
-        max_timestamp = (
-            datetime.fromtimestamp(max_timestamp)
-            .replace(microsecond=0)
-            .replace(tzinfo=UTC_TZ)
+        max_timestamp = datetime.fromtimestamp(max_timestamp, tz=UTC_TZ).replace(
+            microsecond=0
         )
     return max_timestamp
 
