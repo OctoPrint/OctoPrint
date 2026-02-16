@@ -26,8 +26,8 @@ $(function () {
         );
 
         self.onConnectionDataReceived = (parameters, current, last, preferred) => {
-            const ports = parameters.serial.port;
-            const baudrates = parameters.serial.baudrate;
+            const ports = parameters.serial.ports;
+            const baudrates = parameters.serial.baudrates;
 
             const currentPort =
                 current.connector === "serial" ? current.parameters.port : undefined;

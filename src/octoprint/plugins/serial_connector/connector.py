@@ -55,7 +55,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
     @classmethod
     def connection_options(cls) -> dict:
-        return {"port": serialList(), "baudrate": baudrateList()}
+        return {"ports": serialList(), "baudrates": baudrateList()}
 
     @classmethod
     def connection_preconditions_met(cls, params: dict[str, Any]) -> bool:
