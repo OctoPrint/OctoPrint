@@ -48,6 +48,8 @@ def add_group():
         abort(400, description="name is missing")
     if "permissions" not in data:
         abort(400, description="permissions are missing")
+    if "subgroups" not in data:
+        abort(400, description="subgroups are missing")
 
     key = data["key"]
     name = data["name"]
