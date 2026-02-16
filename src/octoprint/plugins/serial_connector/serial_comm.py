@@ -3893,7 +3893,7 @@ class MachineCom:
 
     def _get_communication_timeout_interval(self):
         # special rules during serial detection
-        if self._state != self.STATE_DETECT_SERIAL:
+        if self._state == self.STATE_DETECT_SERIAL:
             if self._detection_retry == 0:
                 # first try
                 return self._timeout_intervals.get("detectionFirst", 10.0)
