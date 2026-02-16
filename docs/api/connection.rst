@@ -155,7 +155,7 @@ Issue a connection command
 
       .. http:post:: /api/connection
 
-         Issue a connection command. Currently available command are:
+         Issue a connection command. Currently available commands are:
  
          connect
            Instructs OctoPrint to connect or, if already connected, reconnect to the printer. Additional parameters are:
@@ -263,7 +263,7 @@ Issue a connection command
 
       .. http:post:: /api/connection
 
-         Issue a connection command. Currently available command are:
+         Issue a connection command. Currently available commands are:
 
          connect
            Instructs OctoPrint to connect or, if already connected, reconnect to the printer. Additional parameters are:

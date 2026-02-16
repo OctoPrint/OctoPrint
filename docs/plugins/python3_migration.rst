@@ -89,7 +89,7 @@ your target compatibility range for now.
    plugins as compatible and then open support requests if that causes issues in your setup.
 
 Once your plugin is ensured to be compatible and you've released a new version that includes the necessary compatibility
-flag and changes, is done you also need to mark up your plugin in the Official Plugin Repository (if it's registered
+flag and changes, you also need to mark up your plugin in the Official Plugin Repository (if it's registered
 therein) so that OctoPrint's built-in Plugin Manager will see that your plugin is compatible as well and allow users
 to install it through it. In order to do that, you need to add a new flag compatibility.python to the front matter in
 your plugin registration file and file a pull request for that. Adjust the markdown file so that it contains this:
@@ -97,7 +97,7 @@ your plugin registration file and file a pull request for that. Adjust the markd
 .. code-block:: yaml
 
    compatibility:
-     python: ">=3.7,<3"
+     python: ">=3.7,<4"
 
 .. warning::
 
@@ -251,7 +251,7 @@ Checklist
 As a summary, follow this checklist to migrate your plugin to be compatible to both Python 2 and 3:
 
 * Create a Python 3 virtualenv and install OctoPrint and your plugin into it for testing.
-* Tell OctoPrint your plugin is Python 3 compatible by adding a new property ``__plugin_pycompat__`` to its
+* Tell OctoPrint your plugin is Python 3 compatible by adding a new property ``__plugin_pythoncompat__`` to its
   ``__init__.py``:
 
   .. code-block:: python
@@ -261,7 +261,7 @@ As a summary, follow this checklist to migrate your plugin to be compatible to b
 * Thoroughly test your plugin under Python 3. Pay special attention to any kind of string handling issues, integer
   division, relative imports from your plugin package and how the results of ``map``, ``filter`` and ``zip`` are
   used in your code, as those have proven to be the biggest issues during past migrations.
-* Once everything works Python 3 and you've prepared a new release of your plugin (don't forget to
+* Once everything works under Python 3 and you've prepared a new release of your plugin (don't forget to
   increment the version!), update your registration file in the Official Plugin Repository to include the correct
   Python compatibility information as well:
 

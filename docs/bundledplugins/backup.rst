@@ -225,7 +225,7 @@ octoprint.plugin.backup.after_restore
    the backup restoration failed.
 
    Arguments:
-      error (bool): Whether the backup creation failed or not
+      error (bool): Whether the backup restoration failed or not
 
 .. _sec-bundledplugins-backup-helpers:
 

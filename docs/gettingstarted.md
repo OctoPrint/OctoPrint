@@ -82,7 +82,7 @@ e.g.:
     octoprint serve --config /path/to/another/config.yaml --basedir /path/to/my/basedir
 
 To start OctoPrint in safe mode - which disables all third party plugins that do not come bundled with OctoPrint - use
-the ``--safe`` flag:
+the `--safe` flag:
 
     octoprint serve --safe
 

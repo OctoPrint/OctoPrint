@@ -144,7 +144,7 @@
 
    Sets the current flowrate multiplier.
 
-   ``factor`` is expected to be a integer value >0 representing the new flowrate percentage.
+   ``factor`` is expected to be an integer value >0 representing the new flowrate percentage.
 
    See the ``flowrate`` command in :ref:`Issue a tool command <sec-api-printer-toolcommand>` for more details.
 
@@ -222,7 +222,7 @@
        or not (``false``), defaults to it not being included
      * ``limit``: an integer value to specify how many history entries to include
 
-   See :ref:`Retrieve the current bed state <sec-api-printer-chamberstate>` for more details.
+   See :ref:`Retrieve the current chamber state <sec-api-printer-chamberstate>` for more details.
 
    :param object flags: Flags that further specify which data to retrieve, see above for details
    :param object opts: Additional options for the request
@@ -281,7 +281,7 @@
 
    .. code-block:: javascript
 
-      OctoPrint.printer.jog({"x", 10.0});
+      OctoPrint.printer.jog({"x": 10.0});
 
    Jog Y by -5mm and Z by 0.2mm.
 
@@ -325,7 +325,7 @@
 
    Sets the feedrate multiplier to use.
 
-   ``factor`` is expected to be a integer value >0 representing the new feedrate percentage.
+   ``factor`` is expected to be an integer value >0 representing the new feedrate percentage.
 
    See the ``feedrate`` command in :ref:`Issue a print head command <sec-api-printer-printheadcommand>` for more details.
 

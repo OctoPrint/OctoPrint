@@ -36,7 +36,7 @@ If you enjoy OctoPrint, please consider becoming a regular supporter!**
 
 :::{note}
 This documentation currently focuses primarily on developers and less on end users. If you are interested in
-helping to change this, please get in touch [on the forum](https://community.octoprint.org/>)!
+helping to change this, please get in touch [on the forum](https://community.octoprint.org/)!
 :::
 
 :::{toctree}

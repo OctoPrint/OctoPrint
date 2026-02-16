@@ -16,8 +16,8 @@ Action commands are a feature defined for the GCODE based RepRap communication p
 
     **// action:command**
 
-    is allowed to be sent from the firmware[. T]he command can currently be pause, resume or disconnect which will
-    execute those commands on the host. As this is also a comment other hosts will just ignored these commands.
+    is allowed to be sent from the firmware. The command can currently be pause, resume or disconnect which will
+    execute those commands on the host. As this is also a comment other hosts will just ignore these commands.
 
 OctoPrint out of the box supports handling of the above mentioned commands:
 

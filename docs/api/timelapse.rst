@@ -43,7 +43,7 @@ Issue a command for an unrendered timelapse
 
 .. http:post:: /api/timelapse/unrendered/(string:name)
 
-   Current only supports to render the unrendered timelapse ``name`` via the
+   Current only supports rendering the unrendered timelapse ``name`` via the
    ``render`` command.
 
    Requires the ``TIMELAPSE_MANAGE_UNRENDERED`` permission.

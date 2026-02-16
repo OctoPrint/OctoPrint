@@ -73,7 +73,7 @@ List all registered system commands for a source
 
    Retrieves the configured system commands for the specified source.
 
-   The response will contain a list of :ref:`command definitions <sec-api-system-commands-definiton>`.
+   The response will contain a list of :ref:`command definitions <sec-api-system-commands-definition>`.
 
    **Example**
 
@@ -168,19 +168,19 @@ List all response
      - Description
    * - ``core``
      - 0..n
-     - List of :ref:`client command definitions <sec-api-client-system-commands-definiton>`
+     - List of :ref:`client command definitions <sec-api-client-system-commands-definition>`
      - List of all core commands defined.
    * - ``custom``
      - 0..n
-     - List of :ref:`client command definitions <sec-api-client-system-commands-definiton>`
+     - List of :ref:`client command definitions <sec-api-client-system-commands-definition>`
      - List of all custom commands defined in ``config.yaml``.
 
-.. _sec-api-client-system-commands-definiton:
+.. _sec-api-client-system-commands-definition:
 
 Client command definitions
 --------------------------
 
-A restricted form of the full :ref:`command definition <sec-api-system-commands-definiton>`.
+A restricted form of the full :ref:`command definition <sec-api-system-commands-definition>`.
 For exposing via the API.
 
 .. list-table::
@@ -215,7 +215,7 @@ For exposing via the API.
      - string
      - The URL of the command to use for executing it.
 
-.. _sec-api-system-commands-definiton:
+.. _sec-api-system-commands-definition:
 
 Command definition
 ------------------

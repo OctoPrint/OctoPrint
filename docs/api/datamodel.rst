@@ -49,7 +49,7 @@ Printer State
    * - ``flags.cancelling``
      - 1
      - Boolean
-     - ``true`` if the printer is currently printing and in the process of pausing, ``false`` otherwise
+     - ``true`` if the printer is currently printing and in the process of cancelling, ``false`` otherwise
    * - ``flags.sdReady``
      - 1
      - Boolean
@@ -242,7 +242,7 @@ Progress information
      - String
      - Origin of the current time left estimate. Can currently be either of:
 
-         * ``linear``: based on an linear approximation of the progress in file in bytes vs time
+         * ``linear``: based on a linear approximation of the progress in file in bytes vs time
          * ``analysis``: based on an analysis of the file
          * ``estimate``: calculated estimate after stabilization of linear estimation
          * ``average``: based on the average total from past prints of the same model against the same printer profile
@@ -606,11 +606,11 @@ Print Statistics
    * - ``averagePrintTime``
      - 1
      - Object
-     - Object that maps printer profile names to the last print time of the file, in seconds
+     - Object that maps printer profile names to the average time of the file, in seconds
    * - ``lastPrintTime``
      - 1
      - Object
-     - Object that maps printer profile names to the average print time of the file, in seconds
+     - Object that maps printer profile names to the last print print time of the file, in seconds
 
 .. _sec-api-datamodel-access:
 
@@ -665,7 +665,7 @@ User record
    * - ``permissions``
      - 0..n
      - List of :ref:`Permissions <sec-api-datamodel-access-permissions>`
-     - The list of permissions assigned to the user (note: this does not include implicit permissions inherit from groups).
+     - The list of permissions assigned to the user (note: this does not include implicit permissions inherited from groups).
 
 .. _sec-api-datamodel-access-permissions:
 

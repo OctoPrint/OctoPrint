@@ -315,7 +315,7 @@ Add a new printer profile
         }
       }
 
-.. _sec-api-printerporfiles-update:
+.. _sec-api-printerprofiles-update:
 
 Update an existing printer profile
 ==================================
@@ -414,7 +414,7 @@ Remove an existing printer profile
    If the profile to be deleted is the currently selected profile, a :http:statuscode:`409` will be
    returned.
 
-   Returns a :http:statuscode:`204` an empty body upon success.
+   Returns a :http:statuscode:`204` and an empty body upon success.
 
    Requires the ``SETTINGS`` permission.
 

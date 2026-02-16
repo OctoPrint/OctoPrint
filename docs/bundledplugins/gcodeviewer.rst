@@ -24,9 +24,12 @@ Configuring the plugin
 
 The plugin supports the following configuration keys:
 
-* ``mobileSizeThreshold``: Whether to also enable tracking on unreleased OctoPrint versions (anything not stable releases
-  or release candidates). Defaults to ``false``.
-* ``sizeThreshold``: Unique instance identifier, auto generated on first activation
+* ``mobileSizeThreshold``: Maximum file size for which the GCode Viewer will automatically load
+  the file for preview on mobile devices. If the file exceeds this threshold, the user will be
+  asked for confirmation before loading. Defaults to ``2MB``.
+* ``sizeThreshold``: Maximum file size for which the GCode Viewer will automatically load the
+  file for preview on desktop. If the file exceeds this threshold, the user will be asked for
+  confirmation before loading. Defaults to ``20MB``.
 * ``skipUntilThis``: If this string is provided the GCode Viewer will search for this string, and if found, skip all gcode up until this string. This can be used to skip prime nozzle gcode in the preview
 
 .. _sec-bundledplugins-gcodeviewer-sourcecode:

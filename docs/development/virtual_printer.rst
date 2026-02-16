@@ -19,7 +19,7 @@ The virtual printer can be enabled through its Settings panel.
 Virtual printer configuration options
 -------------------------------------
 
-There many configuration options via ``config.yaml`` for the virtual printer that allow you to fine-tune its behavior:
+There are many configuration options via ``config.yaml`` for the virtual printer that allow you to fine-tune its behavior:
 
 .. code-block:: yaml
 
@@ -194,7 +194,7 @@ There many configuration options via ``config.yaml`` for the virtual printer tha
        # Format string for M115 output.
        #
        # Placeholders:
-       # - firmare_name: The firmware name as defined in firmwareName
+       # - firmware_name: The firmware name as defined in firmwareName
        m115FormatString: "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0"
 
        # Whether to include capability report in M115 output

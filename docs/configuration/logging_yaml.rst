@@ -111,10 +111,10 @@ could redefine the formatters as follows:
 .. code-block:: yaml
 
    formatters:
-   simple:
-     format: "%(asctime)s - %(name)s - %(pathname)s%(filename)s#%(lineno)d - %(levelname)s - %(message)s"
-   colored:
-     format: "%(log_color)s%(asctime)s - %(name)s - %(pathname)s%(filename)s#%(lineno)d - %(levelname)s - %(message)s%(reset)s"
+     simple:
+       format: "%(asctime)s - %(name)s - %(pathname)s%(filename)s#%(lineno)d - %(levelname)s - %(message)s"
+     colored:
+       format: "%(log_color)s%(asctime)s - %(name)s - %(pathname)s%(filename)s#%(lineno)d - %(levelname)s - %(message)s%(reset)s"
 
 The possible keys for the logging format can be found in the
 :ref:`Python documentation on LogRecord attributes <logrecord-attributes>`.

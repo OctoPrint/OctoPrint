@@ -8,13 +8,13 @@ top-level module define a bunch of :ref:`control properties <sec-plugins-control
 metadata (like name, version etc of the plugin) as well as information on how to initialize the plugin and into what
 parts of the system the plugin will actually plug in to perform its job.
 
-There are three types of ways a plugin might attach itself to the system, through so called
+There are four types of ways a plugin might attach itself to the system, through so called
 :ref:`mixin <sec-plugins-mixins>` implementations, by attaching itself to specified
 :ref:`hook <sec-plugins-hooks>`, by offering :ref:`helper <sec-plugins-helpers>` functionality to be
 used by other plugins or by providing :ref:`settings overlays <sec-plugins-controlproperties-plugin_settings_overlay>`.
 
 Plugin mixin implementations will get a bunch of :ref:`properties injected <sec-plugins-mixins-injectedproperties>`
-by OctoPrint plugin system to help them work.
+by the OctoPrint plugin system to help them work.
 
 .. _sec-plugins-concept-lifecycle:
 

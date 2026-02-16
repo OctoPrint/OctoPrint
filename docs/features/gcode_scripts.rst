@@ -82,13 +82,13 @@ All GCODE scripts have access to the following template variables through the te
   to the corresponding temperature in degrees Celsius. Note that not all tools your printer has must necessarily be
   present here, neither must the heated bed - it depends on whether OctoPrint has values for a tool or the bed. Also
   note that ``actual`` and ``target`` might be ``None``.
-* ``last_fanspeed``: Last fan speed set. It contains the value taken from command (M106 and M107) sent through OctoPrint.
+* ``last_fanspeed``: Last fan speed set. It contains the value taken from commands (M106 and M107) sent through OctoPrint.
   The value might be ``None`` if no fan speed has been set.
 * ``relative_axes_requested``: If ``true``, relative axes coordinates were requested through OctoPrint using ``G91``. See the note below.
 * ``relative_extruder_requested``: If ``true``, relative extrusion coordinates were requested through OctoPrint, by sending ``M83``. See the note below.
 * ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
   and ``script.name`` respectively.
-* ``plugins``: An object containing variables provided by plugins (e.g ``plugins.myplugin.myvariable``)
+* ``plugins``: An object containing variables provided by plugins (e.g. ``plugins.myplugin.myvariable``)
 
 .. note::
 
@@ -225,7 +225,7 @@ to the persisted pause position on resume, making sure to also reset the extrude
 .. code-block:: jinja
    :caption: ``afterPrintPaused`` script
 
-   ; (optional) disable stepper inactivity timeout - uncomment if you printer disables steppers during pause and supports this command
+   ; (optional) disable stepper inactivity timeout - uncomment if your printer disables steppers during pause and supports this command
    ;M18 S0
 
    {% if pause_position.x is not none %}

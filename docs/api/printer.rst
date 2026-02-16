@@ -22,7 +22,7 @@ Bed
   See :ref:`sec-api-printer-bedcommand`.
 Chamber
   Chamber commands allow setting the temperature and temperature offset for the printer's heated chamber. Querying
-  the corresponding resource returns temperature information including an option history. Note that Chamber commands
+  the corresponding resource returns temperature information including an optional history. Note that Chamber commands
   are only available if the currently selected printer profile has a heated chamber.
   See :ref:`sec-api-printer-chambercommand`.
 SD card
@@ -72,7 +72,7 @@ Retrieve the current printer state
    Temperature information can also be made to include the printer's temperature history by supplying the ``history``
    query parameter. The amount of data points to return here can be limited using the ``limit`` query parameter.
 
-   Clients can specific a list of attributes to not return in the response (e.g. if they don't need it) via the
+   Clients can specify a list of attributes to not return in the response (e.g. if they don't need it) via the
    ``exclude`` query parameter.
 
    Returns a :http:statuscode:`200` with a :ref:`Full State Response <sec-api-printer-datamodel-fullstate>` in the
@@ -967,7 +967,7 @@ Issue an SD command
 
    release
      Releases the SD card from the printer. The reverse operation to ``init``. After issuing this command, the SD
-     card won't be available anymore, hence and operations targeting files stored on it will fail. Will return a :http:statuscode:`409`
+     card won't be available anymore, hence any operations targeting files stored on it will fail. Will return a :http:statuscode:`409`
      if the card has not been initialized yet (see the ``init`` command and :ref:`SD state <sec-api-printer-sdstate>`).
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.

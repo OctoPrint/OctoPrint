@@ -145,7 +145,7 @@
 
    :param string location: The location of the file to move, currently only "local" is supported
    :param string path: The path of the file or folder to move
-   :param string destination: The path of the parent to which to copy the file or folder
+   :param string destination: The path of the parent to which to move the file or folder
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 

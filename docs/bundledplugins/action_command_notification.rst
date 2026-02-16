@@ -57,5 +57,5 @@ To display the :ref:`above notification <fig-bundledplugins-action_command_notif
 Source code
 -----------
 
-The source of the Action Command Prompt Notification plugin is bundled with OctoPrint and can be found in
+The source of the Action Command Notification Support plugin is bundled with OctoPrint and can be found in
 its source repository under ``src/octoprint/plugins/action_command_notification``.

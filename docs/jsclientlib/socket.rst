@@ -9,7 +9,7 @@
 
    ``OctoPrintClient.socket.options.timeouts``
        A list of consecutive timeouts after which to attempt reconnecting to a
-       disconnected sockets, in seconds. Defaults to ``[1, 1, 2, 3, 5, 8, 13, 20, 40, 100]``.
+       disconnected socket, in seconds. Defaults to ``[1, 1, 2, 3, 5, 8, 13, 20, 40, 100]``.
        The default setting here makes the client slowly back off after the first couple of very
        fast connection attempts don't succeed, and give up after 10 tries.
 
@@ -121,7 +121,7 @@
    :js:func:`OctoPrint.socket.decreaseRate`.
 
    :param Number measured: Measured message round trip time
-   :param Number minimum: Upper round trip time limit for keeping the rate
+   :param Number maximum: Upper round trip time limit for keeping the rate
 
 .. js:function:: OctoPrintClient.socket.increaseRate()
 

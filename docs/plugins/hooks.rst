@@ -16,7 +16,7 @@ This control property is a dictionary consisting of the implemented hooks' names
 or a 2-tuple of hook callback and order value as value.
 
 Each hook defines a contract detailing the call parameters for the hook handler method and the expected return type.
-OctoPrint will call the hook with the define parameters and process the result depending on the hook.
+OctoPrint will call the hook with the defined parameters and process the result depending on the hook.
 
 An example for a hook within OctoPrint is ``octoprint.comm.protocol.scripts``, which allows adding additional
 lines to OctoPrint's :ref:`GCODE scripts <sec-features-gcode_scripts>`, either as ``prefix`` (before the existing lines)
@@ -65,7 +65,7 @@ declares a custom hook "octoprint.plugin.softwareupdate.check_config" which othe
 to register themselves with the Software Update Plugin by returning their own update check configuration.
 
 If you want your hook handler to be an instance method of a mixin implementation of your plugin (for example since you
-need access to instance variables handed to your implementation via mixin invocations), you can get this work
+need access to instance variables handed to your implementation via mixin invocations), you can get this to work
 by using a small trick. Instead of defining it directly via ``__plugin_hooks__`` utilize the ``__plugin_load__``
 property instead, manually instantiate your implementation instance and then add its hook handler method to the
 ``__plugin_hooks__`` property and itself to the ``__plugin_implementation__`` property. See the following example.
@@ -82,9 +82,9 @@ Execution Order
 
 Hooks may also define an order number to allow influencing the execution order of the registered hook handlers. Instead
 of registering only a callback as hook handler, it is also possible to register a 2-tuple consisting of a callback and
-an integer value used for ordering handlers. They way this works is that OctoPrint will first sort all registered
-hook handlers with a order number, taking their identifier as the second sorting criteria, then after that append
-all hook handlers without a order number sorted only by their identifier.
+an integer value used for ordering handlers. The way this works is that OctoPrint will first sort all registered
+hook handlers with an order number, taking their identifier as the second sorting criteria, then after that append
+all hook handlers without an order number sorted only by their identifier.
 
 An example should help clear this up. Let's assume we have the following plugin ``ordertest`` which defines a new
 hook called ``octoprint.plugin.ordertest.callback``:
@@ -155,12 +155,12 @@ And these three plugins defining handlers for that hook:
        "octoprint.plugin.ordertest.callback": callback
    }
 
-Both ``orderedhook.py`` and ``anotherorderedhook.py`` not only define a handler callback in the hook registration,
+Both ``oneorderedhook.py`` and ``anotherorderedhook.py`` not only define a handler callback in the hook registration,
 but actually a 2-tuple consisting of a callback and an order number. ``yetanotherhook.py`` only defines a callback.
 
-OctoPrint will sort these hooks so that ``orderedhook`` will be called first, then ``anotherorderedhook``, then
-``yetanotherhook``. Just going by the identifiers, the expected order would be ``anotherorderedhook``, ``orderedhook``,
-``yetanotherhook``, but since ``orderedhook`` defines a lower order number (``1``) than ``anotherorderedhook`` (``2``),
+OctoPrint will sort these hooks so that ``oneorderedhook`` will be called first, then ``anotherorderedhook``, then
+``yetanotherhook``. Just going by the identifiers, the expected order would be ``anotherorderedhook``, ``oneorderedhook``,
+``yetanotherhook``, but since ``oneorderedhook`` defines a lower order number (``1``) than ``anotherorderedhook`` (``2``),
 it will be sorted before ``anotherorderedhook``. If you copy those files into your ``~/.octoprint/plugins`` folder
 and start up OctoPrint, you'll see output like this:
 
@@ -766,7 +766,7 @@ This actually describes four hooks:
    :param str phase: The current phase in the command progression, either ``queuing``, ``queued``, ``sending`` or
        ``sent``. Will always match the ``<phase>`` of the hook.
    :param str cmd: The GCODE command for which the hook was triggered. This is the full command as taken either
-       from the currently streamed GCODE file or via other means (e.g. user input our status polling).
+       from the currently streamed GCODE file or via other means (e.g. user input or status polling).
    :param str cmd_type: Type of command, e.g. ``temperature_poll`` for temperature polling or ``sd_status_poll`` for SD
        printing status polling.
    :param str gcode: Parsed GCODE command, e.g. ``G0`` or ``M110``, may also be None if no known command could be parsed
@@ -1241,7 +1241,7 @@ octoprint.printer.additional_state_data
    on the push socket or other registered :class:`octoprint.printer.PrinterCallback`. Anything you return here
    will be located beneath ``plugins.<your plugin id>`` in the resulting initial and current data push structure.
 
-   The ``initial`` parameter will be ``True`` if this the additional update sent to the callback. Your handler should
+   The ``initial`` parameter will be ``True`` if this is the initial update sent to the callback. Your handler should
    return a ``dict``, or ``None`` if nothing should be included.
 
    .. warning::
@@ -1301,7 +1301,7 @@ octoprint.printer.handle_connect
 
    Allows plugins to perform actions upon connecting to a printer. By returning ``True``,
    plugins may also prevent further processing of the connect command. This hook is of
-   special interest if your plugin needs a connect from going through under certain
+   special interest if your plugin needs a connection from going through under certain
    circumstances or if you need to do something before a connection to the printer is
    established (e.g. switching on power to the printer).
 
@@ -1490,7 +1490,7 @@ octoprint.server.http.access_validator
 
    Allows adding additional access validators to the default tornado routers.
 
-   Your plugin might need to this to restrict access to downloads and webcam snapshots further.
+   Your plugin might need this to restrict access to downloads and webcam snapshots further.
 
    .. important::
 

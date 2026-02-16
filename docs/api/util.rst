@@ -21,7 +21,7 @@ Various tests
    .. _sec-api-util-test-path:
 
    path
-     Tests whether or provided path exists and optionally if it also is either a file
+     Tests whether the provided path exists and optionally if it also is either a file
      or a directory and whether OctoPrint's user has read, write and/or execute permissions
      on it. Supported parameters are:
 
@@ -34,7 +34,7 @@ Various tests
          OctoPrint to create the target ``path`` as a directory if it doesn't yet exist to allow
          for further tests.
        * ``check_writable_dir``: If ``check_type`` is provided and set to ``dir``, this will
-         check that the provided ``path`` is a writable directory. OctoPrint not only check if the
+         check that the provided ``path`` is a writable directory. OctoPrint will not only check if the
          permissions on the directory allow for writing but also attempt to write (and delete) a
          small test file ``.testballoon.txt`` to the directory to test if writing is actually
          possible.
@@ -70,7 +70,7 @@ Various tests
            * ``error``: Status codes from 400 to 599
            * ``any``: Any status code starting from 100
 
-         The test will past the status code check if the status returned by the URL is within any of
+         The test will pass the status code check if the status returned by the URL is within any of
          the specified ranges.
        * ``response``: If set to either ``true``, ``json`` or ``bytes``, the response body and the response headers
          from the URL check will be returned as part of the check result as well. ``json`` will attempt

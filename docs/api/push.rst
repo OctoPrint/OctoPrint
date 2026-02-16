@@ -66,7 +66,7 @@ OctoPrint's SockJS socket also accepts three commands from the client to the ser
   * ``events``: Either a boolean value indicating whether to generally receive event messages, or a list of event
     types to receive event messages for.
 
-  If you send a ``subscribe`` message, OctoPrint will default the connection to not subscribe you to anything you did't explicitly
+  If you send a ``subscribe`` message, OctoPrint will default the connection to not subscribe you to anything you didn't explicitly
   request. ``subscribe`` messages do replace previous ones.
 
   Example for a ``subscribe`` message subscribing only to updates from plugin ``example`` but neither state nor events:

@@ -306,13 +306,13 @@ Fetch list of existing application keys
    Fetches a list of existing application keys and pending requests registered in the system for the current user.
 
    If the additional optional parameter ``all`` is provided and the user has the ``PLUGIN_APPKEYS_ADMIN`` permission, fetches a list
-   of *all** application keys and pending requests registered in the system for any user.
+   of *all* application keys and pending requests registered in the system for any user.
 
    If the additional optional parameter ``app`` is provided, only the key for the specified application identifier and the
-   current user will be returned. A user with the ``PLUGIN_APPKEYS_ADMIN``permission may also specify the ``user`` parameter
+   current user will be returned. A user with the ``PLUGIN_APPKEYS_ADMIN`` permission may also specify the ``user`` parameter
    to fetch the key for the specified application identifier and a different user.
 
-   Returns a :http:statuscode:`200` with a :ref:`List response <sec-bundledplugins-appkey-datamodel-listreponse>` in the
+   Returns a :http:statuscode:`200` with a :ref:`List response <sec-bundledplugins-appkey-datamodel-listresponse>` in the
    body upon success.
 
    :query all: Fetch all application keys and pending requests from all users. Requires the ``PLUGIN_APPKEYS_ADMIN`` permission.
@@ -417,7 +417,7 @@ Issue an application key command
 
    :json string command: The command to issue, either ``revoke`` or ``generate``
    :json string app:     ``revoke`` & ``generate`` commands: The application identifier of the key to revoke or generate.
-   :json string user:    ``revoke`` & ``generate`` commands: The user name for which to revoke or generated a key associated with the provided
+   :json string user:    ``revoke`` & ``generate`` commands: The user name for which to revoke or generate a key associated with the provided
                          app id. If not provided, the current user's name will be used.
    :json string key:     ``revoke`` command: The key to revoke. Revoking by providing the key itself has been deprecated
                          as of OctoPrint 1.10.0. Use ``app`` and optionally ``user`` instead.
@@ -509,9 +509,9 @@ Decision request
    * - ``decision``
      - 1
      - boolean
-     - ``True`` if the access request it to be granted, ``False`` otherwise
+     - ``True`` if the access request is to be granted, ``False`` otherwise
 
-.. _sec-bundledplugins-appkey-datamodel-listreponse:
+.. _sec-bundledplugins-appkey-datamodel-listresponse:
 
 List response
 .............

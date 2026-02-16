@@ -14,7 +14,7 @@ key can be either the globally configured one, a user specific one or an app and
 authorization workflow implemented by the bundled :ref:`Application Keys Plugin <sec-bundledplugins-appkeys>` (since 1.3.10).
 
 Clients are advised to implement the :ref:`Application Keys Plugin workflow <sec-bundledplugins-appkeys-workflow>` first and
-fallback on directing the user to manually supply the the user specific API key. The global key is deprecated, will be removed 
+fallback on directing the user to manually supply the user specific API key. The global key is deprecated, will be removed 
 in 1.13.0 and should no longer be used.
 
 The API key must either be supplied in the custom HTTP header ``X-Api-Key``, e.g.

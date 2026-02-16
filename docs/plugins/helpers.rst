@@ -37,7 +37,7 @@ which provides its SSDP browsing and Zeroconf browsing and publishing functions 
            ))
 
 An example of how to use helpers can be found in the `Growl Plugin <https://github.com/OctoPrint/OctoPrint-Growl>`_.
-Using :meth:`~octoprint.plugin.code.PluginManager.get_helpers` plugins can retrieve exported helper methods and call
+Using :meth:`~octoprint.plugin.core.PluginManager.get_helpers` plugins can retrieve exported helper methods and call
 them as (hopefully) documented.
 
 .. code-block:: python

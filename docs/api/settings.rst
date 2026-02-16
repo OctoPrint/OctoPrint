@@ -86,7 +86,7 @@ Regenerate the system wide API key
    :status 200:     No error
    :status 403:     No admin rights
 
-.. _sec-api-settings-fetchtemplaatedata:
+.. _sec-api-settings-fetchtemplatedata:
 
 Fetch template data
 ===================

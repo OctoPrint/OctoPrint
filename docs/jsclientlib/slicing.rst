@@ -12,7 +12,7 @@
 
 .. js:function:: OctoPrintClient.slicing.listProfilesForSlicer(slicer, opts)
 
-   Retrieves of all slicing profiles for the specified ``slicer``.
+   Retrieves a list of all slicing profiles for the specified ``slicer``.
 
    :param string slicer: The identifier of the slicer for which to retrieve the profiles
    :param object opts: Additional options for the request

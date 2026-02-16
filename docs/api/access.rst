@@ -60,7 +60,7 @@ Add a new group
    Requires the ``SETTINGS`` permission and a recent credentials check.
 
    :json key:         The group's identifier
-   :json name:        The user's name
+   :json name:        The group's name
    :json description: A human readable description of the group
    :json permissions: The permissions to assign to the group
    :json subgroups:   Subgroups assigned to the group
@@ -407,11 +407,11 @@ Group registration request
    * - ``permissions``
      - 1..n
      - List of string
-     - A list of identifier's of permissions to assign to the group
+     - A list of identifiers of permissions to assign to the group
    * - ``subgroups``
      - 0..n
      - List of string
-     - A list of identifier's of groups to assign to the group as subgroups
+     - A list of identifiers of groups to assign to the group as subgroups
    * - ``default``
      - 0..1
      - boolean
@@ -437,11 +437,11 @@ Group update request
    * - ``permissions``
      - 1..n
      - List of string
-     - A list of identifier's of permissions to assign to the group
+     - A list of identifiers of permissions to assign to the group
    * - ``subgroups``
      - 0..n
      - List of string
-     - A list of identifier's of groups to assign to the group as subgroups
+     - A list of identifiers of groups to assign to the group as subgroups
    * - ``default``
      - 0..1
      - boolean

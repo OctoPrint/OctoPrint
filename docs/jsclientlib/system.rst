@@ -1,4 +1,4 @@
-.. sec-jsclientlib-system:
+.. _sec-jsclientlib-system:
 
 :mod:`OctoPrintClient.system`
 -----------------------------

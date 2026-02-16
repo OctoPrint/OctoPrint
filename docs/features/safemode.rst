@@ -13,7 +13,7 @@ packs instead of OctoPrint itself.
 
 To allow an easier identification of these cases, OctoPrint 1.3.0 introduced safe mode. Starting
 OctoPrint in safe mode disables all plugins (and starting with 1.3.13 also all language packs) that are
-not bundled with OctoPrint, allowing to easier identify most cases where a third party plugin or language
+not bundled with OctoPrint, allowing to more easily identify most cases where a third party plugin or language
 pack is the culprit of an observed issue.
 
 Additionally, OctoPrint allows uninstalling plugins and language packs in this mode, allowing recovery

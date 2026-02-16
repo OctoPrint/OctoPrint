@@ -11,7 +11,7 @@ in order to provide custom functionality.
 Registering custom viewmodels
 -----------------------------
 
-Register your view model with OctoPrint's web app by pushing a config object unto the global array ``OCTOPRINT_VIEWMODELS``.
+Register your view model with OctoPrint's web app by pushing a config object onto the global array ``OCTOPRINT_VIEWMODELS``.
 
 Possible properties in this config object are:
 

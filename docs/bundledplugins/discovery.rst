@@ -77,7 +77,7 @@ announce itself as. Each entry supports the following fields:
 * ``service``: The service to announce, this is the only obligatory field
 * ``name``: The name to announce, defaults to the OctoPrint instance name if not
   supplied
-* ``port``: The port to announce, defaults to the OctoPrint was started under if
+* ``port``: The port to announce, defaults to the port OctoPrint was started under if
   not supplied
 * ``txt_record``: The TXT record to publish with the DNS-SD record, should be a
   map of keys and associated values.

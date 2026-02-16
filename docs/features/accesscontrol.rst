@@ -69,7 +69,7 @@ While access control cannot be disabled as of OctoPrint 1.5+, the Autologin feat
 be used to bypass authentication for hosts on the network(s) that you trust.
 
 Starting with OctoPrint 1.5.0, OctoPrint makes enabled access control mandatory. This
-might be an inconvience for some who run OctoPrint in an isolated setup where a login is
+might be an inconvenience for some who run OctoPrint in an isolated setup where a login is
 not required to ensure security, at a benefit for a huge number of users out there who
 continue to underestimate or simply ignore the risk of keeping their OctoPrint instance
 unsecured and then happily exposing it on the public internet.

@@ -7,7 +7,7 @@ Over the course of this little tutorial we'll build a full fledged, installable 
 at some locations throughout OctoPrint and also offers some other basic functionality to give you an idea of what
 you can achieve with OctoPrint's plugin system.
 
-First of all let use make sure that you have OctoPrint checked out and set up for development on your local
+First of all let us make sure that you have OctoPrint checked out and set up for development on your local
 development environment::
 
   $ cd ~/devel
@@ -74,7 +74,7 @@ Saving this as ``helloworld.py`` in ``~/.octoprint/plugins`` yields you somethin
 
 .. note::
 
-   For Linux, the plugin folder be ``~/.octoprint/plugins``. For Windows it will be ``%APPDATA%/OctoPrint/plugins`` and for
+   For Linux, the plugin folder will be ``~/.octoprint/plugins``. For Windows it will be ``%APPDATA%/OctoPrint/plugins`` and for
    Mac ``~/Library/Application Support/OctoPrint/plugins``.
 
 OctoPrint found that plugin in the folder and took a look into it. The name and the version it displays in that log
@@ -121,7 +121,7 @@ used :func:`~octoprint.plugin.StartupPlugin.on_startup` instead, in which case o
 up and ready to serve requests.
 
 You'll also note that we are using ``self._logger`` for logging. Where did that one come from? OctoPrint's plugin system
-injects :ref:`a some useful objects <sec-plugins-mixins-injectedproperties>` into our plugin implementation classes,
+injects :ref:`some useful objects <sec-plugins-mixins-injectedproperties>` into our plugin implementation classes,
 one of those being a fully instantiated :py:mod:`python logger <logging>` ready to be
 used by your plugin. As you can see in the log output above, that logger uses the namespace ``octoprint.plugins.helloworld``
 for our little plugin here, or more generally ``octoprint.plugins.<plugin identifier>``.
@@ -459,8 +459,8 @@ Remember that Wikipedia link we added to our little link in the navigation bar? 
 what if we want to allow our users to adjust that according to their wishes, e.g. to link to the German language node
 about "Hello World" programs instead?
 
-To allow your users to customized the behaviour of your plugin you'll need to implement the :class:`~octoprint.plugin.SettingsPlugin`
-mixin and override it's :func:`~octoprint.plugin.SettingsPlugin.get_settings_defaults` method. We'll save the URL to
+To allow your users to customize the behaviour of your plugin you'll need to implement the :class:`~octoprint.plugin.SettingsPlugin`
+mixin and override its :func:`~octoprint.plugin.SettingsPlugin.get_settings_defaults` method. We'll save the URL to
 inject into the link under the key ``url`` in our plugin's settings and set it to the old value by default. We'll therefore
 return just a single key in our default settings dictionary. To be able to quickly see if we've done that right we'll
 extend our little startup message to also log the current setting to the console. We can access that via ``self._settings``,
@@ -650,7 +650,7 @@ More frontend fun: Adding custom javascript to your frontend components
 In the previous section we set that ``custom_bindings`` parameter to ``False`` since we wanted OctoPrint to bind the
 ``SettingsViewModel`` to our settings dialog and the ``NavigationViewModel`` to our entry in the nav bar.
 
-But what if we want to define our own, with more functionality that is already available? Let's take a look. We'll now
+But what if we want to define our own, with more functionality than is already available? Let's take a look. We'll now
 add an additional UI component to our OctoPrint interface, a custom tab. It will act as a little internal web browser,
 showing the website behind the URL from the settings in an IFrame but also allowing the user to load a different URL
 without having to change the settings.
@@ -822,7 +822,7 @@ We hardcoded some ``style`` on our ``iframe`` in line 6, to make it look a bit b
 located inside a stylesheet instead of directly inside our HTML template. Of course that's no problem, we'll just
 add a CSS file to our plugin's provided static assets.
 
-First we'll create a new folder within our plugin's ``static`` folder called ``css`` and within that folders a file
+First we'll create a new folder within our plugin's ``static`` folder called ``css`` and within that folder a file
 ``helloworld.css``. Our plugin's file structure should now look like this::
 
    octoprint_helloworld/
@@ -920,7 +920,7 @@ Restart OctoPrint, shift-reload your browser and take a look. Everything should 
 OctoPrint included our stylesheet and the style information for the ``iframe`` is taken from that instead of
 hardcoded in our template. Way better!
 
-Now, if you had something more complicated than just the couple of line of CSS we used here, you might want to use
+Now, if you had something more complicated than just the couple of lines of CSS we used here, you might want to use
 something like LESS for generating your CSS from. If you use `LESS <http://lesscss.org/>`_, which is what OctoPrint
 uses for that purpose, you can even put OctoPrint into a mode where it directly uses your LESS files instead of the
 generated CSS files (and compiles them on the fly in your browser using `lessjs <http://lesscss.org/#client-side-usage>`_),
@@ -1047,7 +1047,7 @@ Restart and shift-reload and take another look at the ``head``:
    </head>
 
 Now the CSS file is linked and no trace of the LESS links is left in the source. This should help to speed up your development
-tremendously when you have to work with complex stylesheets, just don't forgot to check the generated CSS file in with
+tremendously when you have to work with complex stylesheets, just don't forget to check the generated CSS file in with
 the rest of your plugin or people will miss it when trying to run your plugin!
 
 Remember when I mentioned that OctoPrint by default bundles all our assets for us? We adjusted our ``config.yaml`` to

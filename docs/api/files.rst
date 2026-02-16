@@ -125,8 +125,6 @@ Retrieve all files
 
    Recursively fetch all files and folders.
 
-   Fetch only the files and folders from the root folder.
-
    .. sourcecode:: http
 
       GET /api/files?recursive=true HTTP/1.1
@@ -597,7 +595,7 @@ Issue a file command
      Unselects the currently selected file for printing.
 
      Upon success, a status code of :http:statuscode:`204` and an empty body is returned. If no file is selected
-     or there already is an active print job, a :http:statuscode:`409` is returned. If path isn't ``current```
+     or there already is an active print job, a :http:statuscode:`409` is returned. If path isn't ``current``
      or the filename of the current selection, a :http:statuscode:`400` is returned
 
      Requires the ``FILES_SELECT`` permission.
