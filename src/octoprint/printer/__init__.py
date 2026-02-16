@@ -829,8 +829,8 @@ class PrinterMixin(CommonPrinterMixin):
             preferred = settings().get(["printerConnection", "preferred", "parameters"])
 
         connection_options = serial_connector.get_connection_options()
-        ports = connection_options.get("ports", [])
-        baudrates = connection_options.get("baudrates", [])
+        ports = connection_options.get("port", [])
+        baudrates = connection_options.get("baudrate", [])
 
         return {
             "ports": sorted(ports, key=natural_key),
