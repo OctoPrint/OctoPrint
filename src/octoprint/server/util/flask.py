@@ -590,7 +590,7 @@ class OctoPrintSessionInterface(flask.sessions.SecureCookieSessionInterface):
     def save_session(self, app, session, response):
         from octoprint.server.util import LoginMechanism
 
-        if session.get("_login_mechanism") == LoginMechanism.APIKEY:
+        if session.get("login_mechanism") == LoginMechanism.APIKEY:
             return
         return super().save_session(app, session, response)
 
