@@ -606,7 +606,7 @@ Print Statistics
    * - ``averagePrintTime``
      - 1
      - Object
-     - Object that maps printer profile names to the average time of the file, in seconds
+     - Object that maps printer profile names to the average print time of the file, in seconds
    * - ``lastPrintTime``
      - 1
      - Object
