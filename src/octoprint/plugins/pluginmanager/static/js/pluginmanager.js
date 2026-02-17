@@ -854,7 +854,7 @@ $(function () {
                     deferred.reject();
                 })
                 .done(function (data) {
-                    self.fromOrphanResponse(data.orphans);
+                    self.fromOrphanResponse(data.orphan_data);
                     deferred.resolveWith(data);
                 });
 
