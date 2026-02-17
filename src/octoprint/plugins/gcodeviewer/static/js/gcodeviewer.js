@@ -707,6 +707,7 @@ $(function () {
         self.approveLargeFile = function () {
             self.waitForApproval(false);
             self.loadFile(
+                self.selectedFile.storage(),
                 self.selectedFile.path(),
                 self.selectedFile.date(),
                 self.selectedFile.size()
