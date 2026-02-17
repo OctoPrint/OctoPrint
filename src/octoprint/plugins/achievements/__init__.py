@@ -346,7 +346,7 @@ class AchievementsPlugin(
             self._data.stats.print_duration_total += payload["time"]
             self._current_year_stats.print_duration_total += payload["time"]
 
-            if Events.PRINT_CANCELLED:
+            if event == Events.PRINT_CANCELLED:
                 self._trigger_achievement(
                     Achievements.ALL_BEGINNINGS_ARE_HARD, write=False
                 )
