@@ -754,6 +754,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         tags |= {"trigger:printer.set_temperature_offset"}
 
         self._connection.set_temperature_offset(offsets=offsets, tags=tags)
+        self._set_offsets(self._connection.temperature_offsets)
 
     def _convert_rate_value(self, factor, min_val=None, max_val=None):
         if not isinstance(factor, (int, float)):

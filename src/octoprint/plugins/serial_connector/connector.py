@@ -293,7 +293,6 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             return
 
         self._comm.setTemperatureOffset(offsets)
-        self._setOffsets(self._comm.getOffsets())
 
     @property
     def temperature_offsets(self) -> dict:
