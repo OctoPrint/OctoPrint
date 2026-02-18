@@ -281,7 +281,10 @@ def baudrateList(candidates=None):
     )
     if blocklistedBaudrates:
         for baudrate in blocklistedBaudrates:
-            candidates.remove(baudrate)
+            try:
+                candidates.remove(baudrate)
+            except ValueError:
+                pass
 
     # last used baudrate = first to try, move to start
     prev = settings().getInt(["plugins", "serial_connector", "baudrate"])
