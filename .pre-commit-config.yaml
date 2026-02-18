@@ -1,7 +1,20 @@
 default_language_version:
-  python: python3.12
+  python: python3
 exclude: ^(src/octoprint/vendor/|src/octoprint/static/js/lib|src/octoprint/static/vendor|src/octoprint_setuptools|tests/static/js/lib|tests/util/_files|scripts/|translations/|.*\.css|.*\.svg|docs/)
 repos:
+  - repo: local
+    hooks:
+      - id: python-version-reminder
+        name: python version reminder
+        entry: python -c
+        args:
+          [
+            "print('NOTE: If pre-commit fails, make sure you are using a Python version officially supported by OctoPrint.')"
+          ]
+        language: system
+        always_run: true
+        verbose: true
+        files: ^$
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -13,7 +26,7 @@ repos:
       - id: check-toml
       - id: check-merge-conflict
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.20.0
+    rev: v3.21.2
     hooks:
       - id: pyupgrade
         args: ["--py39-plus"]
