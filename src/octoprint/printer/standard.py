@@ -993,7 +993,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         baudrate = parameters.get("baudrate")
         profile = parameters.get("profile")
 
-        return self._connection.state_string(), port, baudrate, profile
+        return self._connection.get_state_string(), port, baudrate, profile
 
     def is_closed_or_error(self, *args, **kwargs):
         return self._connection is None or self._connection.is_closed_or_error()
