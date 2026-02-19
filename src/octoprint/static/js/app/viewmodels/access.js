@@ -342,7 +342,8 @@ $(function () {
                         });
                 };
 
-                if (self.isCurrentUser()) {
+                const user = self.currentUser();
+                if (self.isCurrentUser(user)) {
                     proceed();
                 } else {
                     access.loginState.reauthenticateIfNecessary(proceed);
