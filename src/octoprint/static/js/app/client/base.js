@@ -157,26 +157,28 @@
     };
 
     OctoPrintClient.prototype.setCookie = function (name, value, opts) {
+        opts = opts || {};
+
         name = encodeURIComponent(this.getCookieName(name));
         value = encodeURIComponent(value);
 
         const url = this.getParsedBaseUrl();
-        const path = opts.path || false;
-        const expires = opts.expires || false;
-        const maxage = opts.maxage || false;
+        const path = opts.path;
+        const expires = opts.expires;
+        const maxage = opts.maxage;
         const secure = opts.secure || url.protocol === "https:";
 
-        let cookie = `${name}=${value}; path=${path}`;
+        let cookie = `${name}=${value}`;
 
-        if (path) {
+        if (path !== undefined) {
             cookie += `; path=${path}`;
         }
 
-        if (expires) {
+        if (expires !== undefined) {
             cookie += `; expires=${
                 expires instanceof Date ? expires.toUTCString() : expires
             }`;
-        } else if (maxage) {
+        } else if (maxage !== undefined) {
             cookie += `; max-age=${maxage}`;
         }
 
