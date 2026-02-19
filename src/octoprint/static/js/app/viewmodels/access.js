@@ -337,7 +337,7 @@ $(function () {
                         })
                         .fail(function (xhr) {
                             if (xhr.status === 403) {
-                                self.currentPasswordMismatch(true);
+                                self.editor.currentPasswordMismatch(true);
                             }
                         });
                 };
