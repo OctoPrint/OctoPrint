@@ -518,7 +518,7 @@ class TrackingPlugin(
         if not self._settings.get_boolean(["events", "slicing"]):
             return
 
-        self._track("slicing_started", slicer=payload.get(b"slicer", "unknown"))
+        self._track("slicing_started", slicer=payload.get("slicer", "unknown"))
 
     def _track(self, event, **kwargs):
         if not self._settings.get_boolean(["enabled"]):
