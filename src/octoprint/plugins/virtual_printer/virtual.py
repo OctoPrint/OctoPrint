@@ -1979,7 +1979,7 @@ class VirtualPrinter:
             if z:
                 self._lastZ = 0
             if e:
-                self._lastE = 0
+                self._lastE[self.currentExtruder] = 0
 
     def _writeSdFile(self, filename: str) -> None:
         if filename.startswith("/"):
