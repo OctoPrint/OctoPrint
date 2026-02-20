@@ -145,9 +145,8 @@ class PrintTimeEstimator:
 
                 # combine
                 totalPrintTime = (
-                    -sub_progress * statisticalTotalPrintTime
-                    + sub_progress * estimatedTotalPrintTime
-                )
+                    1.0 - sub_progress
+                ) * statisticalTotalPrintTime + sub_progress * estimatedTotalPrintTime
 
         printTimeLeft = None
         if totalPrintTime is not None:
