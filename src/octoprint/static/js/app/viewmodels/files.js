@@ -634,7 +634,7 @@ $(function () {
                 }
             }
 
-            self._filesToFocus = self._filesToFocus || focus;
+            self._filesToFocus = self._filesToFocus.length ? self._filesToFocus : focus;
             self._switchToPath = self._switchToPath || switchToPath;
 
             if (self._otherRequestInProgress !== undefined) {
@@ -819,10 +819,12 @@ $(function () {
                 .createFolder(storage, name, self.currentPath())
                 .done(function (data) {
                     self.requestData({
-                        focus: {
-                            path: data.folder.name,
-                            location: data.folder.origin
-                        }
+                        focus: [
+                            {
+                                path: data.folder.name,
+                                location: data.folder.origin
+                            }
+                        ]
                     })
                         .done(function () {
                             self.addFolderDialog.modal("hide");
@@ -1925,7 +1927,7 @@ $(function () {
                 type: "success"
             });
 
-            self.requestData({focus: {location: "printer", path: payload.remote}});
+            self.requestData({focus: [{location: "printer", path: payload.remote}]});
         };
 
         self.onEventTransferFailed = function (payload) {
