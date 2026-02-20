@@ -237,7 +237,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             "G91",
             "G28 {}".format(" ".join(f"{x.upper()}0" for x in axes)),
             "G90",
-            tags=kwargs.get("tags", set) | {"trigger:printer.home"},
+            tags=kwargs.get("tags", set()) | {"trigger:printer.home"},
         )
 
     def extrude(self, amount, speed=None, *args, **kwargs):
