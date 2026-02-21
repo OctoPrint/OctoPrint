@@ -1664,6 +1664,14 @@ textarea.monospace {
 
 // Progress bars with text centered
 
+.progress .bar {
+  #gradient > .vertical(#55b7e8, #4aa3d0);
+}
+
+.progress.progress-striped .bar {
+  #gradient > .striped(#149bdf);
+}
+
 .progress-text-centered {
   position: relative;
 
@@ -1681,13 +1689,13 @@ textarea.monospace {
     text-align: center;
     width: 100%;
     box-sizing: border-box;
-    padding: 0 10px;
-    font-size: 12px;
+    padding: 0 20px;
+    font-size: 13px;
     line-height: 20px;
-  }
-
-  .progress-text-front {
-    color: #fff;
+    font-weight: bold;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
   }
 }
 

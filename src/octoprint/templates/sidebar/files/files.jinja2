@@ -146,8 +146,7 @@
     </div>
     <div id="gcode_upload_progress" class="progress progress-text-centered">
         <div class="bar"></div>
-        <span class="progress-text-back"
-              data-bind="css: { 'progress-text-front': (uploadProgressPercentage() >= 50), 'progress-text-back': (uploadProgressPercentage() < 50) }, text: uploadProgressText()"></span>
+        <span class="progress-text-back" data-bind="text: uploadProgressText()"></span>
     </div>
     <div>
         <small class="muted">{{ _("Hint: You can also drag and drop files on this page to upload them to the currently selected storage (if upload is supported).") }}</small>

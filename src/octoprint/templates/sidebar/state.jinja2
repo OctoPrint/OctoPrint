@@ -59,8 +59,7 @@
     <div class="bar"
          id="job_progressBar"
          data-bind="style: {width: progressString() + '%'}"></div>
-    <span class="progress-text-back"
-          data-bind="css: { 'progress-text-front': (progressString() >= 50), 'progress-text-back': (progressString() < 50) }, text: progressBarString()"></span>
+    <span class="progress-text-back" data-bind="text: progressBarString()"></span>
 </div>
 
 <div class="row-fluid print-control"
