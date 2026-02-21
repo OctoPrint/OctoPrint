@@ -376,9 +376,8 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         if self._comm is None:
             return None
 
-        with self._selectedFileMutex:
-            if self._selectedFile is None:
-                return None
+        if self._job is None:
+            return None
 
         return self._comm.getFilePosition()
 
