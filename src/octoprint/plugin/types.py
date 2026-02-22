@@ -404,7 +404,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
           A note about ``mandatory`` wizard steps: In the current implementation, marking a wizard step as
           mandatory will *only* make it styled accordingly. It is the task of the :ref:`view model <sec-plugins-viewmodels>`
-          to actually prevent the user from skipping the dialog by implementing the ``onWizardTabChange``
+          to actually prevent the user from skipping the dialog by implementing the ``onBeforeWizardTabChange``
           callback and returning ``false`` there if it is detected that the user hasn't yet filled in the
           wizard step.
 
