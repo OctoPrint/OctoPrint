@@ -1821,6 +1821,10 @@ msgid ""
 "Settings > Printer Profiles"
 msgstr ""
 
+#: src/octoprint/templates/tabs/control.jinja2:183
+msgid "Tool (E)"
+msgstr ""
+
 #: src/octoprint/plugins/corewizard/templates/corewizard_printerprofile_wizard.jinja2:7
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:7
 #: src/octoprint/templates/snippets/settings/accesscontrol/groups.jinja2:60
