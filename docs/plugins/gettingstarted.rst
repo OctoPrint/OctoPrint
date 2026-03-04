@@ -1098,7 +1098,7 @@ For some insight on how to create plugins that react to various events within Oc
 add support for a slicer, the `CuraEngine Legacy plugin <https://github.com/OctoPrint/OctoPrint-CuraEngineLegacy>`_
 might give some hints. For extending OctoPrint's interface, the `Wrapped plugin <https://github.com/OctoPrint/OctoPrint-Wrapped>`_
 might show what's possible with a few lines of code already. Finally, just take a look at
-`OctoPrint's bundled plugins <https://github.com/OctoPrint/OctoPrint/tree/dev/src/octoprint/plugins>` and the 
+`OctoPrint's bundled plugins <https://github.com/OctoPrint/OctoPrint/tree/dev/src/octoprint/plugins>`_ and the 
 `official Plugin Repository <http://plugins.octoprint.org>`_ if you are looking for examples.
 
 .. seealso::
