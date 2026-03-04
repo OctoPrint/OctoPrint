@@ -92,6 +92,7 @@ def jobState():
         job=job_info_pre_1_12,
         progress=response.progress,
         state=response.state,
+        error=response.error,
     )
 
     return jsonify(**response_pre_1_12.model_dump(by_alias=True))
