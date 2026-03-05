@@ -56,7 +56,7 @@
         log.warn(
             "OctoPrintClient.printer.issueSdCommand has been deprecated as of OctoPrint 1.12.0, use OctoPrintClient.printer.issueStorageCommand instead"
         );
-        return this.base.issueStorageCommand(command, payload, opts);
+        return this.issueStorageCommand(command, payload, opts);
     };
 
     OctoPrintPrinterClient.prototype.getFullState = function (flags, opts) {
@@ -145,7 +145,7 @@
         log.warn(
             "OctoPrintClient.printer.getSdState has been deprecated as of OctoPrint 1.12.0, use OctoPrintClient.printer.getStorageState instead"
         );
-        return OctoPrintClient.prototype.getStorageState(opts);
+        return this.getStorageState(opts);
     };
 
     OctoPrintPrinterClient.prototype.getErrorInfo = function (opts) {
@@ -293,9 +293,9 @@
     };
     OctoPrintPrinterClient.prototype.initSd = function (opts) {
         log.warn(
-            "OctoPrintClient.printer.getSdState has been deprecated as of OctoPrint 1.12.0, use OctoPrintClient.printer.getStorageState instead"
+            "OctoPrintClient.printer.initSd has been deprecated as of OctoPrint 1.12.0, use OctoPrintClient.printer.initStorage instead"
         );
-        return this.base.initStorage(opts);
+        return this.initStorage(opts);
     };
 
     OctoPrintPrinterClient.prototype.releaseStorage = function (opts) {
@@ -305,7 +305,7 @@
         log.warn(
             "OctoPrintClient.printer.releaseSd has been deprecated as of OctoPrint 1.12.0, use OctoPrintClient.printer.releaseStorage instead"
         );
-        return this.base.releaseStorage(opts);
+        return this.releaseStorage(opts);
     };
 
     OctoPrintPrinterClient.prototype.refreshSd = function (opts) {
