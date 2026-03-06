@@ -828,7 +828,7 @@ def uploadGcodeFile(target):
                     description="File already exists, cannot overwrite due to a lack of permissions",
                 )
 
-            reselect = str(printer.active_job) == f"{target}:{futureFullPathInStorage}"
+            reselect = str(printer.current_job) == f"{target}:{futureFullPathInStorage}"
 
             upload_done = False
 
