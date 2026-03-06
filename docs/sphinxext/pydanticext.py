@@ -7,7 +7,7 @@ import inspect
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Literal, Optional, Union, get_args, get_origin
 
 import yaml
 from docutils import nodes
@@ -51,7 +51,7 @@ class PydanticFieldDoc:
 
 
 class PydanticModelInspector:
-    CONTAINER_TYPES = ("Optional", "Literal")
+    CONTAINER_TYPE_ORIGINS = (Union, Literal)
 
     def __init__(self):
         self.scanner = self._create_scanner()
@@ -107,8 +107,8 @@ class PydanticModelInspector:
         return enum_
 
     def _strip_container_types(self, type_: type) -> type:
-        while any(str(type_).startswith(f"typing.{x}") for x in self.CONTAINER_TYPES):
-            args = type_.__args__
+        while get_origin(type_) in self.CONTAINER_TYPE_ORIGINS:
+            args = get_args(type_)
             if args:
                 type_ = args[0]
             else:
