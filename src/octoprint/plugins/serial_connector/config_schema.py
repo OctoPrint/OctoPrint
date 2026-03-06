@@ -291,7 +291,7 @@ class SerialConfig(BaseModel):
     """Maximum number of ``ok`` acknowledgements to keep active. **DO NOT TOUCH THIS!** Changes can cause completely broken communication."""
 
     sanityCheckTools: bool = True
-    """Whether to senity check the tool count."""
+    """Whether to sanity check the tool count."""
 
     notifySuppressedCommands: InfoWarnNeverEnum = "warn"
     """Whether to notify about any suppressed commands."""

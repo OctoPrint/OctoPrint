@@ -26,7 +26,7 @@ class ApiJobInfo(BaseModel):
     filament: Optional[dict[str, Optional[dict[str, float]]]] = None
     """Filament usage information as mapping from printer profile to mappings from tool to used length, if known"""
     user: Optional[str] = None
-    """The use who started the job, if known"""
+    """The user who started the job, if known"""
 
 
 class ApiJobInfo_pre_1_12(ApiJobInfo):

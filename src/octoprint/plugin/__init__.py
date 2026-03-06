@@ -523,7 +523,7 @@ class PluginSettings:
 
     def global_get_boolean(self, path, **kwargs):
         """
-        Like :func:`global_get` but directly orwards to :func:`octoprint.settings.Settings.getBoolean`.
+        Like :func:`global_get` but directly forwards to :func:`octoprint.settings.Settings.getBoolean`.
         """
         return self.settings.getBoolean(path, **kwargs)
 

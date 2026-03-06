@@ -1188,7 +1188,7 @@ class FileManager:
                                 f"Error while removing file from storage {source_storage}"
                             )
                             raise StorageError(
-                                f"Unexpected error while file from storage {source_storage}",
+                                f"Unexpected error while removing file from storage {source_storage}",
                                 code=StorageError.UNKNOWN,
                                 cause=exc,
                             ) from exc

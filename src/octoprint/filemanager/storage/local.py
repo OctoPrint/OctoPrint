@@ -1712,7 +1712,7 @@ class LocalFileStorage(StorageInterface):
                     else:
                         shutil.copy2(src, dst)
                 except Exception:
-                    self._logger.exception("Error copying/moving {src} to {dst}")
+                    self._logger.exception(f"Error copying/moving {src} to {dst}")
 
     def _get_metadata(self, path, force=False):
         import json

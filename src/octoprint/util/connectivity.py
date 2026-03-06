@@ -16,7 +16,7 @@ class ConnectivityChecker:
     Tries to open a connection to the provided ``host`` and ``port`` every ``interval``
     seconds and sets the ``online`` status accordingly.
 
-    If a ``name``is provided, also tries to resolve that name to a valid IP address
+    If a ``name`` is provided, also tries to resolve that name to a valid IP address
     during connectivity check and only set ``online`` to ``True`` if that succeeds as well.
     """
 

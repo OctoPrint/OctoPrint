@@ -2088,7 +2088,7 @@ class SoftwareUpdatePlugin(
             # we also need to save our update log changes
             self._save_update_log()
 
-            # also, we are now longer updating
+            # also, we are no longer updating
             self._update_in_progress = False
 
         if error:

@@ -16,7 +16,7 @@ abstracted version of the actual printer communication.
    :members:
 
 .. autoclass:: PrinterMixin
-   : members:
+   :members:
 
 .. autoclass:: PrinterCallback
    :members:
@@ -894,7 +894,7 @@ class PrinterMixin(CommonPrinterMixin):
     )
     def unselect_file(self, *args, **kwargs):
         """
-        Unselects and currently selected file.
+        Unselects any currently selected file.
         """
         self.set_job(None)
 

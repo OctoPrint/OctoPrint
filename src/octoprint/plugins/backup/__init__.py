@@ -252,14 +252,14 @@ class BackupPlugin(
                 if not compatible:
                     if not octoprint_compatible and not os_compatible:
                         self._logger.warning(
-                            "Cannot install plugin {}, it is incompatible to this version "
+                            "Cannot install plugin {}, it is incompatible with this version "
                             "of OctoPrint and the underlying operating system".format(
                                 plugin["id"]
                             )
                         )
                     elif not octoprint_compatible:
                         self._logger.warning(
-                            "Cannot install plugin {}, it is incompatible to this version "
+                            "Cannot install plugin {}, it is incompatible with this version "
                             "of OctoPrint".format(plugin["id"])
                         )
                     elif not os_compatible:
@@ -594,14 +594,14 @@ class BackupPlugin(
                     if not compatible:
                         if not octoprint_compatible and not os_compatible:
                             click.echo(
-                                "Cannot install plugin {}, it is incompatible to this version of "
+                                "Cannot install plugin {}, it is incompatible with this version of "
                                 "OctoPrint and the underlying operating system".format(
                                     plugin["id"]
                                 )
                             )
                         elif not octoprint_compatible:
                             click.echo(
-                                "Cannot install plugin {}, it is incompatible to this version of "
+                                "Cannot install plugin {}, it is incompatible with this version of "
                                 "OctoPrint".format(plugin["id"])
                             )
                         elif not os_compatible:
@@ -1471,7 +1471,7 @@ class BackupPlugin(
                                 if not _restore_via_move():
                                     return False
                             except InitialMoveError:
-                                # this will happen if OctoPrint can't rename it's basedir, e.g. because
+                                # this will happen if OctoPrint can't rename its basedir, e.g. because
                                 # /etc/octoprint is being used as basedir and the user running OctoPrint
                                 # doesn't have the permissions to rename it
                                 log_error(

@@ -38,7 +38,7 @@ def sanitize(text, safe_chars="-_.", demoji=True):
     Args:
         text: the text to sanitize
         safe_chars: characters to consider safe and to keep after sanitization
-        emoji: whether to also convert emoji to text
+        demoji: whether to also convert emoji to text
 
     Returns: the sanitized text
     """

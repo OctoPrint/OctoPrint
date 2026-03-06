@@ -210,7 +210,7 @@ class ReadGcodeFilesForOriginResponse_pre_1_12(BaseModel):
 class UploadResponse(BaseModel):
     file: Optional[ApiAddedEntry] = None
     """
-    (File only) Information regarding the file that was just uploaded, mapped by the storage that it was uploaded to.
+    (File only) Information regarding the file that was just uploaded.
     """
     folder: Optional[ApiAddedEntry] = None
     """(Folder only) Information regarding the folder that was just created"""

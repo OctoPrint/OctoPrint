@@ -724,7 +724,9 @@ class SlicingManager:
 
         path = os.path.join(self.get_slicer_profile_path(slicer), f"{name}.profile")
         if not os.path.realpath(path).startswith(os.path.realpath(self._profile_path)):
-            raise OSError(f"Path to profile {name} tried to break out of allows sub path")
+            raise OSError(
+                f"Path to profile {name} tried to break out of allowed sub path"
+            )
         if must_exist and not (os.path.exists(path) and os.path.isfile(path)):
             raise UnknownProfile(slicer, name)
         return path

@@ -11,7 +11,7 @@ class FolderConfig(BaseModel):
     """Absolute path where to store gcode uploads. Defaults to the ``uploads`` folder in OctoPrint's base folder."""
 
     timelapse: Optional[str] = None
-    """Absolute path where to store finished timelase recordings. Defaults to the ``timelapse`` folder in OctoPrint's base folder."""
+    """Absolute path where to store finished timelapse recordings. Defaults to the ``timelapse`` folder in OctoPrint's base folder."""
 
     timelapse_tmp: Optional[str] = None
     """Absolute path where to store temporary timelapse snapshots. Defaults to the ``timelapse/tmp`` folder in OctoPrint's base folder."""

@@ -38,7 +38,7 @@ Non-exhaustive lists of both `type`s and optional `scope`s can be found below.
 
 An optional `!` following the `type` or `type(scope)` tag designates a *breaking change*.
 
-The optional multiline `body` must be separated from the header line by one empty line. it should
+The optional multiline `body` must be separated from the header line by one empty line. It should
 describe the commit further, as needed.
 
 Any optional `references` should be separated from the previous part by one empty line. This is where
@@ -96,7 +96,7 @@ The following types can be used. This list is non-exhaustive and will be extende
 
 - ``chore``: general chores (e.g. version bumps, dependency bumps, release preparations, ...)
 - ``ci``: continuous integration related (e.g. workflow adjustments)
-- ``docs``: documentation related changed (includes full blown docs as well as bundled markdown files)
+- ``docs``: documentation related changes (includes full blown docs as well as bundled markdown files)
 - ``dx``: developer experience related (e.g. introduction of a new task in the `Taskfile`, improvement of existing tooling)
 - ``feat``: adding a new feature (e.g. a new bundled plugin, new UI feature, ...)
 - ``fix``: bug or security fix

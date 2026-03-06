@@ -314,7 +314,7 @@ class PrinterProfileManager:
                 self.save(self.__class__.default, allow_overwrite=True, make_default=True)
             else:
                 self._logger.error(
-                    "Selected default profile {} does not exists, resetting to _default".format(
+                    "Selected default profile {} does not exist, resetting to _default".format(
                         default_id
                     )
                 )

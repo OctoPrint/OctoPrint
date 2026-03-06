@@ -121,9 +121,9 @@ class ConnectedPrinterListenerMixin:
         A :ref:`PositionUpdate event <sec-events-available_events-gcode_processing>` will only be
         triggered if all of the keys are available.
 
-        If ``z`` is provided, the current Z value provided in the state pushs will be updated (if needed).
+        If ``z`` is provided, the current Z value provided in the state pushes will be updated (if needed).
 
-        If ``t`` is provided, the current tool index provided in the state pushs will be updated (if needed).
+        If ``t`` is provided, the current tool index provided in the state pushes will be updated (if needed).
         """
         pass
 

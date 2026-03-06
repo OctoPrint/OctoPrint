@@ -187,7 +187,7 @@ def valid_timelapse(path):
 
 def valid_timelapse_thumbnail(path):
     global _thumbnail_extensions
-    # Thumbnail path is valid if it ends with thumbnail extension and path without extension is valid timelpase
+    # Thumbnail path is valid if it ends with a thumbnail extension and the path without extension is a valid timelapse
     if path.endswith(_thumbnail_extension):
         return valid_timelapse(path[: -len(_thumbnail_extension)])
     else:

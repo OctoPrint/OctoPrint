@@ -9,7 +9,7 @@ This describes the **general, platform agnostic** steps in obtaining, building a
   - [Stable Python 3](https://python.org) (check OctoPrint's README or `pyproject.toml` for the currently supported Python versions!)
   - [Git](https://git-scm.com)
 
-How to install this depends on your Operation System and will not be explained here.
+How to install this depends on your Operative System and will not be explained here.
 
 ### Installation steps
 
@@ -182,7 +182,7 @@ steps into this guide!
 Summary of Visual Studio Code config:
 
   - Pressing `F5` will now start OctoPrint in debug mode
-  - The unit tests should be discovered and starteable through the corresponding tab
+  - The unit tests should be discovered and startable through the corresponding tab
   - Your terminal inside Visual Studio Code uses the virtual python environment
   - Saving a file will run an auto formatter and import sort
 

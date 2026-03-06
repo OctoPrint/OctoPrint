@@ -126,7 +126,7 @@ $(function () {
             // A webcam will not intersect with the control tab if the control tab is invisible because another tab
             // is selected or if the webcam isn't shown because another webcam is active.
             //
-            // Whenever the webacam changes visibility we will call onWebcamVisibilityChange() which the webcam's
+            // Whenever the webcam changes visibility we will call onWebcamVisibilityChange() which the webcam's
             //  VM can use to start or stop the stream.
             self.intersectionObservers.forEach(function (observer) {
                 observer.disconnect();

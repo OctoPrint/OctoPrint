@@ -137,7 +137,7 @@ def add_user_command(ctx, username, password, groups, permissions, is_admin):
 def remove_user_command(ctx, username):
     """Remove an existing user."""
     confirm = click.prompt(
-        "This is will irreversibly destroy the user account! Enter 'yes' to confirm",
+        "This will irreversibly destroy the user account! Enter 'yes' to confirm",
         type=click.STRING,
     )
 

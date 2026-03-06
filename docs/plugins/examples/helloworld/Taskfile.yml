@@ -1,7 +1,7 @@
 
 # Taskfile to be used with task: https://taskfile.dev
 #
-# A copy of task gets automatically installed as a "develop" dependency this plugin:
+# A copy of task gets automatically installed as a "develop" dependency of this plugin:
 #
 #   pip install .[develop]
 #   go-task --list-all

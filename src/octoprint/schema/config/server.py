@@ -28,7 +28,7 @@ class ReverseProxyConfig(BaseModel):
     """The request header from which to determine the server name under which OctoPrint is served by the reverse proxy. Can also be read from the ``hostHeader``."""
 
     portHeader: Optional[str] = None
-    """The request header from which to determine the post number under which OctoPrint is served by the reverse proxy. Can also be read from the ``hostHeader``."""
+    """The request header from which to determine the port number under which OctoPrint is served by the reverse proxy. Can also be read from the ``hostHeader``."""
 
     prefixFallback: Optional[str] = None
     """

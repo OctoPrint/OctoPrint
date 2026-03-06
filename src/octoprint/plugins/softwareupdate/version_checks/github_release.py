@@ -153,7 +153,7 @@ def _get_latest_release(
 
 def _get_sanitized_version(version_string):
     """
-    Removes "-..." prefix from version strings.
+    Removes "-..." suffix from version strings.
 
     Tests:
         >>> _get_sanitized_version(None)

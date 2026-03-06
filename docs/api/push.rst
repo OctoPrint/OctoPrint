@@ -241,7 +241,7 @@ Data model
      - Current height of the Z-Axis (= current height of model) based on position updates or commands *sent through OctoPrint*, ``null`` if unknown.
    * - ``currentTool``
      - 0..1
-     - Float
+     - Integer
      - Currently selected tool based on commands *sent through OctoPrint*, ``null`` if unknown.
    * - ``offsets``
      - 0..1
