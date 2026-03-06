@@ -1836,7 +1836,7 @@ $(function () {
                             : '<i class="fa fa-remove"></i>'
                     }) +
                     (step.result === false && step.faq
-                        ? ' (<a href="" target="_blank" rel="noopener noreferer">' +
+                        ? ' (<a href="" target="_blank" rel="noopener noreferrer">' +
                           gettext("Why?") +
                           "</a>)"
                         : "") +

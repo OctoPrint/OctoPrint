@@ -435,7 +435,7 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                         title = gettext("Could not autodetect your printer");
                         text = _.sprintf(
                             gettext(
-                                'No working connection parameters could be found. Are you sure your printer is physically connected and supported? Refer to <a href="%(url)s" target="_blank" rel="noopener noreferer">the FAQ</a> for help in debugging this.'
+                                'No working connection parameters could be found. Are you sure your printer is physically connected and supported? Refer to <a href="%(url)s" target="_blank" rel="noopener noreferrer">the FAQ</a> for help in debugging this.'
                             ),
                             {url: "https://faq.octoprint.org/connection-error"}
                         );

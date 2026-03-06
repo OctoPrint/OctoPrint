@@ -1110,7 +1110,7 @@ $(function () {
                     "<p>You have Autologin enabled. This means that you will be automatically logged in when accessing OctoPrint from a local IP.</p>" +
                         "<p>By default, OctoPrint is configured in such a way this should not pose a security risk. However, <strong>if you yourself have " +
                         "any additional reverse proxies configured</strong> in front of OctoPrint, make sure those are configured correctly.</p>" +
-                        "<p><a href='%(url)s' target='_blank' rel='noopener noreferer'>Read more in the FAQ</a>.</p>"
+                        "<p><a href='%(url)s' target='_blank' rel='noopener noreferrer'>Read more in the FAQ</a>.</p>"
                 );
 
                 new PNotify.singleButtonNotify({

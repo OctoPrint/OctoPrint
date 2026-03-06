@@ -212,7 +212,7 @@ $(function () {
                 "<p>" +
                 gettext("Please refer to the FAQ for recommended upgrade workflows:") +
                 "</p>" +
-                "<p><a href='https://faq.octoprint.org/python-update' target='_blank' rel='noopener noreferer'>How to migrate to another Python version</a></p>";
+                "<p><a href='https://faq.octoprint.org/python-update' target='_blank' rel='noopener noreferrer'>How to migrate to another Python version</a></p>";
 
             const notification =
                 html +
@@ -338,7 +338,7 @@ $(function () {
                 "</p><p>" +
                 _.sprintf(
                     gettext(
-                        'It is recommended to no longer use the global API key as it\'s one single key that gives full admin access to your whole OctoPrint instance. It will be removed in OctoPrint 1.13.0. Instead of using the global key you should create individual <a href="%(url)s" target="_blank" rel="noopener noreferer">Application Keys</a> for your third party clients. That way they get permissions matching the user account used for key creation and you can also revoke access to one app without having to change the keys for all other apps. It\'s also recommended to create a user account without admin access and use that for third party clients where possible. '
+                        'It is recommended to no longer use the global API key as it\'s one single key that gives full admin access to your whole OctoPrint instance. It will be removed in OctoPrint 1.13.0. Instead of using the global key you should create individual <a href="%(url)s" target="_blank" rel="noopener noreferrer">Application Keys</a> for your third party clients. That way they get permissions matching the user account used for key creation and you can also revoke access to one app without having to change the keys for all other apps. It\'s also recommended to create a user account without admin access and use that for third party clients where possible. '
                     ),
                     {
                         url: "https://docs.octoprint.org/en/main/bundledplugins/appkeys.html"
