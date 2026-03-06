@@ -444,7 +444,7 @@ $(function () {
             if (commandToSend) {
                 OctoPrint.control.sendGcode(commandToSend).done(function () {
                     self.cmdHistory.push(command);
-                    self.cmdHistory.slice(-300); // just to set a sane limit to how many manually entered commands will be saved...
+                    self.cmdHistory = self.cmdHistory.slice(-300); // just to set a sane limit to how many manually entered commands will be saved...
                     self.cmdHistoryIdx = self.cmdHistory.length;
                     self.command("");
                 });
