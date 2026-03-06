@@ -111,8 +111,12 @@ The following types can be used. This list is non-exhaustive and will be extende
 The following scopes can be used. This list is non-exhaustive and will be extended as needed.
 
 - ``achievements``: bundled achievements plugin
+- ``analysis``: related to the file analysis
 - ``api``: related to the public REST API
+- ``appkeys``: bundled application keys plugin
+- ``auth``: authentication and session management
 - ``backup``: bundled backup plugin
+- ``ccmgr``: bundled custom control manager plugin
 - ``ci``: CI related
 - ``cli``: related to the command line interface
 - ``coreui``: related to the core user interface
@@ -121,13 +125,21 @@ The following scopes can be used. This list is non-exhaustive and will be extend
 - ``docs``: documentation related
 - ``e2e``: related to the Playwright based end-to-end tests
 - ``errortracking``: bundled errortracking plugin
+- ``eventmgr``: bundled event manager plugin
 - ``gcv``: bundled gcode viewer plugin
-- ``health_check``: bundled health check plugin
+- ``healthcheck``: bundled health check plugin
+- ``i18n``: translation files
+- ``jsclient``: JavaScript client library
 - ``plugins``: anything plugins related
 - ``pmgr``: bundled plugin manager plugin
 - ``serial``: bundled serial connector plugin
 - ``settings``: settings related
 - ``storage``: related to the internal storage API
+- ``swu``: bundled software update plugin
 - ``systeminfo``: systeminfo related
+- ``timelapse``: bundled timelapse plugin
+- ``tornado``: related to the Tornado implementation
+- ``tracking``: bundled anonymous usage tracking plugin
 - ``upmgr``: bundled upload manager plugin
 - ``ux``: related to the general user experience
+- ``virtualprinter``: bundled virtual printer plugin
