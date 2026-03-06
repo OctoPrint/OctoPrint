@@ -797,6 +797,11 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         self._connection.flow_rate(factor, tags=tags)
 
+    @property
+    def current_job(self):
+        with self._selected_job_mutex:
+            return self._selected_job
+
     def set_job(
         self,
         job: PrintJob,

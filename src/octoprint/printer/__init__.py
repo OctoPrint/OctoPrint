@@ -353,7 +353,7 @@ class CommonPrinterMixin:
 
     @property
     def active_job(self):
-        if self.is_printing() or self.is_pausing or self.is_paused():
+        if self.is_printing() or self.is_pausing() or self.is_paused():
             return self.current_job
         return None
 
