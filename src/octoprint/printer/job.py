@@ -32,7 +32,11 @@ class PrintJob(BaseModel):
         return f"{self.storage}:{self.path}"
 
     def __eq__(self, value):
-        return self.storage == value.origin and self.path == value.path
+        if isinstance(value, PrintJob):
+            return self.storage == value.storage and self.path == value.path
+        if isinstance(value, str):
+            return str(self) == value
+        return NotImplemented
 
 
 class UploadJob(PrintJob):

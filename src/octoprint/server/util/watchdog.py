@@ -113,7 +113,12 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
             ):
                 return
 
-            reselect = self._printer.is_current_file(futureFullPathInStorage, False)
+            current = self._printer.current_job
+            reselect = (
+                current is not None
+                and current.storage == octoprint.filemanager.FileDestinations.LOCAL
+                and current.path == futureFullPathInStorage
+            )
 
             added_file = self._file_manager.add_file(
                 octoprint.filemanager.FileDestinations.LOCAL,
