@@ -44,7 +44,7 @@ msgstr ""
 #: src/octoprint/access/permissions.py:317
 msgid ""
 "Allows to retrieve a list of all uploaded files and folders, "
-"includingtheir metadata (e.g. date, file size, analysis results, ...)"
+"including their metadata (e.g. date, file size, analysis results, ...)"
 msgstr ""
 
 #: src/octoprint/access/permissions.py:326
@@ -76,7 +76,7 @@ msgstr ""
 
 #: src/octoprint/access/permissions.py:368
 msgid ""
-"Allows access to the GCODE viewer if the \"File Download\"permission is "
+"Allows access to the GCODE viewer if the \"File Download\" permission is "
 "also set."
 msgstr ""
 
@@ -88,7 +88,7 @@ msgstr ""
 
 #: src/octoprint/access/permissions.py:388
 msgid ""
-"Allows to control of the printer by using the temperature controls,the "
+"Allows to control of the printer by using the temperature controls, the "
 "control tab or sending commands through the terminal."
 msgstr ""
 
@@ -2761,7 +2761,7 @@ msgstr ""
 #, python-format
 msgid ""
 "You currently have <code>%(logfile)s</code> enabled. Please remember to "
-"turn it off again once your are done debugging whatever issue prompted "
+"turn it off again once you are done debugging whatever issue prompted "
 "you to turn it on."
 msgstr ""
 
@@ -6345,7 +6345,7 @@ msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:718
 #: src/octoprint/static/js/app/viewmodels/usersettings.js:189
-msgid "This will delete the API Key. It will cease to to function immediately."
+msgid "This will delete the API Key. It will cease to function immediately."
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:1301
@@ -8244,7 +8244,7 @@ msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:515
 msgid ""
-"Commands that are know to run long and hence should suppress "
+"Commands that are known to run long and hence should suppress "
 "communication timeouts from being triggered."
 msgstr ""
 
@@ -9733,7 +9733,7 @@ msgstr ""
 
 #: src/octoprint/templates/tabs/timelapse.jinja2:29
 msgid ""
-"OctoPrint will rate limit snapshots to this minimum interval. This it to "
+"OctoPrint will rate limit snapshots to this minimum interval. This is to "
 "prevent against performance issues with vase mode/continuous z prints."
 msgstr ""
 

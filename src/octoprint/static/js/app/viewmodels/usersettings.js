@@ -187,7 +187,7 @@ $(function () {
 
             showConfirmationDialog(
                 gettext(
-                    "This will delete the API Key. It will cease to to function immediately."
+                    "This will delete the API Key. It will cease to function immediately."
                 ),
                 () => {
                     self.loginState.reauthenticateIfNecessary(() => {

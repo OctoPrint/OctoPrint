@@ -160,7 +160,7 @@ $(function () {
                 _.sprintf(
                     gettext(
                         "You currently have <code>%(logfile)s</code> enabled. Please remember to turn it off " +
-                            "again once your are done debugging whatever issue prompted you to turn it on."
+                            "again once you are done debugging whatever issue prompted you to turn it on."
                     ),
                     {logfile: logfile}
                 ) +

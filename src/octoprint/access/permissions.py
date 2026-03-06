@@ -315,7 +315,7 @@ class Permissions(metaclass=PermissionsMetaClass):
     FILES_LIST = OctoPrintPermission(
         "File List",
         gettext(
-            "Allows to retrieve a list of all uploaded files and folders, including"
+            "Allows to retrieve a list of all uploaded files and folders, including "
             "their metadata (e.g. date, file size, analysis results, ...)"
         ),
         RoleNeed("files_list"),
@@ -366,7 +366,7 @@ class Permissions(metaclass=PermissionsMetaClass):
     GCODE_VIEWER = OctoPrintPermission(
         "GCODE viewer",
         gettext(
-            'Allows access to the GCODE viewer if the "File Download"'
+            'Allows access to the GCODE viewer if the "File Download" '
             "permission is also set."
         ),
         RoleNeed("gcodeviewer"),
@@ -386,7 +386,7 @@ class Permissions(metaclass=PermissionsMetaClass):
     CONTROL = OctoPrintPermission(
         "Control",
         gettext(
-            "Allows to control of the printer by using the temperature controls,"
+            "Allows to control of the printer by using the temperature controls, "
             "the control tab or sending commands through the terminal."
         ),
         RoleNeed("control"),

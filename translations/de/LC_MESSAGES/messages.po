@@ -49,7 +49,7 @@ msgstr ""
 #: src/octoprint/access/permissions.py:317
 msgid ""
 "Allows to retrieve a list of all uploaded files and folders, "
-"includingtheir metadata (e.g. date, file size, analysis results, ...)"
+"including their metadata (e.g. date, file size, analysis results, ...)"
 msgstr ""
 "Erlaubt das Abrufen eines Liste aller hochgeladenen Dateien und "
 "Verzeichnisse, inkl. ihrer Metadaten (z.B. Datum, Dateigröße, "
@@ -93,7 +93,7 @@ msgstr "Erlaubt das starten, pausieren und abbrechen eines Druckauftrags"
 
 #: src/octoprint/access/permissions.py:368
 msgid ""
-"Allows access to the GCODE viewer if the \"File Download\"permission is "
+"Allows access to the GCODE viewer if the \"File Download\" permission is "
 "also set."
 msgstr ""
 "Erlaubt den Zugriff auf den GCODE viewer falls die \"File Download\" "
@@ -109,7 +109,7 @@ msgstr ""
 
 #: src/octoprint/access/permissions.py:388
 msgid ""
-"Allows to control of the printer by using the temperature controls,the "
+"Allows to control of the printer by using the temperature controls, the "
 "control tab or sending commands through the terminal."
 msgstr ""
 "Erlaubt vollen Zugriff auf den Drucker, inkl. Temperatur, Steuerung oder "
@@ -3226,7 +3226,7 @@ msgstr ""
 #, python-format
 msgid ""
 "You currently have <code>%(logfile)s</code> enabled. Please remember to "
-"turn it off again once your are done debugging whatever issue prompted "
+"turn it off again once you are done debugging whatever issue prompted "
 "you to turn it on."
 msgstr ""
 "Du hast aktuell <code>%(logfile)s</code> aktiviert. Bitte denk daran, es "
@@ -7321,7 +7321,7 @@ msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:718
 #: src/octoprint/static/js/app/viewmodels/usersettings.js:189
-msgid "This will delete the API Key. It will cease to to function immediately."
+msgid "This will delete the API Key. It will cease to function immediately."
 msgstr "Dies wird den API-Key löschen. Er wird sofort aufhören, zu funktionieren."
 
 #: src/octoprint/static/js/app/viewmodels/settings.js:1301
@@ -9558,7 +9558,7 @@ msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:515
 msgid ""
-"Commands that are know to run long and hence should suppress "
+"Commands that are known to run long and hence should suppress "
 "communication timeouts from being triggered."
 msgstr ""
 "Befehle, von denen bekannt ist, dass sie lang zur Ausführung benötigen "
@@ -11318,7 +11318,7 @@ msgstr "Minimales Intervall"
 
 #: src/octoprint/templates/tabs/timelapse.jinja2:29
 msgid ""
-"OctoPrint will rate limit snapshots to this minimum interval. This it to "
+"OctoPrint will rate limit snapshots to this minimum interval. This is to "
 "prevent against performance issues with vase mode/continuous z prints."
 msgstr ""
 "OctoPrint wird Zeitrafferaufnahmen auf dieses minimale Intervall "
