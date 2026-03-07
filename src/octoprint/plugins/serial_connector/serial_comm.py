@@ -209,6 +209,9 @@ def serialList():
                         i += 1
                 except OSError:
                     pass
+        except FileNotFoundError:
+            _logger.debug("No hardware serial devices found")
+            pass
         except Exception:
             _logger.exception("Error while enumerating the available serial ports")
 
