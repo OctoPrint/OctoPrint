@@ -546,8 +546,9 @@ $(function () {
             if (!selected || selected.length !== 1) return false;
 
             const data = selected[0];
+            if (data.type !== "machinecode") return false;
 
-            return data.type == "machinecode" && printAfterLoad
+            return printAfterLoad
                 ? self.files.enableSelectAndPrint(data, printAfterLoad)
                 : self.files.enableSelect(data);
         };
