@@ -108,9 +108,11 @@
                 </div>
 
                 <div class="btn-group">
-                    <a class="btn btn-small"
-                       title="{{ _('Download') |edq }}"
-                       data-bind="attr: {href: $root.downloadUrl }, css: { disabled: !$root.enableDownload() }"><i class="fa-solid fa-cloud-arrow-down"></i></a>
+                    <button class="btn btn-small"
+                            title="{{ _('Download') |edq }}"
+                            data-bind="click: function() { $root.download(); }, css: { disabled: !$root.enableDownload() }">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                    </button>
                 </div>
 
                 <div class="btn-group">

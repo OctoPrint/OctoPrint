@@ -687,6 +687,12 @@ $(function () {
             }
         });
 
+        self.download = () => {
+            if (!self.enableDownload()) return;
+            const url = self.downloadUrl();
+            if (url) window.location.href = url;
+        };
+
         self.slice = () => {
             if (!self.enableSlicing()) return;
 
