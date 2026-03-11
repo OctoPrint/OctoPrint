@@ -596,11 +596,11 @@ $(function () {
                 (type == "folder" && capabilities.copy_folder);
             const crossStorageCopyPossible = _.any(
                 _.map(
+                    self.files.storageOptions(),
                     (storage) =>
                         storage.key !== data.origin &&
                         ((type === "folder" && storage.capabilities.add_folder) ||
-                            (type !== "folder" && storage.capabilities.upload_file)),
-                    self.files.storageOptions()
+                            (type !== "folder" && storage.capabilities.upload_file))
                 )
             );
 
@@ -627,12 +627,12 @@ $(function () {
                 (type == "folder" && capabilities.remove_folder);
             const crossStorageMovePossible = _.any(
                 _.map(
+                    self.files.storageOptions(),
                     (storage) =>
                         storage.key !== data.origin &&
                         ((type === "folder" && storage.capabilities.add_folder) ||
                             (type !== "folder" && storage.capabilities.upload_file)) &&
-                        inStorageRemovePossible,
-                    self.files.storageOptions()
+                        inStorageRemovePossible
                 )
             );
 
@@ -837,8 +837,8 @@ $(function () {
             const files = self.selectedFiles();
             if (files.length === 0) return;
 
-            const hasFiles = _.any(_.map((f) => f.type !== "folder", files));
-            const hasFolders = _.any(_.map((f) => f.type === "folder", files));
+            const hasFiles = _.any(_.map(files, (f) => f.type !== "folder"));
+            const hasFolders = _.any(_.map(files, (f) => f.type === "folder"));
 
             const location = files[0].origin;
             const capabilities = self.files.storageCapabilities(location);
@@ -882,14 +882,14 @@ $(function () {
             const storageOptions = self.files.storageOptions();
             selectStorageElement.empty();
             _.each(storageOptions, (storage) => {
-                if (storage === location && !inStorageActionPossible) {
+                if (storage.key === location && !inStorageActionPossible) {
                     // skip current storage if it doesn't support copy/move
                     return;
                 }
                 if (
-                    storage !== location &&
-                    ((hasFiles && !self.files.storageCanUpload(storage)) ||
-                        (hasFolders && !self.files.storageCanAddFolder(storage)))
+                    storage.key !== location &&
+                    ((hasFiles && !self.files.storageCanUpload(storage.key)) ||
+                        (hasFolders && !self.files.storageCanAddFolder(storage.key)))
                 ) {
                     // skip other storages that can't write files or add folders
                     return;
