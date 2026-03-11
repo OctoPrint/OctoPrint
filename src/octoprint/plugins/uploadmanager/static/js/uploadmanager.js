@@ -737,7 +737,7 @@ $(function () {
                                     "Creating new folder %(filename)s failed: %(error)s"
                                 ),
                                 {
-                                    filename: _.escape(`local:${value}`),
+                                    filename: _.escape(`${storage}:${value}`),
                                     error: _.escape(_errorFromJqXHR(jqXHR))
                                 }
                             )
@@ -997,7 +997,7 @@ $(function () {
                 ),
                 _.sprintf(
                     gettext(
-                        "Copying %%(filename)s to %(storage)s:%(destination)s failed: %(error)s"
+                        "Copying %%(filename)s to %(storage)s:%(destination)s failed: %%(error)s"
                     ),
                     {storage, destination}
                 ),
@@ -1053,7 +1053,7 @@ $(function () {
                 ),
                 _.sprintf(
                     gettext(
-                        "Moving %%(filename)s to %(storage)s:%(destination)s failed: %(error)s"
+                        "Moving %%(filename)s to %(storage)s:%(destination)s failed: %%(error)s"
                     ),
                     {storage, destination}
                 ),
