@@ -249,13 +249,13 @@ $(function () {
         };
 
         self.foldersOnlyList = ko.dependentObservable(function () {
-            filter = function (data) {
+            var filter = function (data) {
                 return data["type"] && data["type"] == "folder";
             };
             return _.filter(self.listHelper.paginatedItems(), filter);
         });
         self.filesOnlyList = ko.dependentObservable(function () {
-            filter = function (data) {
+            var filter = function (data) {
                 return data["type"] && data["type"] != "folder";
             };
             return _.filter(self.listHelper.paginatedItems(), filter);
