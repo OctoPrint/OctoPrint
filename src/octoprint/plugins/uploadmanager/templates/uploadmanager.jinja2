@@ -216,7 +216,7 @@
                         <!-- /ko -->
 
                         <!-- ko foreach: $root.filesAndFolders -->
-                        <tr data-bind="click.single: $root.handleSingleClick, click.double: $root.handleDoubleClick, event: { contextmenu: $root.handleContextMenu }, css: { 'info': $root.isSelected($data) }, template: { name: $root.templateFor($data), data: $data }, style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }">
+                        <tr data-bind="click.single: $root.handleSingleClick, click.double: $root.handleDoubleClick, css: { 'info': $root.isSelected($data) }, template: { name: $root.templateFor($data), data: $data }, style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }">
                         </tr>
                         <!-- /ko -->
                     </tbody>
