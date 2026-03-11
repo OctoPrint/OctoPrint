@@ -61,7 +61,7 @@
                 <div class="btn-group">
                     <button class="btn btn-small"
                             title="{{ _('Create Folder') |edq }}"
-                            data-bind="click: $root.showAddFolderDialog, css: { disabled: !$root.loginState.isUser() }">
+                            data-bind="click: $root.showAddFolderDialog, css: { disabled: !$root.loginState.isUser() || !$root.currentStorageCanAddFolder() }">
                         <i class="fa-solid fa-folder-plus"></i>
                     </button>
                 </div>
