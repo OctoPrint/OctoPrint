@@ -534,7 +534,13 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             return None
 
     def upload_printer_file(
-        self, source, target, progress_callback: callable = None, *args, **kwargs
+        self,
+        source,
+        target,
+        source_filename,
+        progress_callback: callable = None,
+        *args,
+        **kwargs,
     ) -> str:
         if progress_callback is not None:
             self._progress_callback = progress_callback
@@ -552,7 +558,8 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             tags = kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"}
             return self._comm.startFileTransfer(
                 source,
-                target,
+                source_filename,
+                remote=target,
                 special=not valid_file_type(target, "gcode"),
                 tags=tags,
             )

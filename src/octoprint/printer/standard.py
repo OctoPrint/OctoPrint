@@ -1152,7 +1152,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         else:
             # no plugin feels responsible, use the default implementation
             local = self._file_manager.path_on_disk(FileDestinations.LOCAL, filename)
-            remote = connection.upload_printer_file(local, path)
+            remote = connection.upload_printer_file(local, path, filename)
             return remote
 
     @util.deprecated(

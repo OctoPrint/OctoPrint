@@ -373,7 +373,7 @@ class PrinterFileStorage(StorageInterface):
 
         try:
             remote = self._connection.upload_printer_file(
-                temp.name, path, progress_callback=callback
+                temp.name, path, file_object.filename, progress_callback=callback
             )
             self._update_last_activity()
             return remote
