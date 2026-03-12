@@ -2026,7 +2026,7 @@ $(function () {
             };
 
             // Collect an item from the queue that needs an overwrite dialog
-            const {data, response, path, fileSizeTooBig} =
+            const {data, response, path, storage, fileSizeTooBig} =
                 self._uploadExistsQueue.shift();
             const file = data.files[0];
 
@@ -2068,7 +2068,7 @@ $(function () {
 
                     if (!newName) return;
 
-                    OctoPrint.files.exists("local", path, newName).done(function (r) {
+                    OctoPrint.files.exists(storage, path, newName).done(function (r) {
                         if (r.exists) {
                             $(".control-group", self.uploadExistsDialog).addClass(
                                 "error"
@@ -2122,6 +2122,7 @@ $(function () {
                                 data,
                                 response,
                                 path,
+                                storage,
                                 fileSizeTooBig
                             };
                             self._uploadExistsQueue.push(queueEntry);
