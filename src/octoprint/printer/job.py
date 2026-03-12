@@ -40,7 +40,7 @@ class PrintJob(BaseModel):
 
 
 class UploadJob(PrintJob):
-    remote_path: Optional[str] = None
+    pass
 
 
 class JobProgress(BaseModel):

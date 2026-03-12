@@ -415,7 +415,7 @@ FileSelected
 
    * ``name``: the file's name
    * ``path``: the file's path within its storage location
-   * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+   * ``origin``: the origin storage location of the file, either ``local`` or ``printer``
 
    .. versionchanged:: 1.4.0
 
@@ -423,25 +423,31 @@ FileDeselected
    No file is selected any more for printing.
 
 TransferStarted
-   A file transfer to the printer's SD has started.
+   A file transfer to the printer's storage has started.
 
    Payload:
 
-   * ``local``: the file's name as stored locally
-   * ``remote``: the file's name as stored on SD
+   * ``remote``: the file's name as stored on the printer
 
    **Note:** Name changed in version 1.1.0
 
    .. versionchanged:: 1.1.0
 
+   .. versionchanged:: 2.0.0
+
+      Deprecated ``local`` payload, it's always the same as ``remote``.
+
 TransferDone
-   A file transfer to the printer's SD has finished.
+   A file transfer to the printer's storage has finished.
 
    Payload:
 
    * ``time``: the time it took for the transfer to complete in seconds
-   * ``local``: the file's name as stored locally
-   * ``remote``: the file's name as stored on SD
+   * ``remote``: the file's name as stored on the printer
+
+   .. versionchanged:: 2.0.0
+
+      Deprecated ``local`` payload, it's always the same as ``remote``.
 
 .. _sec-events-available_events-printing:
 

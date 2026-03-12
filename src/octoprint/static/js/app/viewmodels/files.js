@@ -1929,10 +1929,9 @@ $(function () {
                 title: gettext("Streaming done"),
                 text: _.sprintf(
                     gettext(
-                        "Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"
+                        "Streamed %(remote)s to printer storage, took %(time).2f seconds"
                     ),
                     {
-                        local: _.escape(payload.local),
                         remote: _.escape(payload.remote),
                         time: payload.time
                     }
@@ -1951,8 +1950,8 @@ $(function () {
             new PNotify({
                 title: gettext("Streaming failed"),
                 text: _.sprintf(
-                    gettext("Did not finish streaming %(local)s to %(remote)s on SD"),
-                    {local: _.escape(payload.local), remote: _.escape(payload.remote)}
+                    gettext("Did not finish streaming %(remote)s to printer storage"),
+                    {remote: _.escape(payload.remote)}
                 ),
                 type: "error"
             });

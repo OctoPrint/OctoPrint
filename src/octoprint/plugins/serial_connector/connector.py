@@ -724,12 +724,11 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self, local_filename, remote_filename, filesize, user=None
     ):
         job = UploadJob(
-            storage=FileDestinations.LOCAL,
-            path=local_filename,
+            storage=FileDestinations.PRINTER,
+            path=remote_filename,
             display=local_filename,
             size=filesize,
             owner=user,
-            remote_path=remote_filename,
         )
         super().set_job(job)
         self._listener.on_printer_files_upload_start(job)

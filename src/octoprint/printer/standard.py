@@ -1584,7 +1584,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     def on_printer_files_upload_start(self, job: UploadJob):
         eventManager().fire(
             Events.TRANSFER_STARTED,
-            {"local": job.path, "remote": job.remote_path},
+            {"local": job.path, "remote": job.path},  # local is deprecated as of 2.0.0
         )
 
         self._sdStreaming = True
@@ -1604,20 +1604,26 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     ):
         self._sdStreaming = False
 
-        payload = {"local": job.path, "remote": job.remote_path, "time": elapsed}
+        payload = {
+            "local": job.path,
+            "remote": job.path,
+            "time": elapsed,
+        }  # local is deprecated as of 2.0.0
 
         if failed:
             eventManager().fire(Events.TRANSFER_FAILED, payload)
             if callable(self._streamingFailedCallback):
                 self._streamingFailedCallback(
-                    job.path, job.remote_path, FileDestinations.PRINTER
+                    job.path, job.path, FileDestinations.PRINTER
                 )
+                self._streamingFailedCallback = self._streamingFinishedCallback = None
         else:
             eventManager().fire(Events.TRANSFER_DONE, payload)
             if callable(self._streamingFinishedCallback):
                 self._streamingFinishedCallback(
-                    job.path, job.remote_path, FileDestinations.PRINTER
+                    job.path, job.path, FileDestinations.PRINTER
                 )
+                self._streamingFailedCallback = self._streamingFinishedCallback = None
 
         self._set_job_data(None)
         self._update_progress_data()
