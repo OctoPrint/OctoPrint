@@ -430,6 +430,7 @@ $(function () {
                 }
             } else {
                 self.filedata(undefined);
+                self._cachedFileKey = undefined;
             }
         };
 
