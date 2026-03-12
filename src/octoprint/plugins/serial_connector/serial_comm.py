@@ -382,6 +382,8 @@ class TemperatureRecord:
     def copy_from(self, other):
         self._tools = other.tools
         self._bed = other.bed
+        self._chamber = other.chamber
+        self._custom = other.custom
 
     def set_tool(self, tool, actual=None, target=None):
         current = self._tools.get(tool, (None, None))
