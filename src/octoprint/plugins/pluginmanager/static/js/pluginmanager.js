@@ -1701,7 +1701,7 @@ $(function () {
                                 gettext(
                                     "You can find more info on this issue in the FAQ at %(url)s"
                                 ),
-                                {url: faq}
+                                {url: response.faq}
                             ),
                             stream: "error"
                         });
@@ -1836,7 +1836,9 @@ $(function () {
                             : '<i class="fa fa-remove"></i>'
                     }) +
                     (step.result === false && step.faq
-                        ? ' (<a href="" target="_blank" rel="noopener noreferrer">' +
+                        ? ' (<a href="' +
+                          encodeURI(step.faq) +
+                          '" target="_blank" rel="noopener noreferrer">' +
                           gettext("Why?") +
                           "</a>)"
                         : "") +

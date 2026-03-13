@@ -1151,7 +1151,7 @@ class PluginManagerPlugin(
             return result
 
         if is_python_mismatch(stderr):
-            return self.handle_python_mismatch(source, source_type, partial=partial)
+            return self._handle_python_mismatch(source, source_type, partial=partial)
 
         if force:
             # We don't use --upgrade here because that will also happily update all our dependencies - we'd rather
@@ -1174,7 +1174,7 @@ class PluginManagerPlugin(
                 return result
 
             if is_python_mismatch(stderr):
-                return self.handle_python_mismatch(source, source_type)
+                return self._handle_python_mismatch(source, source_type, partial=partial)
 
         result_line = get_result_line(stdout)
         if not result_line:
