@@ -701,6 +701,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._connection.extrude(amount, speed=speed, tags=tags)
 
     def change_tool(self, tool, tags=None, *args, **kwargs):
+        if self._connection is None:
+            return
+
         if not PrinterMixin.valid_tool_regex.match(tool):
             raise ValueError(f'tool must match "tool[0-9]+": {tool}')
 
@@ -711,6 +714,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._connection.change_tool(tool, tags=tags)
 
     def set_temperature(self, heater, value, tags=None, *args, **kwargs):
+        if self._connection is None:
+            return
+
         if not PrinterMixin.valid_heater_regex.match(heater):
             raise ValueError(
                 'heater must match "tool", "tool([0-9])", "bed" or "chamber": {heater}'.format(
