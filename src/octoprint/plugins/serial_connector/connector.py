@@ -755,7 +755,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         )
 
     def on_comm_force_disconnect(self):
-        self._listener.on_printer_disconnected()
+        self._listener.on_printer_disconnect()
 
     def on_comm_record_fileposition(self, origin, name, pos):
         self._listener.on_printer_record_recovery_position(self.current_job, pos)
