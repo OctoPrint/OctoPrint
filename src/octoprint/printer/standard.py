@@ -1825,6 +1825,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                             origin=None,
                             size=None,
                             date=None,
+                            upload=None,
                         ),
                         estimatedPrintTime=None,
                         filament=None,
@@ -1863,6 +1864,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                         date=int(job.date.astimezone(None).timestamp())
                         if job.date
                         else None,
+                        upload=isinstance(job, UploadJob),
                     ),
                     estimatedPrintTime=estimatedPrintTime,
                     filament=filament,

@@ -116,6 +116,7 @@ def _get_api_job_response() -> apischema.ApiJobResponse:
         origin=file_data.get("origin"),
         size=file_data.get("size"),
         date=file_data.get("date"),
+        upload=file_data.get("upload"),
     )
 
     job_data = current_data["job"]

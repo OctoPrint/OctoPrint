@@ -412,7 +412,7 @@ $(function () {
 
         self._cachedFileKey = undefined;
         self._syncMetadata = (data) => {
-            if (data.file && data.file.origin && data.file.path) {
+            if (data.file && data.file.origin && data.file.path && !data.file.upload) {
                 const futureFileKey = self.calcFileKey(data.file);
                 if (futureFileKey !== self._cachedFileKey) {
                     const currentFileKey = self.calcFileKey();

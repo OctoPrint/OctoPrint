@@ -16,6 +16,8 @@ class ApiJobFile(BaseModel):
     """Size of the file being printed in bytes"""
     date: Optional[int] = None
     """Last modification date of the file being printed as timestamp"""
+    upload: Optional[bool] = None
+    """Whether this file is currently being uploaded (true) or already available on the storage (false)"""
 
 
 class ApiJobInfo(BaseModel):
