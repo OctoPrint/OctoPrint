@@ -685,9 +685,7 @@ class MachineCom:
         self._busy_protocol_detected = False
         self._busy_protocol_support = False
 
-        self._trigger_ok_after_resend = self._settings.get_boolean(
-            ["supportResendsWithoutOk"]
-        )
+        self._trigger_ok_after_resend = self._settings.get(["supportResendsWithoutOk"])
         self._resend_ok_timer = None
 
         self._resendActive = False
