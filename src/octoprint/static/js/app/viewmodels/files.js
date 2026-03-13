@@ -1811,7 +1811,9 @@ $(function () {
             //~~ Gcode upload
 
             // Must re-query the DOM element on each call because jQuery File Upload
-            // clones and replaces the file input after every file selection.
+            // clones and replaces the file input after every file selection
+            //
+            // See https://github.com/blueimp/jQuery-File-Upload/wiki/Frequently-Asked-Questions#why-is-the-file-input-field-cloned-and-replaced-after-each-selection
             self.uploadButton = () => $("#gcode_upload");
 
             self.dropOverlay = $("#drop_overlay");
