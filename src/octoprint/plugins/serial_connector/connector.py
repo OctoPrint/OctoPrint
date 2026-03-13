@@ -726,7 +726,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         job = UploadJob(
             storage=FileDestinations.PRINTER,
             path=remote_filename,
-            display=local_filename,
+            display=remote_filename,
             size=filesize,
             owner=user,
         )
