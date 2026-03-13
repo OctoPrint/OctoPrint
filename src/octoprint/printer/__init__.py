@@ -840,7 +840,7 @@ class PrinterMixin(CommonPrinterMixin):
         message="get_connection_option has been deprecated and will be removed in a future version. Please use ConnectedPrinter.all() in combination with get_connection_option on the returned ConnectPrinter instances instead.",
         since="1.12.0",
     )
-    def get_connection_options(cls):
+    def get_connection_options(cls, *args, **kwargs):
         from .connection import ConnectedPrinter
 
         serial_connector = ConnectedPrinter.find("serial")
@@ -857,7 +857,7 @@ class PrinterMixin(CommonPrinterMixin):
         if settings().get(["printerConnection", "preferred", "connector"]) == "serial":
             preferred = settings().get(["printerConnection", "preferred", "parameters"])
 
-        connection_options = serial_connector.get_connection_options()
+        connection_options = serial_connector.connection_options()
         ports = connection_options.get("port", [])
         baudrates = connection_options.get("baudrate", [])
 
