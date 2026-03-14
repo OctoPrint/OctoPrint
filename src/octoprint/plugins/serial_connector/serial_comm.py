@@ -4278,10 +4278,10 @@ class MachineCom:
 
         if ret != "":
             try:
-                self._log(f"<<< {sanitize_ascii(ret)}")
+                self._log(f"Recv: {sanitize_ascii(ret)}")
             except ValueError as e:
                 self._log(f"WARN: While reading last line: {e}")
-                self._log(f"<<< {ret!r}")
+                self._log(f"Recv: {ret!r}")
 
             if null_pos >= 0:
                 self._logger.warning("Received line:")
@@ -5116,7 +5116,7 @@ class MachineCom:
             return
 
         if log:
-            self._log(">>> " + cmd.decode(self._serial_encoding))
+            self._log("Send: " + cmd.decode(self._serial_encoding))
 
         cmd += b"\n"
         written = 0
