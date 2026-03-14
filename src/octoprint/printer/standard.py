@@ -663,7 +663,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             tags = set()
         tags |= {"trigger:printer.jog"}
 
-        self._connection.jog(axes, relative=True, speed=speed, tags=tags)
+        self._connection.jog(axes, relative=relative, speed=speed, tags=tags)
 
     def home(self, axes, tags=None, *args, **kwargs):
         if self._connection is None:
