@@ -400,9 +400,9 @@ class CommonPrinterMixin:
             tags (set of str): An optional set of tags to attach to the command(s) throughout their lifecycle
         """
         if self.is_printing():
-            self.pause_print(*args, tags=tags, **kwargs)
+            self.pause_print(*args, tags=tags, params=params, **kwargs)
         elif self.is_paused():
-            self.resume_print(*args, tags=tags, **kwargs)
+            self.resume_print(*args, tags=tags, params=params, **kwargs)
 
     def cancel_print(self, tags: set[str] = None, params: dict = None, *args, **kwargs):
         """
