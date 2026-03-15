@@ -82,9 +82,9 @@ ERROR_FAQS = {
 class ErrorInformation(BaseModel):
     error: str
     reason: str
-    consequence: str = None
-    faq: str = Optional[None]
-    logs: list[str] = Optional[None]
+    consequence: Optional[str] = None
+    faq: Optional[str] = None
+    logs: Optional[list[str]] = None
 
 
 class FirmwareInformation(BaseModel):
