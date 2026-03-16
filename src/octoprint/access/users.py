@@ -1309,7 +1309,7 @@ class User(UserMixin):
 
         dirty = False
         for permission in permissions:
-            if permissions not in self._permissions:
+            if permission not in self._permissions:
                 self._permissions.append(permission)
                 dirty = True
 

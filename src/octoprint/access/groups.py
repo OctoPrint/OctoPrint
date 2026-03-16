@@ -472,9 +472,9 @@ class FilebasedGroupManager(GroupManager):
             added_subgroups = list(set(subgroups) - set(group._subgroups))
 
             if removed_subgroups:
-                self._dirty = group.remove_subgroups_from_group(removed_subgroups)
+                self._dirty |= group.remove_subgroups_from_group(removed_subgroups)
             if added_subgroups:
-                self._dirty = group.add_subgroups_to_group(added_subgroups)
+                self._dirty |= group.add_subgroups_to_group(added_subgroups)
 
             notifications.append(
                 (
@@ -611,7 +611,7 @@ class Group:
 
         dirty = False
         for permission in permissions:
-            if permissions not in self.permissions:
+            if permission not in self.permissions:
                 self._permissions.append(permission)
                 dirty = True
 
