@@ -5,11 +5,11 @@
         <tr>
             <td class="settings_accesscontrol_subgroups_list_checkbox">
                 <input type="checkbox"
-                       data-bind="checkedValue: key, checked: $parents[1].editor.subgroups, enable: toggleable && $parents[1].editor.subgroupSelectable($data)">
+                       data-bind="checkedValue: key, checked: $parents[1].editor.subgroups, enable: toggleable && $parents[1].editor.subgroupSelectable($data), attr: {title: $parents[1].editor.subgroupUnselectableReason($data)}">
             </td>
             <td class="settings_accesscontrol_subgroups_list_name"
                 style="cursor: pointer"
-                data-bind="click: function() { if ($data.toggleable && $parents[1].editor.subgroupSelectable($data)) { $parents[1].editor.toggleSubgroup($data.key) } }, attr: {title: description}">
+                data-bind="click: function() { if ($data.toggleable && $parents[1].editor.subgroupSelectable($data)) { $parents[1].editor.toggleSubgroup($data.key) } }, attr: {title: $parents[1].editor.subgroupUnselectableReason($data) || description}">
                 <span class="name"
                       data-bind="text: name, style: { fontWeight: ($parents[1].editor.subgroupSelected($data.name)) ? 'bold' : 'normal' }"></span> <small class="label label-info"
         data-bind="visible: !$data.toggleable"

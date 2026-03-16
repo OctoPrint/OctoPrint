@@ -516,6 +516,16 @@ class GroupCantBeChanged(Exception):
         Exception.__init__(self, "Group can't be changed: %s" % key)
 
 
+class CyclicSubgroupReference(Exception):
+    def __init__(self, key, subgroup_key):
+        Exception.__init__(
+            self,
+            "Adding subgroup {} to group {} would create a cycle".format(
+                subgroup_key, key
+            ),
+        )
+
+
 class Group:
     def __init__(
         self,
@@ -636,6 +646,18 @@ class Group:
 
         return dirty
 
+    def has_subgroup_transitive(self, key, seen=None):
+        """Check if key appears in this group's transitive subgroup chain."""
+        if seen is None:
+            seen = set()
+        if self._key in seen:
+            return False
+        seen.add(self._key)
+        for subgroup in self._subgroups:
+            if subgroup._key == key or subgroup.has_subgroup_transitive(key, seen):
+                return True
+        return False
+
     def add_subgroups_to_group(self, subgroups):
         """Adds a list of subgroups to a group"""
         if not self.is_changeable():
@@ -653,6 +675,8 @@ class Group:
 
         dirty = False
         for group in subgroups:
+            if group._key == self._key or group.has_subgroup_transitive(self._key):
+                raise CyclicSubgroupReference(self._key, group._key)
             if group.is_toggleable() and group not in self._subgroups:
                 self._subgroups.append(group)
                 dirty = True

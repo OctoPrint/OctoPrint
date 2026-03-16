@@ -69,6 +69,8 @@ def add_group():
         )
     except groups.GroupAlreadyExists:
         abort(409)
+    except groups.CyclicSubgroupReference:
+        abort(409)
     return get_groups()
 
 
@@ -112,6 +114,8 @@ def update_group(key):
         abort(403)
     except groups.UnknownGroup:
         abort(404)
+    except groups.CyclicSubgroupReference:
+        abort(409)
 
 
 @api.route("/access/groups/<key>", methods=["DELETE"])

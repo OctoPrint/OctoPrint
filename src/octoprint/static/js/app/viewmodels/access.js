@@ -568,12 +568,49 @@ $(function () {
                     }
                     self.editor.permissions(permissions);
                 },
+                subgroupUnselectableReason: function (subgroup) {
+                    if (!subgroup.toggleable)
+                        return gettext(
+                            "Fixed groups can't be added to or removed from other groups."
+                        );
+
+                    var key = self.editor.key();
+                    if (!key) return "";
+
+                    if (key === subgroup.key)
+                        return gettext("A group cannot be its own subgroup.");
+                    if (key === GROUP_GUESTS && subgroup.dangerous)
+                        return gettext(
+                            "Dangerous subgroups cannot be added to the guests group."
+                        );
+
+                    // check if adding this subgroup would create a cycle
+                    var hasSubgroupTransitive = function (groupKey, seen) {
+                        if (!seen) seen = {};
+                        if (groupKey in seen) return false;
+                        seen[groupKey] = true;
+                        var group = self.lookup[groupKey];
+                        if (!group) return false;
+                        for (var i = 0; i < group.subgroups.length; i++) {
+                            var subgroupKey = group.subgroups[i];
+                            if (
+                                subgroupKey === key ||
+                                hasSubgroupTransitive(subgroupKey, seen)
+                            )
+                                return true;
+                        }
+                        return false;
+                    };
+                    if (hasSubgroupTransitive(subgroup.key)) {
+                        return gettext(
+                            "Adding this subgroup would create a circular reference."
+                        );
+                    }
+
+                    return "";
+                },
                 subgroupSelectable: function (subgroup) {
-                    // guests may not get dangerous subgroups
-                    return (
-                        self.editor.key() !== subgroup.key &&
-                        (self.editor.key() !== GROUP_GUESTS || !subgroup.dangerous)
-                    );
+                    return !self.editor.subgroupUnselectableReason(subgroup);
                 },
                 subgroupSelected: function (subgroup) {
                     var index = self.editor.subgroups().indexOf(subgroup);

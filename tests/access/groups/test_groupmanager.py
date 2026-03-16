@@ -45,3 +45,37 @@ class GroupManagerTestCase(unittest.TestCase):
 
             group_manager.remove_group("fancy")
             self.assertIsNone(group_manager.find_group("fancy"))
+
+    def test_cyclic_subgroup_self_reference(self):
+        with group_manager_with_temp_file() as group_manager:
+            group_manager.add_group(
+                "alpha",
+                "Alpha",
+                "Alpha group",
+                permissions=[],
+                subgroups=[],
+                save=False,
+            )
+            with self.assertRaises(octoprint.access.groups.CyclicSubgroupReference):
+                group_manager.update_group("alpha", subgroups=["alpha"], save=False)
+
+    def test_cyclic_subgroup_indirect(self):
+        with group_manager_with_temp_file() as group_manager:
+            group_manager.add_group(
+                "alpha",
+                "Alpha",
+                "Alpha group",
+                permissions=[],
+                subgroups=[],
+                save=False,
+            )
+            group_manager.add_group(
+                "beta",
+                "Beta",
+                "Beta group",
+                permissions=[],
+                subgroups=["alpha"],
+                save=False,
+            )
+            with self.assertRaises(octoprint.access.groups.CyclicSubgroupReference):
+                group_manager.update_group("alpha", subgroups=["beta"], save=False)
