@@ -655,6 +655,8 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             ConnectedPrinterState.CLOSED,
             ConnectedPrinterState.CLOSED_WITH_ERROR,
         }:
+            self.set_state(state, error=error_str)  # this will call the listener
+
             if self._comm is not None:
                 self._comm = None
 
@@ -662,6 +664,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
             self.error_info = None
 
             super().set_job(None)
+            return
 
         self.set_state(state, error=error_str)  # this will call the listener
 

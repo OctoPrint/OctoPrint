@@ -31,6 +31,7 @@ from octoprint.printer import (
     PrinterMixin,
 )
 from octoprint.printer.connection import (
+    PRINTING_STATES,
     ConnectedPrinter,
     ConnectedPrinterListenerMixin,
     ConnectedPrinterState,
@@ -1194,10 +1195,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     ):
         old_state = self._state
 
-        if old_state in {
-            ConnectedPrinterState.PRINTING,
-        }:
-            # if we were still printing and went into an error state, mark the print as failed
+        if old_state in PRINTING_STATES:
+            # if we were in any print-related state and went into an error state, mark the print as failed
             if state in {
                 ConnectedPrinterState.CLOSED,
                 ConnectedPrinterState.ERROR,
@@ -1253,11 +1252,6 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             if self._connection is not None:
                 self._connection = None
 
-            with self._selected_job_mutex:
-                if self._selected_job is not None:
-                    eventManager().fire(Events.FILE_DESELECTED)
-                self._set_job_data(None)
-
             self._update_progress_data()
             self._set_offsets(None)
             self._add_temperature_data()
@@ -1283,10 +1277,12 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                 )
             )
         else:
-            eventManager().fire(Events.FILE_DESELECTED)
-            self._logger_job.info(
-                "Print job deselected - user: {}".format(user if user else "n/a")
-            )
+            with self._selected_job_mutex:
+                if self._selected_job is not None:
+                    eventManager().fire(Events.FILE_DESELECTED)
+                    self._logger_job.info(
+                        "Print job deselected - user: {}".format(user if user else "n/a")
+                    )
 
         self._set_job_data(
             job,
