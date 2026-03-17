@@ -1252,6 +1252,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             if self._connection is not None:
                 self._connection = None
 
+            self.on_printer_job_changed(None)
+
             self._update_progress_data()
             self._set_offsets(None)
             self._add_temperature_data()
