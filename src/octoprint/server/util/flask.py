@@ -664,6 +664,24 @@ def _local_networks():
     return _cached_local_networks
 
 
+def server_side_logout(userid, sessionid=None):
+    from flask import session
+    from flask_login import logout_user
+
+    # log out from user manager...
+    user = octoprint.server.userManager.find_user(userid=userid, session=sessionid)
+    if user:
+        octoprint.server.userManager.logout_user(user)
+
+    # ... clear login related stuff from session...
+    session.pop("usersession.id", None)
+    session.pop("usersession.signature", None)
+    session.pop("login_mechanism", None)
+
+    # ... and log out from flask login (and principal)
+    logout_user()
+
+
 def passive_login():
     logger = logging.getLogger(__name__)
 

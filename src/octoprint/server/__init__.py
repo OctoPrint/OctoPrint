@@ -48,6 +48,7 @@ import octoprint.filemanager
 import octoprint.util
 import octoprint.util.net
 from octoprint.server import util
+from octoprint.server.util.flask import server_side_logout
 from octoprint.systemcommands import system_command_manager
 from octoprint.util.json import JsonEncoding
 from octoprint.vendor.flask_principal import (  # noqa: F401
@@ -206,15 +207,21 @@ def load_user(id):
     if id == "_internal":
         return userManager.internal_user_factory()
 
-    if session and "usersession.id" in session:
-        sessionid = session["usersession.id"]
-    else:
-        sessionid = None
+    sessionid = None
+    sessionsig = ""
+    if session:
+        sessionid = session.get("usersession.id")
+        sessionsig = session.get("usersession.signature", "")
 
-    if session and "usersession.signature" in session:
-        sessionsig = session["usersession.signature"]
-    else:
-        sessionsig = ""
+        login_mechanism = session.get("login_mechanism")
+        if (
+            login_mechanism == util.LoginMechanism.REMOTE_USER
+            and id
+            != request.headers.get(settings().get(["accessControl", "remoteUserHeader"]))
+        ):
+            # remote user header doesn't match anymore, we interpret that as a logout, see #5279
+            server_side_logout(id, sessionid=sessionid)
+            return None
 
     if sessionid:
         # session["_fresh"] is False if the session comes from a remember me cookie,
@@ -1718,6 +1725,8 @@ class Server:
                 and not current_user.is_anonymous
             ):
                 return Identity(current_user.get_id())
+            else:
+                return OctoPrintAnonymousIdentity()
 
         principals.identity_loader(current_user_identity_loader)
 
