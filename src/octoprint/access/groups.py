@@ -472,9 +472,9 @@ class FilebasedGroupManager(GroupManager):
             added_subgroups = list(set(subgroups) - set(group._subgroups))
 
             if removed_subgroups:
-                self._dirty |= group.remove_subgroups_from_group(removed_subgroups)
+                self._dirty = group.remove_subgroups_from_group(removed_subgroups) or self._dirty
             if added_subgroups:
-                self._dirty |= group.add_subgroups_to_group(added_subgroups)
+                self._dirty = group.add_subgroups_to_group(added_subgroups) or self._dirty
 
             notifications.append(
                 (
