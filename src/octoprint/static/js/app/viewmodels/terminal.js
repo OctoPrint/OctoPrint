@@ -534,7 +534,10 @@ $(function () {
 
             new PNotify({
                 title: gettext("Suppressed command"),
-                text: _.sprintf(text, payload),
+                text: _.sprintf(text, {
+                    command: _.escape(payload.command),
+                    message: _.escape(payload.message)
+                }),
                 type: severity,
                 hide: false
             });
