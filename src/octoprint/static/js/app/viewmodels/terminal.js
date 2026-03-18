@@ -508,7 +508,8 @@ $(function () {
         };
 
         self.onEventCommandSuppressed = function (payload) {
-            var setting = self.settings.settings.serial.notifySuppressedCommands();
+            var setting =
+                self.settings.settings.plugins.serial_connector.notifySuppressedCommands();
 
             if (
                 setting === "never" ||
