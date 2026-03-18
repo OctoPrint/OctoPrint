@@ -19,7 +19,11 @@ import octoprint.timelapse
 from octoprint.plugin import plugin_manager
 from octoprint.settings import settings
 from octoprint.util import to_unicode
-from octoprint.util.net import is_loopback_address
+from octoprint.util.net import (
+    contains_trusted_source,
+    is_loopback_address,
+    usable_trusted_proxies_from_settings,
+)
 
 from . import flask, sockjs, tornado, watchdog  # noqa: F401
 
@@ -246,28 +250,37 @@ def get_user_for_remote_user_header(
 
     Will only perform any action if the trustRemoteUser setting is enabled.
     """
-    if not settings().getBoolean(["accessControl", "trustRemoteUser"]):
+    s = settings()
+
+    if not s.getBoolean(["accessControl", "trustRemoteUser"]):
         return None
 
-    header = request.headers.get(settings().get(["accessControl", "remoteUserHeader"]))
+    header = request.headers.get(s.get(["accessControl", "remoteUserHeader"]))
     if header is None:
         return None
 
+    trusted_auth_proxy = s.get(["accessControl", "trustedAuthProxies"])
+    if trusted_auth_proxy:
+        if not contains_trusted_source(
+            trusted_auth_proxy,
+            request.headers.get("X-Forwarded-For"),
+            usable_trusted_proxies_from_settings(s),
+        ):
+            return None  # don't eval the header if this request is not coming from our trusted auth proxy
+
     user = octoprint.server.userManager.find_user(userid=header)
 
-    if user is None and settings().getBoolean(["accessControl", "addRemoteUsers"]):
+    if user is None and s.getBoolean(["accessControl", "addRemoteUsers"]):
         octoprint.server.userManager.add_user(
             header, None, active=True
         )  # create new user with disabled password login
         user = octoprint.server.userManager.find_user(userid=header)
 
-    if user and settings().getBoolean(["accessControl", "trustRemoteGroups"]):
-        groupHeader = request.headers.get(
-            settings().get(["accessControl", "remoteGroupsHeader"])
-        )
+    if user and s.getBoolean(["accessControl", "trustRemoteGroups"]):
+        groupHeader = request.headers.get(s.get(["accessControl", "remoteGroupsHeader"]))
         if groupHeader:
             groups = groupHeader.split(",")
-            mapping = settings().get(["accessControl", "remoteGroupsMapping"])
+            mapping = s.get(["accessControl", "remoteGroupsMapping"])
             if mapping:
                 groups = [mapping.get(group, group) for group in groups]
             octoprint.server.userManager.change_user_groups(header, groups)

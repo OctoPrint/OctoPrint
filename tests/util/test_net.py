@@ -247,3 +247,140 @@ def test_usable_trusted_proxies_from_settings():
             ["server", "reverseProxy", "trustLocalhostProxies"]
         )
         patched.assert_called_once_with(["10.0.0.1"], add_localhost=True)
+
+
+@pytest.mark.parametrize(
+    "addresses,expected",
+    [
+        (["10.0.0.1"], ["10.0.0.1"]),
+        (["10.0.0.1", "murks"], ["10.0.0.1"]),
+        (None, []),
+        ([None], []),
+    ],
+)
+def test_get_ipset_from_list(addresses, expected):
+    actual = [str(x) for x in octoprint.util.net.get_ipset_from_list(addresses)]
+    assert actual == expected
+
+
+@pytest.mark.parametrize(
+    "forwarded_for,expected",
+    [
+        ("127.0.0.1, 10.1.2.3, 192.168.1.10", ["192.168.1.10", "10.1.2.3", "127.0.0.1"]),
+        (None, []),
+    ],
+)
+def test_get_forwarded_for_addresses(forwarded_for, expected):
+    assert octoprint.util.net.get_forwarded_for_addresses(forwarded_for) == expected
+
+
+@pytest.mark.parametrize(
+    "forwarded_for,trusted_proxies,expected",
+    [
+        (
+            None,
+            ["127.0.0.1", "::1"],
+            [],
+        ),  # direct connection
+        (
+            "192.168.1.10",
+            ["127.0.0.1", "::1"],
+            [],
+            # only untrusted proxy
+        ),
+        (
+            "10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "192.168.1.10"],
+            ["192.168.1.10"],
+        ),  # untrusted proxy in front
+        (
+            "10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            ["192.168.1.10"],
+        ),  # ipv4 range w/ untrusted proxy in front
+        (
+            "10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "unknown", "192.168.1.0/24"],
+            ["192.168.1.10"],
+        ),  # ipv4 range w/ garbage entry and untrusted proxy in front
+        (
+            "fd12:3456:789a:2::1, fd12:3456:789a:1::1",
+            ["127.0.0.1", "::1", "fd12:3456:789a:1::/64"],
+            ["fd12:3456:789a:1::1"],
+        ),  # ipv6 range w/ untrusted proxy in front
+        (
+            "10.1.2.3, 192.168.1.10",
+            ["0.0.0.0/0"],
+            ["192.168.1.10", "10.1.2.3"],
+        ),  # everything is trusted (BAD IDEA!)
+    ],
+)
+def test_get_trusted_forwarded_for_addresses(forwarded_for, trusted_proxies, expected):
+    assert (
+        octoprint.util.net.get_trusted_forwarded_for_addresses(
+            forwarded_for, trusted_proxies
+        )
+        == expected
+    )
+
+
+@pytest.mark.parametrize(
+    "trusted,forwarded_for,trusted_proxies,expected",
+    [
+        (
+            None,
+            "10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            False,
+        ),  # nothing is trusted
+        (
+            ["192.168.1.10"],
+            "10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            True,
+        ),  # trusted is contained in forward_for and trusted proxies
+        (
+            ["127.0.0.1", "::1"],
+            "10.1.2.3, 192.168.1.10, ::1",
+            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            True,
+        ),  # trusted is contained in forward_for and trusted proxies
+        (
+            ["127.0.0.1", "::1"],
+            "10.1.2.3, 192.168.1.10, 127.0.0.1",
+            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            True,
+        ),  # trusted is contained in forward_for and trusted proxies
+        (
+            ["192.168.1.1"],
+            "10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            False,
+        ),  # trusted is not contained in forward_for
+        (
+            ["10.1.2.3"],
+            "10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            False,
+        ),  # trusted is contained in forward_for but not trusted proxies
+        (
+            ["192.168.1.0/24"],
+            "10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            True,
+        ),  # trusted range matches ip in forward_for and in trusted proxies
+        (
+            "192.168.1.0/24",
+            "10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            True,
+        ),  # trusted range matches ip in forward_for and in trusted proxies, single auth proxy
+    ],
+)
+def test_contains_trusted_source(trusted, forwarded_for, trusted_proxies, expected):
+    assert (
+        octoprint.util.net.contains_trusted_source(
+            trusted, forwarded_for, trusted_proxies
+        )
+        == expected
+    )
