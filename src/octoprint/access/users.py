@@ -19,6 +19,8 @@ from octoprint.settings import settings as s
 from octoprint.util import atomic_write, deprecated, generate_api_key, to_bytes, yaml
 from octoprint.util import get_fully_qualified_classname as fqcn
 
+NOLOGIN_PWHASH = "nologin"
+
 password_hashers = []
 
 try:
@@ -174,6 +176,8 @@ class UserManager(GroupChangeListener):
 
     @staticmethod
     def create_password_hash(password, *args, **kwargs):
+        if password is None:
+            return NOLOGIN_PWHASH
         return password_hashers[0].hash(password)
 
     @staticmethod
@@ -1226,6 +1230,9 @@ class User(UserMixin):
         }
 
     def check_password(self, password, legacy=False):
+        if self._passwordHash == NOLOGIN_PWHASH:
+            return False
+
         if legacy:
             return self._passwordHash == password
 

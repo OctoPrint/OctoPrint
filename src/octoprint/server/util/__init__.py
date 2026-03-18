@@ -257,8 +257,8 @@ def get_user_for_remote_user_header(
 
     if user is None and settings().getBoolean(["accessControl", "addRemoteUsers"]):
         octoprint.server.userManager.add_user(
-            header, settings().generateApiKey(), active=True
-        )
+            header, None, active=True
+        )  # create new user with disabled password login
         user = octoprint.server.userManager.find_user(userid=header)
 
     if user and settings().getBoolean(["accessControl", "trustRemoteGroups"]):
