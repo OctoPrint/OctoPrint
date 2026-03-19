@@ -954,6 +954,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def get_state_string(self, state=None, *args, **kwargs):
         if self._connection is None:
+            if state is not None:
+                return state.value
             return "Offline"
         else:
             return self._connection.get_state_string(state=state)
@@ -1293,7 +1295,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         )
         self._stateMonitor.set_state(
             self._dict(
-                text=self.get_state_string(),
+                text=self.get_state_string(state=self._state),
                 flags=self._get_state_flags(),
                 error=self.get_error(),
             )
@@ -1671,7 +1673,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
     def _set_state(self, state, state_string=None, error_string=None):
         if state_string is None:
-            state_string = self.get_state_string()
+            state_string = self.get_state_string(state=state)
         if error_string is None:
             error_string = self.get_error()
 
