@@ -66,12 +66,8 @@ class AccessControlConfig(BaseModel):
     """
     Only trust the remote user header if the request came via one of these configured (trusted!) reverse proxies.
 
-    **Unset by default, meaning this will NOT be checked!** If you plan to use an auth proxy with OctoPrint,
-    be sure to also set it's IP address (or a CIDR range covering it) here!
-
-    Please note that only your **trusted reverse proxies** as defined via `server.reverseProxy.trustedProxies` and
-    `server.reverseProxy.trustLocalhostProxies` will be used for a check, so if your trusted auth proxy address
-    isn't part of your trusted reverse proxies, this check will always fail, causing remote user headers to not work!
+    If left unset, the configured trusted reverse proxies from `server.reverseProxy.trustedProxies` and `server.reverseProxy.trustLocalhostProxies`
+    will be used. Make sure this includes your auth proxy or set it explicitly here!
     """
 
     remoteUserHeader: str = "REMOTE_USER"
