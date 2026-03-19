@@ -904,6 +904,7 @@ class WsgiInputContainer:
             ),
             "QUERY_STRING": request.query,
             "REMOTE_ADDR": request.remote_ip,
+            "ORIG_REMOTE_ADDR": request.connection.context._orig_remote_ip,
             "SERVER_NAME": host,
             "SERVER_PORT": str(port),
             "SERVER_PROTOCOL": request.version,

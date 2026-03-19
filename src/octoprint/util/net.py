@@ -6,7 +6,7 @@ import os
 import socket
 import sys
 from collections.abc import Generator
-from typing import Optional
+from typing import Optional, Union
 
 import ifaddr
 import netaddr
@@ -372,40 +372,49 @@ def get_ipset_from_list(addresses) -> netaddr.IPSet:
     return ip_set
 
 
-def get_forwarded_for_addresses(forwarded_for):
+def get_forwarded_for_addresses(forwarded_for: str) -> list[str]:
     if forwarded_for is None:
         return []
     return [sanitize_address(addr.strip()) for addr in reversed(forwarded_for.split(","))]
 
 
-def get_trusted_forwarded_for_addresses(forwarded_for, trusted_proxies):
-    trusted_ip_set = get_ipset_from_list(trusted_proxies)
-    return [
-        addr
-        for addr in get_forwarded_for_addresses(forwarded_for)
-        if addr in trusted_ip_set
-    ]
+def get_trusted_forwarded_for_addresses(
+    forwarded_for: str, trusted_proxies: Union[list[str], netaddr.IPSet]
+) -> list[str]:
+    if not isinstance(trusted_proxies, netaddr.IPSet):
+        trusted_proxies = get_ipset_from_list(trusted_proxies)
+
+    trusted_ff = []
+    for addr in get_forwarded_for_addresses(forwarded_for):
+        if addr not in trusted_proxies:
+            break
+        trusted_ff.append(addr)
+    return trusted_ff
 
 
-def get_http_client_ip(remote_addr, forwarded_for, trusted_proxies):
-    trusted_ip_set = get_ipset_from_list(trusted_proxies)
+def get_http_client_ip(
+    remote_addr: str, forwarded_for: str, trusted_proxies: Union[list[str], netaddr.IPSet]
+) -> str:
+    if not isinstance(trusted_proxies, netaddr.IPSet):
+        trusted_proxies = get_ipset_from_list(trusted_proxies)
 
-    if sanitize_address(remote_addr) in trusted_ip_set:
+    if sanitize_address(remote_addr) in trusted_proxies:
         for addr in get_forwarded_for_addresses(forwarded_for):
-            if addr not in trusted_ip_set:
+            if addr not in trusted_proxies:
                 return addr
     return sanitize_address(remote_addr)
 
 
-def contains_trusted_source(trusted, forwarded_for, trusted_proxies):
+def contains_trusted_source(
+    trusted: netaddr.IPSet, forwarded_for: str, trusted_proxies: netaddr.IPSet
+) -> bool:
     if not trusted:
         return False
-    if not isinstance(trusted, list):
-        trusted = [trusted]
 
     trusted_forward_for = get_trusted_forwarded_for_addresses(
         forwarded_for, trusted_proxies
     )
-    trusted_set = get_ipset_from_list(trusted)
+    if not trusted_forward_for:
+        return False
 
-    return any(source in trusted_set for source in trusted_forward_for)
+    return any(source in trusted for source in trusted_forward_for)

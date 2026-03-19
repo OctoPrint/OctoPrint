@@ -21,7 +21,9 @@ from octoprint.settings import settings
 from octoprint.util import to_unicode
 from octoprint.util.net import (
     contains_trusted_source,
+    get_ipset_from_list,
     is_loopback_address,
+    usable_trusted_proxies,
     usable_trusted_proxies_from_settings,
 )
 
@@ -259,14 +261,30 @@ def get_user_for_remote_user_header(
     if header is None:
         return None
 
-    trusted_auth_proxy = s.get(["accessControl", "trustedAuthProxies"])
-    if trusted_auth_proxy:
-        if not contains_trusted_source(
-            trusted_auth_proxy,
-            request.headers.get("X-Forwarded-For"),
-            usable_trusted_proxies_from_settings(s),
-        ):
-            return None  # don't eval the header if this request is not coming from our trusted auth proxy
+    trusted_proxies = get_ipset_from_list(usable_trusted_proxies_from_settings(s))
+
+    trusted_auth_proxies_config = s.get(["accessControl", "trustedAuthProxies"])
+    if trusted_auth_proxies_config:
+        trusted_auth_proxies = get_ipset_from_list(
+            usable_trusted_proxies(trusted_auth_proxies_config)
+        )
+    else:
+        trusted_auth_proxies = trusted_proxies
+
+    orig_remote_addr = request.environ.get("ORIG_REMOTE_ADDR")
+    forwarded_for = request.headers.get("X-Forwarded-For")
+
+    request_via_trusted_proxy_chain_incl_auth_proxy = (
+        orig_remote_addr in trusted_proxies
+        and contains_trusted_source(trusted_auth_proxies, forwarded_for, trusted_proxies)
+    )
+    request_directly_from_auth_proxy = orig_remote_addr in trusted_auth_proxies
+
+    if not (
+        request_via_trusted_proxy_chain_incl_auth_proxy
+        or request_directly_from_auth_proxy
+    ):
+        return None  # don't eval the header if this request is not coming from our trusted auth proxy
 
     user = octoprint.server.userManager.find_user(userid=header)
 

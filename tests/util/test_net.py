@@ -4,6 +4,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 from unittest import mock
 
 import ifaddr
+import netaddr
 import pytest
 
 import octoprint.util.net
@@ -176,6 +177,12 @@ def test_get_netmask_broken_address():
             "127.100.100.1",
         ),  # everything is trusted (BAD IDEA!)
         (
+            "127.100.100.1",
+            "10.1.2.3, 192.168.1.10",
+            netaddr.IPSet(["0.0.0.0/0"]),
+            "127.100.100.1",
+        ),  # everything is trusted (BAD IDEA!) and already an IPSet
+        (
             "192.168.1.10",
             "127.0.0.1",
             ["127.0.0.1", "::1"],
@@ -313,6 +320,26 @@ def test_get_forwarded_for_addresses(forwarded_for, expected):
             ["0.0.0.0/0"],
             ["192.168.1.10", "10.1.2.3"],
         ),  # everything is trusted (BAD IDEA!)
+        (
+            "127.0.0.1, 192.168.1.10",
+            ["127.0.0.1", "::1"],
+            [],
+        ),  # ipv4 before true lan ip
+        (
+            "::1, ::ffff:192.168.1.10",
+            ["127.0.0.1", "::1"],
+            [],
+        ),  # ipv6 before true lan ip
+        (
+            "127.0.0.1, 10.1.2.3, 192.168.1.10",
+            ["127.0.0.1", "::1", "192.168.1.10"],
+            ["192.168.1.10"],
+        ),  # access through trusted reverse proxies on 127.0.0.1 and 192.168.1.10, real ip 10.1.2.3, spoofed to 127.0.0.1
+        (
+            "::1, fd12:3456:789a:2::1, fd12:3456:789a:1::1",
+            ["127.0.0.1", "::1", "fd12:3456:789a:1::/64"],
+            ["fd12:3456:789a:1::1"],
+        ),  # access through trusted reverse proxies on ::1 and something on fd12:3456:789a:1::/64, spoofed to ::1
     ],
 )
 def test_get_trusted_forwarded_for_addresses(forwarded_for, trusted_proxies, expected):
@@ -330,51 +357,45 @@ def test_get_trusted_forwarded_for_addresses(forwarded_for, trusted_proxies, exp
         (
             None,
             "10.1.2.3, 192.168.1.10",
-            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            netaddr.IPSet(["127.0.0.1", "::1", "192.168.1.0/24"]),
             False,
         ),  # nothing is trusted
         (
-            ["192.168.1.10"],
+            netaddr.IPSet(["192.168.1.10"]),
             "10.1.2.3, 192.168.1.10",
-            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            netaddr.IPSet(["127.0.0.1", "::1", "192.168.1.0/24"]),
             True,
         ),  # trusted is contained in forward_for and trusted proxies
         (
-            ["127.0.0.1", "::1"],
+            netaddr.IPSet(["127.0.0.1", "::1"]),
             "10.1.2.3, 192.168.1.10, ::1",
-            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            netaddr.IPSet(["127.0.0.1", "::1", "192.168.1.0/24"]),
             True,
         ),  # trusted is contained in forward_for and trusted proxies
         (
-            ["127.0.0.1", "::1"],
+            netaddr.IPSet(["127.0.0.1", "::1"]),
             "10.1.2.3, 192.168.1.10, 127.0.0.1",
-            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            netaddr.IPSet(["127.0.0.1", "::1", "192.168.1.0/24"]),
             True,
         ),  # trusted is contained in forward_for and trusted proxies
         (
-            ["192.168.1.1"],
+            netaddr.IPSet(["192.168.1.1"]),
             "10.1.2.3, 192.168.1.10",
-            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            netaddr.IPSet(["127.0.0.1", "::1", "192.168.1.0/24"]),
             False,
         ),  # trusted is not contained in forward_for
         (
-            ["10.1.2.3"],
+            netaddr.IPSet(["10.1.2.3"]),
             "10.1.2.3, 192.168.1.10",
-            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            netaddr.IPSet(["127.0.0.1", "::1", "192.168.1.0/24"]),
             False,
         ),  # trusted is contained in forward_for but not trusted proxies
         (
-            ["192.168.1.0/24"],
+            netaddr.IPSet(["192.168.1.0/24"]),
             "10.1.2.3, 192.168.1.10",
-            ["127.0.0.1", "::1", "192.168.1.0/24"],
+            netaddr.IPSet(["127.0.0.1", "::1", "192.168.1.0/24"]),
             True,
         ),  # trusted range matches ip in forward_for and in trusted proxies
-        (
-            "192.168.1.0/24",
-            "10.1.2.3, 192.168.1.10",
-            ["127.0.0.1", "::1", "192.168.1.0/24"],
-            True,
-        ),  # trusted range matches ip in forward_for and in trusted proxies, single auth proxy
     ],
 )
 def test_contains_trusted_source(trusted, forwarded_for, trusted_proxies, expected):
