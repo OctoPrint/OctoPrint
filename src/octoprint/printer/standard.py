@@ -953,12 +953,9 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._connection.cancel_print(user=user, tags=tags, params=params)
 
     def get_state_string(self, state=None, *args, **kwargs):
-        if self._connection is None:
-            if state is not None:
-                return state.value
-            return "Offline"
-        else:
-            return self._connection.get_state_string(state=state)
+        if state is None:
+            state = self._state
+        return state.value
 
     def get_state_id(self, state=None, *args, **kwargs):
         if state is None:
@@ -1672,12 +1669,13 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         self._stateMonitor.set_temp_offsets(offsets)
 
     def _set_state(self, state, state_string=None, error_string=None):
+        self._state = state
+
         if state_string is None:
-            state_string = self.get_state_string(state=state)
+            state_string = self.get_state_string()
         if error_string is None:
             error_string = self.get_error()
 
-        self._state = state
         self._stateMonitor.set_state(
             self._dict(
                 text=state_string, flags=self._get_state_flags(), error=error_string
@@ -1685,8 +1683,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         )
 
         payload = {
-            "state_id": self.get_state_id(self._state),
-            "state_string": self.get_state_string(self._state),
+            "state_id": self.get_state_id(),
+            "state_string": state_string,
         }
         eventManager().fire(Events.PRINTER_STATE_CHANGED, payload)
 
