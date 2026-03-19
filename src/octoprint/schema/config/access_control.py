@@ -59,15 +59,36 @@ class AccessControlConfig(BaseModel):
     Whether to trust remote user headers. If you have setup authentication in front of OctoPrint and the user names you use there match OctoPrint
     accounts, by setting this to true users will be logged into OctoPrint as the user provided in the header.
 
-    **ONLY ENABLE THIS** if your OctoPrint instance is only accessible through a connection locked down through an authenticating reverse proxy!
+    Make sure to add your auth proxy address(es) to `trustedAuthProxies` as well, see below!
     """
 
-    trustedAuthProxies: Optional[list[str]] = None
+    trustedAuthProxies: list[str] = []
     """
-    Only trust the remote user header if the request came via one of these configured (trusted!) reverse proxies.
+    Only trust the remote user header if the request came via one of these configured (trusted!) reverse proxie addresses or CIDR ranges.
 
-    If left unset, the configured trusted reverse proxies from `server.reverseProxy.trustedProxies` and `server.reverseProxy.trustLocalhostProxies`
-    will be used. Make sure this includes your auth proxy or set it explicitly here!
+    Must either be included in the set of trusted reverse proxies (see `server.reverseProxy.trustedProxies` and `server.reverseProxy.trustLocalhostProxies`)
+    or directly connect to OctoPrint!
+
+    **WARNING**: If left unset, the remote user header won't ever be trusted!
+
+    Examples:
+
+    ``` yaml
+    accessControl:
+      trustedAuthProxies:
+        - 127.0.0.0/8
+        - ::1
+    ```
+
+    to trust localhost.
+
+    ``` yaml
+    accessControl:
+      trustedAuthProxies:
+        - 192.168.1.128
+    ```
+
+    to trust 192.168.1.128
     """
 
     remoteUserHeader: str = "REMOTE_USER"

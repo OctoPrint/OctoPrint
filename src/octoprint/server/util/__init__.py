@@ -261,15 +261,14 @@ def get_user_for_remote_user_header(
     if header is None:
         return None
 
-    trusted_proxies = get_ipset_from_list(usable_trusted_proxies_from_settings(s))
+    trusted_auth_proxies = s.get(["accessControl", "trustedAuthProxies"])
+    if not trusted_auth_proxies:
+        return None
 
-    trusted_auth_proxies_config = s.get(["accessControl", "trustedAuthProxies"])
-    if trusted_auth_proxies_config:
-        trusted_auth_proxies = get_ipset_from_list(
-            usable_trusted_proxies(trusted_auth_proxies_config)
-        )
-    else:
-        trusted_auth_proxies = trusted_proxies
+    trusted_auth_proxies = get_ipset_from_list(
+        usable_trusted_proxies(trusted_auth_proxies, add_localhost=False)
+    )
+    trusted_proxies = get_ipset_from_list(usable_trusted_proxies_from_settings(s))
 
     orig_remote_addr = request.environ.get("ORIG_REMOTE_ADDR")
     forwarded_for = request.headers.get("X-Forwarded-For")
