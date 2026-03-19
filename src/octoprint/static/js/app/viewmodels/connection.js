@@ -153,9 +153,9 @@ $(function () {
 
             // printer profile
 
-            const printerProfiles = response.options.printerProfiles;
+            const printerProfiles = response.options.profiles;
             const preferredProfile = response.options.preferredProfile;
-            const currentProfile = response.current.printerProfile;
+            const currentProfile = response.current.profile;
 
             if (!self.currentProfile() && printerProfiles) {
                 if (printerProfiles.indexOf(currentProfile) >= 0) {
