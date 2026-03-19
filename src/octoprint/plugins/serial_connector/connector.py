@@ -650,6 +650,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         error_str = None
         if self._comm is not None:
             error_str = self._comm.getErrorString()
+            self._port, self._baudrate = self._comm.getConnection()
 
         self.set_state(state, error=error_str)  # this will call the listener
 
