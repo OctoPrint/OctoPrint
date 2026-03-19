@@ -1238,6 +1238,7 @@ class Settings:
             self._migrate_trusted_proxies,
             self._migrate_allowlists_and_blocklists,
             self._migrate_notify_suppressed_commands,
+            self._migrate_trusted_auth_proxies,
         )
 
         for migrate in migrators:
@@ -1826,6 +1827,28 @@ class Settings:
             if "feature" not in config:
                 config["feature"] = {}
             config["feature"][key] = value
+
+        return modified
+
+    def _migrate_trusted_auth_proxies(self, config):
+        modified = False
+
+        if "accessControl" in config and "trustRemoteUser" in config["accessControl"]:
+            value = config["accessControl"].pop("trustRemoteUser")
+
+            if value and "trustedAuthProxies" not in config["accessControl"]:
+                from octoprint.util.net import usable_trusted_proxies_from_settings
+
+                trusted_proxies = usable_trusted_proxies_from_settings(self)
+                config["accessControl"]["trustedAuthProxies"] = trusted_proxies
+
+            modified = True
+
+        if modified:
+            backup_path = self.backup("trusted_auth_proxies_migration")
+            self._logger.info(
+                f"Made a copy of the current config at {backup_path} to allow recovery of trustRemoteUser"
+            )
 
         return modified
 

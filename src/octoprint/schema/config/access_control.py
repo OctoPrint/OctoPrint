@@ -54,41 +54,18 @@ class AccessControlConfig(BaseModel):
     checkBasicAuthenticationPassword: bool = True
     """Whether to also check the password provided through Basic Authentication, if the Basic Authentication header is to be trusted. Disabling this will only match the user name in the Basic Authentication header and login the user without further checks, thus disable with caution."""
 
-    trustRemoteUser: bool = False
-    """
-    Whether to trust remote user headers. If you have setup authentication in front of OctoPrint and the user names you use there match OctoPrint
-    accounts, by setting this to true users will be logged into OctoPrint as the user provided in the header.
-
-    Make sure to add your auth proxy address(es) to `trustedAuthProxies` as well, see below!
-    """
-
     trustedAuthProxies: list[str] = []
     """
-    Only trust the remote user header if the request came via one of these configured (trusted!) reverse proxie addresses or CIDR ranges.
+    If you want to setup a authenticating reverse proxy in front of OctoPrint, add its address (or CIDR range) here to enable trusting
+    the remote user header defined in ``remoteUserHeader``.
 
-    Must either be included in the set of trusted reverse proxies (see `server.reverseProxy.trustedProxies` and `server.reverseProxy.trustLocalhostProxies`)
-    or directly connect to OctoPrint!
+    Please note that your auth proxy must either also be included in the set of trusted reverse proxies (see ``server.reverseProxy.trustedProxies`` and ``server.reverseProxy.trustLocalhostProxies``)
+    or *directly* connect to OctoPrint!
 
-    **WARNING**: If left unset, the remote user header won't ever be trusted!
+    If left unset (the default), the remote user header defined in ``remoteUserHeader`` won't ever be trusted!
 
-    Examples:
-
-    ``` yaml
-    accessControl:
-      trustedAuthProxies:
-        - 127.0.0.0/8
-        - ::1
-    ```
-
-    to trust localhost.
-
-    ``` yaml
-    accessControl:
-      trustedAuthProxies:
-        - 192.168.1.128
-    ```
-
-    to trust 192.168.1.128
+    **Please note:** If you are coming from a previous version of OctoPrint that still supported the ``trustRemoteUser`` setting and you had that set to ``true``,
+    this setting will be prepopulated with your trusted reverse proxies for you during settings migration. You definitely should give this a sanity check however!
     """
 
     remoteUserHeader: str = "REMOTE_USER"
