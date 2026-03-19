@@ -125,7 +125,7 @@ def connectionState_1_12_0():  # 1.12.0+
             connector=connector,
             parameters=connection_state,
             capabilities=capabilities,
-            profile=profile.get("_id") if profile else None,
+            profile=profile.get("id") if profile else None,
         ),
         options=_get_options_1_12_0(),
     )
