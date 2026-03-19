@@ -1292,7 +1292,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
         )
         self._stateMonitor.set_state(
             self._dict(
-                text=self.get_state_string(state=self._state),
+                text=self.get_state_string(),
                 flags=self._get_state_flags(),
                 error=self.get_error(),
             )
