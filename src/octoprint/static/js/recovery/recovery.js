@@ -38,6 +38,7 @@ $(function () {
         self.permitted = ko.observable(false);
         self.username = ko.observable(undefined);
         self.credentialsSeen = ko.observable(undefined);
+        self.credentialsRecheckSupported = ko.observable(false);
 
         // system commands
         self.systemCommands = ko.observableArray([]);
@@ -149,6 +150,9 @@ $(function () {
             return OctoPrint.browser
                 .login(user, pass)
                 .done((response) => {
+                    self.credentialsRecheckSupported(
+                        response._credentials_recheck_supported
+                    );
                     self.credentialsSeen(response._credentials_seen);
                     self.reauthenticateFailed(false);
                     self._reauthenticated = self.credentialsSeen();
@@ -171,6 +175,7 @@ $(function () {
         };
 
         self.checkCredentialsSeen = () => {
+            if (!self.credentialsRecheckSupported()) return true;
             if (CONFIG_REAUTHENTICATION_TIMEOUT <= 0) return true;
 
             const credentialsSeen = self.credentialsSeen();

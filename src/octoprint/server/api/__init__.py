@@ -36,6 +36,7 @@ from octoprint.server.util import (
 )
 from octoprint.server.util.flask import (
     api_versioned,
+    credentials_recheck_supported,
     ensure_credentials_checked_recently,
     get_json_command_from_request,
     limit,
@@ -432,6 +433,9 @@ def login():
                 response["_login_mechanism"] = session["login_mechanism"]
                 response["_credentials_seen"] = to_api_credentials_seen(
                     session["credentials_seen"]
+                )
+                response["_credentials_recheck_supported"] = (
+                    credentials_recheck_supported(user, session["login_mechanism"])
                 )
 
                 r = make_response(jsonify(response))

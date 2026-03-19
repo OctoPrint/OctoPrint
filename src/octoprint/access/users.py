@@ -1229,8 +1229,11 @@ class User(UserMixin):
             "roles": self._roles,
         }
 
+    def has_password(self):
+        return self._passwordHash != NOLOGIN_PWHASH
+
     def check_password(self, password, legacy=False):
-        if self._passwordHash == NOLOGIN_PWHASH:
+        if not self.has_password():
             return False
 
         if legacy:

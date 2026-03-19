@@ -23,8 +23,11 @@ $(function () {
         self.currentLoginMechanism = ko.observable(undefined);
 
         self.credentialsSeen = ko.observable(undefined);
+        self.credentialsRecheckSupported = ko.observable(false);
         self.credentialsSeenTimeout = undefined;
         self.credentialsSeen.subscribe(() => {
+            if (!self.credentialsRecheckSupported()) return;
+
             const credentialsSeen = self.credentialsSeen();
             if (credentialsSeen === undefined) {
                 return;
@@ -170,6 +173,15 @@ $(function () {
         };
 
         self.forceReauthentication = (callback) => {
+            if (!self.credentialsRecheckSupported()) {
+                // we can't force something that simply isn't going to work!
+                callback();
+
+                const deferred = $.Deferred();
+                deferred.resolve();
+                return deferred.promise();
+            }
+
             return self
                 .showReauthenticationDialog()
                 .done(() => {
@@ -181,6 +193,7 @@ $(function () {
         };
 
         self.checkCredentialsSeen = () => {
+            if (!self.credentialsRecheckSupported()) return true;
             if (CONFIG_REAUTHENTICATION_TIMEOUT <= 0) return true;
 
             const credentialsSeen = self.credentialsSeen();
@@ -219,6 +232,9 @@ $(function () {
                 if (response && response.name) {
                     self.loggedIn(true);
                     self.currentLoginMechanism(response._login_mechanism);
+                    self.credentialsRecheckSupported(
+                        response._credentials_recheck_supported
+                    ); // must be set before credentialsSeen for its subscription to work!
                     self.credentialsSeen(response._credentials_seen);
                     self.updateCurrentUserData(response);
                     if (!currentLoggedIn || currentLoggedIn === undefined) {
