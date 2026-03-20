@@ -769,7 +769,7 @@ def _saveSettings(data):
             )
 
         if "notifySuppressedCommands" in data["feature"]:
-            value = data["notifySuppressedCommands"]
+            value = data["feature"]["notifySuppressedCommands"]
             if value in ("info", "warn", "never"):
                 s.set(["feature", "notifySuppressedCommands"], value)
 
