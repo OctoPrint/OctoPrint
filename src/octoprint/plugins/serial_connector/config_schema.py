@@ -260,12 +260,6 @@ class SerialConfig(BaseModel):
     supportWait: bool = True
     """Whether to support ``wait`` responses from the printer and interpret them as a call to send more commands."""
 
-    ignoreIdenticalResends: bool = False
-    """Whether to ignore identical resends from the printer (``true``, repetier) or not (``false``)."""
-
-    identicalResendsCountdown: int = 7
-    """If ``ignoreIdenticalResends`` is true, how many consecutive identical resends to ignore."""
-
     supportFAsCommand: bool = False
     """Whether to support ``F`` on its own as a valid GCODE command (``true``) or not (``false``)."""
 

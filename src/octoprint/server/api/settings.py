@@ -1136,9 +1136,6 @@ def _get_serial_settings():
         "externalHeatupDetection": s.getBoolean(
             ["plugins", "serial_connector", "externalHeatupDetection"]
         ),
-        "ignoreIdenticalResends": s.getBoolean(
-            ["plugins", "serial_connector", "ignoreIdenticalResends"]
-        ),
         "firmwareDetection": s.getBoolean(
             ["plugins", "serial_connector", "firmwareDetection"]
         ),
@@ -1419,11 +1416,6 @@ def _set_serial_settings(data: dict[str, Any]):
         s.setBoolean(
             ["plugins", "serial_connector", "externalHeatupDetection"],
             data["externalHeatupDetection"],
-        )
-    if "ignoreIdenticalResends" in data:
-        s.setBoolean(
-            ["plugins", "serial_connector", "ignoreIdenticalResends"],
-            data["ignoreIdenticalResends"],
         )
     if "firmwareDetection" in data:
         s.setBoolean(

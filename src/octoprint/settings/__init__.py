@@ -1608,8 +1608,6 @@ class Settings:
             "repetierTargetTemp",
             "externalHeatupDetection",
             "supportWait",
-            "ignoreIdenticalResends",
-            "identicalResendsCountdown",
             "supportFAsCommand",
             "firmwareDetection",
             "blockWhileDwelling",
