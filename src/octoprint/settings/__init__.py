@@ -1604,7 +1604,6 @@ class Settings:
             "unknownCommandsNeedAck",
             "sdRelativePath",
             "sdAlwaysAvailable",
-            "swallowOkAfterResend",
             "repetierTargetTemp",
             "externalHeatupDetection",
             "supportWait",

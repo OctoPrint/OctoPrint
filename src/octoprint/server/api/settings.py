@@ -1127,9 +1127,6 @@ def _get_serial_settings():
             ["plugins", "serial_connector", "sdAlwaysAvailable"]
         ),
         "sdLowerCase": s.getBoolean(["plugins", "serial_connector", "sdLowerCase"]),
-        "swallowOkAfterResend": s.getBoolean(
-            ["plugins", "serial_connector", "swallowOkAfterResend"]
-        ),
         "repetierTargetTemp": s.getBoolean(
             ["plugins", "serial_connector", "repetierTargetTemp"]
         ),
@@ -1402,11 +1399,6 @@ def _set_serial_settings(data: dict[str, Any]):
         )
     if "sdLowerCase" in data:
         s.setBoolean(["plugins", "serial_connector", "sdLowerCase"], data["sdLowerCase"])
-    if "swallowOkAfterResend" in data:
-        s.setBoolean(
-            ["plugins", "serial_connector", "swallowOkAfterResend"],
-            data["swallowOkAfterResend"],
-        )
     if "repetierTargetTemp" in data:
         s.setBoolean(
             ["plugins", "serial_connector", "repetierTargetTemp"],
