@@ -240,7 +240,7 @@
 
         var filename = data.filename || undefined;
         if (data.userdata && typeof data.userdata === "object") {
-            data.userdata = JSON.stringify(userdata);
+            data.userdata = JSON.stringify(data.userdata);
         }
         return this.base.upload(resourceForLocation(location), file, filename, data);
     };
