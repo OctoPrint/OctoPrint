@@ -955,6 +955,10 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
     def get_state_string(self, state=None, *args, **kwargs):
         if state is None:
             state = self._state
+        if self._connection is not None:
+            return self._connection.get_state_string(
+                state=state
+            )  # get the connector's custom state string
         return state.value
 
     def get_state_id(self, state=None, *args, **kwargs):
