@@ -2372,7 +2372,7 @@ class VirtualEEPROM:
             },
             "endstop": {
                 "command": "M666",
-                "description": "Enstop adjustment:",  # TODO description needed
+                "description": "Endstop adjustment:",  # TODO description needed
                 "params": {"X": -1.0, "Y": 0.0, "Z": 0.0},
             },
             "delta": {

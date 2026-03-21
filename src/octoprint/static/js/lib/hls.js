@@ -5202,7 +5202,7 @@ var mp4_remuxer_MP4Remuxer = /*#__PURE__*/function () {
     }
     /* PTS is 33bit (from 0 to 2^33 -1)
       if diff between value and reference is bigger than half of the amplitude (2^32) then it means that
-      PTS looping occured. fill the gap */
+      PTS looping occurred. fill the gap */
 
 
     while (Math.abs(value - reference) > 4294967296) {
@@ -6496,7 +6496,7 @@ __webpack_require__.r(__webpack_exports__);
 var HlsEvents = {
   // fired before MediaSource is attaching to media element - data: { media }
   MEDIA_ATTACHING: 'hlsMediaAttaching',
-  // fired when MediaSource has been succesfully attached to media element - data: { }
+  // fired when MediaSource has been successfully attached to media element - data: { }
   MEDIA_ATTACHED: 'hlsMediaAttached',
   // fired before detaching MediaSource from media element - data: { }
   MEDIA_DETACHING: 'hlsMediaDetaching',
@@ -8177,7 +8177,7 @@ var playlist_loader_PlaylistLoader = /*#__PURE__*/function (_EventHandler) {
       response = null;
     }
 
-    logger["logger"].info("A network error occured while loading a " + context.type + "-type playlist");
+    logger["logger"].info("A network error occurred while loading a " + context.type + "-type playlist");
     var details;
     var fatal;
     var loader = this.getInternalLoader(context);
@@ -13912,7 +13912,7 @@ var buffer_controller_BufferController = /*#__PURE__*/function (_EventHandler) {
 
     if (!this.media || this.media.error) {
       this.segments = [];
-      logger["logger"].error('trying to append although a media error occured, flush segment and abort');
+      logger["logger"].error('trying to append although a media error occurred, flush segment and abort');
       return;
     }
 
@@ -13955,7 +13955,7 @@ var buffer_controller_BufferController = /*#__PURE__*/function (_EventHandler) {
       this.appended++;
       this.appending = true;
     } catch (err) {
-      // in case any error occured while appending, put back segment in segments table
+      // in case any error occurred while appending, put back segment in segments table
       logger["logger"].error("error while trying to append buffer:" + err.message);
       segments.unshift(segment);
       var event = {
@@ -21225,7 +21225,7 @@ var hls_Hls = /*#__PURE__*/function (_Observer) {
      * this setter is used to force next auto level.
      * this is useful to force a switch down in auto mode:
      * in case of load error on level N, hls.js can set nextAutoLevel to N-1 for example)
-     * forced value is valid for one fragment. upon succesful frag loading at forced level,
+     * forced value is valid for one fragment. upon successful frag loading at forced level,
      * this value will be resetted to -1 by ABR controller.
      * @type {number}
      */
