@@ -20,6 +20,8 @@ _entry = namedtuple("DirEntry", "name, path, is_file, is_dir, stat")
 @ddt.ddt
 class TimelapseTest(unittest.TestCase):
     def setUp(self):
+        self.addCleanup(self.cleanUp)
+
         # mock settings
         self.settings_patcher = mock.patch("octoprint.timelapse.settings")
         self.settings_getter = self.settings_patcher.start()
