@@ -484,7 +484,7 @@ class LocalStorageTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             file_list = self.storage.list_files(filter=filter_machinecode)
 
-        self.assertTrue(3, len(file_list))
+        self.assertEqual(3, len(file_list))
         self.assertTrue("bp_case.gcode" in file_list)
         self.assertTrue("content" in file_list)
         self.assertTrue("empty" in file_list)
@@ -516,7 +516,8 @@ class LocalStorageTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             file_list = self.storage.list_files(recursive=False)
 
-        self.assertTrue(3, len(file_list))
+        self.assertEqual(4, len(file_list))
+        self.assertTrue("bp_case.stl" in file_list)
         self.assertTrue("bp_case.gcode" in file_list)
         self.assertTrue("content" in file_list)
         self.assertTrue("empty" in file_list)
@@ -596,7 +597,7 @@ class LocalStorageTest(unittest.TestCase):
 
         entries = self.storage.list_storage_entries(filter=filter_machinecode)
 
-        self.assertTrue(3, len(entries))
+        self.assertEqual(3, len(entries))
         self.assertTrue("bp_case.gcode" in entries)
         self.assertTrue("content" in entries)
         self.assertTrue("empty" in entries)
@@ -629,7 +630,8 @@ class LocalStorageTest(unittest.TestCase):
 
         entries = self.storage.list_storage_entries(recursive=False)
 
-        self.assertTrue(3, len(entries))
+        self.assertEqual(4, len(entries))
+        self.assertTrue("bp_case.stl" in entries)
         self.assertTrue("bp_case.gcode" in entries)
         self.assertTrue("content" in entries)
         self.assertTrue("empty" in entries)
