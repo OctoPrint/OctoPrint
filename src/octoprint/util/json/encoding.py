@@ -51,8 +51,8 @@ class JsonEncoding:
 
     @classmethod
     def encode(cls, obj):
-        for type, encoder in cls.encoders.items():
-            if isinstance(obj, type):
+        for typ, encoder in cls.encoders.items():
+            if isinstance(obj, typ):
                 return encoder(obj)
         raise TypeError(f"Unserializable type {type(obj)}")
 
