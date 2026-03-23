@@ -71,7 +71,29 @@ def test_handle_system_commands(mocked_printer, param, shell, expected_call):
         mocked_printer, "test123 {a}", shell=shell
     )
 
-    with mock.patch("subprocess.check_call") as mcc:
+    class MockThread:
+        def __init__(self):
+            self.target = None
+            self.args = None
+            self.mock = None
+
+        def constructor(self, target=None, args=None):
+            self.target = target
+            self.args = args or ()
+            self.mock = mock.MagicMock()
+            self.mock.start.side_effect = self.start
+            return self.mock
+
+        def start(self):
+            self.target(*self.args)
+
+    mock_thread = MockThread()
+
+    with (
+        mock.patch("subprocess.check_call") as mcc,
+        mock.patch("threading.Thread") as mocked_thread,
+    ):
+        mocked_thread.side_effect = mock_thread.constructor
         sub.handle("Test", {"a": param})
 
         mcc.assert_called_once_with(f"test123 {expected_call}", shell=shell, cwd=None)
