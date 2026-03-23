@@ -260,7 +260,7 @@ def load_user_from_request(request):
             return user
 
     # Remote User Header?
-    if settings().getBoolean(["accessControl", "trustRemoteUser"]):
+    if settings().get(["accessControl", "trustedAuthProxies"]):
         user = util.get_user_for_remote_user_header(request)
         if user:
             return user

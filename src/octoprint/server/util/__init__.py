@@ -250,19 +250,17 @@ def get_user_for_remote_user_header(
     """
     Tries to find a user based on the configured remote user request header.
 
-    Will only perform any action if the trustRemoteUser setting is enabled.
+    Will only perform any action if one or more trusted authentication proxies
+    are configured.
     """
     s = settings()
 
-    if not s.getBoolean(["accessControl", "trustRemoteUser"]):
+    trusted_auth_proxies = s.get(["accessControl", "trustedAuthProxies"])
+    if not trusted_auth_proxies:
         return None
 
     header = request.headers.get(s.get(["accessControl", "remoteUserHeader"]))
     if header is None:
-        return None
-
-    trusted_auth_proxies = s.get(["accessControl", "trustedAuthProxies"])
-    if not trusted_auth_proxies:
         return None
 
     trusted_auth_proxies = get_ipset_from_list(
