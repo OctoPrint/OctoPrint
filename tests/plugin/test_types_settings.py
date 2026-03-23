@@ -246,7 +246,7 @@ class TestSettingsPlugin(unittest.TestCase):
         expected = dict(current)
         del expected["_config_version"]
 
-        self.settings.get_all_data.return_value = expected
+        self.settings.get_all_data.return_value = current
 
         ### execute
 
