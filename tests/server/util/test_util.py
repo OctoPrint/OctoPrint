@@ -69,6 +69,14 @@ def test_validate_local_redirect(url, paths, expected):
             "127.0.0.1",
             "",
             "user",
+            ["192.168.1.10"],
+            ["127.0.0.0/8", "::1"],
+            None,
+        ),  # direct from localhost, trusted auth proxy but not trusted reverse proxy (localhost not automatically added)
+        (
+            "127.0.0.1",
+            "",
+            "user",
             ["127.0.0.0/8", "::1"],
             ["127.0.0.0/8", "::1"],
             "user",

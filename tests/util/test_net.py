@@ -275,6 +275,7 @@ def test_get_ipset_from_list(addresses, expected):
     [
         ("127.0.0.1, 10.1.2.3, 192.168.1.10", ["192.168.1.10", "10.1.2.3", "127.0.0.1"]),
         (None, []),
+        ("", []),
     ],
 )
 def test_get_forwarded_for_addresses(forwarded_for, expected):
