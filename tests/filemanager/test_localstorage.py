@@ -51,7 +51,7 @@ class LocalStorageTest(unittest.TestCase):
             elif (
                 name.lower().endswith(".gco")
                 or name.lower().endswith(".gcode")
-                or name.lower.endswith(".g")
+                or name.lower().endswith(".g")
             ):
                 return ["machinecode", "gcode"]
             else:

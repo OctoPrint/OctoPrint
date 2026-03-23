@@ -45,7 +45,7 @@ def plugin_settings(settings):
         ("get", (["some_raw_key"],), {"merged": True}, "get"),
         ("get", (["some_raw_key"],), {"asdict": True}, "get"),
         ("get", (["some_raw_key"],), {"merged": True, "asdict": True}, "get"),
-        ("get_int", (["some_int_key,"],), {}, "getInt"),
+        ("get_int", (["some_int_key"],), {}, "getInt"),
         ("get_float", (["some_float_key"],), {}, "getFloat"),
         ("get_boolean", (["some_boolean_key"],), {}, "getBoolean"),
     ],
