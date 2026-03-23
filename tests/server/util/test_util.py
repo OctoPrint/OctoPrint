@@ -115,6 +115,22 @@ def test_validate_local_redirect(url, paths, expected):
             "user",
         ),  # lan via proxy, trusted auth proxy also trusted as reverse proxy
         (
+            "127.0.0.1",
+            "10.1.2.3",
+            "user",
+            ["192.168.1.10"],
+            ["127.0.0.0/8", "::1", "192.168.1.10"],
+            None,
+        ),  # lan via proxy, trusted auth proxy not in chain, ignored
+        (
+            "127.0.0.1",
+            "192.168.1.10, 10.1.2.3",
+            "user",
+            ["192.168.1.10"],
+            ["127.0.0.0/8", "::1", "192.168.1.10"],
+            None,
+        ),  # lan via proxy, spoofed auth proxy address in X-Forwarded-For, ignored
+        (
             "192.168.1.10",
             "127.0.0.1, 10.1.2.3",
             "user",
@@ -130,6 +146,14 @@ def test_validate_local_redirect(url, paths, expected):
             ["127.0.0.0/8", "::1", "192.168.1.10"],
             None,
         ),  # lan via trusted reverse proxy, not trusted as auth proxy though, spoofed remote address, ignored
+        (
+            "192.168.1.10",
+            "10.1.2.3",
+            "user",
+            ["192.168.1.10"],
+            ["127.0.0.0/8", "::1", "192.168.1.10"],
+            "user",
+        ),  # lan via auth proxy directly, no reverse proxies
     ],
 )
 def test_get_user_for_remote_user_header(
