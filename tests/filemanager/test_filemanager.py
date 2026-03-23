@@ -215,7 +215,7 @@ class FileManagerTest(unittest.TestCase):
     def test_add_file(self):
         wrapper = object()
 
-        self.local_storage.add_file.return_value = ("", "test.gcode")
+        self.local_storage.add_file.return_value = "test.gcode"
         self.local_storage.path_in_storage.return_value = "test.gcode"
         self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
         self.local_storage.split_path.return_value = ("", "test.gcode")
@@ -227,7 +227,7 @@ class FileManagerTest(unittest.TestCase):
             octoprint.filemanager.FileDestinations.LOCAL, "test.gcode", wrapper
         )
 
-        self.assertEqual(("", "test.gcode"), file_path)
+        self.assertEqual("test.gcode", file_path)
         self.local_storage.add_file.assert_called_once_with(
             "test.gcode",
             wrapper,
@@ -245,16 +245,23 @@ class FileManagerTest(unittest.TestCase):
                     "name": "test.gcode",
                     "path": "test.gcode",
                     "type": ["machinecode", "gcode"],
+                    "operation": "add",
                 },
             ),
-            mock.call(octoprint.filemanager.Events.UPDATED_FILES, {"type": "printables"}),
+            mock.call(
+                octoprint.filemanager.Events.UPDATED_FILES,
+                {
+                    "type": "printables",
+                    "storage": octoprint.filemanager.FileDestinations.LOCAL,
+                },
+            ),
         ]
-        self.fire_event.call_args_list = expected_events
+        self.assertEqual(self.fire_event.call_args_list, expected_events)
 
     def test_add_file_display(self):
         wrapper = object()
 
-        self.local_storage.add_file.return_value = ("", "test.gcode")
+        self.local_storage.add_file.return_value = "test.gcode"
         self.local_storage.path_in_storage.return_value = "test.gcode"
         self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
         self.local_storage.split_path.return_value = ("", "test.gcode")
@@ -269,7 +276,7 @@ class FileManagerTest(unittest.TestCase):
             display="täst.gcode",
         )
 
-        self.assertEqual(("", "test.gcode"), file_path)
+        self.assertEqual("test.gcode", file_path)
         self.local_storage.add_file.assert_called_once_with(
             "test.gcode",
             wrapper,
@@ -285,7 +292,7 @@ class FileManagerTest(unittest.TestCase):
         test_profile = {"id": "_default", "name": "My Default Profile"}
         self.printer_profile_manager.get_current_or_default.return_value = test_profile
 
-        self.local_storage.add_file.return_value = ("", "test.gcode")
+        self.local_storage.add_file.return_value = "test.gcode"
         self.local_storage.path_in_storage.return_value = "test.gcode"
         self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
         self.local_storage.split_path.return_value = ("", "test.gcode")
@@ -297,7 +304,7 @@ class FileManagerTest(unittest.TestCase):
             user="user",
         )
 
-        self.assertEqual(("", "test.gcode"), file_path)
+        self.assertEqual("test.gcode", file_path)
         self.local_storage.add_file.assert_called_once_with(
             "test.gcode",
             wrapper,
@@ -326,21 +333,28 @@ class FileManagerTest(unittest.TestCase):
                     "name": "test.gcode",
                     "path": "test.gcode",
                     "type": ["machinecode", "gcode"],
+                    "operation": "remove",
                 },
             ),
-            mock.call(octoprint.filemanager.Events.UPDATED_FILES, {"type": "printables"}),
+            mock.call(
+                octoprint.filemanager.Events.UPDATED_FILES,
+                {
+                    "type": "printables",
+                    "storage": octoprint.filemanager.FileDestinations.LOCAL,
+                },
+            ),
         ]
-        self.fire_event.call_args_list = expected_events
+        self.assertEqual(self.fire_event.call_args_list, expected_events)
 
     def test_add_folder(self):
-        self.local_storage.add_folder.return_value = ("", "test_folder")
+        self.local_storage.add_folder.return_value = "test_folder"
         self.local_storage.split_path.return_value = ("", "test_folder")
 
         folder_path = self.file_manager.add_folder(
             octoprint.filemanager.FileDestinations.LOCAL, "test_folder"
         )
 
-        self.assertEqual(("", "test_folder"), folder_path)
+        self.assertEqual("test_folder", folder_path)
         self.local_storage.add_folder.assert_called_once_with(
             "test_folder", ignore_existing=True, display=None, user=None
         )
@@ -354,9 +368,15 @@ class FileManagerTest(unittest.TestCase):
                     "path": "test_folder",
                 },
             ),
-            mock.call(octoprint.filemanager.Events.UPDATED_FILES, {"type": "printables"}),
+            mock.call(
+                octoprint.filemanager.Events.UPDATED_FILES,
+                {
+                    "type": "printables",
+                    "storage": octoprint.filemanager.FileDestinations.LOCAL,
+                },
+            ),
         ]
-        self.fire_event.call_args_list = expected_events
+        self.assertEqual(self.fire_event.call_args_list, expected_events)
 
     def test_add_folder_not_ignoring_existing(self):
         self.local_storage.add_folder.side_effect = RuntimeError("already there")
@@ -421,9 +441,15 @@ class FileManagerTest(unittest.TestCase):
                     "path": "test_folder",
                 },
             ),
-            mock.call(octoprint.filemanager.Events.UPDATED_FILES, {"type": "printables"}),
+            mock.call(
+                octoprint.filemanager.Events.UPDATED_FILES,
+                {
+                    "type": "printables",
+                    "storage": octoprint.filemanager.FileDestinations.LOCAL,
+                },
+            ),
         ]
-        self.fire_event.call_args_list = expected_events
+        self.assertEqual(self.fire_event.call_args_list, expected_events)
 
     def test_remove_folder_nonrecursive(self):
         self.local_storage.path_in_storage.return_value = "test_folder"
@@ -716,11 +742,14 @@ class FileManagerTest(unittest.TestCase):
         expected_events = [
             mock.call(
                 octoprint.filemanager.Events.SLICING_STARTED,
-                {"stl": "source.file", "gcode": "dest.file", "progressAvailable": False},
-            ),
-            mock.call(
-                octoprint.filemanager.Events.SLICING_DONE,
-                {"stl": "source.file", "gcode": "dest.file", "time": 15.694000005722046},
+                {
+                    "slicer": "some_slicer",
+                    "stl": "source.file",
+                    "stl_location": octoprint.filemanager.FileDestinations.LOCAL,
+                    "gcode": "dest.file",
+                    "gcode_location": octoprint.filemanager.FileDestinations.LOCAL,
+                    "progressAvailable": mock.ANY,
+                },
             ),
             mock.call(
                 octoprint.filemanager.Events.FILE_ADDED,
@@ -729,10 +758,29 @@ class FileManagerTest(unittest.TestCase):
                     "name": "dest.file",
                     "path": "dest.file",
                     "type": None,
+                    "operation": "add",
+                },
+            ),
+            mock.call(
+                octoprint.filemanager.Events.UPDATED_FILES,
+                {
+                    "type": "printables",
+                    "storage": octoprint.filemanager.FileDestinations.LOCAL,
+                },
+            ),
+            mock.call(
+                octoprint.filemanager.Events.SLICING_DONE,
+                {
+                    "slicer": "some_slicer",
+                    "stl": "source.file",
+                    "stl_location": octoprint.filemanager.FileDestinations.LOCAL,
+                    "gcode": "dest.file",
+                    "gcode_location": octoprint.filemanager.FileDestinations.LOCAL,
+                    "time": mock.ANY,
                 },
             ),
         ]
-        self.fire_event.call_args_list = expected_events
+        self.assertEqual(self.fire_event.call_args_list, expected_events)
 
         # assert that model links were added
         self.local_storage.add_file.assert_called_once_with(
@@ -840,18 +888,28 @@ class FileManagerTest(unittest.TestCase):
         expected_events = [
             mock.call(
                 octoprint.filemanager.Events.SLICING_STARTED,
-                {"stl": "source.file", "gcode": "dest.file"},
+                {
+                    "slicer": "some_slicer",
+                    "stl": "source.file",
+                    "stl_location": octoprint.filemanager.FileDestinations.LOCAL,
+                    "gcode": "dest.file",
+                    "gcode_location": octoprint.filemanager.FileDestinations.LOCAL,
+                    "progressAvailable": mock.ANY,
+                },
             ),
             mock.call(
                 octoprint.filemanager.Events.SLICING_FAILED,
                 {
+                    "slicer": "some_slicer",
                     "stl": "source.file",
+                    "stl_location": octoprint.filemanager.FileDestinations.LOCAL,
                     "gcode": "dest.file",
+                    "gcode_location": octoprint.filemanager.FileDestinations.LOCAL,
                     "reason": "Something went wrong",
                 },
             ),
         ]
-        self.fire_event.call_args_list = expected_events
+        self.assertEqual(self.fire_event.call_args_list, expected_events)
 
         # assert that the temporary file was deleted
         mocked_os.assert_called_once_with("tmp.file")
