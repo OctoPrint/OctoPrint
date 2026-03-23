@@ -373,7 +373,7 @@ def get_ipset_from_list(addresses) -> netaddr.IPSet:
 
 
 def get_forwarded_for_addresses(forwarded_for: str) -> list[str]:
-    if forwarded_for is None:
+    if forwarded_for is None or len(forwarded_for) == 0:
         return []
     return [sanitize_address(addr.strip()) for addr in reversed(forwarded_for.split(","))]
 
