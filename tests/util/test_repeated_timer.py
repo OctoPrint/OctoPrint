@@ -2,6 +2,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import threading
 import time
 import unittest
 from unittest import mock
@@ -173,7 +174,10 @@ class RepeatedTimerTest(unittest.TestCase):
         self.assertLess(duration, 7)
 
     def test_condition_change_during_task(self):
+        task_started = threading.Event()
+
         def sleep():
+            task_started.set()
             time.sleep(2)
 
         timer_task = mock.MagicMock()
@@ -182,7 +186,7 @@ class RepeatedTimerTest(unittest.TestCase):
         timer = RepeatedTimer(0.1, timer_task, run_first=True)
         timer.start()
 
-        time.sleep(1)
+        task_started.wait(timeout=2)
         timer.condition = lambda: False
         timer.join()
 
