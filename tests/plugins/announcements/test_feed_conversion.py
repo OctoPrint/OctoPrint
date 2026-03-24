@@ -159,7 +159,7 @@ def test_to_internal_feed_basic(plugin):
 def test_to_internal_feed_sanitization(plugin, feed, description, expected):
     import feedparser
 
-    feed = feedparser.parse(RSS_TEMPLATE.format(description=description))
+    feed = feedparser.parse(feed.format(description=description))
 
     internal = plugin._to_internal_feed(feed)
 
