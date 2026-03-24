@@ -559,7 +559,7 @@ class AnnouncementPlugin(
         )
 
         return {
-            "title": entry["title"],
+            "title": sanitized_title,
             "title_without_tags": _strip_tags(sanitized_title),
             "summary": _lazy_images(sanitized_summary),
             "summary_without_images": _strip_images(sanitized_summary),
