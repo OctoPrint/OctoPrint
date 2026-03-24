@@ -393,27 +393,29 @@ class FileManagerTest(unittest.TestCase):
         )
 
     def test_add_folder_display(self):
-        self.local_storage.add_folder.side_effect = RuntimeError("already there")
+        self.local_storage.add_folder.return_value = "test_folder"
+        self.local_storage.split_path.return_value = ("", "test_folder")
 
-        with self.assertRaises(RuntimeError, msg="already there"):
-            self.file_manager.add_folder(
-                octoprint.filemanager.FileDestinations.LOCAL,
-                "test_folder",
-                display="täst_folder",
-            )
-            self.fail("Expected an exception to occur!")
+        folder_path = self.file_manager.add_folder(
+            octoprint.filemanager.FileDestinations.LOCAL,
+            "test_folder",
+            display="täst_folder",
+        )
+
+        self.assertEqual("test_folder", folder_path)
         self.local_storage.add_folder.assert_called_once_with(
             "test_folder", ignore_existing=True, display="täst_folder", user=None
         )
 
     def test_add_folder_user(self):
-        self.local_storage.add_folder.side_effect = RuntimeError("already there")
+        self.local_storage.add_folder.return_value = "test_folder"
+        self.local_storage.split_path.return_value = ("", "test_folder")
 
-        with self.assertRaises(RuntimeError, msg="already there"):
-            self.file_manager.add_folder(
-                octoprint.filemanager.FileDestinations.LOCAL, "test_folder", user="user"
-            )
-            self.fail("Expected an exception to occur!")
+        folder_path = self.file_manager.add_folder(
+            octoprint.filemanager.FileDestinations.LOCAL, "test_folder", user="user"
+        )
+
+        self.assertEqual("test_folder", folder_path)
         self.local_storage.add_folder.assert_called_once_with(
             "test_folder", ignore_existing=True, display=None, user="user"
         )
