@@ -555,7 +555,7 @@ class AnnouncementPlugin(
         sanitized_title = self._html_sanitizer.sanitize(entry["title"])
         sanitized_summary = self._html_sanitizer.sanitize(entry["summary"])
         sanitized_link = (
-            entry["link"] if not entry["link"].startswith("javascript:") else "#"
+            entry["link"] if not entry["link"].lower().startswith("javascript:") else "#"
         )
 
         return {
