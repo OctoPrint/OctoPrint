@@ -410,12 +410,8 @@ class DaemonTest(unittest.TestCase):
         m.assert_called_once_with(self.pidfile, encoding="utf-8")
 
     def test_get_pid_oserror(self):
-        # setup
-        handle = mock.MagicMock()
-        handle.__enter__.side_effect = OSError()
-
         # test
-        with mock.patch("builtins.open", mock.mock_open(), create=True) as m:
+        with mock.patch("builtins.open", side_effect=OSError(), create=True) as m:
             result = self.daemon.get_pid()
 
         # assert
