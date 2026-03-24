@@ -8,9 +8,16 @@ import octoprint.util
 
 class FastDeepcopyTest(unittest.TestCase):
     def test_clean(self):
-        data = {"a": 1, "b": 2, "c": 3}
-        self.assertEqual(data, octoprint.util.fast_deepcopy(data))
+        data = {"a": 1, "b": [2, 3], "c": {"d": 4}}
+        result = octoprint.util.fast_deepcopy(data)
+        self.assertEqual(data, result)
+        self.assertIsNot(result, data)
+        self.assertIsNot(result["b"], data["b"])
+        self.assertIsNot(result["c"], data["c"])
 
     def test_function(self):
-        data = {"a": 1, "b": 2, "c": 3, "f": lambda x: x + 1}
-        self.assertEqual(data, octoprint.util.fast_deepcopy(data))
+        data = {"a": 1, "b": [2, 3], "f": lambda x: x + 1}
+        result = octoprint.util.fast_deepcopy(data)
+        self.assertEqual(data, result)
+        self.assertIsNot(result, data)
+        self.assertIsNot(result["b"], data["b"])
