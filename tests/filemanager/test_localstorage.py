@@ -259,12 +259,11 @@ class LocalStorageTest(unittest.TestCase):
 
         empty_folder = self._add_and_verify_folder("empty", "empty")
 
-        try:
+        with self.assertRaises(StorageError):
             self.storage.remove_folder(content_folder, recursive=False)
-        except Exception:
-            self.assertTrue(os.path.exists(os.path.join(self.basefolder, content_folder)))
-            self.assertTrue(os.path.isdir(os.path.join(self.basefolder, content_folder)))
-            self.assertTrue(os.path.exists(os.path.join(self.basefolder, other_stl_name)))
+        self.assertTrue(os.path.exists(os.path.join(self.basefolder, content_folder)))
+        self.assertTrue(os.path.isdir(os.path.join(self.basefolder, content_folder)))
+        self.assertTrue(os.path.exists(os.path.join(self.basefolder, other_stl_name)))
 
         self.storage.remove_folder(content_folder, recursive=True)
         self.assertFalse(os.path.exists(os.path.join(self.basefolder, content_folder)))
