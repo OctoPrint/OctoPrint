@@ -112,12 +112,6 @@ class SerialConfig(BaseModel):
     lowLatency: bool = False
     """Whether to request low latency mode on the serial port."""
 
-    autorefresh: bool = True
-    """Whether to automatically refresh the port list while no connection is established."""
-
-    autorefreshInterval: int = 1
-    """Interval in seconds at which to refresh the port list while no connection is established."""
-
     log: bool = False
     """Whether to log whole communication to ``serial.log`` (warning: might decrease performance)."""
 

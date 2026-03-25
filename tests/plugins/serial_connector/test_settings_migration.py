@@ -14,8 +14,35 @@ def plugin():
     return p
 
 
-@pytest.mark.parametrize("preferred_connector", [None, "serial"])
-def test_migration_serial_printer_connection(plugin, preferred_connector):
+@pytest.mark.parametrize(
+    "preferred_connector, autoconnect, parameters, expected",
+    [
+        (
+            None,
+            False,
+            {"port": "VIRTUAL", "baudrate": 115200},
+            {"port": "VIRTUAL", "baudrate": 115200},
+        ),
+        (
+            "serial",
+            False,
+            {"port": "VIRTUAL", "baudrate": 115200},
+            {"port": "VIRTUAL", "baudrate": 115200},
+        ),
+        (
+            "serial",
+            True,
+            {"port": "VIRTUAL", "baudrate": 115200},
+            {"port": "VIRTUAL", "baudrate": 115200},
+        ),
+        ("serial", True, {"port": "VIRTUAL"}, {"port": "VIRTUAL", "baudrate": None}),
+        ("serial", True, {"baudrate": 115200}, {"port": None, "baudrate": 115200}),
+        ("serial", True, {}, {"port": None, "baudrate": None}),
+    ],
+)
+def test_migration_serial_printer_connection(
+    plugin, preferred_connector, autoconnect, parameters, expected
+):
     """
     Tests correct migration of printer connection settings (autoconnect, port, baudrate)
     for serial or unset preferred connector
@@ -27,12 +54,7 @@ def test_migration_serial_printer_connection(plugin, preferred_connector):
 
     def settings_global_get(path):
         if path == ["serial"]:
-            return {
-                "port": "VIRTUAL",
-                "baudrate": 115200,
-                "autoconnect": True,
-                "log": True,
-            }
+            return dict(autoconnect=autoconnect, log=True, **parameters)
         elif path == ["printerConnection", "preferred", "connector"]:
             return preferred_connector
         return None
@@ -47,7 +69,7 @@ def test_migration_serial_printer_connection(plugin, preferred_connector):
         [
             mock.call(
                 ["printerConnection", "preferred", "parameters"],
-                {"port": "VIRTUAL", "baudrate": 115200},
+                expected,
             ),
             mock.call(["plugins", "serial_connector"], {"log": True}, force=True),
         ]
@@ -57,7 +79,7 @@ def test_migration_serial_printer_connection(plugin, preferred_connector):
             "printerConnection",
             "autoconnect",
         ],
-        True,
+        autoconnect,
     )
     plugin._settings.global_remove.assert_called_once_with(["serial"])
 
@@ -135,6 +157,64 @@ def test_migration_serial_behaviour(plugin, config, expected):
         [
             mock.call(["plugins", "serial_connector"], expected, force=True),
         ]
+    )
+    plugin._settings.global_remove.assert_called_once_with(["serial"])
+
+
+def test_migration_autorefresh(plugin):
+    """Tests migration of serial settings to printerConnection.autorefresh"""
+
+    # prep
+    target = 2
+    current_version = None
+
+    def settings_global_get(path):
+        if path == ["serial"]:
+            return {"autorefresh": True}
+        elif path == ["printerConnection", "preferred", "connector"]:
+            return "other"
+        return None
+
+    plugin._settings.global_get.side_effect = settings_global_get
+
+    # test
+    plugin.on_settings_migrate(target, current_version)
+
+    # verify
+    plugin._settings.global_set_boolean.assert_called_once_with(
+        ["printerConnection", "autorefresh"], True
+    )
+    plugin._settings.global_set.assert_called_once_with(
+        ["plugins", "serial_connector"], {}, force=True
+    )
+    plugin._settings.global_remove.assert_called_once_with(["serial"])
+
+
+def test_migration_autorefresh_interval(plugin):
+    """Tests migration of serial settings to printerConnection.autorefreshInterval"""
+
+    # prep
+    target = 2
+    current_version = None
+
+    def settings_global_get(path):
+        if path == ["serial"]:
+            return {"autorefreshInterval": 5}
+        elif path == ["printerConnection", "preferred", "connector"]:
+            return "other"
+        return None
+
+    plugin._settings.global_get.side_effect = settings_global_get
+
+    # test
+    plugin.on_settings_migrate(target, current_version)
+
+    # verify
+    plugin._settings.global_set_int.assert_called_once_with(
+        ["printerConnection", "autorefreshInterval"], 5
+    )
+    plugin._settings.global_set.assert_called_once_with(
+        ["plugins", "serial_connector"], {}, force=True
     )
     plugin._settings.global_remove.assert_called_once_with(["serial"])
 
