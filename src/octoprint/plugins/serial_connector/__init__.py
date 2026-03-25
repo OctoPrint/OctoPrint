@@ -1,3 +1,5 @@
+import logging
+
 from flask_babel import gettext
 
 import octoprint.plugin
@@ -10,6 +12,10 @@ class SerialConnectorPlugin(
 ):
     def initialize(self):
         from .connector import ConnectedSerialPrinter  # noqa: F401
+
+        if self._settings.get_boolean(["log"]):
+            # enable debug logging to serial.log
+            logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 
         ConnectedSerialPrinter._event_bus = self._event_bus
         ConnectedSerialPrinter._file_manager = self._file_manager
