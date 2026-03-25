@@ -62,6 +62,26 @@ class SerialConnectorPlugin(
                         except KeyError:
                             pass
 
+                autoconnect = config.pop("autoconnect", False)
+
+                parameters = {}
+                if "port" in config:
+                    parameters["port"] = config.pop("port")
+                if "baudrate" in config:
+                    parameters["baudrate"] = config.pop("baudrate")
+
+                preferred_connector = self._settings.global_get(
+                    ["printerConnection", "preferred", "connector"]
+                )
+                if preferred_connector is None or preferred_connector == "serial":
+                    self._settings.global_set_boolean(
+                        ["printerConnection", "autoconnect"], autoconnect
+                    )
+                    self._settings.global_set(
+                        ["printerConnection", "preferred", "parameters"],
+                        parameters,
+                    )
+
                 self._settings.global_set(
                     ["plugins", "serial_connector"], config, force=True
                 )
