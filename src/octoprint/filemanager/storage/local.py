@@ -804,14 +804,18 @@ class LocalFileStorage(StorageInterface):
         thumbnails = self._get_thumbnails(path, name)
         return thumbnails and len(thumbnails) > 0
 
-    def get_thumbnail(self, path, sizehint=None) -> StorageThumbnail:
+    def get_thumbnail(self, path, platehint=None, sizehint=None) -> StorageThumbnail:
+        # platehint is currently not supported on local storage
         sh, thumb = self._thumbnail_from_sizehint(path, sizehint=sizehint)
         if not thumb:
             return None
 
         return self._to_thumbnail_info(thumb, sh, path)
 
-    def read_thumbnail(self, path, sizehint=None) -> tuple[StorageThumbnail, typing.IO]:
+    def read_thumbnail(
+        self, path, platehint=None, sizehint=None
+    ) -> tuple[StorageThumbnail, typing.IO]:
+        # platehint is currently not supported on local storage
         sh, thumb = self._thumbnail_from_sizehint(path, sizehint=sizehint)
         if not thumb:
             return None

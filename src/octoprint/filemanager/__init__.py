@@ -1385,13 +1385,19 @@ class FileManager:
     def has_thumbnail(self, location, path) -> bool:
         return self._storage(location).has_thumbnail(path)
 
-    def get_thumbnail(self, location, path, sizehint=None) -> Optional[StorageThumbnail]:
-        return self._storage(location).get_thumbnail(path, sizehint=sizehint)
+    def get_thumbnail(
+        self, location, path, platehint: int = None, sizehint: str = None
+    ) -> Optional[StorageThumbnail]:
+        return self._storage(location).get_thumbnail(
+            path, platehint=platehint, sizehint=sizehint
+        )
 
     def read_thumbnail(
-        self, location, path, sizehint=None
+        self, location, path, platehint: int = None, sizehint: str = None
     ) -> tuple[StorageThumbnail, IO]:
-        return self._storage(location).read_thumbnail(path, sizehint=sizehint)
+        return self._storage(location).read_thumbnail(
+            path, platehint=platehint, sizehint=sizehint
+        )
 
     def refresh_thumbnails(
         self, location, path, force: bool = False, recursive: bool = False

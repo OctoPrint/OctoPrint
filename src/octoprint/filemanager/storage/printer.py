@@ -463,13 +463,19 @@ class PrinterFileStorage(StorageInterface):
     def has_thumbnail(self, path) -> bool:
         return self._connection.has_thumbnail(path)
 
-    def get_thumbnail(self, path, sizehint=None) -> Optional[StorageThumbnail]:
-        return self._connection.get_thumbnail(path, sizehint=sizehint)
+    def get_thumbnail(
+        self, path, platehint=None, sizehint=None
+    ) -> Optional[StorageThumbnail]:
+        return self._connection.get_thumbnail(
+            path, platehint=platehint, sizehint=sizehint
+        )
 
     def read_thumbnail(
-        self, path, sizehint=None
+        self, path, platehint=None, sizehint=None
     ) -> Optional[tuple[StorageThumbnail, IO]]:
-        return self._connection.download_thumbnail(path, sizehint=sizehint)
+        return self._connection.download_thumbnail(
+            path, platehint=platehint, sizehint=sizehint
+        )
 
     def refresh_thumbnails(
         self, path, force: bool = False, recursive: bool = False

@@ -129,6 +129,7 @@ class StorageThumbnail(BaseModel):
     name: str
     printable: str
     sizehint: str
+    plate: int = 1
     mime: str = "application/octet-stream"
     last_modified: Optional[datetime.datetime] = None
     size: int = -1
@@ -525,11 +526,13 @@ class StorageInterface:
         raise NotImplementedError()
 
     def get_thumbnail(
-        self, path: str, sizehint: str = None
+        self, path: str, platehint: int = None, sizehint: str = None
     ) -> Optional[StorageThumbnail]:
         raise NotImplementedError()
 
-    def read_thumbnail(self, path: str, sizehint: str = None) -> Optional[IO]:
+    def read_thumbnail(
+        self, path: str, platehint: int = None, sizehint: str = None
+    ) -> Optional[IO]:
         raise NotImplementedError()
 
     def refresh_thumbnails(
