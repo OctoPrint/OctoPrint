@@ -1151,6 +1151,14 @@ def fetch_template_data(refresh=False):
 
     templates["settings"]["entries"] = {
         "section_printer": (gettext("Printer"), None),
+        "printerconnection": (
+            gettext("Printer Connection"),
+            {
+                "template": "dialogs/settings/printerconnection.jinja2",
+                "_div": "settings_printerconnection",
+                "custom_bindings": True,
+            },
+        ),
         "printerprofiles": (
             gettext("Printer Profiles"),
             {

@@ -41,8 +41,10 @@ $(function () {
         };
 
         self.currentConnector = ko.observable(undefined);
-        self.currentConnectorParameters = {};
         self.currentConnectorCapabilities = ko.observable({});
+
+        self.preferredConnectorName = ko.observable("-");
+        self.preferredConnectorParameters = ko.observableArray([]);
 
         self.lastConnector = undefined;
         self.lastConnectorParameters = {};
@@ -95,7 +97,61 @@ $(function () {
         self.fromResponse = function (response) {
             const connectors = response.options.connectors;
             const currentConnector = response.current.connector;
+
+            // preferred connection
+
             const preferredConnector = response.options.preferredConnector.connector;
+            const preferredConnectorParameters =
+                response.options.preferredConnector.parameters;
+            const preferredConnectorData = connectors.find(
+                (c) => c.connector === preferredConnector
+            );
+
+            if (preferredConnectorData) {
+                self.preferredConnectorName(preferredConnectorData.name);
+            } else {
+                // fallback
+                self.preferredConnectorName(`<code>${preferredConnector}</code>`);
+            }
+
+            let preferredConnectorParametersRendered = false;
+            callViewModels(
+                self.allViewModels,
+                "onRenderParametersForConnector",
+                (method) => {
+                    if (preferredConnectorParametersRendered) return;
+
+                    const result = method(
+                        preferredConnector,
+                        preferredConnectorParameters
+                    );
+                    if (result === false || !Array.isArray(result)) return;
+
+                    preferredConnectorParametersRendered = true;
+                    self.preferredConnectorParameters(
+                        result
+                            .filter(
+                                // make sure everything has name & value
+                                (item) =>
+                                    item.name !== undefined && item.value !== undefined
+                            )
+                            .map((item) => `${item.name}: ${item.value}`)
+                    );
+                }
+            );
+
+            if (!preferredConnectorParametersRendered) {
+                // fallback
+                const params = [];
+                for (const key in preferredConnectorParameters) {
+                    params.push(
+                        `<code>${key}</code>: <code>${JSON.stringify(preferredConnectorParameters[key])}</code>`
+                    );
+                }
+                self.preferredConnectorParameters(params);
+            }
+
+            // available connectors, parameters & capabilities
 
             self.connectorOptions(connectors);
 
@@ -106,6 +162,8 @@ $(function () {
             self.connectorParameters = connectorParameters;
 
             self.currentConnectorCapabilities(response.current.capabilities);
+
+            // determine active parameters
 
             let activeParameters;
             if (currentConnector && connectorParameters[currentConnector]) {
@@ -120,13 +178,13 @@ $(function () {
                 activeParameters = self.lastConnectorParameters;
             } else if (preferredConnector && connectorParameters[preferredConnector]) {
                 self.selectedConnector(preferredConnector);
-                activeParameters = response.options.preferredConnector.parameters;
+                activeParameters = preferredConnectorParameters;
             } else {
                 self.selectedConnector(connectors[0].connector);
                 activeParameters = undefined;
             }
 
-            // connectors
+            // set parameters on connection form & inform viewmodels of received data
 
             if (activeParameters) {
                 const container = $(`#connection_options_${self.selectedConnector()}`);
@@ -148,7 +206,7 @@ $(function () {
                 connectorParameters,
                 response.current,
                 {connector: self.lastConnector, parameters: self.lastConnectorParameters},
-                response.options.preferredConnector
+                preferredConnector
             ]);
 
             // printer profile
@@ -237,6 +295,9 @@ $(function () {
 
                 if (self.saveSettings()) data["save"] = true;
 
+                self.autoconnect(false);
+                self.saveSettings(false);
+
                 OctoPrint.connection.connect(data).done(function () {
                     self.settings.requestData();
                     self.settings.printerProfiles.requestData();
@@ -312,6 +373,6 @@ $(function () {
             "printerProfilesViewModel",
             "accessViewModel"
         ],
-        elements: ["#connection_wrapper"]
+        elements: ["#connection_wrapper", "#settings_printerconnection"]
     });
 });

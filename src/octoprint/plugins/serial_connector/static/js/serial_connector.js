@@ -84,6 +84,21 @@ $(function () {
             self.lastUpdated(new Date().getTime());
         };
 
+        self.onRenderParametersForConnector = (connector, parameters) => {
+            if (connector !== "serial") return false;
+
+            return [
+                {
+                    name: gettext("Port"),
+                    value: !parameters.port ? "AUTO" : parameters.port
+                },
+                {
+                    name: gettext("Baudrate"),
+                    value: !parameters.baudrate ? "AUTO" : parameters.baudrate
+                }
+            ];
+        };
+
         //~~ Settings related
 
         const get_config_item = (item, defaultValue) => {

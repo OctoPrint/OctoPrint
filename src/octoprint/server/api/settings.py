@@ -272,7 +272,11 @@ def getSettings():
     if len(plugin_settings):
         data["plugins"] = plugin_settings
 
-    if not api_version_matches(">=2.0.0"):
+    if api_version_matches(">=2.0.0"):
+        data["printerConnection"] = {
+            "autoconnect": s.getBoolean(["printerConnection", "autoconnect"])
+        }
+    else:
         data["serial"] = _get_serial_settings()
         data["feature"]["autoUppercaseBlacklist"] = data["feature"].pop(
             "autoUppercaseBlocklist"
@@ -628,6 +632,13 @@ def _saveSettings(data):
             s.setInt(
                 ["printerParameters", "defaultExtrusionLength"],
                 data["printer"]["defaultExtrusionLength"],
+            )
+
+    if "printerConnection" in data:
+        if "autoconnect" in data["printerConnection"]:
+            s.setBoolean(
+                ["printerConnection", "autoconnect"],
+                data["printerConnection"]["autoconnect"],
             )
 
     if "webcam" in data:
@@ -1028,7 +1039,7 @@ def _get_serial_settings():
         "lowLatency": s.getBoolean(["plugins", "serial_connector", "lowLatency"]),
         "portOptions": connection_options.get("port", []),
         "baudrateOptions": connection_options.get("baudrate", []),
-        "autoconnect": s.getBoolean(["plugins", "serial_connector", "autoconnect"]),
+        "autoconnect": s.getBoolean(["printerConnection", "autoconnect"]),
         "timeoutConnection": s.getFloat(
             ["plugins", "serial_connector", "timeout", "connection"]
         ),
