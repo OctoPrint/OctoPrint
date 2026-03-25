@@ -88,6 +88,8 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     ):
         super().__init__(*args, **kwargs)
 
+        self._serial_logger = logging.getLogger("SERIAL")
+
         self._port = kwargs.get("port")
         self._baudrate = kwargs.get("baudrate")
 
@@ -123,9 +125,9 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         from octoprint.logging.handlers import SerialLogHandler
 
         SerialLogHandler.arm_rollover()
-        if not logging.getLogger("SERIAL").isEnabledFor(logging.DEBUG):
+        if not self._serial_logger.isEnabledFor(logging.DEBUG):
             # if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
-            logging.getLogger("SERIAL").info(
+            self._serial_logger.info(
                 "serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log"
             )
 
@@ -443,10 +445,9 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._comm.cancelPrint(user=user, tags=tags)
 
     def log_lines(self, *lines):
-        serial_logger = logging.getLogger("SERIAL")
         self.on_comm_log("\n".join(lines))
         for line in lines:
-            serial_logger.debug(line)
+            self._serial_logger.debug(line)
 
     def get_state_string(self, state: ConnectedPrinterState = None):
         if state is None:
