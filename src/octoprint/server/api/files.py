@@ -662,6 +662,7 @@ def _analyse_and_convert_recursively(
                     prints=prints,
                     refs=refs,
                     gcodeAnalysis=analysis,
+                    statistics=metadata,
                     **additional,
                 )
             )
