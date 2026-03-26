@@ -58,7 +58,7 @@ class SerialConnectorPlugin(
         return SerialConfig().model_dump()
 
     def get_settings_version(self):
-        return 2
+        return 3
 
     def on_settings_migrate(self, target, current):
         if current is None:
@@ -120,14 +120,14 @@ class SerialConnectorPlugin(
                         ["plugins", "serial_connector"], config, force=True
                     )
 
-            # TODO: migration should be in version 3
+        if current is None or current < 3:
+            # TODO: needs unit tests added once #5340 is merged
             logging_config = self._settings.global_get(["plugins", "logging"])
             if logging_config and "serial_log_warning" in logging_config:
                 self._settings.global_set(
                     ["plugins", "serial_connector", "logWarning"],
-                    logging_config["serial_log_warning"],
+                    logging_config.pop("serial_log_warning"),
                 )
-                del logging_config["serial_log_warning"]
                 self._settings.global_set(
                     ["plugins", "logging"], logging_config, force=True
                 )
