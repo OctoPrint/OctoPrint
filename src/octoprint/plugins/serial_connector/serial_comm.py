@@ -522,7 +522,6 @@ class MachineCom:
         plugin_manager=None,
     ):
         self._logger = logging.getLogger(__name__)
-        self._serialLogger = logging.getLogger("SERIAL")
         self._phaseLogger = logging.getLogger(__name__ + ".command_phases")
 
         self._settings = settings
@@ -955,7 +954,6 @@ class MachineCom:
 
         self._terminal_log.append(message)
         self._callback.on_comm_log(message)
-        self._serialLogger.debug(message)
 
     def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
         log = "Last lines in terminal:\n" + "\n".join(

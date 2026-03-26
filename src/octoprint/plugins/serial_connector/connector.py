@@ -51,6 +51,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     _file_manager: "FileManager" = None
     _plugin_settings: "PluginSettings" = None
     _plugin_manager: "PluginManager" = None
+    _serial_logger: logging.Logger = None
     # /injected
 
     @classmethod
@@ -88,8 +89,6 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     ):
         super().__init__(*args, **kwargs)
 
-        self._serial_logger = logging.getLogger("SERIAL")
-
         self._port = kwargs.get("port")
         self._baudrate = kwargs.get("baudrate")
 
@@ -122,9 +121,14 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         if self._comm is not None:
             return
 
-        from octoprint.logging.handlers import SerialLogHandler
+        from . import SerialLogHandler
 
         SerialLogHandler.arm_rollover()
+
+        serial_log_enabled = self._plugin_settings.get_boolean(["log"])
+        self._serial_logger.setLevel(
+            logging.DEBUG if serial_log_enabled else logging.INFO
+        )
         if not self._serial_logger.isEnabledFor(logging.DEBUG):
             # if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
             self._serial_logger.info(
@@ -445,9 +449,11 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._comm.cancelPrint(user=user, tags=tags)
 
     def log_lines(self, *lines):
-        self.on_comm_log("\n".join(lines))
         for line in lines:
             self._serial_logger.debug(line)
+        self._listener.on_printer_logs(
+            util.to_unicode("\n".join(lines), "utf-8", errors="replace")
+        )
 
     def get_state_string(self, state: ConnectedPrinterState = None):
         if state is None:
@@ -627,9 +633,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     # ~~ comm.MachineComPrintCallback implementation
 
     def on_comm_log(self, message):
-        self._listener.on_printer_logs(
-            util.to_unicode(message, "utf-8", errors="replace")
-        )
+        self.log_lines(message)
 
     def on_comm_temperature_update(self, tools, bed, chamber, custom=None):
         if custom is None:

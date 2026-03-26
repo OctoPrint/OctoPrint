@@ -3,6 +3,11 @@ from octoprint.logging import (
     handlers,  # noqa: F401
 )
 
+LOGGING_SIMPLE_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+LOGGING_TIMED_MESSAGE_ONLY_FORMAT = "%(asctime)s - %(message)s"
+LOGGING_TIMING_CSV_FORMAT = "%(asctime)s;%(func)s;%(timing)f"
+LOGGING_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 
 def log_to_handler(logger, handler, level, msg, exc_info=None, extra=None, *args):
     """

@@ -1,8 +1,11 @@
-import logging
-
 from flask_babel import gettext
 
 import octoprint.plugin
+from octoprint.logging.handlers import TriggeredRolloverLogHandler
+
+
+class SerialLogHandler(TriggeredRolloverLogHandler):
+    pass
 
 
 class SerialConnectorPlugin(
@@ -13,14 +16,39 @@ class SerialConnectorPlugin(
     def initialize(self):
         from .connector import ConnectedSerialPrinter  # noqa: F401
 
-        if self._settings.get_boolean(["log"]):
-            # enable debug logging to serial.log
-            logging.getLogger("SERIAL").setLevel(logging.DEBUG)
-
         ConnectedSerialPrinter._event_bus = self._event_bus
         ConnectedSerialPrinter._file_manager = self._file_manager
         ConnectedSerialPrinter._plugin_manager = self._plugin_manager
         ConnectedSerialPrinter._plugin_settings = self._settings
+        ConnectedSerialPrinter._serial_logger = self._configure_serial_logger()
+
+    def _configure_serial_logger(self):
+        import logging
+        import os
+
+        from octoprint.logging import LOGGING_TIMED_MESSAGE_ONLY_FORMAT
+
+        serial_log_handler = SerialLogHandler(
+            os.path.join(
+                self._settings.global_get_basefolder("logs"), "serial.log"
+            ),  # for backwards compatibility reasons we'll continue to use the name serial.log
+            encoding="utf-8",
+            backupCount=3,
+            delay=True,
+        )
+        serial_log_handler.setFormatter(
+            logging.Formatter(LOGGING_TIMED_MESSAGE_ONLY_FORMAT)
+        )
+        serial_log_handler.setLevel(logging.DEBUG)
+
+        serial_logger = logging.getLogger(
+            "octoprint.plugins.serial_connector.connector.console"
+        )
+        serial_logger.addHandler(serial_log_handler)
+        serial_logger.setLevel(logging.INFO)
+        serial_logger.propagate = False
+
+        return serial_logger
 
     ##~~ SettingsPlugin mixin
 
@@ -92,6 +120,7 @@ class SerialConnectorPlugin(
                         ["plugins", "serial_connector"], config, force=True
                     )
 
+            # TODO: migration should be in version 3
             logging_config = self._settings.global_get(["plugins", "logging"])
             if logging_config and "serial_log_warning" in logging_config:
                 self._settings.global_set(
