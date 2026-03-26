@@ -204,12 +204,12 @@ def connectionCommand():
             )
             settings().set(["printerConnection", "preferred", "parameters"], parameters)
             printerProfileManager.set_default(printerProfile)
-            settings_dirty = True
 
-        if "autoconnect" in data:
-            settings().setBoolean(
-                ["printerConnection", "autoconnect"], data["autoconnect"]
-            )
+            if "autoconnect" in data:
+                settings().setBoolean(
+                    ["printerConnection", "autoconnect"], data["autoconnect"]
+                )
+
             settings_dirty = True
 
         if settings_dirty:

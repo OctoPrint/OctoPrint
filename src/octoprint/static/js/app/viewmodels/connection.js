@@ -79,7 +79,7 @@ $(function () {
         });
 
         self.enableAutoConnect = ko.pureComputed(function () {
-            return self.enableConnect() && self.isErrorOrClosed();
+            return self.enableSaveSettings() && self.saveSettings();
         });
 
         self.previousIsOperational = undefined;
