@@ -227,6 +227,7 @@ $(function () {
             }
 
             self.saveSettings(false);
+            self.autoconnect(false);
             self.connectionOptionsLastUpdated(new Date().getTime());
         };
 
