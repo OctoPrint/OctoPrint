@@ -206,7 +206,7 @@ $(function () {
                 connectorParameters,
                 response.current,
                 {connector: self.lastConnector, parameters: self.lastConnectorParameters},
-                preferredConnector
+                response.options.preferredConnector
             ]);
 
             // printer profile
