@@ -92,6 +92,17 @@ class SerialConnectorPlugin(
                         ["plugins", "serial_connector"], config, force=True
                     )
 
+            logging_config = self._settings.global_get(["plugins", "logging"])
+            if logging_config and "serial_log_warning" in logging_config:
+                self._settings.global_set(
+                    ["plugins", "serial_connector", "logWarning"],
+                    logging_config["serial_log_warning"],
+                )
+                del logging_config["serial_log_warning"]
+                self._settings.global_set(
+                    ["plugins", "logging"], logging_config, force=True
+                )
+
     ##~~ TemplatePlugin mixin
 
     def get_template_configs(self):
@@ -108,6 +119,11 @@ class SerialConnectorPlugin(
                 "name": gettext("Serial Connection"),
                 "template": "serial_connector_settings.jinja2",
                 "custom_bindings": True,
+            },
+            {
+                "type": "navbar",
+                "template": "serial_connector_navbar_seriallog.jinja2",
+                "suffix": "_seriallog",
             },
         ]
 
