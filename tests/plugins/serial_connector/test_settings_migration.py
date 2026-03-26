@@ -229,7 +229,7 @@ def test_migration_autorefresh_interval(plugin):
     ],
 )
 def test_migration_blocklists(plugin, current_version, config, expected):
-    """Tests migration of blocklisted{ports|Baudrates} to blacklisted{Ports|Baudrates}"""
+    """Tests migration of blacklisted{ports|Baudrates} to blocklisted{Ports|Baudrates}"""
 
     # prep
     target = 2
