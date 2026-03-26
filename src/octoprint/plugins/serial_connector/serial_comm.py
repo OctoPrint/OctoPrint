@@ -189,7 +189,7 @@ PORT_AUTO = "AUTO"
 BAUDRATE_AUTO = 0
 
 STANDARD_BAUDRATES = [115200, 250000, 230400, 57600, 38400, 19200, 9600]
-
+# standard baudrates, sorted by likelihood
 
 SDFileData = namedtuple("SDFileData", ["name", "size", "timestamp", "longname"])
 
@@ -269,8 +269,7 @@ def serialList():
 
 def baudrateList(candidates=None):
     if candidates is None:
-        # sorted by likelihood
-        candidates = STANDARD_BAUDRATES
+        candidates = STANDARD_BAUDRATES[:]
 
     # additional baudrates prepended, sorted descending
     additionalBaudrates = settings().get(

@@ -297,3 +297,34 @@ def test_baudrate_list(
 
         # verify
         assert result == expected
+
+
+def test_baudrate_list_copied():
+    additional = [300000]
+
+    def settings_get(path):
+        if path == ["plugins", "serial_connector", "additionalBaudrates"]:
+            return additional
+        elif path == ["plugins", "serial_connector", "blocklistedBaudrates"]:
+            return []
+        elif path == ["printerConnection", "preferred", "connector"]:
+            return "other"
+        elif path == ["printerConnection", "preferred", "parameters"]:
+            return {}
+        return None
+
+    with mock.patch(
+        "octoprint.plugins.serial_connector.serial_comm.settings"
+    ) as settings_getter:
+        patched_settings = mock.MagicMock()
+        patched_settings.get.side_effect = settings_get
+        settings_getter.return_value = patched_settings
+
+        expected = additional + STANDARD_BAUDRATES
+
+        # test & verify
+        result = baudrateList()  # first call
+        assert result == expected
+
+        result = baudrateList()  # second call
+        assert result == expected  # should not have additional in there twice now
