@@ -218,10 +218,9 @@ def serialList():
     else:
         candidates = []
         try:
-            with os.scandir("/dev") as it:
-                for entry in it:
-                    if regex_serial_devices.match(entry.name):
-                        candidates.append(entry.path)
+            for entry in os.scandir("/dev"):
+                if regex_serial_devices.match(entry.name):
+                    candidates.append(entry.path)
         except Exception:
             _logger.exception("Could not scan /dev for serial ports on the system")
 
