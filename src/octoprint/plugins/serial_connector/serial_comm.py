@@ -188,6 +188,8 @@ MINIMAL_SD_TIMESTAMP = 1212012000
 PORT_AUTO = "AUTO"
 BAUDRATE_AUTO = 0
 
+STANDARD_BAUDRATES = [115200, 250000, 230400, 57600, 38400, 19200, 9600]
+
 
 SDFileData = namedtuple("SDFileData", ["name", "size", "timestamp", "longname"])
 
@@ -251,11 +253,16 @@ def serialList():
                 filter(lambda x: not fnmatch.fnmatch(x, pattern), candidates)
             )
 
-    # last used port = first to try, move to start
-    prev = settings().get(["plugins", "serial_connector", "port"])
-    if prev in candidates:
-        candidates.remove(prev)
-        candidates.insert(0, prev)
+    # preferred port = first to try, move to start
+    preferred_connector = settings().get(["printerConnection", "preferred", "connector"])
+    if preferred_connector == "serial":
+        preferred_params = settings().get(
+            ["printerConnection", "preferred", "parameters"]
+        )
+        preferred = preferred_params.get("port")
+        if preferred in candidates:
+            candidates.remove(preferred)
+            candidates.insert(0, preferred)
 
     return candidates
 
@@ -263,7 +270,7 @@ def serialList():
 def baudrateList(candidates=None):
     if candidates is None:
         # sorted by likelihood
-        candidates = [115200, 250000, 230400, 57600, 38400, 19200, 9600]
+        candidates = STANDARD_BAUDRATES
 
     # additional baudrates prepended, sorted descending
     additionalBaudrates = settings().get(
@@ -288,11 +295,16 @@ def baudrateList(candidates=None):
             except ValueError:
                 pass
 
-    # last used baudrate = first to try, move to start
-    prev = settings().getInt(["plugins", "serial_connector", "baudrate"])
-    if prev in candidates:
-        candidates.remove(prev)
-        candidates.insert(0, prev)
+    # preferred baudrate = first to try, move to start
+    preferred_connector = settings().get(["printerConnection", "preferred", "connector"])
+    if preferred_connector == "serial":
+        preferred_params = settings().get(
+            ["printerConnection", "preferred", "parameters"]
+        )
+        preferred = preferred_params.get("baudrate")
+        if preferred in candidates:
+            candidates.remove(preferred)
+            candidates.insert(0, preferred)
 
     return candidates
 
