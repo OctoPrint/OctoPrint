@@ -122,6 +122,8 @@ class SerialConnectorPlugin(
 
         if current is None or current < 3:
             # TODO: needs unit tests added once #5340 is merged
+
+            # move logWarning from plugins.logging to plugins.serial_connector
             logging_config = self._settings.global_get(["plugins", "logging"])
             if logging_config and "serial_log_warning" in logging_config:
                 self._settings.global_set(
@@ -130,6 +132,28 @@ class SerialConnectorPlugin(
                 )
                 self._settings.global_set(
                     ["plugins", "logging"], logging_config, force=True
+                )
+
+            # rename navbar component in order and disabled lists
+            old_id = "plugin_logging_seriallog"
+            new_id = "plugin_serial_connector_seriallog"
+
+            navbar_order = self._settings.global_get(
+                ["appearance", "components", "order", "navbar"]
+            )
+            if navbar_order and old_id in navbar_order:
+                self._settings.global_set(
+                    ["appearance", "components", "order", "navbar"],
+                    [new_id if x == old_id else x for x in navbar_order],
+                )
+
+            navbar_disabled = self._settings.global_get(
+                ["appearance", "components", "disabled", "navbar"]
+            )
+            if navbar_disabled and old_id in navbar_disabled:
+                self._settings.global_set(
+                    ["appearance", "components", "disabled", "navbar"],
+                    [new_id if x == old_id else x for x in navbar_disabled],
                 )
 
     ##~~ TemplatePlugin mixin
