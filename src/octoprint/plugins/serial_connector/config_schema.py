@@ -95,6 +95,9 @@ class SerialCapabilities(BaseModel):
     busy_protocol: bool = True
     """Whether to shorten the communication timeout if the firmware seems to support the busy protocol."""
 
+    chamber_temp: bool = True
+    """Whether to process chamber temperature data from the firmware if its support is detected."""
+
     emergency_parser: bool = True
     """Whether to send emergency commands out of band if the firmware seems to support the emergency parser."""
 
