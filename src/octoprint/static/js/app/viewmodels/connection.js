@@ -316,7 +316,7 @@ $(function () {
                                 "<p>Disconnecting while a print is in progress will prevent OctoPrint from " +
                                 "completing the print. If you're printing from an SD card attached directly " +
                                 "to the printer, any attempt to restart OctoPrint or reconnect to the printer " +
-                                "could interrupt the print.<p>"
+                                "could interrupt the print.</p>"
                         ),
                         question: gettext(
                             "Are you sure you want to disconnect from the printer?"
