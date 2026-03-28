@@ -198,7 +198,7 @@ def deleteTimelapse(filename):
         try:
             os.remove(full_path)
         except Exception as ex:
-            logging.getLogger(__file__).exception(
+            logging.getLogger(__name__).exception(
                 f"Error deleting timelapse file {full_path}"
             )
             abort(500, description=f"Unexpected error: {ex}")
@@ -213,7 +213,7 @@ def deleteTimelapse(filename):
             os.remove(thumb_path)
         except Exception as ex:
             # Do not treat this as an error, log and ignore
-            logging.getLogger(__file__).warning(
+            logging.getLogger(__name__).warning(
                 f"Unable to delete thumbnail {thumb_path} ({ex})"
             )
 
