@@ -802,7 +802,7 @@ $(function () {
                         if (targets === undefined) {
                             log.error(
                                 "No binding targets defined for view model",
-                                viewMode.constructor.name
+                                viewModel.constructor.name
                             );
                             return;
                         }
