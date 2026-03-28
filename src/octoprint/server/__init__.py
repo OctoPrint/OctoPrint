@@ -2805,7 +2805,7 @@ class Server:
             with open(self_mode_file, "w+", encoding="utf-8") as f:
                 f.write(self_mode)
         except Exception as ex:
-            self._logger.warn(f"Could not write safe mode file {self_mode_file}: {ex}")
+            self._logger.warning(f"Could not write safe mode file {self_mode_file}: {ex}")
 
     def _create_socket_connection(self, session):
         global \
