@@ -224,7 +224,7 @@ class StorageInterface:
         :param string filepath: path to the file
         :return: ``True`` if the file is inside the path, ``False`` otherwise
         """
-        return NotImplementedError()
+        raise NotImplementedError()
 
     def file_exists(self, path):
         """
