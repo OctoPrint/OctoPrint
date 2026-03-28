@@ -126,7 +126,7 @@ $(function () {
 
             mfaOptions.append(container);
 
-            $('button[type="submit"', container).click((e) => {
+            $('button[type="submit"]', container).click((e) => {
                 e.preventDefault();
                 const additional = {};
                 _.each(["input", "select", "textarea"], (tag) => {
