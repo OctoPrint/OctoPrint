@@ -2797,15 +2797,15 @@ class Server:
         self._intermediary_server.server_close()
         self._logger.info("Intermediary server shut down")
 
-    def _log_safe_mode_start(self, self_mode):
-        self_mode_file = os.path.join(
+    def _log_safe_mode_start(self, safe_mode):
+        safe_mode_file = os.path.join(
             self._settings.getBaseFolder("data"), "last_safe_mode"
         )
         try:
-            with open(self_mode_file, "w+", encoding="utf-8") as f:
-                f.write(self_mode)
+            with open(safe_mode_file, "w+", encoding="utf-8") as f:
+                f.write(safe_mode)
         except Exception as ex:
-            self._logger.warning(f"Could not write safe mode file {self_mode_file}: {ex}")
+            self._logger.warning(f"Could not write safe mode file {safe_mode_file}: {ex}")
 
     def _create_socket_connection(self, session):
         global \
