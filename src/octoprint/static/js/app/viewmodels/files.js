@@ -1717,7 +1717,7 @@ $(function () {
         };
 
         self.elementByPath = (path, root) => {
-            self.elementByPathAndStorage(path, "local", root);
+            return self.elementByPathAndStorage(path, "local", root);
         };
 
         self.elementByPathAndStorage = function (path, storage, root) {
