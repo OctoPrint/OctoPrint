@@ -81,11 +81,11 @@ class TrackingPlugin(
         }
 
     def on_settings_save(self, data):
-        enabled = self._settings.get(["enabled"])
+        enabled = self._settings.get_boolean(["enabled"])
 
         octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
-        if enabled is None and self._settings.get(["enabled"]):
+        if enabled is None and self._settings.get_boolean(["enabled"]):
             # tracking was just enabled, let's start up tracking
             self._start_tracking()
 
