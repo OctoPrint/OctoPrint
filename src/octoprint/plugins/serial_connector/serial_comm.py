@@ -3319,13 +3319,7 @@ class MachineCom:
                             self.close(wait=False)
 
                 ### Operational (idle or busy)
-                elif self._state in {
-                    self.STATE_OPERATIONAL,
-                    self.STATE_STARTING,
-                    self.STATE_PRINTING,
-                    self.STATE_PAUSED,
-                    self.STATE_TRANSFERING_FILE,
-                }:
+                elif self._state in self.OPERATIONAL_STATES:
                     if line == "start":  # exact match, to be on the safe side
                         with self.job_put_on_hold():
                             idle = self._state == self.STATE_OPERATIONAL
