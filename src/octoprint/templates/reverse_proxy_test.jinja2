@@ -171,7 +171,7 @@
             {% else %}
                 <p>
                     To receive more information about the request headers that OctoPrint received, please
-                    <a href="{{ url_for('reverse_proxy_test', authenticated='') }}">request the authenticated version of this page</a>.
+                    <a href="{{ url_for('reverse_proxy_test', authenticated='true') }}">request the authenticated version of this page</a>.
                     Note that this will only work if the above settings are reporting green across the board.
                 </p>
             {% endif %}

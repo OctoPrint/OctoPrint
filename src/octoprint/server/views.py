@@ -48,7 +48,7 @@ from octoprint.server.util import (
 )
 from octoprint.server.util.csrf import add_csrf_cookie
 from octoprint.server.util.flask import credentials_checked_recently
-from octoprint.settings import settings
+from octoprint.settings import settings, valid_boolean_trues
 from octoprint.util import sv, to_bytes, to_unicode
 from octoprint.util.version import get_octoprint_version, get_python_version_string
 
@@ -447,7 +447,7 @@ def reverse_proxy_test_redirect():
 def reverse_proxy_test():
     from octoprint.server.util.flask import get_reverse_proxy_info
 
-    authenticated = request.args.get("authenticated", False) is not False
+    authenticated = request.args.get("authenticated", "false") in valid_boolean_trues
     if authenticated:
         response = require_fresh_login_with(permissions=[Permissions.ADMIN])
         if response:
