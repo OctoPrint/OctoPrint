@@ -180,8 +180,8 @@ def _create_etag(path, filter=None, recursive=False, lm=None):
     lastmodified_factory=lambda: _create_lastmodified(
         request.path, request.values.get("recursive", False)
     ),
-    unless=lambda: request.values.get("force", False)
-    or request.values.get("_refresh", False),
+    unless=lambda: request.values.get("force", "false") in valid_boolean_trues
+    or request.values.get("_refresh", "false") in valid_boolean_trues,
 )
 def readGcodeFiles():  # pre 2.0.0
     filter = request.values.get("filter", False)
@@ -224,8 +224,8 @@ def readGcodeFiles():  # pre 2.0.0
     lastmodified_factory=lambda: _create_lastmodified(
         request.path, request.values.get("recursive", False)
     ),
-    unless=lambda: request.values.get("force", False)
-    or request.values.get("_refresh", False),
+    unless=lambda: request.values.get("force", "false") in valid_boolean_trues
+    or request.values.get("_refresh", "false") in valid_boolean_trues,
 )
 def readGcodeFiles_post_2_0_0():  # 2.0.0+
     filter = request.values.get("filter", False)
@@ -336,8 +336,8 @@ def runFilesTest():
     lastmodified_factory=lambda: _create_lastmodified(
         request.path, request.values.get("recursive", False)
     ),
-    unless=lambda: request.values.get("force", False)
-    or request.values.get("_refresh", False),
+    unless=lambda: request.values.get("force", "false") in valid_boolean_trues
+    or request.values.get("_refresh", "false") in valid_boolean_trues,
 )
 def readGcodeFilesForOrigin(origin):
     try:
@@ -388,8 +388,8 @@ def readGcodeFilesForOrigin(origin):
         lm=lm,
     ),
     lastmodified_factory=lambda: _create_lastmodified(request.path, False),
-    unless=lambda: request.values.get("force", False)
-    or request.values.get("_refresh", False),
+    unless=lambda: request.values.get("force", "false") in valid_boolean_trues
+    or request.values.get("_refresh", "false") in valid_boolean_trues,
 )
 def readGcodeFile(target, filename):
     try:
