@@ -21,7 +21,7 @@ class ComponentOrderConfig(BaseModel):
         "settings",
         "systemmenu",
         "plugin_announcements",
-        "plugin_logging_seriallog",
+        "plugin_serial_connector_seriallog",
         "plugin_logging_plugintimingslog",
         "plugin_pi_support",
         "plugin_health_check",

@@ -804,6 +804,15 @@ def _saveSettings(data):
     if "serial" in data and not api_version_matches(">=2.0.0"):
         _set_serial_settings(data["serial"])
 
+        # forward log toggle to the plugin settings path so it gets
+        # persisted through on_settings_save
+        if "log" in data["serial"]:
+            if "plugins" not in data:
+                data["plugins"] = {}
+            if "serial_connector" not in data["plugins"]:
+                data["plugins"]["serial_connector"] = {}
+            data["plugins"]["serial_connector"]["log"] = data["serial"]["log"]
+
     if "temperature" in data:
         if "profiles" in data["temperature"]:
             result = []
@@ -1547,15 +1556,3 @@ def _set_serial_settings(data: dict[str, Any]):
             ["plugins", "serial_connector", "enableShutdownActionCommand"],
             data["enableShutdownActionCommand"],
         )
-
-    oldLog = s.getBoolean(["plugins", "serial_connector", "log"])
-    if "log" in data:
-        s.setBoolean(["plugins", "serial_connector", "log"], data["log"])
-    if oldLog and not s.getBoolean(["plugins", "serial_connector", "log"]):
-        # disable debug logging to serial.log
-        logging.getLogger("SERIAL").debug("Disabling serial logging")
-        logging.getLogger("SERIAL").setLevel(logging.CRITICAL)
-    elif not oldLog and s.getBoolean(["plugins", "serial_connector", "log"]):
-        # enable debug logging to serial.log
-        logging.getLogger("SERIAL").setLevel(logging.DEBUG)
-        logging.getLogger("SERIAL").debug("Enabling serial logging")

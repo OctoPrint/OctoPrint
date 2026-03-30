@@ -51,6 +51,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     _file_manager: "FileManager" = None
     _plugin_settings: "PluginSettings" = None
     _plugin_manager: "PluginManager" = None
+    _serial_logger: logging.Logger = None
     # /injected
 
     @classmethod
@@ -120,12 +121,13 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         if self._comm is not None:
             return
 
-        from octoprint.logging.handlers import SerialLogHandler
+        from . import SerialLogHandler
 
         SerialLogHandler.arm_rollover()
-        if not logging.getLogger("SERIAL").isEnabledFor(logging.DEBUG):
+
+        if not self._serial_logger.isEnabledFor(logging.DEBUG):
             # if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
-            logging.getLogger("SERIAL").info(
+            self._serial_logger.info(
                 "serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log"
             )
 
@@ -443,10 +445,11 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
         self._comm.cancelPrint(user=user, tags=tags)
 
     def log_lines(self, *lines):
-        serial_logger = logging.getLogger("SERIAL")
-        self.on_comm_log("\n".join(lines))
         for line in lines:
-            serial_logger.debug(line)
+            self._serial_logger.debug(line)
+        self._listener.on_printer_logs(
+            util.to_unicode("\n".join(lines), "utf-8", errors="replace")
+        )
 
     def get_state_string(self, state: ConnectedPrinterState = None):
         if state is None:
@@ -626,9 +629,7 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
     # ~~ comm.MachineComPrintCallback implementation
 
     def on_comm_log(self, message):
-        self._listener.on_printer_logs(
-            util.to_unicode(message, "utf-8", errors="replace")
-        )
+        self.log_lines(message)
 
     def on_comm_temperature_update(self, tools, bed, chamber, custom=None):
         if custom is None:

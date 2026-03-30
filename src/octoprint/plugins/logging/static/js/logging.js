@@ -11,7 +11,6 @@ $(function () {
         self.availableLoggersLevel = ko.observable();
         self.configuredLoggers = ko.observableArray();
         self.configuredLoggersChanged = false;
-        self.serialLogEnabled = ko.observable();
         self.pluginTimingsLogEnabled = ko.observable();
         self.freeSpace = ko.observable(undefined);
         self.totalSpace = ko.observable(undefined);
@@ -20,17 +19,6 @@ $(function () {
 
         self.availableLoggersSorted = ko.computed(function () {
             return _.sortBy(self.availableLoggers());
-        });
-
-        self.serialLogWarning = ko.pureComputed(() => {
-            return (
-                self.serialLogEnabled() &&
-                self.settings &&
-                self.settings.settings &&
-                self.settings.settings.plugins &&
-                self.settings.settings.plugins.logging &&
-                self.settings.settings.plugins.logging.serial_log_warning()
-            );
         });
 
         self.pluginTimingsLogWarning = ko.pureComputed(() => {
@@ -90,7 +78,6 @@ $(function () {
         self.fromResponse = function (response) {
             self.fromLogsResponse(response.logs);
             self.fromSetupResponse(response.setup);
-            self.fromSerialLogResponse(response.serial_log);
             self.fromPluginTimingsLogResponse(response.plugintimings_log);
         };
 
@@ -131,20 +118,10 @@ $(function () {
             self.configuredLoggersChanged = false;
         };
 
-        self.fromSerialLogResponse = function (response) {
-            if (!response) return;
-
-            self.serialLogEnabled(response.enabled);
-        };
-
         self.fromPluginTimingsLogResponse = function (response) {
             if (!response) return;
 
             self.pluginTimingsLogEnabled(response.enabled);
-        };
-
-        self.serialLogPopoverContent = function () {
-            return self.popoverContent("serial.log");
         };
 
         self.pluginTimingsLogPopoverContent = function () {
@@ -421,10 +398,6 @@ $(function () {
         construct: LoggingViewModel,
         additionalNames: ["logsViewModel"],
         dependencies: ["loginStateViewModel", "accessViewModel", "settingsViewModel"],
-        elements: [
-            "#settings_plugin_logging",
-            "#navbar_plugin_logging_seriallog",
-            "#navbar_plugin_logging_plugintimingslog"
-        ]
+        elements: ["#settings_plugin_logging", "#navbar_plugin_logging_plugintimingslog"]
     });
 });

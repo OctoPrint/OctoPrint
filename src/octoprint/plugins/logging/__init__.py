@@ -48,14 +48,12 @@ class LoggingPlugin(
         free, total = self._get_usage()
         loggers = self._get_available_loggers()
         levels = self._get_logging_levels()
-        serial_log_enabled = self._settings.global_get_boolean(["serial", "log"])
         plugintimings_log_enabled = self._settings.global_get_boolean(
             ["devel", "pluginTimings"]
         )
         return jsonify(
             logs={"files": files, "free": free, "total": total},
             setup={"loggers": loggers, "levels": levels},
-            serial_log={"enabled": serial_log_enabled},
             plugintimings_log={"enabled": plugintimings_log_enabled},
         )
 
@@ -137,11 +135,6 @@ class LoggingPlugin(
         return [
             {
                 "type": "navbar",
-                "template": "logging_navbar_seriallog.jinja2",
-                "suffix": "_seriallog",
-            },
-            {
-                "type": "navbar",
                 "template": "logging_navbar_plugintimingslog.jinja2",
                 "suffix": "_plugintimingslog",
             },
@@ -162,7 +155,6 @@ class LoggingPlugin(
 
     def get_settings_defaults(self):
         return {
-            "serial_log_warning": True,
             "plugintimings_log_warning": True,
         }
 

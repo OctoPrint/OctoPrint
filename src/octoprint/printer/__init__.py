@@ -415,7 +415,7 @@ class CommonPrinterMixin:
 
     def log_lines(self, *lines):
         """
-        Logs the provided lines to the printer log and serial.log
+        Logs the provided lines to the printer log and the connector's log
         Args:
                 *lines: the lines to log
         """

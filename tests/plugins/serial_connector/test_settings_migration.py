@@ -1,6 +1,9 @@
+from copy import copy
 from unittest import mock
 
 import pytest
+
+TARGET_SETTINGS_VERSION = 3
 
 
 @pytest.fixture()
@@ -12,6 +15,30 @@ def plugin():
     p._logger = mock.MagicMock()
 
     return p
+
+
+def settings_with_needed_migration(path):
+    if path == ["serial"]:
+        return {
+            "port": "VIRTUAL",
+            "baudrate": 115200,
+            "autoconnect": True,
+            "log": True,
+        }
+    elif path == ["printerConnection", "preferred", "connector"]:
+        return "other"
+    elif path == ["plugins", "serial_connector"]:
+        return {"blacklistedPorts": []}
+    elif path == ["plugins", "logging"]:
+        return {"serial_log_warning": False}
+    elif path == ["appearance", "components", "disabled", "navbar"] or path == [
+        "appearance",
+        "components",
+        "order",
+        "navbar",
+    ]:
+        return ["foo", "plugin_logging_seriallog", "bar"]
+    return None
 
 
 @pytest.mark.parametrize(
@@ -49,7 +76,6 @@ def test_migration_serial_printer_connection(
     """
 
     # prep
-    target = 2
     current_version = None
 
     def settings_global_get(path):
@@ -62,7 +88,7 @@ def test_migration_serial_printer_connection(
     plugin._settings.global_get.side_effect = settings_global_get
 
     # test
-    plugin.on_settings_migrate(target, current_version)
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
 
     # verify
     plugin._settings.global_set.assert_has_calls(
@@ -91,7 +117,6 @@ def test_migration_serial_printer_connection_other_connector(plugin):
     """
 
     # prep
-    target = 2
     current_version = None
 
     def settings_global_get(path):
@@ -109,7 +134,7 @@ def test_migration_serial_printer_connection_other_connector(plugin):
     plugin._settings.global_get.side_effect = settings_global_get
 
     # test
-    plugin.on_settings_migrate(target, current_version)
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
 
     # verify
     plugin._settings.global_set.assert_has_calls(
@@ -139,7 +164,6 @@ def test_migration_serial_behaviour(plugin, config, expected):
     """Tests migration of serial settings to plugins.serial_connector.{errorHandling|sendChecksum}"""
 
     # prep
-    target = 2
     current_version = None
 
     def settings_global_get(path):
@@ -150,7 +174,7 @@ def test_migration_serial_behaviour(plugin, config, expected):
     plugin._settings.global_get.side_effect = settings_global_get
 
     # test
-    plugin.on_settings_migrate(target, current_version)
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
 
     # verify
     plugin._settings.global_set.assert_has_calls(
@@ -165,7 +189,6 @@ def test_migration_autorefresh(plugin):
     """Tests migration of serial settings to printerConnection.autorefresh"""
 
     # prep
-    target = 2
     current_version = None
 
     def settings_global_get(path):
@@ -178,7 +201,7 @@ def test_migration_autorefresh(plugin):
     plugin._settings.global_get.side_effect = settings_global_get
 
     # test
-    plugin.on_settings_migrate(target, current_version)
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
 
     # verify
     plugin._settings.global_set_boolean.assert_called_once_with(
@@ -194,7 +217,6 @@ def test_migration_autorefresh_interval(plugin):
     """Tests migration of serial settings to printerConnection.autorefreshInterval"""
 
     # prep
-    target = 2
     current_version = None
 
     def settings_global_get(path):
@@ -207,7 +229,7 @@ def test_migration_autorefresh_interval(plugin):
     plugin._settings.global_get.side_effect = settings_global_get
 
     # test
-    plugin.on_settings_migrate(target, current_version)
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
 
     # verify
     plugin._settings.global_set_int.assert_called_once_with(
@@ -232,8 +254,6 @@ def test_migration_blocklists(plugin, current_version, config, expected):
     """Tests migration of blacklisted{ports|Baudrates} to blocklisted{Ports|Baudrates}"""
 
     # prep
-    target = 2
-
     def settings_global_get(path):
         if path == ["plugins", "serial_connector"]:
             return config
@@ -242,7 +262,7 @@ def test_migration_blocklists(plugin, current_version, config, expected):
     plugin._settings.global_get.side_effect = settings_global_get
 
     # test
-    plugin.on_settings_migrate(target, current_version)
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
 
     # verify
     plugin._settings.global_set.assert_has_calls(
@@ -256,7 +276,6 @@ def test_migration_blocklists_unmodified(plugin):
     """Tests unnecessary blacklist migration"""
 
     # prep
-    target = 2
     current_version = None
 
     def settings_global_get(path):
@@ -267,101 +286,216 @@ def test_migration_blocklists_unmodified(plugin):
     plugin._settings.global_get.side_effect = settings_global_get
 
     # test
-    plugin.on_settings_migrate(target, current_version)
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
 
     # verify
     plugin._settings.global_set.assert_not_called()
 
 
-def test_migration_path_version_none(plugin):
-    """Tests both migrations are done"""
+@pytest.mark.parametrize("current_version", [None, 2])
+@pytest.mark.parametrize(
+    "serial_log_warning, navbar_disabled_components, expected_calls",
+    [
+        # warning enabled and component not disabled
+        (
+            True,
+            ["foo", "bar"],
+            [
+                mock.call(["plugins", "logging"], {}, force=True),
+            ],
+        ),
+        # warning enabled and component disabled
+        (
+            True,
+            ["foo", "plugin_logging_seriallog", "bar"],
+            [
+                mock.call(["plugins", "logging"], {}, force=True),
+                mock.call(
+                    ["appearance", "components", "disabled", "navbar"],
+                    ["foo", "plugin_serial_connector_seriallog", "bar"],
+                ),
+            ],
+        ),
+        # warning disabled and component not disabled
+        (
+            False,
+            ["foo", "bar"],
+            [
+                mock.call(["plugins", "logging"], {}, force=True),
+                mock.call(
+                    ["appearance", "components", "disabled", "navbar"],
+                    ["foo", "bar", "plugin_serial_connector_seriallog"],
+                ),
+            ],
+        ),
+        # warning disabled and component disabled
+        (
+            False,
+            ["foo", "plugin_logging_seriallog", "bar"],
+            [
+                mock.call(["plugins", "logging"], {}, force=True),
+                mock.call(
+                    ["appearance", "components", "disabled", "navbar"],
+                    ["foo", "plugin_serial_connector_seriallog", "bar"],
+                ),
+            ],
+        ),
+    ],
+)
+def test_migration_logging_warning(
+    plugin,
+    current_version,
+    serial_log_warning,
+    navbar_disabled_components,
+    expected_calls,
+):
+    """Tests log warning flag gets migrated correctly"""
 
     # prep
-    target = 2
-    current_version = None
-
     def settings_global_get(path):
-        if path == ["serial"]:
-            return {
-                "port": "VIRTUAL",
-                "baudrate": 115200,
-                "autoconnect": True,
-                "log": True,
-            }
-        elif path == ["printerConnection", "preferred", "connector"]:
-            return "other"
-        elif path == ["plugins", "serial_connector"]:
-            return {"blacklistedPorts": []}
+        if path == ["plugins", "logging"]:
+            return {"serial_log_warning": serial_log_warning}
+        elif path == ["appearance", "components", "disabled", "navbar"]:
+            return copy(navbar_disabled_components)
         return None
 
     plugin._settings.global_get.side_effect = settings_global_get
 
     # test
-    plugin.on_settings_migrate(target, current_version)
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
+
+    # verify
+    plugin._settings.global_set.assert_has_calls(expected_calls)
+    assert plugin._settings.global_set.call_count == len(expected_calls)
+
+
+@pytest.mark.parametrize("current_version", [None, 2])
+def test_migration_logging_navbar_order(plugin, current_version):
+    """Tests navbar order list gets migrated correctly"""
+
+    # prep
+    def settings_global_get(path):
+        if path == ["appearance", "components", "order", "navbar"]:
+            return ["foo", "plugin_logging_seriallog", "bar"]
+        return None
+
+    plugin._settings.global_get.side_effect = settings_global_get
+
+    # test
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
+
+    # verify
+    plugin._settings.global_set.assert_called_once_with(
+        ["appearance", "components", "order", "navbar"],
+        ["foo", "plugin_serial_connector_seriallog", "bar"],
+    )
+
+
+@pytest.mark.parametrize("current_version", [None, 2])
+def test_migration_logging_navbar_disabled(plugin, current_version):
+    """Tests navbar disabled list gets migrated correctly"""
+
+    # prep
+    def settings_global_get(path):
+        if path == ["appearance", "components", "disabled", "navbar"]:
+            return ["foo", "plugin_logging_seriallog", "bar"]
+        return None
+
+    plugin._settings.global_get.side_effect = settings_global_get
+
+    # test
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
+
+    # verify
+    plugin._settings.global_set.assert_called_once_with(
+        ["appearance", "components", "disabled", "navbar"],
+        ["foo", "plugin_serial_connector_seriallog", "bar"],
+    )
+
+
+EXPECTED_CALLS_BY_VERSION = {
+    "none_to_1": [
+        mock.call(["plugins", "serial_connector"], {"log": True}, force=True),
+    ],
+    "1_to_2": [
+        mock.call(["plugins", "serial_connector"], {"blocklistedPorts": []}, force=True)
+    ],
+    "2_to_3": [
+        mock.call(["plugins", "logging"], {}, force=True),
+        mock.call(
+            ["appearance", "components", "order", "navbar"],
+            ["foo", "plugin_serial_connector_seriallog", "bar"],
+        ),
+        mock.call(
+            ["appearance", "components", "disabled", "navbar"],
+            ["foo", "plugin_serial_connector_seriallog", "bar"],
+        ),
+    ],
+}
+
+
+def test_migration_path_version_none(plugin):
+    """Tests all migrations are done"""
+
+    # prep
+    current_version = None
+
+    plugin._settings.global_get.side_effect = settings_with_needed_migration
+
+    # test
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
 
     # verify
     plugin._settings.global_set.assert_has_calls(
-        [
-            mock.call(["plugins", "serial_connector"], {"log": True}, force=True),
-            mock.call(
-                ["plugins", "serial_connector"], {"blocklistedPorts": []}, force=True
-            ),
-        ]
+        EXPECTED_CALLS_BY_VERSION["none_to_1"]
+        + EXPECTED_CALLS_BY_VERSION["1_to_2"]
+        + EXPECTED_CALLS_BY_VERSION["2_to_3"]
     )
     plugin._settings.global_remove.assert_called_once_with(["serial"])
 
 
 def test_migration_path_version_1(plugin):
-    """Tests only the blocklist migration is done"""
+    """Tests only migrations to version 2 & 3 are done"""
 
     # prep
-    target = 2
     current_version = 1
 
-    def settings_global_get(path):
-        if path == ["serial"]:
-            return {
-                "port": "VIRTUAL",
-                "baudrate": 115200,
-                "autoconnect": True,
-                "log": True,
-            }
-        elif path == ["printerConnection", "preferred", "connector"]:
-            return "other"
-        elif path == ["plugins", "serial_connector"]:
-            return {"blacklistedPorts": []}
-        return None
-
-    plugin._settings.global_get.side_effect = settings_global_get
+    plugin._settings.global_get.side_effect = settings_with_needed_migration
 
     # test
-    plugin.on_settings_migrate(target, current_version)
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
 
     # verify
     plugin._settings.global_set.assert_has_calls(
-        [
-            mock.call(
-                ["plugins", "serial_connector"], {"blocklistedPorts": []}, force=True
-            ),
-        ]
+        EXPECTED_CALLS_BY_VERSION["1_to_2"] + EXPECTED_CALLS_BY_VERSION["2_to_3"]
     )
     plugin._settings.global_remove.assert_not_called()
 
 
 def test_migration_path_version_2(plugin):
+    """Tests only migrations to version 3 are done"""
+
+    # prep
+    current_version = 2
+
+    plugin._settings.global_get.side_effect = settings_with_needed_migration
+
+    # test
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
+
+    # verify
+    plugin._settings.global_set.assert_has_calls(EXPECTED_CALLS_BY_VERSION["2_to_3"])
+    plugin._settings.global_remove.assert_not_called()
+
+
+def test_migration_path_current_version(plugin):
     """Tests no migration is done"""
 
     # prep
-    target = 2
-    current_version = 2
-
-    def settings_global_get(path):
-        return None
-
-    plugin._settings.global_get.side_effect = settings_global_get
+    plugin._settings.global_get.side_effect = settings_with_needed_migration
 
     # test
-    plugin.on_settings_migrate(target, current_version)
+    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, TARGET_SETTINGS_VERSION)
 
     # verify
     plugin._settings.global_set.assert_not_called()

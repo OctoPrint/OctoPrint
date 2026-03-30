@@ -266,19 +266,23 @@ def init_logging(
 
     import os
 
+    from octoprint.logging import (
+        LOGGING_DATE_FORMAT,
+        LOGGING_SIMPLE_FORMAT,
+        LOGGING_TIMED_MESSAGE_ONLY_FORMAT,
+        LOGGING_TIMING_CSV_FORMAT,
+    )
     from octoprint.util import dict_merge
 
     # default logging configuration
     if default_config is None:
-        simple_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        date_format = "%Y-%m-%d %H:%M:%S"
         default_config = {
             "version": 1,
             "formatters": {
-                "simple": {"format": simple_format},
+                "simple": {"format": LOGGING_SIMPLE_FORMAT},
                 "colored": {
                     "()": "colorlog.ColoredFormatter",
-                    "format": "%(log_color)s" + simple_format + "%(reset)s",
+                    "format": f"%(log_color)s{LOGGING_SIMPLE_FORMAT}%(reset)s",
                     "reset": True,
                     "log_colors": {
                         "DEBUG": "cyan",
@@ -287,16 +291,15 @@ def init_logging(
                         "CRITICAL": "bold_red",
                     },
                 },
-                "serial": {"format": "%(asctime)s - %(message)s"},
                 "tornado": {
                     "()": "tornado.log.LogFormatter",
                     "color": False,
-                    "format": simple_format,
-                    "datefmt": date_format,
+                    "format": LOGGING_SIMPLE_FORMAT,
+                    "datefmt": LOGGING_DATE_FORMAT,
                 },
-                "auth": {"format": "%(asctime)s - %(message)s"},
-                "timings": {"format": "%(asctime)s - %(message)s"},
-                "timingscsv": {"format": "%(asctime)s;%(func)s;%(timing)f"},
+                "auth": {"format": LOGGING_TIMED_MESSAGE_ONLY_FORMAT},
+                "timings": {"format": LOGGING_TIMED_MESSAGE_ONLY_FORMAT},
+                "timingscsv": {"format": LOGGING_TIMING_CSV_FORMAT},
             },
             "handlers": {
                 "console": {
@@ -314,16 +317,6 @@ def init_logging(
                     "filename": os.path.join(
                         settings.getBaseFolder("logs"), "octoprint.log"
                     ),
-                },
-                "serialFile": {
-                    "class": "octoprint.logging.handlers.SerialLogHandler",
-                    "level": "DEBUG",
-                    "formatter": "serial",
-                    "backupCount": 3,
-                    "filename": os.path.join(
-                        settings.getBaseFolder("logs"), "serial.log"
-                    ),
-                    "delay": True,
                 },
                 "tornadoFile": {
                     "class": "octoprint.logging.handlers.TornadoLogHandler",
@@ -375,11 +368,6 @@ def init_logging(
                 },
             },
             "loggers": {
-                "SERIAL": {
-                    "level": "INFO",
-                    "handlers": ["serialFile"],
-                    "propagate": False,
-                },
                 "AUTH": {
                     "level": "INFO",
                     "handlers": ["authFile"],

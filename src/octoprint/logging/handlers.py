@@ -128,10 +128,6 @@ class TriggeredRolloverLogHandler(
             self.stream = self._open()
 
 
-class SerialLogHandler(TriggeredRolloverLogHandler):
-    pass
-
-
 class PluginTimingsLogHandler(TriggeredRolloverLogHandler):
     pass
 

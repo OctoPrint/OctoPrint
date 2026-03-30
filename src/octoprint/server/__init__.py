@@ -325,10 +325,6 @@ class Server:
         if self._plugin_manager is None:
             self._plugin_manager = octoprint.plugin.plugin_manager()
 
-        if self._settings.getBoolean(["serial", "log"]):
-            # enable debug logging to serial.log
-            logging.getLogger("SERIAL").setLevel(logging.DEBUG)
-
         if self._settings.getBoolean(["devel", "pluginTimings"]):
             # enable plugin timings log
             logging.getLogger("PLUGIN_TIMINGS").setLevel(logging.DEBUG)
