@@ -450,7 +450,7 @@ class PrinterFileStorage(StorageInterface):
         metadata = self.get_metadata(path)
         return metadata and "analysis" in metadata
 
-    def get_metadata(self, path, default=None):
+    def get_metadata(self, path: str, default=None) -> dict:
         if not self.capabilities.metadata:
             return None
 

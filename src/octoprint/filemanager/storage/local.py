@@ -779,11 +779,11 @@ class LocalFileStorage(StorageInterface):
 
         return self.path_in_storage(destination_data["fullpath"])
 
-    def has_analysis(self, path):
+    def has_analysis(self, path: str) -> bool:
         metadata = self.get_metadata(path)
         return metadata and "analysis" in metadata
 
-    def get_metadata(self, path, default=None):
+    def get_metadata(self, path: str, default=None) -> dict:
         path, name = self.sanitize(path)
         return self._get_metadata_entry(path, name, default=default)
 
@@ -1579,7 +1579,7 @@ class LocalFileStorage(StorageInterface):
 
         return entry_data
 
-    def _get_metadata_entry(self, path, name, default=None):
+    def _get_metadata_entry(self, path: str, name: str, default=None) -> dict:
         with self._get_metadata_lock(path):
             metadata = self._get_metadata(path)
             return metadata.get(name, default)
@@ -1715,7 +1715,7 @@ class LocalFileStorage(StorageInterface):
                 except Exception:
                     self._logger.exception(f"Error copying/moving {src} to {dst}")
 
-    def _get_metadata(self, path, force=False):
+    def _get_metadata(self, path: str, force=False) -> dict:
         import json
 
         if not force:

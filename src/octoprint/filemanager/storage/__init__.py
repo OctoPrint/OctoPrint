@@ -480,7 +480,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def has_analysis(self, path) -> bool:
+    def has_analysis(self, path: str) -> bool:
         """
         Returns whether the file at path has been analysed yet
 
@@ -488,7 +488,7 @@ class StorageInterface:
         """
         raise NotImplementedError()
 
-    def get_metadata(self, path, default=None):
+    def get_metadata(self, path: str, default=None) -> dict:
         """
         Retrieves the metadata for the file ``path``.
 
