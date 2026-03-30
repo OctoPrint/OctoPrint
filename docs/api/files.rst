@@ -1095,6 +1095,7 @@ Retrieve a specific file's or folder's information
    :param location: The location of the file for which to retrieve the information, by default ``local`` (for OctoPrint's ``uploads``
                     folder) or ``printer`` or its deprecated alias ``sdcard`` for the printer's internal storage (if available)
    :param filename: The filename of the file for which to retrieve the information
+   :param recursive: If set to ``true``, return all files and folders recursively. Otherwise only return items on same level.
    :statuscode 200: No error
    :statuscode 404: If ``target`` is not among the registered storages (e.g. ``local``, ``printer`` or its deprecated alias ``sdcard``)
 

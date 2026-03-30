@@ -282,6 +282,7 @@ def getSettings():
             "autoUppercaseBlocklist"
         )
         data["server"]["pluginBlacklist"] = data["server"].pop("pluginBlocklist")
+        data["system"]["events"] = s.get(["events"])
 
     if Permissions.WEBCAM.can() or (
         settings().getBoolean(["server", "firstRun"])
@@ -840,6 +841,8 @@ def _saveSettings(data):
     if "system" in data:
         if "actions" in data["system"]:
             s.set(["system", "actions"], data["system"]["actions"])
+        if "events" in data["system"] and not api_version_matches(">=2.0.0"):
+            s.set(["events"], data["system"]["events"])
 
     if "scripts" in data:
         if "gcode" in data["scripts"] and isinstance(data["scripts"]["gcode"], dict):

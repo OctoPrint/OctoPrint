@@ -385,9 +385,12 @@ def readGcodeFilesForOrigin(origin):
 @with_revalidation_checking(
     etag_factory=lambda lm=None: _create_etag(
         request.path,
+        recursive=request.values.get("recursive", "false") in valid_boolean_trues,
         lm=lm,
     ),
-    lastmodified_factory=lambda: _create_lastmodified(request.path, False),
+    lastmodified_factory=lambda: _create_lastmodified(
+        request.path, request.values.get("recursive", "false") in valid_boolean_trues
+    ),
     unless=lambda: request.values.get("force", "false") in valid_boolean_trues
     or request.values.get("_refresh", "false") in valid_boolean_trues,
 )
@@ -396,7 +399,9 @@ def readGcodeFile(target, filename):
         if not _validate_filename(target, filename):
             abort(404)
 
-        file = _getFileDetails(target, filename)
+        recursive = request.values.get("recursive", "false") in valid_boolean_trues
+
+        file = _getFileDetails(target, filename, recursive=recursive)
         if not file:
             abort(404)
 
@@ -406,17 +411,25 @@ def readGcodeFile(target, filename):
         abort(404)
 
 
-def _getFileDetails(origin, path):
+def _getFileDetails(origin, path, recursive=True):
     if "/" in path:
         parent, _ = path.rsplit("/", 1)
     else:
         parent = None
 
-    data = fileManager.get_storage_entry(origin, path)
-    if not data:
-        return None
+    if recursive:
+        data = fileManager.get_storage_entry(origin, path)
+        if not data:
+            return None
 
-    return _analyse_and_convert_recursively(origin, [data], path=parent)[0]
+        return _analyse_and_convert_recursively(origin, [data], path=parent)[0]
+
+    else:
+        files = _getFileList(origin, path=parent, recursive=False, level=1)
+        for f in files:
+            if f.path == path:
+                return f
+        return None
 
 
 @time_this(
