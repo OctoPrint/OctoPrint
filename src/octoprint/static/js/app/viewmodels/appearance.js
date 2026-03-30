@@ -123,7 +123,7 @@ $(function () {
                 case "orange":
                     return "#e39665";
                 case "yellow":
-                    return "#e3d765;";
+                    return "#e3d765";
                 case "green":
                     return "#98f064";
                 case "blue":

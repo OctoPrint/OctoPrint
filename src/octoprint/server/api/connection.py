@@ -78,6 +78,8 @@ class ConnectionOptions_pre_2_0_0(BaseModel):
     baudratePreference: Optional[int]
     printerProfilePreference: Optional[str]
 
+    autoconnect: bool
+
 
 class ConnectionStateResponse_pre_2_0_0(BaseModel):
     current: CurrentConnectionState_pre_2_0_0
@@ -202,12 +204,12 @@ def connectionCommand():
             )
             settings().set(["printerConnection", "preferred", "parameters"], parameters)
             printerProfileManager.set_default(printerProfile)
-            settings_dirty = True
 
-        if "autoconnect" in data:
-            settings().setBoolean(
-                ["printerConnection", "autoconnect"], data["autoconnect"]
-            )
+            if "autoconnect" in data:
+                settings().setBoolean(
+                    ["printerConnection", "autoconnect"], data["autoconnect"]
+                )
+
             settings_dirty = True
 
         if settings_dirty:
@@ -285,6 +287,9 @@ def _get_options() -> ConnectionOptions_pre_2_0_0:  # pre 2.0.0
             ["printerConnection", "preferred", "parameters"]
         )
 
+    # autoconnect
+    autoconnect = settings().getBoolean(["printerConnection", "autoconnect"])
+
     return ConnectionOptions_pre_2_0_0(
         ports=connection_options.get("port", []),
         baudrates=connection_options.get("baudrate", []),
@@ -301,4 +306,5 @@ def _get_options() -> ConnectionOptions_pre_2_0_0:  # pre 2.0.0
         printerProfilePreference=default_profile["id"]
         if "id" in default_profile
         else None,
+        autoconnect=autoconnect,
     )

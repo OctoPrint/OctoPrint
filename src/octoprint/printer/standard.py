@@ -1209,15 +1209,23 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                     if self._selected_job is not None:
                         payload = self._payload_for_print_job_event()
                         if payload:
-                            job_progress = self._connection.job_progress
-                            error_info = self._connection.error_info
+                            job_progress = (
+                                self._connection.job_progress
+                                if self._connection
+                                else None
+                            )
+                            error_info = (
+                                self._connection.error_info if self._connection else None
+                            )
 
                             payload["reason"] = "error"
                             payload["error"] = (
                                 error_info.error if error_info else "unknown"
                             )
-                            payload["time"] = job_progress.elapsed
-                            payload["progress"] = job_progress.progress
+                            payload["time"] = job_progress.elapsed if job_progress else 0
+                            payload["progress"] = (
+                                job_progress.progress if job_progress else 0
+                            )
 
                             def finalize():
                                 self._file_manager.log_print(
@@ -1410,8 +1418,8 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
 
         payload = self._payload_for_print_job_event()
         if payload:
-            job_progress = self._connection.job_progress
-            payload["time"] = job_progress.elapsed
+            job_progress = self._connection.job_progress if self._connection else None
+            payload["time"] = job_progress.elapsed if job_progress else 0
             eventManager().fire(
                 Events.CHART_MARKED,
                 {"type": "done", "label": "Done"},
@@ -1490,7 +1498,7 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
             action_user=user,
         )
         if payload:
-            payload["time"] = job_progress.elapsed
+            payload["time"] = job_progress.elapsed if job_progress else 0
 
             eventManager().fire(Events.PRINT_CANCELLED, payload)
             eventManager().fire(

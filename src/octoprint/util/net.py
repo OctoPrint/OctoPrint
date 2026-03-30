@@ -192,7 +192,7 @@ def is_loopback_address(address):
         ip = netaddr.IPAddress(address)
         return ip.is_loopback()
     except Exception:
-        logging.get_logger(__name__).exception(
+        logging.getLogger(__name__).exception(
             f"Error while trying to determine whether {address} is a loopback address"
         )
         return False

@@ -114,6 +114,10 @@ def printerProfilesGet(identifier):
 @no_firstrun_access
 @Permissions.SETTINGS.require(403)
 def printerProfilesDelete(identifier):
+    profile = printerProfileManager.get(identifier)
+    if profile is None:
+        abort(404)
+
     current_profile = printerProfileManager.get_current()
     if current_profile and current_profile["id"] == identifier:
         abort(409, description="Cannot delete currently selected profile")
@@ -137,7 +141,7 @@ def printerProfilesUpdate(identifier):
 
     profile = printerProfileManager.get(identifier)
     if profile is None:
-        profile = printerProfileManager.get_default()
+        abort(404)
 
     new_profile = json_data["profile"]
     merged_profile = dict_merge(profile, new_profile)

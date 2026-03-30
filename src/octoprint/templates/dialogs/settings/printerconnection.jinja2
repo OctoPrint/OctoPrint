@@ -1,0 +1,41 @@
+<h3>{{ _("Printer Connection") }}</h3>
+
+<h4>{{ _("Default Connection Settings") }}</h4>
+
+<p>
+    {% trans %}
+    The following settings are the current connection defaults:
+{% endtrans %}
+</p>
+
+<dl>
+    <dt>{{ _("Connection Type") }}</dt>
+    <dd>
+        <span data-bind="html: preferredConnectorName"></span>
+    </dd>
+
+    <dt>{{ _("Connection Parameters") }}</dt>
+    <dd data-bind="foreach: preferredConnectorParameters">
+        <span data-bind="html: $data"></span>
+        <br />
+    </dd>
+</dl>
+
+<p>
+    {% trans %}
+    If you want to try to automatically connect with these settings on server startup,
+    check the following checkbox:
+{% endtrans %}
+</p>
+
+<form class="form-horizontal" onsubmit="return false;">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox"
+                       data-bind="checked: settings.settings.printerConnection.autoconnect">
+                {{ _("Attempt to autoconnect on startup with these settings") }}
+            </label>
+        </div>
+    </div>
+</form>

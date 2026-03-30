@@ -487,6 +487,9 @@ class PrinterFileStorage(StorageInterface):
             return None
 
         metadata = self._connection.get_printer_file_metadata(path)
+        if metadata is None or metadata.model_extra is None:
+            return None
+
         return metadata.model_extra.get(key)
 
     def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):

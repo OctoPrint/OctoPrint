@@ -5702,7 +5702,7 @@ msgid ""
 "in progress.</strong></p><p>Disconnecting while a print is in progress "
 "will prevent OctoPrint from completing the print. If you're printing from"
 " an SD card attached directly to the printer, any attempt to restart "
-"OctoPrint or reconnect to the printer could interrupt the print.<p>"
+"OctoPrint or reconnect to the printer could interrupt the print.</p>"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/connection.js:196

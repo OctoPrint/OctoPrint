@@ -48,7 +48,7 @@ from octoprint.server.util import (
 )
 from octoprint.server.util.csrf import add_csrf_cookie
 from octoprint.server.util.flask import credentials_checked_recently
-from octoprint.settings import settings
+from octoprint.settings import settings, valid_boolean_trues
 from octoprint.util import sv, to_bytes, to_unicode
 from octoprint.util.version import get_octoprint_version, get_python_version_string
 
@@ -447,7 +447,7 @@ def reverse_proxy_test_redirect():
 def reverse_proxy_test():
     from octoprint.server.util.flask import get_reverse_proxy_info
 
-    authenticated = request.args.get("authenticated", False) is not False
+    authenticated = request.args.get("authenticated", "false") in valid_boolean_trues
     if authenticated:
         response = require_fresh_login_with(permissions=[Permissions.ADMIN])
         if response:
@@ -503,9 +503,9 @@ def index():
 
     enable_timelapse = settings().getBoolean(["webcam", "timelapseEnabled"])
     enable_loading_animation = settings().getBoolean(["devel", "showLoadingAnimation"])
-    enable_sd_support = settings().get(["feature", "sdSupport"])
+    enable_sd_support = settings().getBoolean(["feature", "sdSupport"])
     enable_webcam = settings().getBoolean(["webcam", "webcamEnabled"])
-    enable_temperature_graph = settings().get(["feature", "temperatureGraph"])
+    enable_temperature_graph = settings().getBoolean(["feature", "temperatureGraph"])
     sockjs_connect_timeout = settings().getInt(["devel", "sockJsConnectTimeout"])
     reauthentication_timeout = settings().getInt(
         ["accessControl", "defaultReauthenticationTimeout"]
@@ -1151,6 +1151,14 @@ def fetch_template_data(refresh=False):
 
     templates["settings"]["entries"] = {
         "section_printer": (gettext("Printer"), None),
+        "printerconnection": (
+            gettext("Printer Connection"),
+            {
+                "template": "dialogs/settings/printerconnection.jinja2",
+                "_div": "settings_printerconnection",
+                "custom_bindings": True,
+            },
+        ),
         "printerprofiles": (
             gettext("Printer Profiles"),
             {

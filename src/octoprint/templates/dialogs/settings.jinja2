@@ -67,7 +67,7 @@
             data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.SYSTEM), click: function() { about.show('about_systeminfo') }">
         <i class="fas fa-flag-checkered"></i> {{ _("System info") }}
     </button>
-    <a href="{{ url_for('reverse_proxy_test', authenticated='') }}"
+    <a href="{{ url_for('reverse_proxy_test', authenticated='true') }}"
        class="btn reverseproxylink"
        target="_blank"
        rel="noopener noreferrer"><i class="fas fa-check-double"></i> {{ _("Reverse Proxy Test") }}</a>

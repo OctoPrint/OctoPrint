@@ -116,6 +116,35 @@ class SerialConnectorPlugin(
                         except KeyError:
                             pass
 
+                if "autorefresh" in config:
+                    self._settings.global_set_boolean(
+                        ["printerConnection", "autorefresh"], config.pop("autorefresh")
+                    )
+                if "autorefreshInterval" in config:
+                    self._settings.global_set_int(
+                        ["printerConnection", "autorefreshInterval"],
+                        config.pop("autorefreshInterval"),
+                    )
+
+                autoconnect = config.pop("autoconnect", False)
+
+                parameters = {
+                    "port": config.pop("port", None),
+                    "baudrate": config.pop("baudrate", None),
+                }
+
+                preferred_connector = self._settings.global_get(
+                    ["printerConnection", "preferred", "connector"]
+                )
+                if preferred_connector is None or preferred_connector == "serial":
+                    self._settings.global_set_boolean(
+                        ["printerConnection", "autoconnect"], autoconnect
+                    )
+                    self._settings.global_set(
+                        ["printerConnection", "preferred", "parameters"],
+                        parameters,
+                    )
+
                 self._settings.global_set(
                     ["plugins", "serial_connector"], config, force=True
                 )

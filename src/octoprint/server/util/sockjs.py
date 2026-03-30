@@ -436,11 +436,11 @@ class PrinterStateConnection(
             self._temperatureBacklog = []
 
         with self._logBacklogMutex:
-            logs = self._filter_logs(self._logBacklog)
+            logs = self._logBacklog
             self._logBacklog = []
 
         with self._messageBacklogMutex:
-            messages = self._filter_messages(self._messageBacklog)
+            messages = self._messageBacklog
             self._messageBacklog = []
 
         busy_files = [
@@ -475,7 +475,7 @@ class PrinterStateConnection(
             data.update(
                 {
                     "logs": self._filter_logs(logs),
-                    "messages": messages,
+                    "messages": self._filter_messages(messages),
                 }
             )
         self._emit("current", payload=data)
