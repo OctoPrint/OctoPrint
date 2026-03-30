@@ -487,10 +487,10 @@ class PrinterFileStorage(StorageInterface):
             return None
 
         metadata = self._connection.get_printer_file_metadata(path)
-        if metadata is None or metadata.model_extra is None:
+        if metadata is None or metadata.additional is None:
             return None
 
-        return metadata.model_extra.get(key)
+        return metadata.additional.get(key)
 
     def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
         if not self.capabilities.metadata:
@@ -503,16 +503,19 @@ class PrinterFileStorage(StorageInterface):
         if metadata is None:
             metadata = MetadataEntry()
 
-        if key in metadata.model_extra:
+        if metadata.additional is None:
+            metadata.additional = {}
+
+        if key in metadata.additional:
             if not overwrite:
                 return
 
             if merge:
                 import octoprint.util
 
-                data = octoprint.util.dict_merge(metadata.model_extra[key], data)
+                data = octoprint.util.dict_merge(metadata.additional[key], data)
 
-        metadata.model_extra[key] = data
+        metadata.additional[key] = data
         self._connection.set_printer_file_metadata(path, metadata)
         self._update_last_activity()
 
@@ -527,8 +530,11 @@ class PrinterFileStorage(StorageInterface):
         if metadata is None:
             metadata = MetadataEntry()
 
+        if metadata.additional is None:
+            metadata.additional = {}
+
         try:
-            del metadata.model_extra[key]
+            del metadata.additional[key]
             self._update_last_activity()
         except KeyError:
             pass
