@@ -1291,7 +1291,7 @@ class FileManager:
     def has_analysis(self, location, path):
         return self._storage(location).has_analysis(path)
 
-    def get_metadata(self, location, path):
+    def get_metadata(self, location: str, path: str) -> dict:
         return self._storage(location).get_metadata(path)
 
     @deprecated(
