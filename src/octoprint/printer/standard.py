@@ -1834,11 +1834,11 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                             size=None,
                             date=None,
                             upload=None,
-                            plate=None,
                         ),
                         estimatedPrintTime=None,
                         filament=None,
                         user=None,
+                        plate=None,
                     )
                 )
                 return
@@ -1874,11 +1874,11 @@ class Printer(PrinterMixin, ConnectedPrinterListenerMixin):
                         if job.date
                         else None,
                         upload=isinstance(job, UploadJob),
-                        plate=job.plate,
                     ),
                     estimatedPrintTime=estimatedPrintTime,
                     filament=filament,
                     user=user,
+                    plate=job.plate,
                 )
             )
             self._selected_job = job
