@@ -7,7 +7,7 @@ import datetime
 from typing import IO, TYPE_CHECKING, Any, Optional
 
 from octoprint.filemanager.util import AbstractFileWrapper
-from octoprint.schema import BaseModel
+from octoprint.schema import BaseModel, BaseModelExtra
 from octoprint.util import deprecated
 
 if TYPE_CHECKING:
@@ -92,11 +92,10 @@ class Statistics(BaseModel):
     lastPrintTime: dict[str, float] = {}
 
 
-class MetadataEntry(BaseModel):
+class MetadataEntry(BaseModelExtra):
     analysis: Optional[AnalysisResult] = None
     history: list[HistoryEntry] = []
     statistics: Optional[Statistics] = None
-    additional: dict[str, Any] = {}
 
 
 class StorageEntry(BaseModel):
