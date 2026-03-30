@@ -169,7 +169,7 @@ class SerialConnectorPlugin(
                     )
 
         if current is None or current < 3:
-            # remove logWarning from plugins.logging
+            # remove serial_log_warning from plugins.logging
             log_warning_enabled = True
 
             logging_config = self._settings.global_get(["plugins", "logging"])
@@ -201,7 +201,7 @@ class SerialConnectorPlugin(
                     [new_id if x == old_id else x for x in navbar_disabled],
                 )
             elif not log_warning_enabled:
-                # logWarning was disabled -> add to disabled navbar components
+                # serial_log_warning was disabled -> add to disabled navbar components
                 if navbar_disabled is None:
                     navbar_disabled = []
                 navbar_disabled.append(new_id)
