@@ -1,3 +1,4 @@
+from copy import copy
 from unittest import mock
 
 import pytest
@@ -292,69 +293,70 @@ def test_migration_blocklists_unmodified(plugin):
 
 
 @pytest.mark.parametrize("current_version", [None, 2])
-def test_migration_logging_warning_enabled(plugin, current_version):
-    """Tests log warning flag gets migrated correctly"""
-
-    # prep
-    def settings_global_get(path):
-        if path == ["plugins", "logging"]:
-            return {"serial_log_warning": True}
-        elif path == ["appearance", "components", "disabled", "navbar"]:
-            return ["foo", "bar"]
-        return None
-
-    plugin._settings.global_get.side_effect = settings_global_get
-
-    # test
-    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
-
-    # verify
-    plugin._settings.global_set.assert_called_once_with(
-        ["plugins", "logging"], {}, force=True
-    )
-
-
-@pytest.mark.parametrize("current_version", [None, 2])
-def test_migration_logging_warning_disabled(plugin, current_version):
-    """Tests log warning flag gets migrated correctly"""
-
-    # prep
-    def settings_global_get(path):
-        if path == ["plugins", "logging"]:
-            return {"serial_log_warning": False}
-        elif path == ["appearance", "components", "disabled", "navbar"]:
-            return ["foo", "bar"]
-        return None
-
-    plugin._settings.global_get.side_effect = settings_global_get
-
-    # test
-    plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
-
-    # verify
-    plugin._settings.global_set.assert_has_calls(
-        [
-            mock.call(["plugins", "logging"], {}, force=True),
-            mock.call(
-                ["appearance", "components", "disabled", "navbar"],
-                ["foo", "bar", "plugin_serial_connector_seriallog"],
-            ),
-        ]
-    )
-
-
-@pytest.mark.parametrize("current_version", [None, 2])
-def test_migration_logging_warning_enabled_but_component_disabled(
-    plugin, current_version
+@pytest.mark.parametrize(
+    "serial_log_warning, navbar_disabled_components, expected_calls",
+    [
+        # warning enabled and component not disabled
+        (
+            True,
+            ["foo", "bar"],
+            [
+                mock.call(["plugins", "logging"], {}, force=True),
+            ],
+        ),
+        # warning enabled and component disabled
+        (
+            True,
+            ["foo", "plugin_logging_seriallog", "bar"],
+            [
+                mock.call(["plugins", "logging"], {}, force=True),
+                mock.call(
+                    ["appearance", "components", "disabled", "navbar"],
+                    ["foo", "plugin_serial_connector_seriallog", "bar"],
+                ),
+            ],
+        ),
+        # warning disabled and component not disabled
+        (
+            False,
+            ["foo", "bar"],
+            [
+                mock.call(["plugins", "logging"], {}, force=True),
+                mock.call(
+                    ["appearance", "components", "disabled", "navbar"],
+                    ["foo", "bar", "plugin_serial_connector_seriallog"],
+                ),
+            ],
+        ),
+        # warning disabled and component disabled
+        (
+            False,
+            ["foo", "plugin_logging_seriallog", "bar"],
+            [
+                mock.call(["plugins", "logging"], {}, force=True),
+                mock.call(
+                    ["appearance", "components", "disabled", "navbar"],
+                    ["foo", "plugin_serial_connector_seriallog", "bar"],
+                ),
+            ],
+        ),
+    ],
+)
+def test_migration_logging_warning(
+    plugin,
+    current_version,
+    serial_log_warning,
+    navbar_disabled_components,
+    expected_calls,
 ):
     """Tests log warning flag gets migrated correctly"""
 
     # prep
     def settings_global_get(path):
         if path == ["plugins", "logging"]:
-            return {"serial_log_warning": True}
+            return {"serial_log_warning": serial_log_warning}
         elif path == ["appearance", "components", "disabled", "navbar"]:
-            return ["foo", "plugin_logging_seriallog", "bar"]
+            return copy(navbar_disabled_components)
         return None
 
     plugin._settings.global_get.side_effect = settings_global_get
@@ -363,15 +365,8 @@ def test_migration_logging_warning_enabled_but_component_disabled(
     plugin.on_settings_migrate(TARGET_SETTINGS_VERSION, current_version)
 
     # verify
-    plugin._settings.global_set.assert_has_calls(
-        [
-            mock.call(["plugins", "logging"], {}, force=True),
-            mock.call(
-                ["appearance", "components", "disabled", "navbar"],
-                ["foo", "plugin_serial_connector_seriallog", "bar"],
-            ),
-        ]
-    )
+    plugin._settings.global_set.assert_has_calls(expected_calls)
+    assert plugin._settings.global_set.call_count == len(expected_calls)
 
 
 @pytest.mark.parametrize("current_version", [None, 2])
