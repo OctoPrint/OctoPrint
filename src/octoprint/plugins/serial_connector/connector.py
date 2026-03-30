@@ -125,10 +125,6 @@ class ConnectedSerialPrinter(ConnectedPrinter, PrinterFilesMixin):
 
         SerialLogHandler.arm_rollover()
 
-        serial_log_enabled = self._plugin_settings.get_boolean(["log"])
-        self._serial_logger.setLevel(
-            logging.DEBUG if serial_log_enabled else logging.INFO
-        )
         if not self._serial_logger.isEnabledFor(logging.DEBUG):
             # if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
             self._serial_logger.info(

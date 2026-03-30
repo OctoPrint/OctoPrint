@@ -1,7 +1,10 @@
+import logging
+
 from flask_babel import gettext
 
 import octoprint.plugin
 from octoprint.logging.handlers import TriggeredRolloverLogHandler
+from octoprint.settings import valid_boolean_trues
 
 
 class SerialLogHandler(TriggeredRolloverLogHandler):
@@ -16,17 +19,21 @@ class SerialConnectorPlugin(
     def initialize(self):
         from .connector import ConnectedSerialPrinter  # noqa: F401
 
+        self._serial_logger = self._configure_serial_logger()
+
         ConnectedSerialPrinter._event_bus = self._event_bus
         ConnectedSerialPrinter._file_manager = self._file_manager
         ConnectedSerialPrinter._plugin_manager = self._plugin_manager
         ConnectedSerialPrinter._plugin_settings = self._settings
-        ConnectedSerialPrinter._serial_logger = self._configure_serial_logger()
+        ConnectedSerialPrinter._serial_logger = self._serial_logger
 
     def _configure_serial_logger(self):
         import logging
         import os
 
         from octoprint.logging import LOGGING_TIMED_MESSAGE_ONLY_FORMAT
+
+        log_enabled = self._settings.get_boolean(["log"])
 
         serial_log_handler = SerialLogHandler(
             os.path.join(
@@ -45,7 +52,7 @@ class SerialConnectorPlugin(
             "octoprint.plugins.serial_connector.connector.console"
         )
         serial_logger.addHandler(serial_log_handler)
-        serial_logger.setLevel(logging.INFO)
+        serial_logger.setLevel(logging.DEBUG if log_enabled else logging.INFO)
         serial_logger.propagate = False
 
         return serial_logger
@@ -56,6 +63,19 @@ class SerialConnectorPlugin(
         from .config_schema import SerialConfig
 
         return SerialConfig().model_dump()
+
+    def on_settings_save(self, data: dict) -> dict:
+        if "log" in data:
+            old_log = self._settings.get_boolean(["log"])
+            new_log = data.get("log") in valid_boolean_trues
+            if not old_log and new_log:
+                self._serial_logger.setLevel(logging.DEBUG)
+                self._serial_logger.info("Enabling serial logging")
+            elif old_log and not new_log:
+                self._serial_logger.debug("Disabling serial logging")
+                self._serial_logger.setLevel(logging.INFO)
+
+        return super().on_settings_save(data)
 
     def get_settings_version(self):
         return 3
